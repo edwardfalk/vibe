@@ -1,0 +1,23 @@
+{
+  "name": "vibe-game",
+  "version": "2.0.0",
+  "description": "A p5.js geometric space shooter survival game with procedural graphics",
+  "main": "index.html",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "serve": "live-server --port=5500",
+    "dev": "live-server --port=5500"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "live-server": "^1.2.2"
+  },
+  "dependencies": {
+    "p5": "^1.7.0"
+  },
+  "keywords": ["game", "p5js", "javascript", "space-shooter", "procedural-graphics", "geometric-art"],
+  "author": "Vibe Game Developer",
+  "license": "MIT"
+}

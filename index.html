@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe - Geometric Space Shooter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #gameContainer {
+            border: 2px solid #333;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 16px;
+            z-index: 100;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div id="score">Score: 0</div>
+        <div id="health">Health: 100</div>
+        <div id="level">Level: 1</div>
+        <div style="margin-top: 10px; font-size: 12px;">
+            <div id="soundStatus">🔇 Click or press M to enable sound</div>
+            <div>💥 WASD to move, Mouse to aim & shoot</div>
+            <div>🎵 <strong>RHYTHMIC COMBAT:</strong> Shoot on the beat!</div>
+            <div>⏸️ Press P to pause/resume</div>
+            <div>🧪 Press T to toggle test mode (auto-movement & shooting)</div>
+        </div>
+    </div>
+    
+    <!-- Core configuration and utilities -->
+    <script src="js/config.js"></script>
+    <script src="js/BeatClock.js"></script>
+    <script src="js/Audio.js"></script>
+    
+    <!-- New modular systems (load before game objects) -->
+    <script src="js/GameState.js"></script>
+    <script src="js/CameraSystem.js"></script>
+    <script src="js/SpawnSystem.js"></script>
+    <script src="js/BackgroundRenderer.js"></script>
+    <script src="js/UIRenderer.js"></script>
+    <script src="js/CollisionSystem.js"></script>
+    <script src="js/TestMode.js"></script>
+    
+    <!-- Modular explosion system -->
+    <script src="js/explosions/Explosion.js"></script>
+    <script src="js/explosions/PlasmaCloud.js"></script>
+    <script src="js/explosions/RadioactiveDebris.js"></script>
+    <script src="js/explosions/ExplosionManager.js"></script>
+    
+    <!-- Game objects and effects -->
+    <script src="js/effects.js"></script>
+    <script src="js/visualEffects.js"></script>
+    <script src="js/player.js"></script>
+    
+    <!-- Modular enemy system (load in dependency order) -->
+    <script src="js/BaseEnemy.js"></script>
+    <script src="js/Grunt.js"></script>
+    <script src="js/Rusher.js"></script>
+    <script src="js/Tank.js"></script>
+    <script src="js/Stabber.js"></script>
+    <script src="js/EnemyFactory.js"></script>
+    
+    <script src="js/bullet.js"></script>
+    
+    <!-- Main game loop (load last) -->
+    <script src="js/GameLoop.js"></script>
+</body>
+</html> 

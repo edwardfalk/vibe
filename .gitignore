@@ -1,0 +1,59 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Playwright test results and reports
+test-results/
+playwright-report/
+test-results-*/
+
+# Screenshots from automated testing
+tests/screenshots/
+tests/manual-sessions/
+
+# IDE and editor files
+.vscode/
+.cursor/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Development and testing files
+file-command-tests/
+
+# Build artifacts (if any future build process is added)
+dist/
+build/
+*.min.js
+*.min.css
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archive and backup directories
+backups/
+
+# Game development artifacts
+*.psd
+*.ai
+*.sketch 
