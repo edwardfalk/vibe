@@ -2,7 +2,7 @@
  * GameState.js - Manages all game state including score, level, health, and game state transitions
  */
 
-class GameState {
+export class GameState {
     constructor() {
         // Core game state
         this.score = 0;
@@ -92,6 +92,9 @@ class GameState {
             }
             
             console.log(`💀 Game Over! Final Score: ${this.score}, Level: ${this.level}, Kills: ${this.totalKills}`);
+            if (window.player) {
+                console.log(`[DEBUG] setGameState('gameOver'): playerHealth=${window.player.health}, playerPos=(${window.player.x},${window.player.y})`);
+            }
         }
     }
     
@@ -114,10 +117,13 @@ class GameState {
         
         // Reset player
         if (window.player) {
-            window.player.x = width / 2;
-            window.player.y = height / 2;
+            // Use the p5 instance from the player object
+            const p = window.player.p;
+            window.player.x = p.width / 2;
+            window.player.y = p.height / 2;
             window.player.health = window.player.maxHealth;
             window.player.velocity = { x: 0, y: 0 };
+            console.log(`[DEBUG] restart(): playerHealth=${window.player.health}, playerPos=(${window.player.x},${window.player.y})`);
         }
         
         // Clear all game objects

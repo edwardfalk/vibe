@@ -4,20 +4,32 @@
   "description": "A p5.js geometric space shooter survival game with procedural graphics",
   "main": "index.html",
   "scripts": {
+    "serve": "five-server --port=5500",
+    "watch-bugs": "node move-bug-reports.js",
+    "dev": "concurrently \"npm run serve\" \"npm run watch-bugs\"",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
-    "serve": "live-server --port=5500",
-    "dev": "live-server --port=5500"
+    "test:debug": "playwright test --debug"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
+    "concurrently": "^9.1.2",
+    "five-server": "^0.4.4",
     "live-server": "^1.2.2"
   },
   "dependencies": {
+    "express": "^5.1.0",
+    "jszip": "^3.10.1",
     "p5": "^1.7.0"
   },
-  "keywords": ["game", "p5js", "javascript", "space-shooter", "procedural-graphics", "geometric-art"],
+  "keywords": [
+    "game",
+    "p5js",
+    "javascript",
+    "space-shooter",
+    "procedural-graphics",
+    "geometric-art"
+  ],
   "author": "Vibe Game Developer",
   "license": "MIT"
 }

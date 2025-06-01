@@ -1,3 +1,7 @@
+import { Explosion } from './Explosion.js';
+import { RadioactiveDebris } from './RadioactiveDebris.js';
+import { PlasmaCloud } from './PlasmaCloud.js';
+
 /**
  * Explosion management system
  * Coordinates all explosion types and effects in the game
@@ -166,7 +170,7 @@ class EnemyFragmentExplosion {
         }
     }
     
-    draw() {
+    draw(p) {
         if (!this.active) return;
         
         // Draw central explosion first (behind fragments)
@@ -235,7 +239,7 @@ class EnemyFragmentExplosion {
     }
 }
 
-class ExplosionManager {
+export class ExplosionManager {
     constructor() {
         this.explosions = [];
         this.plasmaClouds = [];
@@ -250,8 +254,8 @@ class ExplosionManager {
     addPlasmaCloud(x, y) {
         this.plasmaClouds.push(new PlasmaCloud(x, y));
         // Play ominous plasma formation sound
-        if (window.audioManager) {
-            window.audioManager.playPlasmaCloud(x, y);
+        if (window.audio) {
+            window.audio.playPlasmaCloud(x, y);
         }
     }
     
@@ -259,8 +263,8 @@ class ExplosionManager {
     addRadioactiveDebris(x, y) {
         this.radioactiveDebris.push(new RadioactiveDebris(x, y));
         // Play radioactive debris sound (reuse plasma sound for now)
-        if (window.audioManager) {
-            window.audioManager.playPlasmaCloud(x, y);
+        if (window.audio) {
+            window.audio.playPlasmaCloud(x, y);
         }
     }
     
@@ -331,13 +335,14 @@ class ExplosionManager {
             this.explosions.push(new Explosion(x, y, 'enemy'));
         }
         
-        console.log(`💥 ${enemyType} killed by ${killMethod} - created ${killMethod === 'bullet' ? enemyType + '-bullet-kill' : enemyType + '-plasma-kill'} effect`);
+        let effectName = `${enemyType}-${killMethod}-kill`;
+console.log(`💥 ${enemyType} killed by ${killMethod} - created ${effectName} effect`);
     }
     
     // Add beautiful fragment explosion that cuts enemy into pieces
     addFragmentExplosion(x, y, enemy) {
         this.fragmentExplosions.push(new EnemyFragmentExplosion(x, y, enemy));
-        console.log(`✨ Created beautiful fragment explosion for ${enemy.type} at (${x}, ${y})`);
+        // console.log(`✨ Created beautiful fragment explosion for ${enemy.type} at (${x}, ${y})`);
     }
     
     update() {
@@ -348,7 +353,6 @@ class ExplosionManager {
                 this.explosions.splice(i, 1);
             }
         }
-        
         // Update fragment explosions
         for (let i = this.fragmentExplosions.length - 1; i >= 0; i--) {
             this.fragmentExplosions[i].update();
@@ -356,64 +360,42 @@ class ExplosionManager {
                 this.fragmentExplosions.splice(i, 1);
             }
         }
-        
-        // Update plasma clouds and return damage events
+        // Update plasma clouds and collect area damage events
         const damageEvents = [];
         for (let i = this.plasmaClouds.length - 1; i >= 0; i--) {
             const damageInfo = this.plasmaClouds[i].update();
-            if (damageInfo) {
-                damageEvents.push(damageInfo);
-            }
+            if (damageInfo) damageEvents.push(damageInfo);
             if (!this.plasmaClouds[i].active) {
                 this.plasmaClouds.splice(i, 1);
             }
         }
-        
-        // Update radioactive debris and add damage events
+        // Update radioactive debris and collect area damage events
         for (let i = this.radioactiveDebris.length - 1; i >= 0; i--) {
             const damageInfo = this.radioactiveDebris[i].update();
-            if (damageInfo) {
-                damageEvents.push(damageInfo);
-            }
+            if (damageInfo) damageEvents.push(damageInfo);
             if (!this.radioactiveDebris[i].active) {
                 this.radioactiveDebris.splice(i, 1);
             }
         }
-        
         return damageEvents;
     }
     
-    draw() {
+    draw(p) {
+        // Draw all explosions
         for (const explosion of this.explosions) {
-            explosion.draw();
+            explosion.draw(p);
         }
+        // Draw all fragment explosions
         for (const fragmentExplosion of this.fragmentExplosions) {
-            fragmentExplosion.draw();
+            fragmentExplosion.draw(p);
         }
+        // Draw all plasma clouds
         for (const cloud of this.plasmaClouds) {
-            cloud.draw();
+            cloud.draw(p);
         }
+        // Draw all radioactive debris
         for (const debris of this.radioactiveDebris) {
-            debris.draw();
+            debris.draw(p);
         }
     }
-    
-    checkPlasmaCloudDamage(target) {
-        for (const cloud of this.plasmaClouds) {
-            if (cloud.checkDamage(target)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    // Check if target is in radioactive debris damage zone
-    checkRadioactiveDebrisDamage(target) {
-        for (const debris of this.radioactiveDebris) {
-            if (debris.checkDamage(target)) {
-                return true;
-            }
-        }
-        return false;
-    }
-} 
+}

@@ -2,7 +2,12 @@
  * UIRenderer.js - Handles all UI drawing including HUD, game over screen, pause screen, and bomb indicators
  */
 
-class UIRenderer {
+// Requires p5.js for constrain(), random(), lerp(), etc.
+
+import { floor, ceil, min } from './mathUtils.js';
+import { createTicket, updateTicket, loadTicket, listTickets } from './ticketManager.js';
+
+export class UIRenderer {
     constructor() {
         // UI state
         this.dashElement = null;
@@ -21,6 +26,35 @@ class UIRenderer {
             'The rushers send their regards',
             'Better luck next time, earthling!'
         ];
+        
+        this.bugReportButton = null;
+        this.bugReportModal = null;
+        this.bugReportActive = false;
+        this.bugReportKeys = { b: false, r: false };
+        this.latestBugReportFolder = null;
+        this.screenshotCount = 1;
+        this._addBugReportButton();
+        this._addBugReportKeyListener();
+        this._startBugReportButtonWatcher();
+        
+        // Setup bug report log/error capture
+        if (!window._bugReportLogs) {
+            window._bugReportLogs = [];
+            const origLog = console.log;
+            const origErr = console.error;
+            console.log = function(...args) {
+                window._bugReportLogs.push({ type: 'log', msg: args, time: Date.now() });
+                origLog.apply(console, args);
+            };
+            console.error = function(...args) {
+                window._bugReportLogs.push({ type: 'error', msg: args, time: Date.now() });
+                window._bugReportLastError = args;
+                origErr.apply(console, args);
+            };
+        }
+        this._inputHistory = [];
+        this._trackInputHistory();
+        this._createToast(); // Add toast/banner for confirmations
     }
     
     // Update HTML UI elements
@@ -40,8 +74,8 @@ class UIRenderer {
         this.updateDashIndicator();
         
         // Update audio system
-        if (window.audioManager) {
-            window.audioManager.updateTexts();
+        if (window.audio && typeof window.audio.updateTexts === 'function') {
+            window.audio.updateTexts();
         }
     }
     
@@ -54,25 +88,25 @@ class UIRenderer {
             document.body.appendChild(this.dashElement);
         }
         
-        if (window.player.dashCooldown > 0) {
-            const cooldownSeconds = (window.player.dashCooldown / 60).toFixed(1);
+        if (window.player.dashCooldownMs > 0) {
+            const cooldownSeconds = (window.player.dashCooldownMs / 1000).toFixed(1);
             this.dashElement.textContent = `Dash: ${cooldownSeconds}s`;
             this.dashElement.style.color = '#ff6666';
         } else {
-            this.dashElement.textContent = 'Dash: READY (Space)';
+            this.dashElement.textContent = 'Dash: READY (E) | Shoot: SPACE or Mouse';
             this.dashElement.style.color = '#66ff66';
         }
     }
     
     // Draw game over screen
-    drawGameOver() {
+    drawGameOver(p) {
         if (!window.gameState) return;
         
-        push();
+        p.push();
         
         // Semi-transparent overlay
-        fill(0, 0, 0, 150);
-        rect(0, 0, width, height);
+        p.fill(0, 0, 0, 150);
+        p.rect(0, 0, p.width, p.height);
         
         // Check for new high score
         let isNewHighScore = false;
@@ -82,91 +116,91 @@ class UIRenderer {
         }
         
         // Game over text with animation
-        fill(255, 100, 100);
-        textAlign(CENTER, CENTER);
-        textSize(48 + sin(frameCount * 0.1) * 4);
-        const messageIndex = Math.floor(window.gameState.score / 50) % this.gameOverMessages.length;
-        text(this.gameOverMessages[messageIndex], width/2, height/2 - 80);
+        p.fill(255, 100, 100);
+        p.textAlign(p.CENTER, p.CENTER);
+        p.textSize(48 + p.sin(p.frameCount * 0.1) * 4);
+        const messageIndex = floor(window.gameState.score / 50) % this.gameOverMessages.length;
+        p.text(this.gameOverMessages[messageIndex], p.width/2, p.height/2 - 80);
         
         // New high score celebration
         if (isNewHighScore) {
-            fill(255, 255, 0);
-            textSize(20 + sin(frameCount * 0.2) * 3);
-            text('🎉 NEW HIGH SCORE! 🎉', width/2, height/2 - 50);
+            p.fill(255, 255, 0);
+            p.textSize(20 + p.sin(p.frameCount * 0.2) * 3);
+            p.text('NEW HIGH SCORE! 🎉', p.width/2, p.height/2 - 50);
         }
         
         // Score and level
-        fill(255);
-        textSize(24);
-        text(`Final Score: ${window.gameState.score.toLocaleString()}`, width/2, height/2 - 10);
-        text(`Level Reached: ${window.gameState.level}`, width/2, height/2 + 20);
+        p.fill(255);
+        p.textSize(24);
+        p.text(`Final Score: ${window.gameState.score.toLocaleString()}`, p.width/2, p.height/2 - 10);
+        p.text(`Level Reached: ${window.gameState.level}`, p.width/2, p.height/2 + 20);
         
         // Stats
-        fill(200, 200, 255);
-        textSize(16);
-        text(`Enemies Killed: ${window.gameState.totalKills}`, width/2, height/2 + 45);
+        p.fill(200, 200, 255);
+        p.textSize(16);
+        p.text(`Enemies Killed: ${window.gameState.totalKills}`, p.width/2, p.height/2 + 45);
         const accuracy = window.gameState.getAccuracy();
-        text(`Accuracy: ${accuracy}%`, width/2, height/2 + 65);
+        p.text(`Accuracy: ${accuracy}%`, p.width/2, p.height/2 + 65);
         
         // High score display
-        fill(255, 255, 100);
-        textSize(18);
-        text(`High Score: ${window.gameState.highScore.toLocaleString()}`, width/2, height/2 + 90);
+        p.fill(255, 255, 100);
+        p.textSize(18);
+        p.text(`High Score: ${window.gameState.highScore.toLocaleString()}`, p.width/2, p.height/2 + 90);
         
         // Funny comment
-        fill(255, 255, 100);
-        textSize(16);
-        const commentIndex = Math.floor(window.gameState.score / 30) % this.funnyComments.length;
-        text(this.funnyComments[commentIndex], width/2, height/2 + 115);
+        p.fill(255, 255, 100);
+        p.textSize(16);
+        const commentIndex = floor(window.gameState.score / 30) % this.funnyComments.length;
+        p.text(this.funnyComments[commentIndex], p.width/2, p.height/2 + 115);
         
         // Restart instruction
-        fill(255);
-        textSize(16);
-        text('Press R to restart', width/2, height/2 + 140);
+        p.fill(255);
+        p.textSize(16);
+        p.text('Press R to restart', p.width/2, p.height/2 + 140);
         
-        pop();
+        p.pop();
     }
     
     // Draw pause screen
-    drawPauseScreen() {
+    drawPauseScreen(p) {
         if (!window.gameState) return;
         
-        push();
+        p.push();
         
         // Semi-transparent overlay
-        fill(0, 0, 0, 100);
-        rect(0, 0, width, height);
+        p.fill(0, 0, 0, 100);
+        p.rect(0, 0, p.width, p.height);
         
         // Pause text
-        fill(255, 255, 255);
-        textAlign(CENTER, CENTER);
-        textSize(48);
-        text('PAUSED', width/2, height/2 - 40);
+        p.fill(255, 255, 255);
+        p.textAlign(p.CENTER, p.CENTER);
+        p.textSize(48);
+        p.text('PAUSED', p.width/2, p.height/2 - 40);
         
         // Instructions
-        fill(200, 200, 200);
-        textSize(20);
-        text('Press P to resume', width/2, height/2 + 20);
+        p.fill(200, 200, 200);
+        p.textSize(20);
+        p.text('Press P to resume', p.width/2, p.height/2 + 20);
         
         // Current stats
-        fill(255, 255, 100);
-        textSize(16);
-        text(`Score: ${window.gameState.score.toLocaleString()}`, width/2, height/2 + 60);
-        text(`Level: ${window.gameState.level} | Kills: ${window.gameState.totalKills}`, width/2, height/2 + 80);
+        p.fill(255, 255, 100);
+        p.textSize(16);
+        p.text(`Score: ${window.gameState.score.toLocaleString()}`, p.width/2, p.height/2 + 60);
+        p.text(`Level: ${window.gameState.level} | Kills: ${window.gameState.totalKills}`, p.width/2, p.height/2 + 80);
         
         if (window.gameState.killStreak >= 5) {
-            fill(255, 100, 100);
-            text(`🔥 ${window.gameState.killStreak}x KILL STREAK! 🔥`, width/2, height/2 + 100);
+            p.fill(255, 100, 100);
+            p.text(`🔥 ${window.gameState.killStreak}x KILL STREAK! 🔥`, p.width/2, p.height/2 + 100);
         }
         
-        pop();
+        p.pop();
     }
     
     // Draw bomb countdown indicators
-    drawBombs() {
+    drawBombs(p) {
         if (!window.activeBombs) return;
         
-        push();
+        p.push();
         
         // Draw bomb countdown indicators
         for (const bomb of window.activeBombs) {
@@ -174,11 +208,11 @@ class UIRenderer {
             const screenY = bomb.y - (window.cameraSystem ? window.cameraSystem.y : 0);
             
             // Calculate countdown
-            const secondsLeft = Math.ceil(bomb.timer / 60);
+            const secondsLeft = ceil(bomb.timer / 60);
             const progress = bomb.timer / bomb.maxTimer;
             
             // Pulsing red warning circle
-            const pulseIntensity = 1 + sin(frameCount * 0.3) * 0.3;
+            const pulseIntensity = 1 + p.sin(p.frameCount * 0.3) * 0.3;
             const warningSize = 60 * pulseIntensity;
             
             // Warning circle color (red to yellow as time runs out)
@@ -186,160 +220,138 @@ class UIRenderer {
             const green = progress * 255;
             const blue = 0;
             
-            stroke(red, green, blue, 200);
-            strokeWeight(4);
-            noFill();
-            circle(screenX, screenY, warningSize);
+            p.stroke(red, green, blue, 200);
+            p.strokeWeight(4);
+            p.noFill();
+            p.circle(screenX, screenY, warningSize);
             
             // Countdown text
-            fill(255, 255, 255);
-            textAlign(CENTER, CENTER);
-            textSize(24);
-            strokeWeight(2);
-            stroke(0, 0, 0);
-            text(secondsLeft, screenX, screenY);
+            p.fill(255, 255, 255);
+            p.textAlign(p.CENTER, p.CENTER);
+            p.textSize(24);
+            p.strokeWeight(2);
+            p.stroke(0, 0, 0);
+            p.text(secondsLeft, screenX, screenY);
             
-            // "BOMB" label
-            textSize(12);
-            fill(255, 0, 0);
-            text("BOMB", screenX, screenY - 35);
+            // 'TIME BOMB' label (was 'BOMB')
+            p.textSize(12);
+            p.fill(255, 0, 0);
+            p.text("TIME BOMB", screenX, screenY - 35);
         }
         
-        pop();
+        p.pop();
     }
     
     // Draw level progress indicator
-    drawLevelProgress() {
+    drawLevelProgress(p) {
         if (!window.gameState) return;
-        
-        push();
-        
+        p.push();
         const progress = window.gameState.getProgressToNextLevel();
         const barWidth = 200;
         const barHeight = 8;
-        const barX = width - barWidth - 20;
+        const barX = p.width - barWidth - 20;
         const barY = 20;
-        
         // Background bar
-        fill(50, 50, 50, 150);
-        noStroke();
-        rect(barX, barY, barWidth, barHeight);
-        
+        p.fill(50, 50, 50, 150);
+        p.noStroke();
+        p.rect(barX, barY, barWidth, barHeight);
         // Progress bar
-        fill(100, 255, 100, 200);
-        rect(barX, barY, barWidth * progress, barHeight);
-        
+        p.fill(100, 255, 100, 200);
+        p.rect(barX, barY, barWidth * progress, barHeight);
         // Border
-        stroke(255, 255, 255, 100);
-        strokeWeight(1);
-        noFill();
-        rect(barX, barY, barWidth, barHeight);
-        
+        p.stroke(255, 255, 255, 100);
+        p.strokeWeight(1);
+        p.noFill();
+        p.rect(barX, barY, barWidth, barHeight);
         // Label
-        fill(255, 255, 255);
-        textAlign(RIGHT, TOP);
-        textSize(12);
-        noStroke();
-        text(`Level ${window.gameState.level} Progress`, barX + barWidth, barY - 15);
-        
-        pop();
+        p.fill(255, 255, 255);
+        p.textAlign(p.RIGHT, p.TOP);
+        p.textSize(12);
+        p.noStroke();
+        p.text(`Level ${window.gameState.level} Progress`, barX + barWidth, barY - 15);
+        p.pop();
     }
     
     // Draw kill streak indicator
-    drawKillStreakIndicator() {
+    drawKillStreakIndicator(p) {
         if (!window.gameState || window.gameState.killStreak < 3) return;
-        
-        push();
-        
+        p.push();
         const streak = window.gameState.killStreak;
-        const x = width / 2;
+        const x = p.width / 2;
         const y = 80;
-        
         // Pulsing effect for high streaks
-        const pulse = sin(frameCount * 0.2) * 0.5 + 0.5;
+        const pulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5;
         const intensity = Math.min(streak / 10, 1);
-        
         // Background glow
-        fill(255, 100, 100, 50 + pulse * 50 * intensity);
-        noStroke();
-        ellipse(x, y, 120 + pulse * 20, 40 + pulse * 10);
-        
+        p.fill(255, 100, 100, 50 + pulse * 50 * intensity);
+        p.noStroke();
+        p.ellipse(x, y, 120 + pulse * 20, 40 + pulse * 10);
         // Text
-        fill(255, 255, 255);
-        textAlign(CENTER, CENTER);
-        textSize(16 + pulse * 4);
-        text(`${streak}x KILL STREAK!`, x, y);
-        
+        p.fill(255, 255, 255);
+        p.textAlign(p.CENTER, p.CENTER);
+        p.textSize(16 + pulse * 4);
+        p.text(`${streak}x KILL STREAK!`, x, y);
         // Fire effects for high streaks
         if (streak >= 10) {
-            fill(255, 150, 0, 100 + pulse * 100);
-            textSize(20 + pulse * 6);
-            text('🔥 ON FIRE! 🔥', x, y + 25);
+            p.fill(255, 150, 0, 100 + pulse * 100);
+            p.textSize(20 + pulse * 6);
+            p.text('🔥 ON FIRE! 🔥', x, y + 25);
         }
-        
-        pop();
+        p.pop();
     }
     
     // Draw health bar
-    drawHealthBar() {
+    drawHealthBar(p) {
         if (!window.player) return;
-        
-        push();
-        
+        p.push();
         const healthPercent = window.player.health / window.player.maxHealth;
         const barWidth = 150;
         const barHeight = 12;
         const barX = 20;
-        const barY = height - 40;
-        
+        const barY = p.height - 40;
         // Background bar
-        fill(50, 50, 50, 150);
-        noStroke();
-        rect(barX, barY, barWidth, barHeight);
-        
+        p.fill(50, 50, 50, 150);
+        p.noStroke();
+        p.rect(barX, barY, barWidth, barHeight);
         // Health bar color based on health level
         if (healthPercent > 0.6) {
-            fill(100, 255, 100, 200); // Green
+            p.fill(100, 255, 100, 200); // Green
         } else if (healthPercent > 0.3) {
-            fill(255, 255, 100, 200); // Yellow
+            p.fill(255, 255, 100, 200); // Yellow
         } else {
-            fill(255, 100, 100, 200); // Red
+            p.fill(255, 100, 100, 200); // Red
         }
-        
-        rect(barX, barY, barWidth * healthPercent, barHeight);
-        
+        p.rect(barX, barY, barWidth * healthPercent, barHeight);
         // Border
-        stroke(255, 255, 255, 100);
-        strokeWeight(1);
-        noFill();
-        rect(barX, barY, barWidth, barHeight);
-        
+        p.stroke(255, 255, 255, 100);
+        p.strokeWeight(1);
+        p.noFill();
+        p.rect(barX, barY, barWidth, barHeight);
         // Health text
-        fill(255, 255, 255);
-        textAlign(LEFT, BOTTOM);
-        textSize(12);
-        noStroke();
-        text(`Health: ${window.player.health}/${window.player.maxHealth}`, barX, barY - 5);
-        
-        pop();
+        p.fill(255, 255, 255);
+        p.textAlign(p.LEFT, p.BOTTOM);
+        p.textSize(12);
+        p.noStroke();
+        p.text(`Health: ${window.player.health}/${window.player.maxHealth}`, barX, barY - 5);
+        p.pop();
     }
     
     // Draw all UI elements
-    drawUI() {
+    drawUI(p) {
         // Draw in-game UI elements
-        this.drawLevelProgress();
-        this.drawKillStreakIndicator();
-        this.drawHealthBar();
-        this.drawBombs();
+        this.drawLevelProgress(p);
+        this.drawKillStreakIndicator(p);
+        this.drawHealthBar(p);
+        this.drawBombs(p);
         
         // Draw overlays based on game state
         if (window.gameState) {
             switch (window.gameState.gameState) {
                 case 'gameOver':
-                    this.drawGameOver();
+                    this.drawGameOver(p);
                     break;
                 case 'paused':
-                    this.drawPauseScreen();
+                    this.drawPauseScreen(p);
                     break;
             }
         }
@@ -387,14 +399,55 @@ class UIRenderer {
             }
         }
         
-        if (key === ' ') {
-            // Dash with spacebar
+        if (key === 'e' || key === 'E') {
+            // Dash with E
             if (window.gameState.gameState === 'playing' && window.player && window.player.dash()) {
                 console.log('💨 Player dash activated!');
-                // Add screen shake for dramatic dash effect
                 if (window.cameraSystem) {
                     window.cameraSystem.addShake(6, 12);
                 }
+                return true;
+            }
+        }
+        
+        if (key === ' ') {
+            // Shoot with spacebar
+            if (window.gameState.gameState === 'playing' && window.player) {
+                const bullet = window.player.shoot();
+                if (bullet) {
+                    // Ensure playerBullets array exists before pushing new bullet
+                    // Prevents shots from vanishing if array was uninitialized
+                    if (!window.playerBullets) {
+                        window.playerBullets = [];
+                    }
+                    window.playerBullets.push(bullet);
+                    if (window.gameState) {
+                        window.gameState.addShotFired();
+                    }
+                    if (window.audio) {
+                        window.audio.playPlayerShoot(window.player.x, window.player.y);
+                    }
+                }
+                return true;
+            }
+        }
+        
+        // Arrow keys for aim direction
+        if (window.gameState.gameState === 'playing' && window.player) {
+            if (key === 'ArrowUp') {
+                window.player.aimAngle = -Math.PI / 2;
+                return true;
+            }
+            if (key === 'ArrowDown') {
+                window.player.aimAngle = Math.PI / 2;
+                return true;
+            }
+            if (key === 'ArrowLeft') {
+                window.player.aimAngle = Math.PI;
+                return true;
+            }
+            if (key === 'ArrowRight') {
+                window.player.aimAngle = 0;
                 return true;
             }
         }
@@ -409,7 +462,526 @@ class UIRenderer {
             this.dashElement = null;
         }
     }
-}
 
-// Create global UI renderer instance
-window.uiRenderer = new UIRenderer(); 
+    _addBugReportButton() {
+        if (document.getElementById('bugReportBtn')) return;
+        // Robustness: log when button is added
+        console.log('[UIRenderer] Adding bug report button');
+        const btn = document.createElement('button');
+        btn.id = 'bugReportBtn';
+        btn.innerText = '🐞 Report Bug';
+        btn.style.position = 'absolute';
+        btn.style.top = '20px';
+        btn.style.right = '20px';
+        btn.style.zIndex = 10000;
+        btn.style.background = '#222';
+        btn.style.color = '#fff';
+        btn.style.border = '1px solid #888';
+        btn.style.padding = '8px 16px';
+        btn.style.borderRadius = '6px';
+        btn.style.cursor = 'pointer';
+        btn.onclick = () => this._showBugReportModal();
+        document.body.appendChild(btn);
+        this.bugReportButton = btn;
+    }
+
+    // Robustness: Periodically check and re-add the bug report button if missing
+    _startBugReportButtonWatcher() {
+        setInterval(() => {
+            if (!document.getElementById('bugReportBtn')) {
+                console.warn('[UIRenderer] Bug report button missing, re-adding.');
+                this._addBugReportButton();
+            }
+        }, 5000);
+    }
+
+    _addBugReportKeyListener() {
+        window.addEventListener('keydown', (e) => {
+            if (e.repeat) return;
+            if (e.key === 'b' || e.key === 'B') this.bugReportKeys.b = true;
+            if (e.key === 'r' || e.key === 'R') this.bugReportKeys.r = true;
+            if (this.bugReportKeys.b && this.bugReportKeys.r && !this.bugReportActive) {
+                this._showBugReportModal();
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'b' || e.key === 'B') this.bugReportKeys.b = false;
+            if (e.key === 'r' || e.key === 'R') this.bugReportKeys.r = false;
+        });
+    }
+
+    // Toast/banner for confirmations
+    _createToast() {
+        if (document.getElementById('bugToast')) return;
+        const toast = document.createElement('div');
+        toast.id = 'bugToast';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '32px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.background = '#222';
+        toast.style.color = '#fff';
+        toast.style.padding = '12px 24px';
+        toast.style.borderRadius = '8px';
+        toast.style.boxShadow = '0 2px 8px #000';
+        toast.style.fontSize = '16px';
+        toast.style.zIndex = 10002;
+        toast.style.display = 'none';
+        document.body.appendChild(toast);
+        this.toast = toast;
+    }
+    _showToast(msg) {
+        if (!this.toast) this._createToast();
+        this.toast.textContent = msg;
+        this.toast.style.display = 'block';
+        setTimeout(() => {
+            this.toast.style.display = 'none';
+        }, 2200);
+    }
+
+    async _showBugReportModal(existingTicket = null) {
+        if (this.bugReportActive) return;
+        this.bugReportActive = true;
+        if (window.gameState) window.gameState.setGameState('paused');
+        // Modal
+        const modal = document.createElement('div');
+        modal.id = 'bugReportModal';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100vw';
+        modal.style.height = '100vh';
+        modal.style.background = 'rgba(0,0,0,0.7)';
+        modal.style.zIndex = 10001;
+        modal.style.display = 'flex';
+        modal.style.flexDirection = 'column';
+        modal.style.justifyContent = 'center';
+        modal.style.alignItems = 'center';
+        // Content
+        const box = document.createElement('div');
+        box.style.background = '#222';
+        box.style.color = '#fff';
+        box.style.padding = '32px';
+        box.style.borderRadius = '10px';
+        box.style.boxShadow = '0 2px 16px #000';
+        box.style.minWidth = '340px';
+        // Screenshot preview area
+        const screenshotPreview = document.createElement('div');
+        screenshotPreview.id = 'bugScreenshotPreview';
+        screenshotPreview.style.gap = '8px';
+        screenshotPreview.style.marginBottom = '8px';
+        screenshotPreview.style.flexWrap = 'wrap';
+        box.appendChild(screenshotPreview);
+        // Ticketing UI
+        let ticketNameInput = null;
+        let ticketSelect = null;
+        let relatedToSelect = null;
+        let typeSelect = null;
+        let isAppending = false;
+        // Fetch existing tickets from API
+        let tickets = [];
+        try {
+            tickets = await listTickets();
+        } catch (e) {
+            console.warn('Could not fetch tickets from API:', e);
+        }
+        // Ticket type dropdown (always shown for new tickets)
+        if (!existingTicket) {
+            const typeLabel = document.createElement('label');
+            typeLabel.htmlFor = 'ticketTypeSelect';
+            typeLabel.innerText = 'Ticket type:';
+            typeLabel.style.display = 'block';
+            typeLabel.style.marginTop = '8px';
+            box.appendChild(typeLabel);
+            typeSelect = document.createElement('select');
+            typeSelect.id = 'ticketTypeSelect';
+            typeSelect.style.width = '100%';
+            typeSelect.style.margin = '8px 0';
+            ['bug','enhancement','feature'].forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.innerText = val.charAt(0).toUpperCase() + val.slice(1);
+                typeSelect.appendChild(opt);
+            });
+            box.appendChild(typeSelect);
+        }
+        // If not appending, show new ticket name input
+        if (!existingTicket) {
+            box.innerHTML += `<h2>📝 New Ticket</h2>
+            <label for='bugTicketName'>Short ticket name (required):</label><br>
+            <input id='bugTicketName' type='text' maxlength='32' style='width:100%;margin:8px 0;' placeholder='e.g. player-stuck-dash'><br>`;
+            ticketNameInput = document.createElement('input');
+            ticketNameInput.id = 'bugTicketName';
+            ticketNameInput.type = 'text';
+            ticketNameInput.maxLength = 32;
+            ticketNameInput.style.width = '100%';
+            ticketNameInput.style.margin = '8px 0';
+            ticketNameInput.placeholder = 'e.g. player-stuck-dash';
+            box.appendChild(ticketNameInput);
+        } else {
+            isAppending = true;
+            box.innerHTML += `<h2>📝 Add to Ticket: <span style='color:#ff0'>${existingTicket.name}_${existingTicket.uid}</span></h2>`;
+        }
+        // Option to append to existing ticket
+        if (tickets.length > 0 && !existingTicket) {
+            box.innerHTML += `<label for='bugTicketSelect'>Or add to existing ticket:</label><br>`;
+            ticketSelect = document.createElement('select');
+            ticketSelect.id = 'bugTicketSelect';
+            ticketSelect.style.width = '100%';
+            ticketSelect.style.margin = '8px 0';
+            ticketSelect.innerHTML = `<option value=''>-- Select existing ticket --</option>` +
+                tickets.map(t => `<option value='${t.uid||t.id}'>${t.name||t.title}_${t.uid||t.id}</option>`).join('');
+            box.appendChild(ticketSelect);
+        }
+        // Option to link to another ticket (relatedTo)
+        if (tickets.length > 0) {
+            box.innerHTML += `<label for='relatedToSelect'>Link to related ticket (optional):</label><br>`;
+            relatedToSelect = document.createElement('select');
+            relatedToSelect.id = 'relatedToSelect';
+            relatedToSelect.style.width = '100%';
+            relatedToSelect.style.margin = '8px 0';
+            relatedToSelect.innerHTML = `<option value=''>-- None --</option>` +
+                tickets.map(t => `<option value='${t.uid||t.id}'>${t.name||t.title}_${t.uid||t.id}</option>`).join('');
+            box.appendChild(relatedToSelect);
+        }
+        // Description and controls
+        box.innerHTML += `<label for='bugDesc'>Describe what happened:</label><br>
+        <textarea id='bugDesc' rows='5' style='width:100%;margin:8px 0;'></textarea><br>
+        <button id='bugSaveBtn' style='margin-right:12px;'>Save Report</button>
+        <button id='bugScreenshotBtn' style='margin-right:12px;'>Add Screenshot to Ticket</button>
+        <button id='bugCancelBtn'>Cancel</button>`;
+        // Add error message area
+        const errorMsg = document.createElement('div');
+        errorMsg.id = 'bugModalErrorMsg';
+        errorMsg.style.color = '#ff4444';
+        errorMsg.style.marginTop = '12px';
+        errorMsg.style.display = 'none';
+        box.appendChild(errorMsg);
+        modal.appendChild(box);
+        document.body.appendChild(modal);
+        this.bugReportModal = modal;
+        // Screenshot thumbnails state
+        this._screenshotDataList = [];
+        // Focus textarea for immediate typing
+        setTimeout(() => {
+          const ta = document.getElementById('bugDesc');
+          if (ta) ta.focus();
+        }, 50);
+        // Take initial screenshot immediately
+        const initialScreenshot = this._captureCanvasScreenshot();
+        this._pendingInitialScreenshot = initialScreenshot;
+        if (initialScreenshot) this._addScreenshotThumbnail(initialScreenshot);
+        // Button handlers
+        document.getElementById('bugSaveBtn').onclick = async () => {
+            errorMsg.style.display = 'none';
+            errorMsg.textContent = '';
+            // Determine ticket
+            let ticket = existingTicket;
+            if (!ticket) {
+                // New or selected
+                const name = ticketNameInput ? ticketNameInput.value.trim().replace(/\s+/g,'-').toLowerCase() : '';
+                const selectedUid = ticketSelect ? ticketSelect.value : '';
+                const type = typeSelect ? typeSelect.value : 'bug';
+                if (selectedUid) {
+                    ticket = tickets.find(t => (t.uid||t.id) === selectedUid);
+                    isAppending = true;
+                } else if (name) {
+                    const uid = this._shortUID();
+                    ticket = { name, uid, type };
+                } else {
+                    this._showToast('Please enter a short ticket name or select a ticket.');
+                    return;
+                }
+            }
+            // Always ensure type is present
+            if (!ticket.type) ticket.type = typeSelect ? typeSelect.value : 'bug';
+            // Related to
+            let relatedTo = relatedToSelect ? relatedToSelect.value : '';
+            try {
+                await this._saveBugReport(ticket, isAppending, relatedTo);
+            } catch (e) {
+                errorMsg.textContent = (e && e.message) ? e.message : 'Failed to save bug report!';
+                errorMsg.style.display = 'block';
+            }
+        };
+        document.getElementById('bugScreenshotBtn').onclick = () => this._saveAdditionalScreenshot(existingTicket);
+        document.getElementById('bugCancelBtn').onclick = () => this._closeBugReportModal();
+        // Fix: allow spacebar in textarea
+        document.getElementById('bugDesc').addEventListener('keydown', e => {
+          e.stopPropagation();
+        });
+        // Accessibility: Escape closes modal
+        modal.tabIndex = -1;
+        modal.focus();
+        modal.addEventListener('keydown', e => {
+            // If focus is in textarea, only handle Escape or Ctrl+Enter
+            const isTextarea = document.activeElement && document.activeElement.id === 'bugDesc';
+            // Save on Enter or Ctrl+Enter (except when Shift is held for newline in textarea)
+            if ((e.key === 'Enter' && (e.ctrlKey || !isTextarea)) || (e.key === 's' && e.ctrlKey)) {
+                e.preventDefault();
+                document.getElementById('bugSaveBtn').click();
+                return;
+            }
+            // Cancel on Escape or Ctrl+Backspace
+            if (e.key === 'Escape' || (e.key === 'Backspace' && e.ctrlKey)) {
+                e.preventDefault();
+                document.getElementById('bugCancelBtn').click();
+                return;
+            }
+        });
+    }
+
+    _addScreenshotThumbnail(dataUrl) {
+        if (!this._screenshotDataList) this._screenshotDataList = [];
+        this._screenshotDataList.push(dataUrl);
+        const preview = document.getElementById('bugScreenshotPreview');
+        if (preview) {
+            // Clear and re-add all thumbnails
+            preview.innerHTML = '';
+            this._screenshotDataList.forEach((url, idx) => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = `Screenshot ${idx+1}`;
+                img.style.width = '64px';
+                img.style.height = 'auto';
+                img.style.border = '1px solid #555';
+                img.style.borderRadius = '4px';
+                preview.appendChild(img);
+            });
+        }
+    }
+
+    _closeBugReportModal() {
+        if (this.bugReportModal) {
+            this.bugReportModal.remove();
+            this.bugReportModal = null;
+        }
+        this.bugReportActive = false;
+        // Reset modal state
+        this._screenshotDataList = [];
+        this._pendingInitialScreenshot = null;
+        // Clear textarea for next time
+        const ta = document.getElementById('bugDesc');
+        if (ta) ta.value = '';
+        if (window.gameState && window.gameState.gameState === 'paused') {
+            window.gameState.setGameState('playing');
+        }
+    }
+
+    // Track last 20 user inputs (keys/mouse)
+    _trackInputHistory() {
+        window.addEventListener('keydown', e => {
+            this._inputHistory.push({ type: 'keydown', key: e.key, time: Date.now() });
+            if (this._inputHistory.length > 20) this._inputHistory.shift();
+        });
+        window.addEventListener('keyup', e => {
+            this._inputHistory.push({ type: 'keyup', key: e.key, time: Date.now() });
+            if (this._inputHistory.length > 20) this._inputHistory.shift();
+        });
+        window.addEventListener('mousedown', e => {
+            this._inputHistory.push({ type: 'mousedown', button: e.button, x: e.clientX, y: e.clientY, time: Date.now() });
+            if (this._inputHistory.length > 20) this._inputHistory.shift();
+        });
+        window.addEventListener('mouseup', e => {
+            this._inputHistory.push({ type: 'mouseup', button: e.button, x: e.clientX, y: e.clientY, time: Date.now() });
+            if (this._inputHistory.length > 20) this._inputHistory.shift();
+        });
+    }
+
+    // Helper to get FPS (approximate)
+    _getFPS() {
+        if (window.p5 && window.p5.instance && typeof window.p5.instance.frameRate === 'function') {
+            return Math.round(window.p5.instance.frameRate());
+        }
+        return null;
+    }
+
+    // Helper to get system info
+    _getSystemInfo() {
+        return {
+            platform: navigator.platform,
+            userAgent: navigator.userAgent,
+            language: navigator.language,
+            screen: {
+                width: window.screen.width,
+                height: window.screen.height,
+                availWidth: window.screen.availWidth,
+                availHeight: window.screen.availHeight,
+            },
+            window: {
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight,
+            },
+        };
+    }
+
+    // Helper to generate a short unique ID
+    _shortUID() {
+        return Math.random().toString(36).substr(2, 6);
+    }
+
+    async _saveBugReport(ticket, isAppending, relatedTo) {
+        const desc = document.getElementById('bugDesc').value;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0,19);
+        const folder = `tests/bug-reports/${ticket.name||ticket.title}_${ticket.uid||ticket.id}`;
+        this.latestBugReportFolder = folder;
+        this.screenshotCount = 1;
+        // Helper: safely extract serializable state
+        function safeGameState(gs) {
+            if (!gs) return null;
+            return {
+                gameState: gs.gameState,
+                score: gs.score,
+                highScore: gs.highScore,
+                level: gs.level,
+                killStreak: gs.killStreak,
+                totalKills: gs.totalKills,
+                accuracy: typeof gs.getAccuracy === 'function' ? gs.getAccuracy() : null,
+            };
+        }
+        function safePlayer(p) {
+            if (!p) return null;
+            return {
+                x: p.x, y: p.y, vx: p.vx, vy: p.vy,
+                health: p.health, maxHealth: p.maxHealth,
+                dashCooldownMs: p.dashCooldownMs,
+                aimAngle: p.aimAngle,
+                isDashing: p.isDashing,
+            };
+        }
+        function safeEnemy(e) {
+            return {
+                type: e.type, x: e.x, y: e.y, health: e.health, state: e.state, markedForRemoval: e.markedForRemoval
+            };
+        }
+        function safeBullet(b) {
+            return {
+                x: b.x, y: b.y, vx: b.vx, vy: b.vy, damage: b.damage, owner: b.owner, markedForRemoval: b.markedForRemoval
+            };
+        }
+        function safeAudio(a) {
+            if (!a || typeof a.getDebugState !== 'function') return null;
+            return a.getDebugState();
+        }
+        // Gather state
+        const state = {
+            frameCount: typeof frameCount !== 'undefined' ? frameCount : null,
+            gameState: safeGameState(window.gameState),
+            player: safePlayer(window.player),
+            enemies: Array.isArray(window.enemies) ? window.enemies.map(safeEnemy) : [],
+            playerBullets: Array.isArray(window.playerBullets) ? window.playerBullets.map(safeBullet) : [],
+            enemyBullets: Array.isArray(window.enemyBullets) ? window.enemyBullets.map(safeBullet) : [],
+            activeBombs: Array.isArray(window.activeBombs) ? window.activeBombs : [],
+            audio: safeAudio(window.audio),
+            timestamp: Date.now(),
+            description: desc,
+            url: window.location.href,
+            userAgent: navigator.userAgent,
+            logs: window._bugReportLogs ? window._bugReportLogs.slice(-100) : [],
+            lastError: window._bugReportLastError || null,
+            inputHistory: this._inputHistory.slice(),
+            fps: this._getFPS(),
+            systemInfo: this._getSystemInfo(),
+            ticketName: ticket.name||ticket.title,
+            ticketUID: ticket.uid||ticket.id,
+            relatedTo,
+        };
+        // Screenshot (canvas only)
+        const screenshotData = this._pendingInitialScreenshot || this._captureCanvasScreenshot();
+        // Save meta.json (append or create)
+        let meta = {
+            ticketName: ticket.name||ticket.title,
+            ticketUID: ticket.uid||ticket.id,
+            description: desc,
+            timestamp,
+            relatedTo,
+            appended: isAppending,
+            inputHistory: this._inputHistory.slice(),
+            fps: state.fps,
+            systemInfo: state.systemInfo,
+            url: window.location.href,
+        };
+        // Save files via ticketManager API
+        try {
+            if (!isAppending) {
+                // Create new ticket
+                const ticketData = {
+                    id: ticket.uid||ticket.id,
+                    title: ticket.name||ticket.title,
+                    type: ticket.type || 'bug', // Ensure type is always present
+                    description: desc,
+                    timestamp,
+                    relatedTo,
+                    state,
+                    meta,
+                    artifacts: [screenshotData], // For now, store screenshot as base64; backend can split if needed
+                    status: 'Open',
+                    history: [],
+                    verification: [],
+                    relatedTickets: relatedTo ? [relatedTo] : [],
+                };
+                await createTicket(ticketData);
+            } else {
+                // Update existing ticket (append info/artifacts)
+                const updates = {
+                    description: desc,
+                    meta,
+                    artifacts: [screenshotData],
+                    appended: true,
+                    relatedTo,
+                };
+                await updateTicket(ticket.uid||ticket.id, updates);
+            }
+            this._showToast('Bug report saved!');
+        } catch (e) {
+            // Rethrow so the modal can show the error
+            throw e;
+        }
+        this._closeBugReportModal();
+    }
+
+    _captureCanvasScreenshot() {
+        // Try to find the p5 instance and canvas
+        let canvas = null;
+        if (window.p5 && window.p5.instance && window.p5.instance.canvas) {
+            canvas = window.p5.instance.canvas;
+        } else {
+            canvas = document.querySelector('canvas');
+        }
+        if (canvas) {
+            return canvas.toDataURL('image/png');
+        }
+        return null;
+    }
+
+    _downloadScreenshot(dataUrl, filename) {
+        if (!dataUrl) return;
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename;
+        link.click();
+    }
+
+    _saveAdditionalScreenshot(existingTicket) {
+        let ticket = existingTicket;
+        if (!ticket && this.latestBugReportFolder) {
+            // Try to parse from folder name
+            const parts = this.latestBugReportFolder.split('/').pop().split('_');
+            ticket = { name: parts.slice(0, -1).join('_'), uid: parts[parts.length-1] };
+        }
+        if (!ticket) {
+            this._showToast('Please save a bug report first!');
+            return;
+        }
+        this.screenshotCount++;
+        const screenshotData = this._captureCanvasScreenshot();
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0,19);
+        if (window.mcp && window.mcp.saveBugReportScreenshot) {
+            window.mcp.saveBugReportScreenshot(`tests/bug-reports/${ticket.name}_${ticket.uid}/additional-info`, screenshotData, this.screenshotCount);
+        } else {
+            this._downloadScreenshot(screenshotData, `tests/bug-reports/${ticket.name}_${ticket.uid}/additional-info/screenshot-${this.screenshotCount}_${timestamp}_${ticket.uid}.png`);
+        }
+        this._addScreenshotThumbnail(screenshotData);
+        this._showToast(`Screenshot ${this.screenshotCount} saved!`);
+    }
+} 

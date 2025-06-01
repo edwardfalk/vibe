@@ -1,3 +1,8 @@
+import { Grunt } from './Grunt.js';
+import { Rusher } from './Rusher.js';
+import { Tank } from './Tank.js';
+import { Stabber } from './Stabber.js';
+
 /**
  * EnemyFactory class - Handles enemy creation and type management
  * Provides unified interface for spawning different enemy types
@@ -55,18 +60,18 @@ class EnemyFactory {
     /**
      * Get color for enemy type (converts array to p5.js color when needed)
      */
-    getColor(type) {
+    getColor(type, p) {
         const config = this.configs[type];
-        if (!config || !config.colorValues) return color(255, 255, 255); // Default white
+        if (!config || !config.colorValues) return p.color(255, 255, 255); // Default white
         
         const [r, g, b] = config.colorValues;
-        return color(r, g, b);
+        return p.color(r, g, b);
     }
     
     /**
      * Create an enemy of the specified type
      */
-    createEnemy(x, y, type = 'grunt') {
+    createEnemy(x, y, type = 'grunt', p) {
         if (!this.configs[type]) {
             console.warn(`Unknown enemy type: ${type}, defaulting to grunt`);
             type = 'grunt';
@@ -81,7 +86,7 @@ class EnemyFactory {
         }
         
         // Create the enemy using the appropriate class
-        const enemy = new EnemyClass(x, y);
+        const enemy = new EnemyClass(x, y, p);
         
         console.log(`🏭 EnemyFactory created ${type} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
         return enemy;
@@ -106,21 +111,21 @@ class EnemyFactory {
     /**
      * Create a random enemy appropriate for the current level
      */
-    createRandomEnemyForLevel(x, y, level) {
+    createRandomEnemyForLevel(x, y, level, p) {
         const availableTypes = this.getAvailableTypesForLevel(level);
         const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
         
-        return this.createEnemy(x, y, randomType);
+        return this.createEnemy(x, y, randomType, p);
     }
     
     /**
      * Create multiple enemies for spawning
      */
-    createEnemies(spawnData) {
+    createEnemies(spawnData, p) {
         const enemies = [];
         
         for (const spawn of spawnData) {
-            const enemy = this.createEnemy(spawn.x, spawn.y, spawn.type);
+            const enemy = this.createEnemy(spawn.x, spawn.y, spawn.type, p);
             if (enemy) {
                 enemies.push(enemy);
             }
@@ -214,7 +219,7 @@ class EnemyFactory {
     /**
      * Create enemy at random edge position
      */
-    createEnemyAtEdge(type, screenWidth, screenHeight, cameraOffsetX = 0, cameraOffsetY = 0) {
+    createEnemyAtEdge(type, screenWidth, screenHeight, cameraOffsetX = 0, cameraOffsetY = 0, p) {
         const margin = 50;
         let x, y;
         
@@ -240,17 +245,17 @@ class EnemyFactory {
                 break;
         }
         
-        return this.createEnemy(x, y, type);
+        return this.createEnemy(x, y, type, p);
     }
     
     /**
      * Create enemy at random edge position for current level
      */
-    createRandomEnemyAtEdge(level, screenWidth, screenHeight, cameraOffsetX = 0, cameraOffsetY = 0) {
+    createRandomEnemyAtEdge(level, screenWidth, screenHeight, cameraOffsetX = 0, cameraOffsetY = 0, p) {
         const availableTypes = this.getAvailableTypesForLevel(level);
         const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
         
-        return this.createEnemyAtEdge(randomType, screenWidth, screenHeight, cameraOffsetX, cameraOffsetY);
+        return this.createEnemyAtEdge(randomType, screenWidth, screenHeight, cameraOffsetX, cameraOffsetY, p);
     }
     
     /**
@@ -273,5 +278,4 @@ class EnemyFactory {
     }
 }
 
-// Create global instance for easy access
-window.enemyFactory = new EnemyFactory(); 
+export { EnemyFactory }; 

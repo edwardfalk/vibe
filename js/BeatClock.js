@@ -11,7 +11,7 @@
  * This creates an emergent musical experience that players discover organically.
  */
 
-class BeatClock {
+export class BeatClock {
     constructor(bpm = 120) {
         this.bpm = bpm;
         this.beatInterval = (60 / bpm) * 1000; // milliseconds per beat
@@ -67,15 +67,18 @@ class BeatClock {
         return this.isOnBeat(); // Available for audio timing, but player shooting is unrestricted
     }
     
-    // NEW: PLAYER QUARTER-BEAT SHOOTING - 4x faster while staying synced to cosmic beat
+    // NEW: PLAYER QUARTER-BEAT SHOOTING - Exact timing, no tolerance windows
     canPlayerShootQuarterBeat() {
         const elapsed = Date.now() - this.startTime;
         const quarterBeatInterval = this.beatInterval / 4; // 125ms at 120 BPM
         const timeSinceLastQuarterBeat = elapsed % quarterBeatInterval;
         
-        // Allow shooting within tolerance of any quarter beat
-        return timeSinceLastQuarterBeat <= this.tolerance || 
-               timeSinceLastQuarterBeat >= (quarterBeatInterval - this.tolerance);
+        // EXACT TIMING: Only return true in a very small window around the quarter-beat
+        // This creates precise rhythm timing instead of loose tolerance windows
+        const exactTolerance = 16; // ~1 frame at 60fps for precise timing
+        
+        return timeSinceLastQuarterBeat <= exactTolerance || 
+               timeSinceLastQuarterBeat >= (quarterBeatInterval - exactTolerance);
     }
     
     // Get time until next quarter beat for queuing
@@ -150,7 +153,14 @@ class BeatClock {
         this.startTime = Date.now();
         console.log('🎵 BeatClock reset');
     }
-}
 
-// Global beat clock instance
-window.beatClock = new BeatClock(120); // Start at 120 BPM 
+    // No-op update method for compatibility with GameLoop
+    update() {
+        // BeatClock is stateless; nothing to update per frame
+    }
+
+    // Getter for currentBeat for probe/debug compatibility
+    get currentBeat() {
+        return this.getCurrentBeat();
+    }
+} 

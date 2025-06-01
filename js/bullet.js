@@ -1,4 +1,21 @@
-class Bullet {
+import { CONFIG } from './config.js';
+import { max, min, floor, ceil, round, random, sin, cos, atan2, sqrt, PI, TWO_PI, normalizeAngle } from './mathUtils.js';
+
+// Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
+
+// Defensive config access for world dimensions
+const DEFAULT_WORLD_WIDTH = 1920;
+const DEFAULT_WORLD_HEIGHT = 1080;
+
+const GAME_SETTINGS = CONFIG.GAME_SETTINGS;
+if (!GAME_SETTINGS) {
+  console.warn('[Bullet] CONFIG.GAME_SETTINGS missing! Using default world size.');
+}
+
+const WORLD_WIDTH = GAME_SETTINGS?.WORLD_WIDTH ?? DEFAULT_WORLD_WIDTH;
+const WORLD_HEIGHT = GAME_SETTINGS?.WORLD_HEIGHT ?? DEFAULT_WORLD_HEIGHT;
+
+export class Bullet {
     constructor(x, y, angle, speed, owner) {
         this.x = x;
         this.y = y;
@@ -46,26 +63,26 @@ class Bullet {
         this.x += this.velocity.x;
         this.y += this.velocity.y;
         
-        // Check bounds
-        if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
+        // Use centralized world bounds check
+        if (this._isOutOfWorldBounds()) {
             this.active = false;
+            console.log(`🗑️ Removing bullet (off-world): ${this.x.toFixed(0)}, ${this.y.toFixed(0)}`);
         }
     }
     
-    draw() {
+    draw(p) {
         if (!this.active) return;
         
         // Draw enhanced glow effect
         if (typeof drawGlow !== 'undefined') {
             try {
                 if (this.owner === 'player') {
-                    drawGlow(this.x, this.y, this.size * 2, color(255, 255, 100), 0.8);
+                    drawGlow(p, this.x, this.y, this.size * 2, p.color(255, 255, 100), 0.8);
                 } else if (this.owner === 'enemy-tank') {
                     const energyPercent = this.energy ? this.energy / 100 : 1;
-                    drawGlow(this.x, this.y, this.size * 3 * energyPercent, color(150, 100, 255), 1.2);
-
+                    drawGlow(p, this.x, this.y, this.size * 3 * energyPercent, p.color(150, 100, 255), 1.2);
                 } else {
-                    drawGlow(this.x, this.y, this.size * 1.5, color(255, 100, 255), 0.5);
+                    drawGlow(p, this.x, this.y, this.size * 1.5, p.color(255, 100, 255), 0.5);
                 }
             } catch (error) {
                 console.log('⚠️ Bullet glow error:', error);
@@ -73,36 +90,36 @@ class Bullet {
         }
         
         // Draw trail
-        this.drawTrail();
+        this.drawTrail(p);
         
         // Draw bullet
-        push();
-        translate(this.x, this.y);
-        rotate(this.angle);
+        p.push();
+        p.translate(this.x, this.y);
+        p.rotate(this.angle);
         
         if (this.owner === 'player') {
             // Player bullet - cosmic turquoise energy
-            fill(64, 224, 208);
-            noStroke();
-            ellipse(0, 0, this.size);
+            p.fill(64, 224, 208);
+            p.noStroke();
+            p.ellipse(0, 0, this.size);
             
             // Bright core
-            fill(255, 255, 255, 180);
-            ellipse(0, 0, this.size * 0.6);
+            p.fill(255, 255, 255, 180);
+            p.ellipse(0, 0, this.size * 0.6);
             
             // Outer glow
-            fill(0, 255, 255, 80);
-            ellipse(0, 0, this.size * 1.4);
+            p.fill(0, 255, 255, 80);
+            p.ellipse(0, 0, this.size * 1.4);
             
         } else if (this.owner === 'enemy-rusher') {
             // Rusher bullet - small, fast, pink
-            fill(255, 150, 200);
-            noStroke();
-            ellipse(0, 0, this.size);
+            p.fill(255, 150, 200);
+            p.noStroke();
+            p.ellipse(0, 0, this.size);
             
             // Small glow
-            fill(255, 200, 220, 120);
-            ellipse(0, 0, this.size * 1.3);
+            p.fill(255, 200, 220, 120);
+            p.ellipse(0, 0, this.size * 1.3);
             
         } else if (this.owner === 'enemy-tank') {
             // Tank bullet - massive, devastating energy ball with vibrating pulse
@@ -110,43 +127,43 @@ class Bullet {
             const vibration = sin(frameCount * 0.8) * 2; // Fast vibration
             const pulse = sin(frameCount * 0.5) * 0.4 + 0.6; // Slower pulse
             
-            push();
-            translate(vibration, vibration * 0.5); // Vibrating effect
+            p.push();
+            p.translate(vibration, vibration * 0.5); // Vibrating effect
             
             // Main energy ball - size based on remaining energy
-            fill(150 * energyPercent, 100 * energyPercent, 255);
-            noStroke();
-            ellipse(0, 0, this.size * energyPercent);
+            p.fill(150 * energyPercent, 100 * energyPercent, 255);
+            p.noStroke();
+            p.ellipse(0, 0, this.size * energyPercent);
             
             // Massive plasma glow
-            fill(200 * energyPercent, 150 * energyPercent, 255, 120 * pulse);
-            ellipse(0, 0, this.size * 2.2 * energyPercent);
+            p.fill(200 * energyPercent, 150 * energyPercent, 255, 120 * pulse);
+            p.ellipse(0, 0, this.size * 2.2 * energyPercent);
             
             // Pulsing outer aura with vibration
-            fill(255, 200 * energyPercent, 255, 60 * pulse * energyPercent);
-            ellipse(0, 0, this.size * 3 * energyPercent);
+            p.fill(255, 200 * energyPercent, 255, 60 * pulse * energyPercent);
+            p.ellipse(0, 0, this.size * 3 * energyPercent);
             
             // Bright inner core
-            fill(255, 255, 255, 200 * energyPercent);
-            ellipse(0, 0, this.size * 0.4 * energyPercent);
+            p.fill(255, 255, 255, 200 * energyPercent);
+            p.ellipse(0, 0, this.size * 0.4 * energyPercent);
             
-            pop();
+            p.pop();
             
         } else {
             // Standard enemy bullet - purple/pink energy
-            fill(255, 100, 255);
-            noStroke();
-            ellipse(0, 0, this.size);
+            p.fill(255, 100, 255);
+            p.noStroke();
+            p.ellipse(0, 0, this.size);
             
             // Energy glow
-            fill(255, 150, 255, 100);
-            ellipse(0, 0, this.size * 1.5);
+            p.fill(255, 150, 255, 100);
+            p.ellipse(0, 0, this.size * 1.5);
         }
         
-        pop();
+        p.pop();
     }
     
-    drawTrail() {
+    drawTrail(p) {
         if (this.trail.length < 2) return;
         
         for (let i = 0; i < this.trail.length - 1; i++) {
@@ -154,17 +171,17 @@ class Bullet {
             const size = (i / this.trail.length) * this.size * 0.5;
             
             if (this.owner === 'player') {
-                fill(255, 255, 100, alpha);
+                p.fill(255, 255, 100, alpha);
             } else if (this.owner === 'enemy-rusher') {
-                fill(255, 150, 200, alpha);
+                p.fill(255, 150, 200, alpha);
             } else if (this.owner === 'enemy-tank') {
-                fill(150, 100, 255, alpha);
+                p.fill(150, 100, 255, alpha);
             } else {
-                fill(255, 100, 255, alpha);
+                p.fill(255, 100, 255, alpha);
             }
             
-            noStroke();
-            ellipse(this.trail[i].x, this.trail[i].y, size);
+            p.noStroke();
+            p.ellipse(this.trail[i].x, this.trail[i].y, size);
         }
     }
     
@@ -181,8 +198,20 @@ class Bullet {
     
     // Check if bullet is off screen
     isOffScreen() {
-        const margin = 50;
-        return this.x < -margin || this.x > width + margin || 
-               this.y < -margin || this.y > height + margin;
+        // Use centralized world bounds check
+        return this._isOutOfWorldBounds();
+    }
+    
+    /**
+     * Returns true if the bullet is outside the world bounds (with margin).
+     * Centralizes boundary logic for update() and isOffScreen().
+     */
+    _isOutOfWorldBounds() {
+        const margin = 40; // Margin beyond world edges before removal
+        const left = -WORLD_WIDTH/2 - margin;
+        const right = WORLD_WIDTH/2 + margin;
+        const top = -WORLD_HEIGHT/2 - margin;
+        const bottom = WORLD_HEIGHT/2 + margin;
+        return this.x < left || this.x > right || this.y < top || this.y > bottom;
     }
 } 

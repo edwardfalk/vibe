@@ -1,0 +1,37 @@
+{
+  "id": "BR-2025-06-01-001",
+  "title": "File deletion tool fails in bug-reports directory",
+  "type": "bug",
+  "description": "Creating a file in tests/bug-reports/ works, but deletion via the available tool fails with 'file not found' even when the file exists. This blocks automated cleanup and may indicate a deeper issue with file operations in the environment. Steps to reproduce: 1) Create a file in tests/bug-reports/. 2) Attempt to delete it using the tool. 3) Observe failure. Expected: File is deleted. Actual: Tool reports file not found.",
+  "tags": [
+    "filesystem",
+    "automation",
+    "tooling"
+  ],
+  "status": "Closed",
+  "history": [
+    {
+      "timestamp": "2025-06-01T21:58:00Z",
+      "action": "investigation",
+      "details": "Confirmed file exists and is accessible. Deletion tool fails, but move operation works. File was successfully renamed as a workaround. Indicates the delete tool may have a workspace sync or path resolution bug."
+    },
+    {
+      "timestamp": "2025-06-01T21:59:00Z",
+      "action": "workaround",
+      "details": "File was renamed twice (as a soft-delete pattern). File remains in directory but with a .deleted extension. This can be used as a temporary workaround for deletion until the root cause is fixed."
+    },
+    {
+      "timestamp": "2025-06-01T22:00:00Z",
+      "action": "root cause analysis",
+      "details": "Discovered that the built-in delete_file tool only works with relative paths from the workspace root, not absolute paths. Previous failures were due to using absolute paths. Deletion with a relative path works as expected. Solution: Always use relative paths with delete_file, and absolute paths with MCP commands."    }
+  ],
+  "artifacts": [],
+  "verification": [
+    {
+      "timestamp": "2025-06-01T22:01:00Z",
+      "result": "Confirmed fix. Deletion works with relative paths as required. No further action needed."
+    }
+  ],
+  "relatedTickets": [],
+  "timestamp": "2025-06-01T20:00:00Z"
+}

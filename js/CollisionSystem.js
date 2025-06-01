@@ -2,7 +2,10 @@
  * CollisionSystem.js - Handles all collision detection between bullets, enemies, and player
  */
 
-class CollisionSystem {
+import { round, sqrt, atan2, cos, sin } from './mathUtils.js';
+import { CONFIG } from './config.js';
+
+export class CollisionSystem {
     constructor() {
         // Collision detection settings
         this.friendlyFireEnabled = true;
@@ -44,34 +47,45 @@ class CollisionSystem {
                         break;
                 }
                 
-                if (damage > 0) {
+                if (damage > 0 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
                     console.log(`💥 ${enemy.type} contact damage! Damage: ${damage}`);
-                    
+                }
+                
+                // Only play hurt sound and reset kill streak if actual damage is dealt
+                if (damage > 0) {
                     if (window.audio) {
                         window.audio.playPlayerHit();
                     }
-                    
                     if (window.gameState) {
                         window.gameState.resetKillStreak(); // Reset kill streak on taking damage
                     }
-                    
-                    if (window.player.takeDamage(damage)) {
-                        if (window.gameState) {
-                            window.gameState.setGameState('gameOver');
-                        }
-                        console.log(`💀 PLAYER DIED from ${enemy.type} contact! Game state changed to gameOver.`);
-                        return;
+                }
+                
+                if (window.player.takeDamage(damage, `${enemy.type}-contact`)) {
+                    if (window.gameState) {
+                        window.gameState.setGameState('gameOver');
                     }
+                    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                        console.log(`💀 PLAYER DIED from ${enemy.type} contact! Game state changed to gameOver.`);
+                    }
+                    return;
                 } else if (shouldPlaceBomb) {
                     // Tank contact - place bomb
-                    console.log(`💣 Tank contact - placing bomb!`);
-                    if (window.activeBombs && window.activeBombs.length < 3) { // Limit bomb count
+                    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                        console.log(`💣 Tank contact - placing time bomb!`);
+                    }
+                    window.activeBombs = window.activeBombs || [];
+                    // Place bomb if under limit (regardless of debug mode)
+                    if (window.activeBombs.length < 3) {
                         window.activeBombs.push({
                             x: enemy.x,
                             y: enemy.y,
                             timer: 180 // 3 seconds at 60fps
                         });
-                        console.log(`💣 Tank placed bomb at (${Math.round(enemy.x)}, ${Math.round(enemy.y)})`);
+                        // Only log bomb placement in debug mode
+                        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                            console.log(`💣 Tank placed time bomb at (${round(enemy.x)}, ${round(enemy.y)})`);
+                        }
                     }
                 }
             }
@@ -88,15 +102,28 @@ class CollisionSystem {
             for (let j = window.enemies.length - 1; j >= 0; j--) {
                 const enemy = window.enemies[j];
                 
+                // Log positions and health before collision check
+                if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                    console.log(`[DEBUG] Checking bullet vs enemy: bullet=(${bullet.x.toFixed(1)},${bullet.y.toFixed(1)}) enemy=(${enemy.x.toFixed(1)},${enemy.y.toFixed(1)}) enemyHealth=${enemy.health}`);
+                }
+                
                 if (bullet.checkCollision(enemy)) {
-                    console.log(`🎯 Bullet hit ${enemy.type} enemy! Health: ${enemy.health}`);
+                    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                        console.log(`🎯 Bullet hit ${enemy.type} enemy! Health: ${enemy.health}`);
+                    }
                     
                     // Store enemy type for logging
                     const enemyType = enemy.type;
                     const wasExploding = enemy.exploding;
                     
                     // Damage enemy (pass bullet angle for knockback)
+                    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                        console.log(`[DEBUG] Calling takeDamage on enemy: type=${enemyType}, health=${enemy.health}, bullet.damage=${bullet.damage}, bullet.angle=${bullet.angle}`);
+                    }
                     const damageResult = enemy.takeDamage(bullet.damage, bullet.angle);
+                    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                        console.log(`[DEBUG] takeDamage result: ${damageResult}, enemyHealthAfter=${enemy.health}`);
+                    }
                     
                     if (damageResult === 'exploding') {
                         // Rusher started exploding - create hit effect but don't remove enemy yet
@@ -106,12 +133,14 @@ class CollisionSystem {
                         if (window.audio) {
                             window.audio.playHit(bullet.x, bullet.y);
                         }
-                        console.log(`💥 RUSHER SHOT! Starting explosion sequence! Was already exploding: ${wasExploding}`);
+                        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                            console.log(`💥 RUSHER SHOT! Starting explosion sequence! Was already exploding: ${wasExploding}`);
+                        }
                     } else if (damageResult === true) {
                         // Enemy died - create beautiful fragment explosion
                         this.handleEnemyDeath(enemy, enemyType, bullet.x, bullet.y);
                         
-                        window.enemies.splice(j, 1);
+                        enemy.markedForRemoval = true;
                         if (window.gameState) {
                             window.gameState.addKill();
                             
@@ -122,7 +151,9 @@ class CollisionSystem {
                             
                             window.gameState.addScore(points);
                         }
-                        console.log(`💀 ${enemyType} killed by bullet!`);
+                        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                            console.log(`💀 ${enemyType} killed by bullet!`);
+                        }
                     } else {
                         // Enemy hit but not dead - smaller effect
                         if (window.explosionManager) {
@@ -131,12 +162,24 @@ class CollisionSystem {
                         if (window.audio) {
                             window.audio.playHit(bullet.x, bullet.y);
                         }
-                        console.log(`🎯 ${enemyType} damaged, health now: ${enemy.health}`);
+                        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                            console.log(`🎯 ${enemyType} damaged, health now: ${enemy.health}`);
+                        }
                     }
                     
                     // Remove bullet
+                    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                        console.log(`[DEBUG] Removing bullet at index ${i} after hit`);
+                    }
                     window.playerBullets.splice(i, 1);
                     break; // Important: break to avoid hitting multiple enemies with same bullet
+                }
+                
+                if (enemy.type === 'grunt' && bullet.owner === 'player') {
+                    const distance = dist(bullet.x, bullet.y, enemy.x, enemy.y);
+                    if (distance < 50 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                        console.log(`[DEBUG] Bullet near grunt: bullet=(${bullet.x.toFixed(1)},${bullet.y.toFixed(1)}) enemy=(${enemy.x.toFixed(1)},${enemy.y.toFixed(1)}) dist=${distance.toFixed(1)} health=${enemy.health} markedForRemoval=${enemy.markedForRemoval}`);
+                    }
                 }
             }
         }
@@ -159,7 +202,7 @@ class CollisionSystem {
                     window.gameState.resetKillStreak(); // Reset kill streak on taking damage
                 }
                 
-                if (window.player.takeDamage(bullet.damage)) {
+                if (window.player.takeDamage(bullet.damage, `${bullet.owner || bullet.type}-bullet`)) {
                     if (window.gameState) {
                         window.gameState.setGameState('gameOver');
                     }
@@ -184,7 +227,9 @@ class CollisionSystem {
                 
                 // Check if bullet hits enemy (but not the one that fired it)
                 if (bullet.checkCollision(enemy) && bullet.ownerId !== enemy.id) {
-                    console.log(`🔥 FRIENDLY FIRE! ${bullet.type || 'Enemy'} bullet hit ${enemy.type} enemy!`);
+                    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                        console.log(`🔥 FRIENDLY FIRE! ${bullet.type || 'Enemy'} bullet hit ${enemy.type} enemy!`);
+                    }
                     
                     // Handle different bullet types
                     if (bullet.type === 'tankEnergy' || bullet.owner === 'enemy-tank') {
@@ -215,7 +260,7 @@ class CollisionSystem {
             window.audio.playExplosion(enemy.x, enemy.y);
         }
         
-        window.enemies.splice(enemyIndex, 1);
+        enemy.markedForRemoval = true;
         
         if (window.gameState) {
             window.gameState.addKill();
@@ -261,7 +306,9 @@ class CollisionSystem {
             if (window.audio) {
                 window.audio.playHit(bullet.x, bullet.y);
             }
-            console.log(`💥 FRIENDLY FIRE caused rusher to explode!`);
+            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                console.log(`💥 FRIENDLY FIRE caused rusher to explode!`);
+            }
         } else if (damageResult === true) {
             // Enemy died from friendly fire
             this.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
@@ -270,14 +317,15 @@ class CollisionSystem {
                 window.audio.playExplosion(enemy.x, enemy.y);
             }
             
-            window.enemies.splice(enemyIndex, 1);
-            
+            enemy.markedForRemoval = true;
             if (window.gameState) {
                 window.gameState.addKill();
                 window.gameState.addScore(8); // Friendly fire kills get some points
             }
             
-            console.log(`💀 ${enemy.type} killed by friendly fire from ${bulletSource}!`);
+            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                console.log(`💀 ${enemy.type} killed by friendly fire from ${bulletSource}!`);
+            }
         } else {
             // Enemy damaged but not dead
             if (window.explosionManager) {
@@ -286,11 +334,15 @@ class CollisionSystem {
             if (window.audio) {
                 window.audio.playHit(bullet.x, bullet.y);
             }
-            console.log(`🎯 Friendly fire damaged ${enemy.type}, health now: ${enemy.health}`);
+            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                console.log(`🎯 Friendly fire damaged ${enemy.type}, health now: ${enemy.health}`);
+            }
         }
         
         // Remove bullet after hit
-        console.log(`➖ Removing enemy bullet (hit enemy): ${bullet.owner} hit ${enemy.type} - Remaining: ${window.enemyBullets.length - 1}`);
+        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+            console.log(`➖ Removing enemy bullet (hit enemy): ${bullet.owner} hit ${enemy.type} - Remaining: ${window.enemyBullets.length - 1}`);
+        }
         window.enemyBullets.splice(bulletIndex, 1);
     }
     
@@ -328,13 +380,17 @@ class CollisionSystem {
     handleStabberAttack(attack, stabber) {
         if (!window.player) return;
         
-        console.log('🗡️ Stabber executing deadly stab attack!');
+        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+            console.log('🗡️ Stabber executing deadly stab attack!');
+        }
         
         // Check if player is still in stab range
         const distance = Math.sqrt((window.player.x - stabber.x) ** 2 + (window.player.y - stabber.y) ** 2);
         
         if (distance <= attack.range + 10) { // Small buffer for fairness
-            console.log(`⚔️ STABBER HIT! Player took ${attack.damage} damage from stab attack`);
+            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                console.log(`⚔️ STABBER HIT! Player took ${attack.damage} damage from stab attack`);
+            }
             
             if (window.audio) {
                 window.audio.playPlayerHit();
@@ -346,11 +402,13 @@ class CollisionSystem {
             }
             
             // Apply damage and knockback
-            if (window.player.takeDamage(attack.damage)) {
+            if (window.player.takeDamage(attack.damage, 'stabber-legacy')) {
                 if (window.gameState) {
                     window.gameState.setGameState('gameOver');
                 }
-                console.log('💀 PLAYER KILLED BY STABBER ATTACK!');
+                if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                    console.log('💀 PLAYER KILLED BY STABBER ATTACK!');
+                }
                 return;
             }
             
@@ -370,7 +428,9 @@ class CollisionSystem {
                 window.explosionManager.addExplosion(window.player.x, window.player.y, 'hit');
             }
         } else {
-            console.log(`🗡️ Stabber attack missed! Player distance: ${distance.toFixed(1)}, range: ${attack.range}`);
+            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                console.log(`🗡️ Stabber attack missed! Player distance: ${distance.toFixed(1)}, range: ${attack.range}`);
+            }
         }
     }
     
@@ -381,7 +441,9 @@ class CollisionSystem {
         const distance = Math.sqrt((window.player.x - explosion.x) ** 2 + (window.player.y - explosion.y) ** 2);
         
         if (distance <= explosion.radius) {
-            console.log(`💥 RUSHER EXPLOSION HIT PLAYER! Distance: ${distance.toFixed(1)}, Radius: ${explosion.radius}`);
+            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                console.log(`💥 RUSHER EXPLOSION HIT PLAYER! Distance: ${distance.toFixed(1)}, Radius: ${explosion.radius}`);
+            }
             
             if (window.audio) {
                 window.audio.playPlayerHit();
@@ -393,7 +455,7 @@ class CollisionSystem {
             }
             
             // Apply damage
-            if (window.player.takeDamage(explosion.damage)) {
+            if (window.player.takeDamage(explosion.damage, 'rusher-explosion')) {
                 if (window.gameState) {
                     window.gameState.setGameState('gameOver');
                 }
@@ -419,35 +481,9 @@ class CollisionSystem {
             
             // Remove the rusher that exploded
             if (window.enemies && rusherIndex >= 0 && rusherIndex < window.enemies.length) {
-                console.log(`🗑️ Removing exploded rusher at index ${rusherIndex}`);
-                window.enemies.splice(rusherIndex, 1);
+                // Mark the rusher for removal; actual removal will be handled in the cleanup phase
+                window.enemies[rusherIndex].markedForRemoval = true;
             }
         }
     }
-    
-    // Check collision between two circular objects
-    checkCircularCollision(obj1, obj2, radius1 = 10, radius2 = 10) {
-        const distance = Math.sqrt((obj1.x - obj2.x) ** 2 + (obj1.y - obj2.y) ** 2);
-        return distance <= (radius1 + radius2);
-    }
-    
-    // Check collision between point and circle
-    checkPointCircleCollision(point, circle, radius) {
-        const distance = Math.sqrt((point.x - circle.x) ** 2 + (point.y - circle.y) ** 2);
-        return distance <= radius;
-    }
-    
-    // Enable/disable friendly fire
-    setFriendlyFire(enabled) {
-        this.friendlyFireEnabled = enabled;
-        console.log(`🔥 Friendly fire ${enabled ? 'enabled' : 'disabled'}`);
-    }
-    
-    // Reset collision system
-    reset() {
-        this.friendlyFireEnabled = true;
-    }
 }
-
-// Create global collision system instance
-window.collisionSystem = new CollisionSystem(); 

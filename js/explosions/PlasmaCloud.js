@@ -2,7 +2,8 @@
  * Plasma cloud system for tank death effects
  * Creates dangerous plasma zones that persist and deal area damage
  */
-class PlasmaCloud {
+// Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
+export class PlasmaCloud {
     constructor(x, y) {
         this.x = x;
         this.y = y;

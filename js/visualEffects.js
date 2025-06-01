@@ -1,5 +1,9 @@
+import { sin, cos, random } from './mathUtils.js';
+
 // Advanced Visual Effects System for Vibe
 // Leverages p5.js power for stunning graphics
+
+// Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
 class VisualEffectsManager {
     constructor() {
@@ -33,13 +37,13 @@ class VisualEffectsManager {
     }
     
     // Initialize after p5.js is ready
-    init() {
+    init(p) {
         if (this.initialized) return;
         
         try {
             // Initialize cosmic dust and auroras
-            this.initCosmicDust();
-            this.initAuroras();
+            this.initCosmicDust(p);
+            this.initAuroras(p);
             this.initialized = true;
             console.log('✨ Visual effects fully initialized');
         } catch (error) {
@@ -47,42 +51,68 @@ class VisualEffectsManager {
         }
     }
     
-    initCosmicDust() {
-        for (let i = 0; i < 50; i++) { // Much fewer particles
+    initCosmicDust(p) {
+        for (let i = 0; i < 50; i++) {
             this.cosmicDust.push({
-                x: random(-width, width * 2),
-                y: random(-height, height * 2),
+                x: random(-p.width, p.width * 2),
+                y: random(-p.height, p.height * 2),
                 z: random(0.1, 1),
-                size: random(0.5, 2), // Smaller size
-                alpha: random(20, 60), // Much lower alpha
-                speed: random(0.05, 0.2), // Slower movement
-                angle: random(TWO_PI),
+                size: random(0.5, 2),
+                alpha: random(20, 60),
+                speed: random(0.05, 0.2),
+                angle: random(p.TWO_PI),
                 color: random(this.nebulaPalette)
             });
         }
     }
     
-    initAuroras() {
-        for (let i = 0; i < 3; i++) { // Much fewer auroras
+    initAuroras(p) {
+        for (let i = 0; i < 3; i++) {
             this.auroras.push({
-                x: random(-width, width * 2),
-                y: random(-height, height * 2),
-                width: random(150, 300), // Smaller size
-                height: random(80, 150), // Smaller size
-                angle: random(TWO_PI),
-                speed: random(0.002, 0.008), // Slower movement
-                intensity: random(0.1, 0.3), // Much lower intensity
+                x: random(-p.width, p.width * 2),
+                y: random(-p.height, p.height * 2),
+                width: random(150, 300),
+                height: random(80, 150),
+                angle: random(p.TWO_PI),
+                speed: random(0.002, 0.008),
+                intensity: random(0.1, 0.3),
                 color: random(this.auroraPalette),
-                phase: random(TWO_PI)
+                phase: random(p.TWO_PI)
             });
         }
     }
     
     // Enhanced background with dynamic nebulae and aurora effects
-    drawEnhancedBackground(camera) {
-        // Initialize if not already done
+    drawEnhancedBackground(p, camera) {
         if (!this.initialized) {
-            this.init();
+            this.init(p);
+        }
+        this.drawSpaceGradient(p);
+        if (this.initialized) {
+            this.drawAuroras(p, camera);
+            this.drawNebulae(p, camera);
+            this.drawCosmicDust(p, camera);
+            this.drawEnhancedStars(p, camera);
+        }
+        p.blendMode(p.BLEND);
+    }
+    
+    drawSpaceGradient(p) {
+        p.push();
+        p.noFill();
+        for (let i = 0; i <= p.height; i += 2) {
+            const inter = p.map(i, 0, p.height, 0, 1);
+            const c1 = p.color(15, 5, 35);
+            const c2 = p.color(60, 30, 80);
+            const c3 = p.color(25, 15, 45);
+            let currentColor;
+            if (inter < 0.5) {
+                currentColor = p.lerpColor(c1, c3, inter * 2);
+            } else {
+                currentColor = p.lerpColor(c3, c2, (inter - 0.5) * 2);
+            }
+            p.stroke(currentColor);
+            p.line(0, i, p.width, i);
         }
         
         // Base space gradient
@@ -131,129 +161,93 @@ class VisualEffectsManager {
         pop();
     }
     
-    drawAuroras(camera) {
-        push();
-        blendMode(SCREEN);
-        
+    drawAuroras(p, camera) {
+        p.push();
+        p.blendMode(p.SCREEN);
         this.auroras.forEach(aurora => {
-            push();
-            
-            // Apply parallax offset
+            p.push();
             const parallaxX = aurora.x - camera.x * 0.1;
             const parallaxY = aurora.y - camera.y * 0.1;
-            
-            translate(parallaxX, parallaxY);
-            rotate(aurora.angle);
-            
-            // Animate aurora
+            p.translate(parallaxX, parallaxY);
+            p.rotate(aurora.angle);
             aurora.angle += aurora.speed;
             aurora.phase += 0.02;
-            
-            // Create MUCH more subtle aurora effect
-            noStroke();
+            p.noStroke();
             for (let i = 0; i < aurora.width; i += 20) {
                 for (let j = 0; j < aurora.height; j += 20) {
                     const wave = sin(i * 0.01 + aurora.phase) * sin(j * 0.01 + aurora.phase);
-                    const alpha = map(wave, -1, 1, 2, aurora.intensity * 15); // Much lower alpha
-                    
-                    fill(aurora.color[0], aurora.color[1], aurora.color[2], alpha);
-                    ellipse(i - aurora.width/2, j - aurora.height/2, 8, 8); // Smaller size
+                    const alpha = p.map(wave, -1, 1, 2, aurora.intensity * 15);
+                    p.fill(aurora.color[0], aurora.color[1], aurora.color[2], alpha);
+                    p.ellipse(i - aurora.width/2, j - aurora.height/2, 8, 8);
                 }
             }
-            
-            pop();
+            p.pop();
         });
-        
-        blendMode(BLEND);
-        pop();
+        p.blendMode(p.BLEND);
+        p.pop();
     }
     
-    drawNebulae(camera) {
-        push();
-        // Remove problematic MULTIPLY blend mode - use normal blending
-        
-        // Create MUCH more subtle nebula clouds
-        for (let i = 0; i < 3; i++) { // Fewer nebulae
-            const x = (sin(this.timeOffset * 0.001 + i) * width * 0.2) - camera.x * 0.05;
-            const y = (cos(this.timeOffset * 0.0007 + i) * height * 0.2) - camera.y * 0.05;
-            const size = 200 + sin(this.timeOffset * 0.002 + i) * 50; // Smaller size
-            
+    drawNebulae(p, camera) {
+        p.push();
+        for (let i = 0; i < 3; i++) {
+            const x = (sin(this.timeOffset * 0.001 + i) * p.width * 0.2) - camera.x * 0.05;
+            const y = (cos(this.timeOffset * 0.0007 + i) * p.height * 0.2) - camera.y * 0.05;
+            const size = 200 + sin(this.timeOffset * 0.002 + i) * 50;
             const nebulaColor = this.nebulaPalette[i % this.nebulaPalette.length];
-            
-            // Create MUCH more subtle radial gradient effect with normal blending
-            for (let r = size; r > 0; r -= 20) { // Fewer rings
-                const alpha = map(r, 0, size, 8, 0); // Even lower alpha for normal blending
-                fill(nebulaColor[0], nebulaColor[1], nebulaColor[2], alpha);
-                noStroke();
-                ellipse(x + width/2, y + height/2, r, r);
+            for (let r = size; r > 0; r -= 20) {
+                const alpha = p.map(r, 0, size, 8, 0);
+                p.fill(nebulaColor[0], nebulaColor[1], nebulaColor[2], alpha);
+                p.noStroke();
+                p.ellipse(x + p.width/2, y + p.height/2, r, r);
             }
         }
-        
-        pop();
+        p.pop();
     }
     
-    drawCosmicDust(camera) {
-        push();
-        // Use safer blend mode
-        blendMode(SCREEN);
-        
+    drawCosmicDust(p, camera) {
+        p.push();
+        p.blendMode(p.SCREEN);
         this.cosmicDust.forEach(dust => {
-            // Apply parallax and movement
             dust.x += cos(dust.angle) * dust.speed;
             dust.y += sin(dust.angle) * dust.speed;
-            
-            // Wrap around screen
-            if (dust.x > width + 50) dust.x = -50;
-            if (dust.x < -50) dust.x = width + 50;
-            if (dust.y > height + 50) dust.y = -50;
-            if (dust.y < -50) dust.y = height + 50;
-            
+            if (dust.x > p.width + 50) dust.x = -50;
+            if (dust.x < -50) dust.x = p.width + 50;
+            if (dust.y > p.height + 50) dust.y = -50;
+            if (dust.y < -50) dust.y = p.height + 50;
             const parallaxX = dust.x - camera.x * dust.z * 0.3;
             const parallaxY = dust.y - camera.y * dust.z * 0.3;
-            
-            // Draw dust particle with much lower alpha for SCREEN mode
-            fill(dust.color[0], dust.color[1], dust.color[2], dust.alpha * dust.z * 0.3);
-            noStroke();
-            ellipse(parallaxX, parallaxY, dust.size * dust.z, dust.size * dust.z);
+            p.fill(dust.color[0], dust.color[1], dust.color[2], dust.alpha * dust.z * 0.3);
+            p.noStroke();
+            p.ellipse(parallaxX, parallaxY, dust.size * dust.z, dust.size * dust.z);
         });
-        
-        blendMode(BLEND);
-        pop();
+        p.blendMode(p.BLEND);
+        p.pop();
     }
     
-    drawEnhancedStars(camera) {
-        // This will enhance the existing star system with better effects
-        push();
-        blendMode(ADD);
-        
-        // Add dynamic twinkle to bright stars
-        if (backgroundLayers && backgroundLayers[1]) {
-            backgroundLayers[1].forEach(star => {
+    drawEnhancedStars(p, camera) {
+        p.push();
+        p.blendMode(p.ADD);
+        if (window.backgroundLayers && window.backgroundLayers[1]) {
+            window.backgroundLayers[1].forEach(star => {
                 if (star.brightness > 0.8) {
                     const parallaxX = star.x - camera.x * 0.3;
                     const parallaxY = star.y - camera.y * 0.3;
-                    
-                    // Twinkle effect
-                    const twinkle = sin(frameCount * 0.1 + star.x * 0.01) * 0.5 + 0.5;
+                    const twinkle = sin(p.frameCount * 0.1 + star.x * 0.01) * 0.5 + 0.5;
                     const glowSize = star.size * (2 + twinkle);
-                    
-                    fill(255, 255, 255, 30 * twinkle);
-                    noStroke();
-                    ellipse(parallaxX, parallaxY, glowSize, glowSize);
-                    
-                    // Cross sparkle for very bright stars
+                    p.fill(255, 255, 255, 30 * twinkle);
+                    p.noStroke();
+                    p.ellipse(parallaxX, parallaxY, glowSize, glowSize);
                     if (star.brightness > 0.9) {
-                        stroke(255, 255, 255, 50 * twinkle);
-                        strokeWeight(1);
-                        line(parallaxX - glowSize/2, parallaxY, parallaxX + glowSize/2, parallaxY);
-                        line(parallaxX, parallaxY - glowSize/2, parallaxX, parallaxY + glowSize/2);
+                        p.stroke(255, 255, 255, 50 * twinkle);
+                        p.strokeWeight(1);
+                        p.line(parallaxX - glowSize/2, parallaxY, parallaxX + glowSize/2, parallaxY);
+                        p.line(parallaxX, parallaxY - glowSize/2, parallaxX, parallaxY + glowSize/2);
                     }
                 }
             });
         }
-        
-        blendMode(BLEND);
-        pop();
+        p.blendMode(p.BLEND);
+        p.pop();
     }
     
     // Particle system for explosions and effects
@@ -364,70 +358,58 @@ class VisualEffectsManager {
         this.timeOffset++;
     }
     
-    drawParticles() {
-        push();
-        blendMode(ADD);
-        
-        this.particles.forEach(p => {
-            const alpha = map(p.life, 0, p.maxLife, 0, 255);
-            
-            fill(p.color[0], p.color[1], p.color[2], alpha);
-            noStroke();
-            
-            if (p.type === 'trail') {
-                // Motion trail effect
-                ellipse(p.x, p.y, p.size * (p.life / p.maxLife), p.size * (p.life / p.maxLife));
+    drawParticles(p) {
+        p.push();
+        p.blendMode(p.ADD);
+        this.particles.forEach(part => {
+            const alpha = p.map(part.life, 0, part.maxLife, 0, 255);
+            p.fill(part.color[0], part.color[1], part.color[2], alpha);
+            p.noStroke();
+            if (part.type === 'trail') {
+                p.ellipse(part.x, part.y, part.size * (part.life / part.maxLife), part.size * (part.life / part.maxLife));
             } else {
-                // Regular particle
-                ellipse(p.x, p.y, p.size, p.size);
-                
-                // Add glow for explosion particles
-                if (p.type === 'explosion') {
-                    fill(p.color[0], p.color[1], p.color[2], alpha * 0.3);
-                    ellipse(p.x, p.y, p.size * 2, p.size * 2);
+                p.ellipse(part.x, part.y, part.size, part.size);
+                if (part.type === 'explosion') {
+                    p.fill(part.color[0], part.color[1], part.color[2], alpha * 0.3);
+                    p.ellipse(part.x, part.y, part.size * 2, part.size * 2);
                 }
             }
         });
-        
-        blendMode(BLEND);
-        pop();
+        p.blendMode(p.BLEND);
+        p.pop();
     }
     
     // Screen effects
-    applyScreenEffects() {
+    applyScreenEffects(p) {
         if (this.chromaticAberration > 0) {
-            this.drawChromaticAberration();
+            this.drawChromaticAberration(p);
         }
         
         if (this.bloomIntensity > 0) {
-            this.drawBloom();
+            this.drawBloom(p);
         }
     }
     
-    drawChromaticAberration() {
-        // Simple chromatic aberration effect
-        push();
-        blendMode(MULTIPLY);
-        tint(255, 0, 0, 100);
-        // This would need a copy of the canvas to work properly
-        // For now, just add a subtle red tint during intense moments
-        fill(255, 0, 0, this.chromaticAberration * 10);
-        rect(0, 0, width, height);
-        pop();
+    drawChromaticAberration(p) {
+        p.push();
+        p.blendMode(p.MULTIPLY);
+        p.tint(255, 0, 0, 100);
+        p.fill(255, 0, 0, this.chromaticAberration * 10);
+        p.rect(0, 0, p.width, p.height);
+        p.pop();
     }
     
-    drawBloom() {
-        // Simple bloom effect using blur simulation
-        push();
-        blendMode(SCREEN);
-        fill(255, 255, 255, this.bloomIntensity * 20);
-        noStroke();
+    drawBloom(p) {
+        p.push();
+        p.blendMode(p.SCREEN);
+        p.fill(255, 255, 255, this.bloomIntensity * 20);
+        p.noStroke();
         
         // Draw multiple offset copies for blur effect
         for (let i = 0; i < 3; i++) {
-            rect(-i, -i, width + i*2, height + i*2);
+            p.rect(-i, -i, p.width + i*2, p.height + i*2);
         }
-        pop();
+        p.pop();
     }
     
     // Trigger effects
@@ -447,35 +429,32 @@ class VisualEffectsManager {
 }
 
 // Enhanced glow effect function
-function drawGlow(x, y, size, color, intensity = 1) {
-    push();
-    blendMode(ADD);
-    noStroke();
-    
-    // Multiple layers for smooth glow
+function drawGlow(p, x, y, size, color, intensity = 1) {
+    p.push();
+    p.blendMode(p.ADD);
+    p.noStroke();
     for (let i = 0; i < 5; i++) {
-        const alpha = map(i, 0, 4, intensity * 100, 0);
+        const alpha = p.map(i, 0, 4, intensity * 100, 0);
         const glowSize = size * (1 + i * 0.3);
-        
-        fill(red(color), green(color), blue(color), alpha);
-        ellipse(x, y, glowSize, glowSize);
+        p.fill(p.red(color), p.green(color), p.blue(color), alpha);
+        p.ellipse(x, y, glowSize, glowSize);
     }
-    
-    blendMode(BLEND);
-    pop();
+    p.blendMode(p.BLEND);
+    p.pop();
 }
 
 // Enhanced gradient function
-function drawRadialGradient(x, y, innerRadius, outerRadius, innerColor, outerColor) {
-    push();
-    noStroke();
-    
+function drawRadialGradient(p, x, y, innerRadius, outerRadius, innerColor, outerColor) {
+    p.push();
+    p.noStroke();
     for (let r = outerRadius; r > 0; r -= 2) {
-        const inter = map(r, 0, outerRadius, 0, 1);
-        const c = lerpColor(innerColor, outerColor, inter);
-        fill(c);
-        ellipse(x, y, r * 2, r * 2);
+        const inter = p.map(r, 0, outerRadius, 0, 1);
+        const c = p.lerpColor(innerColor, outerColor, inter);
+        p.fill(c);
+        p.ellipse(x, y, r * 2, r * 2);
     }
-    
-    pop();
-} 
+    p.pop();
+}
+
+// Add export to main visual effects manager(s) here 
+export default VisualEffectsManager; 

@@ -6,7 +6,7 @@ This system lets you play the game normally while automatically capturing screen
 
 ```bash
 # Start the live server first
-npx live-server --port=5500 --no-browser
+npx live-server --port=5501 --no-browser
 
 # In another terminal, run manual testing with auto-capture
 npx playwright test manual-testing-with-auto-capture.spec.js --headed

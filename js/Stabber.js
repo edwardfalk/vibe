@@ -1,3 +1,7 @@
+import { BaseEnemy } from './BaseEnemy.js';
+import { floor, random, sqrt, sin, cos, atan2, min, max, ceil } from './mathUtils.js';
+import { CONFIG } from './config.js';
+
 /**
  * Stabber class - Melee assassin with armor system
  * Features three-phase attack system: approach → prepare → dash attack
@@ -14,22 +18,25 @@ class Stabber extends BaseEnemy {
         super(x, y, 'stabber', config);
         
         // Stabber melee system - heavily armored close combat specialist
-        this.stabDistance = 180; // Start preparing attack further away
+        // Tunable parameters are now config-driven for easier balancing
+        this.minStabDistance = CONFIG.STABBER_SETTINGS.MIN_STAB_DISTANCE; // Minimum distance to initiate stab
+        this.maxStabDistance = CONFIG.STABBER_SETTINGS.MAX_STAB_DISTANCE; // Maximum distance to initiate stab
         this.stabCooldown = 0;
-        this.stabPreparing = false; // New preparing phase - almost immediate stop
+        this.stabPreparing = false; 
         this.stabPreparingTime = 0;
-        this.maxStabPreparingTime = 30; // 0.5 second preparation - gradual slow to stop
+        this.maxStabPreparingTime = CONFIG.STABBER_SETTINGS.MAX_PREPARE_TIME; // Preparation phase duration
         this.stabWarning = false;
         this.stabWarningTime = 0;
-        this.maxStabWarningTime = 20; // 0.33 second warning phase - stopped and signaling
+        this.maxStabWarningTime = CONFIG.STABBER_SETTINGS.MAX_WARNING_TIME; // Warning phase duration
         this.hasYelledStab = false;
         
         // Atmospheric TTS system
-        this.stabChantTimer = random(60, 180); // Random delay between chants
+        const speechConfig = CONFIG.SPEECH_SETTINGS['STABBER'] || CONFIG.SPEECH_SETTINGS.DEFAULT;
+        this.stabChantTimer = random((speechConfig.CHANT_MIN || 3) * 60, (speechConfig.CHANT_MAX || 6) * 60);
         this.isStabbing = false;
         this.stabAnimationTime = 0;
-        this.maxStabAnimationTime = 40; // 0.67 second faster stab animation
-        this.stabRecovering = false; // New recovery phase - stuck after attack
+        this.maxStabAnimationTime = 120; // 2 second stab animation (dash) - CONTINUOUS HIT WINDOW
+        this.stabRecovering = false; 
         this.stabRecoveryTime = 0;
         this.maxStabRecoveryTime = 120; // 2 seconds stuck after attack
         
@@ -42,7 +49,8 @@ class Stabber extends BaseEnemy {
         
         // Armor properties
         this.armor = 2; // Reduces incoming damage
-        this.meleeReach = 150; // Maximum knife reach for devastating strikes
+        // Update meleeReach to match new knife length (s * 0.6 * 2.0 + s * 0.15)
+        this.meleeReach = 38; // For s=28, matches visual tip
     }
     
     /**
@@ -59,14 +67,15 @@ class Stabber extends BaseEnemy {
         
         // Handle atmospheric chanting
         if (this.stabChantTimer <= 0 && this.speechCooldown <= 0) {
-            this.stabChantTimer = random(180, 360); // 3-6 seconds between chants
+            const speechConfig = CONFIG.SPEECH_SETTINGS['STABBER'] || CONFIG.SPEECH_SETTINGS.DEFAULT;
+            this.stabChantTimer = random((speechConfig.CHANT_MIN || 3) * 60, (speechConfig.CHANT_MAX || 6) * 60);
             
-            // Stabber atmospheric chanting on off-beat 3.5 with 30% chance
-            if (window.audio && window.beatClock) {
-                if (window.beatClock.isOnBeat([3.5]) && random() < 0.3) {
-                    window.audio.playSound('stabberChant', this.x, this.y);
-                    console.log(`🎭 Stabber atmospheric chanting`);
-                }
+            // Enhanced stabber ambient sounds on off-beat 3.5 with 30% chance
+            if (window.beatClock && window.beatClock.canStabberAttack() && window.audio) {
+                const ambientSounds = ['stabberChant', 'stabberStalk'];
+                const sound = ambientSounds[floor(random() * ambientSounds.length)];
+                window.audio.playSound(sound, this.x, this.y);
+                console.log(`🗡️ Stabber ambient sound: ${sound} on off-beat 3.5`);
             }
         }
         
@@ -80,9 +89,29 @@ class Stabber extends BaseEnemy {
         if (this.stabRecovering) {
             this.stabRecoveryTime++;
             
-            // Cannot move during recovery
-            this.velocity.x = 0;
-            this.velocity.y = 0;
+            // Visual penetration: Brief follow-through movement for the first few frames
+            const penetrationFrames = 10; // How long the follow-through lasts
+            const penetrationSpeedFactor = 0.5; // How fast the follow-through is (relative to dash speed component)
+
+            // --- Immediate follow-through displacement fix ---
+            // We update position (x, y) directly here instead of setting velocity,
+            // because velocity is applied earlier in the frame by BaseEnemy.update().
+            // This avoids a one-frame delay and ensures the follow-through is visible instantly.
+            if (this.stabRecoveryTime <= penetrationFrames && this.stabDirection !== null) {
+                const progress = this.stabRecoveryTime / penetrationFrames;
+                const currentPenetrationSpeed = (this.speed * 7.0 * penetrationSpeedFactor) * (1 - progress); // Decays to 0
+                const dx = cos(this.stabDirection) * currentPenetrationSpeed;
+                const dy = sin(this.stabDirection) * currentPenetrationSpeed;
+                this.x += dx;
+                this.y += dy;
+                // Set velocity to 0 to avoid double movement next frame
+                this.velocity.x = 0;
+                this.velocity.y = 0;
+            } else {
+                // After penetration effect, cannot move during recovery
+                this.velocity.x = 0;
+                this.velocity.y = 0;
+            }
             
             if (this.stabRecoveryTime >= this.maxStabRecoveryTime) {
                 this.stabRecovering = false;
@@ -96,29 +125,84 @@ class Stabber extends BaseEnemy {
         // Stabbing phase - explosive dash forward
         if (this.isStabbing) {
             this.stabAnimationTime++;
-            
-            // Dash forward at 700% speed in locked direction
-            if (this.stabDirection !== null) {
-                this.velocity.x = cos(this.stabDirection) * this.speed * 7.0; // 700% speed
-                this.velocity.y = sin(this.stabDirection) * this.speed * 7.0;
+
+            // Early guard: if stabDirection is null, skip dash and hit logic
+            if (this.stabDirection === null) {
+                // Early exit: If stabDirection is lost, abort dash and enter recovery phase to prevent immediate resumption
+                this.velocity.x = 0;
+                this.velocity.y = 0;
+                this.isStabbing = false; // Properly exit stabbing state if direction is lost
+                this.stabAnimationTime = 0;
+                this.stabRecovering = true;
+                this.stabRecoveryTime = 0;
+                this.stabCooldown = 120; // Apply cooldown as with a missed dash
+                this.stabDirection = null;
+                // Optionally log a warning
+                // console.warn('Stabber tried to dash with null stabDirection');
+                return null;
             }
-            
+
+            // Set/Maintain dash velocity based on locked stabDirection
+            this.velocity.x = cos(this.stabDirection) * this.speed * 7.0;
+            this.velocity.y = sin(this.stabDirection) * this.speed * 7.0;
+
+            // Continuous hit check during the dash (after the first frame of movement)
+            if (this.stabAnimationTime > 1) {
+                const hitResult = this.checkStabHit(playerX, playerY);
+                // Check for hit on player OR other enemies
+                if (hitResult && (hitResult.playerHit || (hitResult.enemiesHit && hitResult.enemiesHit.length > 0))) {
+                    console.log(`🗡️ Stabber HIT during dash (frame ${this.stabAnimationTime}). Target: ${hitResult.playerHit ? 'Player' : 'Enemy'}. Recovering.`);
+                    
+                    // Spawn hit visual effect
+                    if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager && this.stabDirection !== null) {
+                        const impactX = this.x + cos(this.stabDirection) * (this.meleeReach * 0.9); // Slightly back from full reach
+                        const impactY = this.y + sin(this.stabDirection) * (this.meleeReach * 0.9);
+                        // Using a small, sharp explosion effect
+                        visualEffectsManager.addExplosion(impactX, impactY, 20, [255, 255, 100], 0.5, 5, 8); 
+                    }
+
+                    // Apply damage to player if hit
+                    // if (hitResult.playerHit && window.player && typeof window.player.takeDamage === 'function') {
+                    //     console.log('🩸 Stabber is damaging the player!');
+                    //     window.player.takeDamage(hitResult.damage, 'stabber-melee');
+                    // }
+
+                    // Apply damage to other enemies hit (friendly fire)
+                    if (hitResult.enemiesHit && hitResult.enemiesHit.length > 0) {
+                        // Do not apply damage here; GameLoop.js will handle it
+                        // hitResult.enemiesHit.forEach(enemyHitInfo => {
+                        //     if (enemyHitInfo.enemy && typeof enemyHitInfo.enemy.takeDamage === 'function') {
+                        //         console.log(`🗡️ Stabber applying friendly fire to ${enemyHitInfo.enemy.type} for ${enemyHitInfo.damage} damage.`);
+                        //         enemyHitInfo.enemy.takeDamage(enemyHitInfo.damage, enemyHitInfo.angle, 'stabber_melee');
+                        //     }
+                        // });
+                    }
+                    
+                    this.isStabbing = false;
+                    this.stabAnimationTime = 0; 
+                    this.stabRecovering = true;
+                    this.stabRecoveryTime = 0;
+                    this.stabCooldown = 180; // Cooldown after successful hit
+                    this.stabDirection = null;
+                    return hitResult; // Propagate hit result
+                }
+            }
+
+            // Check if max dash duration reached (missed for the entire duration)
             if (this.stabAnimationTime >= this.maxStabAnimationTime) {
-                // End stab attack and enter recovery
+                console.log(`🗡️ Stabber completed full dash (frame ${this.stabAnimationTime}) without a decisive hit. Recovering.`);
                 this.isStabbing = false;
                 this.stabAnimationTime = 0;
                 this.stabRecovering = true;
                 this.stabRecoveryTime = 0;
-                this.stabCooldown = 180; // 3 second cooldown
-                this.stabDirection = null; // Clear direction lock
-                
-                console.log(`🗡️ Stabber attack ended, entering recovery phase`);
-                
-                // Check for hits during dash
-                return this.checkStabHit(playerX, playerY);
+                this.stabCooldown = 120; // Shorter cooldown on a full miss? Or keep same.
+                this.stabDirection = null;
+                // Optionally, call checkStabHit one last time for miss effects/logging if desired
+                // return this.checkStabHit(playerX, playerY); // This would be a guaranteed miss by now
+                return null; // Or just return null
             }
             
-            return null;
+            return null; // Still stabbing
         }
         
         // Warning phase - stopped and signaling
@@ -135,7 +219,7 @@ class Stabber extends BaseEnemy {
                 window.audio.playSound('stabberKnife', this.x, this.y);
                 
                 const stabWarnings = ["STAB TIME!", "SLICE AND DICE!", "ACUPUNCTURE TIME!", "STABBY MCSTABFACE!"];
-                const warning = stabWarnings[Math.floor(Math.random() * stabWarnings.length)];
+                const warning = stabWarnings[floor(random() * stabWarnings.length)];
                 window.audio.speak(this, warning, 'stabber');
             }
             
@@ -159,17 +243,29 @@ class Stabber extends BaseEnemy {
         
         // Preparing phase - gradual slow to stop
         if (this.stabPreparing) {
+            // Play extension sound only on the first frame of preparing, and only if beat allows
+            if (this.stabPreparingTime === 0 && window.audio && window.beatClock && window.beatClock.canStabberAttack()) {
+                window.audio.playSound('stabberKnifeExtend', this.x, this.y);
+            }
             this.stabPreparingTime++;
             
-            // Gradually slow down from normal speed to 0 over preparation time
-            const slowFactor = 1.0 - (this.stabPreparingTime / this.maxStabPreparingTime);
-            const currentSpeed = Math.max(0, this.speed * 1.6 * slowFactor); // From 160% to 0%
-            
-            if (distance > 0) {
-                const unitX = dx / distance;
-                const unitY = dy / distance;
-                this.velocity.x = unitX * currentSpeed;
-                this.velocity.y = unitY * currentSpeed;
+            const prepProgressRatio = this.stabPreparingTime / this.maxStabPreparingTime;
+
+            if (prepProgressRatio < 0.25) { // First 25% of prepare time: move back
+                const moveBackSpeed = this.speed * 0.5;
+                if (distance > 0) { // Avoid division by zero if distance is 0
+                    const unitX = dx / distance;
+                    const unitY = dy / distance;
+                    this.velocity.x = -unitX * moveBackSpeed; // Move AWAY from player
+                    this.velocity.y = -unitY * moveBackSpeed;
+                } else {
+                    // If for some reason distance is 0, don't move (or move in a default direction)
+                    this.velocity.x = 0;
+                    this.velocity.y = 0;
+                }
+            } else { // Remaining 75% of prepare time: stay still
+                this.velocity.x = 0;
+                this.velocity.y = 0;
             }
             
             if (this.stabPreparingTime >= this.maxStabPreparingTime) {
@@ -182,7 +278,7 @@ class Stabber extends BaseEnemy {
                 // Lock attack direction
                 this.stabDirection = this.aimAngle;
                 
-                console.log(`⚠️ Stabber entering warning phase, direction locked at ${(this.stabDirection * 180 / PI).toFixed(1)}°`);
+                console.log(`⚠️ Stabber entering warning phase, direction locked at ${(this.stabDirection * 180 / Math.PI).toFixed(1)}°`);
             }
             
             return null;
@@ -196,12 +292,23 @@ class Stabber extends BaseEnemy {
             const unitX = dx / distance;
             const unitY = dy / distance;
             
-            if (distance <= this.stabDistance) {
-                // Start attack sequence
-                this.stabPreparing = true;
-                this.stabPreparingTime = 0;
-                console.log(`🎯 Stabber starting attack sequence at distance: ${distance.toFixed(0)}px`);
-            } else {
+            if (distance < this.minStabDistance) { // Too close, fall back
+                // Move away from player at normal speed
+                this.velocity.x = -unitX * this.speed * 1.2;
+                this.velocity.y = -unitY * this.speed * 1.2;
+                if (CONFIG.DEBUG) console.log(`🎯 Stabber TOO CLOSE (dist: ${distance.toFixed(0)}px), falling back.`);
+            } else if (distance <= this.maxStabDistance) { // In attack window
+                if (window.beatClock && window.beatClock.canStabberAttack()) {
+                    this.stabPreparing = true;
+                    this.stabPreparingTime = 0;
+                    if (CONFIG.DEBUG) console.log(`🎯 Stabber starting attack (dist: ${distance.toFixed(0)}px) on beat.`);
+                } else {
+                    // Creep slowly if in range and off-beat
+                    this.velocity.x = unitX * this.speed * 0.8; 
+                    this.velocity.y = unitY * this.speed * 0.8;
+                    if (CONFIG.DEBUG) console.log(`🎯 Stabber in range (dist: ${distance.toFixed(0)}px), creeping slowly off-beat.`);
+                }
+            } else { // Outside attack range
                 // Normal approach at 160% speed
                 this.velocity.x = unitX * this.speed * 1.6;
                 this.velocity.y = unitY * this.speed * 1.6;
@@ -215,35 +322,99 @@ class Stabber extends BaseEnemy {
      * Check if stab hit player during dash
      */
     checkStabHit(playerX, playerY) {
-        const distance = sqrt((playerX - this.x) ** 2 + (playerY - this.y) ** 2);
-        const stabReach = this.meleeReach;
-        
-        // Calculate if player is in the locked stab direction (cone-shaped attack)
-        const playerAngle = atan2(playerY - this.y, playerX - this.x);
-        const angleDifference = abs(this.stabDirection - playerAngle);
-        const maxStabAngle = PI / 6; // 30 degree cone for stab attack
-        
-        const inStabDirection = angleDifference <= maxStabAngle || angleDifference >= TWO_PI - maxStabAngle;
-        
-        if (distance <= stabReach && inStabDirection) {
-            console.log(`🗡️ STABBER HIT! Player caught in 700% speed dash attack! Distance: ${distance.toFixed(0)}px, Reach: ${stabReach}px`);
-            return { 
-                type: 'stabber-melee', 
-                x: this.x, 
-                y: this.y, 
-                damage: 25, // High melee damage
-                reach: stabReach,
-                stabAngle: this.stabDirection, // Use locked direction
-                hitType: 'player' // Indicate what was hit
+        if (this.stabDirection == null) {
+            return {
+                type: 'stabber-miss',
+                reason: 'no_stab_direction',
+                playerHit: false,
+                enemiesHit: []
             };
-        } else {
-            if (distance > stabReach) {
-                console.log(`🗡️ STABBER MISSED! Player escaped - out of reach! Distance: ${distance.toFixed(0)}px > Reach: ${stabReach}px`);
-            } else {
-                console.log(`🗡️ STABBER MISSED! Player dodged perpendicular to stab direction! Distance: ${distance.toFixed(0)}px, Angle difference: ${(angleDifference * 180 / PI).toFixed(1)}°`);
+        }
+        // Calculate tip position
+        const s = this.size;
+        const extensionFactor = (this.stabPreparing || this.stabWarning || this.isStabbing) ? 2.0 : 1.0;
+        const knifeLength = s * 0.6 * extensionFactor;
+        // Move tip slightly forward for hit check
+        const tipOffset = 4;
+        const tipX = this.x + cos(this.stabDirection) * (knifeLength + s * 0.15 + tipOffset);
+        const tipY = this.y + sin(this.stabDirection) * (knifeLength + s * 0.15 + tipOffset);
+        // Use tip position for hit detection
+        const playerDistance = sqrt((playerX - tipX) ** 2 + (playerY - tipY) ** 2);
+        const stabReach = 16; // More forgiving hitbox
+        // Angle check as before
+        const playerAngle = atan2(playerY - this.y, playerX - this.x);
+        // Modular angle difference to handle wrap-around
+        let playerDiff = ((this.stabDirection - playerAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
+        if (playerDiff < -Math.PI) playerDiff += 2 * Math.PI;
+        const angleDifference = Math.abs(playerDiff);
+        const maxStabAngle = Math.PI / 6;
+        const inStabDirection = angleDifference <= maxStabAngle;
+        let result = {
+            type: 'stabber-miss',
+            x: tipX,
+            y: tipY,
+            playerHit: false,
+            enemiesHit: []
+        };
+        // Check player hit
+        if (playerDistance <= stabReach && inStabDirection) {
+            result.type = 'stabber-melee';
+            result.playerHit = true;
+            result.damage = 25;
+            result.reach = stabReach;
+            result.stabAngle = this.stabDirection;
+            result.hitType = 'player';
+            // Spark effect at tip
+            if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
+                visualEffectsManager.addExplosion(tipX, tipY, 10, [255,255,180], 0.7, 3, 8);
+                // Red splash effect
+                visualEffectsManager.addExplosion(tipX, tipY, 14, [255,40,40], 0.5, 2, 10);
             }
-            
-            // Create explosion effect for missed attack
+            // Play hit sound
+            if (window.audio) {
+                window.audio.playSound('stabberKnifeHit', tipX, tipY);
+            }
+        }
+        // Check enemy hits (friendly fire)
+        if (window.enemies) {
+            for (let i = 0; i < window.enemies.length; i++) {
+                const enemy = window.enemies[i];
+                if (enemy === this) continue;
+                const enemyDistance = sqrt((enemy.x - tipX) ** 2 + (enemy.y - tipY) ** 2);
+                if (enemyDistance <= stabReach) {
+                    const enemyAngle = atan2(enemy.y - this.y, enemy.x - this.x);
+                    // Modular angle difference to handle wrap-around
+                    let enemyDiff = ((this.stabDirection - enemyAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
+                    if (enemyDiff < -Math.PI) enemyDiff += 2 * Math.PI;
+                    const enemyAngleDifference = Math.abs(enemyDiff);
+                    const enemyInStabDirection = enemyAngleDifference <= maxStabAngle;
+                    if (enemyInStabDirection) {
+                        result.enemiesHit.push({
+                            enemy: enemy,
+                            index: i,
+                            damage: 25,
+                            angle: this.stabDirection
+                        });
+                        // (Effects and sounds moved outside loop)
+                    }
+                }
+            }
+            // After collecting all enemy hits, trigger effects and sound only once if any were hit
+            if (result.enemiesHit.length > 0) {
+                // Spark effect at tip
+                if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
+                    visualEffectsManager.addExplosion(tipX, tipY, 10, [255,255,180], 0.7, 3, 8);
+                    // Red splash effect
+                    visualEffectsManager.addExplosion(tipX, tipY, 14, [255,40,40], 0.5, 2, 10);
+                }
+                // Play hit sound
+                if (window.audio) {
+                    window.audio.playSound('stabberKnifeHit', tipX, tipY);
+                }
+            }
+        }
+        // Miss case as before
+        if (result.type === 'stabber-miss') {
             if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
                 try {
                     visualEffectsManager.addExplosion(this.x, this.y, 15, [255, 215, 0], 0.8);
@@ -251,16 +422,11 @@ class Stabber extends BaseEnemy {
                     console.log('⚠️ Stabber miss explosion error:', error);
                 }
             }
-            
-            return { 
-                type: 'stabber-miss', 
-                x: this.x, 
-                y: this.y,
-                reason: distance > stabReach ? 'out_of_reach' : 'wrong_direction',
-                distance: distance,
-                reach: stabReach
-            };
+            result.reason = playerDistance > stabReach ? 'out_of_reach' : 'wrong_direction';
+            result.distance = playerDistance;
+            result.reach = stabReach;
         }
+        return result;
     }
     
     /**
@@ -268,13 +434,12 @@ class Stabber extends BaseEnemy {
      */
     triggerAmbientSpeech() {
         if (window.audio && this.speechCooldown <= 0) {
-            // Stabber ambient speech on off-beat 3.5 with 20% chance
-            if (window.beatClock && window.beatClock.isOnBeat([3.5]) && random() < 0.2) {
+            if (window.beatClock && window.beatClock.canStabberAttack() && random() < 0.2) {
                 const stabberLines = [
                     "STAB!", "SLICE!", "CUT!", "POKE!", "ACUPUNCTURE!", "LITTLE PRICK!",
                     "STABBY MCSTABFACE!", "NEEDLE THERAPY!", "I COLLECT BELLY BUTTONS!"
                 ];
-                const randomLine = stabberLines[Math.floor(Math.random() * stabberLines.length)];
+                const randomLine = stabberLines[floor(random() * stabberLines.length)];
                 window.audio.speak(this, randomLine, 'stabber');
                 this.speechCooldown = this.maxSpeechCooldown;
             }
@@ -310,24 +475,20 @@ class Stabber extends BaseEnemy {
     
     /**
      * Override aim angle update to lock during attack phases
+     *
+     * --- Update order refactor ---
+     * We run updateSpecificBehavior() first to set velocity and state,
+     * then call super.update() to apply velocity to position.
+     * This ensures all velocity changes take effect in the same frame,
+     * preventing frame delays and making the update logic robust.
      */
     update(playerX, playerY) {
-        // Call parent update but override aim angle locking
-        const result = super.update(playerX, playerY);
-        
-        // Lock rotation during attack phases
-        if (this.stabPreparing || this.stabWarning || this.isStabbing || this.stabRecovering) {
-            // Don't update aim angle during these phases
-        } else {
-            // Normal aim angle update
-            const dx = playerX - this.x;
-            const dy = playerY - this.y;
-            if (dx !== 0 || dy !== 0) {
-                this.aimAngle = atan2(dy, dx);
-            }
-        }
-        
-        return result;
+        // 1. Run Stabber-specific logic first (sets velocity, handles state)
+        const behaviorResult = this.updateSpecificBehavior(playerX, playerY);
+        // 2. Then call parent update to apply velocity to position, handle common logic
+        const baseUpdateResult = super.update(playerX, playerY);
+        // Only return behaviorResult if it is neither null nor undefined; otherwise, return baseUpdateResult
+        return behaviorResult != null ? behaviorResult : baseUpdateResult;
     }
     
     /**
@@ -347,50 +508,47 @@ class Stabber extends BaseEnemy {
     }
     
     /**
-     * Override weapon drawing for stabber's giant laser knife
+     * Override weapon drawing for stabber's extending laser knife
      */
     drawWeapon(s) {
-        // Giant laser knife - much larger than normal weapons
-        const knifeLength = s * 0.6; // 60% longer
-        const knifeWidth = s * 0.2; // 100% wider
-        
-        fill(this.weaponColor);
-        
-        // Main blade
-        beginShape();
-        vertex(s * 0.3, -knifeWidth / 2);
-        vertex(s * 0.3 + knifeLength, -knifeWidth / 4);
-        vertex(s * 0.3 + knifeLength, knifeWidth / 4);
-        vertex(s * 0.3, knifeWidth / 2);
-        endShape(CLOSE);
-        
-        // Knife handle with armor plating
-        fill(this.weaponColor.levels[0] - 30, this.weaponColor.levels[1] - 30, this.weaponColor.levels[2] - 30);
-        rect(s * 0.2, -knifeWidth / 3, s * 0.2, knifeWidth * 0.67);
-        
-        // Laser edge glow
-        if (this.stabWarning || this.isStabbing) {
-            fill(255, 255, 255, 150);
-            beginShape();
-            vertex(s * 0.3, -knifeWidth / 3);
-            vertex(s * 0.3 + knifeLength * 0.9, -knifeWidth / 6);
-            vertex(s * 0.3 + knifeLength * 0.9, knifeWidth / 6);
-            vertex(s * 0.3, knifeWidth / 3);
-            endShape(CLOSE);
+        // Base knife dimensions
+        let knifeLength = s * 0.6; // Base length
+        let knifeWidth = s * 0.2; // Base width
+        let extensionFactor = 1.0; // Default (retracted)
+        const extendedFactor = 2.0; // New fixed extension (about half of old max)
+        let isExtended = false;
+
+        // Determine state
+        if (this.stabPreparing || this.stabWarning || this.isStabbing) {
+            extensionFactor = extendedFactor;
+            isExtended = true;
         }
-        
-        // Enhanced trail effects during stab
-        if (this.isStabbing) {
-            for (let i = 0; i < 3; i++) {
-                fill(255, 215, 0, 100 - i * 30);
-                const trailOffset = i * 10;
-                beginShape();
-                vertex(s * 0.3 - trailOffset, -knifeWidth / 2);
-                vertex(s * 0.3 + knifeLength - trailOffset, -knifeWidth / 4);
-                vertex(s * 0.3 + knifeLength - trailOffset, knifeWidth / 4);
-                vertex(s * 0.3 - trailOffset, knifeWidth / 2);
-                endShape(CLOSE);
-            }
+        // Color: always white when extended or retracted
+        fill(255, 255, 255);
+
+        let currentKnifeLength = s * 0.6 * extensionFactor;
+
+        // Draw main blade
+        beginShape();
+        vertex(s * 0.3, -knifeWidth / 2); // Base back bottom
+        vertex(s * 0.3 + currentKnifeLength + s * 0.15, 0); // Sharp point
+        vertex(s * 0.3, knifeWidth / 2);  // Base back top
+        endShape(CLOSE);
+
+        // Knife handle
+        fill(200, 200, 200);
+        rect(s * 0.2, -knifeWidth / 3, s * 0.2, knifeWidth * 0.67);
+
+        // Glow at tip if extended
+        if (isExtended) {
+            const tipX = s * 0.3 + currentKnifeLength + s * 0.15;
+            const tipY = 0;
+            const glowColor = color(120, 200, 255, 180);
+            noStroke();
+            fill(glowColor);
+            ellipse(tipX, tipY, 10, 10);
+            fill(255, 255, 255, 200);
+            ellipse(tipX, tipY, 5, 5);
         }
     }
     
@@ -428,7 +586,7 @@ class Stabber extends BaseEnemy {
         // Charging sparks around the stabber
         if (frameCount % 3 === 0) {
             for (let i = 0; i < 6; i++) {
-                const sparkAngle = (frameCount * 0.1 + i * PI / 3) % TWO_PI;
+                const sparkAngle = (frameCount * 0.1 + i * Math.PI / 3) % (2 * Math.PI);
                 const sparkDist = this.size * (0.8 + stabPercent * 0.4);
                 const sparkX = this.x + cos(sparkAngle) * sparkDist;
                 const sparkY = this.y + sin(sparkAngle) * sparkDist;
@@ -474,21 +632,42 @@ class Stabber extends BaseEnemy {
             text("STUCK", this.x, this.y - this.size - 20);
             
             // Countdown
-            const countdown = Math.ceil((this.maxStabRecoveryTime - this.stabRecoveryTime) / 60);
+            const countdown = ceil((this.maxStabRecoveryTime - this.stabRecoveryTime) / 60);
             textSize(6);
             text(countdown + "s", this.x, this.y - this.size - 10);
         }
     }
     
     /**
-     * Override takeDamage to handle armor system
+     * Override takeDamage to handle armor system and interrupt attacks
      */
     takeDamage(amount, bulletAngle = null, damageSource = null) {
         // Apply armor damage reduction
         let actualDamage = amount;
         if (this.armor) {
-            actualDamage = Math.max(1, amount - this.armor); // Minimum 1 damage
+            actualDamage = max(1, amount - this.armor); // Minimum 1 damage
             console.log(`🛡️ Stabber armor reduced damage: ${amount} -> ${actualDamage}`);
+        }
+        
+        // INTERRUPT ATTACK when taking damage - prevents phantom hits after knockback
+        if (this.stabPreparing || this.stabWarning) {
+            console.log(`🚫 Stabber attack interrupted by damage! Was in: ${this.stabPreparing ? 'preparing' : 'warning'} phase`);
+            
+            // Reset all attack states
+            this.stabPreparing = false;
+            this.stabPreparingTime = 0;
+            this.stabWarning = false;
+            this.stabWarningTime = 0;
+            this.isStabbing = false;
+            this.stabAnimationTime = 0;
+            this.stabDirection = null;
+            
+            // Enter recovery state after interruption
+            this.stabRecovering = true;
+            this.stabRecoveryTime = 0;
+            
+            // Add cooldown to prevent immediate re-attack
+            this.stabCooldown = 60; // 1 second cooldown after interruption
         }
         
         // Apply knockback when hit
@@ -501,6 +680,8 @@ class Stabber extends BaseEnemy {
         
         // Apply damage using actual damage amount
         this.health -= actualDamage;
+        // Clamp health to never go below 0, and check for NaN
+        if (isNaN(this.health) || this.health < 0) this.health = 0;
         this.hitFlash = 8;
         
         if (this.health <= 0) {
@@ -515,4 +696,6 @@ class Stabber extends BaseEnemy {
     createBullet() {
         return null;
     }
-} 
+}
+
+export { Stabber }; 

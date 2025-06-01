@@ -2,6 +2,19 @@
  * Effects System for Vibe - Screen shake, particles, and visual polish
  */
 
+// Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
+
+const max = Math.max;
+const min = Math.min;
+const floor = Math.floor;
+const ceil = Math.ceil;
+const round = Math.round;
+const random = Math.random;
+const sin = Math.sin;
+const cos = Math.cos;
+const atan2 = Math.atan2;
+const sqrt = Math.sqrt;
+
 class EffectsManager {
     constructor() {
         // Screen shake system
@@ -35,8 +48,8 @@ class EffectsManager {
             const progress = this.shake.duration / 30; // 30 frame max duration
             const currentIntensity = this.shake.intensity * progress;
             
-            this.shake.x = (Math.random() - 0.5) * currentIntensity;
-            this.shake.y = (Math.random() - 0.5) * currentIntensity;
+            this.shake.x = (random() - 0.5) * currentIntensity;
+            this.shake.y = (random() - 0.5) * currentIntensity;
         } else {
             this.shake.x = 0;
             this.shake.y = 0;
@@ -72,40 +85,50 @@ class EffectsManager {
         }
     }
     
-    draw() {
+    draw(p) {
         // Apply screen shake
-        push();
-        translate(this.shake.x, this.shake.y);
+        p.push();
+        p.translate(this.shake.x, this.shake.y);
         
         // Draw trails first (behind everything)
         for (const trail of this.trails) {
-            trail.draw();
-        }
-    }
-    
-    drawParticles() {
-        // Draw particles (in front of game objects)
-        for (const particle of this.particles) {
-            particle.draw();
-        }
-    }
-    
-    drawScreenEffects() {
-        // Draw screen flash
-        if (this.screenFlash.duration > 0) {
-            fill(this.screenFlash.color[0], this.screenFlash.color[1], this.screenFlash.color[2], 
-                 this.screenFlash.intensity * 100);
-            noStroke();
-            rect(-this.shake.x, -this.shake.y, width, height);
+            trail.draw(p);
         }
         
-        pop(); // End screen shake translation
+        // Draw screen flash
+        if (this.screenFlash.duration > 0) {
+            p.fill(this.screenFlash.color[0], this.screenFlash.color[1], this.screenFlash.color[2], 
+                 this.screenFlash.intensity * 100);
+            p.noStroke();
+            p.rect(-this.shake.x, -this.shake.y, p.width, p.height);
+        }
+        
+        p.pop(); // End screen shake translation
+    }
+    
+    drawParticles(p) {
+        // Draw particles (in front of game objects)
+        for (const particle of this.particles) {
+            particle.draw(p);
+        }
+    }
+    
+    drawScreenEffects(p) {
+        // Draw screen flash
+        if (this.screenFlash.duration > 0) {
+            p.fill(this.screenFlash.color[0], this.screenFlash.color[1], this.screenFlash.color[2], 
+                 this.screenFlash.intensity * 100);
+            p.noStroke();
+            p.rect(-this.shake.x, -this.shake.y, p.width, p.height);
+        }
+        
+        p.pop(); // End screen shake translation
     }
     
     // Screen shake methods
     addShake(intensity, duration = 20) {
-        this.shake.intensity = Math.max(this.shake.intensity, intensity);
-        this.shake.duration = Math.max(this.shake.duration, duration);
+        this.shake.intensity = max(this.shake.intensity, intensity);
+        this.shake.duration = max(this.shake.duration, duration);
     }
     
     addScreenFlash(color = [255, 255, 255], duration = 8) {
@@ -177,29 +200,29 @@ class Particle {
         this.size = this.maxSize * lifePercent;
     }
     
-    draw() {
+    draw(p) {
         const lifePercent = this.life / this.maxLife;
         const alpha = lifePercent * 255;
         
-        push();
-        translate(this.x, this.y);
-        rotate(this.rotation);
+        p.push();
+        p.translate(this.x, this.y);
+        p.rotate(this.rotation);
         
-        fill(this.color[0], this.color[1], this.color[2], alpha);
-        noStroke();
+        p.fill(this.color[0], this.color[1], this.color[2], alpha);
+        p.noStroke();
         
         // Draw as a small polygon for more interesting shapes
-        beginShape();
+        p.beginShape();
         for (let i = 0; i < 6; i++) {
-            const angle = (i / 6) * TWO_PI;
+            const angle = (i / 6) * p.TWO_PI;
             const radius = (i % 2 === 0) ? this.size : this.size * 0.6;
-            const x = cos(angle) * radius;
-            const y = sin(angle) * radius;
-            vertex(x, y);
+            const x = p.cos(angle) * radius;
+            const y = p.sin(angle) * radius;
+            p.vertex(x, y);
         }
-        endShape(CLOSE);
+        p.endShape(p.CLOSE);
         
-        pop();
+        p.pop();
     }
     
     isDead() {
@@ -233,19 +256,19 @@ class Trail {
         this.points = this.points.filter(point => point.life > 0);
     }
     
-    draw() {
+    draw(p) {
         if (this.points.length < 2) return;
         
-        noFill();
+        p.noFill();
         for (let i = 1; i < this.points.length; i++) {
             const point = this.points[i];
             const prevPoint = this.points[i - 1];
             const alpha = (point.life / this.maxSegments) * 150;
             const thickness = (point.life / this.maxSegments) * 3;
             
-            stroke(this.color[0], this.color[1], this.color[2], alpha);
-            strokeWeight(thickness);
-            line(prevPoint.x, prevPoint.y, point.x, point.y);
+            p.stroke(this.color[0], this.color[1], this.color[2], alpha);
+            p.strokeWeight(thickness);
+            p.line(prevPoint.x, prevPoint.y, point.x, point.y);
         }
     }
     
@@ -290,9 +313,9 @@ class EnhancedExplosionManager {
         }
     }
     
-    draw() {
+    draw(p) {
         for (const explosion of this.explosions) {
-            explosion.draw();
+            explosion.draw(p);
         }
     }
 }
@@ -330,31 +353,40 @@ class EnhancedExplosion {
         }
     }
     
-    draw() {
+    draw(p) {
         const lifePercent = this.life / this.maxLife;
         
-        push();
-        translate(this.x, this.y);
+        p.push();
+        p.translate(this.x, this.y);
         
         for (const ring of this.rings) {
             if (ring.radius > 0) {
-                const alpha = Math.max(0, 1 - ring.radius / ring.maxRadius) * lifePercent * 100;
-                fill(ring.color[0], ring.color[1], ring.color[2], alpha);
-                noStroke();
-                ellipse(0, 0, ring.radius * 2);
+                const alpha = max(0, 1 - ring.radius / ring.maxRadius) * lifePercent * 100;
+                p.fill(ring.color[0], ring.color[1], ring.color[2], alpha);
+                p.noStroke();
+                p.ellipse(0, 0, ring.radius * 2);
                 
                 // Inner bright core
                 if (ring.radius < ring.maxRadius * 0.3) {
-                    fill(255, 255, 255, alpha * 0.8);
-                    ellipse(0, 0, ring.radius);
+                    p.fill(255, 255, 255, alpha * 0.8);
+                    p.ellipse(0, 0, ring.radius);
                 }
             }
         }
         
-        pop();
+        if (this.type === 'energy') {
+            drawGlow(p, this.x, this.y, this.size * 2, p.color(100, 255, 255), 0.7);
+        } else if (this.type === 'debris') {
+            drawGlow(p, this.x, this.y, this.size * 1.5, p.color(200, 200, 200), 0.3);
+        }
+        
+        p.pop();
     }
     
     isDead() {
         return this.life <= 0;
     }
-} 
+}
+
+// Add export to main effects manager(s) here
+export { EffectsManager }; 

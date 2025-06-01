@@ -49,8 +49,11 @@
  * =============================================================================
  */
 
-class Audio {
-    constructor() {
+// Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
+
+export class Audio {
+    constructor(p, ...args) {
+        this.p = p;
         // Core audio setup
         this.audioContext = null;
         this.masterGain = null;
@@ -64,12 +67,16 @@ class Audio {
             distortion: null
         };
         
+        // Distortion curve cache
+        this.distortionCurves = new Map();
+        this.maxCurveCache = 32; // Limit cache size to 32 entries
+        
         // TTS system - OPTIMIZED
         this.speechSynthesis = window.speechSynthesis;
         this.speechEnabled = true;
         this.englishVoices = [];
         this.lastSpeechTime = 0;
-        this.speechCooldown = 1200; // Reduced from 2000ms to 1200ms for better flow
+        this.speechCooldown = 2500; // 2.5 seconds - reasonable cooldown to prevent excessive chatter
         
         // Text display system - IMPROVED
         this.activeTexts = [];
@@ -77,7 +84,7 @@ class Audio {
         // Sound configuration - MUSICAL COMBAT SYSTEM
         this.sounds = {
             // MUSICAL WEAPONS: Each enemy type becomes an instrument
-            playerShoot: { frequency: 480, waveform: 'sawtooth', volume: 0.15, duration: 0.02 }, // Hi-hat: crisp, high, short
+            playerShoot: { frequency: 480, waveform: 'sawtooth', volume: 0.2, duration: 0.01 }, // Hi-hat: crisp, high, short
             alienShoot: { frequency: 800, waveform: 'square', volume: 0.25, duration: 0.15 }, // Snare: punchy, mid-range
             tankEnergy: { frequency: 80, waveform: 'sine', volume: 0.7, duration: 1.0 }, // ENHANCED: Fatter bass drum with more volume and duration
             stabAttack: { frequency: 2000, waveform: 'sawtooth', volume: 0.3, duration: 0.1 }, // Sharp accent: cutting through
@@ -115,7 +122,8 @@ class Audio {
             gruntBeep: { frequency: 800, waveform: 'triangle', volume: 0.08, duration: 0.15 },
             gruntWhir: { frequency: 300, waveform: 'sine', volume: 0.1, duration: 0.6 },
             gruntError: { frequency: 220, waveform: 'square', volume: 0.1, duration: 0.2 },
-            gruntGlitch: { frequency: 150, waveform: 'sawtooth', volume: 0.09, duration: 0.25 }
+            gruntGlitch: { frequency: 150, waveform: 'sawtooth', volume: 0.09, duration: 0.25 },
+            gruntOw: { frequency: 600, waveform: 'triangle', volume: 0.25, duration: 0.18 } // Quick, soft "ow" fallback
         };
         
         // Voice configuration - REDUCED VOLUMES for background speech effect
@@ -177,7 +185,8 @@ class Audio {
         
         // Simple distortion
         this.effects.distortion = this.audioContext.createWaveShaper();
-        this.effects.distortion.curve = this.createDistortionCurve(30);
+        // Re-use cached curve for identical amount / sample-rate pairs
+        this.effects.distortion.curve = this.createOrGetCurve(30);
         this.effects.distortion.oversample = '2x';
     }
     
@@ -195,15 +204,35 @@ class Audio {
         return impulse;
     }
     
-    createDistortionCurve(amount) {
-        const samples = 44100;
+    createDistortionCurve(amount, sampleRate) {
+        // Use the actual audio context sample rate, rounded to nearest power of two for efficiency
+        let samples = sampleRate || 44100;
+        samples = Math.pow(2, Math.round(Math.log2(samples)));
         const curve = new Float32Array(samples);
         const deg = Math.PI / 180;
-        
         for (let i = 0; i < samples; i++) {
             const x = (i * 2) / samples - 1;
             curve[i] = ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
         }
+        return curve;
+    }
+    
+    // Distortion curve cache helper with proper FIFO eviction and duplicate check
+    createOrGetCurve(amount) {
+        const sampleRate = this.audioContext ? this.audioContext.sampleRate : 44100;
+        const key = `${amount}_${sampleRate}`;
+        // If the key already exists, return it immediately (no reinsertion)
+        if (this.distortionCurves.has(key)) {
+            return this.distortionCurves.get(key);
+        }
+        // If adding a new key and the cache is full, evict the oldest
+        if (this.distortionCurves.size >= this.maxCurveCache) {
+            const oldestKey = this.distortionCurves.keys().next().value;
+            this.distortionCurves.delete(oldestKey);
+        }
+        // Add the new curve
+        const curve = this.createDistortionCurve(amount, sampleRate);
+        this.distortionCurves.set(key, curve);
         return curve;
     }
     
@@ -246,9 +275,9 @@ class Audio {
         const panNode = this.audioContext.createStereoPanner();
         
         // Add subtle randomness to frequency and volume for variety
-        const frequencyVariation = 1 + (Math.random() - 0.5) * 0.1; // ±5% frequency variation
-        const volumeVariation = 1 + (Math.random() - 0.5) * 0.15; // ±7.5% volume variation
-        const durationVariation = 1 + (Math.random() - 0.5) * 0.2; // ±10% duration variation
+        const frequencyVariation = 1 + (this.p.random() - 0.5) * 0.1;
+        const volumeVariation = 1 + (this.p.random() - 0.5) * 0.15;
+        const durationVariation = 1 + (this.p.random() - 0.5) * 0.2;
         
         // Configure oscillator with randomness
         oscillator.type = config.waveform === 'noise' ? 'sawtooth' : config.waveform;
@@ -335,7 +364,7 @@ class Audio {
             
             // REDUCED: Distortion amount from 15 to 10 for more subtle otherworldly effect
             const distortionNode = this.audioContext.createWaveShaper();
-            distortionNode.curve = this.createDistortionCurve(10); // Was 15, now 10
+            distortionNode.curve = this.createOrGetCurve(5); // Was this.createDistortionCurve(5)
             distortionNode.oversample = '2x';
             
             // SIMPLIFIED: Direct connection with reduced effects intensity
@@ -383,14 +412,14 @@ class Audio {
     // SPEECH SYSTEM (SIMPLIFIED AND RELIABLE)
     // ========================================================================
     
-    speak(entity, text, voiceType = 'player') {
+    speak(entity, text, voiceType = 'player', force = false) {
         if (!this.speechEnabled || !this.speechSynthesis || !text) {
             return false;
         }
         
-        // Check cooldown - IMPROVED: Less aggressive blocking
+        // Check cooldown unless force is true
         const now = Date.now();
-        if (now - this.lastSpeechTime < this.speechCooldown) {
+        if (!force && (now - this.lastSpeechTime < this.speechCooldown)) {
             return false; // Return false immediately, no text, no speech
         }
         
@@ -410,19 +439,20 @@ class Audio {
         utterance.rate = config.rate;
         utterance.pitch = config.pitch;
         
-        // FIXED: Player always gets full volume, enemies get distance-based volume
-        if (voiceType === 'player') {
-            utterance.volume = config.volume; // Full volume for player always - player IS the reference point
-        } else {
-            // Get player position for relative audio positioning
-            let playerX = 400, playerY = 300; // Default screen center
-            if (typeof window.player !== 'undefined' && window.player) {
-                playerX = window.player.x;
-                playerY = window.player.y;
-            }
-            
-            utterance.volume = config.volume * this.calculateVolume(entity.x, entity.y, playerX, playerY);
+        // Get player position for relative audio positioning
+        let playerX = 400, playerY = 300; // Default screen center
+        if (typeof window.player !== 'undefined' && window.player) {
+            playerX = window.player.x;
+            playerY = window.player.y;
         }
+        // Ensure entity.x and entity.y are valid numbers
+        let ex = (entity && typeof entity.x === 'number' && !isNaN(entity.x)) ? entity.x : 400;
+        let ey = (entity && typeof entity.y === 'number' && !isNaN(entity.y)) ? entity.y : 300;
+        // Ensure TTS volume respects master volume, per-voice config, and distance attenuation
+        utterance.volume = Math.min(
+            1,
+            config.volume * this.calculateVolume(ex, ey, playerX, playerY) * this.volume
+        );
         
         // Enhanced voice selection with effects
         const voice = this.selectVoiceWithEffects(voiceType, text);
@@ -563,11 +593,11 @@ class Audio {
                 return name.includes('clear') || name.includes('precise') || name.includes('clinical') ||
                        name.includes('sharp') || name.includes('articulate');
             });
-            if (preciseVoices.length > 0) return preciseVoices[Math.floor(Math.random() * preciseVoices.length)];
+            if (preciseVoices.length > 0) return preciseVoices[Math.floor(this.p.random() * preciseVoices.length)];
         }
         
         // Fallback to random voice
-        return availableVoices[Math.floor(Math.random() * availableVoices.length)];
+        return availableVoices[Math.floor(this.p.random() * availableVoices.length)];
     }
     
     // DYNAMIC voice effects based on content and character
@@ -590,7 +620,7 @@ class Audio {
             // Grunts get robotic, confused effects
             if (isConfused) {
                 utterance.rate = Math.max(0.4, baseConfig.rate - 0.2); // Much slower when confused
-                utterance.pitch = baseConfig.pitch + random(-0.1, 0.1); // Slight pitch variation
+                utterance.pitch = baseConfig.pitch + this.p.random(-0.1, 0.1); // Slight pitch variation
             }
             if (isAggressive) {
                 utterance.rate = Math.min(1.0, baseConfig.rate + 0.2); // Faster when angry
@@ -612,13 +642,13 @@ class Audio {
             // Stabbers get precise, clinical effects
             if (isAggressive) {
                 utterance.rate = Math.max(0.7, baseConfig.rate - 0.2); // Slower, more deliberate
-                utterance.pitch = baseConfig.pitch + random(-0.05, 0.05); // Slight variation for unsettling effect
+                utterance.pitch = baseConfig.pitch + this.p.random(-0.05, 0.05); // Slight variation for unsettling effect
             }
         }
         
         // Add some randomness for variety (small amounts)
-        utterance.rate += random(-0.05, 0.05);
-        utterance.pitch += random(-0.03, 0.03);
+        utterance.rate += this.p.random(-0.05, 0.05);
+        utterance.pitch += this.p.random(-0.03, 0.03);
         
         // Ensure values stay in valid ranges
         utterance.rate = Math.max(0.1, Math.min(2.0, utterance.rate));
@@ -681,20 +711,26 @@ class Audio {
         }
     }
     
-    drawTexts() {
-        push();
-        textAlign(CENTER, CENTER);
+    drawTexts(p) {
+        p.push();
+        p.textAlign(p.CENTER, p.CENTER);
         
         for (const textObj of this.activeTexts) {
-            // Fixed fade out effect - stay visible longer, then fade quickly
-            const totalDuration = 180; // Total duration in frames
-            const fadeStartTime = 150; // Start fading at 150 frames (stay visible for 2.5 seconds)
-            
-            let alpha = 255; // Default full opacity
-            if (textObj.timer < fadeStartTime) {
-                // Quick fade in the last 30 frames (0.5 seconds)
-                alpha = Math.max(0, (textObj.timer / (fadeStartTime - totalDuration + fadeStartTime)) * 255);
+            // Defines how long the fade-out animation should last, in frames.
+            const fadeOutDuration = 30; // 30 frames = 0.5 seconds at 60fps
+            let alpha;
+
+            if (textObj.timer <= fadeOutDuration) {
+                // If the remaining time for the text is less than or equal to the fade-out duration,
+                // calculate alpha to create a linear fade-out effect.
+                alpha = (textObj.timer / fadeOutDuration) * 255;
+            } else {
+                // If there's more time remaining than the fade-out duration,
+                // the text should be fully opaque.
+                alpha = 255;
             }
+            // Ensure alpha is clamped to the valid range [0, 255].
+            alpha = Math.max(0, Math.min(255, alpha));
             
             // Different colors and styles based on content and character
             const isPlayer = textObj.voiceType === 'player';
@@ -716,41 +752,42 @@ class Audio {
                 }
             }
             
-            textSize(textSizeValue);
+            p.textSize(textSizeValue);
             
-            // Adjust for camera
+            // NEW LOGIC: Use world coordinates directly.
+            // The camera transform is already applied globally in GameLoop.js
             let screenX = textObj.x;
             let screenY = textObj.y;
-            if (typeof camera !== 'undefined') {
-                screenX = textObj.x - camera.x;
-                screenY = textObj.y - camera.y;
-            }
             
             // Add animation effects
             if (textObj.shakeTimer > 0) {
                 // Shake effect for aggressive text
-                screenX += random(-2, 2);
-                screenY += random(-1, 1);
+                screenX += this.p.random(-2, 2);
+                screenY += this.p.random(-1, 1);
             }
             
             if (textObj.wobbleTimer > 0) {
                 // Wobble effect for confused text
-                const wobble = sin(frameCount * 0.3) * 1.5;
+                const wobble = this.p.sin(this.p.frameCount * 0.3) * 1.5;
                 screenX += wobble;
-                screenY += sin(frameCount * 0.2) * 0.8;
+                screenY += this.p.sin(this.p.frameCount * 0.2) * 0.8;
             }
             
             // Enhanced stroke for better visibility
-            stroke(0, 0, 0, alpha);
-            strokeWeight(strokeWeightValue);
+            p.stroke(0, 0, 0, alpha);
+            p.strokeWeight(strokeWeightValue);
             
             // Fill with calculated color
-            fill(textColor[0], textColor[1], textColor[2], alpha);
+            p.fill(textColor[0], textColor[1], textColor[2], alpha);
             
-            text(textObj.text, screenX, screenY);
+            p.text(textObj.text, screenX, screenY);
         }
         
-        pop();
+        if (this.showBeatIndicator) {
+            drawGlow(p, this.beatX, this.beatY, 40, p.color(255, 255, 100), 0.5);
+        }
+        
+        p.pop();
     }
     
     // ========================================================================
@@ -822,7 +859,7 @@ class Audio {
             death: ["DAMN!", "HELL!", "SHIT!", "FUCK!", "NO!", "ARGH!", "DIE!", "BACK!"]
         };
         const contextLines = lines[context] || lines.start;
-        return contextLines[Math.floor(Math.random() * contextLines.length)];
+        return contextLines[Math.floor(this.p.random() * contextLines.length)];
     }
     
     getGruntLine() {
@@ -837,7 +874,7 @@ class Audio {
             "MY HELMET IS TIGHT!", "WIFI PASSWORD?", "MOMMY?", "SCARED!",
             "IS THAT MY TARGET?", "WHICH BUTTON?", "I'M CONFUSED!"
         ];
-        return lines[Math.floor(Math.random() * lines.length)];
+        return lines[Math.floor(this.p.random() * lines.length)];
     }
     
     getRusherLine() {
@@ -852,7 +889,7 @@ class Audio {
             "TOO FAST!", "CAN'T STOP!", "EXPLOSIVE DIARRHEA!", "REGRET NOTHING!",
             "WITNESS ME!", "LEEROY JENKINS!", "OOPS BOOM!"
         ];
-        return lines[Math.floor(Math.random() * lines.length)];
+        return lines[Math.floor(this.p.random() * lines.length)];
     }
     
     getTankLine() {
@@ -867,7 +904,7 @@ class Audio {
             "SIZE MATTERS!", "PROTEIN POWER!", "HULK SMASH!", "BEAST MODE!",
             "MY GUN IS BIGGER!", "MAXIMUM TESTOSTERONE!"
         ];
-        return lines[Math.floor(Math.random() * lines.length)];
+        return lines[Math.floor(this.p.random() * lines.length)];
     }
     
     getStabberLine() {
@@ -882,7 +919,7 @@ class Audio {
             "NEEDLE THERAPY!", "OOPS SORRY!", "STABBY MCSTABFACE!",
             "HUMAN PINCUSHION!", "LITTLE SCRATCH!", "POINTY DEATH!"
         ];
-        return lines[Math.floor(Math.random() * lines.length)];
+        return lines[Math.floor(this.p.random() * lines.length)];
     }
     
     // Control methods
@@ -902,7 +939,7 @@ class Audio {
     
     // Compatibility methods
     updateSpeechBubbles() { this.updateTexts(); }
-    drawSpeechBubbles() { this.drawTexts(); }
+    drawSpeechBubbles() { this.drawTexts(this.p); }
     
     // ========================================================================
     // UPDATE METHOD - Called every frame

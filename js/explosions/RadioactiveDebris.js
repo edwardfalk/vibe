@@ -1,8 +1,10 @@
+// Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
+
 /**
  * Radioactive debris system for bomb explosion effects
  * Creates long-lasting contamination zones with lower damage than plasma clouds
  */
-class RadioactiveDebris {
+export class RadioactiveDebris {
     constructor(x, y) {
         this.x = x;
         this.y = y;

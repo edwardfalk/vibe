@@ -41,48 +41,56 @@
         <div style="margin-top: 10px; font-size: 12px;">
             <div id="soundStatus">🔇 Click or press M to enable sound</div>
             <div>💥 WASD to move, Mouse to aim & shoot</div>
-            <div>🎵 <strong>RHYTHMIC COMBAT:</strong> Shoot on the beat!</div>
+            <div>💨 Press Space to dash</div>
             <div>⏸️ Press P to pause/resume</div>
             <div>🧪 Press T to toggle test mode (auto-movement & shooting)</div>
         </div>
     </div>
     
+    <div id="spawnInstructions" style="position: absolute; top: 20px; right: 20px; color: #aaa; font-size: 11px; text-align: left; z-index: 101; pointer-events: none; line-height: 1.5;">
+      <div><b>Enemy Spawn Keys</b></div>
+      <div>1: Grunt</div>
+      <div>2: Rusher</div>
+      <div>3: Tank</div>
+      <div>4: Stabber</div>
+    </div>
+    
     <!-- Core configuration and utilities -->
-    <script src="js/config.js"></script>
-    <script src="js/BeatClock.js"></script>
-    <script src="js/Audio.js"></script>
+    <script type="module" src="js/config.js"></script>
+    <script type="module" src="js/BeatClock.js"></script>
+    <script type="module" src="js/Audio.js"></script>
     
     <!-- New modular systems (load before game objects) -->
-    <script src="js/GameState.js"></script>
-    <script src="js/CameraSystem.js"></script>
-    <script src="js/SpawnSystem.js"></script>
-    <script src="js/BackgroundRenderer.js"></script>
-    <script src="js/UIRenderer.js"></script>
-    <script src="js/CollisionSystem.js"></script>
-    <script src="js/TestMode.js"></script>
+    <script type="module" src="js/GameState.js"></script>
+    <script type="module" src="js/CameraSystem.js"></script>
+    <script type="module" src="js/SpawnSystem.js"></script>
+    <script type="module" src="js/BackgroundRenderer.js"></script>
+    <script type="module" src="js/UIRenderer.js"></script>
+    <script type="module" src="js/CollisionSystem.js"></script>
+    <script type="module" src="js/TestMode.js"></script>
     
     <!-- Modular explosion system -->
-    <script src="js/explosions/Explosion.js"></script>
-    <script src="js/explosions/PlasmaCloud.js"></script>
-    <script src="js/explosions/RadioactiveDebris.js"></script>
-    <script src="js/explosions/ExplosionManager.js"></script>
+    <script type="module" src="js/explosions/Explosion.js"></script>
+    <script type="module" src="js/explosions/PlasmaCloud.js"></script>
+    <script type="module" src="js/explosions/RadioactiveDebris.js"></script>
+    <script type="module" src="js/explosions/ExplosionManager.js"></script>
     
     <!-- Game objects and effects -->
-    <script src="js/effects.js"></script>
-    <script src="js/visualEffects.js"></script>
-    <script src="js/player.js"></script>
+    <script type="module" src="js/effects.js"></script>
+    <script type="module" src="js/visualEffects.js"></script>
+    <script type="module" src="js/player.js"></script>
     
     <!-- Modular enemy system (load in dependency order) -->
-    <script src="js/BaseEnemy.js"></script>
-    <script src="js/Grunt.js"></script>
-    <script src="js/Rusher.js"></script>
-    <script src="js/Tank.js"></script>
-    <script src="js/Stabber.js"></script>
-    <script src="js/EnemyFactory.js"></script>
+    <!-- <script type="module" src="js/BaseEnemy.js"></script> -->
+    <script type="module" src="js/Grunt.js"></script>
+    <script type="module" src="js/Rusher.js"></script>
+    <script type="module" src="js/Tank.js"></script>
+    <script type="module" src="js/Stabber.js"></script>
+    <script type="module" src="js/EnemyFactory.js"></script>
     
-    <script src="js/bullet.js"></script>
+    <!-- <script type="module" src="js/bullet.js"></script> -->
     
     <!-- Main game loop (load last) -->
-    <script src="js/GameLoop.js"></script>
+    <script type="module" src="js/GameLoop.js"></script>
 </body>
 </html> 

@@ -2,7 +2,7 @@
  * Basic explosion effects system
  * Handles particle-based explosions for various game events
  */
-class Explosion {
+export class Explosion {
     constructor(x, y, type = 'enemy') {
         this.x = x;
         this.y = y;
@@ -144,7 +144,7 @@ class Explosion {
                 vx: random(vxRange[0], vxRange[1]),
                 vy: random(vyRange[0], vyRange[1]),
                 size: random(sizeRange[0], sizeRange[1]),
-                color: this.getParticleColor(type),
+                color: this.getParticleColor(type, p),
                 life: random(lifeRange[0], lifeRange[1]),
                 maxLife: random(lifeRange[0], lifeRange[1]),
                 rotation: random(TWO_PI),
@@ -201,84 +201,76 @@ class Explosion {
         }
     }
     
-    getParticleColor(type) {
+    getParticleColor(type, p) {
         if (type === 'tank-plasma') {
-            // Cosmic aurora plasma explosion - blue violet and turquoise energy
             const colors = [
-                color(138, 43, 226),  // Blue violet plasma
-                color(64, 224, 208),  // Turquoise energy
-                color(255, 20, 147),  // Deep pink plasma
-                color(255, 255, 255), // White energy core
-                color(0, 191, 255),   // Deep sky blue
-                color(255, 215, 0)    // Gold energy
+                p.color(138, 43, 226),
+                p.color(64, 224, 208),
+                p.color(255, 20, 147),
+                p.color(255, 255, 255),
+                p.color(0, 191, 255),
+                p.color(255, 215, 0)
             ];
             return random(colors);
         } else if (type === 'rusher-explosion') {
-            // Violent rusher explosion - hot colors with white cores
             const colors = [
-                color(255, 20, 147),  // Deep pink (primary)
-                color(255, 69, 0),    // Red orange
-                color(255, 215, 0),   // Gold
-                color(255, 255, 255), // White hot core
-                color(255, 140, 0),   // Dark orange
-                color(255, 182, 193), // Light pink
-                color(255, 255, 0)    // Bright yellow
+                p.color(255, 20, 147),
+                p.color(255, 69, 0),
+                p.color(255, 215, 0),
+                p.color(255, 255, 255),
+                p.color(255, 140, 0),
+                p.color(255, 182, 193),
+                p.color(255, 255, 0)
             ];
             return random(colors);
         } else if (type === 'grunt-death') {
-            // Green energy discharge for grunt deaths
             const colors = [
-                color(50, 205, 50),   // Lime green (primary)
-                color(0, 255, 127),   // Spring green
-                color(34, 139, 34),   // Forest green
-                color(255, 255, 255), // White sparks
-                color(144, 238, 144), // Light green
-                color(0, 255, 0)      // Pure green
+                p.color(50, 205, 50),
+                p.color(0, 255, 127),
+                p.color(34, 139, 34),
+                p.color(255, 255, 255),
+                p.color(144, 238, 144),
+                p.color(0, 255, 0)
             ];
             return random(colors);
         } else if (type === 'stabber-death') {
-            // Golden energy blade discharge for stabber deaths
             const colors = [
-                color(255, 215, 0),   // Gold (primary)
-                color(255, 255, 0),   // Yellow
-                color(255, 140, 0),   // Dark orange
-                color(255, 255, 255), // White energy
-                color(218, 165, 32),  // Goldenrod
-                color(255, 248, 220)  // Cornsilk
+                p.color(255, 215, 0),
+                p.color(255, 255, 0),
+                p.color(255, 140, 0),
+                p.color(255, 255, 255),
+                p.color(218, 165, 32),
+                p.color(255, 248, 220)
             ];
             return random(colors);
         } else if (type === 'tank-death') {
-            // Blue violet energy discharge for tank deaths
             const colors = [
-                color(138, 43, 226),  // Blue violet (primary)
-                color(123, 104, 238), // Medium slate blue
-                color(72, 61, 139),   // Dark slate blue
-                color(255, 255, 255), // White energy
-                color(0, 191, 255),   // Deep sky blue
-                color(147, 112, 219)  // Medium purple
+                p.color(138, 43, 226),
+                p.color(123, 104, 238),
+                p.color(72, 61, 139),
+                p.color(255, 255, 255),
+                p.color(0, 191, 255),
+                p.color(147, 112, 219)
             ];
             return random(colors);
         } else if (type.includes('bullet-kill') || type.includes('plasma-kill')) {
-            // Type-specific kill effects
             if (type.includes('grunt')) {
-                return this.getParticleColor('grunt-death');
+                return this.getParticleColor('grunt-death', p);
             } else if (type.includes('stabber')) {
-                return this.getParticleColor('stabber-death');
+                return this.getParticleColor('stabber-death', p);
             } else if (type.includes('tank')) {
-                return this.getParticleColor('tank-death');
+                return this.getParticleColor('tank-death', p);
             } else if (type.includes('rusher')) {
-                return this.getParticleColor('rusher-explosion');
+                return this.getParticleColor('rusher-explosion', p);
             }
         }
-        
-        // Default explosion colors - cosmic aurora theme
         const colors = [
-            color(255, 69, 0),    // Red orange
-            color(255, 140, 0),   // Dark orange
-            color(255, 215, 0),   // Gold
-            color(255, 255, 255), // White
-            color(255, 20, 147),  // Deep pink
-            color(138, 43, 226)   // Blue violet
+            p.color(255, 69, 0),
+            p.color(255, 140, 0),
+            p.color(255, 215, 0),
+            p.color(255, 255, 255),
+            p.color(255, 20, 147),
+            p.color(138, 43, 226)
         ];
         return random(colors);
     }
@@ -357,78 +349,78 @@ class Explosion {
         }
     }
     
-    draw() {
-        push();
+    draw(p) {
+        p.push();
         
         // Draw shockwave
         if (this.hasShockwave && this.shockwaveRadius > 0) {
-            stroke(255, 255, 255, 100 * (1 - this.shockwaveRadius / this.maxShockwaveRadius));
-            strokeWeight(3);
-            noFill();
-            ellipse(this.x, this.y, this.shockwaveRadius * 2);
+            p.stroke(255, 255, 255, 100 * (1 - this.shockwaveRadius / this.maxShockwaveRadius));
+            p.strokeWeight(3);
+            p.noFill();
+            p.ellipse(this.x, this.y, this.shockwaveRadius * 2);
         }
         
         // Draw energy rings
         for (const s of this.sparkles) {
             if (s.type === 'energyRing') {
                 const alpha = (s.life / s.maxLife) * s.intensity * 255;
-                stroke(138, 43, 226, alpha); // Blue violet energy
-                strokeWeight(2 + s.ringIndex);
-                noFill();
-                ellipse(s.x, s.y, s.radius * 2);
+                p.stroke(138, 43, 226, alpha); // Blue violet energy
+                p.strokeWeight(2 + s.ringIndex);
+                p.noFill();
+                p.ellipse(s.x, s.y, s.radius * 2);
             }
         }
         
         // Draw particles
-        for (const p of this.particles) {
-            const alpha = (p.life / p.maxLife) * 255;
+        for (const particle of this.particles) {
+            const alpha = (particle.life / particle.maxLife) * 255;
             
             // Draw glow effect
-            if (p.glow > 0) {
-                fill(red(p.color), green(p.color), blue(p.color), alpha * p.glow * 0.3);
-                noStroke();
-                ellipse(p.x, p.y, p.size * 2);
+            if (particle.glow > 0) {
+                p.fill(p.red(particle.color), p.green(particle.color), p.blue(particle.color), alpha * particle.glow * 0.3);
+                p.noStroke();
+                p.ellipse(particle.x, particle.y, particle.size * 2);
             }
             
             // Draw main particle
-            fill(red(p.color), green(p.color), blue(p.color), alpha);
-            noStroke();
+            p.fill(p.red(particle.color), p.green(particle.color), p.blue(particle.color), alpha);
+            p.noStroke();
             
-            if (p.isArmor) {
+            if (particle.isArmor) {
                 // Draw armor fragments as rectangles
-                push();
-                translate(p.x, p.y);
-                rotate(p.rotation);
-                rect(-p.size/2, -p.size/2, p.size, p.size);
-                pop();
-            } else if (p.sparkle) {
+                p.push();
+                p.translate(particle.x, particle.y);
+                p.rotate(particle.rotation);
+                p.rect(-particle.size/2, -particle.size/2, particle.size, particle.size);
+                p.pop();
+            } else if (particle.sparkle) {
                 // Draw sparkle particles as stars
-                push();
-                translate(p.x, p.y);
-                rotate(p.rotation);
+                p.push();
+                p.translate(particle.x, particle.y);
+                p.rotate(particle.rotation);
                 for (let i = 0; i < 4; i++) {
-                    rotate(PI/2);
-                    line(0, 0, p.size, 0);
+                    p.rotate(PI/2);
+                    p.line(0, 0, particle.size, 0);
                 }
-                pop();
+                p.pop();
             } else {
                 // Draw normal particles as circles
-                ellipse(p.x, p.y, p.size);
+                p.ellipse(particle.x, particle.y, particle.size);
             }
             
             // Draw particle trail
-            if (p.trail.length > 1) {
-                stroke(red(p.color), green(p.color), blue(p.color), alpha * 0.5);
-                strokeWeight(1);
-                noFill();
-                beginShape();
-                for (const t of p.trail) {
-                    vertex(t.x, t.y);
+            if (particle.trail.length > 1) {
+                p.stroke(p.red(particle.color), p.green(particle.color), p.blue(particle.color), alpha * 0.5);
+                p.strokeWeight(1);
+                p.noFill();
+                p.beginShape();
+                for (const t of particle.trail) {
+                    p.vertex(t.x, t.y);
                 }
-                endShape();
+                p.endShape();
             }
         }
         
-        pop();
+        p.pop();
     }
 } 

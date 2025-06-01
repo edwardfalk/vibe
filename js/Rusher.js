@@ -1,9 +1,13 @@
+import { BaseEnemy } from './BaseEnemy.js';
+import { floor, random, sqrt, sin, cos } from './mathUtils.js';
+import { CONFIG } from './config.js';
+
 /**
  * Rusher class - Suicide bomber mechanics
  * Two-stage system: battle cry at distance, explosion when close, enhanced explosion effects
  */
 class Rusher extends BaseEnemy {
-    constructor(x, y) {
+    constructor(x, y, p) {
         const config = {
             size: 22,
             health: 1,
@@ -11,7 +15,8 @@ class Rusher extends BaseEnemy {
             color: color(255, 20, 147) // Deep pink - aggressive
         };
         
-        super(x, y, 'rusher', config);
+        super(x, y, 'rusher', CONFIG.ENEMIES.RUSHER, p);
+        this.p = p;
         
         // Rusher explosion system
         this.exploding = false;
@@ -87,7 +92,7 @@ class Rusher extends BaseEnemy {
                                 "INCOMING!", "BOOM!", "KAMIKAZE!", "WHEEE!", "YOLO!", "CAN'T STOP!",
                                 "EXPLOSIVE DIARRHEA!", "LEEROY JENKINS!", "KAMIKAZE PIZZA PARTY!"
                             ];
-                            const battleCry = battleCries[Math.floor(Math.random() * battleCries.length)];
+                            const battleCry = battleCries[floor(random() * battleCries.length)];
                             window.audio.speak(this, battleCry, 'rusher');
                             
                             // Play rusher charge sound
@@ -114,14 +119,13 @@ class Rusher extends BaseEnemy {
      */
     triggerAmbientSpeech() {
         if (window.audio && this.speechCooldown <= 0) {
-            // Rusher ambient speech on every beat with 15% chance
             if (window.beatClock && random() < 0.15) {
                 const rusherLines = [
                     "KAMIKAZE TIME!", "SUICIDE RUN!", "INCOMING!", "BOOM!",
                     "EXPLOSIVE DIARRHEA!", "LEEROY JENKINS!", "WHEEE!",
                     "CAN'T STOP!", "YOLO!", "KAMIKAZE PIZZA PARTY!"
                 ];
-                const randomLine = rusherLines[Math.floor(Math.random() * rusherLines.length)];
+                const randomLine = rusherLines[floor(random() * rusherLines.length)];
                 window.audio.speak(this, randomLine, 'rusher');
                 this.speechCooldown = this.maxSpeechCooldown;
             }
@@ -133,10 +137,10 @@ class Rusher extends BaseEnemy {
      */
     getGlowColor(isSpeaking) {
         if (this.exploding) {
-            const pulse = sin(frameCount * 0.5) * 0.5 + 0.5;
-            return color(255, 50 + pulse * 100, 50 + pulse * 100);
+            const pulse = this.p.sin(this.p.frameCount * 0.5) * 0.5 + 0.5;
+            return this.p.color(255, 50 + pulse * 100, 50 + pulse * 100);
         }
-        return isSpeaking ? color(255, 150, 200) : color(255, 100, 150);
+        return isSpeaking ? this.p.color(255, 150, 200) : this.p.color(255, 100, 150);
     }
     
     /**
@@ -219,7 +223,7 @@ class Rusher extends BaseEnemy {
         fill(255, 255, 255);
         textAlign(CENTER, CENTER);
         textSize(12);
-        const countdown = Math.ceil((explosionTime - this.explosionTimer) / 60);
+        const countdown = ceil((explosionTime - this.explosionTimer) / 60);
         text(countdown, this.x, this.y - this.size - 20);
         
         // Add "SHOT!" text if triggered by shooting
@@ -254,4 +258,6 @@ class Rusher extends BaseEnemy {
     createBullet() {
         return null;
     }
-} 
+}
+
+export { Rusher }; 

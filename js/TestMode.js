@@ -2,7 +2,12 @@
  * TestMode.js - Handles automated testing including player movement patterns, auto-shooting, and test enemy spawning
  */
 
-class TestMode {
+// Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
+
+import { Bullet } from './bullet.js';
+import { sin, cos, min, floor, random, atan2 } from './mathUtils.js';
+
+export class TestMode {
     constructor() {
         // Test mode state
         this.enabled = false;
@@ -128,7 +133,7 @@ class TestMode {
         const centerY = height / 2;
         const radius = Math.min(width, height) * 0.2;
         window.player.x = centerX + radius * cos(phase * 2);
-        window.player.y = centerY + radius * sin(phase * 2);
+        window.player.y = centerY + radius * cos(phase * 2);
     }
     
     // Update auto-shooting
@@ -198,7 +203,7 @@ class TestMode {
         
         // Randomly choose enemy type for testing
         const enemyTypes = ['grunt', 'stabber', 'rusher', 'tank'];
-        const randomType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+        const randomType = enemyTypes[floor(random() * enemyTypes.length)];
         
         if (window.enemies && window.spawnSystem && window.spawnSystem.enemyFactory) {
             const enemy = window.spawnSystem.enemyFactory.createEnemy(testX, testY, randomType);

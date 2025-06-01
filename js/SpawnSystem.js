@@ -2,7 +2,10 @@
  * SpawnSystem.js - Handles enemy spawning logic and timing
  */
 
-class SpawnSystem {
+import { EnemyFactory } from './EnemyFactory.js';
+import { max, min, floor, ceil, round, random, sin, cos, atan2, sqrt } from './mathUtils.js';
+
+export class SpawnSystem {
     constructor() {
         // Spawning timers
         this.enemySpawnTimer = 0;
@@ -25,7 +28,7 @@ class SpawnSystem {
         this.enemySpawnTimer++;
         
         // Calculate current spawn rate based on level
-        const currentSpawnRate = Math.max(
+        const currentSpawnRate = max(
             this.minSpawnRate,
             this.baseSpawnRate - (window.gameState.level - 1) * this.spawnRateDecreasePerLevel
         );
@@ -39,7 +42,7 @@ class SpawnSystem {
             const currentEnemyCount = window.enemies ? window.enemies.length : 0;
             
             if (currentEnemyCount < maxEnemies) {
-                const enemiesToSpawn = Math.min(2, maxEnemies - currentEnemyCount);
+                const enemiesToSpawn = min(2, maxEnemies - currentEnemyCount);
                 this.spawnEnemies(enemiesToSpawn);
             }
         }
@@ -47,26 +50,19 @@ class SpawnSystem {
     
     // Get maximum enemies allowed for current level
     getMaxEnemiesForLevel(level) {
-        return Math.min(2 + Math.floor(level / 2), 6); // Start with 2, max 6
+        return min(2 + floor(level / 2), 6); // Start with 2, max 6
     }
     
     // Spawn enemies based on level progression
     spawnEnemies(count) {
         if (!window.enemies) window.enemies = [];
-        
         const level = window.gameState ? window.gameState.level : 1;
-        
+        const p = window.player && window.player.p;
         for (let i = 0; i < count; i++) {
-            // Determine enemy type based on level progression
             const enemyType = this.getEnemyTypeForLevel(level);
-            
-            // Find spawn position away from player
             const spawnPos = this.findSpawnPosition();
-            
-            // Create enemy
-            const enemy = this.enemyFactory.createEnemy(spawnPos.x, spawnPos.y, enemyType);
+            const enemy = this.enemyFactory.createEnemy(spawnPos.x, spawnPos.y, enemyType, p);
             window.enemies.push(enemy);
-            
             console.log(`👾 Spawned ${enemyType} at level ${level} (${window.enemies.length}/${this.getMaxEnemiesForLevel(level)} enemies)`);
         }
     }
@@ -109,40 +105,39 @@ class SpawnSystem {
             weightedTypes = ['grunt', 'stabber', 'rusher', 'tank'];
         }
         
-        return weightedTypes[Math.floor(Math.random() * weightedTypes.length)];
+        return weightedTypes[floor(random() * weightedTypes.length)];
     }
     
     // Find a good spawn position away from player
     findSpawnPosition() {
         const player = window.player;
         if (!player) {
-            return { x: random(100, width - 100), y: random(100, height - 100) };
+            // fallback: use 800x600 as default if no player (should never happen in normal play)
+            return { x: random(100, 700), y: random(100, 500) };
         }
-        
+        const p = player.p;
         let attempts = 0;
         let spawnX, spawnY;
-        
         do {
             // Spawn OFF-SCREEN at edges, then enemies move toward player
             const margin = 50; // Distance beyond screen edge
-            const side = Math.floor(random(4)); // 0=top, 1=right, 2=bottom, 3=left
-            
+            const side = floor(random(4)); // 0=top, 1=right, 2=bottom, 3=left
             switch(side) {
                 case 0: // Top
-                    spawnX = random(0, width);
+                    spawnX = random(0, p.width);
                     spawnY = -margin;
                     break;
                 case 1: // Right
-                    spawnX = width + margin;
-                    spawnY = random(0, height);
+                    spawnX = p.width + margin;
+                    spawnY = random(0, p.height);
                     break;
                 case 2: // Bottom
-                    spawnX = random(0, width);
-                    spawnY = height + margin;
+                    spawnX = random(0, p.width);
+                    spawnY = p.height + margin;
                     break;
                 case 3: // Left
                     spawnX = -margin;
-                    spawnY = random(0, height);
+                    spawnY = random(0, p.height);
                     break;
             }
             
@@ -179,18 +174,18 @@ class SpawnSystem {
             console.warn('⚠️ Could not find good spawn position, using fallback');
             // Spawn far off-screen in random direction
             const angle = random(0, Math.PI * 2);
-            spawnX = player.x + Math.cos(angle) * 600;
-            spawnY = player.y + Math.sin(angle) * 600;
+            spawnX = player.x + cos(angle) * 600;
+            spawnY = player.y + sin(angle) * 600;
         }
         
-        console.log(`📍 Spawning enemy OFF-SCREEN at (${Math.round(spawnX)}, ${Math.round(spawnY)}) - distance from player: ${Math.round(this.getDistance(spawnX, spawnY, player.x, player.y))}px`);
+        console.log(`📍 Spawning enemy OFF-SCREEN at (${round(spawnX)}, ${round(spawnY)}) - distance from player: ${round(this.getDistance(spawnX, spawnY, player.x, player.y))}px`);
         
         return { x: spawnX, y: spawnY };
     }
     
     // Helper function to calculate distance
     getDistance(x1, y1, x2, y2) {
-        return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        return sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
     }
     
     // Reset spawning system

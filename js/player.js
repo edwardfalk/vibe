@@ -1,8 +1,18 @@
-class Player {
-    constructor(x, y) {
+// Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
+// Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
+import { CONFIG } from './config.js';
+import { Bullet } from './bullet.js';
+import { max, atan2 } from './mathUtils.js';
+
+const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
+const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
+
+export class Player {
+    constructor(p, x, y) {
+        this.p = p;
         this.x = x;
         this.y = y;
-        this.size = 24;
+        this.size = 32;
         this.health = 100;
         this.maxHealth = 100;
         this.speed = 3;
@@ -14,7 +24,7 @@ class Player {
         
         // Shooting
         this.aimAngle = 0;
-        this.shootCooldown = 0;
+        this.shootCooldownMs = 0;
         this.muzzleFlash = 0;
         this.queuedShot = null;
         this.wantsToContinueShooting = false;
@@ -26,41 +36,46 @@ class Player {
         // Dash ability
         this.isDashing = false;
         this.dashVelocity = { x: 0, y: 0 };
-        this.dashTimer = 0;
-        this.maxDashTime = 12; // frames
+        this.dashTimerMs = 0; // ms
+        this.maxDashTimeMs = 300; // ms (was 12 frames)
         this.dashSpeed = 8;
-        this.dashCooldown = 0;
-        this.maxDashCooldown = 180; // 3 seconds at 60fps
+        this.dashCooldownMs = 0; // ms
+        this.maxDashCooldownMs = 3000; // ms (was 180 frames)
         
         // Visual colors with better contrast
-        this.vestColor = color(70, 130, 180);    // Steel blue vest
-        this.pantsColor = color(25, 25, 112);    // Midnight blue pants
-        this.skinColor = color(255, 219, 172);   // Peach skin
-        this.gunColor = color(169, 169, 169);    // Dark gray gun
-        this.bandanaColor = color(139, 69, 19);  // Brown bandana
+        this.vestColor = this.p.color(70, 130, 180);    // Steel blue vest
+        this.pantsColor = this.p.color(25, 25, 112);    // Midnight blue pants
+        this.skinColor = this.p.color(255, 219, 172);   // Peach skin
+        this.gunColor = this.p.color(169, 169, 169);    // Dark gray gun
+        this.bandanaColor = this.p.color(139, 69, 19);  // Brown bandana
 
         // Speech is now handled by unified Audio system
     }
     
-    update() {
+    update(deltaTimeMs) {
+        // Log the current game state for debugging
+        if (window.gameState && window.gameState.gameState) {
+            console.log('[STATE] gameState:', window.gameState.gameState);
+        }
+        
         // Handle movement
         this.velocity.x = 0;
         this.velocity.y = 0;
         this.isMoving = false;
         
-        if (keyIsDown(87)) { // W
+        if (this.p.keyIsDown(87)) { // W
             this.velocity.y = -this.speed;
             this.isMoving = true;
         }
-        if (keyIsDown(83)) { // S
+        if (this.p.keyIsDown(83)) { // S
             this.velocity.y = this.speed;
             this.isMoving = true;
         }
-        if (keyIsDown(65)) { // A
+        if (this.p.keyIsDown(65)) { // A
             this.velocity.x = -this.speed;
             this.isMoving = true;
         }
-        if (keyIsDown(68)) { // D
+        if (this.p.keyIsDown(68)) { // D
             this.velocity.x = this.speed;
             this.isMoving = true;
         }
@@ -73,44 +88,45 @@ class Player {
         
         // Apply movement (normal or dash)
         if (this.isDashing) {
-            // Apply dash movement
-            this.x += this.dashVelocity.x;
-            this.y += this.dashVelocity.y;
+            // Apply dash movement scaled by elapsed time (same baseline as walking)
+            const dt = deltaTimeMs / 16.6667; // 60 FPS baseline
+            this.x += this.dashVelocity.x * dt;
+            this.y += this.dashVelocity.y * dt;
         } else {
             // Apply normal movement
-            this.x += this.velocity.x;
-            this.y += this.velocity.y;
+    const dt = deltaTimeMs / 16.6667;   // 60 fps baseline
+    this.x += this.velocity.x * dt;
+    this.y += this.velocity.y * dt;
         }
         
-        // FIXED: Improved movement bounds using world coordinates instead of viewport bounds
-        // Allow movement in full world space, not just viewport
+        // Use world bounds consistent with CameraSystem.js and bullet.js
         const halfSize = this.size / 2;
-        const margin = 50; // Reduced margin for cleaner edge behavior
-        
-        // Define world bounds (larger than viewport to allow off-screen movement)
-        const WORLD_WIDTH = 1280;
-        const WORLD_HEIGHT = 720;
-        
-        // Get world bounds - use actual world dimensions, not camera viewport bounds
+        const margin = 5;
         const worldBounds = {
             left: -WORLD_WIDTH/2 + margin,
             right: WORLD_WIDTH/2 - margin,
             top: -WORLD_HEIGHT/2 + margin,
             bottom: WORLD_HEIGHT/2 - margin
         };
+        this.x = this.p.constrain(this.x, worldBounds.left + halfSize, worldBounds.right - halfSize);
+        this.y = this.p.constrain(this.y, worldBounds.top + halfSize, worldBounds.bottom - halfSize);
         
-        // Constrain to world bounds instead of viewport bounds
-        this.x = constrain(this.x, worldBounds.left + halfSize, worldBounds.right - halfSize);
-        this.y = constrain(this.y, worldBounds.top + halfSize, worldBounds.bottom - halfSize);
-        
-        // FIXED: Update aim angle using proper coordinate conversion
-        // Convert mouse screen coordinates to world coordinates for accurate aiming
-        if (window.cameraSystem) {
-            const worldMouse = window.cameraSystem.screenToWorld(mouseX, mouseY);
+        // Use arrow keys for aim if any are pressed
+        if (window.arrowUpPressed || window.arrowDownPressed || window.arrowLeftPressed || window.arrowRightPressed) {
+            let dx = 0, dy = 0;
+            if (window.arrowUpPressed) dy -= 1;
+            if (window.arrowDownPressed) dy += 1;
+            if (window.arrowLeftPressed) dx -= 1;
+            if (window.arrowRightPressed) dx += 1;
+            if (dx !== 0 || dy !== 0) {
+                this.aimAngle = atan2(dy, dx);
+                console.log('[AIM] Arrow keys: dx=' + dx + ', dy=' + dy + ', angle=' + (this.aimAngle * 180 / Math.PI).toFixed(1));
+            }
+        } else if (window.cameraSystem) {
+            const worldMouse = window.cameraSystem.screenToWorld(this.p.mouseX, this.p.mouseY);
             this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
         } else {
-            // Fallback for when camera system not available
-            this.aimAngle = atan2(mouseY - this.y, mouseX - this.x);
+            this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
         }
         
         // Update animation
@@ -120,21 +136,22 @@ class Player {
         
         // Handle dash
         if (this.isDashing) {
-            this.dashTimer++;
-            if (this.dashTimer >= this.maxDashTime) {
+            this.dashTimerMs += deltaTimeMs;
+            if (this.dashTimerMs >= this.maxDashTimeMs) {
                 this.isDashing = false;
-                this.dashTimer = 0;
+                this.dashTimerMs = 0;
                 console.log('💨 Dash completed!');
             }
-            // Don't apply normal movement during dash
-            return;
+            // Skip walking animation, BUT still update combat timers below
         }
         
         // Handle queued shots
         if (this.queuedShot) {
-            this.queuedShot.timer--;
+            if (deltaTimeMs > 0) {
+                this.queuedShot.timerMs -= deltaTimeMs;
+            }
             
-            if (this.queuedShot.timer <= 0) {
+            if (this.queuedShot.timerMs <= 0) {
                 // Time to fire the queued shot
                 const bullet = this.fireBullet();
                 if (bullet && window.playerBullets) {
@@ -163,20 +180,26 @@ class Player {
         this.wantsToContinueShooting = false;
         
         // If mouse is not pressed and player was shooting, reset shooting state  
-        if (wasShooting && !mouseIsPressed) {
+        if (wasShooting && !this.p.mouseIsPressed) {
             this.isCurrentlyShooting = false;
             this.firstShotFired = false;
         }
         
         // Update timers - ENSURE cooldown always decrements
-        if (this.shootCooldown > 0) {
-            this.shootCooldown--;
+        if (this.shootCooldownMs > 0) {
+            if (deltaTimeMs > 0) {
+                this.shootCooldownMs -= deltaTimeMs;
+                this.shootCooldownMs = max(0, this.shootCooldownMs);
+            }
         }
         if (this.muzzleFlash > 0) this.muzzleFlash--;
-        if (this.dashCooldown > 0) this.dashCooldown--;
+        if (this.dashCooldownMs > 0) {
+            this.dashCooldownMs -= deltaTimeMs;
+            this.dashCooldownMs = max(0, this.dashCooldownMs);
+        }
     }
     
-    draw() {
+    draw(p) {
         // Motion trail disabled for stability
         
         // Draw enhanced glow effect
@@ -184,63 +207,70 @@ class Player {
             try {
                 const healthPercent = this.health / this.maxHealth;
                 if (healthPercent > 0.7) {
-                    drawGlow(this.x, this.y, this.size * 2, color(100, 200, 255), 0.6);
+                    drawGlow(p, this.x, this.y, this.size * 2, p.color(100, 200, 255), 0.6);
                 } else if (healthPercent < 0.3) {
                     // Pulsing red glow when low health
-                    const pulse = sin(frameCount * 0.3) * 0.5 + 0.5;
-                    drawGlow(this.x, this.y, this.size * 2.5, color(255, 100, 100), pulse * 0.8);
+                    const pulse = p.sin(p.frameCount * 0.3) * 0.5 + 0.5;
+                    drawGlow(p, this.x, this.y, this.size * 2.5, p.color(255, 100, 100), pulse * 0.8);
                 }
             } catch (error) {
                 console.log('⚠️ Player glow error:', error);
             }
         }
         
-        push();
-        translate(this.x, this.y);
-        rotate(this.aimAngle);
+        p.push();
+        p.translate(this.x, this.y);
+        p.rotate(this.aimAngle);
         
         const s = this.size;
-        const walkBob = this.isMoving ? sin(this.animFrame) * 2 : 0;
+        const walkBob = this.isMoving ? p.sin(this.animFrame) * 2 : 0;
         
         // Body bob
-        translate(0, walkBob);
+        p.translate(0, walkBob);
         
-        // Draw legs (behind body)
-        fill(this.pantsColor);
-        noStroke();
+        // Draw legs (behind body) - ensure they're always visible
+        p.fill(this.pantsColor);
+        p.noStroke();
+        
+        // Reset any potential rendering state issues that might hide legs
+        p.blendMode(p.BLEND);
         
         // Animated leg positions for walking
-        const legOffset = this.isMoving ? sin(this.animFrame) * 3 : 0;
-        rect(-s*0.25, s*0.1 - legOffset, s*0.15, s*0.35); // Left leg
-        rect(s*0.1, s*0.1 + legOffset, s*0.15, s*0.35);   // Right leg
+        const legOffset = this.isMoving ? p.sin(this.animFrame) * 3 : 0;
+        // Ensure leg dimensions are always positive and visible
+        const legWidth = max(s*0.15, 2);  // Minimum width of 2 pixels
+        const legHeight = max(s*0.35, 8); // Minimum height of 8 pixels
+        
+        p.rect(-s*0.25, s*0.1 - legOffset, legWidth, legHeight); // Left leg
+        p.rect(s*0.1, s*0.1 + legOffset, legWidth, legHeight);   // Right leg
         
         // Draw main body with better visibility
-        fill(this.vestColor);
-        stroke(255, 255, 255, 100); // Light outline for clarity
-        strokeWeight(1);
-        rect(-s*0.3, -s*0.1, s*0.6, s*0.4);
-        noStroke();
+        p.fill(this.vestColor);
+        p.stroke(255, 255, 255, 100); // Light outline for clarity
+        p.strokeWeight(1);
+        p.rect(-s*0.3, -s*0.1, s*0.6, s*0.4);
+        p.noStroke();
         
         // Draw arms
-        fill(this.skinColor);
+        p.fill(this.skinColor);
         
         // Left arm (animated)
-        push();
-        translate(-s*0.25, 0);
-        rotate(this.isMoving ? sin(this.animFrame) * 0.3 : 0);
-        rect(-s*0.06, 0, s*0.12, s*0.25);
-        pop();
+        p.push();
+        p.translate(-s*0.25, 0);
+        p.rotate(this.isMoving ? p.sin(this.animFrame) * 0.3 : 0);
+        p.rect(-s*0.06, 0, s*0.12, s*0.25);
+        p.pop();
         
         // Right arm (gun arm - steady)
-        rect(s*0.2, -s*0.02, s*0.12, s*0.25);
+        p.rect(s*0.2, -s*0.02, s*0.12, s*0.25);
         
         // Draw gun
-        fill(this.gunColor);
-        rect(s*0.25, -s*0.04, s*0.4, s*0.08);
+        p.fill(this.gunColor);
+        p.rect(s*0.25, -s*0.04, s*0.4, s*0.08);
         
         // Gun barrel
-        fill(60);
-        rect(s*0.65, -s*0.025, s*0.12, s*0.05);
+        p.fill(60);
+        p.rect(s*0.65, -s*0.025, s*0.12, s*0.05);
         
         // Enhanced muzzle flash with glow
         if (this.muzzleFlash > 0) {
@@ -248,81 +278,81 @@ class Player {
             const flashIntensity = this.muzzleFlash / 10;
             
             // Outer glow
-            push();
-            blendMode(ADD);
-            fill(255, 255, 100, 100 * flashIntensity);
-            noStroke();
-            ellipse(s*0.8, 0, flashSize * 2);
+            p.push();
+            p.blendMode(p.ADD);
+            p.fill(255, 255, 100, 100 * flashIntensity);
+            p.noStroke();
+            p.ellipse(s*0.8, 0, flashSize * 2);
             
             // Inner flash
-            fill(255, 255, 200, 200 * flashIntensity);
-            ellipse(s*0.8, 0, flashSize);
+            p.fill(255, 255, 200, 200 * flashIntensity);
+            p.ellipse(s*0.8, 0, flashSize);
             
             // Core
-            fill(255, 255, 255, 255 * flashIntensity);
-            ellipse(s*0.8, 0, flashSize * 0.4);
-            blendMode(BLEND);
-            pop();
+            p.fill(255, 255, 255, 255 * flashIntensity);
+            p.ellipse(s*0.8, 0, flashSize * 0.4);
+            p.blendMode(p.BLEND);
+            p.pop();
         }
         
         // Draw head
-        fill(this.skinColor);
-        ellipse(0, -s*0.25, s*0.3);
+        p.fill(this.skinColor);
+        p.ellipse(0, -s*0.25, s*0.3);
         
         // Draw bandana
-        fill(this.bandanaColor);
-        rect(-s*0.15, -s*0.35, s*0.3, s*0.08);
+        p.fill(this.bandanaColor);
+        p.rect(-s*0.15, -s*0.35, s*0.3, s*0.08);
         
         // Bandana tails
-        rect(-s*0.12, -s*0.27, s*0.04, s*0.15);
-        rect(s*0.08, -s*0.25, s*0.04, s*0.12);
+        p.rect(-s*0.12, -s*0.27, s*0.04, s*0.15);
+        p.rect(s*0.08, -s*0.25, s*0.04, s*0.12);
         
         // Add cosmic glow effect when healthy
         if (this.health > this.maxHealth * 0.7) {
-            fill(64, 224, 208, 40); // Turquoise glow
-            noStroke();
-            ellipse(0, 0, s * 1.8);
+            p.fill(64, 224, 208, 40); // Turquoise glow
+            p.noStroke();
+            p.ellipse(0, 0, s * 1.8);
         }
         
         // Add warning glow when low health
         if (this.health < this.maxHealth * 0.3) {
-            const pulse = sin(frameCount * 0.3) * 0.5 + 0.5;
-            fill(255, 20, 147, pulse * 60); // Deep pink warning
-            noStroke();
-            ellipse(0, 0, s * 2.2);
+            const pulse = p.sin(p.frameCount * 0.3) * 0.5 + 0.5;
+            p.fill(255, 20, 147, pulse * 60); // Deep pink warning
+            p.noStroke();
+            p.ellipse(0, 0, s * 2.2);
         }
         
         // Enhanced dash effect
         if (this.isDashing) {
-            const dashProgress = this.dashTimer / this.maxDashTime;
+            const dashProgress = this.dashTimerMs / this.maxDashTimeMs;
             const dashIntensity = 1 - dashProgress; // Fade out over dash duration
             
             // Multiple layered dash trail effects
             // Outer glow
-            fill(100, 200, 255, dashIntensity * 80); // Cyan outer glow
-            noStroke();
-            ellipse(0, 0, s * 4 * dashIntensity);
+            p.fill(100, 200, 255, dashIntensity * 80); // Cyan outer glow
+            p.noStroke();
+            p.ellipse(0, 0, s * 4 * dashIntensity);
             
             // Middle trail
-            fill(150, 220, 255, dashIntensity * 120); // Brighter cyan
-            ellipse(0, 0, s * 2.5 * dashIntensity);
+            p.fill(150, 220, 255, dashIntensity * 120); // Brighter cyan
+            p.ellipse(0, 0, s * 2.5 * dashIntensity);
             
             // Inner core
-            fill(200, 240, 255, dashIntensity * 160); // Almost white core
-            ellipse(0, 0, s * 1.5 * dashIntensity);
+            p.fill(200, 240, 255, dashIntensity * 160); // Almost white core
+            p.ellipse(0, 0, s * 1.5 * dashIntensity);
             
             // Enhanced speed lines with multiple layers
             for (let layer = 0; layer < 3; layer++) {
-                stroke(255, 255, 255, dashIntensity * (120 - layer * 30));
-                strokeWeight(3 - layer);
+                p.stroke(255, 255, 255, dashIntensity * (120 - layer * 30));
+                p.strokeWeight(3 - layer);
                 for (let i = 0; i < 8; i++) {
                     const lineLength = s * (1.5 + i * 0.4 + layer * 0.3);
-                    const lineAngle = atan2(-this.dashVelocity.y, -this.dashVelocity.x) + random(-0.3, 0.3);
-                    const startX = cos(lineAngle) * lineLength * (0.3 + layer * 0.2);
-                    const startY = sin(lineAngle) * lineLength * (0.3 + layer * 0.2);
-                    const endX = cos(lineAngle) * lineLength;
-                    const endY = sin(lineAngle) * lineLength;
-                    line(startX, startY, endX, endY);
+                    const lineAngle = atan2(-this.dashVelocity.y, -this.dashVelocity.x) + p.random(-0.3, 0.3);
+                    const startX = p.cos(lineAngle) * lineLength * (0.3 + layer * 0.2);
+                    const startY = p.sin(lineAngle) * lineLength * (0.3 + layer * 0.2);
+                    const endX = p.cos(lineAngle) * lineLength;
+                    const endY = p.sin(lineAngle) * lineLength;
+                    p.line(startX, startY, endX, endY);
                 }
             }
             
@@ -330,12 +360,12 @@ class Player {
             for (let i = 0; i < 12; i++) {
                 const particleAngle = (i / 12) * TWO_PI;
                 const particleDistance = s * 2 * dashIntensity;
-                const particleX = cos(particleAngle) * particleDistance;
-                const particleY = sin(particleAngle) * particleDistance;
+                const particleX = p.cos(particleAngle) * particleDistance;
+                const particleY = p.sin(particleAngle) * particleDistance;
                 
-                fill(100 + i * 10, 200, 255, dashIntensity * 100);
-                noStroke();
-                ellipse(particleX, particleY, 4 * dashIntensity, 4 * dashIntensity);
+                p.fill(100 + i * 10, 200, 255, dashIntensity * 100);
+                p.noStroke();
+                p.ellipse(particleX, particleY, 4 * dashIntensity, 4 * dashIntensity);
             }
             
             // Energy distortion rings
@@ -343,43 +373,43 @@ class Player {
                 const ringSize = s * (2 + ring * 0.8) * dashIntensity;
                 const ringAlpha = dashIntensity * (60 - ring * 15);
                 
-                stroke(150, 220, 255, ringAlpha);
-                strokeWeight(2);
-                noFill();
-                ellipse(0, 0, ringSize, ringSize);
+                p.stroke(150, 220, 255, ringAlpha);
+                p.strokeWeight(2);
+                p.noFill();
+                p.ellipse(0, 0, ringSize, ringSize);
             }
             
-            noStroke();
+            p.noStroke();
         }
         
         // Health bar above player (drawn relative to player)
-        this.drawHealthBar();
+        this.drawHealthBar(p);
         
-        pop();
+        p.pop();
         
         // Speech is now handled by the unified Audio system
     }
     
-    drawHealthBar() {
+    drawHealthBar(p) {
         const barWidth = this.size * 1.2;
         const barHeight = 4;
         const yOffset = -this.size * 0.8;
         
         // Background
-        fill(60);
-        noStroke();
-        rect(-barWidth/2, yOffset, barWidth, barHeight);
+        p.fill(60);
+        p.noStroke();
+        p.rect(-barWidth/2, yOffset, barWidth, barHeight);
         
         // Health
         const healthPercent = this.health / this.maxHealth;
-        fill(healthPercent > 0.5 ? color(100, 200, 100) : 
-             healthPercent > 0.25 ? color(255, 255, 100) : 
-             color(255, 100, 100));
-        rect(-barWidth/2, yOffset, barWidth * healthPercent, barHeight);
+        p.fill(healthPercent > 0.5 ? this.p.color(100, 200, 100) : 
+             healthPercent > 0.25 ? this.p.color(255, 255, 100) : 
+             this.p.color(255, 100, 100));
+        p.rect(-barWidth/2, yOffset, barWidth * healthPercent, barHeight);
     }
     
     shoot() {
-        // IMPROVED SHOOTING SYSTEM: First shot immediate, continuous fire on beat
+        // IMPROVED SHOOTING SYSTEM: First shot immediate, continuous fire on quarter-beats
         this.wantsToContinueShooting = true; // Player wants to shoot
         
         // Check if this is the start of shooting (first shot)
@@ -388,14 +418,14 @@ class Player {
             this.firstShotFired = false;
         }
         
-        if (this.shootCooldown <= 0) {
+        if (this.shootCooldownMs <= 0) {
             // First shot is always immediate for responsive feel
             if (!this.firstShotFired) {
                 this.firstShotFired = true;
                 return this.fireBullet();
             }
             
-            // Subsequent shots follow beat timing for musical flow
+            // Subsequent shots follow quarter-beat timing for musical flow
             if (window.beatClock) {
                 // Check for quarter-beat timing (4x faster than full beats)
                 if (window.beatClock.canPlayerShootQuarterBeat()) {
@@ -407,7 +437,7 @@ class Player {
                     return null;
                 }
             } else {
-                // No beat clock available, fire immediately (fallback)
+                // No beat clock available, fire with normal cooldown (fallback)
                 return this.fireBullet();
             }
         }
@@ -415,13 +445,13 @@ class Player {
     }
     
     fireBullet() {
-        this.shootCooldown = 8; // Reduced from 30 to 8 frames for quarter-beat timing (8 frames = ~125ms at 60fps)
+        this.shootCooldownMs = 17; // At least one frame at 60fps (was 5)
         this.muzzleFlash = 4;
         
         // Calculate bullet spawn position
         const bulletDistance = this.size * 0.8;
-        const bulletX = this.x + cos(this.aimAngle) * bulletDistance;
-        const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
+        const bulletX = this.x + this.p.cos(this.aimAngle) * bulletDistance;
+        const bulletY = this.y + this.p.sin(this.aimAngle) * bulletDistance;
         
         return new Bullet(bulletX, bulletY, this.aimAngle, 8, 'player');
     }
@@ -430,16 +460,16 @@ class Player {
         // Queue shot for next beat - allow re-queuing if no shot is currently queued
         if (!this.queuedShot) {
             this.queuedShot = {
-                timer: Math.ceil(timeToNextBeat / (1000/60)), // Convert ms to frames
+                timerMs: timeToNextBeat, // Store milliseconds directly
                 aimAngle: this.aimAngle // Store current aim angle
             };
-            console.log(`🎵 Shot queued for next beat in ${this.queuedShot.timer} frames`);
+            console.log(`🎵 Shot queued for next beat in ${this.queuedShot.timerMs.toFixed(2)} ms`);
         }
     }
     
     dash() {
         // Can only dash if not on cooldown and not already dashing
-        if (this.dashCooldown > 0 || this.isDashing) {
+        if (this.dashCooldownMs > 0 || this.isDashing) {
             return false;
         }
         
@@ -447,16 +477,16 @@ class Player {
         let dashDirX = 0;
         let dashDirY = 0;
         
-        if (keyIsDown(87)) dashDirY = -1; // W
-        if (keyIsDown(83)) dashDirY = 1;  // S
-        if (keyIsDown(65)) dashDirX = -1; // A
-        if (keyIsDown(68)) dashDirX = 1;  // D
+        if (this.p.keyIsDown(87)) dashDirY = -1; // W
+        if (this.p.keyIsDown(83)) dashDirY = 1;  // S
+        if (this.p.keyIsDown(65)) dashDirX = -1; // A
+        if (this.p.keyIsDown(68)) dashDirX = 1;  // D
         
         // If no movement keys, dash away from mouse (emergency escape)
         if (dashDirX === 0 && dashDirY === 0) {
-            const mouseAngle = atan2(mouseY - this.y, mouseX - this.x);
-            dashDirX = -cos(mouseAngle); // Opposite direction from mouse
-            dashDirY = -sin(mouseAngle);
+            const mouseAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
+            dashDirX = -this.p.cos(mouseAngle); // Opposite direction from mouse
+            dashDirY = -this.p.sin(mouseAngle);
         }
         
         // Normalize diagonal dashes
@@ -473,34 +503,37 @@ class Player {
         
         // Start dash
         this.isDashing = true;
-        this.dashTimer = 0;
-        this.dashCooldown = this.maxDashCooldown;
+        this.dashTimerMs = 0;
+        this.dashCooldownMs = this.maxDashCooldownMs;
         
         console.log(`💨 Player dashed! Direction: (${dashDirX.toFixed(2)}, ${dashDirY.toFixed(2)})`);
         return true;
     }
     
-    takeDamage(amount) {
+    takeDamage(amount, damageSource = 'unknown') {
+        console.log(`🩸 PLAYER DAMAGE: ${amount} HP from ${damageSource} (Health: ${this.health} → ${this.health - amount})`);
+        
         this.health -= amount;
         
         // Only trigger speech if game is still playing and audio system is available
-        if (typeof gameState !== 'undefined' && gameState === 'playing' && window.audioManager) {
+        if (window.gameState && window.gameState.gameState === 'playing' && window.audio) {
             const context = this.health <= 0 ? 'death' : 
                            this.health < this.maxHealth * 0.3 ? 'lowHealth' : 'damage';
-            if (window.audioManager.speakPlayerLine(this, context)) {
+            if (window.audio.speakPlayerLine(this, context)) {
                 console.log(`🎤 Player damage reaction triggered`);
             }
         }
         
         if (this.health <= 0) {
             this.health = 0;
+            console.log(`💀 PLAYER KILLED by ${damageSource}!`);
             return true; // Player died
         }
         return false;
     }
     
     checkCollision(other) {
-        const distance = dist(this.x, this.y, other.x, other.y);
+        const distance = this.p.dist(this.x, this.y, other.x, other.y);
         return distance < (this.size + other.size) * 0.5;
     }
 } 
