@@ -4,9 +4,18 @@
 
 import { max, min, floor, ceil, round, sin, cos, sqrt } from './mathUtils.js';
 
+/**
+ * @param {p5} p - The p5 instance
+ * @param {CameraSystem} cameraSystem - The camera system controlling parallax (dependency injected for modularity)
+ * @param {Player} player - The player object (dependency injected for modularity)
+ * @param {GameState} gameState - The game state object (dependency injected for modularity)
+ */
 export class BackgroundRenderer {
-    constructor(p) {
+    constructor(p, cameraSystem, player, gameState) {
         this.p = p;
+        this.cameraSystem = cameraSystem;
+        this.player = player;
+        this.gameState = gameState;
         // Parallax background layers
         this.parallaxLayers = [];
         this.parallaxInitialized = false;
@@ -114,18 +123,13 @@ export class BackgroundRenderer {
         if (!this.parallaxInitialized) {
             this.createParallaxBackground(p);
         }
-        
         p.push();
-        
-        // Get camera offset for parallax calculation
-        const cameraX = p.cameraSystem ? p.cameraSystem.x : 0;
-        const cameraY = p.cameraSystem ? p.cameraSystem.y : 0;
-        
-        // Draw each parallax layer
+        // Use injected cameraSystem for robust, modular parallax offset (do not use global or p.cameraSystem)
+        const cameraX = this.cameraSystem ? this.cameraSystem.x : 0;
+        const cameraY = this.cameraSystem ? this.cameraSystem.y : 0;
         for (const layer of this.parallaxLayers) {
             this.drawParallaxLayer(layer, cameraX, cameraY, p);
         }
-        
         p.pop();
     }
     
@@ -449,24 +453,21 @@ export class BackgroundRenderer {
     // Draw interactive background effects that respond to gameplay
     drawInteractiveBackgroundEffects(p = this.p) {
         p.push();
-        
-        // Player movement ripples
-        if (p.player && p.player.isMoving) {
-            const rippleIntensity = p.map(p.player.speed, 0, 5, 0, 1);
+        // Use injected player and gameState for robust, modular background effects (do not use global or p.*)
+        if (this.player && this.player.isMoving) {
+            const rippleIntensity = p.map(this.player.speed, 0, 5, 0, 1);
             for (let i = 0; i < 3; i++) {
                 const rippleRadius = (p.frameCount * 2 + i * 20) % 100;
                 const rippleAlpha = p.map(rippleRadius, 0, 100, 30 * rippleIntensity, 0);
-                
                 p.stroke(64, 224, 208, rippleAlpha);
                 p.strokeWeight(2);
                 p.noFill();
-                p.ellipse(p.player.x, p.player.y, rippleRadius, rippleRadius);
+                p.ellipse(this.player.x, this.player.y, rippleRadius, rippleRadius);
             }
         }
-        
         // Health-based background tint
-        if (p.player) {
-            const healthPercent = p.player.health / p.player.maxHealth;
+        if (this.player) {
+            const healthPercent = this.player.health / this.player.maxHealth;
             if (healthPercent < 0.3) {
                 // Red danger tint when low health
                 const dangerPulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5;
@@ -480,45 +481,38 @@ export class BackgroundRenderer {
                 p.rect(0, 0, p.width, p.height);
             }
         }
-        
         // Score-based cosmic energy
-        if (p.gameState && p.gameState.score > 0) {
-            const energyLevel = p.min(p.gameState.score / 1000, 1);
+        if (this.gameState && this.gameState.score > 0) {
+            const energyLevel = p.min(this.gameState.score / 1000, 1);
             for (let i = 0; i < 5; i++) {
                 const energyX = p.random(p.width);
                 const energyY = p.random(p.height);
                 const energySize = p.random(10, 30) * energyLevel;
                 const energyAlpha = p.random(5, 15) * energyLevel;
-                
                 p.fill(255, 215, 0, energyAlpha);
                 p.noStroke();
                 p.ellipse(energyX, energyY, energySize, energySize);
             }
         }
-        
         // Kill streak effects
-        if (p.gameState && p.gameState.killStreak >= 5) {
-            const streakIntensity = p.min(p.gameState.killStreak / 10, 1);
-            
+        if (this.gameState && this.gameState.killStreak >= 5) {
+            const streakIntensity = p.min(this.gameState.killStreak / 10, 1);
             // Pulsing border effect
             const borderPulse = p.sin(p.frameCount * 0.3) * 0.5 + 0.5;
             p.stroke(255, 100, 255, borderPulse * 100 * streakIntensity);
             p.strokeWeight(4);
             p.noFill();
             p.rect(5, 5, p.width - 10, p.height - 10);
-            
             // Floating energy orbs
-            for (let i = 0; i < p.gameState.killStreak && i < 15; i++) {
+            for (let i = 0; i < this.gameState.killStreak && i < 15; i++) {
                 const orbX = 50 + (i % 5) * 40;
                 const orbY = 50 + p.floor(i / 5) * 30;
                 const orbPulse = p.sin(p.frameCount * 0.1 + i) * 0.5 + 0.5;
-                
                 p.fill(255, 100, 255, orbPulse * 150);
                 p.noStroke();
                 p.ellipse(orbX, orbY, 8 + orbPulse * 4, 8 + orbPulse * 4);
             }
         }
-        
         p.pop();
     }
     

@@ -8,10 +8,17 @@ const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
 
 export class Player {
-    constructor(p, x, y) {
+    /**
+     * @param {p5} p - The p5 instance
+     * @param {number} x - Initial x position
+     * @param {number} y - Initial y position
+     * @param {CameraSystem} cameraSystem - The camera system (dependency injected for modularity)
+     */
+    constructor(p, x, y, cameraSystem) {
         this.p = p;
         this.x = x;
         this.y = y;
+        this.cameraSystem = cameraSystem;
         this.size = 32;
         this.health = 100;
         this.maxHealth = 100;
@@ -122,8 +129,8 @@ export class Player {
                 this.aimAngle = atan2(dy, dx);
                 console.log('[AIM] Arrow keys: dx=' + dx + ', dy=' + dy + ', angle=' + (this.aimAngle * 180 / Math.PI).toFixed(1));
             }
-        } else if (window.cameraSystem) {
-            const worldMouse = window.cameraSystem.screenToWorld(this.p.mouseX, this.p.mouseY);
+        } else if (this.cameraSystem) {
+            const worldMouse = this.cameraSystem.screenToWorld(this.p.mouseX, this.p.mouseY);
             this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
         } else {
             this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);

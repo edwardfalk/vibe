@@ -1,0 +1,15 @@
+{
+  "id": "TASK-2024-06-01-modular-ticketing-platform",
+  "type": "task",
+  "title": "Design Modular, Automation-First Ticketing Platform (Cross-Project)",
+  "description": "Design and prototype a robust, modular, automation-first ticketing and workflow platform that is project-agnostic and scalable. The platform should support database-backed storage, modern web UI, API-first automation, DevOps/code integration, plugin extensibility, and memory graph features. Reference and iterate on the vision document at docs/vision/modular_ticketing_platform_vision.md. This is intended for use beyond Vibe and should be architected for reuse across projects.",
+  "tags": ["platform", "ticketing", "automation", "vision", "cross-project", "MCP"],
+  "status": "open",
+  "createdAt": "2024-06-01T12:30:00Z",
+  "updatedAt": "2024-06-01T12:30:00Z",
+  "history": [
+    { "status": "open", "timestamp": "2024-06-01T12:30:00Z", "action": "created", "details": "Task ticket created by AI at user request. Linked to vision document." }
+  ],
+  "artifacts": ["docs/vision/modular_ticketing_platform_vision.md"],
+  "relatedTickets": []
+}

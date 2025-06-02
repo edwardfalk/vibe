@@ -23,8 +23,21 @@ The ticketing system is a core, modular subsystem for tracking bugs, features, e
 
 - **Tickets:** Stored as JSON files in `tests/bug-reports/`.
 - **Artifacts:** (screenshots, logs) are saved in the same folder as their ticket, auto-moved by `move-bug-reports.js`.
-- **Folder Naming:**
-  - Each bug report folder: `[ISO timestamp]_[ticket ID]_[short title]`
+- **Folder Structure:**
+  - Each ticket (bug, feature, enhancement, task) must have its own folder:
+    ```
+    tests/bug-reports/[ISO timestamp]_[ticket ID]_[short title]/
+    ```
+  - The main ticket JSON file must be named:
+    ```
+    [ticket ID].json
+    ```
+    Example:
+    ```
+    tests/bug-reports/2024-06-01T12-00-00_TASK-2024-06-01-auto-resume-ocr/
+      └── TASK-2024-06-01-auto-resume-ocr.json
+    ```
+  - All artifacts (screenshots, logs, follow-ups) must be saved inside this folder, referenced in the `artifacts` array.
   - Follow-up artifacts/reports: Saved as subfolders or files within the parent ticket folder, referencing the same ID.
 
 ---
@@ -70,6 +83,10 @@ Each ticket must include:
 - **ticket-api.js:** Backend API for ticket CRUD operations. All tickets must be created/updated via this API.
 - **ID Requirement:** All tickets must include a unique `id`—the backend will reject tickets without it.
 - **Artifacts:** Attachments (screenshots, logs) must be referenced in the `artifacts` array and saved in the ticket's folder.
+- **Ticket Creation Workflow:**
+  - **Preferred:** Always use the ticket API (`ticketManager.js` or `/api/tickets`) to create, update, or query tickets. This ensures unique IDs, correct metadata, and proper artifact handling.
+  - **Fallback:** If the backend server is not running, you may create a ticket JSON file directly in `tests/bug-reports/`. When the server is available, migrate or register these tickets via the API.
+  - **Automation:** Automated scripts and Playwright probes must use the API when possible. If not, log a warning and save the ticket as a JSON file for later reconciliation.
 
 **Example (JS):**
 ```js
@@ -122,6 +139,17 @@ createTicket(ticket);
 - Use concise, metadata-rich tickets—avoid verbose text.
 - Always use the API and modules for ticket operations.
 - Group all related artifacts and follow-ups under the same ticket folder.
+- Follow required fields and naming conventions:
+  - `id`: Unique, short, and prefixed by type (e.g., `TASK-`, `BR-`, `FEAT-`, `ENH-`)
+  - `type`: One of `bug`, `feature`, `enhancement`, `task`
+  - `title`: Concise, human-readable
+  - `status`: `open`, `in-progress`, `closed`, etc.
+  - `tags`: Array of relevant tags
+  - `history`: Array of status/assignment changes
+  - `artifacts`: Array of file paths (relative to ticket folder)
+  - `relatedTickets`: Array of ticket IDs
+  - `createdAt`, `updatedAt`: ISO timestamps
+- If you create a ticket JSON file directly (due to backend downtime), ensure it follows the schema and folder structure. When the backend is available, use the API to register the ticket and move artifacts if needed. Mark the migration in the ticket’s `history` array.
 - Reference this guide for updates and troubleshooting.
 
 ---

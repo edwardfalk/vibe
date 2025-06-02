@@ -52,8 +52,13 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
 export class Audio {
-    constructor(p, ...args) {
+    /**
+     * @param {p5} p - The p5 instance
+     * @param {Player} player - The player object (dependency injected for modularity)
+     */
+    constructor(p, player, ...args) {
         this.p = p;
+        this.player = player;
         // Core audio setup
         this.audioContext = null;
         this.masterGain = null;
@@ -306,9 +311,9 @@ export class Audio {
         
         // Get player position for relative audio positioning
         let playerX = 400, playerY = 300; // Default screen center
-        if (typeof window.player !== 'undefined' && window.player) {
-            playerX = window.player.x;
-            playerY = window.player.y;
+        if (typeof this.player !== 'undefined' && this.player) {
+            playerX = this.player.x;
+            playerY = this.player.y;
         }
         
         // Configure gain envelope with proper volume calculation and randomness
@@ -392,12 +397,15 @@ export class Audio {
     }
     
     calculatePan(x, playerX = 400) {
+        if (playerX === 400 && typeof this.player !== 'undefined') playerX = this.player.x;
         if (x === null || x === undefined) return 0;
         // Pan relative to player position instead of screen center
         return Math.max(-1, Math.min(1, (x - playerX) / 400));
     }
     
     calculateVolume(x, y, playerX = 400, playerY = 300) {
+        if (playerX === 400 && typeof this.player !== 'undefined') playerX = this.player.x;
+        if (playerY === 300 && typeof this.player !== 'undefined') playerY = this.player.y;
         if (x === null || y === null) return 1.0;
         
         // Calculate distance relative to player position instead of screen center
@@ -441,9 +449,9 @@ export class Audio {
         
         // Get player position for relative audio positioning
         let playerX = 400, playerY = 300; // Default screen center
-        if (typeof window.player !== 'undefined' && window.player) {
-            playerX = window.player.x;
-            playerY = window.player.y;
+        if (typeof this.player !== 'undefined' && this.player) {
+            playerX = this.player.x;
+            playerY = this.player.y;
         }
         // Ensure entity.x and entity.y are valid numbers
         let ex = (entity && typeof entity.x === 'number' && !isNaN(entity.x)) ? entity.x : 400;

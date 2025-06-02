@@ -133,7 +133,7 @@ function setup(p) {
     p.createCanvas(800, 600);
     
     // Initialize player at center
-    player = new Player(p, p.width/2, p.height/2);
+    player = new Player(p, p.width/2, p.height/2, window.cameraSystem);
     window.player = player;
     
     // Initialize global arrays
@@ -148,12 +148,15 @@ function setup(p) {
     
     // Disable visual effects for stability
     effectsManager = null;
-    visualEffectsManager = null;
+    if (!window.visualEffectsManager) {
+        window.visualEffectsManager = new VisualEffectsManager(window.backgroundLayers);
+    }
     console.log('🎮 Visual effects disabled - using stable rendering');
     
     // Initialize unified audio system
-    audio = new Audio(p);
-    window.audio = audio;
+    if (!window.audio) {
+        window.audio = new Audio(p, window.player);
+    }
     console.log('🎵 Unified audio system initialized');
     
     // Initialize modular systems
@@ -176,7 +179,7 @@ function setup(p) {
     console.log('🎮 GameState system initialized');
     
     if (!window.backgroundRenderer) {
-        window.backgroundRenderer = new BackgroundRenderer(p);
+        window.backgroundRenderer = new BackgroundRenderer(p, window.cameraSystem, window.player, window.gameState);
     }
     window.backgroundRenderer.createParallaxBackground(p);
     console.log('🌌 Background renderer initialized');
@@ -187,12 +190,12 @@ function setup(p) {
     console.log('💥 Collision system initialized');
     
     if (!window.uiRenderer) {
-        window.uiRenderer = new UIRenderer();
+        window.uiRenderer = new UIRenderer(window.gameState, window.player, window.audio, window.cameraSystem, window.testModeManager);
     }
     console.log('🖥️ UI renderer initialized');
     
     if (!window.testModeManager) {
-        window.testModeManager = new TestMode();
+        window.testModeManager = new TestMode(window.player);
     }
     console.log('🧪 Test mode manager initialized');
     

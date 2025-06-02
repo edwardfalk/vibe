@@ -131,7 +131,7 @@
 - **AI File Edit Workflow:**  
   All MCP file edits must use `dryRun` first and review the diff.  
   Before any real edit, back up the file.  
-  After editing, immediately validate the file’s content.  
+  After editing, immediately validate the file's content.  
   If the file is corrupted or missing expected content, restore from backup.  
   Optionally, run a linter for code/config files.  
   Delete the backup if the edit is successful.
@@ -160,6 +160,12 @@
 - Handle errors gracefully and consistently; use early returns and clear error messages.
 - Write code that is easy to test (favor pure functions, dependency injection where possible).
 - Manage dependencies via `package.json` and npm; do not add libraries without team review.
+
+**Dependency Injection:**
+All modular systems and renderers must receive their dependencies (e.g., player, cameraSystem, gameState) via constructor injection, not via global/window or p5 instance properties.
+Do not attach game state or systems to the p5 instance (`p`). Only use `p` for p5-native methods and properties.
+Globals (`window.*`) are only for top-level coordination, not for internal logic.
+This ensures modularity, testability, and maintainability.
 
 ---
 

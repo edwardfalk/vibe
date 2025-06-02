@@ -6,7 +6,15 @@ import { CONFIG } from './config.js';
  * Handles position, health, basic movement, common rendering, and speech systems
  */
 export class BaseEnemy {
-    constructor(x, y, type, config, p) {
+    /**
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @param {string} type - Enemy type
+     * @param {object} config - Enemy config
+     * @param {p5} p - The p5 instance
+     * @param {Audio} audio - The audio system (dependency injected for modularity)
+     */
+    constructor(x, y, type, config, p, audio) {
         // Core properties
         this.x = x;
         this.y = y;
@@ -44,6 +52,7 @@ export class BaseEnemy {
         this.ambientSpeechTimer = p.random(speechConfig.AMBIENT_MIN * 60, speechConfig.AMBIENT_MAX * 60); // seconds to frames
         
         this.p = p;
+        this.audio = audio;
         
         // Initialize type-specific colors
         this.initializeColors();
@@ -163,8 +172,8 @@ export class BaseEnemy {
                 drawGlow(this.x, this.y, glowSize, glowColor, speechGlowIntensity);
                 
                 // Add extra pulsing glow for aggressive speech
-                if (isSpeaking && window.audio) {
-                    const activeTexts = window.audio.activeTexts || [];
+                if (isSpeaking && this.audio) {
+                    const activeTexts = this.audio.activeTexts || [];
                     const myText = activeTexts.find(text => text.entity === this);
                     if (myText && myText.isAggressive) {
                         const aggressivePulse = Math.sin(p.frameCount * 0.8) * 0.3 + 0.5;
@@ -412,8 +421,8 @@ export class BaseEnemy {
         bullet.ownerId = this.id; // Use unique enemy ID to prevent self-shooting
         
         // Play alien shooting sound
-        if (window.audio) {
-            window.audio.playAlienShoot(this.x, this.y);
+        if (this.audio) {
+            this.audio.playAlienShoot(this.x, this.y);
         }
         
         // DEBUG: Log bullet creation only if collision debug is enabled
