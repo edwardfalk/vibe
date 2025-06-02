@@ -1,5 +1,9 @@
 # Vibe Game Design: Cosmic Beat System & Core Concepts
 
+> **Purpose:**  
+> This document explains the musical gameplay system and core design concepts.  
+> For rules, see [.cursorrules](../.cursorrules).
+
 ## Cosmic Beat System Overview
 Vibe is built around a unique musical timing system—the "Cosmic Beat"—which synchronizes enemy actions and player experience to a rhythmic pulse. This system creates an emergent musical experience as players interact with the game world.
 
@@ -47,7 +51,7 @@ if (beatClock.isOnBeat([2, 4])) {
 ## References
 - `js/BeatClock.js`: Full implementation and in-code documentation
 - `js/GameLoop.js`: Integration of BeatClock with the main game loop
-- README.md: Project overview and modular architecture
+- ../README.md: Project overview and modular architecture
 
 ---
 

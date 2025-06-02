@@ -1,6 +1,9 @@
 # .cursorrules
 
-> **This file is the core standards and workflow reference for the Vibe project. Always consult the latest README.md for the single source of truth on architecture, coding standards, and best practices.**
+> **Purpose:**  
+> This file is the authoritative rulebook for Vibe.  
+> It defines architecture, coding standards, and workflow rules.  
+> For detailed explanations, see the referenced guides.
 
 ---
 
@@ -15,7 +18,7 @@
 - Entities: `player.js`, `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js`, `EnemyFactory.js`, `bullet.js`
 - Support: `Audio.js`, `BeatClock.js`, `visualEffects.js`, `effects.js`, `config.js`, `mathUtils.js`
 - Other: `ticketManager.js`, `ai-liveness-probe.js`
-- (See `/js/` for the full, up-to-date list.)
+- (See `/js/` for the full, up-to-date list. For details, see README.md.)
 
 **Legacy Files (Do NOT use):**
 - `js/game.js` (replaced by `GameLoop.js`)
@@ -73,7 +76,7 @@
 - Prefer built-in tools for simple, day-to-day edits.
 - Use MCP tools for batch, advanced, or automation tasks.
 - Always check path requirements (absolute for MCP, relative for built-in).
-- Reference `MCP_PLAYWRIGHT_TESTING_GUIDE.md` for advanced Playwright workflows.
+- For advanced Playwright workflows, see [MCP_PLAYWRIGHT_TESTING_GUIDE.md](./MCP_PLAYWRIGHT_TESTING_GUIDE.md).
 
 **Example: Automated Bug Ticket Creation**
 1. Run probe-driven test with MCP Playwright.
@@ -124,6 +127,14 @@
 ---
 
 **5. Coding Standards**
+
+- **AI File Edit Workflow:**  
+  All MCP file edits must use `dryRun` first and review the diff.  
+  Before any real edit, back up the file.  
+  After editing, immediately validate the file’s content.  
+  If the file is corrupted or missing expected content, restore from backup.  
+  Optionally, run a linter for code/config files.  
+  Delete the backup if the edit is successful.
 
 - **Simplicity:** Write simple, straightforward code.
 - **Readability:** Code should be easy to read and understand.
@@ -186,7 +197,7 @@
 
 **8. Future Expansion & MCP Tools Documentation**
 
-- For advanced MCP tool usage, troubleshooting, and workflow examples, see the upcoming `MCP_TOOLS_GUIDE.md`.
+- For advanced MCP tool usage, troubleshooting, and workflow examples, see [MCP_TOOLS_GUIDE.md](./MCP_TOOLS_GUIDE.md).
 - This file will provide:
   - Deeper explanations of each MCP tool category
   - Example commands and workflows
@@ -200,7 +211,7 @@
 
 - If a JavaScript file uses p5.js global functions (e.g., `constrain()`, `random()`, `lerp()`), add a top-of-file comment:
   `// Requires p5.js for constrain(), random(), lerp(), etc.`
-- The project uses p5.js version X.X.X. (Specify version in README and package.json.)
+- The project uses p5.js version [TODO: FILL IN VERSION]. (See package.json and README.)
 
 ---
 

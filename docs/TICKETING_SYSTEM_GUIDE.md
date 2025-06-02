@@ -1,6 +1,10 @@
 # Ticketing System Guide
 
-> **This document is the authoritative reference for Vibe’s modular ticketing system.**
+> **Purpose:**  
+> This guide documents the modular ticketing system: schema, API, workflows, and best practices.  
+> For rules, see [.cursorrules](../.cursorrules).
+
+> **This document is the authoritative reference for Vibe's modular ticketing system.**
 > For architecture and coding standards, see the main `README.md` and `.cursorrules`.
 
 ---
@@ -65,7 +69,7 @@ Each ticket must include:
 - **ticketManager.js:** Main JS module for ticket creation, updates, and queries.
 - **ticket-api.js:** Backend API for ticket CRUD operations. All tickets must be created/updated via this API.
 - **ID Requirement:** All tickets must include a unique `id`—the backend will reject tickets without it.
-- **Artifacts:** Attachments (screenshots, logs) must be referenced in the `artifacts` array and saved in the ticket’s folder.
+- **Artifacts:** Attachments (screenshots, logs) must be referenced in the `artifacts` array and saved in the ticket's folder.
 
 **Example (JS):**
 ```js
@@ -95,7 +99,7 @@ createTicket(ticket);
 
 - **Open bug-report modal:**
   - Press `B` + `R` keys together
-  - Or click the UI “Report Bug” button
+  - Or click the UI "Report Bug" button
 - **Keyboard shortcuts in modal:**
   - `Enter`/`Ctrl+Enter`: Save report
   - `Escape`: Cancel/close modal
@@ -124,7 +128,7 @@ createTicket(ticket);
 
 ## 9. References
 
-- [README.md](./README.md)
+- [README.md](../README.md)
 - [.cursorrules](./.cursorrules)
 - [MCP_TOOLS_GUIDE.md](./MCP_TOOLS_GUIDE.md)
 - [MCP_PLAYWRIGHT_TESTING_GUIDE.md](./MCP_PLAYWRIGHT_TESTING_GUIDE.md)

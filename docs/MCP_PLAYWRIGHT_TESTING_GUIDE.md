@@ -1,5 +1,9 @@
 # MCP Playwright Testing Guide for AI & Automation
 
+> **Purpose:**  
+> This guide explains probe-driven Playwright testing, liveness probes, and bug report automation.  
+> For rules, see [.cursorrules](../.cursorrules).
+
 ## Introduction
 
 This guide explains how to use MCP Playwright for robust, AI-driven testing of the Vibe game. It covers best practices, liveness/heartbeat probes, custom scenario checks, and how to minimize confusion and maximize diagnostic value.
@@ -119,8 +123,8 @@ if (result.moveBlockedByEdge) {
 ---
 
 ## See Also
-- [README.md](README.md) (Quick Start)
-- [tests/](tests/) (All Playwright tests must now be probe-driven using MCP Playwright. Manual .spec.js tests are deprecated and should not be used.)
+- [README.md](../README.md) (Quick Start)
+- [tests/](../tests/) (All Playwright tests must now be probe-driven using MCP Playwright. Manual .spec.js tests are deprecated and should not be used.)
 
 - The standard dev server is Five Server, running on http://localhost:5500
 - All Playwright/MCP tests should target port 5500

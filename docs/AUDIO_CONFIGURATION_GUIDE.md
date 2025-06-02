@@ -1,6 +1,8 @@
 # 🎛️ Vibe Game Audio Configuration Guide
 
-This guide explains how to adjust audio parameters in the Vibe game for optimal sound design.
+> **Purpose:**  
+> This guide explains how to configure and tune all audio parameters in Vibe.  
+> For rules, see [.cursorrules](../.cursorrules).
 
 ## 📁 File Location
 All audio configuration is in: `js/Audio.js`

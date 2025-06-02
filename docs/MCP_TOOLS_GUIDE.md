@@ -2,7 +2,21 @@
 
 > **Purpose:**  
 > This guide details all MCP tools for memory, testing, and file operations in Vibe.  
-> For rules, see [.cursorrules](./.cursorrules).
+> For rules, see [.cursorrules](../.cursorrules).
+
+---
+
+## 🔗 Official Documentation & Resources
+
+- [MCP Tools Concept](https://modelcontextprotocol.io/docs/concepts/tools) — Official, up-to-date tool structure, best practices, and security notes.
+- [MCP Introduction](https://modelcontextprotocol.io/introduction) — Protocol overview and architecture.
+- [rawr-ai/mcp-filesystem GitHub](https://github.com/rawr-ai/mcp-filesystem) — Filesystem server implementation and options.
+
+---
+
+> **Tip:** MCP supports dynamic tool discovery via the `tools/list` endpoint. The AI or user can always check for new or updated tools if the server is upgraded or reconfigured. See [Tool Discovery and Updates](https://modelcontextprotocol.io/docs/concepts/tools#tool-discovery-and-updates).
+
+> **Note:** Each MCP tool can include annotations (metadata) to describe its behavior (e.g., `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`). These hints help the AI and users understand tool side effects and safety, but should not be relied on for security decisions. See [Tool Annotations](https://modelcontextprotocol.io/docs/concepts/tools#tool-annotations) for details.
 
 ---
 
@@ -502,6 +516,24 @@ The Model Context Protocol (MCP) is a universal, open standard for connecting AI
 
 ## 3.7 Filesystem MCP Server (AI Usage Notes)
 
+<!--
+### 🛠️ Dynamic Tool Discovery
+
+- MCP supports dynamic tool discovery via the `tools/list` endpoint. The AI or user can always check for new or updated tools if the server is upgraded or reconfigured.
+- For more, see [MCP Tools Concept](https://modelcontextprotocol.io/docs/concepts/tools#tool-discovery-and-updates).
+
+### 🏷️ Tool Annotations & Metadata
+
+- Each MCP tool can include annotations (metadata) to describe its behavior:
+    - `readOnlyHint`: True if the tool does not modify its environment
+    - `destructiveHint`: True if the tool may perform destructive updates
+    - `idempotentHint`: True if repeated calls with the same arguments have no additional effect
+    - `openWorldHint`: True if the tool interacts with external systems (like the web)
+- These hints help the AI and users understand tool side effects and safety, but should not be relied on for security decisions.
+- See [Tool Annotations](https://modelcontextprotocol.io/docs/concepts/tools#tool-annotations) for details.
+-->
+
+
 - This project uses **@modelcontextprotocol/server-filesystem** for all MCP file operations.
 - **Access is restricted**: Only folders listed in the MCP config (`args` array) are accessible to the AI.
 - **No separate settings file**: All access control is set in the main MCP config (e.g., `.vscode/mcp.json`, `.cursor/mcp.json`, or global config).
@@ -510,7 +542,128 @@ The Model Context Protocol (MCP) is a universal, open standard for connecting AI
 
 ---
 
+## 📦 Filesystem Tools: Path Handling & Best Practices
+
+### Path Handling Table
+
+| Tool Type / Command                | Path Type Required | Error on Wrong Path         | Notes/Best Practice                        |
+|------------------------------------|:------------------:|:---------------------------|--------------------------------------------|
+| Built-in (edit_file, read_file, etc.) | Relative           | "path should be..."         | Use for day-to-day dev; workspace-relative |
+| MCP Filesystem (all)               | Absolute           | "Access denied"             | Use for automation, batch, advanced ops    |
+| mcp_filesystem_list_allowed_directories | N/A               | N/A                         | Use to discover valid root paths           |
+
+- **Built-in tools** (edit_file, read_file, list_dir, delete_file):  
+  - Only accept **relative paths** (e.g., `file-command-tests/native-test/test.txt`)
+  - Will fail with a "path should be..." error if given an absolute path
+
+- **MCP Filesystem tools** (write, read, edit, move, etc.):  
+  - Only accept **absolute paths** (e.g., `C:/CursorWorkspace/projects/vibe/file-command-tests/native-test/test.txt`)
+  - Will fail with "Access denied" if given a relative path or a path outside allowed directories
+
+---
+
+### Discovering Allowed Directories
+
+Before using MCP filesystem tools, always check which absolute paths are permitted:
+
+```js
+mcp_filesystem_list_allowed_directories({})
+// Returns: [ "C:/CursorWorkspace/projects", ... ]
+```
+**Best Practice:**  
+- Only operate within these directories.  
+- All absolute paths must start with one of the allowed roots.
+
+---
+
+### Error Handling & Troubleshooting
+
+| Error Message                        | Likely Cause                                 | Solution                                 |
+|-------------------------------------- |----------------------------------------------|------------------------------------------|
+| "Access denied"                      | Path is not absolute, or outside allowed dirs| Use absolute path within allowed dirs    |
+| "path should be a `path.relative()`d string" | Built-in tool given absolute path            | Use relative path for built-in tools     |
+| "Could not find file ..."            | Typo or wrong path type                      | Double-check path and type               |
+
+---
+
+### Symlink and Permission Flags
+
+- The MCP server enforces strict path validation and permission flags.
+- By default, symlinks are followed only if both the link and target are within allowed directories.
+- Permission flags (`--readonly`, `--full-access`, `--allow-create`, etc.) control what operations are available.  
+  See [rawr-ai/mcp-filesystem GitHub](https://github.com/rawr-ai/mcp-filesystem) for details.
+
+---
+
+### Reference
+
+- [rawr-ai/mcp-filesystem GitHub](https://github.com/rawr-ai/mcp-filesystem) (official server documentation)
+
+---
+
+## 🗂️ XML Tools (For Future Use)
+
+The MCP filesystem server also provides tools for working with XML files.  
+**These are not currently used in this project, but are available for future automation or data processing needs.**
+
+### Available XML Tools
+
+- **xml_to_json**
+  - Convert an XML file to a JSON file.
+  - Inputs: `xmlPath` (source XML), `jsonPath` (destination JSON), options (see below).
+  - Options: `ignoreAttributes`, `preserveOrder`, `format`, `indentSize`.
+  - Requires read permission for XML and create/edit for JSON.
+
+- **xml_to_json_string**
+  - Convert an XML file to a JSON string (returned directly).
+  - Inputs: `xmlPath`, options.
+  - Returns: JSON string.
+
+- **xml_query**
+  - Query an XML file using XPath expressions.
+  - Inputs: `path` (XML file), `query` (XPath), options.
+  - Returns: JSON representation of query results or structure.
+
+- **xml_structure**
+  - Analyze XML structure without reading the entire file.
+  - Inputs: `path` (XML file), options.
+  - Returns: Statistical info about elements, attributes, and structure.
+
+**Example Usage:**
+```js
+mcp_filesystem_xml_to_json({
+  xmlPath: "C:/CursorWorkspace/projects/vibe/data/sample.xml",
+  jsonPath: "C:/CursorWorkspace/projects/vibe/data/sample.json",
+  options: { format: true, indentSize: 2 }
+})
+```
+
+**See the [rawr-ai/mcp-filesystem repo](https://github.com/rawr-ai/mcp-filesystem) for full details and option descriptions.**
+
+---
+
+## Summary
+
+- **Always use the correct path type for each tool.**
+- **Check allowed directories before using MCP filesystem tools.**
+- **Refer to this guide and the official repo for troubleshooting and advanced usage.**
+- **XML tools are available for future needs.**
+
+---
+
 ## 4. Best Practices & Troubleshooting
+
+### AI File Edit Safety Workflow
+1. **Always use `dryRun` for MCP edits and review the diff.**
+2. **Backup the file before any real edit.**
+3. **Apply the edit.**
+4. **Immediately read and validate the file’s content and structure.**
+5. **If the file is corrupted or missing expected content, restore from backup.**
+6. **Optionally, run a linter/validator for code or config files.**
+7. **Delete the backup if the edit is successful.**
+
+This workflow prevents accidental data loss and ensures robust, safe AI-driven editing.
+
 
 - Prefer targeted, minimal operations—avoid full-graph or batch calls unless needed.
 - Always check path requirements (absolute for MCP, relative for built-in tools).

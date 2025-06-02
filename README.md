@@ -1,9 +1,21 @@
 # Vibe: Cosmic Beat Space Shooter
 
+> **Purpose:**  
+> This README provides a project overview, quickstart, and a map to all major documentation.  
+> For rules and standards, see [.cursorrules](./.cursorrules).
+
+## Documentation Map
+- [.cursorrules](./.cursorrules): Core rules and standards (architecture, coding, workflow)
+- [docs/TICKETING_SYSTEM_GUIDE.md](./docs/TICKETING_SYSTEM_GUIDE.md): Ticketing system schema and workflow
+- [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
+- [docs/MCP_TOOLS_GUIDE.md](./docs/MCP_TOOLS_GUIDE.md): Advanced MCP tool usage and best practices
+- [docs/AUDIO_CONFIGURATION_GUIDE.md](./docs/AUDIO_CONFIGURATION_GUIDE.md): Audio setup and tuning
+- [docs/DESIGN.md](./docs/DESIGN.md): Game design and Cosmic Beat System
+
 ## Overview
 Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. The project emphasizes clean architecture, maintainability, and a robust ticketing system for all bugs, features, and enhancements.
 
-For a detailed explanation of the Cosmic Beat System and musical gameplay, see [`DESIGN.md`](./DESIGN.md).
+For a detailed explanation of the Cosmic Beat System and musical gameplay, see [`docs/DESIGN.md`](./docs/DESIGN.md).
 
 ---
 
@@ -24,7 +36,7 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 - **All work (bugs, features, enhancements, tasks) is tracked via the modular ticketing system.**
 - Tickets are structured JSON files in `tests/bug-reports/`.
 - Use `ticketManager.js` and `ticket-api.js` for all ticket management (in-game, admin, automation).
-- **See [`TICKETING_SYSTEM_GUIDE.md`](./TICKETING_SYSTEM_GUIDE.md) for full documentation, schema, and workflow.**
+- **See [`docs/TICKETING_SYSTEM_GUIDE.md`](./docs/TICKETING_SYSTEM_GUIDE.md) for full documentation, schema, and workflow.**
 - Each ticket must have a unique `id` and specify a `type` (`bug`, `feature`, `enhancement`, `task`).
 - Artifacts (screenshots, logs) are grouped per ticket and auto-moved by `move-bug-reports.js`.
 - The AI and automated scripts have full access to the ticketing system and bug-report modal.
@@ -35,7 +47,7 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 - **Dev server**: Five Server runs on port 5500 (`http://localhost:5500`).
 - **Backend server**: Runs on port 3001 for ticket API and automation.
 - **Start all servers with `npm run dev`** (kills ports 5500/3001 if needed).
-- **Testing**: Only probe-driven Playwright tests are allowed (see `MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
+- **Testing**: Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
 - **Test mode**: Press 'T' in-game to enable scripted testing.
 - **Bug-report modal**: Open with 'B' + 'R' or UI button. Keyboard: Enter/Ctrl+Enter = Save, Escape = Cancel.
 - **Artifacts**: All screenshots/logs saved in `tests/bug-reports/` and grouped by ticket ID.
@@ -62,7 +74,7 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 ## Audio & Visuals
 - Audio system is modular and beat-synced.
 - Visual effects are handled by `visualEffects.js` and `effects.js`.
-- See `AUDIO_CONFIGURATION_GUIDE.md` for setup.
+- See `docs/AUDIO_CONFIGURATION_GUIDE.md` for setup.
 
 ---
 
@@ -75,10 +87,10 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 ## References
 - `.cursorrules`: Core standards and workflow reference
-- `TICKETING_SYSTEM_GUIDE.md`: Ticketing system documentation
-- `MCP_PLAYWRIGHT_TESTING_GUIDE.md`: Automated testing guide
-- `AUDIO_CONFIGURATION_GUIDE.md`: Audio setup and troubleshooting
-- `DESIGN.md`: Cosmic Beat System and musical gameplay design
+- `docs/TICKETING_SYSTEM_GUIDE.md`: Ticketing system documentation
+- `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`: Automated testing guide
+- `docs/AUDIO_CONFIGURATION_GUIDE.md`: Audio setup and troubleshooting
+- `docs/DESIGN.md`: Cosmic Beat System and musical gameplay design
 
 ---
 
