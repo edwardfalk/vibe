@@ -6,10 +6,12 @@
   "scripts": {
     "serve": "five-server --port=5500",
     "watch-bugs": "node move-bug-reports.js",
-    "dev": "concurrently \"npm run serve\" \"npm run watch-bugs\"",
+    "predev": "npx kill-port 5500 3001",
+    "dev": "concurrently \"npm run serve\" \"npm run watch-bugs\" \"npm run api\"",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug"
+    "test:debug": "playwright test --debug",
+    "api": "node ticket-api.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",

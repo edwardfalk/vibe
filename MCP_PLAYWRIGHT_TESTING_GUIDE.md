@@ -120,7 +120,7 @@ if (result.moveBlockedByEdge) {
 
 ## See Also
 - [README.md](README.md) (Quick Start)
-- [tests/](tests/) (Manual Playwright tests for developers)
+- [tests/](tests/) (All Playwright tests must now be probe-driven using MCP Playwright. Manual .spec.js tests are deprecated and should not be used.)
 
 - The standard dev server is Five Server, running on http://localhost:5500
 - All Playwright/MCP tests should target port 5500

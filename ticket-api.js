@@ -31,8 +31,8 @@ app.get('/api/tickets/:id', (req, res) => {
 function ensureTicketMetadata(ticket, isNew = false) {
   if (!ticket.id) throw new Error('Missing ticket id');
   if (!ticket.title) throw new Error('Missing ticket title');
-  if (!ticket.type) throw new Error('Missing ticket type (bug, enhancement, feature)');
-  const allowedTypes = ['bug', 'enhancement', 'feature'];
+  if (!ticket.type) throw new Error('Missing ticket type (bug, enhancement, feature, task)');
+  const allowedTypes = ['bug', 'enhancement', 'feature', 'task'];
   if (!allowedTypes.includes(ticket.type)) throw new Error('Invalid ticket type');
   // Initialize required fields if missing
   if (isNew && !ticket.status) ticket.status = 'Open';

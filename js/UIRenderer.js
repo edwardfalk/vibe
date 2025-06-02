@@ -546,6 +546,8 @@ export class UIRenderer {
         // Modal
         const modal = document.createElement('div');
         modal.id = 'bugReportModal';
+        modal.setAttribute('data-status', 'idle'); // Track modal status for AI/automation
+        window.bugReportModalStatus = 'idle';
         modal.style.position = 'fixed';
         modal.style.top = '0';
         modal.style.left = '0';
@@ -597,7 +599,7 @@ export class UIRenderer {
             typeSelect.id = 'ticketTypeSelect';
             typeSelect.style.width = '100%';
             typeSelect.style.margin = '8px 0';
-            ['bug','enhancement','feature'].forEach(val => {
+            ['bug','enhancement','feature','task'].forEach(val => {
                 const opt = document.createElement('option');
                 opt.value = val;
                 opt.innerText = val.charAt(0).toUpperCase() + val.slice(1);
@@ -675,6 +677,8 @@ export class UIRenderer {
         document.getElementById('bugSaveBtn').onclick = async () => {
             errorMsg.style.display = 'none';
             errorMsg.textContent = '';
+            modal.setAttribute('data-status', 'saving');
+            window.bugReportModalStatus = 'saving';
             // Determine ticket
             let ticket = existingTicket;
             if (!ticket) {
@@ -690,6 +694,8 @@ export class UIRenderer {
                     ticket = { name, uid, type };
                 } else {
                     this._showToast('Please enter a short ticket name or select a ticket.');
+                    modal.setAttribute('data-status', 'idle');
+                    window.bugReportModalStatus = 'idle';
                     return;
                 }
             }
@@ -698,10 +704,15 @@ export class UIRenderer {
             // Related to
             let relatedTo = relatedToSelect ? relatedToSelect.value : '';
             try {
-                await this._saveBugReport(ticket, isAppending, relatedTo);
+                await this._saveBugReport(ticket, isAppending, relatedTo, modal, errorMsg);
+                // --- Playwright workflow note ---
+                // After clicking Save Report, take a Playwright screenshot to verify the modal closes and the ticket is created.
             } catch (e) {
+                // Show backend error message
                 errorMsg.textContent = (e && e.message) ? e.message : 'Failed to save bug report!';
                 errorMsg.style.display = 'block';
+                modal.setAttribute('data-status', 'error');
+                window.bugReportModalStatus = 'error';
             }
         };
         document.getElementById('bugScreenshotBtn').onclick = () => this._saveAdditionalScreenshot(existingTicket);
@@ -757,6 +768,7 @@ export class UIRenderer {
             this.bugReportModal = null;
         }
         this.bugReportActive = false;
+        window.bugReportModalStatus = 'closed';
         // Reset modal state
         this._screenshotDataList = [];
         this._pendingInitialScreenshot = null;
@@ -820,7 +832,7 @@ export class UIRenderer {
         return Math.random().toString(36).substr(2, 6);
     }
 
-    async _saveBugReport(ticket, isAppending, relatedTo) {
+    async _saveBugReport(ticket, isAppending, relatedTo, modal, errorMsg) {
         const desc = document.getElementById('bugDesc').value;
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0,19);
         const folder = `tests/bug-reports/${ticket.name||ticket.title}_${ticket.uid||ticket.id}`;
@@ -932,12 +944,27 @@ export class UIRenderer {
                 };
                 await updateTicket(ticket.uid||ticket.id, updates);
             }
-            this._showToast('Bug report saved!');
+            // Show success message and close modal after short delay
+            if (modal && errorMsg) {
+                errorMsg.textContent = 'Ticket created!';
+                errorMsg.style.display = 'block';
+                errorMsg.style.color = '#66ff66';
+                modal.setAttribute('data-status', 'success');
+                window.bugReportModalStatus = 'success';
+                setTimeout(() => {
+                    this._closeBugReportModal();
+                    if (modal) modal.setAttribute('data-status', 'closed');
+                    window.bugReportModalStatus = 'closed';
+                }, 1000);
+            } else {
+                this._closeBugReportModal();
+                if (modal) modal.setAttribute('data-status', 'closed');
+                window.bugReportModalStatus = 'closed';
+            }
         } catch (e) {
             // Rethrow so the modal can show the error
             throw e;
         }
-        this._closeBugReportModal();
     }
 
     _captureCanvasScreenshot() {
