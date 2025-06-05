@@ -143,6 +143,13 @@ Vibe uses a comprehensive automated testing system with probe-driven testing and
    npm run debug:probe   # Quick health check + summary
    ```
 
+6. **CodeRabbit Integration** - Automated review processing
+   ```bash
+   npm run coderabbit:analyze    # Analyze CodeRabbit reviews only
+   npm run coderabbit:integrate  # Full integration (analysis + tickets + tests)
+   npm run coderabbit:workflow   # Complete CodeRabbit workflow
+   ```
+
 ### Probe-Driven Testing
 
 The game uses specialized probe files for different aspects:

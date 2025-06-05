@@ -6,7 +6,7 @@
 class CodeRabbitReviewProcessor {
     constructor(options = {}) {
         this.githubToken = options.githubToken || process.env.GITHUB_TOKEN;
-        this.owner = options.owner || 'your-username'; // Replace with actual repo owner
+        this.owner = options.owner || 'edwardfalk'; // GitHub username
         this.repo = options.repo || 'vibe'; // Replace with actual repo name
         this.baseUrl = 'https://api.github.com';
         
@@ -440,7 +440,7 @@ if (typeof module !== 'undefined' && module.exports) {
 async function runCodeRabbitAnalysis() {
     try {
         const processor = new CodeRabbitReviewProcessor({
-            owner: 'your-github-username', // Replace with actual username
+            owner: 'edwardfalk',
             repo: 'vibe'
         });
         

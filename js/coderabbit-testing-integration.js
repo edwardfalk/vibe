@@ -386,7 +386,7 @@ async function runIntegratedWorkflow() {
         };
 
         const integration = new CodeRabbitTestingIntegration({
-            owner: 'your-github-username', // Replace with actual username
+            owner: 'edwardfalk',
             repo: 'vibe',
             ticketManager: mockTicketManager,
             testRunner: mockTestRunner

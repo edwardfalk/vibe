@@ -37,8 +37,8 @@ Update the repository details in the scripts:
 ```javascript
 // In js/coderabbit-review-processor.js and js/coderabbit-testing-integration.js
 const processor = new CodeRabbitReviewProcessor({
-    owner: 'your-actual-github-username',  // Replace this
-    repo: 'vibe'                           // Replace if different
+    owner: 'edwardfalk',  // Already configured
+    repo: 'vibe'          // Already configured
 });
 ```
 
@@ -68,7 +68,7 @@ npm run coderabbit:integrate
 const CodeRabbitReviewProcessor = require('./js/coderabbit-review-processor.js');
 
 const processor = new CodeRabbitReviewProcessor({
-    owner: 'your-username',
+    owner: 'edwardfalk',
     repo: 'vibe'
 });
 
@@ -176,7 +176,7 @@ The integration works seamlessly with the existing ticket system:
 const ticketManager = require('./ticketManager.js');
 
 const integration = new CodeRabbitTestingIntegration({
-    owner: 'your-username',
+    owner: 'edwardfalk',
     repo: 'vibe',
     ticketManager: ticketManager  // Use existing ticket system
 });
