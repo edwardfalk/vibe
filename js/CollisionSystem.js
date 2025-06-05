@@ -5,6 +5,9 @@
 import { round, sqrt, atan2, cos, sin, dist } from './mathUtils.js';
 import { CONFIG } from './config.js';
 
+// Default countdown for tank time bombs (in frames)
+const TIME_BOMB_FRAMES = 180; // 3 seconds at 60fps
+
 export class CollisionSystem {
     constructor() {
         // Collision detection settings
@@ -77,10 +80,13 @@ export class CollisionSystem {
                     window.activeBombs = window.activeBombs || [];
                     // Place bomb if under limit (regardless of debug mode)
                     if (window.activeBombs.length < 3) {
+                        const timer = TIME_BOMB_FRAMES;
                         window.activeBombs.push({
                             x: enemy.x,
                             y: enemy.y,
-                            timer: 180 // 3 seconds at 60fps
+                            timer,
+                            maxTimer: timer,
+                            tankId: enemy.id
                         });
                         // Only log bomb placement in debug mode
                         if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
