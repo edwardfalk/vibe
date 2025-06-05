@@ -47,7 +47,8 @@
  * - More distortion: Increase distortionAmount in ambient sound processing
  * 
  * =============================================================================
- */
+*/
+import { random } from './mathUtils.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
@@ -203,7 +204,7 @@ export class Audio {
         for (let channel = 0; channel < 2; channel++) {
             const channelData = impulse.getChannelData(channel);
             for (let i = 0; i < length; i++) {
-                channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+                channelData[i] = (random() * 2 - 1) * Math.pow(1 - i / length, decay);
             }
         }
         return impulse;
@@ -529,7 +530,7 @@ export class Audio {
         }
         
         // Random voice for enemies
-        return availableVoices[Math.floor(Math.random() * availableVoices.length)];
+        return availableVoices[Math.floor(random() * availableVoices.length)];
     }
     
     // ENHANCED voice selection with effects
@@ -571,7 +572,7 @@ export class Audio {
                 return name.includes('robot') || name.includes('computer') || name.includes('synthetic') ||
                        name.includes('monotone') || name.includes('flat');
             });
-            if (roboticVoices.length > 0) return roboticVoices[Math.floor(Math.random() * roboticVoices.length)];
+            if (roboticVoices.length > 0) return roboticVoices[Math.floor(random() * roboticVoices.length)];
         }
         
         if (voiceType === 'rusher') {
@@ -581,7 +582,7 @@ export class Audio {
                 return name.includes('female') || name.includes('high') || name.includes('fast') ||
                        name.includes('excited') || name.includes('energetic');
             });
-            if (franticVoices.length > 0) return franticVoices[Math.floor(Math.random() * franticVoices.length)];
+            if (franticVoices.length > 0) return franticVoices[Math.floor(random() * franticVoices.length)];
         }
         
         if (voiceType === 'tank') {
@@ -591,7 +592,7 @@ export class Audio {
                 return name.includes('deep') || name.includes('bass') || name.includes('low') ||
                        name.includes('heavy') || name.includes('strong') || name.includes('male');
             });
-            if (deepVoices.length > 0) return deepVoices[Math.floor(Math.random() * deepVoices.length)];
+            if (deepVoices.length > 0) return deepVoices[Math.floor(random() * deepVoices.length)];
         }
         
         if (voiceType === 'stabber') {

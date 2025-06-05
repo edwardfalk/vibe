@@ -8,6 +8,9 @@ const os = require('os');
 
 // CONFIGURATION
 const downloadsDir = path.join(os.homedir(), 'Downloads');
+if (!fs.existsSync(downloadsDir)) {
+  fs.mkdirSync(downloadsDir, { recursive: true });
+}
 const projectBugDir = path.join(__dirname, 'tests', 'bug-reports'); // Change to 'de_bug' if you prefer
 const bugFilePattern = /^(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z_[^_]+).*\.(md|json|png)$/;
 
