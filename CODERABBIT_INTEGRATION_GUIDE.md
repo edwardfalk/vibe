@@ -49,6 +49,10 @@ const processor = new CodeRabbitReviewProcessor({
 ```bash
 # Run the complete CodeRabbit workflow
 npm run coderabbit:workflow
+
+# Track and manage tickets
+npm run coderabbit:list      # View all tickets
+npm run coderabbit:stats     # Check statistics
 ```
 
 ### Individual Commands
@@ -59,6 +63,17 @@ npm run coderabbit:analyze
 
 # Run full integration (analysis + tickets + tests)
 npm run coderabbit:integrate
+
+# Ticket management commands
+npm run coderabbit:tickets                    # Show help
+npm run coderabbit:tickets list               # List all tickets
+npm run coderabbit:tickets list open          # Filter by status
+npm run coderabbit:tickets list resolved      # Show resolved tickets
+npm run coderabbit:tickets stats              # Show statistics
+
+# Update ticket status (manual commands)
+node js/coderabbit-ticket-tracker.js status CR-123-abc inProgress "Working on fix"
+node js/coderabbit-ticket-tracker.js resolve CR-123-abc "Fixed the issue"
 ```
 
 ### Manual Usage
@@ -74,6 +89,90 @@ const processor = new CodeRabbitReviewProcessor({
 
 const reviews = await processor.getLatestCodeRabbitReviews(5);
 console.log('Found reviews:', reviews.length);
+```
+
+## Ticket Tracking System
+
+### Unique Ticket IDs
+
+Every CodeRabbit ticket gets a unique ID in the format: `CR-{timestamp}-{random}`
+
+Example: `CR-1749145455554-h0stuh71c`
+
+### Ticket Lifecycle
+
+1. **Created** - Automatically generated from high-priority CodeRabbit suggestions
+2. **Open** - Initial status, ready for work
+3. **In Progress** - Someone is actively working on it
+4. **Resolved** - Issue has been fixed
+5. **Closed** - Verified and completed
+
+### Tracking Commands
+
+```bash
+# View all tickets with details
+npm run coderabbit:list
+
+# Filter by status
+npm run coderabbit:list open
+npm run coderabbit:list inProgress
+npm run coderabbit:list resolved
+
+# Get summary statistics
+npm run coderabbit:stats
+
+# Update ticket status
+node js/coderabbit-ticket-tracker.js status CR-1749145455554-h0stuh71c inProgress "Started working on this"
+
+# Mark as resolved
+node js/coderabbit-ticket-tracker.js resolve CR-1749145455554-h0stuh71c "Fixed by updating the code"
+```
+
+### Ticket Data Structure
+
+Each ticket contains:
+- **Unique ID** for tracking
+- **Title** and **description** from CodeRabbit
+- **Priority** (high/medium/low) and **category** (bug/security/performance/etc.)
+- **Pull Request** and **review links** for context
+- **File/line references** when available
+- **Status history** with timestamps and notes
+- **Resolution details** when completed
+
+### Example Ticket Listing
+
+```
+🔓 CR-1749145455554-h0stuh71c
+   Title: Fix bug issue in PR #2
+   Priority: 🚨 high
+   Category: 🐛 bug
+   Status: open
+   Created: 2025-06-05
+   PR: #2
+   Review: https://github.com/edwardfalk/vibe/pull/2#pullrequestreview-2901053040
+```
+
+### Statistics Dashboard
+
+```
+📊 CodeRabbit Ticket Statistics
+================================
+Total: 6
+Open: 4
+In Progress: 1
+Resolved: 1
+Closed: 0
+
+📂 Category Breakdown:
+   🐛 bug: 1
+   🎨 style: 1
+   🔒 security: 1
+   💡 general: 1
+   📚 documentation: 1
+   ⚡ performance: 1
+
+🎯 Priority Breakdown:
+   🚨 high: 6
 ```
 
 ## How It Works

@@ -9,9 +9,15 @@
     "UI",
     "workflow"
   ],
-  "status": "open",
+  "status": "resolved",
   "timestamp": "2024-06-01T10:30:00Z",
-  "history": [],
+  "history": [
+    {
+      "timestamp": "2025-06-05T22:30:00Z",
+      "action": "fix_implemented",
+      "details": "Fixed modal closing issue by: 1) Corrected API endpoint in ticketManager.js to use port 3001, 2) Added better error handling with auto-close after 3 seconds on error, 3) Improved logging for debugging. Modal now closes properly on both success and error cases."
+    }
+  ],
   "artifacts": [],
   "verification": [],
   "relatedTickets": []

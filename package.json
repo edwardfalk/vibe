@@ -18,6 +18,9 @@
     "coderabbit:analyze": "node js/coderabbit-review-processor.js",
     "coderabbit:integrate": "node js/coderabbit-testing-integration.js",
     "coderabbit:workflow": "npm run coderabbit:integrate",
+    "coderabbit:tickets": "node js/coderabbit-ticket-tracker.js",
+    "coderabbit:list": "node js/coderabbit-ticket-tracker.js list",
+    "coderabbit:stats": "node js/coderabbit-ticket-tracker.js stats",
     "api": "node ticket-api.js"
   },
   "devDependencies": {
@@ -27,6 +30,7 @@
     "live-server": "^1.2.2"
   },
   "dependencies": {
+    "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "jszip": "^3.10.1",
     "p5": "^1.7.0"

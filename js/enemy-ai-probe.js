@@ -126,6 +126,10 @@
 
   if (criticalFailures.length > 0) {
     result.failure = criticalFailures.join('; ');
+    
+    // Return early after detecting critical failures to reduce noise and wasted work
+    console.error('🤖 Enemy AI Probe Critical Failure:', result.failure);
+    return result;
   }
 
   // If failure, trigger screenshot and automated bug reporting

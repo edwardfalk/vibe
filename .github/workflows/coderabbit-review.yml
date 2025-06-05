@@ -40,6 +40,7 @@ jobs:
         continue-on-error: true
         
       - name: Run automated tests
+        id: tests
         run: |
           # Run our comprehensive test suite
           npm run test:automated || echo "Automated tests completed"
@@ -74,7 +75,7 @@ jobs:
           
           # Add any linting results
           echo "## Code Quality Checks" >> test-reports/test-summary.md
-          echo "- Automated tests: $(if npm run test:automated > /dev/null 2>&1; then echo "✅ Passed"; else echo "❌ Failed"; fi)" >> test-reports/test-summary.md
+          echo "- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')" >> test-reports/test-summary.md
           echo "- File structure: ✅ Modular architecture maintained" >> test-reports/test-summary.md
           echo "- Dependencies: ✅ No critical vulnerabilities detected" >> test-reports/test-summary.md
           

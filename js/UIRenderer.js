@@ -723,8 +723,17 @@ export class UIRenderer {
                 // Show backend error message
                 errorMsg.textContent = (e && e.message) ? e.message : 'Failed to save bug report!';
                 errorMsg.style.display = 'block';
+                errorMsg.style.color = '#ff6666';
                 modal.setAttribute('data-status', 'error');
                 window.bugReportModalStatus = 'error';
+                
+                // Auto-close modal after showing error for 3 seconds
+                setTimeout(() => {
+                    console.log('🎫 Auto-closing modal after error');
+                    this._closeBugReportModal();
+                    if (modal) modal.setAttribute('data-status', 'closed');
+                    window.bugReportModalStatus = 'closed';
+                }, 3000);
             }
         };
         document.getElementById('bugScreenshotBtn').onclick = () => this._saveAdditionalScreenshot(existingTicket);

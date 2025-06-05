@@ -137,10 +137,16 @@
     criticalFailures.push('BeatClock system missing');
   } else if (window.beatClock.isRunning === false) {
     criticalFailures.push('BeatClock not running');
+  } else if (result.beatClock.beatTimingHealthy === false) {
+    criticalFailures.push('BeatClock timing unhealthy');
   }
 
   if (criticalFailures.length > 0) {
     result.failure = criticalFailures.join('; ');
+    
+    // Return early after detecting critical failures to reduce noise and wasted work
+    console.error('🎵 Audio System Probe Critical Failure:', result.failure);
+    return result;
   }
 
   // If failure, trigger screenshot and automated bug reporting
