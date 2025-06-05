@@ -1,0 +1,147 @@
+# CodeRabbit Configuration for Vibe Game Project
+# AI-powered code reviews with context-aware feedback
+
+# Language settings
+language: en-US
+
+# Review settings
+reviews:
+  # Enable comprehensive code analysis
+  profile: chill
+  
+  # Request changes for critical issues
+  request_changes: auto
+  
+  # Auto-approve simple changes
+  auto_approve: false
+  
+  # Review entire files for context
+  review_full_file: true
+
+# Path-based review rules
+path_instructions:
+  - path: "js/**"
+    instructions: |
+      Focus on:
+      - Adherence to .cursorrules coding standards
+      - Proper p5.js instance mode usage (this.p. prefix)
+      - Emoji-prefixed console logging (🎮 🎵 🗡️ 💥 ⚠️ etc.)
+      - Constructor signature consistency for enemy classes
+      - deltaTimeMs parameter usage in update methods
+      - Dependency injection patterns vs window.* global access
+      - Error handling and null checks
+      - Performance implications for game loop code
+      
+  - path: "tests/**"
+    instructions: |
+      Focus on:
+      - Probe-driven testing patterns
+      - MCP Playwright tool usage
+      - Automated bug reporting integration
+      - Screenshot capture on failures
+      - Test coverage and edge cases
+      - Proper async/await patterns
+      
+  - path: "*.md"
+    instructions: |
+      Focus on:
+      - Documentation clarity and completeness
+      - Code example accuracy
+      - Proper markdown formatting
+      - Link validity and structure
+      
+  - path: "package.json"
+    instructions: |
+      Focus on:
+      - Dependency version compatibility
+      - Script naming consistency
+      - Security vulnerabilities
+      - Proper semver usage
+
+# Custom rules for game development
+rules:
+  # Enforce game-specific patterns
+  - pattern: "console\\.log\\("
+    message: "Use emoji-prefixed logging per .cursorrules standards"
+    severity: warning
+    
+  - pattern: "constructor\\(.*\\).*{[^}]*super\\([^,]*,[^,]*,[^,]*\\)"
+    message: "Enemy constructors must use signature: constructor(x, y, type, config, p, audio)"
+    severity: error
+    
+  - pattern: "update\\([^)]*\\).*{(?!.*deltaTimeMs)"
+    message: "Update methods should accept deltaTimeMs parameter for frame-independent timing"
+    severity: warning
+    
+  - pattern: "fill\\(|ellipse\\(|rect\\(|text\\("
+    message: "Use p5.js instance mode: this.p.fill(), this.p.ellipse(), etc."
+    severity: error
+
+# Ignore patterns
+ignore:
+  - "node_modules/**"
+  - "test-results/**"
+  - "playwright-report/**"
+  - "*.min.js"
+  - "package-lock.json"
+
+# Enable specific features
+features:
+  # Enable sequence diagram generation for complex interactions
+  sequence_diagrams: true
+  
+  # Enable security analysis
+  security_analysis: true
+  
+  # Enable performance analysis for game code
+  performance_analysis: true
+  
+  # Enable accessibility checks for UI code
+  accessibility_analysis: true
+
+# Custom prompts for game development context
+prompts:
+  system: |
+    You are reviewing code for Vibe, a p5.js-based geometric space shooter game.
+    
+    Key architectural principles:
+    - Modular design with clear separation of concerns
+    - Probe-driven testing with automated bug reporting
+    - p5.js instance mode for namespace safety
+    - Frame-independent timing using deltaTimeMs
+    - Emoji-prefixed logging for categorization
+    - Dependency injection for testability
+    
+    Focus on game performance, maintainability, and adherence to the established patterns.
+    
+  review: |
+    Analyze this code change in the context of a real-time game engine.
+    Consider performance implications, timing consistency, and architectural patterns.
+    Suggest improvements that align with the project's modular design principles.
+
+# Integration settings
+integrations:
+  # GitHub integration
+  github:
+    # Enable PR summaries
+    pr_summary: true
+    
+    # Enable interactive chat
+    chat: true
+    
+    # Auto-assign reviewers for critical changes
+    auto_assign: true
+    
+    # Label PRs based on analysis
+    auto_label: true
+
+# Notification settings
+notifications:
+  # Notify on critical issues
+  critical_issues: true
+  
+  # Notify on security vulnerabilities
+  security_issues: true
+  
+  # Notify on performance regressions
+  performance_issues: true

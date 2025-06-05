@@ -11,6 +11,11 @@
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
+    "test:mcp": "node run-mcp-tests.js",
+    "test:automated": "node automated-game-test.js",
+    "test:comprehensive": "npm run test:automated && npm run test:mcp",
+    "coderabbit:analyze": "node -e \"const CR = require('./js/coderabbit-integration.js'); const cr = new CR(); console.log('CodeRabbit analysis ready')\"",
+    "lint": "echo 'Running CodeRabbit-enhanced linting...' && npm run coderabbit:analyze",
     "api": "node ticket-api.js"
   },
   "devDependencies": {

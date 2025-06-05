@@ -108,3 +108,89 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 ## License
 MIT
+
+## Testing
+
+Vibe uses a comprehensive automated testing system with probe-driven testing and MCP Playwright integration.
+
+### Test Types
+
+1. **Automated Game Tests** - Basic system checks and file validation
+   ```bash
+   npm run test:automated
+   ```
+
+2. **MCP Probe-Driven Tests** - Comprehensive game state and behavior testing
+   ```bash
+   npm run test:mcp
+   ```
+
+3. **Comprehensive Test Suite** - Runs all automated tests
+   ```bash
+   npm run test:comprehensive
+   ```
+
+4. **Traditional Playwright Tests** - Browser-based testing
+   ```bash
+   npm run test          # Headless
+   npm run test:headed   # With browser UI
+   npm run test:debug    # Debug mode
+   ```
+
+### Probe-Driven Testing
+
+The game uses specialized probe files for different aspects:
+
+- **`js/ai-liveness-probe.js`** - Basic game state and entity presence
+- **`js/enemy-ai-probe.js`** - Enemy AI behavior and interactions  
+- **`js/audio-system-probe.js`** - Audio system and beat synchronization
+- **`js/combat-collision-probe.js`** - Combat mechanics and collision detection
+- **`js/ui-score-probe.js`** - UI elements and score system
+
+Each probe automatically:
+- Tests specific game systems
+- Captures screenshots on failure
+- Creates bug tickets via the ticketing system
+- Provides structured diagnostic data
+
+### MCP Playwright Integration
+
+The testing system uses MCP (Model Context Protocol) Playwright tools for:
+- Browser automation and control
+- JavaScript evaluation in game context
+- Screenshot capture and artifact management
+- Automated bug reporting integration
+
+### Test Artifacts
+
+Test results and artifacts are saved to:
+- **Screenshots**: `test-results/`
+- **Bug Reports**: `tests/bug-reports/`
+- **Test Reports**: `test-results/mcp-automated-test-report-*.json`
+- **Playwright Reports**: `playwright-report/`
+
+### Running Tests in Development
+
+The development server includes automated testing capabilities:
+
+```bash
+npm run dev  # Starts game server, bug watcher, and API server
+```
+
+Then in another terminal:
+```bash
+npm run test:comprehensive  # Run all automated tests
+```
+
+### Test Configuration
+
+- **Game URL**: `http://localhost:5500`
+- **Test Timeout**: 30 seconds per test
+- **Retry Attempts**: 2 retries on failure
+- **Screenshot on Failure**: Enabled
+- **Automated Bug Reporting**: Enabled
+
+For detailed testing documentation, see:
+- [MCP Playwright Testing Guide](docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md)
+- [Ticketing System Guide](TICKETING_SYSTEM_GUIDE.md)
+- [CodeRabbit Integration Guide](docs/CODERABBIT_INTEGRATION_GUIDE.md)
