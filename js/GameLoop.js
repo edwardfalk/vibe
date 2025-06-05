@@ -219,7 +219,7 @@ function draw(p) {
     
     // Log the current game state every frame
     if (window.DEBUG && window.gameState && window.gameState.gameState) {
-        console.log('[STATE] gameState:', window.gameState.gameState);
+        console.log('🎮 [STATE] gameState:', window.gameState.gameState);
     }
     
     // Draw background using BackgroundRenderer
@@ -319,7 +319,7 @@ function updateGame(p) {
     // Update enemies
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
-        const result = enemy.update(player ? player.x : 400, player ? player.y : 300);
+        const result = enemy.update(player ? player.x : 400, player ? player.y : 300, p.deltaTime);
         
         // Handle enemy update results
         if (result) {
@@ -496,7 +496,7 @@ function drawGame(p) {
     // Debug: Log camera position and enemy count every 30 frames
     if (typeof p.frameCount !== 'undefined' && p.frameCount % 30 === 0) {
         const cam = window.cameraSystem ? { x: window.cameraSystem.x, y: window.cameraSystem.y } : { x: 0, y: 0 };
-        console.log(`[DRAW GAME] camera=(${cam.x},${cam.y}) enemies=${enemies.length}`);
+        console.log(`🎮 [DRAW GAME] camera=(${cam.x},${cam.y}) enemies=${enemies.length}`);
     }
     // Apply camera transform for world objects
     if (window.cameraSystem) {

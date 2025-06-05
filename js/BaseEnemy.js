@@ -88,16 +88,22 @@ export class BaseEnemy {
     
     /**
      * Basic movement update - should be overridden by subclasses for specific AI
+     * @param {number} playerX - Player X position
+     * @param {number} playerY - Player Y position
+     * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
      */
-    update(playerX, playerY) {
+    update(playerX, playerY, deltaTimeMs = 16.6667) {
         // Update animation frame
         this.animFrame += 0.1;
         
-        // Decrease cooldowns
-        if (this.shootCooldown > 0) this.shootCooldown--;
-        if (this.hitFlash > 0) this.hitFlash--;
-        if (this.speechTimer > 0) this.speechTimer--;
-        if (this.speechCooldown > 0) this.speechCooldown--;
+        // Normalize deltaTime to 60fps baseline for frame-independent behavior
+        const dt = deltaTimeMs / 16.6667;
+        
+        // Decrease cooldowns using deltaTime
+        if (this.shootCooldown > 0) this.shootCooldown -= dt;
+        if (this.hitFlash > 0) this.hitFlash -= dt;
+        if (this.speechTimer > 0) this.speechTimer -= dt;
+        if (this.speechCooldown > 0) this.speechCooldown -= dt;
         
         // Calculate basic aim angle (subclasses can override targeting)
         const dx = playerX - this.x;
@@ -111,19 +117,23 @@ export class BaseEnemy {
         this.y += this.velocity.y;
         
         // Handle ambient speech timing
-        this.updateAmbientSpeech();
+        this.updateAmbientSpeech(deltaTimeMs);
         
         // Subclasses should override this method for specific behavior
-        return this.updateSpecificBehavior(playerX, playerY);
+        return this.updateSpecificBehavior(playerX, playerY, deltaTimeMs);
     }
     
     /**
      * Handle ambient speech timing - shared across all enemy types
+     * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
      */
-    updateAmbientSpeech() {
+    updateAmbientSpeech(deltaTimeMs) {
+        // Normalize deltaTime to 60fps baseline
+        const dt = deltaTimeMs / 16.6667;
+        
         // Handle ambient speech
         if (this.ambientSpeechTimer > 0) {
-            this.ambientSpeechTimer--;
+            this.ambientSpeechTimer -= dt;
         }
         
         if (this.ambientSpeechTimer <= 0 && this.speechCooldown <= 0) {
@@ -148,8 +158,11 @@ export class BaseEnemy {
     
     /**
      * Update specific behavior - must be implemented by subclasses
+     * @param {number} playerX - Player X position
+     * @param {number} playerY - Player Y position
+     * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
      */
-    updateSpecificBehavior(playerX, playerY) {
+    updateSpecificBehavior(playerX, playerY, deltaTimeMs) {
         // Must be implemented by subclasses
         return null;
     }

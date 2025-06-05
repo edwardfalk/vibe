@@ -8,15 +8,17 @@ import { CONFIG } from './config.js';
  * Features anger system that targets other enemies when friendly fire occurs
  */
 class Tank extends BaseEnemy {
-    constructor(x, y) {
-        const config = {
+    constructor(x, y, type, config, p, audio) {
+        const tankConfig = {
             size: 50,
             health: 60,
             speed: 0.3,
-            color: color(138, 43, 226) // Blue violet - massive
+            color: p.color(138, 43, 226) // Blue violet - massive
         };
         
-        super(x, y, 'tank', config);
+        super(x, y, 'tank', tankConfig, p, audio);
+        this.p = p;
+        this.audio = audio;
         
         // Tank special charging system
         this.chargingShot = false;
@@ -39,16 +41,20 @@ class Tank extends BaseEnemy {
         this.leftArmorDestroyed = false;
         this.rightArmorDestroyed = false;
         
-        console.log('Tank created with charging system, anger tracking, and multi-part armor initialized');
+        console.log('🛡️ Tank created with charging system, anger tracking, and multi-part armor initialized');
     }
     
     /**
      * Update specific tank behavior - heavy artillery
+     * @param {number} playerX - Player X position
+     * @param {number} playerY - Player Y position  
+     * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
      */
-    updateSpecificBehavior(playerX, playerY) {
+    updateSpecificBehavior(playerX, playerY, deltaTimeMs = 16.6667) {
         // Tank anger system - update anger cooldown and targeting
+        const dt = deltaTimeMs / 16.6667; // Normalize to 60fps baseline
         if (this.isAngry) {
-            this.angerCooldown--;
+            this.angerCooldown -= dt;
             if (this.angerCooldown <= 0) {
                 this.isAngry = false;
                 this.angerTarget = null;
@@ -113,7 +119,7 @@ class Tank extends BaseEnemy {
         
         // Handle charging shot system
         if (this.chargingShot) {
-            this.chargeTime++;
+            this.chargeTime += dt;
             
             // Tank power sound at different charge stages
             if (window.audio && window.beatClock) {
@@ -124,11 +130,11 @@ class Tank extends BaseEnemy {
             }
             
             // Different charging sounds at different stages
-            if (this.chargeTime === 1 && window.audio) {
+            if (this.chargeTime >= 1 && this.chargeTime < 1 + dt && window.audio) {
                 console.log('🔋 Tank starting to charge!');
                 window.audio.speak(this, "CHARGING!", 'tank');
                 window.audio.playSound('tankCharging', this.x, this.y);
-            } else if (this.chargeTime === this.maxChargeTime / 2 && window.audio) {
+            } else if (this.chargeTime >= this.maxChargeTime / 2 && this.chargeTime < (this.maxChargeTime / 2) + dt && window.audio) {
                 console.log('⚡ Tank 50% charged!');
                 window.audio.speak(this, "POWER UP!", 'tank');
                 window.audio.playSound('tankPowerUp', this.x, this.y);
@@ -182,20 +188,20 @@ class Tank extends BaseEnemy {
      */
     drawBody(s) {
         // Massive, blocky body
-        fill(this.bodyColor);
-        noStroke();
-        rect(-s * 0.5, -s * 0.6, s, s * 1.2); // Main chassis (center part)
+        this.p.fill(this.bodyColor);
+        this.p.noStroke();
+        this.p.rect(-s * 0.5, -s * 0.6, s, s * 1.2); // Main chassis (center part)
         
         // Decorative plating on main chassis (these are not the destructible armor)
-        fill(this.bodyColor.levels[0] + 20, this.bodyColor.levels[1] + 20, this.bodyColor.levels[2] + 20);
-        rect(-s * 0.45, -s * 0.5, s * 0.9, s * 0.2); // Top plate on chassis
-        rect(-s * 0.45, -s * 0.1, s * 0.9, s * 0.2); // Middle plate on chassis
-        rect(-s * 0.45, s * 0.3, s * 0.9, s * 0.2);  // Bottom plate on chassis
+        this.p.fill(this.bodyColor.levels[0] + 20, this.bodyColor.levels[1] + 20, this.bodyColor.levels[2] + 20);
+        this.p.rect(-s * 0.45, -s * 0.5, s * 0.9, s * 0.2); // Top plate on chassis
+        this.p.rect(-s * 0.45, -s * 0.1, s * 0.9, s * 0.2); // Middle plate on chassis
+        this.p.rect(-s * 0.45, s * 0.3, s * 0.9, s * 0.2);  // Bottom plate on chassis
         
         // Tank treads (visual only)
-        fill(this.bodyColor.levels[0] - 30, this.bodyColor.levels[1] - 30, this.bodyColor.levels[2] - 30);
-        rect(-s * 0.55, -s * 0.7, s * 1.1, s * 0.15); // Top of treads
-        rect(-s * 0.55, s * 0.55, s * 1.1, s * 0.15); // Bottom of treads
+        this.p.fill(this.bodyColor.levels[0] - 30, this.bodyColor.levels[1] - 30, this.bodyColor.levels[2] - 30);
+        this.p.rect(-s * 0.55, -s * 0.7, s * 1.1, s * 0.15); // Top of treads
+        this.p.rect(-s * 0.55, s * 0.55, s * 1.1, s * 0.15); // Bottom of treads
 
         // Draw Destructible Armor Pieces (these are drawn relative to the tank's center after rotation)
         this.drawArmorPlates(s);
@@ -214,43 +220,43 @@ class Tank extends BaseEnemy {
         // Front Armor (Tank's local +X side - its nose)
         push();
         if (!this.frontArmorDestroyed) {
-            fill(120, 120, 140); stroke(60, 60, 70); strokeWeight(2);
+            this.p.fill(120, 120, 140); this.p.stroke(60, 60, 70); this.p.strokeWeight(2);
             // rect(x_top_left, y_top_left, width, height)
             // x_top_left is chassisFrontX (places it on the front edge of the chassis)
             // y_top_left is -armorPlateLength / 2 + s * 0.1 (to align with cannon visually, slightly narrower than side armor)
             // width is armorPlateThickness (it extends along X-axis)
             // height is armorPlateLength * 0.8 (making it slightly shorter than side plates for visual distinction)
-            rect(chassisFrontX, -armorPlateLength * 0.4, armorPlateThickness * 1.5, armorPlateLength * 0.8);
+            this.p.rect(chassisFrontX, -armorPlateLength * 0.4, armorPlateThickness * 1.5, armorPlateLength * 0.8);
         } else {
-            fill(50, 50, 50, 150); noStroke();
-            rect(chassisFrontX, -armorPlateLength * 0.4, armorPlateThickness * 1.5, armorPlateLength * 0.8);
+            this.p.fill(50, 50, 50, 150); this.p.noStroke();
+            this.p.rect(chassisFrontX, -armorPlateLength * 0.4, armorPlateThickness * 1.5, armorPlateLength * 0.8);
         }
         pop();
 
         // Left Armor (Tank's local -Y side)
         push();
         if (!this.leftArmorDestroyed) {
-            fill(100, 100, 120); stroke(50, 50, 60); strokeWeight(2);
+            this.p.fill(100, 100, 120); this.p.stroke(50, 50, 60); this.p.strokeWeight(2);
             // rect(x_top_left, y_top_left, width, height)
             // x_top_left is -armorPlateLength / 2 to center it along the tank's X-axis.
             // y_top_left is -chassisSideY - armorPlateThickness (places it outside the chassis on the -Y side).
-            rect(-armorPlateLength / 2, -chassisSideY - armorPlateThickness, armorPlateLength, armorPlateThickness);
+            this.p.rect(-armorPlateLength / 2, -chassisSideY - armorPlateThickness, armorPlateLength, armorPlateThickness);
         } else {
-            fill(50, 50, 50, 150); noStroke();
-            rect(-armorPlateLength / 2, -chassisSideY - armorPlateThickness, armorPlateLength, armorPlateThickness);
+            this.p.fill(50, 50, 50, 150); this.p.noStroke();
+            this.p.rect(-armorPlateLength / 2, -chassisSideY - armorPlateThickness, armorPlateLength, armorPlateThickness);
         }
         pop();
 
         // Right Armor (Tank's local +Y side)
         push();
         if (!this.rightArmorDestroyed) {
-            fill(100, 100, 120); stroke(50, 50, 60); strokeWeight(2);
+            this.p.fill(100, 100, 120); this.p.stroke(50, 50, 60); this.p.strokeWeight(2);
             // x_top_left is -armorPlateLength / 2.
             // y_top_left is +chassisSideY (places it outside the chassis on the +Y side).
-            rect(-armorPlateLength / 2, chassisSideY, armorPlateLength, armorPlateThickness);
+            this.p.rect(-armorPlateLength / 2, chassisSideY, armorPlateLength, armorPlateThickness);
         } else {
-            fill(50, 50, 50, 150); noStroke();
-            rect(-armorPlateLength / 2, chassisSideY, armorPlateLength, armorPlateThickness);
+            this.p.fill(50, 50, 50, 150); this.p.noStroke();
+            this.p.rect(-armorPlateLength / 2, chassisSideY, armorPlateLength, armorPlateThickness);
         }
         pop();
     }
@@ -260,18 +266,18 @@ class Tank extends BaseEnemy {
      */
     drawWeapon(s) {
         // Massive tank cannon
-        fill(this.weaponColor);
-        rect(s * 0.3, -s * 0.1, s * 0.8, s * 0.2);
+        this.p.fill(this.weaponColor);
+        this.p.rect(s * 0.3, -s * 0.1, s * 0.8, s * 0.2);
         
         // Cannon details
-        fill(this.weaponColor.levels[0] + 30, this.weaponColor.levels[1] + 30, this.weaponColor.levels[2] + 30);
-        rect(s * 0.35, -s * 0.08, s * 0.7, s * 0.06);
-        rect(s * 0.35, s * 0.02, s * 0.7, s * 0.06);
+        this.p.fill(this.weaponColor.levels[0] + 30, this.weaponColor.levels[1] + 30, this.weaponColor.levels[2] + 30);
+        this.p.rect(s * 0.35, -s * 0.08, s * 0.7, s * 0.06);
+        this.p.rect(s * 0.35, s * 0.02, s * 0.7, s * 0.06);
         
         // Muzzle flash (larger for tank)
         if (this.muzzleFlash > 0) {
-            fill(255, 255, 100, this.muzzleFlash * 30);
-            ellipse(s * 1.1, 0, s * 0.4, s * 0.2);
+            this.p.fill(255, 255, 100, this.muzzleFlash * 30);
+            this.p.ellipse(s * 1.1, 0, s * 0.4, s * 0.2);
             this.muzzleFlash--;
         }
     }
@@ -284,14 +290,14 @@ class Tank extends BaseEnemy {
             this.drawChargingIndicator();
         }
         if (window.activeBombs && window.activeBombs.some(bomb => bomb.tankId === this.id)) {
-            push();
-            fill(255, 0, 0);
-            textAlign(CENTER, CENTER);
-            textSize(16);
-            stroke(0, 0, 0);
-            strokeWeight(3);
-            text('TIME BOMB!', this.x, this.y - this.size - 50);
-            pop();
+            this.p.push();
+            this.p.fill(255, 0, 0);
+            this.p.textAlign(this.p.CENTER, this.p.CENTER);
+            this.p.textSize(16);
+            this.p.stroke(0, 0, 0);
+            this.p.strokeWeight(3);
+            this.p.text('TIME BOMB!', this.x, this.y - this.size - 50);
+            this.p.pop();
         }
     }
     
@@ -306,24 +312,24 @@ class Tank extends BaseEnemy {
         const chargeRadius = this.size * (0.8 + chargePercent * 0.4);
         
         // Outer charge field
-        fill(100, 200, 255, 30 + chargePercent * 50 + pulse * 30);
-        noStroke();
-        ellipse(this.x, this.y, chargeRadius * 2.5);
+        this.p.fill(100, 200, 255, 30 + chargePercent * 50 + pulse * 30);
+        this.p.noStroke();
+        this.p.ellipse(this.x, this.y, chargeRadius * 2.5);
         
         // Inner energy core
-        fill(150, 220, 255, 60 + chargePercent * 80 + pulse * 40);
-        ellipse(this.x, this.y, chargeRadius * 1.5);
+        this.p.fill(150, 220, 255, 60 + chargePercent * 80 + pulse * 40);
+        this.p.ellipse(this.x, this.y, chargeRadius * 1.5);
         
         // Charge percentage text
-        fill(255, 255, 255);
-        textAlign(CENTER, CENTER);
-        textSize(10);
-        text(`${floor(chargePercent * 100)}%`, this.x, this.y - this.size - 25);
+        this.p.fill(255, 255, 255);
+        this.p.textAlign(this.p.CENTER, this.p.CENTER);
+        this.p.textSize(10);
+        this.p.text(`${floor(chargePercent * 100)}%`, this.x, this.y - this.size - 25);
         
         // "CHARGING" text
         if (chargePercent > 0.3) {
-            textSize(12);
-            text("CHARGING", this.x, this.y - this.size - 40);
+            this.p.textSize(12);
+            this.p.text("CHARGING", this.x, this.y - this.size - 40);
         }
     }
     

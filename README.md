@@ -13,7 +13,15 @@
 - [docs/DESIGN.md](./docs/DESIGN.md): Game design and Cosmic Beat System
 
 ## Overview
-Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. The project emphasizes clean architecture, maintainability, and a robust ticketing system for all bugs, features, and enhancements.
+Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
+
+**Technology Stack:**
+- **Engine**: p5.js 1.7.0 (migrated from Phaser for better modularity)
+- **Architecture**: ES modules with strict dependency injection
+- **Development**: MCP tools integration for advanced automation
+- **Testing**: Probe-driven Playwright with automated bug reporting
+
+The project features a robust ticketing system for all bugs, features, and enhancements, plus advanced MCP tools for memory management, automated testing, and file operations.
 
 For a detailed explanation of the Cosmic Beat System and musical gameplay, see [`docs/DESIGN.md`](./docs/DESIGN.md).
 
@@ -56,12 +64,16 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 ## Coding Standards
 - **Simplicity, readability, maintainability, testability, reusability.**
-- Use ES modules (`import`/`export`).
-- Use constants for world dimensions and math utilities from `mathUtils.js`.
-- Add `// Requires p5.js for constrain(), random(), lerp(), etc.` to files using p5.js globals.
+- **Multi-AI Model Compatibility**: Strict consistency standards ensure identical behavior across different AI models.
+- Use ES modules (`import`/`export`) with mandatory dependency injection patterns.
+- **p5.js Instance Mode**: All drawing functions must use `this.p.` prefix (e.g., `this.p.fill()`, `this.p.ellipse()`).
+- Import math functions from `mathUtils.js` instead of using p5.js globals.
+- **Constructor Signatures**: All enemy classes use exact signature: `constructor(x, y, type, config, p, audio)`.
+- **Console Logging**: All logs must use emoji prefixes (🎮 Game state, 🎵 Audio, 🗡️ Combat, etc.).
+- **Timing System**: Use `deltaTimeMs` for frame-independent calculations, normalized to 60fps baseline.
 - Use early returns, descriptive names, and clear error handling.
 - All code must pass ESLint and Prettier before commit.
-- See `.cursorrules` for full standards.
+- **See `.cursorrules` for complete standards and mandatory patterns.**
 
 ---
 

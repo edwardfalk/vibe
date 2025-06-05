@@ -7,16 +7,17 @@ import { CONFIG } from './config.js';
  * Two-stage system: battle cry at distance, explosion when close, enhanced explosion effects
  */
 class Rusher extends BaseEnemy {
-    constructor(x, y, p) {
-        const config = {
+    constructor(x, y, type, config, p, audio) {
+        const rusherConfig = {
             size: 22,
             health: 1,
             speed: 2.8,
-            color: color(255, 20, 147) // Deep pink - aggressive
+            color: p.color(255, 20, 147) // Deep pink - aggressive
         };
         
-        super(x, y, 'rusher', CONFIG.ENEMIES.RUSHER, p);
+        super(x, y, 'rusher', rusherConfig, p, audio);
         this.p = p;
+        this.audio = audio;
         
         // Rusher explosion system
         this.exploding = false;
@@ -29,19 +30,36 @@ class Rusher extends BaseEnemy {
         this.chargeDistance = 150; // Distance to start battle cry and charge
         this.explodeDistance = 50; // Distance to actually explode
         this.isCharging = false; // Track if currently charging
+        
+        // deltaTime-based timing for motion trail
+        this.motionTrailTimer = 0;
+        this.motionTrailInterval = 66.67; // ~4 frames at 60fps (4 * 16.67ms)
     }
     
     /**
      * Update specific rusher behavior - suicide bombing
+     * @param {number} playerX - Player X position
+     * @param {number} playerY - Player Y position  
+     * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
      */
-    updateSpecificBehavior(playerX, playerY) {
+    updateSpecificBehavior(playerX, playerY, deltaTimeMs) {
         const dx = playerX - this.x;
         const dy = playerY - this.y;
         const distance = sqrt(dx * dx + dy * dy);
         
+        // Update deltaTime-based timers
+        const dt = deltaTimeMs / 16.6667; // Normalize to 60fps baseline
+        
+        // Update motion trail timer
+        this.motionTrailTimer += deltaTimeMs;
+        if (this.isCharging && this.motionTrailTimer >= this.motionTrailInterval) {
+            this.drawMotionTrail();
+            this.motionTrailTimer = 0;
+        }
+        
         if (this.exploding) {
-            // Explosion countdown
-            this.explosionTimer++;
+            // Explosion countdown using deltaTime
+            this.explosionTimer += dt;
             
             // Check if explosion should occur
             const explosionTime = this.shotTriggered ? this.maxExplosionTime * 0.5 : this.maxExplosionTime;
@@ -145,6 +163,7 @@ class Rusher extends BaseEnemy {
     
     /**
      * Get animation modifications for explosive behavior
+     * Note: Visual effects use frameCount (appropriate for visual timing)
      */
     getAnimationModifications() {
         let bobble = 0;
@@ -153,8 +172,8 @@ class Rusher extends BaseEnemy {
         // Intense vibration for exploding rushers
         if (this.exploding) {
             const intensity = (this.explosionTimer / this.maxExplosionTime) * 8;
-            bobble += sin(frameCount * 0.8) * intensity;
-            waddle += cos(frameCount * 1.2) * intensity;
+            bobble += sin(frameCount * 0.8) * intensity; // frameCount OK for visual effects
+            waddle += cos(frameCount * 1.2) * intensity; // frameCount OK for visual effects
         }
         
         return { bobble, waddle };
@@ -162,9 +181,10 @@ class Rusher extends BaseEnemy {
     
     /**
      * Draw motion trail for charging rushers
+     * Note: This is now called from updateSpecificBehavior based on deltaTime timer
      */
     drawMotionTrail() {
-        if (this.isCharging && frameCount % 4 === 0 && typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
+        if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
             try {
                 const trailColor = [255, 100, 100];
                 visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
@@ -179,16 +199,16 @@ class Rusher extends BaseEnemy {
      */
     drawBody(s) {
         // Lean, angular body for speed
-        fill(this.bodyColor);
-        noStroke();
-        beginShape();
-        vertex(-s * 0.3, -s * 0.4);
-        vertex(s * 0.3, -s * 0.3);
-        vertex(s * 0.4, s * 0.3);
-        vertex(s * 0.2, s * 0.6);
-        vertex(-s * 0.2, s * 0.6);
-        vertex(-s * 0.4, s * 0.3);
-        endShape(CLOSE);
+        this.p.fill(this.bodyColor);
+        this.p.noStroke();
+        this.p.beginShape();
+        this.p.vertex(-s * 0.3, -s * 0.4);
+        this.p.vertex(s * 0.3, -s * 0.3);
+        this.p.vertex(s * 0.4, s * 0.3);
+        this.p.vertex(s * 0.2, s * 0.6);
+        this.p.vertex(-s * 0.2, s * 0.6);
+        this.p.vertex(-s * 0.4, s * 0.3);
+        this.p.endShape(this.p.CLOSE);
     }
     
     /**
@@ -211,26 +231,26 @@ class Rusher extends BaseEnemy {
         
         // Outer warning circle - more intense if shot
         const intensity = this.shotTriggered ? 150 : 100;
-        fill(255, 0, 0, 50 + pulse * intensity);
-        noStroke();
-        ellipse(this.x, this.y, warningRadius * 2);
+        this.p.fill(255, 0, 0, 50 + pulse * intensity);
+        this.p.noStroke();
+        this.p.ellipse(this.x, this.y, warningRadius * 2);
         
         // Inner danger zone
-        fill(255, 100, 0, 30 + pulse * 80);
-        ellipse(this.x, this.y, warningRadius * 1.2);
+        this.p.fill(255, 100, 0, 30 + pulse * 80);
+        this.p.ellipse(this.x, this.y, warningRadius * 1.2);
         
         // Countdown text
-        fill(255, 255, 255);
-        textAlign(CENTER, CENTER);
-        textSize(12);
+        this.p.fill(255, 255, 255);
+        this.p.textAlign(this.p.CENTER, this.p.CENTER);
+        this.p.textSize(12);
         const countdown = ceil((explosionTime - this.explosionTimer) / 60);
-        text(countdown, this.x, this.y - this.size - 20);
+        this.p.text(countdown, this.x, this.y - this.size - 20);
         
         // Add "SHOT!" text if triggered by shooting
         if (this.shotTriggered) {
-            fill(255, 255, 0);
-            textSize(10);
-            text("SHOT!", this.x, this.y - this.size - 35);
+            this.p.fill(255, 255, 0);
+            this.p.textSize(10);
+            this.p.text("SHOT!", this.x, this.y - this.size - 35);
         }
     }
     
@@ -250,6 +270,16 @@ class Rusher extends BaseEnemy {
         
         // Apply normal damage
         return super.takeDamage(amount, bulletAngle, damageSource);
+    }
+    
+    /**
+     * Override update to pass deltaTimeMs to specific behavior
+     */
+    update(playerX, playerY, deltaTimeMs = 16.6667) {
+        // Call specific behavior first, then parent update
+        const behaviorResult = this.updateSpecificBehavior(playerX, playerY, deltaTimeMs);
+        const baseUpdateResult = super.update(playerX, playerY, deltaTimeMs);
+        return behaviorResult != null ? behaviorResult : baseUpdateResult;
     }
     
     /**

@@ -1,3 +1,4 @@
+// Requires p5.js for random(), sin(), cos(), TWO_PI, lerp(), etc.
 /**
  * BackgroundRenderer.js - Handles all background drawing including parallax, cosmic effects, and space elements
  */
