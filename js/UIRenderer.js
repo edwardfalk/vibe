@@ -7,9 +7,21 @@
 import { floor, ceil, min } from './mathUtils.js';
 import { createTicket, updateTicket, loadTicket, listTickets } from './ticketManager.js';
 
+/**
+ * @param {GameState} gameState - The game state object (dependency injected for modularity)
+ * @param {Player} player - The player object (dependency injected for modularity)
+ * @param {Audio} audio - The audio system (dependency injected for modularity)
+ * @param {CameraSystem} cameraSystem - The camera system (dependency injected for modularity)
+ * @param {TestMode} testModeManager - The test mode manager (dependency injected for modularity)
+ */
 export class UIRenderer {
-    constructor() {
+    constructor(gameState, player, audio, cameraSystem, testModeManager) {
         // UI state
+        this.gameState = gameState;
+        this.player = player;
+        this.audio = audio;
+        this.cameraSystem = cameraSystem;
+        this.testModeManager = testModeManager;
         this.dashElement = null;
         this.gameOverMessages = [
             'GAME OVER',
@@ -59,23 +71,23 @@ export class UIRenderer {
     
     // Update HTML UI elements
     updateUI() {
-        if (!window.gameState || !window.player) return;
+        if (!this.gameState || !this.player) return;
         
         // Update main UI elements with enhanced formatting
-        const scoreText = window.gameState.killStreak >= 5 
-            ? `Score: ${window.gameState.score.toLocaleString()} (${window.gameState.killStreak}x STREAK!)`
-            : `Score: ${window.gameState.score.toLocaleString()}`;
+        const scoreText = this.gameState.killStreak >= 5 
+            ? `Score: ${this.gameState.score.toLocaleString()} (${this.gameState.killStreak}x STREAK!)`
+            : `Score: ${this.gameState.score.toLocaleString()}`;
         
         document.getElementById('score').textContent = scoreText;
-        document.getElementById('health').textContent = `Health: ${window.player.health}`;
-        document.getElementById('level').textContent = `Level: ${window.gameState.level}`;
+        document.getElementById('health').textContent = `Health: ${this.player.health}`;
+        document.getElementById('level').textContent = `Level: ${this.gameState.level}`;
         
         // Add dash cooldown indicator
         this.updateDashIndicator();
         
         // Update audio system
-        if (window.audio && typeof window.audio.updateTexts === 'function') {
-            window.audio.updateTexts();
+        if (this.audio && typeof this.audio.updateTexts === 'function') {
+            this.audio.updateTexts();
         }
     }
     
@@ -88,8 +100,8 @@ export class UIRenderer {
             document.body.appendChild(this.dashElement);
         }
         
-        if (window.player.dashCooldownMs > 0) {
-            const cooldownSeconds = (window.player.dashCooldownMs / 1000).toFixed(1);
+        if (this.player.dashCooldownMs > 0) {
+            const cooldownSeconds = (this.player.dashCooldownMs / 1000).toFixed(1);
             this.dashElement.textContent = `Dash: ${cooldownSeconds}s`;
             this.dashElement.style.color = '#ff6666';
         } else {
@@ -100,7 +112,7 @@ export class UIRenderer {
     
     // Draw game over screen
     drawGameOver(p) {
-        if (!window.gameState) return;
+        if (!this.gameState) return;
         
         p.push();
         
@@ -110,8 +122,8 @@ export class UIRenderer {
         
         // Check for new high score
         let isNewHighScore = false;
-        if (window.gameState.score > window.gameState.highScore) {
-            window.gameState.updateHighScore();
+        if (this.gameState.score > this.gameState.highScore) {
+            this.gameState.updateHighScore();
             isNewHighScore = true;
         }
         
@@ -119,7 +131,7 @@ export class UIRenderer {
         p.fill(255, 100, 100);
         p.textAlign(p.CENTER, p.CENTER);
         p.textSize(48 + p.sin(p.frameCount * 0.1) * 4);
-        const messageIndex = floor(window.gameState.score / 50) % this.gameOverMessages.length;
+        const messageIndex = floor(this.gameState.score / 50) % this.gameOverMessages.length;
         p.text(this.gameOverMessages[messageIndex], p.width/2, p.height/2 - 80);
         
         // New high score celebration
@@ -132,25 +144,25 @@ export class UIRenderer {
         // Score and level
         p.fill(255);
         p.textSize(24);
-        p.text(`Final Score: ${window.gameState.score.toLocaleString()}`, p.width/2, p.height/2 - 10);
-        p.text(`Level Reached: ${window.gameState.level}`, p.width/2, p.height/2 + 20);
+        p.text(`Final Score: ${this.gameState.score.toLocaleString()}`, p.width/2, p.height/2 - 10);
+        p.text(`Level Reached: ${this.gameState.level}`, p.width/2, p.height/2 + 20);
         
         // Stats
         p.fill(200, 200, 255);
         p.textSize(16);
-        p.text(`Enemies Killed: ${window.gameState.totalKills}`, p.width/2, p.height/2 + 45);
-        const accuracy = window.gameState.getAccuracy();
+        p.text(`Enemies Killed: ${this.gameState.totalKills}`, p.width/2, p.height/2 + 45);
+        const accuracy = this.gameState.getAccuracy();
         p.text(`Accuracy: ${accuracy}%`, p.width/2, p.height/2 + 65);
         
         // High score display
         p.fill(255, 255, 100);
         p.textSize(18);
-        p.text(`High Score: ${window.gameState.highScore.toLocaleString()}`, p.width/2, p.height/2 + 90);
+        p.text(`High Score: ${this.gameState.highScore.toLocaleString()}`, p.width/2, p.height/2 + 90);
         
         // Funny comment
         p.fill(255, 255, 100);
         p.textSize(16);
-        const commentIndex = floor(window.gameState.score / 30) % this.funnyComments.length;
+        const commentIndex = floor(this.gameState.score / 30) % this.funnyComments.length;
         p.text(this.funnyComments[commentIndex], p.width/2, p.height/2 + 115);
         
         // Restart instruction
@@ -163,7 +175,7 @@ export class UIRenderer {
     
     // Draw pause screen
     drawPauseScreen(p) {
-        if (!window.gameState) return;
+        if (!this.gameState) return;
         
         p.push();
         
@@ -185,12 +197,12 @@ export class UIRenderer {
         // Current stats
         p.fill(255, 255, 100);
         p.textSize(16);
-        p.text(`Score: ${window.gameState.score.toLocaleString()}`, p.width/2, p.height/2 + 60);
-        p.text(`Level: ${window.gameState.level} | Kills: ${window.gameState.totalKills}`, p.width/2, p.height/2 + 80);
+        p.text(`Score: ${this.gameState.score.toLocaleString()}`, p.width/2, p.height/2 + 60);
+        p.text(`Level: ${this.gameState.level} | Kills: ${this.gameState.totalKills}`, p.width/2, p.height/2 + 80);
         
-        if (window.gameState.killStreak >= 5) {
+        if (this.gameState.killStreak >= 5) {
             p.fill(255, 100, 100);
-            p.text(`🔥 ${window.gameState.killStreak}x KILL STREAK! 🔥`, p.width/2, p.height/2 + 100);
+            p.text(`🔥 ${this.gameState.killStreak}x KILL STREAK! 🔥`, p.width/2, p.height/2 + 100);
         }
         
         p.pop();
@@ -198,14 +210,14 @@ export class UIRenderer {
     
     // Draw bomb countdown indicators
     drawBombs(p) {
-        if (!window.activeBombs) return;
+        if (!this.gameState.activeBombs) return;
         
         p.push();
         
         // Draw bomb countdown indicators
-        for (const bomb of window.activeBombs) {
-            const screenX = bomb.x - (window.cameraSystem ? window.cameraSystem.x : 0);
-            const screenY = bomb.y - (window.cameraSystem ? window.cameraSystem.y : 0);
+        for (const bomb of this.gameState.activeBombs) {
+            const screenX = bomb.x - (this.cameraSystem ? this.cameraSystem.x : 0);
+            const screenY = bomb.y - (this.cameraSystem ? this.cameraSystem.y : 0);
             
             // Calculate countdown
             const secondsLeft = ceil(bomb.timer / 60);
@@ -244,9 +256,9 @@ export class UIRenderer {
     
     // Draw level progress indicator
     drawLevelProgress(p) {
-        if (!window.gameState) return;
+        if (!this.gameState) return;
         p.push();
-        const progress = window.gameState.getProgressToNextLevel();
+        const progress = this.gameState.getProgressToNextLevel();
         const barWidth = 200;
         const barHeight = 8;
         const barX = p.width - barWidth - 20;
@@ -268,15 +280,15 @@ export class UIRenderer {
         p.textAlign(p.RIGHT, p.TOP);
         p.textSize(12);
         p.noStroke();
-        p.text(`Level ${window.gameState.level} Progress`, barX + barWidth, barY - 15);
+        p.text(`Level ${this.gameState.level} Progress`, barX + barWidth, barY - 15);
         p.pop();
     }
     
     // Draw kill streak indicator
     drawKillStreakIndicator(p) {
-        if (!window.gameState || window.gameState.killStreak < 3) return;
+        if (!this.gameState || this.gameState.killStreak < 3) return;
         p.push();
-        const streak = window.gameState.killStreak;
+        const streak = this.gameState.killStreak;
         const x = p.width / 2;
         const y = 80;
         // Pulsing effect for high streaks
@@ -302,9 +314,9 @@ export class UIRenderer {
     
     // Draw health bar
     drawHealthBar(p) {
-        if (!window.player) return;
+        if (!this.player) return;
         p.push();
-        const healthPercent = window.player.health / window.player.maxHealth;
+        const healthPercent = this.player.health / this.player.maxHealth;
         const barWidth = 150;
         const barHeight = 12;
         const barX = 20;
@@ -332,7 +344,7 @@ export class UIRenderer {
         p.textAlign(p.LEFT, p.BOTTOM);
         p.textSize(12);
         p.noStroke();
-        p.text(`Health: ${window.player.health}/${window.player.maxHealth}`, barX, barY - 5);
+        p.text(`Health: ${this.player.health}/${this.player.maxHealth}`, barX, barY - 5);
         p.pop();
     }
     
@@ -345,8 +357,8 @@ export class UIRenderer {
         this.drawBombs(p);
         
         // Draw overlays based on game state
-        if (window.gameState) {
-            switch (window.gameState.gameState) {
+        if (this.gameState) {
+            switch (this.gameState.gameState) {
                 case 'gameOver':
                     this.drawGameOver(p);
                     break;
@@ -359,30 +371,30 @@ export class UIRenderer {
     
     // Handle key presses for UI
     handleKeyPress(key) {
-        if (!window.gameState) return false;
+        if (!this.gameState) return false;
         
         if (key === 'r' || key === 'R') {
-            if (window.gameState.gameState === 'gameOver') {
-                window.gameState.restart();
+            if (this.gameState.gameState === 'gameOver') {
+                this.gameState.restart();
                 return true;
             }
         }
         
         if (key === 'p' || key === 'P') {
-            if (window.gameState.gameState === 'playing') {
-                window.gameState.setGameState('paused');
+            if (this.gameState.gameState === 'playing') {
+                this.gameState.setGameState('paused');
                 console.log('⏸️ Game paused');
                 return true;
-            } else if (window.gameState.gameState === 'paused') {
-                window.gameState.setGameState('playing');
+            } else if (this.gameState.gameState === 'paused') {
+                this.gameState.setGameState('playing');
                 console.log('▶️ Game resumed');
                 return true;
             }
         }
         
         if (key === 'm' || key === 'M') {
-            if (window.audio) {
-                const soundEnabled = window.audio.toggle();
+            if (this.audio) {
+                const soundEnabled = this.audio.toggle();
                 console.log('Sound ' + (soundEnabled ? 'enabled' : 'disabled'));
                 document.getElementById('soundStatus').textContent = soundEnabled 
                     ? '🔊 Sound ON (M to toggle)' 
@@ -393,18 +405,18 @@ export class UIRenderer {
         
         if (key === 't' || key === 'T') {
             // Toggle test mode using the new modular system
-            if (window.testModeManager) {
-                const enabled = window.testModeManager.toggle();
+            if (this.testModeManager) {
+                const enabled = this.testModeManager.toggle();
                 return true;
             }
         }
         
         if (key === 'e' || key === 'E') {
             // Dash with E
-            if (window.gameState.gameState === 'playing' && window.player && window.player.dash()) {
+            if (this.gameState.gameState === 'playing' && this.player && this.player.dash()) {
                 console.log('💨 Player dash activated!');
-                if (window.cameraSystem) {
-                    window.cameraSystem.addShake(6, 12);
+                if (this.cameraSystem) {
+                    this.cameraSystem.addShake(6, 12);
                 }
                 return true;
             }
@@ -412,20 +424,20 @@ export class UIRenderer {
         
         if (key === ' ') {
             // Shoot with spacebar
-            if (window.gameState.gameState === 'playing' && window.player) {
-                const bullet = window.player.shoot();
+            if (this.gameState.gameState === 'playing' && this.player) {
+                const bullet = this.player.shoot();
                 if (bullet) {
                     // Ensure playerBullets array exists before pushing new bullet
                     // Prevents shots from vanishing if array was uninitialized
-                    if (!window.playerBullets) {
-                        window.playerBullets = [];
+                    if (!this.gameState.playerBullets) {
+                        this.gameState.playerBullets = [];
                     }
-                    window.playerBullets.push(bullet);
-                    if (window.gameState) {
-                        window.gameState.addShotFired();
+                    this.gameState.playerBullets.push(bullet);
+                    if (this.gameState) {
+                        this.gameState.addShotFired();
                     }
-                    if (window.audio) {
-                        window.audio.playPlayerShoot(window.player.x, window.player.y);
+                    if (this.audio) {
+                        this.audio.playPlayerShoot(this.player.x, this.player.y);
                     }
                 }
                 return true;
@@ -433,21 +445,21 @@ export class UIRenderer {
         }
         
         // Arrow keys for aim direction
-        if (window.gameState.gameState === 'playing' && window.player) {
+        if (this.gameState.gameState === 'playing' && this.player) {
             if (key === 'ArrowUp') {
-                window.player.aimAngle = -Math.PI / 2;
+                this.player.aimAngle = -Math.PI / 2;
                 return true;
             }
             if (key === 'ArrowDown') {
-                window.player.aimAngle = Math.PI / 2;
+                this.player.aimAngle = Math.PI / 2;
                 return true;
             }
             if (key === 'ArrowLeft') {
-                window.player.aimAngle = Math.PI;
+                this.player.aimAngle = Math.PI;
                 return true;
             }
             if (key === 'ArrowRight') {
-                window.player.aimAngle = 0;
+                this.player.aimAngle = 0;
                 return true;
             }
         }
@@ -542,10 +554,12 @@ export class UIRenderer {
     async _showBugReportModal(existingTicket = null) {
         if (this.bugReportActive) return;
         this.bugReportActive = true;
-        if (window.gameState) window.gameState.setGameState('paused');
+        if (this.gameState) this.gameState.setGameState('paused');
         // Modal
         const modal = document.createElement('div');
         modal.id = 'bugReportModal';
+        modal.setAttribute('data-status', 'idle'); // Track modal status for AI/automation
+        window.bugReportModalStatus = 'idle';
         modal.style.position = 'fixed';
         modal.style.top = '0';
         modal.style.left = '0';
@@ -597,7 +611,7 @@ export class UIRenderer {
             typeSelect.id = 'ticketTypeSelect';
             typeSelect.style.width = '100%';
             typeSelect.style.margin = '8px 0';
-            ['bug','enhancement','feature'].forEach(val => {
+            ['bug','enhancement','feature','task'].forEach(val => {
                 const opt = document.createElement('option');
                 opt.value = val;
                 opt.innerText = val.charAt(0).toUpperCase() + val.slice(1);
@@ -675,6 +689,8 @@ export class UIRenderer {
         document.getElementById('bugSaveBtn').onclick = async () => {
             errorMsg.style.display = 'none';
             errorMsg.textContent = '';
+            modal.setAttribute('data-status', 'saving');
+            window.bugReportModalStatus = 'saving';
             // Determine ticket
             let ticket = existingTicket;
             if (!ticket) {
@@ -690,6 +706,8 @@ export class UIRenderer {
                     ticket = { name, uid, type };
                 } else {
                     this._showToast('Please enter a short ticket name or select a ticket.');
+                    modal.setAttribute('data-status', 'idle');
+                    window.bugReportModalStatus = 'idle';
                     return;
                 }
             }
@@ -698,10 +716,15 @@ export class UIRenderer {
             // Related to
             let relatedTo = relatedToSelect ? relatedToSelect.value : '';
             try {
-                await this._saveBugReport(ticket, isAppending, relatedTo);
+                await this._saveBugReport(ticket, isAppending, relatedTo, modal, errorMsg);
+                // --- Playwright workflow note ---
+                // After clicking Save Report, take a Playwright screenshot to verify the modal closes and the ticket is created.
             } catch (e) {
+                // Show backend error message
                 errorMsg.textContent = (e && e.message) ? e.message : 'Failed to save bug report!';
                 errorMsg.style.display = 'block';
+                modal.setAttribute('data-status', 'error');
+                window.bugReportModalStatus = 'error';
             }
         };
         document.getElementById('bugScreenshotBtn').onclick = () => this._saveAdditionalScreenshot(existingTicket);
@@ -757,14 +780,15 @@ export class UIRenderer {
             this.bugReportModal = null;
         }
         this.bugReportActive = false;
+        window.bugReportModalStatus = 'closed';
         // Reset modal state
         this._screenshotDataList = [];
         this._pendingInitialScreenshot = null;
         // Clear textarea for next time
         const ta = document.getElementById('bugDesc');
         if (ta) ta.value = '';
-        if (window.gameState && window.gameState.gameState === 'paused') {
-            window.gameState.setGameState('playing');
+        if (this.gameState && this.gameState.gameState === 'paused') {
+            this.gameState.setGameState('playing');
         }
     }
 
@@ -820,7 +844,7 @@ export class UIRenderer {
         return Math.random().toString(36).substr(2, 6);
     }
 
-    async _saveBugReport(ticket, isAppending, relatedTo) {
+    async _saveBugReport(ticket, isAppending, relatedTo, modal, errorMsg) {
         const desc = document.getElementById('bugDesc').value;
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0,19);
         const folder = `tests/bug-reports/${ticket.name||ticket.title}_${ticket.uid||ticket.id}`;
@@ -866,20 +890,19 @@ export class UIRenderer {
         // Gather state
         const state = {
             frameCount: typeof frameCount !== 'undefined' ? frameCount : null,
-            gameState: safeGameState(window.gameState),
-            player: safePlayer(window.player),
-            enemies: Array.isArray(window.enemies) ? window.enemies.map(safeEnemy) : [],
-            playerBullets: Array.isArray(window.playerBullets) ? window.playerBullets.map(safeBullet) : [],
-            enemyBullets: Array.isArray(window.enemyBullets) ? window.enemyBullets.map(safeBullet) : [],
-            activeBombs: Array.isArray(window.activeBombs) ? window.activeBombs : [],
-            audio: safeAudio(window.audio),
+            gameState: safeGameState(this.gameState),
+            player: safePlayer(this.player),
+            enemies: Array.isArray(this.gameState.enemies) ? this.gameState.enemies.map(safeEnemy) : [],
+            playerBullets: Array.isArray(this.gameState.playerBullets) ? this.gameState.playerBullets.map(safeBullet) : [],
+            enemyBullets: Array.isArray(this.gameState.enemyBullets) ? this.gameState.enemyBullets.map(safeBullet) : [],
+            activeBombs: Array.isArray(this.gameState.activeBombs) ? this.gameState.activeBombs : [],
+            audio: safeAudio(this.audio),
             timestamp: Date.now(),
             description: desc,
             url: window.location.href,
             userAgent: navigator.userAgent,
-            logs: window._bugReportLogs ? window._bugReportLogs.slice(-100) : [],
+            logs: this._inputHistory.slice(),
             lastError: window._bugReportLastError || null,
-            inputHistory: this._inputHistory.slice(),
             fps: this._getFPS(),
             systemInfo: this._getSystemInfo(),
             ticketName: ticket.name||ticket.title,
@@ -932,12 +955,27 @@ export class UIRenderer {
                 };
                 await updateTicket(ticket.uid||ticket.id, updates);
             }
-            this._showToast('Bug report saved!');
+            // Show success message and close modal after short delay
+            if (modal && errorMsg) {
+                errorMsg.textContent = 'Ticket created!';
+                errorMsg.style.display = 'block';
+                errorMsg.style.color = '#66ff66';
+                modal.setAttribute('data-status', 'success');
+                window.bugReportModalStatus = 'success';
+                setTimeout(() => {
+                    this._closeBugReportModal();
+                    if (modal) modal.setAttribute('data-status', 'closed');
+                    window.bugReportModalStatus = 'closed';
+                }, 1000);
+            } else {
+                this._closeBugReportModal();
+                if (modal) modal.setAttribute('data-status', 'closed');
+                window.bugReportModalStatus = 'closed';
+            }
         } catch (e) {
             // Rethrow so the modal can show the error
             throw e;
         }
-        this._closeBugReportModal();
     }
 
     _captureCanvasScreenshot() {

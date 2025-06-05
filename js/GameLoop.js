@@ -22,6 +22,7 @@ import { Audio } from './Audio.js';
 import { BeatClock } from './BeatClock.js';
 import { Bullet } from './bullet.js';
 import { EffectsManager } from './effects.js';
+import VisualEffectsManager from './visualEffects.js';
 import { CONFIG } from './config.js';
 import { sqrt, max, min, floor, ceil, round, random, atan2, cos, sin } from './mathUtils.js';
 
@@ -47,6 +48,14 @@ window.activeBombs = activeBombs;
 window.explosionManager = null;
 window.audio = null;
 window.speechManager = null;
+
+// Keys system for testing
+window.keys = {
+    W: false, w: false,
+    A: false, a: false,
+    S: false, s: false,
+    D: false, d: false
+};
 
 // Add at the top, after global system references
 window.playerIsShooting = false;
@@ -133,7 +142,7 @@ function setup(p) {
     p.createCanvas(800, 600);
     
     // Initialize player at center
-    player = new Player(p, p.width/2, p.height/2);
+    player = new Player(p, p.width/2, p.height/2, window.cameraSystem);
     window.player = player;
     
     // Initialize global arrays
@@ -148,12 +157,15 @@ function setup(p) {
     
     // Disable visual effects for stability
     effectsManager = null;
-    visualEffectsManager = null;
+    if (!window.visualEffectsManager) {
+        window.visualEffectsManager = new VisualEffectsManager(window.backgroundLayers);
+    }
     console.log('🎮 Visual effects disabled - using stable rendering');
     
     // Initialize unified audio system
-    audio = new Audio(p);
-    window.audio = audio;
+    if (!window.audio) {
+        window.audio = new Audio(p, window.player);
+    }
     console.log('🎵 Unified audio system initialized');
     
     // Initialize modular systems
@@ -176,7 +188,7 @@ function setup(p) {
     console.log('🎮 GameState system initialized');
     
     if (!window.backgroundRenderer) {
-        window.backgroundRenderer = new BackgroundRenderer(p);
+        window.backgroundRenderer = new BackgroundRenderer(p, window.cameraSystem, window.player, window.gameState);
     }
     window.backgroundRenderer.createParallaxBackground(p);
     console.log('🌌 Background renderer initialized');
@@ -187,12 +199,12 @@ function setup(p) {
     console.log('💥 Collision system initialized');
     
     if (!window.uiRenderer) {
-        window.uiRenderer = new UIRenderer();
+        window.uiRenderer = new UIRenderer(window.gameState, window.player, window.audio, window.cameraSystem, window.testModeManager);
     }
     console.log('🖥️ UI renderer initialized');
     
     if (!window.testModeManager) {
-        window.testModeManager = new TestMode();
+        window.testModeManager = new TestMode(window.player);
     }
     console.log('🧪 Test mode manager initialized');
     
@@ -216,7 +228,7 @@ function draw(p) {
     
     // Log the current game state every frame
     if (window.DEBUG && window.gameState && window.gameState.gameState) {
-        console.log('[STATE] gameState:', window.gameState.gameState);
+        console.log('🎮 [STATE] gameState:', window.gameState.gameState);
     }
     
     // Draw background using BackgroundRenderer
@@ -316,7 +328,7 @@ function updateGame(p) {
     // Update enemies
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
-        const result = enemy.update(player ? player.x : 400, player ? player.y : 300);
+        const result = enemy.update(player ? player.x : 400, player ? player.y : 300, p.deltaTime);
         
         // Handle enemy update results
         if (result) {
@@ -387,8 +399,8 @@ function updateGame(p) {
                         // Apply knockback to player
                         const knockbackAngle = atan2(window.player.y - result.y, window.player.x - result.x);
                         const knockbackForce = 8;
-                        window.player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
-                        window.player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
+                        window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
+                        window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
                         
                         // Screen shake for dramatic effect
                         if (window.cameraSystem) {
@@ -493,7 +505,7 @@ function drawGame(p) {
     // Debug: Log camera position and enemy count every 30 frames
     if (typeof p.frameCount !== 'undefined' && p.frameCount % 30 === 0) {
         const cam = window.cameraSystem ? { x: window.cameraSystem.x, y: window.cameraSystem.y } : { x: 0, y: 0 };
-        console.log(`[DRAW GAME] camera=(${cam.x},${cam.y}) enemies=${enemies.length}`);
+        console.log(`🎮 [DRAW GAME] camera=(${cam.x},${cam.y}) enemies=${enemies.length}`);
     }
     // Apply camera transform for world objects
     if (window.cameraSystem) {
@@ -566,8 +578,8 @@ function handleAreaDamageEvents(damageEvents) {
                 // Apply knockback
                 const knockbackAngle = atan2(window.player.y - event.y, window.player.x - event.x);
                 const knockbackForce = 6;
-                window.player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
-                window.player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
+                window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
+                window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
                 
                 // Screen shake
                 if (window.cameraSystem) {
@@ -698,8 +710,8 @@ function updateBombs(p) {
                 const dy = bomb.y - window.player.y;
                 const playerDistSq = dx * dx + dy * dy;
                 if (playerDistSq < explosionRadiusSq) {
-                    const playerDistance = Math.sqrt(playerDistSq); // Only for proportional damage
-                    const damage = Math.max(10, Math.floor(40 * (1 - playerDistance / explosionRadius)));
+                    const playerDistance = sqrt(playerDistSq); // Only for proportional damage
+                    const damage = max(10, floor(40 * (1 - playerDistance / explosionRadius)));
                     console.log(`💥 Player took ${damage} bomb damage! Distance: ${playerDistance.toFixed(1)}`);
                     
                     if (window.audio) {
@@ -719,8 +731,8 @@ function updateBombs(p) {
                         // Apply massive knockback
                         const knockbackAngle = atan2(window.player.y - bomb.y, window.player.x - bomb.x);
                         const knockbackForce = 15;
-                        window.player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
-                        window.player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
+                        window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
+                        window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
                     }
                 }
             }
@@ -732,8 +744,8 @@ function updateBombs(p) {
                 const dy = bomb.y - enemy.y;
                 const enemyDistSq = dx * dx + dy * dy;
                 if (enemyDistSq < explosionRadiusSq) {
-                    const enemyDistance = Math.sqrt(enemyDistSq); // Only for proportional damage
-                    const damage = Math.max(5, Math.floor(30 * (1 - enemyDistance / explosionRadius)));
+                    const enemyDistance = sqrt(enemyDistSq); // Only for proportional damage
+                    const damage = max(5, floor(30 * (1 - enemyDistance / explosionRadius)));
                     const damageResult = enemy.takeDamage(damage, null, 'bomb');
                     
                     if (damageResult === true) {

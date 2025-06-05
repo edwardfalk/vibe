@@ -44,6 +44,9 @@
             <div>💨 Press Space to dash</div>
             <div>⏸️ Press P to pause/resume</div>
             <div>🧪 Press T to toggle test mode (auto-movement & shooting)</div>
+            <div>🚀 Press F7 for 3-minute extended gameplay test</div>
+            <div>📍 Press F6 for edge exploration test (visits all screen edges)</div>
+            <div>🛡️ Press F8 for enhanced edge exploration (with survival strategies)</div>
         </div>
     </div>
     
@@ -68,6 +71,13 @@
     <script type="module" src="js/UIRenderer.js"></script>
     <script type="module" src="js/CollisionSystem.js"></script>
     <script type="module" src="js/TestMode.js"></script>
+    <script type="module" src="js/comprehensive-test-suite.js"></script>
+    <script type="module" src="js/test-runner.js"></script>
+    <script type="module" src="js/interactive-gameplay-test.js"></script>
+    <script type="module" src="js/extended-gameplay-test.js"></script>
+    <script type="module" src="js/edge-exploration-test.js"></script>
+    <script type="module" src="js/enhanced-edge-exploration-test.js"></script>
+    <script type="module" src="js/ai-liveness-probe.js"></script>
     
     <!-- Modular explosion system -->
     <script type="module" src="js/explosions/Explosion.js"></script>
@@ -81,14 +91,14 @@
     <script type="module" src="js/player.js"></script>
     
     <!-- Modular enemy system (load in dependency order) -->
-    <!-- <script type="module" src="js/BaseEnemy.js"></script> -->
+    <script type="module" src="js/BaseEnemy.js"></script>
     <script type="module" src="js/Grunt.js"></script>
     <script type="module" src="js/Rusher.js"></script>
     <script type="module" src="js/Tank.js"></script>
     <script type="module" src="js/Stabber.js"></script>
     <script type="module" src="js/EnemyFactory.js"></script>
     
-    <!-- <script type="module" src="js/bullet.js"></script> -->
+    <script type="module" src="js/bullet.js"></script>
     
     <!-- Main game loop (load last) -->
     <script type="module" src="js/GameLoop.js"></script>

@@ -2,16 +2,23 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { CONFIG } from './config.js';
 import { Bullet } from './bullet.js';
-import { max, atan2 } from './mathUtils.js';
+import { max, atan2, sin, cos, random, TWO_PI } from './mathUtils.js';
 
 const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
 
 export class Player {
-    constructor(p, x, y) {
+    /**
+     * @param {p5} p - The p5 instance
+     * @param {number} x - Initial x position
+     * @param {number} y - Initial y position
+     * @param {CameraSystem} cameraSystem - The camera system (dependency injected for modularity)
+     */
+    constructor(p, x, y, cameraSystem) {
         this.p = p;
         this.x = x;
         this.y = y;
+        this.cameraSystem = cameraSystem;
         this.size = 32;
         this.health = 100;
         this.maxHealth = 100;
@@ -58,24 +65,28 @@ export class Player {
             console.log('[STATE] gameState:', window.gameState.gameState);
         }
         
-        // Handle movement
+        // Handle movement (check both keyboard and testing keys)
         this.velocity.x = 0;
         this.velocity.y = 0;
         this.isMoving = false;
         
-        if (this.p.keyIsDown(87)) { // W
+        // Check for W key (up movement)
+        if (this.p.keyIsDown(87) || (window.keys && (window.keys.W || window.keys.w))) {
             this.velocity.y = -this.speed;
             this.isMoving = true;
         }
-        if (this.p.keyIsDown(83)) { // S
+        // Check for S key (down movement)
+        if (this.p.keyIsDown(83) || (window.keys && (window.keys.S || window.keys.s))) {
             this.velocity.y = this.speed;
             this.isMoving = true;
         }
-        if (this.p.keyIsDown(65)) { // A
+        // Check for A key (left movement)
+        if (this.p.keyIsDown(65) || (window.keys && (window.keys.A || window.keys.a))) {
             this.velocity.x = -this.speed;
             this.isMoving = true;
         }
-        if (this.p.keyIsDown(68)) { // D
+        // Check for D key (right movement)
+        if (this.p.keyIsDown(68) || (window.keys && (window.keys.D || window.keys.d))) {
             this.velocity.x = this.speed;
             this.isMoving = true;
         }
@@ -122,8 +133,8 @@ export class Player {
                 this.aimAngle = atan2(dy, dx);
                 console.log('[AIM] Arrow keys: dx=' + dx + ', dy=' + dy + ', angle=' + (this.aimAngle * 180 / Math.PI).toFixed(1));
             }
-        } else if (window.cameraSystem) {
-            const worldMouse = window.cameraSystem.screenToWorld(this.p.mouseX, this.p.mouseY);
+        } else if (this.cameraSystem) {
+            const worldMouse = this.cameraSystem.screenToWorld(this.p.mouseX, this.p.mouseY);
             this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
         } else {
             this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
@@ -210,7 +221,7 @@ export class Player {
                     drawGlow(p, this.x, this.y, this.size * 2, p.color(100, 200, 255), 0.6);
                 } else if (healthPercent < 0.3) {
                     // Pulsing red glow when low health
-                    const pulse = p.sin(p.frameCount * 0.3) * 0.5 + 0.5;
+                    const pulse = sin(p.frameCount * 0.3) * 0.5 + 0.5;
                     drawGlow(p, this.x, this.y, this.size * 2.5, p.color(255, 100, 100), pulse * 0.8);
                 }
             } catch (error) {
@@ -223,7 +234,7 @@ export class Player {
         p.rotate(this.aimAngle);
         
         const s = this.size;
-        const walkBob = this.isMoving ? p.sin(this.animFrame) * 2 : 0;
+        const walkBob = this.isMoving ? sin(this.animFrame) * 2 : 0;
         
         // Body bob
         p.translate(0, walkBob);
@@ -236,7 +247,7 @@ export class Player {
         p.blendMode(p.BLEND);
         
         // Animated leg positions for walking
-        const legOffset = this.isMoving ? p.sin(this.animFrame) * 3 : 0;
+        const legOffset = this.isMoving ? sin(this.animFrame) * 3 : 0;
         // Ensure leg dimensions are always positive and visible
         const legWidth = max(s*0.15, 2);  // Minimum width of 2 pixels
         const legHeight = max(s*0.35, 8); // Minimum height of 8 pixels
@@ -257,7 +268,7 @@ export class Player {
         // Left arm (animated)
         p.push();
         p.translate(-s*0.25, 0);
-        p.rotate(this.isMoving ? p.sin(this.animFrame) * 0.3 : 0);
+        p.rotate(this.isMoving ? sin(this.animFrame) * 0.3 : 0);
         p.rect(-s*0.06, 0, s*0.12, s*0.25);
         p.pop();
         
@@ -347,11 +358,11 @@ export class Player {
                 p.strokeWeight(3 - layer);
                 for (let i = 0; i < 8; i++) {
                     const lineLength = s * (1.5 + i * 0.4 + layer * 0.3);
-                    const lineAngle = atan2(-this.dashVelocity.y, -this.dashVelocity.x) + p.random(-0.3, 0.3);
-                    const startX = p.cos(lineAngle) * lineLength * (0.3 + layer * 0.2);
-                    const startY = p.sin(lineAngle) * lineLength * (0.3 + layer * 0.2);
-                    const endX = p.cos(lineAngle) * lineLength;
-                    const endY = p.sin(lineAngle) * lineLength;
+                    const lineAngle = atan2(-this.dashVelocity.y, -this.dashVelocity.x) + random(-0.3, 0.3);
+                    const startX = cos(lineAngle) * lineLength * (0.3 + layer * 0.2);
+                    const startY = sin(lineAngle) * lineLength * (0.3 + layer * 0.2);
+                    const endX = cos(lineAngle) * lineLength;
+                    const endY = sin(lineAngle) * lineLength;
                     p.line(startX, startY, endX, endY);
                 }
             }
@@ -360,8 +371,8 @@ export class Player {
             for (let i = 0; i < 12; i++) {
                 const particleAngle = (i / 12) * TWO_PI;
                 const particleDistance = s * 2 * dashIntensity;
-                const particleX = p.cos(particleAngle) * particleDistance;
-                const particleY = p.sin(particleAngle) * particleDistance;
+                const particleX = cos(particleAngle) * particleDistance;
+                const particleY = sin(particleAngle) * particleDistance;
                 
                 p.fill(100 + i * 10, 200, 255, dashIntensity * 100);
                 p.noStroke();
@@ -535,5 +546,58 @@ export class Player {
     checkCollision(other) {
         const distance = this.p.dist(this.x, this.y, other.x, other.y);
         return distance < (this.size + other.size) * 0.5;
+    }
+    
+    /**
+     * Handle input for testing purposes
+     * @param {Object} keys - Key state object
+     */
+    handleInput(keys) {
+        // This method is used by the testing system to simulate input
+        // The actual input handling is done in the update() method
+        if (keys) {
+            // Store previous position for testing
+            const prevX = this.x;
+            const prevY = this.y;
+            
+            // Reset velocity
+            this.velocity.x = 0;
+            this.velocity.y = 0;
+            
+            // Apply movement based on key states
+            if (keys.W || keys.w) this.velocity.y = -this.speed;
+            if (keys.S || keys.s) this.velocity.y = this.speed;
+            if (keys.A || keys.a) this.velocity.x = -this.speed;
+            if (keys.D || keys.d) this.velocity.x = this.speed;
+            
+            // Normalize diagonal movement
+            if (this.velocity.x !== 0 && this.velocity.y !== 0) {
+                this.velocity.x *= 0.707;
+                this.velocity.y *= 0.707;
+            }
+            
+            // Apply movement
+            this.x += this.velocity.x;
+            this.y += this.velocity.y;
+            
+            // Apply world bounds
+            const halfSize = this.size / 2;
+            const margin = 5;
+            const worldBounds = {
+                left: -WORLD_WIDTH/2 + margin,
+                right: WORLD_WIDTH/2 - margin,
+                top: -WORLD_HEIGHT/2 + margin,
+                bottom: WORLD_HEIGHT/2 - margin
+            };
+            this.x = this.p.constrain(this.x, worldBounds.left + halfSize, worldBounds.right - halfSize);
+            this.y = this.p.constrain(this.y, worldBounds.top + halfSize, worldBounds.bottom - halfSize);
+            
+            return {
+                moved: Math.abs(this.x - prevX) > 0.1 || Math.abs(this.y - prevY) > 0.1,
+                prevPos: { x: prevX, y: prevY },
+                newPos: { x: this.x, y: this.y }
+            };
+        }
+        return { moved: false };
     }
 } 

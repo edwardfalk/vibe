@@ -6,7 +6,7 @@ import { sin, cos, random } from './mathUtils.js';
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
 class VisualEffectsManager {
-    constructor() {
+    constructor(backgroundLayers) {
         // Particle systems
         this.particles = [];
         this.cosmicDust = [];
@@ -34,6 +34,8 @@ class VisualEffectsManager {
             [221, 160, 221], // Plum
             [255, 182, 193]  // Light pink
         ];
+        
+        this.backgroundLayers = backgroundLayers;
     }
     
     // Initialize after p5.js is ready
@@ -227,8 +229,8 @@ class VisualEffectsManager {
     drawEnhancedStars(p, camera) {
         p.push();
         p.blendMode(p.ADD);
-        if (window.backgroundLayers && window.backgroundLayers[1]) {
-            window.backgroundLayers[1].forEach(star => {
+        if (this.backgroundLayers && this.backgroundLayers[1]) {
+            this.backgroundLayers[1].forEach(star => {
                 if (star.brightness > 0.8) {
                     const parallaxX = star.x - camera.x * 0.3;
                     const parallaxY = star.y - camera.y * 0.3;

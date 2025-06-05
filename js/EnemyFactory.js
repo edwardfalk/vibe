@@ -71,9 +71,9 @@ class EnemyFactory {
     /**
      * Create an enemy of the specified type
      */
-    createEnemy(x, y, type = 'grunt', p) {
+    createEnemy(x, y, type = 'grunt', p, audio = null) {
         if (!this.configs[type]) {
-            console.warn(`Unknown enemy type: ${type}, defaulting to grunt`);
+            console.warn(`⚠️ Unknown enemy type: ${type}, defaulting to grunt`);
             type = 'grunt';
         }
         
@@ -81,12 +81,12 @@ class EnemyFactory {
         const EnemyClass = config.class;
         
         if (!EnemyClass) {
-            console.error(`Enemy class not found for type: ${type}`);
+            console.error(`⚠️ Enemy class not found for type: ${type}`);
             return null;
         }
         
-        // Create the enemy using the appropriate class
-        const enemy = new EnemyClass(x, y, p);
+        // Create the enemy using the appropriate class with correct constructor signature
+        const enemy = new EnemyClass(x, y, type, config, p, audio || window.audio);
         
         console.log(`🏭 EnemyFactory created ${type} at (${x.toFixed(0)}, ${y.toFixed(0)})`);
         return enemy;
@@ -111,21 +111,21 @@ class EnemyFactory {
     /**
      * Create a random enemy appropriate for the current level
      */
-    createRandomEnemyForLevel(x, y, level, p) {
+    createRandomEnemyForLevel(x, y, level, p, audio = null) {
         const availableTypes = this.getAvailableTypesForLevel(level);
         const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
         
-        return this.createEnemy(x, y, randomType, p);
+        return this.createEnemy(x, y, randomType, p, audio);
     }
     
     /**
      * Create multiple enemies for spawning
      */
-    createEnemies(spawnData, p) {
+    createEnemies(spawnData, p, audio = null) {
         const enemies = [];
         
         for (const spawn of spawnData) {
-            const enemy = this.createEnemy(spawn.x, spawn.y, spawn.type, p);
+            const enemy = this.createEnemy(spawn.x, spawn.y, spawn.type, p, audio);
             if (enemy) {
                 enemies.push(enemy);
             }
@@ -219,7 +219,7 @@ class EnemyFactory {
     /**
      * Create enemy at random edge position
      */
-    createEnemyAtEdge(type, screenWidth, screenHeight, cameraOffsetX = 0, cameraOffsetY = 0, p) {
+    createEnemyAtEdge(type, screenWidth, screenHeight, cameraOffsetX = 0, cameraOffsetY = 0, p, audio = null) {
         const margin = 50;
         let x, y;
         
@@ -245,17 +245,17 @@ class EnemyFactory {
                 break;
         }
         
-        return this.createEnemy(x, y, type, p);
+        return this.createEnemy(x, y, type, p, audio);
     }
     
     /**
      * Create enemy at random edge position for current level
      */
-    createRandomEnemyAtEdge(level, screenWidth, screenHeight, cameraOffsetX = 0, cameraOffsetY = 0, p) {
+    createRandomEnemyAtEdge(level, screenWidth, screenHeight, cameraOffsetX = 0, cameraOffsetY = 0, p, audio = null) {
         const availableTypes = this.getAvailableTypesForLevel(level);
         const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
         
-        return this.createEnemyAtEdge(randomType, screenWidth, screenHeight, cameraOffsetX, cameraOffsetY, p);
+        return this.createEnemyAtEdge(randomType, screenWidth, screenHeight, cameraOffsetX, cameraOffsetY, p, audio);
     }
     
     /**

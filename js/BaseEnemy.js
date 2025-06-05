@@ -1,17 +1,26 @@
 import { Bullet } from './bullet.js';
 import { CONFIG } from './config.js';
+import { random, sin, cos, atan2 } from './mathUtils.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
  * Handles position, health, basic movement, common rendering, and speech systems
  */
 export class BaseEnemy {
-    constructor(x, y, type, config, p) {
+    /**
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @param {string} type - Enemy type
+     * @param {object} config - Enemy config
+     * @param {p5} p - The p5 instance
+     * @param {Audio} audio - The audio system (dependency injected for modularity)
+     */
+    constructor(x, y, type, config, p, audio) {
         // Core properties
         this.x = x;
         this.y = y;
         this.type = type;
-        this.id = Math.random().toString(36).substr(2, 9); // Unique ID for each enemy
+        this.id = random().toString(36).substr(2, 9); // Unique ID for each enemy
         
         // Configuration from type-specific configs
         this.size = config.size;
@@ -44,6 +53,7 @@ export class BaseEnemy {
         this.ambientSpeechTimer = p.random(speechConfig.AMBIENT_MIN * 60, speechConfig.AMBIENT_MAX * 60); // seconds to frames
         
         this.p = p;
+        this.audio = audio;
         
         // Initialize type-specific colors
         this.initializeColors();
@@ -79,22 +89,28 @@ export class BaseEnemy {
     
     /**
      * Basic movement update - should be overridden by subclasses for specific AI
+     * @param {number} playerX - Player X position
+     * @param {number} playerY - Player Y position
+     * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
      */
-    update(playerX, playerY) {
+    update(playerX, playerY, deltaTimeMs = 16.6667) {
         // Update animation frame
         this.animFrame += 0.1;
         
-        // Decrease cooldowns
-        if (this.shootCooldown > 0) this.shootCooldown--;
-        if (this.hitFlash > 0) this.hitFlash--;
-        if (this.speechTimer > 0) this.speechTimer--;
-        if (this.speechCooldown > 0) this.speechCooldown--;
+        // Normalize deltaTime to 60fps baseline for frame-independent behavior
+        const dt = deltaTimeMs / 16.6667;
+        
+        // Decrease cooldowns using deltaTime
+        if (this.shootCooldown > 0) this.shootCooldown -= dt;
+        if (this.hitFlash > 0) this.hitFlash -= dt;
+        if (this.speechTimer > 0) this.speechTimer -= dt;
+        if (this.speechCooldown > 0) this.speechCooldown -= dt;
         
         // Calculate basic aim angle (subclasses can override targeting)
         const dx = playerX - this.x;
         const dy = playerY - this.y;
         if (dx !== 0 || dy !== 0) {
-            this.aimAngle = this.p.atan2(dy, dx);
+            this.aimAngle = atan2(dy, dx);
         }
         
         // Apply velocity
@@ -102,19 +118,23 @@ export class BaseEnemy {
         this.y += this.velocity.y;
         
         // Handle ambient speech timing
-        this.updateAmbientSpeech();
+        this.updateAmbientSpeech(deltaTimeMs);
         
         // Subclasses should override this method for specific behavior
-        return this.updateSpecificBehavior(playerX, playerY);
+        return this.updateSpecificBehavior(playerX, playerY, deltaTimeMs);
     }
     
     /**
      * Handle ambient speech timing - shared across all enemy types
+     * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
      */
-    updateAmbientSpeech() {
+    updateAmbientSpeech(deltaTimeMs) {
+        // Normalize deltaTime to 60fps baseline
+        const dt = deltaTimeMs / 16.6667;
+        
         // Handle ambient speech
         if (this.ambientSpeechTimer > 0) {
-            this.ambientSpeechTimer--;
+            this.ambientSpeechTimer -= dt;
         }
         
         if (this.ambientSpeechTimer <= 0 && this.speechCooldown <= 0) {
@@ -139,8 +159,11 @@ export class BaseEnemy {
     
     /**
      * Update specific behavior - must be implemented by subclasses
+     * @param {number} playerX - Player X position
+     * @param {number} playerY - Player Y position
+     * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
      */
-    updateSpecificBehavior(playerX, playerY) {
+    updateSpecificBehavior(playerX, playerY, deltaTimeMs) {
         // Must be implemented by subclasses
         return null;
     }
@@ -163,11 +186,11 @@ export class BaseEnemy {
                 drawGlow(this.x, this.y, glowSize, glowColor, speechGlowIntensity);
                 
                 // Add extra pulsing glow for aggressive speech
-                if (isSpeaking && window.audio) {
-                    const activeTexts = window.audio.activeTexts || [];
+                if (isSpeaking && this.audio) {
+                    const activeTexts = this.audio.activeTexts || [];
                     const myText = activeTexts.find(text => text.entity === this);
                     if (myText && myText.isAggressive) {
-                        const aggressivePulse = Math.sin(p.frameCount * 0.8) * 0.3 + 0.5;
+                        const aggressivePulse = sin(p.frameCount * 0.8) * 0.3 + 0.5;
                         drawGlow(this.x, this.y, this.size * 2, this.p.color(255, 0, 0), aggressivePulse * 0.6);
                     }
                 }
@@ -225,8 +248,8 @@ export class BaseEnemy {
         p.rotate(this.aimAngle);
         
         const s = this.size;
-        let bobble = Math.sin(this.animFrame) * 2;
-        let waddle = Math.cos(this.animFrame * 0.8) * 1.5;
+        let bobble = sin(this.animFrame) * 2;
+        let waddle = cos(this.animFrame * 0.8) * 1.5;
         
         // Allow subclasses to modify animation
         const animationMods = this.getAnimationModifications();
@@ -245,7 +268,7 @@ export class BaseEnemy {
             p.translate(shakeX, shakeY);
             
             // Comical size distortion when hit
-            const distortion = 1 + Math.sin(p.frameCount * 2) * hitIntensity * 0.1;
+            const distortion = 1 + sin(p.frameCount * 2) * hitIntensity * 0.1;
             p.scale(distortion, 1 / distortion);
         }
         
@@ -404,16 +427,16 @@ export class BaseEnemy {
      */
     createBullet() {
         const bulletDistance = this.size * 0.9;
-        const bulletX = this.x + Math.cos(this.aimAngle) * bulletDistance;
-        const bulletY = this.y + Math.sin(this.aimAngle) * bulletDistance;
+        const bulletX = this.x + cos(this.aimAngle) * bulletDistance;
+        const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
         
         // Create bullet with enemy type information
         const bullet = new Bullet(bulletX, bulletY, this.aimAngle, 4, `enemy-${this.type}`);
         bullet.ownerId = this.id; // Use unique enemy ID to prevent self-shooting
         
         // Play alien shooting sound
-        if (window.audio) {
-            window.audio.playAlienShoot(this.x, this.y);
+        if (this.audio) {
+            this.audio.playAlienShoot(this.x, this.y);
         }
         
         // DEBUG: Log bullet creation only if collision debug is enabled

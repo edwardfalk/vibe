@@ -7,9 +7,13 @@
 import { Bullet } from './bullet.js';
 import { sin, cos, min, floor, random, atan2 } from './mathUtils.js';
 
+/**
+ * @param {Player} player - The player object (dependency injected for modularity)
+ */
 export class TestMode {
-    constructor() {
+    constructor(player) {
         // Test mode state
+        this.player = player;
         this.enabled = false;
         this.timer = 0;
         
@@ -48,7 +52,7 @@ export class TestMode {
     
     // Update test mode (call every frame)
     update() {
-        if (!this.enabled || !window.player) return;
+        if (!this.enabled || !this.player) return;
         
         this.timer++;
         
@@ -67,7 +71,7 @@ export class TestMode {
     
     // Update player movement patterns
     updatePlayerMovement() {
-        const halfSize = window.player.size / 2;
+        const halfSize = this.player.size / 2;
         
         // Test pattern that specifically targets all four corners and edges
         const phase = (this.timer * this.moveSpeed) % (Math.PI * 8); // Complete cycle every ~8 seconds
@@ -87,8 +91,8 @@ export class TestMode {
         }
         
         // Apply proper player constraints (same as in player.js)
-        window.player.x = constrain(window.player.x, halfSize, width - halfSize);
-        window.player.y = constrain(window.player.y, halfSize, height - halfSize);
+        this.player.x = constrain(this.player.x, halfSize, width - halfSize);
+        this.player.y = constrain(this.player.y, halfSize, height - halfSize);
     }
     
     // Move player to corners in sequence
@@ -96,35 +100,35 @@ export class TestMode {
         const cornerPhase = (phase / (Math.PI * 2)) * 4;
         if (cornerPhase < 1) {
             // Top-left corner
-            window.player.x = halfSize;
-            window.player.y = halfSize;
+            this.player.x = halfSize;
+            this.player.y = halfSize;
         } else if (cornerPhase < 2) {
             // Top-right corner
-            window.player.x = width - halfSize;
-            window.player.y = halfSize;
+            this.player.x = width - halfSize;
+            this.player.y = halfSize;
         } else if (cornerPhase < 3) {
             // Bottom-right corner
-            window.player.x = width - halfSize;
-            window.player.y = height - halfSize;
+            this.player.x = width - halfSize;
+            this.player.y = height - halfSize;
         } else {
             // Bottom-left corner
-            window.player.x = halfSize;
-            window.player.y = height - halfSize;
+            this.player.x = halfSize;
+            this.player.y = height - halfSize;
         }
     }
     
     // Move along vertical edges (left and right)
     moveAlongVerticalEdges(phase, halfSize) {
         const edgePhase = phase / (Math.PI * 2);
-        window.player.x = edgePhase < 0.5 ? halfSize : width - halfSize; // Left then right edge
-        window.player.y = halfSize + (height - window.player.size) * sin(edgePhase * Math.PI * 4); // Move up/down along edge
+        this.player.x = edgePhase < 0.5 ? halfSize : width - halfSize; // Left then right edge
+        this.player.y = halfSize + (height - this.player.size) * sin(edgePhase * Math.PI * 4); // Move up/down along edge
     }
     
     // Move along horizontal edges (top and bottom)
     moveAlongHorizontalEdges(phase, halfSize) {
         const edgePhase = phase / (Math.PI * 2);
-        window.player.y = edgePhase < 0.5 ? halfSize : height - halfSize; // Top then bottom edge
-        window.player.x = halfSize + (width - window.player.size) * sin(edgePhase * Math.PI * 4); // Move left/right along edge
+        this.player.y = edgePhase < 0.5 ? halfSize : height - halfSize; // Top then bottom edge
+        this.player.x = halfSize + (width - this.player.size) * sin(edgePhase * Math.PI * 4); // Move left/right along edge
     }
     
     // Move in center pattern
@@ -132,8 +136,8 @@ export class TestMode {
         const centerX = width / 2;
         const centerY = height / 2;
         const radius = Math.min(width, height) * 0.2;
-        window.player.x = centerX + radius * cos(phase * 2);
-        window.player.y = centerY + radius * cos(phase * 2);
+        this.player.x = centerX + radius * cos(phase * 2);
+        this.player.y = centerY + radius * cos(phase * 2);
     }
     
     // Update auto-shooting
@@ -157,7 +161,7 @@ export class TestMode {
         let nearestDistance = Infinity;
         
         for (const enemy of window.enemies) {
-            const distance = dist(window.player.x, window.player.y, enemy.x, enemy.y);
+            const distance = dist(this.player.x, this.player.y, enemy.x, enemy.y);
             if (distance < nearestDistance) {
                 nearestDistance = distance;
                 nearestEnemy = enemy;
@@ -170,10 +174,10 @@ export class TestMode {
     // Shoot at specific enemy
     shootAtEnemy(enemy) {
         // Aim at enemy
-        const angle = atan2(enemy.y - window.player.y, enemy.x - window.player.x);
-        const bulletDistance = window.player.size * 0.9;
-        const bulletX = window.player.x + cos(angle) * bulletDistance;
-        const bulletY = window.player.y + sin(angle) * bulletDistance;
+        const angle = atan2(enemy.y - this.player.y, enemy.x - this.player.x);
+        const bulletDistance = this.player.size * 0.9;
+        const bulletX = this.player.x + cos(angle) * bulletDistance;
+        const bulletY = this.player.y + sin(angle) * bulletDistance;
         
         const bullet = new Bullet(bulletX, bulletY, angle, 6, 'player');
         if (window.playerBullets) {
@@ -189,7 +193,7 @@ export class TestMode {
         
         // Play shoot sound
         if (window.audio) {
-            window.audio.playPlayerShoot(window.player.x, window.player.y);
+            window.audio.playPlayerShoot(this.player.x, this.player.y);
         }
     }
     
@@ -220,10 +224,10 @@ export class TestMode {
         if (this.timer - this.lastLogFrame >= this.logInterval) {
             const cameraX = window.cameraSystem ? window.cameraSystem.x : 0;
             const cameraY = window.cameraSystem ? window.cameraSystem.y : 0;
-            const visualX = window.player.x - cameraX;
-            const visualY = window.player.y - cameraY;
+            const visualX = this.player.x - cameraX;
+            const visualY = this.player.y - cameraY;
             
-            console.log(`🎯 Edge Test - World: (${window.player.x.toFixed(1)}, ${window.player.y.toFixed(1)}) Visual: (${visualX.toFixed(1)}, ${visualY.toFixed(1)}) Camera: (${cameraX.toFixed(1)}, ${cameraY.toFixed(1)})`);
+            console.log(`🎯 Edge Test - World: (${this.player.x.toFixed(1)}, ${this.player.y.toFixed(1)}) Visual: (${visualX.toFixed(1)}, ${visualY.toFixed(1)}) Camera: (${cameraX.toFixed(1)}, ${cameraY.toFixed(1)})`);
             this.lastLogFrame = this.timer;
         }
         
@@ -307,15 +311,4 @@ export class TestMode {
             }
         }, 5000); // Change pattern every 5 seconds
     }
-}
-
-// Create global test mode instance
-window.testMode = false; // Keep backward compatibility
-window.testModeManager = new TestMode();
-
-// Backward compatibility function
-window.runTestMode = function() {
-    if (window.testModeManager) {
-        window.testModeManager.update();
-    }
-}; 
+} 

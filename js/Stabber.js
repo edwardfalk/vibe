@@ -7,15 +7,17 @@ import { CONFIG } from './config.js';
  * Features three-phase attack system: approach → prepare → dash attack
  */
 class Stabber extends BaseEnemy {
-    constructor(x, y) {
-        const config = {
+    constructor(x, y, type, config, p, audio) {
+        const stabberConfig = {
             size: 28,
             health: 10,
             speed: 1.5,
-            color: color(255, 215, 0) // Gold - heavily armored melee fighter
+            color: p.color(255, 215, 0) // Gold - heavily armored melee fighter
         };
         
-        super(x, y, 'stabber', config);
+        super(x, y, 'stabber', stabberConfig, p, audio);
+        this.p = p;
+        this.audio = audio;
         
         // Stabber melee system - heavily armored close combat specialist
         // Tunable parameters are now config-driven for easier balancing
@@ -29,6 +31,10 @@ class Stabber extends BaseEnemy {
         this.stabWarningTime = 0;
         this.maxStabWarningTime = CONFIG.STABBER_SETTINGS.MAX_WARNING_TIME; // Warning phase duration
         this.hasYelledStab = false;
+        
+        // deltaTime-based timing for motion trail
+        this.motionTrailTimer = 0;
+        this.motionTrailInterval = 66.67; // ~4 frames at 60fps (4 * 16.67ms)
         
         // Atmospheric TTS system
         const speechConfig = CONFIG.SPEECH_SETTINGS['STABBER'] || CONFIG.SPEECH_SETTINGS.DEFAULT;
@@ -55,15 +61,26 @@ class Stabber extends BaseEnemy {
     
     /**
      * Update specific stabber behavior - melee assassination
+     * @param {number} playerX - Player X position
+     * @param {number} playerY - Player Y position  
+     * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
      */
-    updateSpecificBehavior(playerX, playerY) {
+    updateSpecificBehavior(playerX, playerY, deltaTimeMs) {
         const dx = playerX - this.x;
         const dy = playerY - this.y;
         const distance = sqrt(dx * dx + dy * dy);
         
-        // Update stabber timers
-        if (this.stabCooldown > 0) this.stabCooldown--;
-        if (this.stabChantTimer > 0) this.stabChantTimer--;
+        // Update stabber timers using deltaTime
+        const dt = deltaTimeMs / 16.6667; // Normalize to 60fps baseline
+        if (this.stabCooldown > 0) this.stabCooldown -= dt;
+        if (this.stabChantTimer > 0) this.stabChantTimer -= dt;
+        
+        // Update motion trail timer
+        this.motionTrailTimer += deltaTimeMs;
+        if (this.motionTrailTimer >= this.motionTrailInterval) {
+            this.drawMotionTrail();
+            this.motionTrailTimer = 0;
+        }
         
         // Handle atmospheric chanting
         if (this.stabChantTimer <= 0 && this.speechCooldown <= 0) {
@@ -87,7 +104,7 @@ class Stabber extends BaseEnemy {
         
         // Recovery phase - stuck after attack
         if (this.stabRecovering) {
-            this.stabRecoveryTime++;
+            this.stabRecoveryTime += dt;
             
             // Visual penetration: Brief follow-through movement for the first few frames
             const penetrationFrames = 10; // How long the follow-through lasts
@@ -124,7 +141,7 @@ class Stabber extends BaseEnemy {
         
         // Stabbing phase - explosive dash forward
         if (this.isStabbing) {
-            this.stabAnimationTime++;
+            this.stabAnimationTime += dt;
 
             // Early guard: if stabDirection is null, skip dash and hit logic
             if (this.stabDirection === null) {
@@ -207,7 +224,7 @@ class Stabber extends BaseEnemy {
         
         // Warning phase - stopped and signaling
         if (this.stabWarning) {
-            this.stabWarningTime++;
+            this.stabWarningTime += dt;
             
             // Completely stopped during warning
             this.velocity.x = 0;
@@ -247,7 +264,7 @@ class Stabber extends BaseEnemy {
             if (this.stabPreparingTime === 0 && window.audio && window.beatClock && window.beatClock.canStabberAttack()) {
                 window.audio.playSound('stabberKnifeExtend', this.x, this.y);
             }
-            this.stabPreparingTime++;
+            this.stabPreparingTime += dt;
             
             const prepProgressRatio = this.stabPreparingTime / this.maxStabPreparingTime;
 
@@ -461,9 +478,10 @@ class Stabber extends BaseEnemy {
     
     /**
      * Draw motion trail for stabbers
+     * Note: This is now called from updateSpecificBehavior based on deltaTime timer
      */
     drawMotionTrail() {
-        if (frameCount % 4 === 0 && typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
+        if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
             try {
                 const trailColor = [255, 140, 0];
                 visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
@@ -482,11 +500,11 @@ class Stabber extends BaseEnemy {
      * This ensures all velocity changes take effect in the same frame,
      * preventing frame delays and making the update logic robust.
      */
-    update(playerX, playerY) {
+    update(playerX, playerY, deltaTimeMs = 16.6667) {
         // 1. Run Stabber-specific logic first (sets velocity, handles state)
-        const behaviorResult = this.updateSpecificBehavior(playerX, playerY);
+        const behaviorResult = this.updateSpecificBehavior(playerX, playerY, deltaTimeMs);
         // 2. Then call parent update to apply velocity to position, handle common logic
-        const baseUpdateResult = super.update(playerX, playerY);
+        const baseUpdateResult = super.update(playerX, playerY, deltaTimeMs);
         // Only return behaviorResult if it is neither null nor undefined; otherwise, return baseUpdateResult
         return behaviorResult != null ? behaviorResult : baseUpdateResult;
     }
@@ -496,15 +514,15 @@ class Stabber extends BaseEnemy {
      */
     drawBody(s) {
         // Compact, armored body for stabber
-        fill(this.bodyColor);
-        noStroke();
-        ellipse(0, 0, s, s * 0.9);
+        this.p.fill(this.bodyColor);
+        this.p.noStroke();
+        this.p.ellipse(0, 0, s, s * 0.9);
         
         // Armor plating details
-        fill(this.bodyColor.levels[0] + 20, this.bodyColor.levels[1] + 20, this.bodyColor.levels[2] + 20);
-        ellipse(0, -s * 0.2, s * 0.6, s * 0.3); // Chest armor
-        ellipse(-s * 0.25, s * 0.1, s * 0.3, s * 0.4); // Left armor plate
-        ellipse(s * 0.25, s * 0.1, s * 0.3, s * 0.4); // Right armor plate
+        this.p.fill(this.bodyColor.levels[0] + 20, this.bodyColor.levels[1] + 20, this.bodyColor.levels[2] + 20);
+        this.p.ellipse(0, -s * 0.2, s * 0.6, s * 0.3); // Chest armor
+        this.p.ellipse(-s * 0.25, s * 0.1, s * 0.3, s * 0.4); // Left armor plate
+        this.p.ellipse(s * 0.25, s * 0.1, s * 0.3, s * 0.4); // Right armor plate
     }
     
     /**
@@ -524,31 +542,31 @@ class Stabber extends BaseEnemy {
             isExtended = true;
         }
         // Color: always white when extended or retracted
-        fill(255, 255, 255);
+        this.p.fill(255, 255, 255);
 
         let currentKnifeLength = s * 0.6 * extensionFactor;
 
         // Draw main blade
-        beginShape();
-        vertex(s * 0.3, -knifeWidth / 2); // Base back bottom
-        vertex(s * 0.3 + currentKnifeLength + s * 0.15, 0); // Sharp point
-        vertex(s * 0.3, knifeWidth / 2);  // Base back top
-        endShape(CLOSE);
+        this.p.beginShape();
+        this.p.vertex(s * 0.3, -knifeWidth / 2); // Base back bottom
+        this.p.vertex(s * 0.3 + currentKnifeLength + s * 0.15, 0); // Sharp point
+        this.p.vertex(s * 0.3, knifeWidth / 2);  // Base back top
+        this.p.endShape(this.p.CLOSE);
 
         // Knife handle
-        fill(200, 200, 200);
-        rect(s * 0.2, -knifeWidth / 3, s * 0.2, knifeWidth * 0.67);
+        this.p.fill(200, 200, 200);
+        this.p.rect(s * 0.2, -knifeWidth / 3, s * 0.2, knifeWidth * 0.67);
 
         // Glow at tip if extended
         if (isExtended) {
             const tipX = s * 0.3 + currentKnifeLength + s * 0.15;
             const tipY = 0;
-            const glowColor = color(120, 200, 255, 180);
-            noStroke();
-            fill(glowColor);
-            ellipse(tipX, tipY, 10, 10);
-            fill(255, 255, 255, 200);
-            ellipse(tipX, tipY, 5, 5);
+            const glowColor = this.p.color(120, 200, 255, 180);
+            this.p.noStroke();
+            this.p.fill(glowColor);
+            this.p.ellipse(tipX, tipY, 10, 10);
+            this.p.fill(255, 255, 255, 200);
+            this.p.ellipse(tipX, tipY, 5, 5);
         }
     }
     
@@ -575,13 +593,13 @@ class Stabber extends BaseEnemy {
         const warningRadius = this.size * (1.2 + stabPercent * 0.8); // Growing energy field
         
         // Building energy circle - intensifying over time
-        fill(255, 150, 0, 40 + stabPercent * 60 + pulse * 40);
-        noStroke();
-        ellipse(this.x, this.y, warningRadius * 2);
+        this.p.fill(255, 150, 0, 40 + stabPercent * 60 + pulse * 40);
+        this.p.noStroke();
+        this.p.ellipse(this.x, this.y, warningRadius * 2);
         
         // Inner charging core - pulsing faster as charge builds
-        fill(255, 200, 0, 60 + stabPercent * 80 + chargePulse * 60);
-        ellipse(this.x, this.y, warningRadius);
+        this.p.fill(255, 200, 0, 60 + stabPercent * 80 + chargePulse * 60);
+        this.p.ellipse(this.x, this.y, warningRadius);
         
         // Charging sparks around the stabber
         if (frameCount % 3 === 0) {
@@ -591,17 +609,17 @@ class Stabber extends BaseEnemy {
                 const sparkX = this.x + cos(sparkAngle) * sparkDist;
                 const sparkY = this.y + sin(sparkAngle) * sparkDist;
                 
-                fill(255, 255, 0, 120 + stabPercent * 100);
-                ellipse(sparkX, sparkY, 3 + stabPercent * 3);
+                this.p.fill(255, 255, 0, 120 + stabPercent * 100);
+                this.p.ellipse(sparkX, sparkY, 3 + stabPercent * 3);
             }
         }
         
         // Energy buildup text
         if (stabPercent > 0.5) {
-            fill(255, 255, 255, 150 + stabPercent * 100);
-            textAlign(CENTER, CENTER);
-            textSize(8 + stabPercent * 4);
-            text("CHARGING", this.x, this.y - this.size - 25);
+            this.p.fill(255, 255, 255, 150 + stabPercent * 100);
+            this.p.textAlign(this.p.CENTER, this.p.CENTER);
+            this.p.textSize(8 + stabPercent * 4);
+            this.p.text("CHARGING", this.x, this.y - this.size - 25);
         }
     }
     
@@ -616,25 +634,25 @@ class Stabber extends BaseEnemy {
         const recoveryRadius = this.size * (1.5 - recoveryPercent * 0.5); // Shrinking as recovery progresses
         
         // Exhausted red glow - fading over time
-        fill(255, 0, 0, (60 - recoveryPercent * 40) + pulse * 20);
-        noStroke();
-        ellipse(this.x, this.y, recoveryRadius * 1.5);
+        this.p.fill(255, 0, 0, (60 - recoveryPercent * 40) + pulse * 20);
+        this.p.noStroke();
+        this.p.ellipse(this.x, this.y, recoveryRadius * 1.5);
         
         // Inner exhaustion core
-        fill(200, 0, 0, (40 - recoveryPercent * 30) + pulse * 15);
-        ellipse(this.x, this.y, recoveryRadius);
+        this.p.fill(200, 0, 0, (40 - recoveryPercent * 30) + pulse * 15);
+        this.p.ellipse(this.x, this.y, recoveryRadius);
         
         // Recovery progress text
         if (recoveryPercent < 0.8) {
-            fill(255, 255, 255, 200 - recoveryPercent * 100);
-            textAlign(CENTER, CENTER);
-            textSize(8);
-            text("STUCK", this.x, this.y - this.size - 20);
+            this.p.fill(255, 255, 255, 200 - recoveryPercent * 100);
+            this.p.textAlign(this.p.CENTER, this.p.CENTER);
+            this.p.textSize(8);
+            this.p.text("STUCK", this.x, this.y - this.size - 20);
             
             // Countdown
             const countdown = ceil((this.maxStabRecoveryTime - this.stabRecoveryTime) / 60);
-            textSize(6);
-            text(countdown + "s", this.x, this.y - this.size - 10);
+            this.p.textSize(6);
+            this.p.text(countdown + "s", this.x, this.y - this.size - 10);
         }
     }
     
