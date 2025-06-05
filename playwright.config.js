@@ -36,7 +36,7 @@ module.exports = defineConfig({
   
   /* Global test settings optimized for Vibe game */
   use: {
-    baseURL: 'http://localhost:5501',
+    baseURL: 'http://localhost:5500',
     
     /* Enhanced media capture - always record for troubleshooting */
     screenshot: 'only-on-failure',
@@ -78,8 +78,8 @@ module.exports = defineConfig({
 
   /* Development server configuration */
   webServer: {
-    command: 'npx live-server --port=5501 --no-browser --quiet',
-    port: 5501,
+    command: 'npx five-server --port=5500 --no-browser --quiet',
+    port: 5500,
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
     ignoreHTTPSErrors: true,

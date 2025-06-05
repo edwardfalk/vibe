@@ -2,7 +2,7 @@
  * CollisionSystem.js - Handles all collision detection between bullets, enemies, and player
  */
 
-import { round, sqrt, atan2, cos, sin } from './mathUtils.js';
+import { round, sqrt, atan2, cos, sin, dist } from './mathUtils.js';
 import { CONFIG } from './config.js';
 
 export class CollisionSystem {

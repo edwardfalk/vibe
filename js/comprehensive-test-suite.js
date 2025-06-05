@@ -67,10 +67,14 @@ export class ComprehensiveTestSuite {
         try {
             // Test categories in order
             await this.testInitialization();
+            await this.testAILivenessProbe();
+            await this.testPlayerMovement();
+            await this.testShootingMechanics();
+            await this.testCollisionSystem();
+            await this.testSoundSystem();
             await this.testGameplay();
             await this.testPerformance();
             await this.testAudio();
-            await this.testCollisionSystem();
             await this.testUI();
             await this.testMemoryUsage();
             await this.testConsistency();
@@ -100,16 +104,19 @@ export class ComprehensiveTestSuite {
             failed: 0
         };
         
-        // Test 1: Core systems exist
+        // Test 1: CRITICAL - Game actually starts (no JS errors)
+        results.tests.push(this.checkGameStartup());
+        
+        // Test 2: Core systems exist
         results.tests.push(this.checkCoreSystemsExist());
         
-        // Test 2: Game state is valid
+        // Test 3: Game state is valid
         results.tests.push(this.checkGameStateValid());
         
-        // Test 3: Player initialization
+        // Test 4: Player initialization
         results.tests.push(this.checkPlayerInitialization());
         
-        // Test 4: Audio system initialization
+        // Test 5: Audio system initialization
         results.tests.push(this.checkAudioInitialization());
         
         // Count results
@@ -120,6 +127,91 @@ export class ComprehensiveTestSuite {
         console.log(`✅ Initialization tests: ${results.passed} passed, ${results.failed} failed`);
     }
     
+    /**
+     * Test AI Liveness Probe System
+     */
+    async testAILivenessProbe() {
+        this.currentTest = 'ai-liveness-probe';
+        console.log('🤖 Testing AI Liveness Probe...');
+        
+        const results = {
+            category: 'ai-liveness-probe',
+            tests: [],
+            passed: 0,
+            failed: 0
+        };
+        
+        try {
+            // Import and execute the probe
+            const probeModule = await import('./ai-liveness-probe.js');
+            const probeResult = await probeModule.default;
+            
+            // Test 1: Probe execution
+            if (probeResult) {
+                results.tests.push({
+                    name: 'Probe Execution',
+                    passed: true,
+                    details: 'AI Liveness Probe executed successfully',
+                    data: probeResult
+                });
+            } else {
+                results.tests.push({
+                    name: 'Probe Execution',
+                    passed: false,
+                    details: 'AI Liveness Probe failed to execute',
+                    data: null
+                });
+            }
+            
+            // Test 2: Game liveness validation
+            const livenessValid = probeResult && !probeResult.failure;
+            results.tests.push({
+                name: 'Game Liveness',
+                passed: livenessValid,
+                details: livenessValid ? 'Game is alive and responsive' : `Liveness issue: ${probeResult?.failure || 'Unknown'}`,
+                data: probeResult
+            });
+            
+            // Test 3: Entity presence validation
+            const entitiesValid = probeResult && probeResult.playerAlive && probeResult.enemyCount > 0;
+            results.tests.push({
+                name: 'Entity Presence',
+                passed: entitiesValid,
+                details: entitiesValid ? 
+                    `Player alive: ${probeResult.playerAlive}, Enemies: ${probeResult.enemyCount}` :
+                    `Entity issues - Player: ${probeResult?.playerAlive}, Enemies: ${probeResult?.enemyCount}`,
+                data: { playerAlive: probeResult?.playerAlive, enemyCount: probeResult?.enemyCount }
+            });
+            
+            // Test 4: Frame progression
+            const frameValid = probeResult && typeof probeResult.frameCount === 'number' && probeResult.frameCount > 0;
+            results.tests.push({
+                name: 'Frame Progression',
+                passed: frameValid,
+                details: frameValid ? 
+                    `Frame count: ${probeResult.frameCount}` :
+                    'Frame count not progressing',
+                data: { frameCount: probeResult?.frameCount }
+            });
+            
+        } catch (error) {
+            results.tests.push({
+                name: 'Probe System Error',
+                passed: false,
+                details: `Error executing probe: ${error.message}`,
+                data: { error: error.message }
+            });
+        }
+        
+        results.passed = results.tests.filter(t => t.passed).length;
+        results.failed = results.tests.filter(t => !t.passed).length;
+        
+        this.testResults.push(results);
+        console.log(`✅ AI Liveness Probe tests: ${results.passed} passed, ${results.failed} failed`);
+        
+        return results;
+    }
+
     /**
      * Test gameplay mechanics
      */
@@ -153,6 +245,9 @@ export class ComprehensiveTestSuite {
         
         // Test 5: Beat synchronization
         results.tests.push(await this.testBeatSynchronization());
+        
+        // Test 6: Advanced gameplay mechanics
+        results.tests.push(await this.testAdvancedGameplay());
         
         // Disable test mode
         if (window.testMode) {
@@ -196,6 +291,45 @@ export class ComprehensiveTestSuite {
         console.log(`✅ Performance tests: ${results.passed} passed, ${results.failed} failed`);
     }
     
+    /**
+     * CRITICAL: Check if game actually starts without JavaScript errors
+     */
+    checkGameStartup() {
+        const issues = [];
+        
+        // Check if game state reached "playing" (means initialization succeeded)
+        if (!window.gameState || window.gameState.gameState !== 'playing') {
+            issues.push(`Game state not playing: ${window.gameState ? window.gameState.gameState : 'undefined'}`);
+        }
+        
+        // Check if canvas exists and has valid dimensions
+        const canvas = document.querySelector('canvas');
+        if (!canvas) {
+            issues.push('Canvas not found');
+        } else if (canvas.width === 0 || canvas.height === 0) {
+            issues.push('Canvas has invalid dimensions');
+        }
+        
+        // Check for critical missing imports/dependencies
+        if (!window.player) issues.push('Player not initialized');
+        if (!window.gameState) issues.push('GameState not initialized');
+        if (!window.audio) issues.push('Audio not initialized');
+        
+        const passed = issues.length === 0;
+        
+        if (!passed) {
+            this.reportBug('game-startup-failure', 'Game failed to start properly', { issues });
+        }
+        
+        return {
+            name: 'Game Startup (CRITICAL)',
+            passed,
+            details: passed ? 'Game started successfully' : `Startup issues: ${issues.join(', ')}`,
+            data: { issues },
+            critical: true
+        };
+    }
+
     /**
      * Check if core systems exist and are properly initialized
      */
@@ -362,28 +496,236 @@ export class ComprehensiveTestSuite {
      * Test shooting mechanics
      */
     async testShootingMechanics() {
-        return new Promise((resolve) => {
-            const initialBulletCount = window.playerBullets ? window.playerBullets.length : 0;
+        this.currentTest = 'shooting-mechanics';
+        console.log('🔫 Testing shooting mechanics...');
+        
+        const results = {
+            category: 'shooting-mechanics',
+            tests: [],
+            passed: 0,
+            failed: 0
+        };
+        
+        // Test 1: Bullet creation system
+        const initialBulletCount = window.playerBullets ? window.playerBullets.length : 0;
+        
+        // Simulate shooting
+        if (window.player && typeof window.player.shoot === 'function') {
+            try {
+                window.player.shoot();
+                await new Promise(resolve => setTimeout(resolve, 50)); // Wait for bullet creation
+                
+                const newBulletCount = window.playerBullets ? window.playerBullets.length : 0;
+                const bulletCreated = newBulletCount > initialBulletCount;
+                
+                results.tests.push({
+                    name: 'Bullet Creation',
+                    passed: bulletCreated,
+                    details: bulletCreated ? 
+                        `Bullet created (${initialBulletCount} → ${newBulletCount})` :
+                        'No bullet created on shoot command',
+                    data: { initialCount: initialBulletCount, newCount: newBulletCount }
+                });
+            } catch (error) {
+                results.tests.push({
+                    name: 'Bullet Creation',
+                    passed: false,
+                    details: `Shooting error: ${error.message}`,
+                    data: { error: error.message }
+                });
+            }
+        } else {
+            results.tests.push({
+                name: 'Bullet Creation',
+                passed: false,
+                details: 'Player shoot method not available',
+                data: null
+            });
+        }
+        
+        // Test 2: Bullet trajectory and movement
+        if (window.playerBullets && window.playerBullets.length > 0) {
+            const bullet = window.playerBullets[window.playerBullets.length - 1];
+            const initialPos = { x: bullet.x, y: bullet.y };
             
-            // Trigger shooting (simulate space key or auto-shoot)
-            if (window.testMode) {
-                window.testMode.setShootInterval(1); // Shoot every frame
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const finalPos = { x: bullet.x, y: bullet.y };
+            const bulletMoved = Math.abs(finalPos.x - initialPos.x) > 1 || Math.abs(finalPos.y - initialPos.y) > 1;
+            
+            results.tests.push({
+                name: 'Bullet Trajectory',
+                passed: bulletMoved,
+                details: bulletMoved ? 
+                    `Bullet moving (${Math.round(initialPos.x)},${Math.round(initialPos.y)} → ${Math.round(finalPos.x)},${Math.round(finalPos.y)})` :
+                    'Bullet not moving',
+                data: { initialPos, finalPos, distance: Math.sqrt((finalPos.x - initialPos.x) ** 2 + (finalPos.y - initialPos.y) ** 2) }
+            });
+        } else {
+            results.tests.push({
+                name: 'Bullet Trajectory',
+                passed: false,
+                details: 'No bullets available for trajectory testing',
+                data: null
+            });
+        }
+        
+        // Test 3: CRITICAL - Collision System Integration
+        // This test should have caught the dist function error!
+        try {
+            // Force collision system to run with bullets present
+            if (window.collisionSystem && window.playerBullets && window.playerBullets.length > 0) {
+                console.log('🔍 Testing collision system with active bullets...');
+                window.collisionSystem.checkBulletCollisions();
+                
+                results.tests.push({
+                    name: 'Collision System Integration',
+                    passed: true,
+                    details: 'Collision system runs without errors with active bullets',
+                    data: { bulletCount: window.playerBullets.length }
+                });
+            } else {
+                results.tests.push({
+                    name: 'Collision System Integration',
+                    passed: false,
+                    details: 'Collision system or bullets not available for testing',
+                    data: { 
+                        collisionSystemExists: !!window.collisionSystem,
+                        bulletCount: window.playerBullets ? window.playerBullets.length : 0
+                    }
+                });
+            }
+        } catch (error) {
+            results.tests.push({
+                name: 'Collision System Integration',
+                passed: false,
+                details: `CRITICAL: Collision system error - ${error.message}`,
+                data: { 
+                    error: error.message,
+                    stack: error.stack,
+                    bulletCount: window.playerBullets ? window.playerBullets.length : 0
+                }
+            });
+            console.error('🚨 CRITICAL COLLISION SYSTEM ERROR:', error);
+        }
+        
+        // Test 4: Rate of fire control
+        const rapidFireTest = async () => {
+            const startCount = window.playerBullets ? window.playerBullets.length : 0;
+            const shootAttempts = 10;
+            
+            for (let i = 0; i < shootAttempts; i++) {
+                if (window.player && typeof window.player.shoot === 'function') {
+                    try {
+                        window.player.shoot();
+                    } catch (error) {
+                        console.error(`🚨 Shooting error on attempt ${i + 1}:`, error);
+                        return {
+                            passed: false,
+                            details: `Shooting failed on attempt ${i + 1}: ${error.message}`,
+                            data: { error: error.message, attempt: i + 1 }
+                        };
+                    }
+                }
+                await new Promise(resolve => setTimeout(resolve, 10)); // Rapid fire
             }
             
-            setTimeout(() => {
-                const finalBulletCount = window.playerBullets ? window.playerBullets.length : 0;
-                const bulletsCreated = finalBulletCount > initialBulletCount;
-                
-                resolve({
-                    name: 'Shooting Mechanics',
-                    passed: bulletsCreated,
-                    details: bulletsCreated ? 'Bullets created successfully' : 'No bullets created',
-                    data: { initialBulletCount, finalBulletCount }
-                });
-            }, 500); // Test for 0.5 seconds
+            await new Promise(resolve => setTimeout(resolve, 100));
+            const endCount = window.playerBullets ? window.playerBullets.length : 0;
+            const bulletsCreated = endCount - startCount;
+            
+            // Should have rate limiting (not all 10 shots should succeed)
+            const hasRateLimit = bulletsCreated < shootAttempts;
+            
+            return {
+                passed: hasRateLimit,
+                details: hasRateLimit ? 
+                    `Rate limiting working (${bulletsCreated}/${shootAttempts} shots fired)` :
+                    `No rate limiting (${bulletsCreated}/${shootAttempts} shots fired)`,
+                data: { attempts: shootAttempts, created: bulletsCreated }
+            };
+        };
+        
+        const rateTest = await rapidFireTest();
+        results.tests.push({
+            name: 'Rate of Fire Control',
+            ...rateTest
         });
+        
+        // Test 5: Audio feedback on shooting
+        let audioFeedback = false;
+        if (window.audio && typeof window.audio.playSound === 'function') {
+            // Check if audio system is available
+            audioFeedback = true;
+        }
+        
+        results.tests.push({
+            name: 'Audio Feedback',
+            passed: audioFeedback,
+            details: audioFeedback ? 
+                'Audio system available for shooting feedback' :
+                'Audio system not available',
+            data: { audioSystemAvailable: audioFeedback }
+        });
+        
+        // Test 6: CRITICAL - Runtime Error Detection
+        // Test bullet rendering and update cycles for runtime errors
+        try {
+            if (window.playerBullets && window.playerBullets.length > 0) {
+                console.log('🔍 Testing bullet runtime operations...');
+                
+                // Test bullet update cycle
+                for (const bullet of window.playerBullets) {
+                    if (typeof bullet.update === 'function') {
+                        bullet.update();
+                    }
+                }
+                
+                // Test bullet drawing (if p5 instance available)
+                if (window.p5Instance) {
+                    for (const bullet of window.playerBullets) {
+                        if (typeof bullet.draw === 'function') {
+                            bullet.draw(window.p5Instance);
+                        }
+                    }
+                }
+                
+                results.tests.push({
+                    name: 'Runtime Error Detection',
+                    passed: true,
+                    details: 'Bullet update and draw cycles completed without errors',
+                    data: { bulletCount: window.playerBullets.length }
+                });
+            } else {
+                results.tests.push({
+                    name: 'Runtime Error Detection',
+                    passed: false,
+                    details: 'No bullets available for runtime testing',
+                    data: { bulletCount: 0 }
+                });
+            }
+        } catch (error) {
+            results.tests.push({
+                name: 'Runtime Error Detection',
+                passed: false,
+                details: `CRITICAL: Runtime error in bullet operations - ${error.message}`,
+                data: { 
+                    error: error.message,
+                    stack: error.stack
+                }
+            });
+            console.error('🚨 CRITICAL BULLET RUNTIME ERROR:', error);
+        }
+        
+        results.passed = results.tests.filter(t => t.passed).length;
+        results.failed = results.tests.filter(t => !t.passed).length;
+        
+        this.testResults.push(results);
+        console.log(`✅ Shooting mechanics tests: ${results.passed} passed, ${results.failed} failed`);
+        
+        return results;
     }
-    
+
     /**
      * Test enemy spawning
      */
@@ -456,6 +798,182 @@ export class ComprehensiveTestSuite {
         });
     }
     
+    /**
+     * Test player movement mechanics
+     */
+    async testPlayerMovement() {
+        this.currentTest = 'player-movement';
+        console.log('🎮 Testing player movement mechanics...');
+        
+        const results = {
+            category: 'player-movement',
+            tests: [],
+            passed: 0,
+            failed: 0
+        };
+        
+        if (!window.player) {
+            results.tests.push({
+                name: 'Player Entity Existence',
+                passed: false,
+                details: 'Player entity not found',
+                data: null
+            });
+            results.failed++;
+            this.testResults.push(results);
+            return results;
+        }
+        
+        const initialPos = { x: window.player.x, y: window.player.y };
+        
+        // Test 1: Player entity structure
+        const requiredMethods = ['update', 'draw', 'handleInput'];
+        const requiredProperties = ['x', 'y', 'health', 'speed'];
+        
+        const missingMethods = requiredMethods.filter(method => typeof window.player[method] !== 'function');
+        const missingProperties = requiredProperties.filter(prop => typeof window.player[prop] === 'undefined');
+        
+        results.tests.push({
+            name: 'Player Entity Structure',
+            passed: missingMethods.length === 0 && missingProperties.length === 0,
+            details: missingMethods.length === 0 && missingProperties.length === 0 ? 
+                'Player has all required methods and properties' :
+                `Missing: ${[...missingMethods, ...missingProperties].join(', ')}`,
+            data: { missingMethods, missingProperties }
+        });
+        
+        // Test 2: Movement responsiveness (simulate WASD input)
+        const testMovement = async (direction, expectedChange) => {
+            const startPos = { x: window.player.x, y: window.player.y };
+            
+            // Simulate key press
+            const keyMap = { 'W': 'w', 'A': 'a', 'S': 's', 'D': 'd' };
+            const key = keyMap[direction];
+            
+            // Simulate input for a few frames
+            if (window.keys) {
+                window.keys[key] = true;
+                
+                // Let the game update for a few frames
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                const endPos = { x: window.player.x, y: window.player.y };
+                const moved = Math.abs(endPos.x - startPos.x) > 1 || Math.abs(endPos.y - startPos.y) > 1;
+                
+                window.keys[key] = false; // Release key
+                
+                return {
+                    moved,
+                    startPos,
+                    endPos,
+                    distance: Math.sqrt((endPos.x - startPos.x) ** 2 + (endPos.y - startPos.y) ** 2)
+                };
+            }
+            
+            return { moved: false, error: 'Keys system not available' };
+        };
+        
+        // Test movement in all directions
+        const directions = ['W', 'A', 'S', 'D'];
+        let movementTests = [];
+        
+        for (const direction of directions) {
+            try {
+                const result = await testMovement(direction);
+                movementTests.push({
+                    direction,
+                    ...result
+                });
+            } catch (error) {
+                movementTests.push({
+                    direction,
+                    moved: false,
+                    error: error.message
+                });
+            }
+        }
+        
+        const successfulMovements = movementTests.filter(t => t.moved).length;
+        results.tests.push({
+            name: 'Movement Responsiveness',
+            passed: successfulMovements >= 2, // At least 2 directions should work
+            details: `${successfulMovements}/4 directions responsive: ${movementTests.map(t => `${t.direction}:${t.moved ? '✓' : '✗'}`).join(' ')}`,
+            data: movementTests
+        });
+        
+        // Test 3: Boundary detection
+        const canvasWidth = window.innerWidth || 800;
+        const canvasHeight = window.innerHeight || 600;
+        
+        const withinBounds = window.player.x >= 0 && window.player.x <= canvasWidth &&
+                           window.player.y >= 0 && window.player.y <= canvasHeight;
+        
+        results.tests.push({
+            name: 'Boundary Detection',
+            passed: withinBounds,
+            details: withinBounds ? 
+                `Player within bounds (${Math.round(window.player.x)}, ${Math.round(window.player.y)})` :
+                `Player out of bounds (${Math.round(window.player.x)}, ${Math.round(window.player.y)})`,
+            data: { 
+                playerPos: { x: window.player.x, y: window.player.y },
+                bounds: { width: canvasWidth, height: canvasHeight }
+            }
+        });
+        
+        // Test 4: Movement smoothness (check for stuttering)
+        const positions = [];
+        const startTime = Date.now();
+        
+        // Record positions over time
+        const recordPosition = () => {
+            if (Date.now() - startTime < 1000) { // Record for 1 second
+                positions.push({ 
+                    x: window.player.x, 
+                    y: window.player.y, 
+                    time: Date.now() 
+                });
+                setTimeout(recordPosition, 16); // ~60fps
+            }
+        };
+        
+        recordPosition();
+        await new Promise(resolve => setTimeout(resolve, 1100));
+        
+        // Analyze movement smoothness
+        let stutterCount = 0;
+        for (let i = 1; i < positions.length - 1; i++) {
+            const prev = positions[i - 1];
+            const curr = positions[i];
+            const next = positions[i + 1];
+            
+            const dist1 = Math.sqrt((curr.x - prev.x) ** 2 + (curr.y - prev.y) ** 2);
+            const dist2 = Math.sqrt((next.x - curr.x) ** 2 + (next.y - curr.y) ** 2);
+            
+            // Detect sudden stops or jumps
+            if (Math.abs(dist1 - dist2) > 5) {
+                stutterCount++;
+            }
+        }
+        
+        const smoothMovement = stutterCount < positions.length * 0.1; // Less than 10% stutter
+        results.tests.push({
+            name: 'Movement Smoothness',
+            passed: smoothMovement,
+            details: smoothMovement ? 
+                `Smooth movement (${stutterCount} stutters in ${positions.length} frames)` :
+                `Stuttering detected (${stutterCount} stutters in ${positions.length} frames)`,
+            data: { stutterCount, totalFrames: positions.length, stutterRate: stutterCount / positions.length }
+        });
+        
+        results.passed = results.tests.filter(t => t.passed).length;
+        results.failed = results.tests.filter(t => !t.passed).length;
+        
+        this.testResults.push(results);
+        console.log(`✅ Player movement tests: ${results.passed} passed, ${results.failed} failed`);
+        
+        return results;
+    }
+
     /**
      * Test beat synchronization
      */
@@ -1071,6 +1589,97 @@ export class ComprehensiveTestSuite {
         console.log(healthy ? '✅ Quick health check: PASSED' : `❌ Quick health check: ${issues.join(', ')}`);
         
         return { healthy, issues };
+    }
+
+    /**
+     * Test game initialization and startup
+     * This is the most critical test - does the game actually start?
+     */
+    async testGameInitialization() {
+        const results = {
+            passed: 0,
+            failed: 0,
+            details: []
+        };
+
+        // Test 1: Check for JavaScript errors during startup
+        const errors = this.getJavaScriptErrors();
+        if (errors.length === 0) {
+            results.passed++;
+            results.details.push('✅ No JavaScript errors during startup');
+        } else {
+            results.failed++;
+            results.details.push(`❌ JavaScript errors found: ${errors.join(', ')}`);
+        }
+
+        // Test 2: Verify game state reaches "playing"
+        if (window.gameState && window.gameState.gameState === 'playing') {
+            results.passed++;
+            results.details.push('✅ Game state successfully reached "playing"');
+        } else {
+            results.failed++;
+            results.details.push(`❌ Game state not playing: ${window.gameState ? window.gameState.gameState : 'undefined'}`);
+        }
+
+        // Test 3: Verify core systems are initialized
+        const coreSystems = ['player', 'gameState', 'audio', 'cameraSystem', 'spawnSystem'];
+        let systemsInitialized = 0;
+        for (const system of coreSystems) {
+            if (window[system]) {
+                systemsInitialized++;
+                results.details.push(`✅ ${system} initialized`);
+            } else {
+                results.details.push(`❌ ${system} not initialized`);
+            }
+        }
+        
+        if (systemsInitialized === coreSystems.length) {
+            results.passed++;
+            results.details.push('✅ All core systems initialized');
+        } else {
+            results.failed++;
+            results.details.push(`❌ Only ${systemsInitialized}/${coreSystems.length} core systems initialized`);
+        }
+
+        // Test 4: Verify canvas is created and visible
+        const canvas = document.querySelector('canvas');
+        if (canvas && canvas.width > 0 && canvas.height > 0) {
+            results.passed++;
+            results.details.push('✅ Canvas created and has valid dimensions');
+        } else {
+            results.failed++;
+            results.details.push('❌ Canvas not found or has invalid dimensions');
+        }
+
+        return {
+            testName: 'Game Initialization',
+            ...results,
+            critical: true // Mark as critical test
+        };
+    }
+
+    /**
+     * Get JavaScript errors from console
+     */
+    getJavaScriptErrors() {
+        // This would need to be implemented with actual error tracking
+        // For now, check if critical objects exist
+        const errors = [];
+        
+        try {
+            if (typeof VisualEffectsManager === 'undefined') {
+                errors.push('VisualEffectsManager not defined');
+            }
+        } catch (e) {
+            // VisualEffectsManager might be in module scope, check if game works instead
+        }
+
+        // Check for common initialization failures
+        if (!window.gameState) errors.push('GameState not initialized');
+        if (!window.player) errors.push('Player not initialized');
+        if (!window.audio) errors.push('Audio not initialized');
+
+        return errors;
     }
 }
 

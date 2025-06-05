@@ -22,6 +22,7 @@ import { Audio } from './Audio.js';
 import { BeatClock } from './BeatClock.js';
 import { Bullet } from './bullet.js';
 import { EffectsManager } from './effects.js';
+import VisualEffectsManager from './visualEffects.js';
 import { CONFIG } from './config.js';
 import { sqrt, max, min, floor, ceil, round, random, atan2, cos, sin } from './mathUtils.js';
 

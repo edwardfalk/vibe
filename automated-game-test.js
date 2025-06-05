@@ -197,6 +197,50 @@ function checkConsistencyViolations() {
     }
 }
 
+// Test if game actually starts (CRITICAL)
+function testGameStartup() {
+    log('🎮 Testing game startup...', 'cyan');
+    
+    // This would need to be implemented with a headless browser
+    // For now, we'll check if the files that caused the startup failure exist
+    const criticalFiles = [
+        'js/visualEffects.js',  // The file that was missing import
+        'js/GameLoop.js'
+    ];
+    
+    const issues = [];
+    
+    for (const file of criticalFiles) {
+        if (!fs.existsSync(file)) {
+            issues.push(`Critical file missing: ${file}`);
+        } else {
+            const content = fs.readFileSync(file, 'utf8');
+            
+            // Check for the specific issue that caused startup failure
+            if (file === 'js/GameLoop.js') {
+                if (content.includes('new VisualEffectsManager') && !content.includes('import VisualEffectsManager')) {
+                    issues.push('GameLoop.js uses VisualEffectsManager without importing it');
+                }
+            }
+        }
+    }
+    
+    const passed = issues.length === 0;
+    
+    if (passed) {
+        log('✅ Game startup checks passed', 'green');
+    } else {
+        log('❌ Game startup issues found:', 'red');
+        issues.forEach(issue => log(`  - ${issue}`, 'red'));
+    }
+    
+    return {
+        passed,
+        details: passed ? 'Game startup checks passed' : `Issues: ${issues.join(', ')}`,
+        issues
+    };
+}
+
 // Generate test report
 function generateTestReport(results) {
     log('\n🧪 ===== AUTOMATED TEST REPORT =====', 'magenta');
@@ -206,6 +250,7 @@ function generateTestReport(results) {
     const categories = [
         { name: 'Server Status', result: results.serverRunning },
         { name: 'Game Files', result: results.filesExist },
+        { name: 'Game Startup (CRITICAL)', result: results.gameStartup },
         { name: 'JavaScript Syntax', result: results.syntaxValid },
         { name: 'Consistency Rules', result: results.consistencyValid }
     ];
@@ -269,6 +314,7 @@ async function runAutomatedTests() {
     const results = {
         serverRunning: false,
         filesExist: false,
+        gameStartup: false,
         syntaxValid: false,
         consistencyValid: false
     };
@@ -280,10 +326,14 @@ async function runAutomatedTests() {
         // Test 2: Check files
         results.filesExist = checkGameFiles();
         
-        // Test 3: Check JavaScript syntax
+        // Test 3: CRITICAL - Check game startup
+        const startupResult = testGameStartup();
+        results.gameStartup = startupResult.passed;
+        
+        // Test 4: Check JavaScript syntax
         results.syntaxValid = checkJavaScriptSyntax();
         
-        // Test 4: Check consistency
+        // Test 5: Check consistency
         results.consistencyValid = checkConsistencyViolations();
         
     } catch (error) {

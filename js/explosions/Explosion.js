@@ -2,6 +2,7 @@
  * Basic explosion effects system
  * Handles particle-based explosions for various game events
  */
+import { random, TWO_PI } from '../mathUtils.js';
 export class Explosion {
     constructor(x, y, type = 'enemy') {
         this.x = x;
@@ -144,7 +145,7 @@ export class Explosion {
                 vx: random(vxRange[0], vxRange[1]),
                 vy: random(vyRange[0], vyRange[1]),
                 size: random(sizeRange[0], sizeRange[1]),
-                color: this.getParticleColor(type, p),
+                color: this.getParticleColor(type),
                 life: random(lifeRange[0], lifeRange[1]),
                 maxLife: random(lifeRange[0], lifeRange[1]),
                 rotation: random(TWO_PI),
@@ -169,7 +170,7 @@ export class Explosion {
                 vx: random(-3, 3),
                 vy: random(-2, 4), // Bias downward for falling debris
                 size: random(8, 16),
-                color: color(100, 100, 120), // Metallic gray
+                color: [100, 100, 120], // Metallic gray
                 life: random(60, 90),
                 maxLife: random(60, 90),
                 rotation: random(TWO_PI),
@@ -201,76 +202,76 @@ export class Explosion {
         }
     }
     
-    getParticleColor(type, p) {
+    getParticleColor(type) {
         if (type === 'tank-plasma') {
             const colors = [
-                p.color(138, 43, 226),
-                p.color(64, 224, 208),
-                p.color(255, 20, 147),
-                p.color(255, 255, 255),
-                p.color(0, 191, 255),
-                p.color(255, 215, 0)
+                [138, 43, 226],
+                [64, 224, 208],
+                [255, 20, 147],
+                [255, 255, 255],
+                [0, 191, 255],
+                [255, 215, 0]
             ];
             return random(colors);
         } else if (type === 'rusher-explosion') {
             const colors = [
-                p.color(255, 20, 147),
-                p.color(255, 69, 0),
-                p.color(255, 215, 0),
-                p.color(255, 255, 255),
-                p.color(255, 140, 0),
-                p.color(255, 182, 193),
-                p.color(255, 255, 0)
+                [255, 20, 147],
+                [255, 69, 0],
+                [255, 215, 0],
+                [255, 255, 255],
+                [255, 140, 0],
+                [255, 182, 193],
+                [255, 255, 0]
             ];
             return random(colors);
         } else if (type === 'grunt-death') {
             const colors = [
-                p.color(50, 205, 50),
-                p.color(0, 255, 127),
-                p.color(34, 139, 34),
-                p.color(255, 255, 255),
-                p.color(144, 238, 144),
-                p.color(0, 255, 0)
+                [50, 205, 50],
+                [0, 255, 127],
+                [34, 139, 34],
+                [255, 255, 255],
+                [144, 238, 144],
+                [0, 255, 0]
             ];
             return random(colors);
         } else if (type === 'stabber-death') {
             const colors = [
-                p.color(255, 215, 0),
-                p.color(255, 255, 0),
-                p.color(255, 140, 0),
-                p.color(255, 255, 255),
-                p.color(218, 165, 32),
-                p.color(255, 248, 220)
+                [255, 215, 0],
+                [255, 255, 0],
+                [255, 140, 0],
+                [255, 255, 255],
+                [218, 165, 32],
+                [255, 248, 220]
             ];
             return random(colors);
         } else if (type === 'tank-death') {
             const colors = [
-                p.color(138, 43, 226),
-                p.color(123, 104, 238),
-                p.color(72, 61, 139),
-                p.color(255, 255, 255),
-                p.color(0, 191, 255),
-                p.color(147, 112, 219)
+                [138, 43, 226],
+                [123, 104, 238],
+                [72, 61, 139],
+                [255, 255, 255],
+                [0, 191, 255],
+                [147, 112, 219]
             ];
             return random(colors);
         } else if (type.includes('bullet-kill') || type.includes('plasma-kill')) {
             if (type.includes('grunt')) {
-                return this.getParticleColor('grunt-death', p);
+                return this.getParticleColor('grunt-death');
             } else if (type.includes('stabber')) {
-                return this.getParticleColor('stabber-death', p);
+                return this.getParticleColor('stabber-death');
             } else if (type.includes('tank')) {
-                return this.getParticleColor('tank-death', p);
+                return this.getParticleColor('tank-death');
             } else if (type.includes('rusher')) {
-                return this.getParticleColor('rusher-explosion', p);
+                return this.getParticleColor('rusher-explosion');
             }
         }
         const colors = [
-            p.color(255, 69, 0),
-            p.color(255, 140, 0),
-            p.color(255, 215, 0),
-            p.color(255, 255, 255),
-            p.color(255, 20, 147),
-            p.color(138, 43, 226)
+            [255, 69, 0],
+            [255, 140, 0],
+            [255, 215, 0],
+            [255, 255, 255],
+            [255, 20, 147],
+            [138, 43, 226]
         ];
         return random(colors);
     }
