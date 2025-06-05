@@ -137,10 +137,9 @@ Vibe uses a comprehensive automated testing system with probe-driven testing and
    npm run test:debug    # Debug mode
    ```
 
-5. **Game Debugging** - Bug detection and analysis
+5. **Game Debugging** - Basic health check and analysis
    ```bash
-   npm run debug:game    # Full analysis + detailed report
-   npm run debug:probe   # Quick health check + summary
+   npm run debug:probe   # Game health check + summary
    ```
 
 6. **CodeRabbit Integration** - Automated review processing
@@ -195,8 +194,7 @@ Then in another terminal:
 ```bash
 npm run test:comprehensive  # Run all automated tests
 
-npm run debug:game          # AI-powered game debugging analysis
-npm run debug:probe         # Quick game health check
+npm run debug:probe         # Game health check
 ```
 
 ### Test Configuration

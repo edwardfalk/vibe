@@ -3,13 +3,22 @@
  * Integrates CodeRabbit review processing with automated testing workflow
  */
 
+// Load environment variables from .env file if it exists
+try {
+    require('dotenv').config();
+} catch (e) {
+    // dotenv not available, continue without it
+}
+
 const CodeRabbitReviewProcessor = require('./coderabbit-review-processor.js');
+const CodeRabbitTicketTracker = require('./coderabbit-ticket-tracker.js');
 
 class CodeRabbitTestingIntegration {
     constructor(options = {}) {
         this.processor = new CodeRabbitReviewProcessor(options);
         this.ticketManager = options.ticketManager;
         this.testRunner = options.testRunner;
+        this.tracker = new CodeRabbitTicketTracker(options);
     }
 
     /**
@@ -69,13 +78,14 @@ class CodeRabbitTestingIntegration {
         }
 
         const tickets = [];
-        const highPriorityTasks = tasks.filter(task => task.priority === 'high');
+        // Create tickets for all priority levels (high, medium, low)
+        const allTasks = tasks.filter(task => ['high', 'medium', 'low'].includes(task.priority));
 
-        for (const task of highPriorityTasks) {
+        for (const task of allTasks) {
             try {
                 const ticketData = {
                     id: `CR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    type: 'bug', // High priority CodeRabbit suggestions are treated as bugs
+                    type: task.priority === 'high' ? 'bug' : (task.priority === 'medium' ? 'enhancement' : 'task'),
                     title: task.title,
                     description: this.formatTicketDescription(task, reviewData),
                     priority: task.priority,
@@ -94,6 +104,10 @@ class CodeRabbitTestingIntegration {
 
                 const ticket = await this.ticketManager.createTicket(ticketData);
                 tickets.push(ticket);
+                
+                // Track the ticket
+                await this.tracker.addTicket(ticketData);
+                
                 console.log(`🎫 Created ticket: ${ticketData.id} - ${task.title}`);
 
             } catch (error) {
@@ -131,7 +145,13 @@ class CodeRabbitTestingIntegration {
         }
         
         description += `## Action Required\n`;
-        description += `This issue was automatically identified by CodeRabbit and requires immediate attention due to its high priority.\n\n`;
+        if (task.priority === 'high') {
+            description += `This issue was automatically identified by CodeRabbit and requires immediate attention due to its high priority.\n\n`;
+        } else if (task.priority === 'medium') {
+            description += `This enhancement was automatically identified by CodeRabbit and should be addressed when convenient.\n\n`;
+        } else {
+            description += `This task was automatically identified by CodeRabbit and can be addressed during maintenance cycles.\n\n`;
+        }
         description += `## Testing Notes\n`;
         description += `- [ ] Verify the issue exists\n`;
         description += `- [ ] Implement the suggested fix\n`;
@@ -346,7 +366,7 @@ class CodeRabbitTestingIntegration {
             actions.push(`${actions.length + 1}. Investigate ${failedTests.length} failed tests`);
         }
 
-        const securityIssues = tickets.filter(t => t.metadata.category === 'security');
+        const securityIssues = tickets.filter(t => t.metadata?.category === 'security');
         if (securityIssues.length > 0) {
             actions.push(`${actions.length + 1}. Prioritize ${securityIssues.length} security issues`);
         }

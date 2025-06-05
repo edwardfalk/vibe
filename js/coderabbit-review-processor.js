@@ -3,6 +3,13 @@
  * Fetches and processes CodeRabbit reviews from GitHub API for automated testing workflow
  */
 
+// Load environment variables from .env file if it exists
+try {
+    require('dotenv').config();
+} catch (e) {
+    // dotenv not available, continue without it
+}
+
 class CodeRabbitReviewProcessor {
     constructor(options = {}) {
         this.githubToken = options.githubToken || process.env.GITHUB_TOKEN;
