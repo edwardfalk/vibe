@@ -4,10 +4,11 @@
  */
 
 const CONFIG = {
-    // Google Cloud Text-to-Speech API Key
-    // Get your API key from: https://console.cloud.google.com/apis/credentials
-    // Make sure to enable the Text-to-Speech API for your project
-    GOOGLE_CLOUD_TTS_API_KEY: 'AIzaSyDU_4kdSpkB_Rs4Aas3fv3DaMEciUvlCoY',
+    // Google Cloud Text-to-Speech API Key (loaded from environment variable)
+    // Create a `.env` file with `GOOGLE_CLOUD_TTS_API_KEY=your-key`
+    GOOGLE_CLOUD_TTS_API_KEY:
+        (typeof process !== 'undefined' && process.env && process.env.GOOGLE_CLOUD_TTS_API_KEY) ||
+        '',
     
     // TTS Settings
     TTS_SETTINGS: {

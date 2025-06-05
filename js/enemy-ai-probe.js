@@ -2,6 +2,7 @@
 // Probe: Enemy AI Behavior and Interactions with Automated Bug Reporting
 
 (async function() {
+  const { random } = await import('./mathUtils.js');
   // Import ticketManager API if available
   let ticketManager = null;
   try {
@@ -145,7 +146,7 @@
     
     if (ticketManager && ticketManager.createTicket) {
       try {
-        const shortId = 'AI-' + Math.random().toString(36).substr(2, 6);
+        const shortId = 'AI-' + random().toString(36).substr(2, 6);
         const ticketData = {
           id: shortId,
           title: 'enemy-ai-failure',

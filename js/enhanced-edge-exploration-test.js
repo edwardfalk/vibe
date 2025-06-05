@@ -4,6 +4,7 @@
  * Continuously shoots at enemies while systematically visiting all screen edges
  * Takes screenshots at each edge to confirm boundary detection
  */
+import { random } from './mathUtils.js';
 
 class EnhancedEdgeExplorationTester {
     constructor() {
@@ -372,7 +373,7 @@ class EnhancedEdgeExplorationTester {
             const dangerLevel = this.assessDangerLevel();
             
             // Reduce shooting frequency when in danger to focus on movement
-            if (dangerLevel > 0.6 && Math.random() > 0.3) {
+            if (dangerLevel > 0.6 && random() > 0.3) {
                 return; // Skip shooting 70% of the time when in high danger
             }
             

@@ -4,7 +4,7 @@
 
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
-import { floor, ceil, min } from './mathUtils.js';
+import { floor, ceil, min, random } from './mathUtils.js';
 import { createTicket, updateTicket, loadTicket, listTickets } from './ticketManager.js';
 
 /**
@@ -850,7 +850,7 @@ export class UIRenderer {
 
     // Helper to generate a short unique ID
     _shortUID() {
-        return Math.random().toString(36).substr(2, 6);
+        return random().toString(36).substr(2, 6);
     }
 
     async _saveBugReport(ticket, isAppending, relatedTo, modal, errorMsg) {

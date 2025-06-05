@@ -12,6 +12,7 @@ try {
 
 const CodeRabbitReviewProcessor = require('./coderabbit-review-processor.js');
 const CodeRabbitTicketTracker = require('./coderabbit-ticket-tracker.js');
+const { random } = require('./mathUtils.js');
 
 class CodeRabbitTestingIntegration {
     constructor(options = {}) {
@@ -84,7 +85,7 @@ class CodeRabbitTestingIntegration {
         for (const task of allTasks) {
             try {
                 const ticketData = {
-                    id: `CR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    id: `CR-${Date.now()}-${random().toString(36).substr(2, 9)}`,
                     type: task.priority === 'high' ? 'bug' : (task.priority === 'medium' ? 'enhancement' : 'task'),
                     title: task.title,
                     description: this.formatTicketDescription(task, reviewData),
@@ -398,8 +399,8 @@ async function runIntegratedWorkflow() {
             runTest: async (testConfig) => {
                 console.log(`🧪 Mock: Running test ${testConfig.name}`);
                 return {
-                    passed: Math.random() > 0.3, // 70% pass rate
-                    duration: Math.floor(Math.random() * 5000) + 1000,
+                    passed: random() > 0.3, // 70% pass rate
+                    duration: Math.floor(random() * 5000) + 1000,
                     details: `Test completed for ${testConfig.category} issue`
                 };
             }

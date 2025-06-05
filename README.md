@@ -71,8 +71,8 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 - **Constructor Signatures**: All enemy classes use exact signature: `constructor(x, y, type, config, p, audio)`.
 - **Console Logging**: All logs must use emoji prefixes (🎮 Game state, 🎵 Audio, 🗡️ Combat, etc.).
 - **Timing System**: Use `deltaTimeMs` for frame-independent calculations, normalized to 60fps baseline.
-- Use early returns, descriptive names, and clear error handling.
-- All code must pass ESLint and Prettier before commit.
+ - Use early returns, descriptive names, and clear error handling.
+ - All code must pass ESLint and Prettier before commit. Run `npm run lint` to check linting and `npm run format` to apply Prettier formatting.
 - **See `.cursorrules` for complete standards and mandatory patterns.**
 
 ---
@@ -207,5 +207,5 @@ npm run debug:probe         # Game health check
 
 For detailed testing documentation, see:
 - [MCP Playwright Testing Guide](docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md)
-- [Ticketing System Guide](TICKETING_SYSTEM_GUIDE.md)
+- [Ticketing System Guide](docs/TICKETING_SYSTEM_GUIDE.md)
 

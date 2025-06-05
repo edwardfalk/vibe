@@ -2,6 +2,7 @@
 // Probe: Combat System and Collision Detection with Automated Bug Reporting
 
 (async function() {
+  const { random } = await import('./mathUtils.js');
   // Import ticketManager API if available
   let ticketManager = null;
   try {
@@ -215,7 +216,7 @@
     
     if (ticketManager && ticketManager.createTicket) {
       try {
-        const shortId = 'CMB-' + Math.random().toString(36).substr(2, 6);
+        const shortId = 'CMB-' + random().toString(36).substr(2, 6);
         const ticketData = {
           id: shortId,
           title: 'combat-collision-failure',
