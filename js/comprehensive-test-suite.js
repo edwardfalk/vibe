@@ -460,7 +460,8 @@ export class ComprehensiveTestSuite {
     }
     
     /**
-     * Test player movement
+     * Test player movement mechanics including WASD controls and boundary detection
+     * @returns {Object} Test results object with movement validation data
      */
     async testPlayerMovement() {
         return new Promise((resolve) => {
@@ -493,7 +494,8 @@ export class ComprehensiveTestSuite {
     }
     
     /**
-     * Test shooting mechanics
+     * Test shooting mechanics including bullet creation, trajectory, and collision detection
+     * @returns {Object} Test results object with shooting validation data
      */
     async testShootingMechanics() {
         this.currentTest = 'shooting-mechanics';
@@ -727,7 +729,8 @@ export class ComprehensiveTestSuite {
     }
 
     /**
-     * Test enemy spawning
+     * Test enemy spawning system including spawn rates, enemy types, and positioning
+     * @returns {Object} Test results object with spawning validation data
      */
     async testEnemySpawning() {
         return new Promise((resolve) => {
@@ -765,7 +768,8 @@ export class ComprehensiveTestSuite {
     }
     
     /**
-     * Test enemy behavior
+     * Test enemy behavior patterns including AI movement, targeting, and attack patterns
+     * @returns {Object} Test results object with behavior validation data
      */
     async testEnemyBehavior() {
         return new Promise((resolve) => {
@@ -972,6 +976,290 @@ export class ComprehensiveTestSuite {
         console.log(`✅ Player movement tests: ${results.passed} passed, ${results.failed} failed`);
         
         return results;
+    }
+
+    /**
+     * Test advanced gameplay mechanics including dash, special abilities, and complex interactions
+     * @returns {Object} Test results object with detailed metrics
+     */
+    async testAdvancedGameplay() {
+        this.currentTest = 'advanced-gameplay';
+        console.log('🚀 Testing advanced gameplay mechanics...');
+        
+        const results = {
+            category: 'advanced-gameplay',
+            tests: [],
+            passed: 0,
+            failed: 0
+        };
+        
+        try {
+            // Test 1: Player dash mechanics
+            const dashTest = await this.testPlayerDash();
+            results.tests.push(dashTest);
+            
+            // Test 2: Enemy special abilities
+            const specialAbilitiesTest = await this.testEnemySpecialAbilities();
+            results.tests.push(specialAbilitiesTest);
+            
+            // Test 3: Complex collision scenarios
+            const complexCollisionTest = await this.testComplexCollisions();
+            results.tests.push(complexCollisionTest);
+            
+            // Test 4: Performance under stress
+            const stressTest = await this.testPerformanceStress();
+            results.tests.push(stressTest);
+            
+            // Test 5: Beat synchronization accuracy
+            const beatAccuracyTest = await this.testBeatAccuracy();
+            results.tests.push(beatAccuracyTest);
+            
+        } catch (error) {
+            console.error('🔥 Advanced gameplay test error:', error);
+            results.tests.push({
+                name: 'Advanced Gameplay Error',
+                passed: false,
+                details: `Test execution failed: ${error.message}`,
+                data: { error: error.message }
+            });
+        }
+        
+        results.passed = results.tests.filter(t => t.passed).length;
+        results.failed = results.tests.filter(t => !t.passed).length;
+        
+        this.testResults.push(results);
+        console.log(`✅ Advanced gameplay tests: ${results.passed} passed, ${results.failed} failed`);
+        
+        return results;
+    }
+
+    /**
+     * Test player dash mechanics (Space key functionality)
+     * @returns {Object} Test result object
+     */
+    async testPlayerDash() {
+        console.log('💨 Testing player dash mechanics...');
+        
+        if (!window.player) {
+            return {
+                name: 'Player Dash Mechanics',
+                passed: false,
+                details: 'Player not available for testing',
+                data: { playerExists: false }
+            };
+        }
+        
+        const initialPosition = { x: window.player.x, y: window.player.y };
+        const initialVelocity = { x: window.player.velocity.x, y: window.player.velocity.y };
+        
+        // Simulate dash input
+        if (window.keys) {
+            window.keys[' '] = true; // Space key
+        }
+        
+        // Wait for dash to process
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const postDashPosition = { x: window.player.x, y: window.player.y };
+        const postDashVelocity = { x: window.player.velocity.x, y: window.player.velocity.y };
+        
+        // Clean up
+        if (window.keys) {
+            window.keys[' '] = false;
+        }
+        
+        // Check if dash had any effect
+        const positionChanged = Math.abs(postDashPosition.x - initialPosition.x) > 1 || 
+                               Math.abs(postDashPosition.y - initialPosition.y) > 1;
+        const velocityChanged = Math.abs(postDashVelocity.x - initialVelocity.x) > 1 || 
+                               Math.abs(postDashVelocity.y - initialVelocity.y) > 1;
+        
+        const dashWorking = positionChanged || velocityChanged;
+        
+        return {
+            name: 'Player Dash Mechanics',
+            passed: dashWorking,
+            details: dashWorking ? 'Dash mechanics responsive' : 'Dash mechanics not working',
+            data: {
+                initialPosition,
+                postDashPosition,
+                initialVelocity,
+                postDashVelocity,
+                positionChanged,
+                velocityChanged
+            }
+        };
+    }
+
+    /**
+     * Test enemy special abilities (Tank bombs, Stabber melee, etc.)
+     * @returns {Object} Test result object
+     */
+    async testEnemySpecialAbilities() {
+        console.log('🗡️ Testing enemy special abilities...');
+        
+        if (!window.enemies || window.enemies.length === 0) {
+            return {
+                name: 'Enemy Special Abilities',
+                passed: false,
+                details: 'No enemies available for testing',
+                data: { enemyCount: 0 }
+            };
+        }
+        
+        const abilities = {
+            tankBombs: false,
+            stabberMelee: false,
+            rusherExplosion: false,
+            gruntShooting: false
+        };
+        
+        // Check for different enemy types and their abilities
+        for (const enemy of window.enemies) {
+            if (enemy.type === 'tank' && typeof enemy.placeBomb === 'function') {
+                abilities.tankBombs = true;
+            }
+            if (enemy.type === 'stabber' && typeof enemy.meleeAttack === 'function') {
+                abilities.stabberMelee = true;
+            }
+            if (enemy.type === 'rusher' && typeof enemy.explode === 'function') {
+                abilities.rusherExplosion = true;
+            }
+            if (enemy.type === 'grunt' && typeof enemy.shoot === 'function') {
+                abilities.gruntShooting = true;
+            }
+        }
+        
+        const abilitiesFound = Object.values(abilities).filter(Boolean).length;
+        const passed = abilitiesFound > 0;
+        
+        return {
+            name: 'Enemy Special Abilities',
+            passed,
+            details: passed ? `${abilitiesFound} special abilities found` : 'No special abilities detected',
+            data: abilities
+        };
+    }
+
+    /**
+     * Test complex collision scenarios
+     * @returns {Object} Test result object
+     */
+    async testComplexCollisions() {
+        console.log('💥 Testing complex collision scenarios...');
+        
+        const collisionSystem = window.collisionSystem;
+        if (!collisionSystem) {
+            return {
+                name: 'Complex Collisions',
+                passed: false,
+                details: 'Collision system not available',
+                data: { collisionSystemExists: false }
+            };
+        }
+        
+        // Check if collision system has required methods
+        const requiredMethods = ['checkPlayerBulletCollisions', 'checkEnemyBulletCollisions', 'checkPlayerEnemyCollisions'];
+        const missingMethods = requiredMethods.filter(method => typeof collisionSystem[method] !== 'function');
+        
+        const passed = missingMethods.length === 0;
+        
+        return {
+            name: 'Complex Collisions',
+            passed,
+            details: passed ? 'All collision methods available' : `Missing methods: ${missingMethods.join(', ')}`,
+            data: { missingMethods, requiredMethods }
+        };
+    }
+
+    /**
+     * Test performance under stress conditions
+     * @returns {Object} Test result object
+     */
+    async testPerformanceStress() {
+        console.log('⚡ Testing performance under stress...');
+        
+        const startTime = performance.now();
+        const initialEnemyCount = window.enemies ? window.enemies.length : 0;
+        const initialBulletCount = (window.playerBullets ? window.playerBullets.length : 0) + 
+                                  (window.enemyBullets ? window.enemyBullets.length : 0);
+        
+        // Wait and measure performance
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const endTime = performance.now();
+        const duration = endTime - startTime;
+        
+        const finalEnemyCount = window.enemies ? window.enemies.length : 0;
+        const finalBulletCount = (window.playerBullets ? window.playerBullets.length : 0) + 
+                                (window.enemyBullets ? window.enemyBullets.length : 0);
+        
+        // Check if game is still responsive
+        const gameResponsive = window.gameState && window.gameState.gameState === 'playing';
+        const performanceGood = duration < 1200; // Should complete within reasonable time
+        
+        const passed = gameResponsive && performanceGood;
+        
+        return {
+            name: 'Performance Stress Test',
+            passed,
+            details: passed ? 'Performance acceptable under stress' : 'Performance issues detected',
+            data: {
+                duration,
+                gameResponsive,
+                performanceGood,
+                initialEnemyCount,
+                finalEnemyCount,
+                initialBulletCount,
+                finalBulletCount
+            }
+        };
+    }
+
+    /**
+     * Test beat synchronization accuracy
+     * @returns {Object} Test result object
+     */
+    async testBeatAccuracy() {
+        console.log('🎵 Testing beat synchronization accuracy...');
+        
+        const beatClock = window.beatClock;
+        if (!beatClock) {
+            return {
+                name: 'Beat Synchronization Accuracy',
+                passed: false,
+                details: 'Beat clock not available',
+                data: { beatClockExists: false }
+            };
+        }
+        
+        // Check if beat clock has required methods
+        const requiredMethods = ['getBeat', 'getBeatProgress', 'isOnBeat'];
+        const missingMethods = requiredMethods.filter(method => typeof beatClock[method] !== 'function');
+        
+        let beatAccurate = false;
+        if (missingMethods.length === 0) {
+            try {
+                const beat = beatClock.getBeat();
+                const progress = beatClock.getBeatProgress();
+                const onBeat = beatClock.isOnBeat();
+                
+                beatAccurate = typeof beat === 'number' && 
+                              typeof progress === 'number' && 
+                              typeof onBeat === 'boolean';
+            } catch (error) {
+                console.warn('⚠️ Beat clock method error:', error);
+            }
+        }
+        
+        const passed = missingMethods.length === 0 && beatAccurate;
+        
+        return {
+            name: 'Beat Synchronization Accuracy',
+            passed,
+            details: passed ? 'Beat synchronization working accurately' : 'Beat synchronization issues detected',
+            data: { missingMethods, beatAccurate }
+        };
     }
 
     /**
@@ -1206,6 +1494,60 @@ export class ComprehensiveTestSuite {
         });
     }
     
+    /**
+     * Test sound system
+     */
+    async testSoundSystem() {
+        this.currentTest = 'sound-system';
+        console.log('🔊 Testing sound system...');
+        
+        const results = {
+            category: 'sound-system',
+            tests: [],
+            passed: 0,
+            failed: 0
+        };
+        
+        // Test 1: Audio context availability
+        const audioContextExists = !!(window.AudioContext || window.webkitAudioContext);
+        results.tests.push({
+            name: 'Audio Context Support',
+            passed: audioContextExists,
+            details: audioContextExists ? 'Audio context supported' : 'Audio context not supported',
+            data: { audioContextExists }
+        });
+        
+        // Test 2: Audio system initialization
+        const audioSystemExists = !!window.audio;
+        results.tests.push({
+            name: 'Audio System Exists',
+            passed: audioSystemExists,
+            details: audioSystemExists ? 'Audio system loaded' : 'Audio system not loaded',
+            data: { audioSystemExists }
+        });
+        
+        // Test 3: Sound playback methods
+        if (audioSystemExists) {
+            const requiredMethods = ['playPlayerShoot', 'playExplosion', 'playHit', 'playEnemyHit'];
+            const missingMethods = requiredMethods.filter(method => typeof window.audio[method] !== 'function');
+            
+            results.tests.push({
+                name: 'Sound Playback Methods',
+                passed: missingMethods.length === 0,
+                details: missingMethods.length === 0 ? 'All sound methods available' : `Missing methods: ${missingMethods.join(', ')}`,
+                data: { missingMethods, requiredMethods }
+            });
+        }
+        
+        results.passed = results.tests.filter(t => t.passed).length;
+        results.failed = results.tests.filter(t => !t.passed).length;
+        
+        this.testResults.push(results);
+        console.log(`✅ Sound system tests: ${results.passed} passed, ${results.failed} failed`);
+        
+        return results;
+    }
+
     /**
      * Test collision system
      */

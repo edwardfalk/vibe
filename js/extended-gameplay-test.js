@@ -106,19 +106,38 @@ class ExtendedGameplayTester {
                     console.log(`⏱️ Extended test progress: ${minutes}:${seconds.toString().padStart(2, '0')} - Actions: ${this.stats.totalActions}`);
                 }
 
-                // Random action selection (weighted towards combat)
+                // Strategic action selection (survival-focused)
                 const actionType = Math.random();
                 
-                if (actionType < 0.4) {
-                    // 40% chance: Shoot
-                    await this.performShooting();
-                } else if (actionType < 0.8) {
-                    // 40% chance: Move
-                    const randomDirection = movements[Math.floor(Math.random() * movements.length)];
-                    await this.performMovement(randomDirection);
+                // Check if player is in danger (low health or enemies nearby)
+                const playerInDanger = window.player && (
+                    window.player.health < 50 || 
+                    this.isEnemyNearby(100) // Enemy within 100 pixels
+                );
+                
+                if (playerInDanger) {
+                    // When in danger: prioritize movement and defensive shooting
+                    if (actionType < 0.6) {
+                        // 60% chance: Defensive movement
+                        const randomDirection = movements[Math.floor(Math.random() * movements.length)];
+                        await this.performMovement(randomDirection);
+                    } else {
+                        // 40% chance: Defensive shooting while moving
+                        await this.performCombinedAction(movements);
+                    }
                 } else {
-                    // 20% chance: Combined action (move + shoot)
-                    await this.performCombinedAction(movements);
+                    // When safe: balanced combat approach
+                    if (actionType < 0.5) {
+                        // 50% chance: Shoot
+                        await this.performShooting();
+                    } else if (actionType < 0.8) {
+                        // 30% chance: Move
+                        const randomDirection = movements[Math.floor(Math.random() * movements.length)];
+                        await this.performMovement(randomDirection);
+                    } else {
+                        // 20% chance: Combined action (move + shoot)
+                        await this.performCombinedAction(movements);
+                    }
                 }
 
                 // Monitor game state
@@ -143,16 +162,47 @@ class ExtendedGameplayTester {
     }
 
     /**
-     * Perform shooting action
+     * Perform strategic shooting action - target nearest enemy
      */
     async performShooting() {
         try {
-            const shootType = Math.random() < 0.7 ? 'spacebar' : 'mouse';
+            // Find nearest enemy for strategic targeting
+            let targetEnemy = null;
+            let minDistance = Infinity;
             
-            if (shootType === 'spacebar') {
-                await this.simulateKeyPress(' ', 100);
+            if (window.enemies && window.player) {
+                for (const enemy of window.enemies) {
+                    const dx = enemy.x - window.player.x;
+                    const dy = enemy.y - window.player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        targetEnemy = enemy;
+                    }
+                }
+            }
+            
+            if (targetEnemy && window.player) {
+                // Calculate angle to target
+                const dx = targetEnemy.x - window.player.x;
+                const dy = targetEnemy.y - window.player.y;
+                const angle = Math.atan2(dy, dx);
+                
+                // Simulate mouse position for targeting
+                const canvas = document.querySelector('canvas');
+                if (canvas) {
+                    const rect = canvas.getBoundingClientRect();
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const targetX = centerX + Math.cos(angle) * 100;
+                    const targetY = centerY + Math.sin(angle) * 100;
+                    
+                    await this.simulateMouseClick(targetX, targetY);
+                }
             } else {
-                await this.simulateMouseClick();
+                // Fallback to spacebar shooting
+                await this.simulateKeyPress(' ', 100);
             }
             
             this.stats.shotsFired++;
@@ -162,12 +212,60 @@ class ExtendedGameplayTester {
     }
 
     /**
-     * Perform movement action
+     * Perform strategic movement action - avoid enemies and stay mobile
      */
     async performMovement(direction) {
         try {
-            const holdTime = 100 + Math.random() * 200; // 100-300ms hold
-            await this.simulateKeyPress(direction, holdTime);
+            // Strategic movement: avoid enemies and stay near center
+            let bestDirection = direction;
+            
+            if (window.player && window.enemies) {
+                const playerX = window.player.x;
+                const playerY = window.player.y;
+                const centerX = 640; // Screen center
+                const centerY = 360;
+                
+                // Find direction away from nearest enemy
+                let nearestEnemy = null;
+                let minDistance = Infinity;
+                
+                for (const enemy of window.enemies) {
+                    const dx = enemy.x - playerX;
+                    const dy = enemy.y - playerY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestEnemy = enemy;
+                    }
+                }
+                
+                // If enemy is too close (< 150 pixels), move away
+                if (nearestEnemy && minDistance < 150) {
+                    const dx = playerX - nearestEnemy.x;
+                    const dy = playerY - nearestEnemy.y;
+                    
+                    // Choose direction away from enemy
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        bestDirection = dx > 0 ? 'd' : 'a'; // Move right or left
+                    } else {
+                        bestDirection = dy > 0 ? 's' : 'w'; // Move down or up
+                    }
+                } else {
+                    // Move towards center if too far from it
+                    const distFromCenter = Math.sqrt((playerX - centerX) ** 2 + (playerY - centerY) ** 2);
+                    if (distFromCenter > 200) {
+                        if (Math.abs(playerX - centerX) > Math.abs(playerY - centerY)) {
+                            bestDirection = playerX > centerX ? 'a' : 'd';
+                        } else {
+                            bestDirection = playerY > centerY ? 'w' : 's';
+                        }
+                    }
+                }
+            }
+            
+            const holdTime = 150 + Math.random() * 100; // 150-250ms hold for better control
+            await this.simulateKeyPress(bestDirection, holdTime);
             this.stats.movementActions++;
         } catch (error) {
             console.error('❌ Movement error:', error.message);
@@ -210,34 +308,77 @@ class ExtendedGameplayTester {
     }
 
     /**
+     * Check if any enemy is within specified distance of player
+     */
+    isEnemyNearby(maxDistance) {
+        if (!window.player || !window.enemies) return false;
+        
+        const playerX = window.player.x;
+        const playerY = window.player.y;
+        
+        for (const enemy of window.enemies) {
+            const dx = enemy.x - playerX;
+            const dy = enemy.y - playerY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance <= maxDistance) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
      * Monitor game state for changes
      */
     async monitorGameState() {
-        // Check if player died
-        if (window.player && window.player.health <= 0) {
+        // Check if player died or game ended
+        if ((window.player && window.player.health <= 0) || 
+            (window.gameState && window.gameState.gameState === 'gameOver')) {
+            
             this.stats.playerDeaths++;
-            console.log('💀 Player death detected during extended test');
+            console.log('💀 Player death/game over detected during extended test');
             
-            // Try to restart if possible
+            // Try multiple restart methods
+            let restarted = false;
+            
+            // Method 1: Use gameState.restartGame if available
             if (window.gameState && typeof window.gameState.restartGame === 'function') {
-                await this.wait(1000);
-                window.gameState.restartGame();
-                await this.wait(1000);
-                console.log('🔄 Game restarted after player death');
+                try {
+                    window.gameState.restartGame();
+                    await this.wait(1000);
+                    restarted = true;
+                    console.log('🔄 Game restarted using gameState.restartGame()');
+                } catch (error) {
+                    console.warn('⚠️ gameState.restartGame() failed:', error.message);
+                }
             }
-        }
-
-        // Check if game ended
-        if (window.gameState && window.gameState.gameState === 'gameOver') {
-            console.log('🎮 Game over detected during extended test');
             
-            // Restart for continued testing
-            if (typeof window.gameState.restartGame === 'function') {
-                await this.wait(1000);
-                window.gameState.restartGame();
-                await this.wait(1000);
-                console.log('🔄 Game restarted after game over');
+            // Method 2: Try pressing R key (common restart key)
+            if (!restarted) {
+                try {
+                    await this.simulateKeyPress('r', 100);
+                    await this.wait(1000);
+                    console.log('🔄 Attempted restart using R key');
+                } catch (error) {
+                    console.warn('⚠️ R key restart failed:', error.message);
+                }
             }
+            
+            // Method 3: Try clicking on screen to restart
+            if (!restarted && window.gameState && window.gameState.gameState === 'gameOver') {
+                try {
+                    await this.simulateMouseClick(640, 360); // Click center screen
+                    await this.wait(1000);
+                    console.log('🔄 Attempted restart using mouse click');
+                } catch (error) {
+                    console.warn('⚠️ Mouse click restart failed:', error.message);
+                }
+            }
+            
+            // Wait for game to stabilize after restart
+            await this.wait(500);
         }
     }
 
@@ -376,26 +517,44 @@ class ExtendedGameplayTester {
     }
 
     /**
-     * Simulate key press with proper timing
+     * Simulate key press with proper timing - uses window.keys for movement
      */
     async simulateKeyPress(key, holdDuration = 100) {
-        const keyDownEvent = new KeyboardEvent('keydown', { 
-            key: key, 
-            code: key === ' ' ? 'Space' : `Key${key.toUpperCase()}`,
-            bubbles: true,
-            cancelable: true
-        });
-        document.dispatchEvent(keyDownEvent);
-        
-        await this.wait(holdDuration);
-        
-        const keyUpEvent = new KeyboardEvent('keyup', { 
-            key: key, 
-            code: key === ' ' ? 'Space' : `Key${key.toUpperCase()}`,
-            bubbles: true,
-            cancelable: true
-        });
-        document.dispatchEvent(keyUpEvent);
+        // For movement keys, use window.keys system
+        if (['w', 'a', 's', 'd'].includes(key.toLowerCase())) {
+            if (window.keys) {
+                // Set both uppercase and lowercase versions
+                window.keys[key.toUpperCase()] = true;
+                window.keys[key.toLowerCase()] = true;
+                console.log(`🎮 Setting movement key: ${key} for ${holdDuration}ms`);
+                
+                await this.wait(holdDuration);
+                
+                // Clear the keys
+                window.keys[key.toUpperCase()] = false;
+                window.keys[key.toLowerCase()] = false;
+                console.log(`🎮 Cleared movement key: ${key}`);
+            }
+        } else {
+            // For non-movement keys (like spacebar), use keyboard events
+            const keyDownEvent = new KeyboardEvent('keydown', { 
+                key: key, 
+                code: key === ' ' ? 'Space' : `Key${key.toUpperCase()}`,
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(keyDownEvent);
+            
+            await this.wait(holdDuration);
+            
+            const keyUpEvent = new KeyboardEvent('keyup', { 
+                key: key, 
+                code: key === ' ' ? 'Space' : `Key${key.toUpperCase()}`,
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(keyUpEvent);
+        }
         
         await this.wait(50);
     }

@@ -1,8 +1,7 @@
 /**
  * Game Debugging Probe
  * 
- * Uses CodeRabbit AI analysis to identify bugs affecting Vibe game
- * Focuses on actionable debugging insights for game stability and performance
+ * Provides debugging insights for game stability and performance
  */
 
 class GameDebuggingProbe {
@@ -27,9 +26,7 @@ class GameDebuggingProbe {
         console.log('🐛 Starting Game Debugging Probe...');
         
         try {
-            // Initialize CodeRabbit debugger
-            const CodeRabbitGameDebugger = require('./coderabbit-game-debugger.js');
-            const gameDebugger = new CodeRabbitGameDebugger();
+                    // Game debugging analysis
             
             // Analyze game files for bugs
             console.log('🔍 Analyzing game files for bugs and performance issues...');
@@ -59,7 +56,7 @@ class GameDebuggingProbe {
     }
 
     /**
-     * Extract key debugging insights from CodeRabbit analysis
+     * Extract key debugging insights from game analysis
      */
     extractKeyInsights(debuggingResults) {
         console.log('🎯 Extracting key debugging insights...');

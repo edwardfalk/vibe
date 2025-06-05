@@ -14,12 +14,10 @@
     "test:mcp": "node run-mcp-tests.js",
     "test:automated": "node automated-game-test.js",
     "test:comprehensive": "npm run test:automated && npm run test:mcp",
-    "test:coderabbit": "node test-coderabbit-integration.js",
-    "test:coderabbit-probe": "node js/coderabbit-comment-probe.js",
-    "debug:game": "node js/coderabbit-game-debugger.js",
     "debug:probe": "node js/game-debugging-probe.js",
-    "coderabbit:analyze": "node -e \"const CR = require('./js/coderabbit-integration.js'); const cr = new CR(); console.log('CodeRabbit analysis ready')\"",
-    "lint": "echo 'Running CodeRabbit-enhanced linting...' && npm run coderabbit:analyze",
+    "coderabbit:analyze": "node js/coderabbit-review-processor.js",
+    "coderabbit:integrate": "node js/coderabbit-testing-integration.js",
+    "coderabbit:workflow": "npm run coderabbit:integrate",
     "api": "node ticket-api.js"
   },
   "devDependencies": {
