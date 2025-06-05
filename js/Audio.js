@@ -50,6 +50,7 @@
  */
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
+import { random, randomRange, floor } from './mathUtils.js';
 
 export class Audio {
     /**
@@ -280,9 +281,9 @@ export class Audio {
         const panNode = this.audioContext.createStereoPanner();
         
         // Add subtle randomness to frequency and volume for variety
-        const frequencyVariation = 1 + (this.p.random() - 0.5) * 0.1;
-        const volumeVariation = 1 + (this.p.random() - 0.5) * 0.15;
-        const durationVariation = 1 + (this.p.random() - 0.5) * 0.2;
+        const frequencyVariation = 1 + (random() - 0.5) * 0.1;
+        const volumeVariation = 1 + (random() - 0.5) * 0.15;
+        const durationVariation = 1 + (random() - 0.5) * 0.2;
         
         // Configure oscillator with randomness
         oscillator.type = config.waveform === 'noise' ? 'sawtooth' : config.waveform;
@@ -601,11 +602,11 @@ export class Audio {
                 return name.includes('clear') || name.includes('precise') || name.includes('clinical') ||
                        name.includes('sharp') || name.includes('articulate');
             });
-            if (preciseVoices.length > 0) return preciseVoices[Math.floor(this.p.random() * preciseVoices.length)];
+            if (preciseVoices.length > 0) return preciseVoices[floor(random() * preciseVoices.length)];
         }
         
         // Fallback to random voice
-        return availableVoices[Math.floor(this.p.random() * availableVoices.length)];
+        return availableVoices[floor(random() * availableVoices.length)];
     }
     
     // DYNAMIC voice effects based on content and character
@@ -628,7 +629,7 @@ export class Audio {
             // Grunts get robotic, confused effects
             if (isConfused) {
                 utterance.rate = Math.max(0.4, baseConfig.rate - 0.2); // Much slower when confused
-                utterance.pitch = baseConfig.pitch + this.p.random(-0.1, 0.1); // Slight pitch variation
+                utterance.pitch = baseConfig.pitch + randomRange(-0.1, 0.1); // Slight pitch variation
             }
             if (isAggressive) {
                 utterance.rate = Math.min(1.0, baseConfig.rate + 0.2); // Faster when angry
@@ -650,13 +651,13 @@ export class Audio {
             // Stabbers get precise, clinical effects
             if (isAggressive) {
                 utterance.rate = Math.max(0.7, baseConfig.rate - 0.2); // Slower, more deliberate
-                utterance.pitch = baseConfig.pitch + this.p.random(-0.05, 0.05); // Slight variation for unsettling effect
+                utterance.pitch = baseConfig.pitch + randomRange(-0.05, 0.05); // Slight variation for unsettling effect
             }
         }
         
         // Add some randomness for variety (small amounts)
-        utterance.rate += this.p.random(-0.05, 0.05);
-        utterance.pitch += this.p.random(-0.03, 0.03);
+        utterance.rate += randomRange(-0.05, 0.05);
+        utterance.pitch += randomRange(-0.03, 0.03);
         
         // Ensure values stay in valid ranges
         utterance.rate = Math.max(0.1, Math.min(2.0, utterance.rate));
@@ -770,8 +771,8 @@ export class Audio {
             // Add animation effects
             if (textObj.shakeTimer > 0) {
                 // Shake effect for aggressive text
-                screenX += this.p.random(-2, 2);
-                screenY += this.p.random(-1, 1);
+                screenX += randomRange(-2, 2);
+                screenY += randomRange(-1, 1);
             }
             
             if (textObj.wobbleTimer > 0) {
@@ -868,7 +869,7 @@ export class Audio {
             death: ["DAMN!", "HELL!", "SHIT!", "FUCK!", "NO!", "ARGH!", "DIE!", "BACK!"]
         };
         const contextLines = lines[context] || lines.start;
-        return contextLines[Math.floor(this.p.random() * contextLines.length)];
+        return contextLines[floor(random() * contextLines.length)];
     }
     
     getGruntLine() {
@@ -883,7 +884,7 @@ export class Audio {
             "MY HELMET IS TIGHT!", "WIFI PASSWORD?", "MOMMY?", "SCARED!",
             "IS THAT MY TARGET?", "WHICH BUTTON?", "I'M CONFUSED!"
         ];
-        return lines[Math.floor(this.p.random() * lines.length)];
+        return lines[floor(random() * lines.length)];
     }
     
     getRusherLine() {
@@ -898,7 +899,7 @@ export class Audio {
             "TOO FAST!", "CAN'T STOP!", "EXPLOSIVE DIARRHEA!", "REGRET NOTHING!",
             "WITNESS ME!", "LEEROY JENKINS!", "OOPS BOOM!"
         ];
-        return lines[Math.floor(this.p.random() * lines.length)];
+        return lines[floor(random() * lines.length)];
     }
     
     getTankLine() {
@@ -913,7 +914,7 @@ export class Audio {
             "SIZE MATTERS!", "PROTEIN POWER!", "HULK SMASH!", "BEAST MODE!",
             "MY GUN IS BIGGER!", "MAXIMUM TESTOSTERONE!"
         ];
-        return lines[Math.floor(this.p.random() * lines.length)];
+        return lines[floor(random() * lines.length)];
     }
     
     getStabberLine() {
@@ -928,7 +929,7 @@ export class Audio {
             "NEEDLE THERAPY!", "OOPS SORRY!", "STABBY MCSTABFACE!",
             "HUMAN PINCUSHION!", "LITTLE SCRATCH!", "POINTY DEATH!"
         ];
-        return lines[Math.floor(this.p.random() * lines.length)];
+        return lines[floor(random() * lines.length)];
     }
     
     // Control methods
