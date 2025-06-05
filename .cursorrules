@@ -1,6 +1,323 @@
 # .cursorrules
 
-- Always consult the latest README.md for the single source of truth on coding standards, best practices, and architecture updates.
-- The bug ticketing system is a core, modular subsystem. All bug tracking, workflow, and knowledge management should use the API and JSON ticket model.
-- Use the provided API endpoints and JS modules for all ticket management (in-game, admin, automation).
-- Keep the ticketing system and documentation up to date as the project evolves.
+> **Purpose:**  
+> This file is the authoritative rulebook for Vibe.  
+> It defines architecture, coding standards, and workflow rules.  
+> For detailed explanations, see the referenced guides.
+
+---
+
+**1. Project Architecture & File Structure**
+
+- Vibe uses a strict modular architecture.
+- Do NOT reference or use legacy/monolithic files.
+- All new code must be modular, focused, and placed in the correct file.
+
+**Current Modular Files (as of 2024):**
+- Core Systems: `GameLoop.js`, `GameState.js`, `CameraSystem.js`, `SpawnSystem.js`, `CollisionSystem.js`, `UIRenderer.js`, `BackgroundRenderer.js`, `TestMode.js`
+- Entities: `player.js`, `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js`, `EnemyFactory.js`, `bullet.js`
+- Support: `Audio.js`, `BeatClock.js`, `visualEffects.js`, `effects.js`, `config.js`, `mathUtils.js`
+- Other: `ticketManager.js`, `ai-liveness-probe.js`
+- (See `/js/` for the full, up-to-date list. For details, see README.md.)
+
+**Legacy Files (Do NOT use):**
+- `js/game.js` (replaced by `GameLoop.js`)
+- `js/enemy.js` (replaced by `BaseEnemy.js` + individual enemy classes)
+- `js/explosion.js` (replaced by `effects.js` + `visualEffects.js`)
+
+- Never suggest or implement monolithic or legacy patterns.
+- Update this section and the README.md if the architecture changes.
+
+---
+
+**2. Ticketing System: Bugs, Features, Enhancements, Tasks**
+
+- The ticketing system is a core, modular subsystem.
+- All work (bugs, features, enhancements, tasks) must be tracked via the ticketing system.
+- Full documentation, schema, API usage, and workflow best practices are now in the dedicated guide:
+  - ➡️ **See [`TICKETING_SYSTEM_GUIDE.md`](./TICKETING_SYSTEM_GUIDE.md) for all details.**
+- Tickets are structured JSON files stored in `tests/bug-reports/`.
+- Use the provided API endpoints (`ticket-api.js`) and JS modules (`ticketManager.js`) for all ticket management (in-game, admin, automation).
+- Each ticket must specify a `type` field: `bug`, `feature`, `enhancement`, or `task`.
+- **All tickets created via the API must include a unique `id` field. The backend will reject tickets without an `id`. See the guide for example payloads.**
+- Tickets support tags, status, history, artifacts (screenshots, logs), and related tickets.
+- The bug-report watcher script (`move-bug-reports.js`) auto-moves artifacts to the correct folder.
+- No ZIP download option is provided; all artifacts must be saved to the bug-reports folder.
+- The AI must be able to programmatically open the bug-report modal and access the same data as a human tester.
+- All feature/enhancement work should be logged through the same metadata-rich JSON ticket workflow.
+- **Known issue:** If the bug report modal does not close after submission, this is tracked as bug ticket `BR-2024-06-01-modal-bug-001`. See the guide for troubleshooting steps.
+
+---
+
+**3. MCP Tools Usage Guide (Summary)**
+
+**What are MCP Tools?**
+- MCP tools are advanced, server-powered utilities for memory management, Playwright testing, and file operations.
+- Use them for tasks that require more power, precision, or automation than built-in Cursor tools.
+
+**Categories & When to Use:**
+
+- **Memory Management**
+  - Use for: Reading, updating, and organizing the project's knowledge graph.
+  - Key tools: `mcp_memory_read_graph`, `mcp_memory_search_nodes`, `mcp_memory_add_observations`, etc.
+  - Path: N/A (entity-based, not file-based)
+
+- **Playwright Testing**
+  - Use for: Automated, probe-driven browser testing, bug reproduction, and artifact capture.
+  - Key tools: `mcp_playwright_navigate`, `mcp_playwright_click`, `mcp_playwright_press_key`, etc.
+  - Path: N/A (browser automation)
+
+- **Filesystem Operations**
+  - Use for: Batch file reads, precise line edits, directory management, and metadata.
+  - Key tools: `mcp_filesystem_read_file`, `mcp_filesystem_edit_file`, `mcp_filesystem_list_directory`, etc.
+  - Path: **Absolute paths required** (e.g., `C:\CursorWorkspace\projects\vibe\...`)
+
+**Best Practices:**
+- Prefer built-in tools for simple, day-to-day edits.
+- Use MCP tools for batch, advanced, or automation tasks.
+- Always check path requirements (absolute for MCP, relative for built-in).
+- For advanced Playwright workflows, see [MCP_PLAYWRIGHT_TESTING_GUIDE.md](./MCP_PLAYWRIGHT_TESTING_GUIDE.md).
+
+**Example: Automated Bug Ticket Creation**
+1. Run probe-driven test with MCP Playwright.
+2. On failure, capture screenshot and logs.
+3. Use `ticketManager.js` and `ticket-api.js` to create a new bug ticket with artifacts.
+4. Artifacts are auto-moved to the correct folder by `move-bug-reports.js`.
+
+---
+
+**Workflow Note: Robust Server Startup**
+- The `predev` script kills any process on ports 5500 and 3001 before starting dev servers.
+- The `dev` script starts Five Server (frontend), bug watcher, and ticket API server in parallel.
+- If port 5500 is in use, Five Server will use another port (e.g., 56555); always check the console for the actual port.
+
+---
+
+**4. Memory Management**
+
+- The project uses a structured knowledge graph for entities, relations, and observations.
+- **Entity:** A meaningful component or concept (e.g., Player, Enemy, Bullet, BeatClock, Audio).
+- **Relation:** A directed connection describing interaction or dependency (e.g., Player *fires* Bullet).
+- **Observation:** A concise, factual note about an entity or relation (e.g., "`Bullet.js` handles velocity and collision detection.").
+
+**Guidelines:**
+- Keep memory focused and clean—avoid information overload.
+- Quality over quantity: Fewer, well-organized entities.
+- Focus on the current state; archive resolved issues.
+- Regularly clean up outdated or redundant information.
+
+**Entity Organization:**
+- Max 10-15 observations per entity—split if exceeding.
+- One clear responsibility per entity; use meaningful names.
+- Avoid duplicates—search before creating new entities.
+
+**Good Examples:**  
+- `VibeGame` (project overview), `GameArchitecture`, `CosmicBeatSystem`, `AudioSystem`, `TestingSystem`
+
+**Anti-Patterns to Avoid:**  
+- Version-specific or temporary entities, issue-tracking entities, information overload, inconsistent naming.
+
+**Workflow:**
+1. Read memory first: `mcp_memory_read_graph`
+2. Search existing: `mcp_memory_search_nodes`
+3. Open specific: `mcp_memory_open_nodes`
+4. Plan changes, update existing entities, add current state observations, create relations, and note key decisions.
+5. Archive resolved issues, update current state, clean up temporary observations, and verify relations.
+
+---
+
+**5. Coding Standards**
+
+- **MCP File Edit Workflow (MANDATORY):**  
+  All `mcp_filesystem_edit_file` operations must follow this workflow:  
+  1. ALWAYS use `dryRun: true` first and review the diff carefully  
+  2. Only proceed with `dryRun: false` if diff matches expectations  
+  3. Before real edit, back up the file if it's critical  
+  4. After editing, immediately validate the file's content  
+  5. If corrupted or missing expected content, restore from backup  
+  6. Optionally, run a linter for code/config files  
+  7. Delete backup if edit is successful
+
+- **Simplicity:** Write simple, straightforward code.
+- **Readability:** Code should be easy to read and understand.
+- **Performance:** Optimize only when it doesn't harm readability.
+- **Maintainability:** Code should be easy to update and maintain.
+- **Testability:** Code should be easy to test.
+- **Reusability:** Write reusable components and functions.
+
+**Rules:**
+- Only modify code related to the task at hand—minimal changes.
+- Use early returns to avoid nested conditions.
+- Prefer conditional classes over ternary operators for class attributes.
+- Use descriptive names for variables and functions. Prefix event handlers with "handle" (e.g., handleClick).
+- Use constants instead of functions where possible.
+- Write correct, DRY (Don't Repeat Yourself) code.
+- Prefer functional, immutable style unless much more verbose.
+- Add a comment at the start of each function describing what it does.
+- Use JSDoc comments for JavaScript (unless TypeScript).
+- Order functions so that those composing others appear earlier in the file.
+- If you encounter a bug or suboptimal code, add a `// TODO:` comment outlining the problem.
+- All code must pass linting (ESLint) and formatting (Prettier) checks before commit. See README for setup.
+- Use ES modules (`import`/`export`) for all new code unless otherwise specified.
+- Handle errors gracefully and consistently; use early returns and clear error messages.
+- Write code that is easy to test (favor pure functions, dependency injection where possible).
+- Manage dependencies via `package.json` and npm; do not add libraries without team review.
+
+**Dependency Injection & Global Access:**
+- Prefer constructor injection for dependencies (e.g., audio, cameraSystem) in new modules
+- Allow window.* access for shared game systems that need global coordination
+- Core systems (gameState, audio, beatClock, player) may use window.* for cross-module communication
+- Entity-specific data should use dependency injection where practical
+- Do not attach game state or systems to the p5 instance (`p`). Only use `p` for p5-native methods and properties.
+- This hybrid approach balances modularity with practical game development needs.
+
+**Architecture Validation:**
+- New systems must receive dependencies via constructor injection where practical
+- Files >500 lines should consider splitting by responsibility
+- Console.log usage: Include emoji prefixes for categorization (🎮 for game state, 🎵 for audio, etc.)
+- Each module should have a clear, single primary responsibility
+- Update memory knowledge graph when adding new systems or major changes
+
+**Timing Standards:**
+- Use deltaTimeMs for time-based calculations (movement, animations)
+- Use frame counters only for simple state machines or fixed-duration effects
+- Normalize to 60fps baseline: `const dt = deltaTimeMs / 16.6667`
+- BeatClock system takes precedence for musical timing coordination
+
+**Strict Consistency Standards (Multi-AI Model Compatibility):**
+
+- **Constructor Standards (MANDATORY):**
+  - All enemy classes MUST use exact signature: `constructor(x, y, type, config, p, audio)`
+  - ✅ Correct: `super(x, y, 'stabber', config, p, audio)` 
+  - ❌ Incorrect: `super(x, y, 'stabber', config)` // Missing dependencies
+  - 🎯 Rationale: Ensures dependency injection consistency across AI models
+
+- **Import/Export Standards:**
+  - ALWAYS import math functions from mathUtils.js instead of using p5 globals
+  - ✅ Correct: `import { sin, cos, random } from './mathUtils.js'`
+  - ❌ Incorrect: `sin(angle)` // Using p5 global
+  - 🎯 Rationale: Explicit imports make dependencies clear and testable
+
+- **Error Handling Standards:**
+  - Pattern 1 (Preferred): `if (typeof obj !== 'undefined' && obj) { obj.method(); }`
+  - Pattern 2 (External): `try { external.api(); } catch(e) { console.log('⚠️ API Error:', e); }`
+  - ❌ Never: `obj.method()` // No safety checks
+  - 🎯 Rationale: Consistent error handling prevents runtime crashes
+
+- **Method Signature Standards:**
+  - ALL enemy methods MUST accept deltaTimeMs parameter
+  - ✅ Correct: `update(playerX, playerY, deltaTimeMs = 16.6667)`
+  - ✅ Correct: `updateSpecificBehavior(playerX, playerY, deltaTimeMs)`
+  - ❌ Incorrect: `update(playerX, playerY)` // Missing deltaTimeMs
+  - 🎯 Rationale: Frame-independent timing requires consistent parameter passing
+
+- **Console Logging Standards (ENFORCED):**
+  - ALL logs MUST use emoji prefixes for categorization
+  - ✅ Correct: `console.log('🎮 Game state changed:', newState)`
+  - ✅ Correct: `console.log('🗡️ Stabber attacking at distance:', distance)`
+  - ❌ Incorrect: `console.log('Stabber attacking')` // No emoji
+  - Emoji map: 🎮 Game state, 🎵 Audio, 🗡️ Combat, 💥 Explosions, ⚠️ Errors, 🚀 Movement, 🎯 AI behavior, 🛡️ Defense, 🏥 Health
+  - 🎯 Rationale: Consistent logging helps debugging across different developers/AI models
+
+- **Return Value Standards:**
+  - Methods that can hit targets MUST return structured objects:
+  - ✅ Correct: `return { type: 'stabber-melee', playerHit: true, damage: 25 }`
+  - ❌ Incorrect: `return true` // Ambiguous
+  - Null/undefined for no-action cases: `return null`
+  - 🎯 Rationale: Structured returns enable GameLoop.js to handle all cases consistently
+
+- **Global Access Hierarchy (CLARIFIED):**
+  - Tier 1 (window.*): gameState, audio, beatClock, player (core coordination)
+  - Tier 2 (injection): p5 instance, cameraSystem, specific systems
+  - Tier 3 (forbidden): Internal enemy state, temporary calculations
+  - ✅ Correct: `window.audio.playSound()` // Core system
+  - ✅ Correct: `this.audio.playSound()` // If injected
+  - ❌ Incorrect: `window.someTemporaryVariable` // Not core system
+  - 🎯 Rationale: Clear hierarchy prevents globals abuse while allowing necessary coordination
+
+- **p5.js Instance Mode Standards (MANDATORY):**
+  - ALL drawing functions MUST use `this.p.` or `p.` prefix in instance mode
+  - ✅ Correct: `this.p.fill(255, 0, 0)`, `this.p.ellipse(x, y, w, h)`, `this.p.textAlign(this.p.CENTER)`
+  - ❌ Incorrect: `fill(255, 0, 0)`, `ellipse(x, y, w, h)`, `textAlign(CENTER)` // Missing prefix
+  - 🎯 Rationale: Prevents global namespace pollution and ensures instance mode compatibility across all AI models
+
+- **Math Function Import Standards (MANDATORY):**
+  - ALWAYS import math functions from mathUtils.js instead of using p5 globals
+  - ✅ Correct: `import { sin, cos, random, sqrt, atan2, min, max } from './mathUtils.js'`
+  - ❌ Incorrect: `sin(angle)`, `random(0, 100)`, `sqrt(x*x + y*y)` // Using p5 globals
+  - 🎯 Rationale: Explicit imports make dependencies clear, enable testing, and prevent p5 version conflicts
+
+- **Attack Method Return Standards (MANDATORY):**
+  - ALL attack methods MUST return structured objects or null
+  - ✅ Correct: `return { type: 'melee', playerHit: true, damage: 25, x: this.x, y: this.y }`
+  - ✅ Correct: `return null` // No action taken
+  - ❌ Incorrect: `return true`, `return false` // Ambiguous boolean returns
+  - 🎯 Rationale: Structured returns enable GameLoop.js to handle all attack types consistently across AI models
+
+---
+
+**6. Testing & Playwright**
+
+- **Probe-driven testing only:** Remove all manual Playwright `.spec.js` tests; maintain only probe files.
+- **Use MCP Playwright for all automated tests.**
+- **Dev server runs on port 5500** (`http://localhost:5500`).
+- **Game must be started before gameplay checks** (restart from game-over if needed).
+- **Activate audio:** Click canvas at (400,300) to enable audio context.
+- **Test mode:** Press 'T' key for scripted testing mode.
+- **Bug report automation:** On probe failure, auto-capture screenshot and logs, restart and retry, then create a detailed bug report if the issue persists.
+- **Artifacts:** All screenshots and logs must be saved in the correct bug-report folder, auto-moved by `move-bug-reports.js`.
+- **Keyboard shortcuts:** In the bug-report modal, Enter/Ctrl+Enter = Save, Escape = Cancel.
+- **AI must be able to open the bug-report modal programmatically and access the same data as a human tester.**
+
+---
+
+**7. Error Handling & Fallbacks**
+
+- **Common Issues & Solutions:**
+  - *File not found:* Check current architecture, avoid legacy files.
+  - *Playwright clicks fail:* Use canvas coordinates or JavaScript evaluation.
+  - *Audio context issues:* Ensure user interaction before audio.
+  - *Memory errors:* Check entity names exist before creating relations.
+  - *Build errors:* Run terminal commands to check dependencies.
+
+- **Fallback Strategies:**
+  - If semantic search fails → try grep search with exact terms.
+  - If Playwright fails → use test mode (T key) for automation.
+  - If file edit fails → try reapply tool for better accuracy.
+  - If memory search is empty → read the full graph to understand structure.
+
+---
+
+**8. Future Expansion & MCP Tools Documentation**
+
+- For advanced MCP tool usage, troubleshooting, and workflow examples, see [MCP_TOOLS_GUIDE.md](./MCP_TOOLS_GUIDE.md).
+- This file will provide:
+  - Deeper explanations of each MCP tool category
+  - Example commands and workflows
+  - Troubleshooting tips and advanced usage
+  - References to other guides (e.g., `MCP_PLAYWRIGHT_TESTING_GUIDE.md`)
+- **Keep this `.cursorrules` file focused on core rules, standards, and best practices.**
+
+---
+
+**9. p5.js Usage**
+
+- If a JavaScript file uses p5.js global functions (e.g., `constrain()`, `random()`, `lerp()`), add a top-of-file comment:
+  `// Requires p5.js for constrain(), random(), lerp(), etc.`
+- The project uses p5.js version 1.7.0. (See package.json and README.)
+- In instance mode: use `p.` prefix for all p5 functions and constants (e.g., `p.TWO_PI`, `p.constrain()`)
+- Import commonly used constants via mathUtils.js when possible for consistency
+
+---
+
+**10. HTML & CSS Standards**
+
+- Use semantic HTML elements and follow accessibility (a11y) best practices.
+- Organize CSS for modularity and maintainability (e.g., BEM, CSS modules, or utility classes).
+- Place custom scripts and styles in dedicated files unless otherwise specified.
+- Ensure all UI is keyboard accessible and screen-reader friendly.
+- Reference the README for any framework-specific or build tool requirements.
+
+---
+
+**End of File**

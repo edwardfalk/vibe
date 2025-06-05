@@ -1,6 +1,7 @@
 import { Explosion } from './Explosion.js';
 import { RadioactiveDebris } from './RadioactiveDebris.js';
 import { PlasmaCloud } from './PlasmaCloud.js';
+import { random, TWO_PI, cos, sin } from '../mathUtils.js';
 
 /**
  * Explosion management system
@@ -34,10 +35,10 @@ class EnemyFragmentExplosion {
         const fragmentCount = 12; // Increased from 8 for more dramatic effect
         
         // Get enemy colors
-        const bodyColor = this.enemy.bodyColor || color(100, 150, 100);
-        const skinColor = this.enemy.skinColor || color(120, 180, 120);
-        const helmetColor = this.enemy.helmetColor || color(80, 80, 120);
-        const weaponColor = this.enemy.weaponColor || color(148, 0, 211);
+        const bodyColor = this.enemy.bodyColor || [100, 150, 100];
+        const skinColor = this.enemy.skinColor || [120, 180, 120];
+        const helmetColor = this.enemy.helmetColor || [80, 80, 120];
+        const weaponColor = this.enemy.weaponColor || [148, 0, 211];
         
         // Create different fragment types based on enemy parts
         for (let i = 0; i < fragmentCount; i++) {
@@ -90,15 +91,15 @@ class EnemyFragmentExplosion {
         // Get primary enemy color for explosion
         let primaryColor;
         if (this.enemy.type === 'grunt') {
-            primaryColor = color(50, 205, 50); // Green
+            primaryColor = [50, 205, 50]; // Green
         } else if (this.enemy.type === 'stabber') {
-            primaryColor = color(255, 215, 0); // Gold
+            primaryColor = [255, 215, 0]; // Gold
         } else if (this.enemy.type === 'rusher') {
-            primaryColor = color(255, 20, 147); // Pink
+            primaryColor = [255, 20, 147]; // Pink
         } else if (this.enemy.type === 'tank') {
-            primaryColor = color(138, 43, 226); // Blue violet
+            primaryColor = [138, 43, 226]; // Blue violet
         } else {
-            primaryColor = color(255, 255, 255); // White
+            primaryColor = [255, 255, 255]; // White
         }
         
         for (let i = 0; i < particleCount; i++) {

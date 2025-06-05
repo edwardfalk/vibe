@@ -7,15 +7,16 @@ import { CONFIG } from './config.js';
  * Maintains tactical distance, uses friendly fire avoidance, confused personality
  */
 class Grunt extends BaseEnemy {
-    constructor(x, y, p) {
-        const config = {
+    constructor(x, y, type, config, p, audio) {
+        const gruntConfig = {
             size: 26,
             health: 2,
             speed: 1.2,
             color: p.color(50, 205, 50) // Lime green
         };
-        super(x, y, 'grunt', config, p);
+        super(x, y, 'grunt', gruntConfig, p, audio);
         this.p = p;
+        this.audio = audio;
 
         // --- Deferred-death state ---------------------------------
         this.pendingStabDeath      = false; // true while "ow" delay active
@@ -31,14 +32,18 @@ class Grunt extends BaseEnemy {
     
     /**
      * Update specific grunt behavior - tactical ranged combat
+     * @param {number} playerX - Player X position
+     * @param {number} playerY - Player Y position  
+     * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
      */
-    updateSpecificBehavior(playerX, playerY) {
+    updateSpecificBehavior(playerX, playerY, deltaTimeMs = 16.6667) {
         if (typeof frameCount !== 'undefined' && frameCount % 30 === 0 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
             console.log(`[GRUNT AI] updateSpecificBehavior called for Grunt at (${this.x.toFixed(1)},${this.y.toFixed(1)})`);
         }
         // Handle delayed death if stabbed
+        const dt = deltaTimeMs / 16.6667; // Normalize to 60fps baseline
         if (this.pendingStabDeath) {
-            this.pendingStabDeathTimer--;
+            this.pendingStabDeathTimer -= dt;
             if (this.pendingStabDeathTimer <= 0) {
                 this.pendingStabDeath = false;
                 // Actually die now, call super.takeDamage() once
@@ -71,7 +76,7 @@ class Grunt extends BaseEnemy {
         
         // Handle grunt weird noise timer (separate from speech)
         if (this.gruntNoiseTimer > 0) {
-            this.gruntNoiseTimer--;
+            this.gruntNoiseTimer -= dt;
         }
         
         if (this.gruntNoiseTimer <= 0) {
