@@ -202,5 +202,5 @@ npm run debug:probe         # Quick game health check
 
 For detailed testing documentation, see:
 - [MCP Playwright Testing Guide](docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md)
-- [Ticketing System Guide](TICKETING_SYSTEM_GUIDE.md)
+- [Ticketing System Guide](docs/TICKETING_SYSTEM_GUIDE.md)
 
