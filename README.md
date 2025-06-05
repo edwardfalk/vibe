@@ -1,213 +1,103 @@
-# Vibe: Cosmic Beat Space Shooter
+# Vibe Project
 
-> **Purpose:**  
-> This README provides a project overview, quickstart, and a map to all major documentation.  
-> For rules and standards, see [.cursorrules](./.cursorrules).
+## Bug, Feature, & Enhancement Ticketing System (2024+)
 
-## Documentation Map
-- [.cursorrules](./.cursorrules): Core rules and standards (architecture, coding, workflow)
-- [docs/TICKETING_SYSTEM_GUIDE.md](./docs/TICKETING_SYSTEM_GUIDE.md): Ticketing system schema and workflow
-- [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
-- [docs/MCP_TOOLS_GUIDE.md](./docs/MCP_TOOLS_GUIDE.md): Advanced MCP tool usage and best practices
-- [docs/AUDIO_CONFIGURATION_GUIDE.md](./docs/AUDIO_CONFIGURATION_GUIDE.md): Audio setup and tuning
-- [docs/DESIGN.md](./docs/DESIGN.md): Game design and Cosmic Beat System
+## Ticketing System: Bugs, Enhancements, and Features
 
-## Overview
-Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
+The modular ticketing system now supports tracking not only bugs, but also enhancements and new features. All tickets must specify a `type` field with one of the following values:
+- `bug`
+- `enhancement`
+- `feature`
 
-**Technology Stack:**
-- **Engine**: p5.js 1.7.0 (migrated from Phaser for better modularity)
-- **Architecture**: ES modules with strict dependency injection
-- **Development**: MCP tools integration for advanced automation
-- **Testing**: Probe-driven Playwright with automated bug reporting
+This field is required for all tickets, both via the API and the in-game UI modal. The UI now provides a dropdown to select the ticket type when creating a new ticket.
 
-The project features a robust ticketing system for all bugs, features, and enhancements, plus advanced MCP tools for memory management, automated testing, and file operations.
-
-For a detailed explanation of the Cosmic Beat System and musical gameplay, see [`docs/DESIGN.md`](./docs/DESIGN.md).
-
----
-
-## Project Structure & Architecture
-- **Strict modular architecture**: All code is organized by system or entity (see `/js/`).
-- **No legacy/monolithic files**: Only use modular files listed in `.cursorrules` and `/js/`.
-- **Core Systems**: `GameLoop.js`, `GameState.js`, `CameraSystem.js`, `SpawnSystem.js`, `CollisionSystem.js`, `UIRenderer.js`, `BackgroundRenderer.js`, `TestMode.js`
-- **Entities**: `player.js`, `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js`, `EnemyFactory.js`, `bullet.js`
-- **Support**: `Audio.js`, `BeatClock.js`, `visualEffects.js`, `effects.js`, `config.js`, `mathUtils.js`
-- **Other**: `ticketManager.js`, `ai-liveness-probe.js`
-- **See `/js/` for the full, up-to-date list.**
-
-> **Always consult the latest `.cursorrules` for the single source of truth on architecture, coding standards, and best practices.**
-
----
-
-## Ticketing System
-- **All work (bugs, features, enhancements, tasks) is tracked via the modular ticketing system.**
-- Tickets are structured JSON files in `tests/bug-reports/`.
-- Use `ticketManager.js` and `ticket-api.js` for all ticket management (in-game, admin, automation).
-- **See [`docs/TICKETING_SYSTEM_GUIDE.md`](./docs/TICKETING_SYSTEM_GUIDE.md) for full documentation, schema, and workflow.**
-- Each ticket must have a unique `id` and specify a `type` (`bug`, `feature`, `enhancement`, `task`).
-- Artifacts (screenshots, logs) are grouped per ticket and auto-moved by `move-bug-reports.js`.
-- The AI and automated scripts have full access to the ticketing system and bug-report modal.
-
----
-
-## Development & Testing
-- **Dev server**: Five Server runs on port 5500 (`http://localhost:5500`).
-- **Backend server**: Runs on port 3001 for ticket API and automation.
-- **Start all servers with `npm run dev`** (kills ports 5500/3001 if needed).
-- **Testing**: Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
-- **Test mode**: Press 'T' in-game to enable scripted testing.
-- **Bug-report modal**: Open with 'B' + 'R' or UI button. Keyboard: Enter/Ctrl+Enter = Save, Escape = Cancel.
-- **Artifacts**: All screenshots/logs saved in `tests/bug-reports/` and grouped by ticket ID.
-
----
-
-## Coding Standards
-- **Simplicity, readability, maintainability, testability, reusability.**
-- **Multi-AI Model Compatibility**: Strict consistency standards ensure identical behavior across different AI models.
-- Use ES modules (`import`/`export`) with mandatory dependency injection patterns.
-- **p5.js Instance Mode**: All drawing functions must use `this.p.` prefix (e.g., `this.p.fill()`, `this.p.ellipse()`).
-- Import math functions from `mathUtils.js` instead of using p5.js globals.
-- **Constructor Signatures**: All enemy classes use exact signature: `constructor(x, y, type, config, p, audio)`.
-- **Console Logging**: All logs must use emoji prefixes (🎮 Game state, 🎵 Audio, 🗡️ Combat, etc.).
-- **Timing System**: Use `deltaTimeMs` for frame-independent calculations, normalized to 60fps baseline.
-- Use early returns, descriptive names, and clear error handling.
-- All code must pass ESLint and Prettier before commit.
-- **See `.cursorrules` for complete standards and mandatory patterns.**
-
----
-
-## Memory Management
-- Uses a structured knowledge graph for entities, relations, and observations.
-- See `.cursorrules` for workflow and best practices.
-
----
-
-## Audio & Visuals
-- Audio system is modular and beat-synced.
-- Visual effects are handled by `visualEffects.js` and `effects.js`.
-- See `docs/AUDIO_CONFIGURATION_GUIDE.md` for setup.
-
----
-
-## Contributing
-- **All changes must follow modular architecture and ticketing workflow.**
-- Update `.cursorrules` and this README if architecture or standards change.
-- See `.cursorrules` for rules on memory, testing, and coding standards.
-
----
-
-## References
-- `.cursorrules`: Core standards and workflow reference
-- `docs/TICKETING_SYSTEM_GUIDE.md`: Ticketing system documentation
-- `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`: Automated testing guide
-- `docs/AUDIO_CONFIGURATION_GUIDE.md`: Audio setup and troubleshooting
-- `docs/DESIGN.md`: Cosmic Beat System and musical gameplay design
-
----
-
-## License
-MIT
-
-## Testing
-
-Vibe uses a comprehensive automated testing system with probe-driven testing and MCP Playwright integration.
-
-### Test Types
-
-1. **Automated Game Tests** - Basic system checks and file validation
-   ```bash
-   npm run test:automated
-   ```
-
-2. **MCP Probe-Driven Tests** - Comprehensive game state and behavior testing
-   ```bash
-   npm run test:mcp
-   ```
-
-3. **Comprehensive Test Suite** - Runs all automated tests
-   ```bash
-   npm run test:comprehensive
-   ```
-
-4. **Traditional Playwright Tests** - Browser-based testing
-   ```bash
-   npm run test          # Headless
-   npm run test:headed   # With browser UI
-   npm run test:debug    # Debug mode
-   ```
-
-5. **Game Debugging** - Bug detection and analysis
-   ```bash
-   npm run debug:game    # Full analysis + detailed report
-   npm run debug:probe   # Quick health check + summary
-   ```
-
-6. **CodeRabbit Integration** - Automated review processing
-   ```bash
-   npm run coderabbit:analyze    # Analyze CodeRabbit reviews only
-   npm run coderabbit:integrate  # Full integration (analysis + tickets + tests)
-   npm run coderabbit:workflow   # Complete CodeRabbit workflow
-   ```
-
-### Probe-Driven Testing
-
-The game uses specialized probe files for different aspects:
-
-- **`js/ai-liveness-probe.js`** - Basic game state and entity presence
-- **`js/enemy-ai-probe.js`** - Enemy AI behavior and interactions  
-- **`js/audio-system-probe.js`** - Audio system and beat synchronization
-- **`js/combat-collision-probe.js`** - Combat mechanics and collision detection
-- **`js/ui-score-probe.js`** - UI elements and score system
-- **`js/game-debugging-probe.js`** - Bug detection and game health analysis
-
-Each probe automatically:
-- Tests specific game systems
-- Captures screenshots on failure
-- Creates bug tickets via the ticketing system
-- Provides structured diagnostic data
-
-### MCP Playwright Integration
-
-The testing system uses MCP (Model Context Protocol) Playwright tools for:
-- Browser automation and control
-- JavaScript evaluation in game context
-- Screenshot capture and artifact management
-- Automated bug reporting integration
-
-### Test Artifacts
-
-Test results and artifacts are saved to:
-- **Screenshots**: `test-results/`
-- **Bug Reports**: `tests/bug-reports/`
-- **Test Reports**: `test-results/mcp-automated-test-report-*.json`
-- **Playwright Reports**: `playwright-report/`
-
-### Running Tests in Development
-
-The development server includes automated testing capabilities:
-
-```bash
-npm run dev  # Starts game server, bug watcher, and API server
+### Example Ticket JSON
+```json
+{
+  "id": "BR-2024-07-01-001",
+  "title": "Player disappears after dashing into wall",
+  "type": "bug",
+  ...
+}
 ```
 
-Then in another terminal:
-```bash
-npm run test:comprehensive  # Run all automated tests
+Refer to the rest of this README for API usage and workflow details.
 
-npm run debug:game          # AI-powered game debugging analysis
-npm run debug:probe         # Quick game health check
+### Overview
+The ticketing system is a modular, API-driven subsystem supporting:
+- Structured JSON tickets (status, history, artifacts, verification, etc.)
+- **Supports bugs, features, enhancements, and tasks**
+- Ticket types: `bug`, `feature`, `enhancement`, `task`, etc.
+- Tags/labels for filtering and organization (e.g., `UI`, `AI`, `QoL`)
+- CLI, browser, and automation-friendly management
+- In-game, admin, and automated probe/test integration
+- Knowledge graph and documentation hooks
+
+### How it Works
+- **Tickets** are stored as JSON in `tests/bug-reports/`.
+- **API** (`ticket-api.js`) exposes endpoints for creating, updating, listing, and retrieving tickets.
+- **Frontend** uses `js/ticketManager.js` to interact with the API from in-game UI, admin tools, or automation scripts.
+- **Artifacts** (screenshots, logs) are linked in each ticket.
+- **History** tracks all status changes, fix attempts, verification, and comments.
+- **Probe/test integration**: Automated tests can create/update tickets and attach results.
+- **Knowledge graph**: On ticket resolution, update the Memory Knowledge Graph with new facts/relations.
+- **Feature development**: Tickets can be used for new features, enhancements, and AI-driven development, with full progress and design history logged for future reference.
+
+### Ticket Types & Tags
+- Each ticket has a `type` field: `bug`, `feature`, `enhancement`, `task`, etc.
+- Tickets can have an array of `tags` for filtering and organization (e.g., `["UI", "AI", "QoL"]`).
+- Use the modal UI or API to set type and tags when creating or updating tickets.
+
+#### Example Feature Ticket JSON
+```json
+{
+  "id": "abc123",
+  "type": "feature",
+  "title": "Add co-op multiplayer mode",
+  "description": "Allow two players to play together online or locally.",
+  "tags": ["multiplayer", "networking", "UI"],
+  "status": "Open",
+  "history": [],
+  "artifacts": [],
+  "verification": [],
+  "relatedTickets": [],
+  "timestamp": "2024-07-01T18:00:00Z"
+}
 ```
 
-### Test Configuration
+### API Endpoints
+- `GET    /api/tickets`         List all tickets
+- `GET    /api/tickets/:id`     Get a ticket by ID
+- `POST   /api/tickets`         Create a new ticket
+- `PATCH  /api/tickets/:id`     Update a ticket (partial)
 
-- **Game URL**: `http://localhost:5500`
-- **Test Timeout**: 30 seconds per test
-- **Retry Attempts**: 2 retries on failure
-- **Screenshot on Failure**: Enabled
-- **Automated Bug Reporting**: Enabled
+### Bug Report Watcher Script
+- The project includes a watcher script: `move-bug-reports.js` (in the project root).
+- **Purpose:** Automatically moves bug report files (JSON, markdown, PNG screenshots) from your Downloads folder to the correct subfolder in `tests/bug-reports/`.
+- **How it works:**
+  - Watches your Downloads folder for files matching the bug report naming convention (timestamp, ID, and title).
+  - Moves each file into the appropriate ticket folder, creating the folder if needed.
+  - Ensures all bug report artifacts are organized and accessible for both human and AI/agent debugging.
+- **How to run:**
+  - The watcher runs automatically with `npm run dev` (alongside the dev server).
+  - You can also run it alone with `npm run watch-bugs`.
+  - To run manually: `node move-bug-reports.js`
+- **Note:** The watcher is required for workflows where bug report files are downloaded from the browser (fallback/manual mode). It ensures all artifacts are grouped and accessible in the repo.
 
-For detailed testing documentation, see:
-- [MCP Playwright Testing Guide](docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md)
-- [Ticketing System Guide](TICKETING_SYSTEM_GUIDE.md)
+### Usage
+- Start the API: `node ticket-api.js`
+- Use the in-game bug/feature modal or admin UI to create/update tickets
+- Use Playwright/MCP scripts for automated bug/feature reporting
+- Use tickets for both bugs and features (set the `type` field and add tags as needed)
 
+### Extending
+- Add artifact upload endpoints as needed
+- Add dashboards, notifications, or analytics
+- Integrate with external tools if desired
+- **Next step:** Expand UI and workflow to fully support feature requests and enhancements, with progress and design history for both human and AI contributors.
+
+---
+
+## Coding Standards & Architecture
+- See the top of this README and `.cursorrules` for the latest standards and architecture rules.
+- The ticketing system is now a core part of the Vibe project and should be kept up to date with all future improvements.
