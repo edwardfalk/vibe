@@ -308,7 +308,7 @@ class Tank extends BaseEnemy {
         const chargePercent = this.chargeTime / this.maxChargeTime;
         
         // Charging circle around tank
-        const pulse = sin(frameCount * 2.0) * 0.3 + 0.7;
+        const pulse = sin(this.p.frameCount * 2.0) * 0.3 + 0.7;
         const chargeRadius = this.size * (0.8 + chargePercent * 0.4);
         
         // Outer charge field

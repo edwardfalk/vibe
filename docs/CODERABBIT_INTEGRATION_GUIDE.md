@@ -20,6 +20,13 @@ CodeRabbit provides AI-powered code reviews that understand the specific pattern
 - **Performance Monitoring**: Tracks code quality impact on game performance
 - **Continuous Improvement**: Suggests optimizations based on test results
 
+### 🐛 AI-Powered Game Debugging (NEW)
+- **Comprehensive Code Analysis**: Analyzes all game files for bugs and performance issues
+- **Game Health Scoring**: Provides 0-100 health score based on code quality
+- **Critical Bug Detection**: Identifies issues that could crash the game
+- **Memory Leak Detection**: Finds timer leaks and object creation in game loops
+- **Cross-File Correlation**: Identifies systemic issues across multiple files
+
 ## Configuration Files
 
 ### `.coderabbit.yaml`
@@ -145,6 +152,10 @@ npm run lint
 
 # Comprehensive testing with CodeRabbit integration
 npm run test:comprehensive
+
+# AI-powered game debugging (NEW)
+npm run debug:game    # Full analysis + detailed report
+npm run debug:probe   # Quick health check + summary
 ```
 
 ### GitHub Integration

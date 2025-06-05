@@ -384,7 +384,55 @@ The Model Context Protocol (MCP) is a universal, open standard for connecting AI
 
 ---
 
-### 3.4 GitHub Integration Tools
+### 3.4 CodeRabbit Game Debugging Tools (NEW)
+
+#### `npm run debug:game` (CodeRabbit Game Debugger)
+- **Category:** Game Debugging
+- **Description:** Comprehensive AI-powered analysis of all game files for bugs, performance issues, and code quality problems.
+- **When to Use:** For thorough debugging sessions, before releases, or when investigating game stability issues.
+- **How to Use:**
+  ```bash
+  npm run debug:game
+  ```
+- **Output:** Generates `VIBE_GAME_DEBUGGING_REPORT.md` with detailed findings
+- **Best Practices:** Run after major changes; review all critical bugs first.
+
+#### `npm run debug:probe` (Game Debugging Probe)
+- **Category:** Game Debugging
+- **Description:** Quick health check that provides game health score (0-100) and summary of critical issues.
+- **When to Use:** For daily health checks, progress tracking, or quick issue assessment.
+- **How to Use:**
+  ```bash
+  npm run debug:probe
+  ```
+- **Output:** Console summary with health score and issue counts
+- **Best Practices:** Run regularly to track improvement; use before and after fixes.
+
+#### CodeRabbit Game Debugger Features
+- **Critical Bug Detection:** Identifies issues that could crash the game (null pointer exceptions, p5.js instance mode violations)
+- **Performance Analysis:** Finds frame rate bottlenecks, memory leaks, and expensive operations
+- **Memory Leak Detection:** Discovers timer leaks, object creation in game loops, and cleanup issues
+- **Cross-File Correlation:** Identifies systemic issues affecting multiple files
+- **Game Health Scoring:** Provides 0-100 score based on code quality and stability
+- **Actionable Recommendations:** Generates specific fix instructions with code examples
+
+#### Common Issues Detected
+1. **p5.js Instance Mode Violations** - Using global p5 functions instead of `this.p.method()`
+2. **Missing Null Checks** - Accessing object properties without safety validation
+3. **Memory Leaks** - Timers without cleanup, object creation in game loops
+4. **Frame-Rate Dependencies** - Movement not using deltaTimeMs for frame-independent timing
+5. **Console Logging in Production** - Performance-affecting logs in game loop
+6. **Systemic Code Quality Issues** - Inconsistent patterns across multiple files
+
+#### Integration with Existing Systems
+- **Ticketing System:** Can create bug tickets from debugging findings
+- **MCP Playwright:** Automated testing of fixes and regression detection
+- **Memory Management:** Updates knowledge graph with debugging insights
+- **Probe Architecture:** Consistent JSON output for automation
+
+---
+
+### 3.5 GitHub Integration Tools
 
 #### `mcp_github_create_or_update_file`
 - **Category:** GitHub Integration
@@ -464,7 +512,7 @@ The Model Context Protocol (MCP) is a universal, open standard for connecting AI
 
 ---
 
-### 3.5 Web Search & Knowledge Tools
+### 3.6 Web Search & Knowledge Tools
 
 #### `mcp_tavily_tavily-search`
 - **Category:** Web Search/Knowledge
@@ -488,7 +536,7 @@ The Model Context Protocol (MCP) is a universal, open standard for connecting AI
 
 ---
 
-### 3.6 Miscellaneous/Advanced Tools
+### 3.7 Miscellaneous/Advanced Tools
 
 #### `mcp_sequentialThinking_sequentialthinking`
 - **Category:** Advanced/Miscellaneous

@@ -808,6 +808,7 @@ export class Audio {
     playExplosion(x, y) { this.playSound('explosion', x, y); }
     playHit(x, y) { this.playSound('hit', x, y); }
     playPlayerHit() { this.playSound('playerHit'); }
+    playEnemyHit(x, y) { this.playSound('hit', x, y); }
     playRusherScream(x, y) { this.playSound('rusherScream', x, y); }
     playTankEnergyBall(x, y) { this.playSound('tankEnergy', x, y); }
     playStabAttack(x, y) { this.playSound('stabAttack', x, y); }

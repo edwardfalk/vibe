@@ -137,6 +137,12 @@ Vibe uses a comprehensive automated testing system with probe-driven testing and
    npm run test:debug    # Debug mode
    ```
 
+5. **CodeRabbit-Powered Game Debugging** - AI-powered bug detection and analysis
+   ```bash
+   npm run debug:game    # Full analysis + detailed report
+   npm run debug:probe   # Quick health check + summary
+   ```
+
 ### Probe-Driven Testing
 
 The game uses specialized probe files for different aspects:
@@ -146,6 +152,7 @@ The game uses specialized probe files for different aspects:
 - **`js/audio-system-probe.js`** - Audio system and beat synchronization
 - **`js/combat-collision-probe.js`** - Combat mechanics and collision detection
 - **`js/ui-score-probe.js`** - UI elements and score system
+- **`js/game-debugging-probe.js`** - CodeRabbit-powered bug detection and game health analysis
 
 Each probe automatically:
 - Tests specific game systems
@@ -180,6 +187,10 @@ npm run dev  # Starts game server, bug watcher, and API server
 Then in another terminal:
 ```bash
 npm run test:comprehensive  # Run all automated tests
+npm run test:coderabbit     # Test CodeRabbit integration
+npm run test:coderabbit-probe # Quick CodeRabbit probe test
+npm run debug:game          # AI-powered game debugging analysis
+npm run debug:probe         # Quick game health check
 ```
 
 ### Test Configuration
@@ -194,3 +205,4 @@ For detailed testing documentation, see:
 - [MCP Playwright Testing Guide](docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md)
 - [Ticketing System Guide](TICKETING_SYSTEM_GUIDE.md)
 - [CodeRabbit Integration Guide](docs/CODERABBIT_INTEGRATION_GUIDE.md)
+- [CodeRabbit Comment Testing Guide](docs/CODERABBIT_COMMENT_TESTING_GUIDE.md)

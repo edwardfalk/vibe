@@ -9,12 +9,13 @@ This guide covers advanced gameplay testing for the Vibe cosmic beat space shoot
 ## Table of Contents
 
 1. [AI Liveness Probe System](#ai-liveness-probe-system)
-2. [Gameplay Testing Layers](#gameplay-testing-layers)
-3. [Automated Testing Infrastructure](#automated-testing-infrastructure)
-4. [Manual Testing Procedures](#manual-testing-procedures)
-5. [Performance Testing](#performance-testing)
-6. [Bug Detection & Reporting](#bug-detection--reporting)
-7. [Testing Workflows](#testing-workflows)
+2. [CodeRabbit Game Debugging](#coderabbit-game-debugging)
+3. [Gameplay Testing Layers](#gameplay-testing-layers)
+4. [Automated Testing Infrastructure](#automated-testing-infrastructure)
+5. [Manual Testing Procedures](#manual-testing-procedures)
+6. [Performance Testing](#performance-testing)
+7. [Bug Detection & Reporting](#bug-detection--reporting)
+8. [Testing Workflows](#testing-workflows)
 
 ---
 
@@ -61,6 +62,74 @@ console.log('Probe result:', probeResult);
   failure: null               // Failure description (if any)
 }
 ```
+
+---
+
+## CodeRabbit Game Debugging
+
+### Overview
+CodeRabbit-powered debugging system provides AI-driven analysis of game code to identify bugs, performance issues, and stability problems that could affect gameplay.
+
+### Quick Commands
+```bash
+# Quick health check (30 seconds)
+npm run debug:probe
+
+# Full analysis with detailed report (2 minutes)
+npm run debug:game
+```
+
+### What It Analyzes
+```javascript
+// Critical Issues Detection
+✅ p5.js instance mode violations (crash prevention)
+✅ Null pointer exceptions (stability)
+✅ Memory leaks (performance)
+✅ Frame-rate dependencies (consistency)
+✅ Console logging in production (optimization)
+✅ Cross-file systemic issues (architecture)
+```
+
+### Game Health Scoring
+- **0-30**: Critical - Game has serious stability issues
+- **31-60**: Poor - Multiple performance and reliability problems  
+- **61-80**: Good - Minor issues, mostly stable
+- **81-100**: Excellent - High quality, production-ready code
+
+### Integration with Gameplay Testing
+```javascript
+// Before gameplay testing session
+npm run debug:probe  // Check game health first
+
+// After finding gameplay issues
+npm run debug:game   // Analyze code for root causes
+
+// After fixing bugs
+npm run debug:probe  // Verify improvements
+```
+
+### Common Gameplay-Affecting Issues
+1. **Player Control Problems**: Null checks missing in player.js
+2. **Enemy AI Glitches**: Frame-rate dependent movement
+3. **Performance Drops**: Memory leaks in GameLoop.js
+4. **Audio Desync**: Error handling missing in Audio.js
+5. **Collision Bugs**: p5.js instance mode violations
+
+### Debugging Workflow for Gameplay Issues
+```
+1. Observe gameplay problem (e.g., stuttering movement)
+2. Run `npm run debug:probe` to check game health
+3. If health score < 80, run `npm run debug:game`
+4. Review VIBE_GAME_DEBUGGING_REPORT.md for related issues
+5. Fix critical bugs first (p5.js instance mode, null checks)
+6. Re-test gameplay to verify fix
+7. Run debug probe again to confirm improvement
+```
+
+### Output Files
+- **VIBE_GAME_DEBUGGING_REPORT.md**: Detailed analysis with line-by-line issues
+- **VIBE_GAME_BUG_FIXING_CHECKLIST.md**: Actionable checklist with progress tracking
+- **Console Output**: Real-time health score and issue counts
 
 ---
 

@@ -49,6 +49,14 @@ window.explosionManager = null;
 window.audio = null;
 window.speechManager = null;
 
+// Keys system for testing
+window.keys = {
+    W: false, w: false,
+    A: false, a: false,
+    S: false, s: false,
+    D: false, d: false
+};
+
 // Add at the top, after global system references
 window.playerIsShooting = false;
 window.arrowUpPressed = false;
@@ -391,8 +399,8 @@ function updateGame(p) {
                         // Apply knockback to player
                         const knockbackAngle = atan2(window.player.y - result.y, window.player.x - result.x);
                         const knockbackForce = 8;
-                        window.player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
-                        window.player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
+                        window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
+                        window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
                         
                         // Screen shake for dramatic effect
                         if (window.cameraSystem) {
@@ -570,8 +578,8 @@ function handleAreaDamageEvents(damageEvents) {
                 // Apply knockback
                 const knockbackAngle = atan2(window.player.y - event.y, window.player.x - event.x);
                 const knockbackForce = 6;
-                window.player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
-                window.player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
+                window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
+                window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
                 
                 // Screen shake
                 if (window.cameraSystem) {
@@ -702,8 +710,8 @@ function updateBombs(p) {
                 const dy = bomb.y - window.player.y;
                 const playerDistSq = dx * dx + dy * dy;
                 if (playerDistSq < explosionRadiusSq) {
-                    const playerDistance = Math.sqrt(playerDistSq); // Only for proportional damage
-                    const damage = Math.max(10, Math.floor(40 * (1 - playerDistance / explosionRadius)));
+                    const playerDistance = sqrt(playerDistSq); // Only for proportional damage
+                    const damage = max(10, floor(40 * (1 - playerDistance / explosionRadius)));
                     console.log(`💥 Player took ${damage} bomb damage! Distance: ${playerDistance.toFixed(1)}`);
                     
                     if (window.audio) {
@@ -723,8 +731,8 @@ function updateBombs(p) {
                         // Apply massive knockback
                         const knockbackAngle = atan2(window.player.y - bomb.y, window.player.x - bomb.x);
                         const knockbackForce = 15;
-                        window.player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
-                        window.player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
+                        window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
+                        window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
                     }
                 }
             }
@@ -736,8 +744,8 @@ function updateBombs(p) {
                 const dy = bomb.y - enemy.y;
                 const enemyDistSq = dx * dx + dy * dy;
                 if (enemyDistSq < explosionRadiusSq) {
-                    const enemyDistance = Math.sqrt(enemyDistSq); // Only for proportional damage
-                    const damage = Math.max(5, Math.floor(30 * (1 - enemyDistance / explosionRadius)));
+                    const enemyDistance = sqrt(enemyDistSq); // Only for proportional damage
+                    const damage = max(5, floor(30 * (1 - enemyDistance / explosionRadius)));
                     const damageResult = enemy.takeDamage(damage, null, 'bomb');
                     
                     if (damageResult === true) {

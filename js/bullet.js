@@ -124,8 +124,8 @@ export class Bullet {
         } else if (this.owner === 'enemy-tank') {
             // Tank bullet - massive, devastating energy ball with vibrating pulse
             const energyPercent = this.energy ? this.energy / 100 : 1;
-            const vibration = sin(window.frameCount * 0.8) * 2; // Fast vibration
-            const pulse = sin(window.frameCount * 0.5) * 0.4 + 0.6; // Slower pulse
+            const vibration = sin(p.frameCount * 0.8) * 2; // Fast vibration
+            const pulse = sin(p.frameCount * 0.5) * 0.4 + 0.6; // Slower pulse
             
             p.push();
             p.translate(vibration, vibration * 0.5); // Vibrating effect

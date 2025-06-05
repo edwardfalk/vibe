@@ -1,5 +1,6 @@
 import { Bullet } from './bullet.js';
 import { CONFIG } from './config.js';
+import { random, sin, cos, atan2 } from './mathUtils.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
@@ -19,7 +20,7 @@ export class BaseEnemy {
         this.x = x;
         this.y = y;
         this.type = type;
-        this.id = Math.random().toString(36).substr(2, 9); // Unique ID for each enemy
+        this.id = random().toString(36).substr(2, 9); // Unique ID for each enemy
         
         // Configuration from type-specific configs
         this.size = config.size;
@@ -109,7 +110,7 @@ export class BaseEnemy {
         const dx = playerX - this.x;
         const dy = playerY - this.y;
         if (dx !== 0 || dy !== 0) {
-            this.aimAngle = this.p.atan2(dy, dx);
+            this.aimAngle = atan2(dy, dx);
         }
         
         // Apply velocity
@@ -189,7 +190,7 @@ export class BaseEnemy {
                     const activeTexts = this.audio.activeTexts || [];
                     const myText = activeTexts.find(text => text.entity === this);
                     if (myText && myText.isAggressive) {
-                        const aggressivePulse = Math.sin(p.frameCount * 0.8) * 0.3 + 0.5;
+                        const aggressivePulse = sin(p.frameCount * 0.8) * 0.3 + 0.5;
                         drawGlow(this.x, this.y, this.size * 2, this.p.color(255, 0, 0), aggressivePulse * 0.6);
                     }
                 }
@@ -247,8 +248,8 @@ export class BaseEnemy {
         p.rotate(this.aimAngle);
         
         const s = this.size;
-        let bobble = Math.sin(this.animFrame) * 2;
-        let waddle = Math.cos(this.animFrame * 0.8) * 1.5;
+        let bobble = sin(this.animFrame) * 2;
+        let waddle = cos(this.animFrame * 0.8) * 1.5;
         
         // Allow subclasses to modify animation
         const animationMods = this.getAnimationModifications();
@@ -267,7 +268,7 @@ export class BaseEnemy {
             p.translate(shakeX, shakeY);
             
             // Comical size distortion when hit
-            const distortion = 1 + Math.sin(p.frameCount * 2) * hitIntensity * 0.1;
+            const distortion = 1 + sin(p.frameCount * 2) * hitIntensity * 0.1;
             p.scale(distortion, 1 / distortion);
         }
         
@@ -426,8 +427,8 @@ export class BaseEnemy {
      */
     createBullet() {
         const bulletDistance = this.size * 0.9;
-        const bulletX = this.x + Math.cos(this.aimAngle) * bulletDistance;
-        const bulletY = this.y + Math.sin(this.aimAngle) * bulletDistance;
+        const bulletX = this.x + cos(this.aimAngle) * bulletDistance;
+        const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
         
         // Create bullet with enemy type information
         const bullet = new Bullet(bulletX, bulletY, this.aimAngle, 4, `enemy-${this.type}`);
