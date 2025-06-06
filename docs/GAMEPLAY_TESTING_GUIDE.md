@@ -207,15 +207,15 @@ window.comprehensiveTestSuite.runAllTests();
 window.comprehensiveTestSuite.testGameplay();
 ```
 
-### Node.js Automated Testing
-**File**: `automated-game-test.js`
+### Playwright Gameplay Probes
+**File**: `tests/gameplay-probe.test.js`
 
 ```bash
-# Run full automated test suite
+# Run headless gameplay probes
 npm test
 
-# Or directly
-node automated-game-test.js
+# With browser UI
+npm run test:headed
 ```
 
 ### Console Test Runner
@@ -396,7 +396,7 @@ window.comprehensiveTestSuite.reportBug(
 ### Development Workflow
 ```bash
 1. Start development server: npm run dev
-2. Run automated tests: node automated-game-test.js
+2. Run gameplay probes: npm test
 3. Open browser: http://localhost:5500
 4. Run quick health check: F10
 5. Perform manual testing

@@ -116,14 +116,15 @@ Vibe uses a comprehensive automated testing system with probe-driven testing and
 
 ### Test Types
 
-1. **Automated Game Tests** - Basic system checks and file validation
-   ```bash
-   npm run test:automated
-   ```
-
-2. **MCP Probe-Driven Tests** - Comprehensive game state and behavior testing
+1. **MCP Probe-Driven Tests** - Comprehensive game state and behavior testing
    ```bash
    npm run test:mcp
+   ```
+2. **Playwright Gameplay Probes** - Headless browser tests using probe scripts
+   ```bash
+   npm test          # Headless
+   npm run test:headed   # With browser UI
+   npm run test:debug    # Debug mode
    ```
 
 3. **Comprehensive Test Suite** - Runs all automated tests
@@ -131,24 +132,16 @@ Vibe uses a comprehensive automated testing system with probe-driven testing and
    npm run test:comprehensive
    ```
 
-4. **Traditional Playwright Tests** - Browser-based testing
+4. **Game Debugging** - Basic health check and analysis
    ```bash
-   npm run test          # Headless
-   npm run test:headed   # With browser UI
-   npm run test:debug    # Debug mode
-   ```
-
-5. **Game Debugging** - Basic health check and analysis
-   ```bash
-   npm run debug:probe   # Game health check + summary
-   ```
-
-6. **CodeRabbit Integration** - Automated review processing
-   ```bash
-   npm run coderabbit:analyze    # Analyze CodeRabbit reviews only
-   npm run coderabbit:integrate  # Full integration (analysis + tickets + tests)
-   npm run coderabbit:workflow   # Complete CodeRabbit workflow
-   ```
+    npm run debug:probe   # Game health check + summary
+    ```
+5. **CodeRabbit Integration** - Automated review processing
+    ```bash
+    npm run coderabbit:analyze    # Analyze CodeRabbit reviews only
+    npm run coderabbit:integrate  # Full integration (analysis + tickets + tests)
+    npm run coderabbit:workflow   # Complete CodeRabbit workflow
+    ```
 
 ### Probe-Driven Testing
 
