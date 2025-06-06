@@ -19,6 +19,8 @@ export class Bullet {
     constructor(x, y, angle, speed, owner) {
         this.x = x;
         this.y = y;
+        this.prevX = x;
+        this.prevY = y;
         this.angle = angle;
         this.speed = speed;
         this.owner = owner; // 'player' or 'enemy'
@@ -53,6 +55,9 @@ export class Bullet {
     }
     
     update() {
+        // Remember previous position for collision checking
+        this.prevX = this.x;
+        this.prevY = this.y;
         // Store position for trail
         this.trail.push({ x: this.x, y: this.y });
         if (this.trail.length > this.maxTrailLength) {
@@ -187,9 +192,17 @@ export class Bullet {
     
     checkCollision(target) {
         if (!this.active) return false;
-        
-        const distance = dist(this.x, this.y, target.x, target.y);
-        return distance < (this.size + target.size) * 0.75;
+
+        const threshold = (this.size + target.size) * 0.5;
+        const distance = this._pointSegmentDistance(
+            target.x,
+            target.y,
+            this.prevX,
+            this.prevY,
+            this.x,
+            this.y
+        );
+        return distance < threshold;
     }
     
     destroy() {
@@ -213,5 +226,21 @@ export class Bullet {
         const top = -WORLD_HEIGHT/2 - margin;
         const bottom = WORLD_HEIGHT/2 + margin;
         return this.x < left || this.x > right || this.y < top || this.y > bottom;
+    }
+
+    /**
+     * Distance from point (px,py) to segment (x1,y1)-(x2,y2)
+     */
+    _pointSegmentDistance(px, py, x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        if (dx === 0 && dy === 0) {
+            return dist(px, py, x1, y1);
+        }
+        const t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy);
+        const clamped = Math.max(0, Math.min(1, t));
+        const lx = x1 + clamped * dx;
+        const ly = y1 + clamped * dy;
+        return dist(px, py, lx, ly);
     }
 } 

@@ -175,6 +175,9 @@ function setup(p) {
     
     if (!window.cameraSystem) {
         window.cameraSystem = new CameraSystem(p);
+        if (player) {
+            player.cameraSystem = window.cameraSystem; // Fix mouse aiming
+        }
     }
     console.log('📷 Camera system initialized');
     
@@ -321,6 +324,11 @@ function updateGame(p) {
     
     // Update bullets
     updateBullets(p);
+
+    // Immediately process bullet collisions to catch hits before enemies move
+    if (window.collisionSystem) {
+        window.collisionSystem.checkBulletCollisions();
+    }
     
     // Update bombs
     updateBombs(p);
