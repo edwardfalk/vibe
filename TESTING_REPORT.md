@@ -80,7 +80,7 @@
 3. **📁 `js/interactive-gameplay-test.js`** - Real user input simulation testing
 4. **📁 `js/enhanced-playwright-test.js`** - MCP Playwright optimized testing
 5. **📁 `js/extended-gameplay-test.js`** - 3-minute stress test with continuous gameplay - **NEW**
-6. **📁 `automated-game-test.js`** - Node.js automated testing script
+6. **📁 `tests/gameplay-probe.test.js`** - Playwright gameplay probes
 
 ### **Testing Capabilities:**
 - ✅ Game initialization validation
@@ -268,13 +268,12 @@
   - Bug pattern detection
   - Performance monitoring
 
-### **3. Automated Testing Script**
-- **Location:** `automated-game-test.js`
+### **3. Gameplay Probe Suite**
+- **Location:** `tests/gameplay-probe.test.js`
 - **Features:**
-  - Server status verification
-  - File existence checks
-  - Syntax validation
-  - Consistency rule enforcement
+  - Runs ai-liveness probe inside Playwright
+  - Validates movement, shooting and enemy presence
+  - CI friendly
 
 ### **4. Enhanced Error Handling**
 - Consistent error patterns across all modules
@@ -373,13 +372,11 @@ checkGameStartup() {
   - Automated bug reporting via ticketing system
   - Keyboard shortcuts (F9: full tests, F10: quick check)
 
-#### 3. **Node.js Automated Testing** 
-- **File**: `automated-game-test.js`
+#### 3. **Gameplay Probe Suite**
+- **File**: `tests/gameplay-probe.test.js`
 - **Features**:
-  - Server status verification
-  - File existence checks
-  - **NEW**: Game startup validation
-  - Consistency rule enforcement
+  - Headless Playwright tests with ai-liveness probe
+  - Verifies movement and shooting
   - CI/CD integration ready
 
 #### 4. **Console Test Runner**
@@ -394,7 +391,7 @@ checkGameStartup() {
 
 ### Current Status: ✅ PRODUCTION READY
 
-Running `node automated-game-test.js`:
+Running `npm test`:
 ```
 ✅ PASS Server Status
 ✅ PASS Game Files  
@@ -448,7 +445,7 @@ Running `node automated-game-test.js`:
 
 ### CI/CD Integration
 ```bash
-npm test  # Runs automated-game-test.js
+npm test  # Runs Playwright gameplay probes
 # Exit code 0 = all tests pass
 # Exit code 1 = tests failed
 ```
@@ -653,10 +650,10 @@ F12: Quick Interactive Test
 - **Bug ticket creation on failures**
 - **Continuous quality validation**
 
-### **4. Node.js Automated Testing** (`automated-game-test.js`)
+### **4. Playwright Gameplay Probes** (`tests/gameplay-probe.test.js`)
 - **CI/CD integration ready**
-- **File system validation**
-- **Syntax checking**
+- **Headless browser checks**
+- **Movement and shooting verification**
 - **Consistency rule enforcement**
 
 ### **5. Console Test Runner** (`js/test-runner.js`)
