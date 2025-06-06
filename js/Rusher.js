@@ -113,8 +113,10 @@ class Rusher extends BaseEnemy {
                             const battleCry = battleCries[floor(random() * battleCries.length)];
                             window.audio.speak(this, battleCry, 'rusher');
                             
-                            // Play rusher charge sound
-                            window.audio.playSound('rusherCharge', this.x, this.y);
+                            // Play rusher charge sound on-beat
+                            if (!window.beatClock || window.beatClock.canRusherCharge()) {
+                                window.audio.playRusherCharge(this.x, this.y);
+                            }
                         }
                     }
                     

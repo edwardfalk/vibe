@@ -52,6 +52,12 @@ export class BackgroundRenderer {
                 elements: [],
                 speed: 0.8,
                 depth: 0.3
+            },
+            {
+                name: 'foreground_sparks',
+                elements: [],
+                speed: 1.2,
+                depth: 0.1
             }
         ];
         
@@ -117,6 +123,18 @@ export class BackgroundRenderer {
                 shape: p.random(['triangle', 'square', 'diamond'])
             });
         }
+
+        // Foreground sparks layer
+        const foregroundSparks = this.parallaxLayers[4];
+        for (let i = 0; i < 20; i++) {
+            foregroundSparks.elements.push({
+                x: p.random(-p.width, p.width * 2),
+                y: p.random(-p.height, p.height * 2),
+                size: p.random(2, 4),
+                alpha: p.random(150, 255),
+                flickerSpeed: p.random(0.05, 0.15)
+            });
+        }
     }
     
     // Draw parallax background
@@ -156,6 +174,9 @@ export class BackgroundRenderer {
                 break;
             case 'close_debris':
                 this.drawCloseDebris(layer.elements, p);
+                break;
+            case 'foreground_sparks':
+                this.drawForegroundSparks(layer.elements, p);
                 break;
         }
         
@@ -231,6 +252,16 @@ export class BackgroundRenderer {
                     break;
             }
             p.pop();
+        }
+    }
+
+    // Draw foreground sparks
+    drawForegroundSparks(sparks, p = this.p) {
+        p.noStroke();
+        for (const spark of sparks) {
+            const flicker = p.sin(p.frameCount * spark.flickerSpeed) * 0.5 + 0.5;
+            p.fill(255, 255, 255, spark.alpha * flicker);
+            p.ellipse(spark.x, spark.y, spark.size, spark.size);
         }
     }
     
