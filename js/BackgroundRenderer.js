@@ -147,6 +147,18 @@ export class BackgroundRenderer {
                 flickerSpeed: p.random(0.05, 0.15)
             });
         }
+
+        // Foreground sparks layer
+        const foregroundSparks = this.parallaxLayers[4];
+        for (let i = 0; i < 20; i++) {
+            foregroundSparks.elements.push({
+                x: p.random(-p.width, p.width * 2),
+                y: p.random(-p.height, p.height * 2),
+                size: p.random(2, 4),
+                alpha: p.random(150, 255),
+                flickerSpeed: p.random(0.05, 0.15)
+            });
+        }
     }
     
     // Draw parallax background
