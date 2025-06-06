@@ -32,7 +32,7 @@ The Vibe game has undergone a complete testing infrastructure overhaul, transfor
 | **Interactive Tests** | `js/interactive-gameplay-test.js` | Real input simulation | F11/F12 | 10 seconds |
 | **Enhanced Playwright** | `js/enhanced-playwright-test.js` | MCP browser automation | Manual | 15 seconds |
 | **AI Liveness Probe** | `js/ai-liveness-probe.js` | Continuous monitoring | Automatic | Continuous |
-| **Automated Runner** | `automated-game-test.js` | Node.js validation | `npm test` | 5 seconds |
+| **Gameplay Probes** | `tests/gameplay-probe.test.js` | Playwright-based probe suite | `npm test` | 15 seconds |
 
 ---
 
@@ -218,11 +218,8 @@ await tester.runExtendedTest();
 
 ### **Node.js Testing**
 ```bash
-# Run automated tests
+# Run gameplay probes
 npm test
-
-# Or directly
-node automated-game-test.js
 ```
 
 ---
