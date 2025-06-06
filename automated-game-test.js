@@ -306,6 +306,26 @@ function generateTestReport(results) {
     };
 }
 
+// Check for screenshots in test-results directory
+function checkScreenshots() {
+    const dir = path.join(__dirname, 'test-results');
+
+    if (!fs.existsSync(dir)) {
+        log('❌ test-results directory not found', 'red');
+        return false;
+    }
+
+    const pngFiles = fs.readdirSync(dir).filter(f => f.endsWith('.png'));
+
+    if (pngFiles.length === 0) {
+        log('❌ No screenshots found in test-results/', 'red');
+        return false;
+    }
+
+    log(`✅ Found ${pngFiles.length} screenshot(s) in test-results/`, 'green');
+    return true;
+}
+
 // Main test function
 async function runAutomatedTests() {
     log('🚀 Starting automated game tests...', 'magenta');
@@ -342,9 +362,13 @@ async function runAutomatedTests() {
     
     // Generate report
     const report = generateTestReport(results);
-    
+
+    // Verify screenshots were generated
+    const screenshotsExist = checkScreenshots();
+
     // Exit with appropriate code
-    process.exit(report.allPassed ? 0 : 1);
+    const exitCode = report.allPassed && screenshotsExist ? 0 : 1;
+    process.exit(exitCode);
 }
 
 // Run tests if this script is executed directly
@@ -357,5 +381,6 @@ module.exports = {
     checkServer,
     checkGameFiles,
     checkJavaScriptSyntax,
-    checkConsistencyViolations
-}; 
+    checkConsistencyViolations,
+    checkScreenshots
+};
