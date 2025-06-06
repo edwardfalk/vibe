@@ -3,6 +3,7 @@
  * Uses Playwright automation to simulate real user interactions
  * Tests movement, shooting, collisions, and sound through actual gameplay
  */
+import { random } from './mathUtils.js';
 
 class InteractiveGameplayTester {
     constructor() {
@@ -272,13 +273,13 @@ class InteractiveGameplayTester {
             while (Date.now() - startTime < combatDuration) {
                 // Random movement
                 const movements = ['w', 'a', 's', 'd'];
-                const randomMove = movements[Math.floor(Math.random() * movements.length)];
+                const randomMove = movements[Math.floor(random() * movements.length)];
                 
                 const moveEvent = new KeyboardEvent('keydown', { key: randomMove });
                 document.dispatchEvent(moveEvent);
                 
                 // Random shooting
-                if (Math.random() < 0.7) { // 70% chance to shoot
+                if (random() < 0.7) { // 70% chance to shoot
                     const shootEvent = new KeyboardEvent('keydown', { key: ' ', code: 'Space' });
                     document.dispatchEvent(shootEvent);
                     

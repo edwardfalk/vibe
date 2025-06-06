@@ -2,6 +2,7 @@ import { Grunt } from './Grunt.js';
 import { Rusher } from './Rusher.js';
 import { Tank } from './Tank.js';
 import { Stabber } from './Stabber.js';
+import { random } from './mathUtils.js';
 
 /**
  * EnemyFactory class - Handles enemy creation and type management
@@ -113,7 +114,7 @@ class EnemyFactory {
      */
     createRandomEnemyForLevel(x, y, level, p, audio = null) {
         const availableTypes = this.getAvailableTypesForLevel(level);
-        const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        const randomType = availableTypes[Math.floor(random() * availableTypes.length)];
         
         return this.createEnemy(x, y, randomType, p, audio);
     }
@@ -224,24 +225,24 @@ class EnemyFactory {
         let x, y;
         
         // Choose random edge (0=top, 1=right, 2=bottom, 3=left)
-        const edge = Math.floor(Math.random() * 4);
+        const edge = Math.floor(random() * 4);
         
         switch (edge) {
             case 0: // Top
-                x = Math.random() * screenWidth + cameraOffsetX;
+                x = random() * screenWidth + cameraOffsetX;
                 y = cameraOffsetY - margin;
                 break;
             case 1: // Right
                 x = screenWidth + cameraOffsetX + margin;
-                y = Math.random() * screenHeight + cameraOffsetY;
+                y = random() * screenHeight + cameraOffsetY;
                 break;
             case 2: // Bottom
-                x = Math.random() * screenWidth + cameraOffsetX;
+                x = random() * screenWidth + cameraOffsetX;
                 y = screenHeight + cameraOffsetY + margin;
                 break;
             case 3: // Left
                 x = cameraOffsetX - margin;
-                y = Math.random() * screenHeight + cameraOffsetY;
+                y = random() * screenHeight + cameraOffsetY;
                 break;
         }
         
@@ -253,7 +254,7 @@ class EnemyFactory {
      */
     createRandomEnemyAtEdge(level, screenWidth, screenHeight, cameraOffsetX = 0, cameraOffsetY = 0, p, audio = null) {
         const availableTypes = this.getAvailableTypesForLevel(level);
-        const randomType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+        const randomType = availableTypes[Math.floor(random() * availableTypes.length)];
         
         return this.createEnemyAtEdge(randomType, screenWidth, screenHeight, cameraOffsetX, cameraOffsetY, p, audio);
     }
