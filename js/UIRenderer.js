@@ -355,6 +355,11 @@ export class UIRenderer {
         this.drawKillStreakIndicator(p);
         this.drawHealthBar(p);
         this.drawBombs(p);
+
+        // Draw crosshair when playing
+        if (this.gameState && this.gameState.gameState === 'playing') {
+            this.drawCrosshair(p);
+        }
         
         // Draw overlays based on game state
         if (this.gameState) {
@@ -1031,4 +1036,16 @@ export class UIRenderer {
         this._addScreenshotThumbnail(screenshotData);
         this._showToast(`Screenshot ${this.screenshotCount} saved!`);
     }
-} 
+
+    drawCrosshair(p) {
+        p.push();
+        const x = p.mouseX;
+        const y = p.mouseY;
+        const size = 8;
+        p.stroke(255, 100, 100);
+        p.strokeWeight(2);
+        p.line(x - size, y, x + size, y);
+        p.line(x, y - size, x, y + size);
+        p.pop();
+    }
+}
