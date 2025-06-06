@@ -336,6 +336,16 @@ function updateGame(p) {
     // Update enemies
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
+        
+        // CRITICAL FIX: Remove dead enemies before updating
+        if (enemy.health <= 0 || enemy.markedForRemoval) {
+            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                console.log(`🗑️ Removing dead enemy: ${enemy.type} at (${enemy.x.toFixed(1)}, ${enemy.y.toFixed(1)}) health=${enemy.health} marked=${enemy.markedForRemoval}`);
+            }
+            enemies.splice(i, 1);
+            continue;
+        }
+        
         const result = enemy.update(player ? player.x : 400, player ? player.y : 300, p.deltaTime);
         
         // Handle enemy update results
