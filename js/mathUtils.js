@@ -37,3 +37,19 @@ export function normalizeAngle(angle) {
   while (angle < -PI) angle += TWO_PI;
   return angle;
 }
+
+/**
+ * Generate a random number between min (inclusive) and max (exclusive).
+ * If only one argument is provided, the range is [0, min).
+ * Mirrors the behavior of p5.js random().
+ * @param {number} min
+ * @param {number} [max]
+ * @returns {number}
+ */
+export function randomRange(min, max) {
+  if (max === undefined) {
+    max = min;
+    min = 0;
+  }
+  return random() * (max - min) + min;
+}

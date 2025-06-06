@@ -50,6 +50,7 @@
  */
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
+import { random, randomRange, floor } from './mathUtils.js';
 
 export class Audio {
     /**
@@ -109,7 +110,7 @@ export class Audio {
             stabberChant: { frequency: 1800, waveform: 'triangle', volume: 0.3, duration: 0.5 },
             gruntAdvance: { frequency: 400, waveform: 'square', volume: 0.2, duration: 0.2 },
             gruntRetreat: { frequency: 350, waveform: 'square', volume: 0.15, duration: 0.08 },
-            rusherCharge: { frequency: 1200, waveform: 'sawtooth', volume: 0.5, duration: 0.6 },
+            rusherCharge: { frequency: 1200, waveform: 'sawtooth', volume: 0.5, duration: 0.6, tremolo: true },
             stabberKnife: { frequency: 2200, waveform: 'triangle', volume: 0.4, duration: 0.15 },
             enemyIdle: { frequency: 200, waveform: 'sine', volume: 0.1, duration: 0.8 },
             tankPowerUp: { frequency: 40, waveform: 'sawtooth', volume: 0.5, duration: 1.2 },
@@ -133,7 +134,8 @@ export class Audio {
         
         // Voice configuration - REDUCED VOLUMES for background speech effect
         this.voiceConfig = {
-            player: { rate: 0.9, pitch: 0.2, volume: 0.5 }, // Reduced from 1.0 to 0.4 - still audible but background
+            // Player voice tweaked for mysterious tone
+            player: { rate: 0.85, pitch: 0.15, volume: 0.5 },
             grunt: { rate: 0.6, pitch: 1.6, volume: 0.3 }, // Reduced from 0.8 to 0.3
             rusher: { rate: 1.4, pitch: 1.5, volume: 0.35 }, // Reduced from 0.9 to 0.35
             tank: { rate: 0.5, pitch: 0.2, volume: 0.4 }, // Reduced from 1.0 to 0.4
@@ -190,7 +192,7 @@ export class Audio {
         
         // Simple distortion
         this.effects.distortion = this.audioContext.createWaveShaper();
-        // Re-use cached curve for identical amount / sample-rate pairs
+        // Reuse cached curve for identical amount / sample-rate pairs
         this.effects.distortion.curve = this.createOrGetCurve(30);
         this.effects.distortion.oversample = '2x';
     }
@@ -280,9 +282,9 @@ export class Audio {
         const panNode = this.audioContext.createStereoPanner();
         
         // Add subtle randomness to frequency and volume for variety
-        const frequencyVariation = 1 + (this.p.random() - 0.5) * 0.1;
-        const volumeVariation = 1 + (this.p.random() - 0.5) * 0.15;
-        const durationVariation = 1 + (this.p.random() - 0.5) * 0.2;
+        const frequencyVariation = 1 + (random() - 0.5) * 0.1;
+        const volumeVariation = 1 + (random() - 0.5) * 0.15;
+        const durationVariation = 1 + (random() - 0.5) * 0.2;
         
         // Configure oscillator with randomness
         oscillator.type = config.waveform === 'noise' ? 'sawtooth' : config.waveform;
@@ -341,8 +343,14 @@ export class Audio {
         panNode.pan.setValueAtTime(panValue, this.audioContext.currentTime);
         
         // Connect nodes - add reverb for ambient enemy sounds
-        oscillator.connect(gainNode);
+        const tremoloGain = this.audioContext.createGain();
+        oscillator.connect(tremoloGain);
+        tremoloGain.connect(gainNode);
         gainNode.connect(panNode);
+
+        if (config.tremolo) {
+            this.applyBeatTremolo(tremoloGain, config.duration * durationVariation);
+        }
         
         // Check if this is an ambient enemy sound that should have reverb
         const soundName = Object.keys(this.sounds).find(key => this.sounds[key] === config);
@@ -414,6 +422,24 @@ export class Audio {
         
         // Less dramatic volume reduction for distant enemies
         return Math.max(0.3, 1.0 - (normalizedDistance * 0.6));
+    }
+
+    // Apply beat-synced tremolo using the global BeatClock
+    applyBeatTremolo(targetGain, duration) {
+        if (!window.beatClock) return;
+
+        const lfo = this.audioContext.createOscillator();
+        const depth = this.audioContext.createGain();
+
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(window.beatClock.bpm / 60, this.audioContext.currentTime);
+        depth.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+
+        lfo.connect(depth);
+        depth.connect(targetGain.gain);
+
+        lfo.start(this.audioContext.currentTime);
+        lfo.stop(this.audioContext.currentTime + duration);
     }
     
     // ========================================================================
@@ -601,11 +627,11 @@ export class Audio {
                 return name.includes('clear') || name.includes('precise') || name.includes('clinical') ||
                        name.includes('sharp') || name.includes('articulate');
             });
-            if (preciseVoices.length > 0) return preciseVoices[Math.floor(this.p.random() * preciseVoices.length)];
+            if (preciseVoices.length > 0) return preciseVoices[floor(random() * preciseVoices.length)];
         }
         
         // Fallback to random voice
-        return availableVoices[Math.floor(this.p.random() * availableVoices.length)];
+        return availableVoices[floor(random() * availableVoices.length)];
     }
     
     // DYNAMIC voice effects based on content and character
@@ -628,7 +654,7 @@ export class Audio {
             // Grunts get robotic, confused effects
             if (isConfused) {
                 utterance.rate = Math.max(0.4, baseConfig.rate - 0.2); // Much slower when confused
-                utterance.pitch = baseConfig.pitch + this.p.random(-0.1, 0.1); // Slight pitch variation
+                utterance.pitch = baseConfig.pitch + randomRange(-0.1, 0.1); // Slight pitch variation
             }
             if (isAggressive) {
                 utterance.rate = Math.min(1.0, baseConfig.rate + 0.2); // Faster when angry
@@ -650,13 +676,13 @@ export class Audio {
             // Stabbers get precise, clinical effects
             if (isAggressive) {
                 utterance.rate = Math.max(0.7, baseConfig.rate - 0.2); // Slower, more deliberate
-                utterance.pitch = baseConfig.pitch + this.p.random(-0.05, 0.05); // Slight variation for unsettling effect
+                utterance.pitch = baseConfig.pitch + randomRange(-0.05, 0.05); // Slight variation for unsettling effect
             }
         }
         
         // Add some randomness for variety (small amounts)
-        utterance.rate += this.p.random(-0.05, 0.05);
-        utterance.pitch += this.p.random(-0.03, 0.03);
+        utterance.rate += randomRange(-0.05, 0.05);
+        utterance.pitch += randomRange(-0.03, 0.03);
         
         // Ensure values stay in valid ranges
         utterance.rate = Math.max(0.1, Math.min(2.0, utterance.rate));
@@ -770,8 +796,8 @@ export class Audio {
             // Add animation effects
             if (textObj.shakeTimer > 0) {
                 // Shake effect for aggressive text
-                screenX += this.p.random(-2, 2);
-                screenY += this.p.random(-1, 1);
+                screenX += randomRange(-2, 2);
+                screenY += randomRange(-1, 1);
             }
             
             if (textObj.wobbleTimer > 0) {
@@ -862,13 +888,25 @@ export class Audio {
     // Dialogue lines
     getPlayerLine(context) {
         const lines = {
-            start: ["GO!", "FIGHT!", "KILL!", "DIE!", "BOOM!", "FIRE!", "WAR!", "RAGE!"],
-            damage: ["WEAK!", "SOFT!", "LAME!", "FAIL!", "MISS!", "TRY HARD!", "NO WAY!", "WEAK!"],
-            lowHealth: ["RAGE!", "FIGHT!", "NOT DONE!", "BRING IT!", "MORE!", "COME ON!", "STILL HERE!", "TRY ME!"],
-            death: ["DAMN!", "HELL!", "SHIT!", "FUCK!", "NO!", "ARGH!", "DIE!", "BACK!"]
+            start: [
+                'RISE!', 'CRUSH!', 'BLOOD MOON!', 'CHAOS!',
+                'DANCE DEATH!', 'COSMIC!', 'LAUGH!', 'RIOT!'
+            ],
+            damage: [
+                'PAIN!', 'BROKEN!', 'HA!', 'YOU MISS!',
+                'TRY AGAIN!', 'BITTER!', 'BLEED!', 'MAD!'
+            ],
+            lowHealth: [
+                'MORE!', 'STILL HERE!', 'NO FEAR!', 'DEEP CUT!',
+                'GASP!', 'WE CONTINUE!', 'HOLD FAST!', 'NEVER DONE!'
+            ],
+            death: [
+                'FALLING...', 'FAREWELL!', 'DARKNESS...', 'SEE YOU...',
+                'I END...', 'GOODBYE...', 'VOID CALLS!', 'FADING...'
+            ]
         };
         const contextLines = lines[context] || lines.start;
-        return contextLines[Math.floor(this.p.random() * contextLines.length)];
+        return contextLines[floor(random() * contextLines.length)];
     }
     
     getGruntLine() {
@@ -883,7 +921,7 @@ export class Audio {
             "MY HELMET IS TIGHT!", "WIFI PASSWORD?", "MOMMY?", "SCARED!",
             "IS THAT MY TARGET?", "WHICH BUTTON?", "I'M CONFUSED!"
         ];
-        return lines[Math.floor(this.p.random() * lines.length)];
+        return lines[floor(random() * lines.length)];
     }
     
     getRusherLine() {
@@ -898,7 +936,7 @@ export class Audio {
             "TOO FAST!", "CAN'T STOP!", "EXPLOSIVE DIARRHEA!", "REGRET NOTHING!",
             "WITNESS ME!", "LEEROY JENKINS!", "OOPS BOOM!"
         ];
-        return lines[Math.floor(this.p.random() * lines.length)];
+        return lines[floor(random() * lines.length)];
     }
     
     getTankLine() {
@@ -913,7 +951,7 @@ export class Audio {
             "SIZE MATTERS!", "PROTEIN POWER!", "HULK SMASH!", "BEAST MODE!",
             "MY GUN IS BIGGER!", "MAXIMUM TESTOSTERONE!"
         ];
-        return lines[Math.floor(this.p.random() * lines.length)];
+        return lines[floor(random() * lines.length)];
     }
     
     getStabberLine() {
@@ -928,7 +966,7 @@ export class Audio {
             "NEEDLE THERAPY!", "OOPS SORRY!", "STABBY MCSTABFACE!",
             "HUMAN PINCUSHION!", "LITTLE SCRATCH!", "POINTY DEATH!"
         ];
-        return lines[Math.floor(this.p.random() * lines.length)];
+        return lines[floor(random() * lines.length)];
     }
     
     // Control methods

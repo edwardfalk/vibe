@@ -3,7 +3,7 @@
  * BackgroundRenderer.js - Handles all background drawing including parallax, cosmic effects, and space elements
  */
 
-import { max, min, floor, ceil, round, sin, cos, sqrt } from './mathUtils.js';
+import { max, min, floor, ceil, round, sin, cos, sqrt, random, randomRange } from './mathUtils.js';
 
 /**
  * @param {p5} p - The p5 instance
@@ -52,6 +52,12 @@ export class BackgroundRenderer {
                 elements: [],
                 speed: 0.8,
                 depth: 0.3
+            },
+            {
+                name: 'foreground_sparks',
+                elements: [],
+                speed: 1.2,
+                depth: 0.1
             }
         ];
         
@@ -68,11 +74,11 @@ export class BackgroundRenderer {
         const distantStars = this.parallaxLayers[0];
         for (let i = 0; i < 50; i++) {
             distantStars.elements.push({
-                x: p.random(-p.width, p.width * 2),
-                y: p.random(-p.height, p.height * 2),
-                size: p.random(1, 3),
-                brightness: p.random(0.3, 1),
-                twinkleSpeed: p.random(0.01, 0.03)
+                x: randomRange(-p.width, p.width * 2),
+                y: randomRange(-p.height, p.height * 2),
+                size: randomRange(1, 3),
+                brightness: randomRange(0.3, 1),
+                twinkleSpeed: randomRange(0.01, 0.03)
             });
         }
         
@@ -80,16 +86,16 @@ export class BackgroundRenderer {
         const nebulaClouds = this.parallaxLayers[1];
         for (let i = 0; i < 8; i++) {
             nebulaClouds.elements.push({
-                x: p.random(-p.width, p.width * 2),
-                y: p.random(-p.height, p.height * 2),
-                size: p.random(100, 300),
+                x: randomRange(-p.width, p.width * 2),
+                y: randomRange(-p.height, p.height * 2),
+                size: randomRange(100, 300),
                 color: {
-                    r: p.random(40, 80),
-                    g: p.random(20, 60),
-                    b: p.random(60, 120)
+                    r: randomRange(40, 80),
+                    g: randomRange(20, 60),
+                    b: randomRange(60, 120)
                 },
-                alpha: p.random(0.05, 0.15),
-                driftSpeed: p.random(0.1, 0.3)
+                alpha: randomRange(0.05, 0.15),
+                driftSpeed: randomRange(0.1, 0.3)
             });
         }
         
@@ -97,11 +103,11 @@ export class BackgroundRenderer {
         const mediumStars = this.parallaxLayers[2];
         for (let i = 0; i < 30; i++) {
             mediumStars.elements.push({
-                x: p.random(-p.width, p.width * 2),
-                y: p.random(-p.height, p.height * 2),
-                size: p.random(2, 5),
-                brightness: p.random(0.5, 1),
-                color: p.random(['white', 'blue', 'yellow', 'orange'])
+                x: randomRange(-p.width, p.width * 2),
+                y: randomRange(-p.height, p.height * 2),
+                size: randomRange(2, 5),
+                brightness: randomRange(0.5, 1),
+                color: ['white', 'blue', 'yellow', 'orange'][floor(random() * 4)]
             });
         }
         
@@ -109,12 +115,24 @@ export class BackgroundRenderer {
         const closeDebris = this.parallaxLayers[3];
         for (let i = 0; i < 15; i++) {
             closeDebris.elements.push({
+                x: randomRange(-p.width, p.width * 2),
+                y: randomRange(-p.height, p.height * 2),
+                size: randomRange(3, 8),
+                rotation: randomRange(0, p.TWO_PI),
+                rotationSpeed: randomRange(-0.02, 0.02),
+                shape: ['triangle', 'square', 'diamond'][floor(random() * 3)]
+            });
+        }
+
+        // Foreground sparks layer
+        const foregroundSparks = this.parallaxLayers[4];
+        for (let i = 0; i < 20; i++) {
+            foregroundSparks.elements.push({
                 x: p.random(-p.width, p.width * 2),
                 y: p.random(-p.height, p.height * 2),
-                size: p.random(3, 8),
-                rotation: p.random(0, p.TWO_PI),
-                rotationSpeed: p.random(-0.02, 0.02),
-                shape: p.random(['triangle', 'square', 'diamond'])
+                size: p.random(2, 4),
+                alpha: p.random(150, 255),
+                flickerSpeed: p.random(0.05, 0.15)
             });
         }
     }
@@ -156,6 +174,9 @@ export class BackgroundRenderer {
                 break;
             case 'close_debris':
                 this.drawCloseDebris(layer.elements, p);
+                break;
+            case 'foreground_sparks':
+                this.drawForegroundSparks(layer.elements, p);
                 break;
         }
         
@@ -231,6 +252,16 @@ export class BackgroundRenderer {
                     break;
             }
             p.pop();
+        }
+    }
+
+    // Draw foreground sparks
+    drawForegroundSparks(sparks, p = this.p) {
+        p.noStroke();
+        for (const spark of sparks) {
+            const flicker = p.sin(p.frameCount * spark.flickerSpeed) * 0.5 + 0.5;
+            p.fill(255, 255, 255, spark.alpha * flicker);
+            p.ellipse(spark.x, spark.y, spark.size, spark.size);
         }
     }
     
@@ -486,10 +517,10 @@ export class BackgroundRenderer {
         if (this.gameState && this.gameState.score > 0) {
             const energyLevel = p.min(this.gameState.score / 1000, 1);
             for (let i = 0; i < 5; i++) {
-                const energyX = p.random(p.width);
-                const energyY = p.random(p.height);
-                const energySize = p.random(10, 30) * energyLevel;
-                const energyAlpha = p.random(5, 15) * energyLevel;
+                const energyX = randomRange(p.width);
+                const energyY = randomRange(p.height);
+                const energySize = randomRange(10, 30) * energyLevel;
+                const energyAlpha = randomRange(5, 15) * energyLevel;
                 p.fill(255, 215, 0, energyAlpha);
                 p.noStroke();
                 p.ellipse(energyX, energyY, energySize, energySize);
