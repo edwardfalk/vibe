@@ -60,10 +60,10 @@ export class Player {
     }
     
     update(deltaTimeMs) {
-        // Log the current game state for debugging
-        if (window.gameState && window.gameState.gameState) {
-            console.log('[STATE] gameState:', window.gameState.gameState);
-        }
+        // Log the current game state for debugging - DISABLED to reduce console spam
+        // if (window.gameState && window.gameState.gameState) {
+        //     console.log('[STATE] gameState:', window.gameState.gameState);
+        // }
         
         // Handle movement (check both keyboard and testing keys)
         this.velocity.x = 0;
