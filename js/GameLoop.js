@@ -229,10 +229,10 @@ function draw(p) {
     // Ensure global frameCount is updated for all modules and probes (p5 instance mode)
     window.frameCount = p.frameCount;
     
-    // Log the current game state every frame
-    if (window.DEBUG && window.gameState && window.gameState.gameState) {
-        console.log('🎮 [STATE] gameState:', window.gameState.gameState);
-    }
+    // Log the current game state every frame - DISABLED to reduce console spam
+    // if (window.DEBUG && window.gameState && window.gameState.gameState) {
+    //     console.log('🎮 [STATE] gameState:', window.gameState.gameState);
+    // }
     
     // Draw background using BackgroundRenderer
     if (window.backgroundRenderer) {

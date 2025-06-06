@@ -48,7 +48,6 @@
  * 
  * =============================================================================
 */
-import { random } from './mathUtils.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { random, randomRange, floor } from './mathUtils.js';
