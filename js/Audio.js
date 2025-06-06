@@ -192,7 +192,7 @@ export class Audio {
         
         // Simple distortion
         this.effects.distortion = this.audioContext.createWaveShaper();
-        // Re-use cached curve for identical amount / sample-rate pairs
+        // Reuse cached curve for identical amount / sample-rate pairs
         this.effects.distortion.curve = this.createOrGetCurve(30);
         this.effects.distortion.oversample = '2x';
     }
