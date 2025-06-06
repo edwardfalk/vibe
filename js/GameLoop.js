@@ -324,6 +324,11 @@ function updateGame(p) {
     
     // Update bullets
     updateBullets(p);
+
+    // Immediately process bullet collisions to catch hits before enemies move
+    if (window.collisionSystem) {
+        window.collisionSystem.checkBulletCollisions();
+    }
     
     // Update bombs
     updateBombs(p);

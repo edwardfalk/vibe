@@ -384,3 +384,4 @@ module.exports = {
     checkConsistencyViolations,
     checkScreenshots
 };
+

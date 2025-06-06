@@ -42,8 +42,8 @@ jobs:
       - name: Run automated tests
         id: tests
         run: |
-          # Run our comprehensive test suite
-          npm run test:automated || echo "Automated tests completed"
+          # Run gameplay probes and MCP tests
+          npm run test:comprehensive || echo "Tests completed"
         continue-on-error: true
         
       - name: CodeRabbit AI Review

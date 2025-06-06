@@ -167,21 +167,24 @@ export class Player {
                 const bullet = this.fireBullet();
                 if (bullet && window.playerBullets) {
                     window.playerBullets.push(bullet);
-                    
+
                     if (window.gameState) {
                         window.gameState.addShotFired();
                     }
-                    
+
                     // Play shooting sound with spatial audio
                     if (window.audio) {
                         window.audio.playPlayerShoot(this.x, this.y);
                     }
-                    
+
                     console.log('🎵 Queued shot fired on beat!');
                 }
-                
+
+                // Ensure cooldown doesn't expire this frame (prevents double shots)
+                this.shootCooldownMs += deltaTimeMs;
+
                 this.queuedShot = null; // Clear the queue
-                
+
                 // Don't immediately re-queue - let the regular shoot() call handle it
             }
         }
