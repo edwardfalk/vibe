@@ -377,7 +377,7 @@ export class BaseEnemy {
      * Draw health bar
      */
     drawHealthBar(p) {
-        if (this.health < this.maxHealth) {
+        if (this.health < this.maxHealth && !this.markedForRemoval) {
             const barWidth = this.size * 1.2;
             const barHeight = 4;
             const barY = this.y - this.size * 0.8;

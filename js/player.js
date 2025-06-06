@@ -317,6 +317,18 @@ export class Player {
         // Bandana tails
         p.rect(-s*0.12, -s*0.27, s*0.04, s*0.15);
         p.rect(s*0.08, -s*0.25, s*0.04, s*0.12);
+
+        // Mysterious eyes
+        p.fill(0);
+        const eyeOffset = s * 0.07;
+        const eyeSize = s * 0.06;
+        p.ellipse(-eyeOffset, -s*0.25, eyeSize);
+        p.ellipse(eyeOffset, -s*0.25, eyeSize);
+
+        // Small cosmic horns for flair
+        p.fill(128, 0, 128);
+        p.triangle(-s*0.12, -s*0.35, -s*0.05, -s*0.55, -s*0.01, -s*0.35);
+        p.triangle(s*0.12, -s*0.35, s*0.05, -s*0.55, s*0.01, -s*0.35);
         
         // Add cosmic glow effect when healthy
         if (this.health > this.maxHealth * 0.7) {

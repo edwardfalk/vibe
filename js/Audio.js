@@ -110,7 +110,7 @@ export class Audio {
             stabberChant: { frequency: 1800, waveform: 'triangle', volume: 0.3, duration: 0.5 },
             gruntAdvance: { frequency: 400, waveform: 'square', volume: 0.2, duration: 0.2 },
             gruntRetreat: { frequency: 350, waveform: 'square', volume: 0.15, duration: 0.08 },
-            rusherCharge: { frequency: 1200, waveform: 'sawtooth', volume: 0.5, duration: 0.6 },
+            rusherCharge: { frequency: 1200, waveform: 'sawtooth', volume: 0.5, duration: 0.6, tremolo: true },
             stabberKnife: { frequency: 2200, waveform: 'triangle', volume: 0.4, duration: 0.15 },
             enemyIdle: { frequency: 200, waveform: 'sine', volume: 0.1, duration: 0.8 },
             tankPowerUp: { frequency: 40, waveform: 'sawtooth', volume: 0.5, duration: 1.2 },
@@ -134,7 +134,8 @@ export class Audio {
         
         // Voice configuration - REDUCED VOLUMES for background speech effect
         this.voiceConfig = {
-            player: { rate: 0.9, pitch: 0.2, volume: 0.5 }, // Reduced from 1.0 to 0.4 - still audible but background
+            // Player voice tweaked for mysterious tone
+            player: { rate: 0.85, pitch: 0.15, volume: 0.5 },
             grunt: { rate: 0.6, pitch: 1.6, volume: 0.3 }, // Reduced from 0.8 to 0.3
             rusher: { rate: 1.4, pitch: 1.5, volume: 0.35 }, // Reduced from 0.9 to 0.35
             tank: { rate: 0.5, pitch: 0.2, volume: 0.4 }, // Reduced from 1.0 to 0.4
@@ -342,8 +343,14 @@ export class Audio {
         panNode.pan.setValueAtTime(panValue, this.audioContext.currentTime);
         
         // Connect nodes - add reverb for ambient enemy sounds
-        oscillator.connect(gainNode);
+        const tremoloGain = this.audioContext.createGain();
+        oscillator.connect(tremoloGain);
+        tremoloGain.connect(gainNode);
         gainNode.connect(panNode);
+
+        if (config.tremolo) {
+            this.applyBeatTremolo(tremoloGain, config.duration * durationVariation);
+        }
         
         // Check if this is an ambient enemy sound that should have reverb
         const soundName = Object.keys(this.sounds).find(key => this.sounds[key] === config);
@@ -415,6 +422,24 @@ export class Audio {
         
         // Less dramatic volume reduction for distant enemies
         return Math.max(0.3, 1.0 - (normalizedDistance * 0.6));
+    }
+
+    // Apply beat-synced tremolo using the global BeatClock
+    applyBeatTremolo(targetGain, duration) {
+        if (!window.beatClock) return;
+
+        const lfo = this.audioContext.createOscillator();
+        const depth = this.audioContext.createGain();
+
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(window.beatClock.bpm / 60, this.audioContext.currentTime);
+        depth.gain.setValueAtTime(0.5, this.audioContext.currentTime);
+
+        lfo.connect(depth);
+        depth.connect(targetGain.gain);
+
+        lfo.start(this.audioContext.currentTime);
+        lfo.stop(this.audioContext.currentTime + duration);
     }
     
     // ========================================================================
@@ -863,10 +888,22 @@ export class Audio {
     // Dialogue lines
     getPlayerLine(context) {
         const lines = {
-            start: ["GO!", "FIGHT!", "KILL!", "DIE!", "BOOM!", "FIRE!", "WAR!", "RAGE!"],
-            damage: ["WEAK!", "SOFT!", "LAME!", "FAIL!", "MISS!", "TRY HARD!", "NO WAY!", "WEAK!"],
-            lowHealth: ["RAGE!", "FIGHT!", "NOT DONE!", "BRING IT!", "MORE!", "COME ON!", "STILL HERE!", "TRY ME!"],
-            death: ["DAMN!", "HELL!", "SHIT!", "FUCK!", "NO!", "ARGH!", "DIE!", "BACK!"]
+            start: [
+                'RISE!', 'CRUSH!', 'BLOOD MOON!', 'CHAOS!',
+                'DANCE DEATH!', 'COSMIC!', 'LAUGH!', 'RIOT!'
+            ],
+            damage: [
+                'PAIN!', 'BROKEN!', 'HA!', 'YOU MISS!',
+                'TRY AGAIN!', 'BITTER!', 'BLEED!', 'MAD!'
+            ],
+            lowHealth: [
+                'MORE!', 'STILL HERE!', 'NO FEAR!', 'DEEP CUT!',
+                'GASP!', 'WE CONTINUE!', 'HOLD FAST!', 'NEVER DONE!'
+            ],
+            death: [
+                'FALLING...', 'FAREWELL!', 'DARKNESS...', 'SEE YOU...',
+                'I END...', 'GOODBYE...', 'VOID CALLS!', 'FADING...'
+            ]
         };
         const contextLines = lines[context] || lines.start;
         return contextLines[floor(random() * contextLines.length)];

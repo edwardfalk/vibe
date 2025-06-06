@@ -11,6 +11,7 @@
 - [docs/MCP_TOOLS_GUIDE.md](./docs/MCP_TOOLS_GUIDE.md): Advanced MCP tool usage and best practices
 - [docs/AUDIO_CONFIGURATION_GUIDE.md](./docs/AUDIO_CONFIGURATION_GUIDE.md): Audio setup and tuning
 - [docs/DESIGN.md](./docs/DESIGN.md): Game design and Cosmic Beat System
+- [docs/DEV_SERVER_SETUP.md](./docs/DEV_SERVER_SETUP.md): Local dev server & testing quickstart
 
 ## Overview
 Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
