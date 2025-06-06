@@ -175,6 +175,9 @@ function setup(p) {
     
     if (!window.cameraSystem) {
         window.cameraSystem = new CameraSystem(p);
+        if (player) {
+            player.cameraSystem = window.cameraSystem; // Fix mouse aiming
+        }
     }
     console.log('📷 Camera system initialized');
     

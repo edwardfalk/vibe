@@ -1,5 +1,6 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
 import { CONFIG } from './config.js';
+import { randomRange } from './mathUtils.js';
 
 /**
  * CameraSystem.js - Handles camera movement, parallax effects, and screen shake
@@ -69,8 +70,8 @@ export class CameraSystem {
         // Apply screen shake
         if (this.screenShake.duration > 0) {
             this.screenShake.duration--;
-            const shakeX = p.random(-this.screenShake.intensity, this.screenShake.intensity);
-            const shakeY = p.random(-this.screenShake.intensity, this.screenShake.intensity);
+            const shakeX = randomRange(-this.screenShake.intensity, this.screenShake.intensity);
+            const shakeY = randomRange(-this.screenShake.intensity, this.screenShake.intensity);
             p.translate(shakeX, shakeY);
         }
         

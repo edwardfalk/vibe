@@ -385,7 +385,12 @@ class MCPAutomatedTestRunner {
         };
         
         // Save report to file
-        const reportPath = `test-results/mcp-automated-test-report-${Date.now()}.json`;
+        const reportsDir = 'test-results';
+        if (!fs.existsSync(reportsDir)) {
+            fs.mkdirSync(reportsDir);
+        }
+
+        const reportPath = `${reportsDir}/mcp-automated-test-report-${Date.now()}.json`;
         fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
         
         // Display summary

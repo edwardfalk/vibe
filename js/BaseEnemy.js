@@ -1,6 +1,6 @@
 import { Bullet } from './bullet.js';
 import { CONFIG } from './config.js';
-import { random, sin, cos, atan2 } from './mathUtils.js';
+import { random, randomRange, sin, cos, atan2 } from './mathUtils.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
@@ -32,7 +32,7 @@ export class BaseEnemy {
         // Movement and animation
         this.velocity = { x: 0, y: 0 };
         this.aimAngle = 0;
-        this.animFrame = p.random(0, p.TWO_PI);
+        this.animFrame = randomRange(0, p.TWO_PI);
         
         // Combat
         this.shootCooldown = 0;
@@ -50,7 +50,10 @@ export class BaseEnemy {
         this.speechCooldown = 0;
         this.maxSpeechCooldown = speechConfig.COOLDOWN * 60; // seconds to frames
         // Random speech timer for ambient chatter
-        this.ambientSpeechTimer = p.random(speechConfig.AMBIENT_MIN * 60, speechConfig.AMBIENT_MAX * 60); // seconds to frames
+        this.ambientSpeechTimer = randomRange(
+            speechConfig.AMBIENT_MIN * 60,
+            speechConfig.AMBIENT_MAX * 60
+        ); // seconds to frames
         
         this.p = p;
         this.audio = audio;
@@ -143,7 +146,10 @@ export class BaseEnemy {
             
             // Reset timer for next speech using config
             const speechConfig = CONFIG.SPEECH_SETTINGS[this.type.toUpperCase()] || CONFIG.SPEECH_SETTINGS.DEFAULT;
-            this.ambientSpeechTimer = this.p.random(speechConfig.AMBIENT_MIN * 60, speechConfig.AMBIENT_MAX * 60); // seconds to frames
+            this.ambientSpeechTimer = randomRange(
+                speechConfig.AMBIENT_MIN * 60,
+                speechConfig.AMBIENT_MAX * 60
+            ); // seconds to frames
         }
     }
     
@@ -263,8 +269,8 @@ export class BaseEnemy {
         if (this.hitFlash > 0) {
             p.tint(255, 255, 255, 100);
             const hitIntensity = this.hitFlash / 8;
-            const shakeX = p.random(-hitIntensity * 4, hitIntensity * 4);
-            const shakeY = p.random(-hitIntensity * 3, hitIntensity * 3);
+            const shakeX = randomRange(-hitIntensity * 4, hitIntensity * 4);
+            const shakeY = randomRange(-hitIntensity * 3, hitIntensity * 3);
             p.translate(shakeX, shakeY);
             
             // Comical size distortion when hit
@@ -371,7 +377,7 @@ export class BaseEnemy {
      * Draw health bar
      */
     drawHealthBar(p) {
-        if (this.health < this.maxHealth) {
+        if (this.health < this.maxHealth && !this.markedForRemoval) {
             const barWidth = this.size * 1.2;
             const barHeight = 4;
             const barY = this.y - this.size * 0.8;

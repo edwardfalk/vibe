@@ -35,9 +35,11 @@ class MockMCPClient {
     async evaluate(options) {
         console.log(`🧪 [MOCK] Evaluating script (${options.script.length} chars)`);
         // In real implementation, this would use mcp_playwright_playwright_evaluate
-        
-        // Return mock results for demonstration
-        if (options.script.includes('ai-liveness-probe')) {
+
+        const script = options.script;
+
+        // Probe-driven liveness check
+        if (script.includes('ai-liveness-probe')) {
             return {
                 frameCount: 1234,
                 gameState: 'playing',
@@ -47,17 +49,44 @@ class MockMCPClient {
                 failure: null
             };
         }
-        
-        return { 
-            gameLoaded: true, 
-            canvasExists: true,
-            playerExists: true,
-            x: 400,
-            y: 300,
-            bulletCount: 0,
-            moved: true,
-            bulletCreated: true
-        };
+
+        // Game loaded verification
+        if (script.includes('canvasExists')) {
+            return { gameLoaded: true, canvasExists: true };
+        }
+
+        // Initialize game state / restart check
+        if (script.includes('restartGame')) {
+            return { restarted: false, state: 'playing' };
+        }
+
+        // Movement: initial position
+        if (script.includes('initialPos')) {
+            return { initialPos: { x: 400, y: 300 }, playerExists: true };
+        }
+
+        // Movement: final position
+        if (script.includes('finalPos')) {
+            return { finalPos: { x: 410, y: 310 }, moved: true };
+        }
+
+        // Shooting: initial bullet count
+        if (script.includes('bulletsExist')) {
+            return { bulletCount: 0, bulletsExist: true };
+        }
+
+        // Shooting: after shooting
+        if (script.includes('bulletCreated')) {
+            return { bulletCount: 1, bulletCreated: true };
+        }
+
+        // Enemy interactions
+        if (script.includes('enemyTypes')) {
+            return { totalEnemies: 1, activeEnemies: 1, enemyTypes: ['grunt'] };
+        }
+
+        // Fallback generic result
+        return { success: true };
     }
     
     async screenshot(options) {
