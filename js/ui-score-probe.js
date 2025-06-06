@@ -2,6 +2,7 @@
 // Probe: UI Elements and Score System with Automated Bug Reporting
 
 (async function() {
+  const { random } = await import('./mathUtils.js');
   // Import ticketManager API if available
   let ticketManager = null;
   try {
@@ -222,7 +223,7 @@
     
     if (ticketManager && ticketManager.createTicket) {
       try {
-        const shortId = 'UI-' + Math.random().toString(36).substr(2, 6);
+        const shortId = 'UI-' + random().toString(36).substr(2, 6);
         const ticketData = {
           id: shortId,
           title: 'ui-score-failure',

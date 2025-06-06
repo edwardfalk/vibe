@@ -4,6 +4,7 @@
  * Tests game stability, performance, and functionality under extended play
  * Based on MCP Playwright optimized testing patterns
  */
+import { random } from './mathUtils.js';
 
 class ExtendedGameplayTester {
     constructor() {
@@ -107,7 +108,7 @@ class ExtendedGameplayTester {
                 }
 
                 // Strategic action selection (survival-focused)
-                const actionType = Math.random();
+                const actionType = random();
                 
                 // Check if player is in danger (low health or enemies nearby)
                 const playerInDanger = window.player && (
@@ -119,7 +120,7 @@ class ExtendedGameplayTester {
                     // When in danger: prioritize movement and defensive shooting
                     if (actionType < 0.6) {
                         // 60% chance: Defensive movement
-                        const randomDirection = movements[Math.floor(Math.random() * movements.length)];
+                        const randomDirection = movements[Math.floor(random() * movements.length)];
                         await this.performMovement(randomDirection);
                     } else {
                         // 40% chance: Defensive shooting while moving
@@ -132,7 +133,7 @@ class ExtendedGameplayTester {
                         await this.performShooting();
                     } else if (actionType < 0.8) {
                         // 30% chance: Move
-                        const randomDirection = movements[Math.floor(Math.random() * movements.length)];
+                        const randomDirection = movements[Math.floor(random() * movements.length)];
                         await this.performMovement(randomDirection);
                     } else {
                         // 20% chance: Combined action (move + shoot)
@@ -264,7 +265,7 @@ class ExtendedGameplayTester {
                 }
             }
             
-            const holdTime = 150 + Math.random() * 100; // 150-250ms hold for better control
+            const holdTime = 150 + random() * 100; // 150-250ms hold for better control
             await this.simulateKeyPress(bestDirection, holdTime);
             this.stats.movementActions++;
         } catch (error) {
@@ -277,7 +278,7 @@ class ExtendedGameplayTester {
      */
     async performCombinedAction(movements) {
         try {
-            const direction = movements[Math.floor(Math.random() * movements.length)];
+            const direction = movements[Math.floor(random() * movements.length)];
             
             // Start movement
             const moveDownEvent = new KeyboardEvent('keydown', { 

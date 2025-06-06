@@ -1,0 +1,22 @@
+import prettierPlugin from 'eslint-plugin-prettier';
+
+export default [
+  {
+    files: ['**/*.js'],
+    ignores: ['node_modules/**'],
+    languageOptions: {
+      sourceType: 'module',
+      ecmaVersion: 2021
+    },
+    plugins: {
+      prettier: prettierPlugin
+    },
+    rules: {
+      'prefer-const': 'error',
+      'no-var': 'error',
+      'require-jsdoc': 'warn',
+      'valid-jsdoc': 'warn',
+      'prettier/prettier': 'error'
+    }
+  }
+];

@@ -20,13 +20,20 @@
     "coderabbit:tickets": "node js/coderabbit-ticket-tracker.js",
     "coderabbit:list": "node js/coderabbit-ticket-tracker.js list",
     "coderabbit:stats": "node js/coderabbit-ticket-tracker.js stats",
-    "api": "node ticket-api.js"
+    "api": "node ticket-api.js",
+    "lint": "eslint \"**/*.js\"",
+    "format": "prettier --write \"**/*.{js,md,json}\""
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
     "concurrently": "^9.1.2",
     "five-server": "^0.4.4",
-    "live-server": "^1.2.2"
+    "live-server": "^1.2.2",
+    "kill-port": "^2.0.1",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.0.0"
   },
   "dependencies": {
     "dotenv": "^16.5.0",

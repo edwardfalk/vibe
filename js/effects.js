@@ -4,16 +4,18 @@
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
-const max = Math.max;
-const min = Math.min;
-const floor = Math.floor;
-const ceil = Math.ceil;
-const round = Math.round;
-const random = Math.random;
-const sin = Math.sin;
-const cos = Math.cos;
-const atan2 = Math.atan2;
-const sqrt = Math.sqrt;
+import {
+    max,
+    min,
+    floor,
+    ceil,
+    round,
+    random,
+    sin,
+    cos,
+    atan2,
+    sqrt
+} from './mathUtils.js';
 
 class EffectsManager {
     constructor() {
