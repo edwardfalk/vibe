@@ -337,7 +337,8 @@ class Grunt extends BaseEnemy {
             this.pendingStabDeath = true;
             this.pendingStabDeathTimer = 12; // ~200ms at 60fps
             this._pendingStabDeathParams = { amount, bulletAngle, damageSource };
-            return 'pendingStabDeath';
+            // FIXED: Return true if this would kill the grunt, false otherwise
+            return amount >= this.health;
         }
         const died = super.takeDamage(amount, bulletAngle, damageSource);
         if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {

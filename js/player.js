@@ -131,13 +131,23 @@ export class Player {
             if (window.arrowRightPressed) dx += 1;
             if (dx !== 0 || dy !== 0) {
                 this.aimAngle = atan2(dy, dx);
-                console.log('[AIM] Arrow keys: dx=' + dx + ', dy=' + dy + ', angle=' + (this.aimAngle * 180 / Math.PI).toFixed(1));
+                if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+                    console.log('[AIM] Arrow keys: dx=' + dx + ', dy=' + dy + ', angle=' + (this.aimAngle * 180 / Math.PI).toFixed(1));
+                }
             }
         } else if (this.cameraSystem) {
+            // FIXED: Proper camera-aware mouse aiming
             const worldMouse = this.cameraSystem.screenToWorld(this.p.mouseX, this.p.mouseY);
             this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
+            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && frameCount % 60 === 0) {
+                console.log(`[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${(this.aimAngle * 180 / Math.PI).toFixed(1)}°`);
+            }
         } else {
+            // Fallback for when camera system is not available
             this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
+            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && frameCount % 60 === 0) {
+                console.log(`[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${(this.aimAngle * 180 / Math.PI).toFixed(1)}°`);
+            }
         }
         
         // Update animation
