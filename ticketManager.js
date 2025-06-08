@@ -2,12 +2,15 @@
 // Client-side ticket management utilities for the Vibe game
 // Integrates with ticket-api.js backend and supports in-game bug reporting
 
+import { CONFIG } from './js/config.js';
+import { retryOperation, logError, validateApiResponse } from './js/errorHandler.js';
+
 /**
  * Client-side ticket manager for handling bug reports, features, and tasks
  * Provides utilities for creating, updating, and managing tickets from the game
  */
 class TicketManager {
-  constructor(apiBaseUrl = 'http://localhost:3001/api/tickets') {
+  constructor(apiBaseUrl = CONFIG.TICKET_API.BASE_URL) {
     this.apiBaseUrl = apiBaseUrl;
     this.cache = new Map();
     this.lastFetch = 0;
@@ -46,17 +49,16 @@ class TicketManager {
         ticketData.timestamp = new Date().toISOString();
       }
 
-      const response = await fetch(this.apiBaseUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(ticketData),
+      const response = await retryOperation(async () => {
+        const res = await fetch(this.apiBaseUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(ticketData),
+        });
+        return validateApiResponse(res, { operation: 'createTicket', ticketId: ticketData.id });
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create ticket: ${response.statusText}`);
-      }
 
       const ticket = await response.json();
       this.cache.set(ticket.id, ticket);
@@ -64,7 +66,7 @@ class TicketManager {
       console.log('🎫 Ticket created:', ticket.id);
       return ticket;
     } catch (error) {
-      console.error('❌ Failed to create ticket:', error);
+      logError(error, { operation: 'createTicket', ticketId: ticketData.id });
       throw error;
     }
   }
@@ -267,10 +269,11 @@ class TicketManager {
   }
 }
 
-// Global instance for easy access
-window.ticketManager = new TicketManager();
+// Global instance for easy access (browser only)
+if (typeof window !== 'undefined') {
+  window.ticketManager = new TicketManager();
+}
 
 // Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = TicketManager;
-}
+export { TicketManager };
+export default TicketManager;
