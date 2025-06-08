@@ -525,25 +525,28 @@ export class Player {
       // First shot is always immediate for responsive feel
       if (!this.firstShotFired) {
         this.firstShotFired = true;
+        console.log('🎯 FIRST SHOT - firing immediately');
         return this.fireBullet();
       }
 
-      // Subsequent shots follow quarter-beat timing for musical flow
+      // TEMPORARY FIX: Allow continuous shooting for debugging
+      // TODO: Re-enable quarter-beat timing after fixing collision detection
       if (window.beatClock) {
-        // Check for quarter-beat timing (4x faster than full beats)
-        if (window.beatClock.canPlayerShootQuarterBeat()) {
+        // For now, allow shooting every few frames instead of strict quarter-beat timing
+        const elapsed = Date.now() - (this.lastShotTime || 0);
+        if (elapsed > 100) { // 100ms = ~6 frames at 60fps
+          this.lastShotTime = Date.now();
+          console.log('🎯 CONTINUOUS SHOT - firing with relaxed timing');
           return this.fireBullet();
-        } else if (!this.queuedShot) {
-          // Queue shot for next quarter-beat if not already queued
-          const timeToNext = window.beatClock.getTimeToNextQuarterBeat();
-          this.queueShot(timeToNext);
-          return null;
         }
+        return null;
       } else {
         // No beat clock available, fire with normal cooldown (fallback)
+        console.log('🎯 FALLBACK SHOT - no beat clock');
         return this.fireBullet();
       }
     }
+    console.log('🎯 SHOT BLOCKED - cooldown active:', this.shootCooldownMs);
     return null;
   }
 
@@ -553,8 +556,10 @@ export class Player {
 
     // Calculate bullet spawn position
     const bulletDistance = this.size * 0.8;
-    const bulletX = this.x + this.p.cos(this.aimAngle) * bulletDistance;
-    const bulletY = this.y + this.p.sin(this.aimAngle) * bulletDistance;
+    const bulletX = this.x + cos(this.aimAngle) * bulletDistance;
+    const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
+
+    console.log(`🔫 Player firing bullet: aim=${(this.aimAngle * 180 / Math.PI).toFixed(1)}° pos=(${bulletX.toFixed(1)}, ${bulletY.toFixed(1)})`);
 
     return new Bullet(bulletX, bulletY, this.aimAngle, 8, 'player');
   }
@@ -590,8 +595,8 @@ export class Player {
     // If no movement keys, dash away from mouse (emergency escape)
     if (dashDirX === 0 && dashDirY === 0) {
       const mouseAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
-      dashDirX = -this.p.cos(mouseAngle); // Opposite direction from mouse
-      dashDirY = -this.p.sin(mouseAngle);
+      dashDirX = -cos(mouseAngle); // Opposite direction from mouse
+      dashDirY = -sin(mouseAngle);
     }
 
     // Normalize diagonal dashes

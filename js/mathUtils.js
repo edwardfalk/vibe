@@ -14,6 +14,17 @@ export const PI = Math.PI;
 export const TWO_PI = Math.PI * 2;
 
 /**
+ * Linear interpolation between two values
+ * @param {number} start - Starting value
+ * @param {number} stop - Ending value  
+ * @param {number} amt - Amount to interpolate (0.0 to 1.0)
+ * @returns {number}
+ */
+export function lerp(start, stop, amt) {
+  return start + (stop - start) * amt;
+}
+
+/**
  * Calculate distance between two points
  * @param {number} x1
  * @param {number} y1

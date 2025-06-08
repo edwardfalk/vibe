@@ -186,14 +186,16 @@ function setup(p) {
   explosionManager = new ExplosionManager();
   window.explosionManager = explosionManager;
 
-  // Disable visual effects for stability
-  effectsManager = null;
+  // Initialize effects systems
+  effectsManager = new EffectsManager();
+  window.effectsManager = effectsManager;
+  
   if (!window.visualEffectsManager) {
     window.visualEffectsManager = new VisualEffectsManager(
       window.backgroundLayers
     );
   }
-      console.log('🎮 Visual effects disabled - using stable rendering');
+  console.log('✨ Visual effects enabled - full rendering active');
     
     // Initialize unified audio system
     if (!window.audio) {
@@ -617,6 +619,16 @@ function updateGame(p) {
     }
   }
 
+  // Update effects manager
+  if (effectsManager) {
+    effectsManager.update();
+  }
+
+  // Update visual effects manager
+  if (window.visualEffectsManager) {
+    window.visualEffectsManager.updateParticles();
+  }
+
   // Update audio system
   if (window.audio) {
     window.audio.update();
@@ -662,6 +674,16 @@ function drawGame(p) {
     explosionManager.draw(p);
   }
 
+  // Draw effects particles (world space - with camera transform)
+  if (effectsManager) {
+    effectsManager.drawParticles(p);
+  }
+
+  // Draw visual effects particles (world space - with camera transform)
+  if (window.visualEffectsManager) {
+    window.visualEffectsManager.drawParticles(p);
+  }
+
   // Draw speech bubbles/text (world space - with camera transform)
   if (window.audio) {
     window.audio.drawTexts(p);
@@ -670,6 +692,15 @@ function drawGame(p) {
   // Remove camera transform
   if (window.cameraSystem) {
     window.cameraSystem.removeTransform();
+  }
+
+  // Draw screen effects (after camera transform removed)
+  if (effectsManager) {
+    effectsManager.drawScreenEffects(p);
+  }
+
+  if (window.visualEffectsManager) {
+    window.visualEffectsManager.applyScreenEffects(p);
   }
 }
 

@@ -15,6 +15,8 @@ import {
   cos,
   atan2,
   sqrt,
+  lerp,
+  TWO_PI,
 } from './mathUtils.js';
 
 class EffectsManager {
@@ -233,7 +235,7 @@ class Particle {
     // Draw as a small polygon for more interesting shapes
     p.beginShape();
     for (let i = 0; i < 6; i++) {
-      const angle = (i / 6) * p.TWO_PI;
+      const angle = (i / 6) * TWO_PI;
       const radius = i % 2 === 0 ? this.size : this.size * 0.6;
       const x = p.cos(angle) * radius;
       const y = p.sin(angle) * radius;
