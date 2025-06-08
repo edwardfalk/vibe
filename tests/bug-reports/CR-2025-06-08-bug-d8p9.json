@@ -1,0 +1,23 @@
+{
+  "id": "CR-2025-06-08-bug-d8p9",
+  "type": "bug",
+  "title": "Bug Fix: '·:·⏎··························probe.status·===·'e...",
+  "description": "## CodeRabbit Suggestion\n\n**Category:** bug\n**Priority:** high\n**Source PR:** #15 - Enhance visual effects management by initializing `EffectsManager` in `GameLoop.js`, updating particle effects rendering, and integrating linear interpolation function `lerp` in `mathUtils.js`. This improves visual fidelity and performance during gameplay. Additionally, refactor player shooting logic in `player.js` for better debugging and responsiveness.\n\n### Suggestion Details\n'·:·⏎··························probe.status·===·'error'·?·'💥'·:·'❌';⏎········...\n\n### Implementation Notes\n- Review the original CodeRabbit suggestion in PR #15\n- Implement the suggested changes following project coding standards\n- Test thoroughly before creating a pull request\n- Update this ticket status when work begins and completes\n\n### Acceptance Criteria\n- [ ] Review original CodeRabbit suggestion\n- [ ] Implement suggested changes\n- [ ] Add appropriate tests\n- [ ] Update documentation if needed\n- [ ] Create pull request with changes\n- [ ] Verify CodeRabbit approval in new PR\n\n---\n*This ticket was automatically generated from CodeRabbit review suggestions.*",
+  "tags": [
+    "coderabbit",
+    "bug",
+    "auto-generated"
+  ],
+  "status": "open",
+  "priority": "high",
+  "source": "coderabbit",
+  "pullRequest": "#15",
+  "coderabbitSuggestion": "'·:·⏎··························probe.status·===·'error'·?·'💥'·:·'❌';⏎········...",
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-08T23:05:48.158Z",
+  "updatedAt": "2025-06-08T23:05:48.158Z",
+  "timestamp": "2025-06-08T23:05:48.158Z",
+  "history": [],
+  "verification": []
+}
