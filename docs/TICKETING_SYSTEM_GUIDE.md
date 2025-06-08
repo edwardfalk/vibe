@@ -12,6 +12,7 @@
 ## 1. Overview
 
 The ticketing system is a core, modular subsystem for tracking bugs, features, enhancements, and tasks. It is designed for:
+
 - **Automation:** Integrates with probe-driven Playwright tests and bug-report watcher scripts.
 - **Metadata-rich tickets:** All tickets are structured JSON files with essential metadata.
 - **Artifact management:** Screenshots, logs, and follow-ups are grouped per ticket.
@@ -45,6 +46,7 @@ The ticketing system is a core, modular subsystem for tracking bugs, features, e
 ## 3. Ticket Format (JSON Schema)
 
 Each ticket must include:
+
 - `id` (unique, short)
 - `type` (`bug`, `feature`, `enhancement`, `task`)
 - `title` (concise, human-readable)
@@ -56,6 +58,7 @@ Each ticket must include:
 - `createdAt`, `updatedAt` (ISO timestamps)
 
 **Example:**
+
 ```json
 {
   "id": "BR-2024-06-01-modal-bug-001",
@@ -63,9 +66,7 @@ Each ticket must include:
   "title": "Bug report modal does not close after submission",
   "status": "open",
   "tags": ["UI", "modal", "accessibility"],
-  "history": [
-    { "status": "open", "timestamp": "2024-06-01T12:00:00Z" }
-  ],
+  "history": [{ "status": "open", "timestamp": "2024-06-01T12:00:00Z" }],
   "artifacts": [
     "2024-06-01T12-00-00_BR-2024-06-01-modal-bug-001_screenshot.png"
   ],
@@ -89,6 +90,7 @@ Each ticket must include:
   - **Automation:** Automated scripts and Playwright probes must use the API when possible. If not, log a warning and save the ticket as a JSON file for later reconciliation.
 
 **Example (JS):**
+
 ```js
 import { createTicket } from './js/ticketManager.js';
 
@@ -163,4 +165,4 @@ createTicket(ticket);
 
 ---
 
-*Last updated: 2024-06-01*
+_Last updated: 2024-06-01_

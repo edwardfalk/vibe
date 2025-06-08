@@ -14,11 +14,7 @@
       "createdAt": "2025-06-05T17:44:15.554Z",
       "updatedAt": "2025-06-05T18:11:29.268Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "bug"
-      ],
+      "tags": ["coderabbit", "automated", "bug"],
       "history": [
         {
           "action": "created",
@@ -44,7 +40,7 @@
     "CR-1749145455566-a3aewyk6t": {
       "id": "CR-1749145455566-a3aewyk6t",
       "title": "Fix style issue in PR #2",
-      "description": "## CodeRabbit Suggestion\n\n**Category:** style\n**Priority:** high\n**Pull Request:** #2\n\n**File:** .github/workflows/coderabbit-review.yml\n**Line:** 79\n\n**Suggestion:**\n_🛠️ Refactor suggestion_\n\n**Avoid re-running tests when composing the summary**\n\n`npm run test:automated` is executed earlier; running it again inside markdown generation doubles CI time and can hide flakiness.\n\nCapture the previous exit code instead:\n\n```diff\n- echo \"- Automated tests: $(if npm run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+ echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n```\n\n(Declare an explicit `id: tests` on the earlier step to expose its outcome.)\n\n\n\n<!-- suggestion_start -->\n\n<details>\n<summary>📝 Committable suggestion</summary>\n\n> ‼️ **IMPORTANT**\n> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.\n\n```suggestion\n          # Add any linting results\n          echo \"## Code Quality Checks\" >> test-reports/test-summary.md\n-         echo \"- Automated tests: $(if npm run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+         echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n          echo \"- File structure: ✅ Modular architecture maintained\" >> test-reports/test-summary.md\n          echo \"- Dependencies: ✅ No critical vulnerabilities detected\" >> test-reports/test-summary.md\n```\n\n</details>\n\n<!-- suggestion_end -->\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nIn .github/workflows/coderabbit-review.yml around lines 75 to 79, the script\nreruns `npm run test:automated` during the markdown summary generation, which\ndoubles CI time and can mask flaky tests. To fix this, modify the earlier test\nstep to include an explicit `id: tests` and capture its exit code or result.\nThen, in the summary step, reference this stored outcome instead of rerunning\nthe test command, using the saved exit code or status to conditionally display\npass/fail in the markdown.\n```\n\n</details>\n\n<!-- This is an auto-generated comment by CodeRabbit -->\n\n**Review Link:** https://github.com/edwardfalk/vibe/pull/2#pullrequestreview-2901053040\n**PR Link:** https://github.com/edwardfalk/vibe/pull/2\n\n## Action Required\nThis issue was automatically identified by CodeRabbit and requires immediate attention due to its high priority.\n\n## Testing Notes\n- [ ] Verify the issue exists\n- [ ] Implement the suggested fix\n- [ ] Run relevant tests\n- [ ] Update documentation if needed\n",
+      "description": "## CodeRabbit Suggestion\n\n**Category:** style\n**Priority:** high\n**Pull Request:** #2\n\n**File:** .github/workflows/coderabbit-review.yml\n**Line:** 79\n\n**Suggestion:**\n_🛠️ Refactor suggestion_\n\n**Avoid re-running tests when composing the summary**\n\n`bun run test:automated` is executed earlier; running it again inside markdown generation doubles CI time and can hide flakiness.\n\nCapture the previous exit code instead:\n\n```diff\n- echo \"- Automated tests: $(if bun run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+ echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n```\n\n(Declare an explicit `id: tests` on the earlier step to expose its outcome.)\n\n\n\n<!-- suggestion_start -->\n\n<details>\n<summary>📝 Committable suggestion</summary>\n\n> ‼️ **IMPORTANT**\n> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.\n\n```suggestion\n          # Add any linting results\n          echo \"## Code Quality Checks\" >> test-reports/test-summary.md\n-         echo \"- Automated tests: $(if bun run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+         echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n          echo \"- File structure: ✅ Modular architecture maintained\" >> test-reports/test-summary.md\n          echo \"- Dependencies: ✅ No critical vulnerabilities detected\" >> test-reports/test-summary.md\n```\n\n</details>\n\n<!-- suggestion_end -->\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nIn .github/workflows/coderabbit-review.yml around lines 75 to 79, the script\nreruns `bun run test:automated` during the markdown summary generation, which\ndoubles CI time and can mask flaky tests. To fix this, modify the earlier test\nstep to include an explicit `id: tests` and capture its exit code or result.\nThen, in the summary step, reference this stored outcome instead of rerunning\nthe test command, using the saved exit code or status to conditionally display\npass/fail in the markdown.\n```\n\n</details>\n\n<!-- This is an auto-generated comment by CodeRabbit -->\n\n**Review Link:** https://github.com/edwardfalk/vibe/pull/2#pullrequestreview-2901053040\n**PR Link:** https://github.com/edwardfalk/vibe/pull/2\n\n## Action Required\nThis issue was automatically identified by CodeRabbit and requires immediate attention due to its high priority.\n\n## Testing Notes\n- [ ] Verify the issue exists\n- [ ] Implement the suggested fix\n- [ ] Run relevant tests\n- [ ] Update documentation if needed\n",
       "priority": "high",
       "category": "style",
       "pullRequest": 2,
@@ -55,11 +51,7 @@
       "createdAt": "2025-06-05T17:44:15.566Z",
       "updatedAt": "2025-06-05T17:44:42.517Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "style"
-      ],
+      "tags": ["coderabbit", "automated", "style"],
       "history": [
         {
           "action": "created",
@@ -89,11 +81,7 @@
       "createdAt": "2025-06-05T17:44:15.569Z",
       "updatedAt": "2025-06-05T17:57:06.798Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "security"
-      ],
+      "tags": ["coderabbit", "automated", "security"],
       "history": [
         {
           "action": "created",
@@ -128,11 +116,7 @@
       "createdAt": "2025-06-05T17:44:15.574Z",
       "updatedAt": "2025-06-05T17:59:10.563Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "general"
-      ],
+      "tags": ["coderabbit", "automated", "general"],
       "history": [
         {
           "action": "created",
@@ -162,11 +146,7 @@
       "createdAt": "2025-06-05T17:44:15.581Z",
       "updatedAt": "2025-06-05T17:58:15.680Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "documentation"
-      ],
+      "tags": ["coderabbit", "automated", "documentation"],
       "history": [
         {
           "action": "created",
@@ -196,11 +176,7 @@
       "createdAt": "2025-06-05T17:44:15.584Z",
       "updatedAt": "2025-06-05T17:57:39.143Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "performance"
-      ],
+      "tags": ["coderabbit", "automated", "performance"],
       "history": [
         {
           "action": "created",
@@ -228,11 +204,7 @@
       "createdAt": "2025-06-05T18:17:56.657Z",
       "updatedAt": "2025-06-05T18:17:56.661Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "bug"
-      ],
+      "tags": ["coderabbit", "automated", "bug"],
       "history": [
         {
           "action": "created",
@@ -244,7 +216,7 @@
     "CR-1749147476663-fehti4r25": {
       "id": "CR-1749147476663-fehti4r25",
       "title": "Fix style issue in PR #2",
-      "description": "## CodeRabbit Suggestion\n\n**Category:** style\n**Priority:** high\n**Pull Request:** #2\n\n**File:** .github/workflows/coderabbit-review.yml\n**Line:** 79\n\n**Suggestion:**\n_🛠️ Refactor suggestion_\n\n**Avoid re-running tests when composing the summary**\n\n`npm run test:automated` is executed earlier; running it again inside markdown generation doubles CI time and can hide flakiness.\n\nCapture the previous exit code instead:\n\n```diff\n- echo \"- Automated tests: $(if npm run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+ echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n```\n\n(Declare an explicit `id: tests` on the earlier step to expose its outcome.)\n\n\n\n<!-- suggestion_start -->\n\n<details>\n<summary>📝 Committable suggestion</summary>\n\n> ‼️ **IMPORTANT**\n> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.\n\n```suggestion\n          # Add any linting results\n          echo \"## Code Quality Checks\" >> test-reports/test-summary.md\n-         echo \"- Automated tests: $(if npm run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+         echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n          echo \"- File structure: ✅ Modular architecture maintained\" >> test-reports/test-summary.md\n          echo \"- Dependencies: ✅ No critical vulnerabilities detected\" >> test-reports/test-summary.md\n```\n\n</details>\n\n<!-- suggestion_end -->\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nIn .github/workflows/coderabbit-review.yml around lines 75 to 79, the script\nreruns `npm run test:automated` during the markdown summary generation, which\ndoubles CI time and can mask flaky tests. To fix this, modify the earlier test\nstep to include an explicit `id: tests` and capture its exit code or result.\nThen, in the summary step, reference this stored outcome instead of rerunning\nthe test command, using the saved exit code or status to conditionally display\npass/fail in the markdown.\n```\n\n</details>\n\n<!-- This is an auto-generated comment by CodeRabbit -->\n\n**Review Link:** https://github.com/edwardfalk/vibe/pull/2#pullrequestreview-2901053040\n**PR Link:** https://github.com/edwardfalk/vibe/pull/2\n\n## Action Required\nThis issue was automatically identified by CodeRabbit and requires immediate attention due to its high priority.\n\n## Testing Notes\n- [ ] Verify the issue exists\n- [ ] Implement the suggested fix\n- [ ] Run relevant tests\n- [ ] Update documentation if needed\n",
+      "description": "## CodeRabbit Suggestion\n\n**Category:** style\n**Priority:** high\n**Pull Request:** #2\n\n**File:** .github/workflows/coderabbit-review.yml\n**Line:** 79\n\n**Suggestion:**\n_🛠️ Refactor suggestion_\n\n**Avoid re-running tests when composing the summary**\n\n`bun run test:automated` is executed earlier; running it again inside markdown generation doubles CI time and can hide flakiness.\n\nCapture the previous exit code instead:\n\n```diff\n- echo \"- Automated tests: $(if bun run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+ echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n```\n\n(Declare an explicit `id: tests` on the earlier step to expose its outcome.)\n\n\n\n<!-- suggestion_start -->\n\n<details>\n<summary>📝 Committable suggestion</summary>\n\n> ‼️ **IMPORTANT**\n> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.\n\n```suggestion\n          # Add any linting results\n          echo \"## Code Quality Checks\" >> test-reports/test-summary.md\n-         echo \"- Automated tests: $(if bun run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+         echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n          echo \"- File structure: ✅ Modular architecture maintained\" >> test-reports/test-summary.md\n          echo \"- Dependencies: ✅ No critical vulnerabilities detected\" >> test-reports/test-summary.md\n```\n\n</details>\n\n<!-- suggestion_end -->\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nIn .github/workflows/coderabbit-review.yml around lines 75 to 79, the script\nreruns `bun run test:automated` during the markdown summary generation, which\ndoubles CI time and can mask flaky tests. To fix this, modify the earlier test\nstep to include an explicit `id: tests` and capture its exit code or result.\nThen, in the summary step, reference this stored outcome instead of rerunning\nthe test command, using the saved exit code or status to conditionally display\npass/fail in the markdown.\n```\n\n</details>\n\n<!-- This is an auto-generated comment by CodeRabbit -->\n\n**Review Link:** https://github.com/edwardfalk/vibe/pull/2#pullrequestreview-2901053040\n**PR Link:** https://github.com/edwardfalk/vibe/pull/2\n\n## Action Required\nThis issue was automatically identified by CodeRabbit and requires immediate attention due to its high priority.\n\n## Testing Notes\n- [ ] Verify the issue exists\n- [ ] Implement the suggested fix\n- [ ] Run relevant tests\n- [ ] Update documentation if needed\n",
       "priority": "high",
       "category": "style",
       "pullRequest": 2,
@@ -255,11 +227,7 @@
       "createdAt": "2025-06-05T18:17:56.663Z",
       "updatedAt": "2025-06-05T18:21:42.317Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "style"
-      ],
+      "tags": ["coderabbit", "automated", "style"],
       "history": [
         {
           "action": "created",
@@ -289,11 +257,7 @@
       "createdAt": "2025-06-05T18:17:56.668Z",
       "updatedAt": "2025-06-05T18:19:53.923Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "security"
-      ],
+      "tags": ["coderabbit", "automated", "security"],
       "history": [
         {
           "action": "created",
@@ -321,11 +285,7 @@
       "createdAt": "2025-06-05T18:17:56.673Z",
       "updatedAt": "2025-06-05T18:17:56.675Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "general"
-      ],
+      "tags": ["coderabbit", "automated", "general"],
       "history": [
         {
           "action": "created",
@@ -348,11 +308,7 @@
       "createdAt": "2025-06-05T18:17:56.678Z",
       "updatedAt": "2025-06-05T18:17:56.680Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "documentation"
-      ],
+      "tags": ["coderabbit", "automated", "documentation"],
       "history": [
         {
           "action": "created",
@@ -375,11 +331,7 @@
       "createdAt": "2025-06-05T18:17:56.682Z",
       "updatedAt": "2025-06-05T18:17:56.684Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "performance"
-      ],
+      "tags": ["coderabbit", "automated", "performance"],
       "history": [
         {
           "action": "created",
@@ -400,11 +352,7 @@
       "createdAt": "2025-06-05T18:18:51.589Z",
       "updatedAt": "2025-06-05T18:18:51.593Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "bug"
-      ],
+      "tags": ["coderabbit", "automated", "bug"],
       "history": [
         {
           "action": "created",
@@ -416,7 +364,7 @@
     "CR-1749147531598-4265nrc0j": {
       "id": "CR-1749147531598-4265nrc0j",
       "title": "Fix style issue in PR #2",
-      "description": "## CodeRabbit Suggestion\n\n**Category:** style\n**Priority:** high\n**Pull Request:** #2\n\n**File:** .github/workflows/coderabbit-review.yml\n**Line:** 79\n\n**Suggestion:**\n_🛠️ Refactor suggestion_\n\n**Avoid re-running tests when composing the summary**\n\n`npm run test:automated` is executed earlier; running it again inside markdown generation doubles CI time and can hide flakiness.\n\nCapture the previous exit code instead:\n\n```diff\n- echo \"- Automated tests: $(if npm run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+ echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n```\n\n(Declare an explicit `id: tests` on the earlier step to expose its outcome.)\n\n\n\n<!-- suggestion_start -->\n\n<details>\n<summary>📝 Committable suggestion</summary>\n\n> ‼️ **IMPORTANT**\n> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.\n\n```suggestion\n          # Add any linting results\n          echo \"## Code Quality Checks\" >> test-reports/test-summary.md\n-         echo \"- Automated tests: $(if npm run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+         echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n          echo \"- File structure: ✅ Modular architecture maintained\" >> test-reports/test-summary.md\n          echo \"- Dependencies: ✅ No critical vulnerabilities detected\" >> test-reports/test-summary.md\n```\n\n</details>\n\n<!-- suggestion_end -->\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nIn .github/workflows/coderabbit-review.yml around lines 75 to 79, the script\nreruns `npm run test:automated` during the markdown summary generation, which\ndoubles CI time and can mask flaky tests. To fix this, modify the earlier test\nstep to include an explicit `id: tests` and capture its exit code or result.\nThen, in the summary step, reference this stored outcome instead of rerunning\nthe test command, using the saved exit code or status to conditionally display\npass/fail in the markdown.\n```\n\n</details>\n\n<!-- This is an auto-generated comment by CodeRabbit -->\n\n**Review Link:** https://github.com/edwardfalk/vibe/pull/2#pullrequestreview-2901053040\n**PR Link:** https://github.com/edwardfalk/vibe/pull/2\n\n## Action Required\nThis issue was automatically identified by CodeRabbit and requires immediate attention due to its high priority.\n\n## Testing Notes\n- [ ] Verify the issue exists\n- [ ] Implement the suggested fix\n- [ ] Run relevant tests\n- [ ] Update documentation if needed\n",
+      "description": "## CodeRabbit Suggestion\n\n**Category:** style\n**Priority:** high\n**Pull Request:** #2\n\n**File:** .github/workflows/coderabbit-review.yml\n**Line:** 79\n\n**Suggestion:**\n_🛠️ Refactor suggestion_\n\n**Avoid re-running tests when composing the summary**\n\n`bun run test:automated` is executed earlier; running it again inside markdown generation doubles CI time and can hide flakiness.\n\nCapture the previous exit code instead:\n\n```diff\n- echo \"- Automated tests: $(if npm run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+ echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n```\n\n(Declare an explicit `id: tests` on the earlier step to expose its outcome.)\n\n\n\n<!-- suggestion_start -->\n\n<details>\n<summary>📝 Committable suggestion</summary>\n\n> ‼️ **IMPORTANT**\n> Carefully review the code before committing. Ensure that it accurately replaces the highlighted code, contains no missing lines, and has no issues with indentation. Thoroughly test & benchmark the code to ensure it meets the requirements.\n\n```suggestion\n          # Add any linting results\n          echo \"## Code Quality Checks\" >> test-reports/test-summary.md\n-         echo \"- Automated tests: $(if npm run test:automated > /dev/null 2>&1; then echo \"✅ Passed\"; else echo \"❌ Failed\"; fi)\" >> test-reports/test-summary.md\n+         echo \"- Automated tests: $([[ ${{ steps.tests.outcome }} == success ]] && echo '✅ Passed' || echo '❌ Failed')\" >> test-reports/test-summary.md\n          echo \"- File structure: ✅ Modular architecture maintained\" >> test-reports/test-summary.md\n          echo \"- Dependencies: ✅ No critical vulnerabilities detected\" >> test-reports/test-summary.md\n```\n\n</details>\n\n<!-- suggestion_end -->\n\n<details>\n<summary>🤖 Prompt for AI Agents</summary>\n\n```\nIn .github/workflows/coderabbit-review.yml around lines 75 to 79, the script\nreruns `npm run test:automated` during the markdown summary generation, which\ndoubles CI time and can mask flaky tests. To fix this, modify the earlier test\nstep to include an explicit `id: tests` and capture its exit code or result.\nThen, in the summary step, reference this stored outcome instead of rerunning\nthe test command, using the saved exit code or status to conditionally display\npass/fail in the markdown.\n```\n\n</details>\n\n<!-- This is an auto-generated comment by CodeRabbit -->\n\n**Review Link:** https://github.com/edwardfalk/vibe/pull/2#pullrequestreview-2901053040\n**PR Link:** https://github.com/edwardfalk/vibe/pull/2\n\n## Action Required\nThis issue was automatically identified by CodeRabbit and requires immediate attention due to its high priority.\n\n## Testing Notes\n- [ ] Verify the issue exists\n- [ ] Implement the suggested fix\n- [ ] Run relevant tests\n- [ ] Update documentation if needed\n",
       "priority": "high",
       "category": "style",
       "pullRequest": 2,
@@ -427,11 +375,7 @@
       "createdAt": "2025-06-05T18:18:51.598Z",
       "updatedAt": "2025-06-05T18:21:48.976Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "style"
-      ],
+      "tags": ["coderabbit", "automated", "style"],
       "history": [
         {
           "action": "created",
@@ -459,11 +403,7 @@
       "createdAt": "2025-06-05T18:18:51.604Z",
       "updatedAt": "2025-06-05T18:18:51.607Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "general"
-      ],
+      "tags": ["coderabbit", "automated", "general"],
       "history": [
         {
           "action": "created",
@@ -484,11 +424,7 @@
       "createdAt": "2025-06-05T18:18:51.609Z",
       "updatedAt": "2025-06-05T18:18:51.612Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "documentation"
-      ],
+      "tags": ["coderabbit", "automated", "documentation"],
       "history": [
         {
           "action": "created",
@@ -509,11 +445,7 @@
       "createdAt": "2025-06-05T18:18:51.615Z",
       "updatedAt": "2025-06-05T18:18:51.618Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "testing"
-      ],
+      "tags": ["coderabbit", "automated", "testing"],
       "history": [
         {
           "action": "created",
@@ -534,11 +466,7 @@
       "createdAt": "2025-06-05T18:18:51.620Z",
       "updatedAt": "2025-06-05T18:18:51.623Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "bug"
-      ],
+      "tags": ["coderabbit", "automated", "bug"],
       "history": [
         {
           "action": "created",
@@ -559,11 +487,7 @@
       "createdAt": "2025-06-05T18:18:51.629Z",
       "updatedAt": "2025-06-05T18:18:51.632Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "style"
-      ],
+      "tags": ["coderabbit", "automated", "style"],
       "history": [
         {
           "action": "created",
@@ -584,11 +508,7 @@
       "createdAt": "2025-06-05T18:18:51.635Z",
       "updatedAt": "2025-06-05T18:18:51.638Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "performance"
-      ],
+      "tags": ["coderabbit", "automated", "performance"],
       "history": [
         {
           "action": "created",
@@ -611,11 +531,7 @@
       "createdAt": "2025-06-05T18:18:51.641Z",
       "updatedAt": "2025-06-05T18:20:00.608Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "security"
-      ],
+      "tags": ["coderabbit", "automated", "security"],
       "history": [
         {
           "action": "created",
@@ -643,11 +559,7 @@
       "createdAt": "2025-06-05T18:18:51.649Z",
       "updatedAt": "2025-06-05T18:18:51.652Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "general"
-      ],
+      "tags": ["coderabbit", "automated", "general"],
       "history": [
         {
           "action": "created",
@@ -668,11 +580,7 @@
       "createdAt": "2025-06-05T18:18:51.655Z",
       "updatedAt": "2025-06-05T18:18:51.657Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "bug"
-      ],
+      "tags": ["coderabbit", "automated", "bug"],
       "history": [
         {
           "action": "created",
@@ -693,11 +601,7 @@
       "createdAt": "2025-06-05T18:18:51.661Z",
       "updatedAt": "2025-06-05T18:18:51.664Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "testing"
-      ],
+      "tags": ["coderabbit", "automated", "testing"],
       "history": [
         {
           "action": "created",
@@ -718,11 +622,7 @@
       "createdAt": "2025-06-05T18:18:51.667Z",
       "updatedAt": "2025-06-05T18:18:51.669Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "general"
-      ],
+      "tags": ["coderabbit", "automated", "general"],
       "history": [
         {
           "action": "created",
@@ -745,11 +645,7 @@
       "createdAt": "2025-06-05T18:18:51.671Z",
       "updatedAt": "2025-06-05T18:18:51.674Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "documentation"
-      ],
+      "tags": ["coderabbit", "automated", "documentation"],
       "history": [
         {
           "action": "created",
@@ -770,11 +666,7 @@
       "createdAt": "2025-06-05T18:18:51.678Z",
       "updatedAt": "2025-06-05T18:18:51.682Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "general"
-      ],
+      "tags": ["coderabbit", "automated", "general"],
       "history": [
         {
           "action": "created",
@@ -795,11 +687,7 @@
       "createdAt": "2025-06-05T18:18:51.685Z",
       "updatedAt": "2025-06-05T18:18:51.688Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "refactoring"
-      ],
+      "tags": ["coderabbit", "automated", "refactoring"],
       "history": [
         {
           "action": "created",
@@ -820,11 +708,7 @@
       "createdAt": "2025-06-05T18:18:51.690Z",
       "updatedAt": "2025-06-05T18:18:51.697Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "bug"
-      ],
+      "tags": ["coderabbit", "automated", "bug"],
       "history": [
         {
           "action": "created",
@@ -845,11 +729,7 @@
       "createdAt": "2025-06-05T18:18:51.706Z",
       "updatedAt": "2025-06-05T18:18:51.715Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "style"
-      ],
+      "tags": ["coderabbit", "automated", "style"],
       "history": [
         {
           "action": "created",
@@ -870,11 +750,7 @@
       "createdAt": "2025-06-05T18:18:51.718Z",
       "updatedAt": "2025-06-05T18:18:51.722Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "testing"
-      ],
+      "tags": ["coderabbit", "automated", "testing"],
       "history": [
         {
           "action": "created",
@@ -895,11 +771,7 @@
       "createdAt": "2025-06-05T18:18:51.726Z",
       "updatedAt": "2025-06-05T18:18:51.731Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "documentation"
-      ],
+      "tags": ["coderabbit", "automated", "documentation"],
       "history": [
         {
           "action": "created",
@@ -920,11 +792,7 @@
       "createdAt": "2025-06-05T18:18:51.734Z",
       "updatedAt": "2025-06-05T18:18:51.736Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "performance"
-      ],
+      "tags": ["coderabbit", "automated", "performance"],
       "history": [
         {
           "action": "created",
@@ -947,11 +815,7 @@
       "createdAt": "2025-06-05T18:18:51.739Z",
       "updatedAt": "2025-06-05T18:18:51.742Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "performance"
-      ],
+      "tags": ["coderabbit", "automated", "performance"],
       "history": [
         {
           "action": "created",
@@ -972,11 +836,7 @@
       "createdAt": "2025-06-05T18:18:51.747Z",
       "updatedAt": "2025-06-05T18:18:51.749Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "general"
-      ],
+      "tags": ["coderabbit", "automated", "general"],
       "history": [
         {
           "action": "created",
@@ -997,11 +857,7 @@
       "createdAt": "2025-06-05T18:18:51.753Z",
       "updatedAt": "2025-06-05T18:18:51.755Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "bug"
-      ],
+      "tags": ["coderabbit", "automated", "bug"],
       "history": [
         {
           "action": "created",
@@ -1022,11 +878,7 @@
       "createdAt": "2025-06-05T18:18:51.757Z",
       "updatedAt": "2025-06-05T18:18:51.762Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "performance"
-      ],
+      "tags": ["coderabbit", "automated", "performance"],
       "history": [
         {
           "action": "created",
@@ -1047,11 +899,7 @@
       "createdAt": "2025-06-05T18:18:51.766Z",
       "updatedAt": "2025-06-05T18:18:51.770Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "testing"
-      ],
+      "tags": ["coderabbit", "automated", "testing"],
       "history": [
         {
           "action": "created",
@@ -1072,11 +920,7 @@
       "createdAt": "2025-06-05T18:18:51.772Z",
       "updatedAt": "2025-06-05T18:18:51.775Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "documentation"
-      ],
+      "tags": ["coderabbit", "automated", "documentation"],
       "history": [
         {
           "action": "created",
@@ -1097,11 +941,7 @@
       "createdAt": "2025-06-05T18:18:51.779Z",
       "updatedAt": "2025-06-05T18:18:51.782Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "general"
-      ],
+      "tags": ["coderabbit", "automated", "general"],
       "history": [
         {
           "action": "created",
@@ -1122,11 +962,7 @@
       "createdAt": "2025-06-05T18:18:51.786Z",
       "updatedAt": "2025-06-05T18:18:51.788Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "testing"
-      ],
+      "tags": ["coderabbit", "automated", "testing"],
       "history": [
         {
           "action": "created",
@@ -1147,11 +983,7 @@
       "createdAt": "2025-06-05T18:18:51.792Z",
       "updatedAt": "2025-06-05T18:18:51.795Z",
       "source": "coderabbit",
-      "tags": [
-        "coderabbit",
-        "automated",
-        "bug"
-      ],
+      "tags": ["coderabbit", "automated", "bug"],
       "history": [
         {
           "action": "created",

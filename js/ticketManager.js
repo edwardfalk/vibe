@@ -10,11 +10,13 @@ export async function createTicket(ticketData) {
     const res = await fetch(API_BASE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(ticketData)
+      body: JSON.stringify(ticketData),
     });
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(`Failed to create ticket: ${res.status} ${res.statusText} - ${errorText}`);
+      throw new Error(
+        `Failed to create ticket: ${res.status} ${res.statusText} - ${errorText}`
+      );
     }
     const result = await res.json();
     console.log('✅ Ticket created successfully:', result.id);
@@ -31,11 +33,13 @@ export async function updateTicket(ticketId, updates) {
     const res = await fetch(`${API_BASE_URL}/${ticketId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates)
+      body: JSON.stringify(updates),
     });
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(`Failed to update ticket: ${res.status} ${res.statusText} - ${errorText}`);
+      throw new Error(
+        `Failed to update ticket: ${res.status} ${res.statusText} - ${errorText}`
+      );
     }
     const result = await res.json();
     console.log('✅ Ticket updated successfully:', result.id);
@@ -51,7 +55,9 @@ export async function loadTicket(ticketId) {
     const res = await fetch(`${API_BASE_URL}/${ticketId}`);
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(`Failed to load ticket: ${res.status} ${res.statusText} - ${errorText}`);
+      throw new Error(
+        `Failed to load ticket: ${res.status} ${res.statusText} - ${errorText}`
+      );
     }
     return await res.json();
   } catch (error) {
@@ -65,7 +71,9 @@ export async function listTickets() {
     const res = await fetch(API_BASE_URL);
     if (!res.ok) {
       const errorText = await res.text();
-      throw new Error(`Failed to list tickets: ${res.status} ${res.statusText} - ${errorText}`);
+      throw new Error(
+        `Failed to list tickets: ${res.status} ${res.statusText} - ${errorText}`
+      );
     }
     return await res.json();
   } catch (error) {
@@ -87,7 +95,7 @@ export async function checkApiHealth() {
 
 // --- Backend API (Node.js/Express) runs on port 3001 ---
 // POST   /api/tickets         -> create new ticket JSON file
-// PATCH  /api/tickets/:id     -> update ticket JSON file  
+// PATCH  /api/tickets/:id     -> update ticket JSON file
 // GET    /api/tickets/:id     -> get ticket JSON file
 // GET    /api/tickets         -> list all ticket JSON files
 // (Backend implemented in ticket-api.js)

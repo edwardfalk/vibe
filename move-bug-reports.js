@@ -1,6 +1,6 @@
 // move-bug-reports.js
 // Watches your Downloads folder and moves bug report files to tests/bug-reports/ (or de_bug/)
-// Usage: node move-bug-reports.js
+// Usage: bun move-bug-reports.js
 
 const fs = require('fs');
 const path = require('path');
@@ -12,18 +12,21 @@ if (!fs.existsSync(downloadsDir)) {
   fs.mkdirSync(downloadsDir, { recursive: true });
 }
 const projectBugDir = path.join(__dirname, 'tests', 'bug-reports'); // Change to 'de_bug' if you prefer
-const bugFilePattern = /^(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z_[^_]+).*\.(md|json|png)$/;
+const bugFilePattern =
+  /^(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z_[^_]+).*\.(md|json|png)$/;
 
-if (!fs.existsSync(projectBugDir)) fs.mkdirSync(projectBugDir, { recursive: true });
+if (!fs.existsSync(projectBugDir))
+  fs.mkdirSync(projectBugDir, { recursive: true });
 
 function moveBugFiles() {
-  fs.readdirSync(downloadsDir).forEach(file => {
+  fs.readdirSync(downloadsDir).forEach((file) => {
     const match = file.match(bugFilePattern);
     if (match) {
       // Use the full prefix (timestamp + desc) as the folder name
       const folderName = match[1];
       const destFolder = path.join(projectBugDir, folderName);
-      if (!fs.existsSync(destFolder)) fs.mkdirSync(destFolder, { recursive: true });
+      if (!fs.existsSync(destFolder))
+        fs.mkdirSync(destFolder, { recursive: true });
       const src = path.join(downloadsDir, file);
       const dest = path.join(destFolder, file);
       try {

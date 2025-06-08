@@ -8,9 +8,12 @@ test.describe('Gameplay Probes', () => {
     await page.waitForSelector('canvas');
     await page.evaluate(() => {
       const canvas = document.querySelector('canvas');
-      canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      canvas &&
+        canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    await page.waitForFunction(() => window.gameState && window.player && window.audio);
+    await page.waitForFunction(
+      () => window.gameState && window.player && window.audio
+    );
     const probe = await page.evaluate(async () => {
       const mod = await import('../js/ai-liveness-probe.js');
       return mod.default;
@@ -24,7 +27,8 @@ test.describe('Gameplay Probes', () => {
     await page.waitForSelector('canvas');
     await page.evaluate(() => {
       const canvas = document.querySelector('canvas');
-      canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      canvas &&
+        canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
     await page.waitForFunction(() => window.testRunner && window.player);
     const result = await page.evaluate(async () => {

@@ -1,7 +1,7 @@
 // ai-liveness-probe.js
 // Probe: Liveness and Entity Presence with Automated Bug Reporting
 
-(async function() {
+(async function () {
   const { random } = await import('./mathUtils.js');
   // Import ticketManager API if available (assume browser context with ES modules)
   let ticketManager = null;
@@ -15,7 +15,9 @@
     frameCount: typeof frameCount !== 'undefined' ? frameCount : null,
     gameState: window.gameState ? window.gameState.gameState : null,
     playerAlive: !!window.player && !window.player.markedForRemoval,
-    enemyCount: Array.isArray(window.enemies) ? window.enemies.filter(e => !e.markedForRemoval).length : 0,
+    enemyCount: Array.isArray(window.enemies)
+      ? window.enemies.filter((e) => !e.markedForRemoval).length
+      : 0,
     timestamp: Date.now(),
     failure: null,
   };
@@ -40,7 +42,9 @@
     let screenshotData = null;
     if (window.mcp && window.mcp.screenshot) {
       // If MCP API is available, capture screenshot and get base64
-      screenshotData = await window.mcp.screenshot('failure-' + result.failure.replace(/\s+/g, '-'));
+      screenshotData = await window.mcp.screenshot(
+        'failure-' + result.failure.replace(/\s+/g, '-')
+      );
     } else if (document.querySelector('canvas')) {
       // Fallback: capture canvas as base64
       screenshotData = document.querySelector('canvas').toDataURL('image/png');
@@ -64,13 +68,13 @@
               type: 'probe_failure',
               description: result.failure,
               at: new Date().toISOString(),
-            }
+            },
           ],
           verification: [],
           relatedTickets: [],
         };
         await ticketManager.createTicket(ticketData);
-        console.log('Automated bug ticket created for probe failure.');
+        console.log('🎫 Automated bug ticket created for probe failure.');
       } catch (err) {
         console.error('Failed to create automated bug ticket:', err);
       }
