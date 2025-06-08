@@ -12,7 +12,7 @@ app.use(express.json());
 app.get('/api/tickets', (req, res) => {
   fs.readdir(TICKETS_DIR, (err, files) => {
     if (err) return res.status(500).json({ error: err.message });
-    const tickets = files.filter(f => f.endsWith('.json'));
+    const tickets = files.filter((f) => f.endsWith('.json'));
     res.json(tickets);
   });
 });
@@ -20,7 +20,8 @@ app.get('/api/tickets', (req, res) => {
 // Get a ticket by ID (filename)
 app.get('/api/tickets/:id', (req, res) => {
   const file = path.join(TICKETS_DIR, req.params.id);
-  if (!file.endsWith('.json')) return res.status(400).json({ error: 'Invalid ticket id' });
+  if (!file.endsWith('.json'))
+    return res.status(400).json({ error: 'Invalid ticket id' });
   fs.readFile(file, 'utf8', (err, data) => {
     if (err) return res.status(404).json({ error: 'Ticket not found' });
     res.json(JSON.parse(data));
@@ -31,9 +32,11 @@ app.get('/api/tickets/:id', (req, res) => {
 function ensureTicketMetadata(ticket, isNew = false) {
   if (!ticket.id) throw new Error('Missing ticket id');
   if (!ticket.title) throw new Error('Missing ticket title');
-  if (!ticket.type) throw new Error('Missing ticket type (bug, enhancement, feature, task)');
+  if (!ticket.type)
+    throw new Error('Missing ticket type (bug, enhancement, feature, task)');
   const allowedTypes = ['bug', 'enhancement', 'feature', 'task'];
-  if (!allowedTypes.includes(ticket.type)) throw new Error('Invalid ticket type');
+  if (!allowedTypes.includes(ticket.type))
+    throw new Error('Invalid ticket type');
   // Initialize required fields if missing
   if (isNew && !ticket.status) ticket.status = 'Open';
   if (!Array.isArray(ticket.history)) ticket.history = [];
@@ -52,7 +55,7 @@ app.post('/api/tickets', (req, res) => {
     return res.status(400).json({ error: err.message });
   }
   const file = path.join(TICKETS_DIR, ticket.id + '.json');
-  fs.writeFile(file, JSON.stringify(ticket, null, 2), err => {
+  fs.writeFile(file, JSON.stringify(ticket, null, 2), (err) => {
     if (err) return res.status(500).json({ error: err.message });
     res.status(201).json(ticket);
   });
@@ -70,7 +73,7 @@ app.patch('/api/tickets/:id', (req, res) => {
     } catch (err2) {
       return res.status(400).json({ error: err2.message });
     }
-    fs.writeFile(file, JSON.stringify(ticket, null, 2), err2 => {
+    fs.writeFile(file, JSON.stringify(ticket, null, 2), (err2) => {
       if (err2) return res.status(500).json({ error: err2.message });
       res.json(ticket);
     });

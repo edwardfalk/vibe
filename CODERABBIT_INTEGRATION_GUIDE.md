@@ -5,6 +5,7 @@ This guide explains how to use the automated CodeRabbit review processing and te
 ## Overview
 
 The CodeRabbit integration automatically:
+
 1. **Fetches** CodeRabbit reviews from GitHub API
 2. **Analyzes** suggestions and categorizes them by priority/type
 3. **Creates** tickets for high-priority issues
@@ -37,8 +38,8 @@ Update the repository details in the scripts:
 ```javascript
 // In js/coderabbit-review-processor.js and js/coderabbit-testing-integration.js
 const processor = new CodeRabbitReviewProcessor({
-    owner: 'edwardfalk',  // Already configured
-    repo: 'vibe'          // Already configured
+  owner: 'edwardfalk', // Already configured
+  repo: 'vibe', // Already configured
 });
 ```
 
@@ -48,43 +49,43 @@ const processor = new CodeRabbitReviewProcessor({
 
 ```bash
 # Run the complete CodeRabbit workflow
-npm run coderabbit:workflow
+bun run coderabbit:workflow
 
 # Track and manage tickets
-npm run coderabbit:list      # View all tickets
-npm run coderabbit:stats     # Check statistics
+bun run coderabbit:list      # View all tickets
+bun run coderabbit:stats     # Check statistics
 ```
 
 ### Individual Commands
 
 ```bash
 # Analyze CodeRabbit reviews only
-npm run coderabbit:analyze
+bun run coderabbit:analyze
 
 # Run full integration (analysis + tickets + tests)
-npm run coderabbit:integrate
+bun run coderabbit:integrate
 
 # Ticket management commands
-npm run coderabbit:tickets                    # Show help
-npm run coderabbit:tickets list               # List all tickets
-npm run coderabbit:tickets list open          # Filter by status
-npm run coderabbit:tickets list resolved      # Show resolved tickets
-npm run coderabbit:tickets stats              # Show statistics
+bun run coderabbit:tickets                    # Show help
+bun run coderabbit:tickets list               # List all tickets
+bun run coderabbit:tickets list open          # Filter by status
+bun run coderabbit:tickets list resolved      # Show resolved tickets
+bun run coderabbit:tickets stats              # Show statistics
 
 # Update ticket status (manual commands)
-node js/coderabbit-ticket-tracker.js status CR-123-abc inProgress "Working on fix"
-node js/coderabbit-ticket-tracker.js resolve CR-123-abc "Fixed the issue"
+bun js/coderabbit-ticket-tracker.js status CR-123-abc inProgress "Working on fix"
+bun js/coderabbit-ticket-tracker.js resolve CR-123-abc "Fixed the issue"
 ```
 
 ### Manual Usage
 
 ```javascript
-// Direct usage in Node.js
+// Direct usage in Bun/Node.js
 const CodeRabbitReviewProcessor = require('./js/coderabbit-review-processor.js');
 
 const processor = new CodeRabbitReviewProcessor({
-    owner: 'edwardfalk',
-    repo: 'vibe'
+  owner: 'edwardfalk',
+  repo: 'vibe',
 });
 
 const reviews = await processor.getLatestCodeRabbitReviews(5);
@@ -111,26 +112,27 @@ Example: `CR-1749145455554-h0stuh71c`
 
 ```bash
 # View all tickets with details
-npm run coderabbit:list
+bun run coderabbit:list
 
 # Filter by status
-npm run coderabbit:list open
-npm run coderabbit:list inProgress
-npm run coderabbit:list resolved
+bun run coderabbit:list open
+bun run coderabbit:list inProgress
+bun run coderabbit:list resolved
 
 # Get summary statistics
-npm run coderabbit:stats
+bun run coderabbit:stats
 
 # Update ticket status
-node js/coderabbit-ticket-tracker.js status CR-1749145455554-h0stuh71c inProgress "Started working on this"
+bun js/coderabbit-ticket-tracker.js status CR-1749145455554-h0stuh71c inProgress "Started working on this"
 
 # Mark as resolved
-node js/coderabbit-ticket-tracker.js resolve CR-1749145455554-h0stuh71c "Fixed by updating the code"
+bun js/coderabbit-ticket-tracker.js resolve CR-1749145455554-h0stuh71c "Fixed by updating the code"
 ```
 
 ### Ticket Data Structure
 
 Each ticket contains:
+
 - **Unique ID** for tracking
 - **Title** and **description** from CodeRabbit
 - **Priority** (high/medium/low) and **category** (bug/security/performance/etc.)
@@ -180,6 +182,7 @@ Closed: 0
 ### 1. Review Fetching
 
 The system uses GitHub's REST API to:
+
 - Fetch recent pull requests
 - Get reviews for each PR
 - Filter for CodeRabbit reviews specifically
@@ -190,11 +193,13 @@ The system uses GitHub's REST API to:
 CodeRabbit suggestions are automatically categorized:
 
 **Priority Levels:**
+
 - **High**: Security, critical issues, vulnerabilities
 - **Medium**: Performance, bugs, errors
 - **Low**: Style, formatting, typos
 
 **Categories:**
+
 - `security` - Security vulnerabilities
 - `performance` - Performance optimizations
 - `bug` - Potential bugs or errors
@@ -206,6 +211,7 @@ CodeRabbit suggestions are automatically categorized:
 ### 3. Ticket Creation
 
 High-priority suggestions automatically create tickets with:
+
 - Structured descriptions
 - Links to original reviews
 - File/line references
@@ -214,6 +220,7 @@ High-priority suggestions automatically create tickets with:
 ### 4. Targeted Testing
 
 Based on suggestion categories, the system runs:
+
 - **Bug tests**: Error reproduction and handling
 - **Performance tests**: Optimization verification
 - **Security tests**: Vulnerability assessment
@@ -222,6 +229,7 @@ Based on suggestion categories, the system runs:
 ### 5. Reporting
 
 Comprehensive reports include:
+
 - Summary statistics
 - Priority/category breakdowns
 - Actionable recommendations
@@ -275,9 +283,9 @@ The integration works seamlessly with the existing ticket system:
 const ticketManager = require('./ticketManager.js');
 
 const integration = new CodeRabbitTestingIntegration({
-    owner: 'edwardfalk',
-    repo: 'vibe',
-    ticketManager: ticketManager  // Use existing ticket system
+  owner: 'edwardfalk',
+  repo: 'vibe',
+  ticketManager: ticketManager, // Use existing ticket system
 });
 ```
 
@@ -287,12 +295,12 @@ Integrate with your existing test runner:
 
 ```javascript
 const integration = new CodeRabbitTestingIntegration({
-    testRunner: {
-        runTest: async (config) => {
-            // Your custom test execution logic
-            return await yourTestFramework.run(config);
-        }
-    }
+  testRunner: {
+    runTest: async (config) => {
+      // Your custom test execution logic
+      return await yourTestFramework.run(config);
+    },
+  },
 });
 ```
 
@@ -305,7 +313,7 @@ Set up automated runs using cron or GitHub Actions:
 name: CodeRabbit Analysis
 on:
   schedule:
-    - cron: '0 9 * * *'  # Daily at 9 AM
+    - cron: '0 9 * * *' # Daily at 9 AM
   workflow_dispatch:
 
 jobs:
@@ -314,8 +322,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
-      - run: npm install
-      - run: npm run coderabbit:workflow
+      - run: bun install
+      - run: bun run coderabbit:workflow
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -325,11 +333,13 @@ jobs:
 ### Common Issues
 
 1. **No reviews found**
+
    - Ensure CodeRabbit is installed and active on your repository
    - Check that recent PRs have CodeRabbit reviews
    - Verify GitHub token has correct permissions
 
 2. **API rate limits**
+
    - GitHub API has rate limits (5000 requests/hour for authenticated users)
    - The script includes error handling for rate limits
    - Consider reducing the number of PRs analyzed if hitting limits
@@ -345,9 +355,9 @@ Enable detailed logging:
 
 ```javascript
 const processor = new CodeRabbitReviewProcessor({
-    owner: 'your-username',
-    repo: 'vibe',
-    debug: true  // Enable debug logging
+  owner: 'your-username',
+  repo: 'vibe',
+  debug: true, // Enable debug logging
 });
 ```
 
@@ -367,21 +377,25 @@ p.fetchPullRequests('open').then(console.log).catch(console.error);
 ## Best Practices
 
 ### 1. Regular Monitoring
+
 - Run the workflow daily or after each PR merge
 - Review generated tickets promptly
 - Track resolution of high-priority issues
 
 ### 2. Team Integration
+
 - Share reports with the development team
 - Use tickets for sprint planning
 - Discuss patterns in CodeRabbit feedback
 
 ### 3. Continuous Improvement
+
 - Monitor which categories appear most frequently
 - Adjust coding practices based on patterns
 - Update CodeRabbit configuration to focus on relevant issues
 
 ### 4. Security Focus
+
 - Always prioritize security-related suggestions
 - Review security test results carefully
 - Consider additional security scanning for flagged areas
@@ -396,12 +410,12 @@ Modify the categorization logic:
 // In coderabbit-review-processor.js
 categorizeIssue(content) {
     const lowercaseContent = content.toLowerCase();
-    
+
     // Add custom categories
     if (lowercaseContent.includes('your-custom-pattern')) {
         return 'custom-category';
     }
-    
+
     // ... existing logic
 }
 ```
@@ -421,7 +435,7 @@ generateTestConfig(task) {
             steps: ['Custom test steps']
         };
     }
-    
+
     // ... existing logic
 }
 ```
@@ -464,6 +478,7 @@ To improve the CodeRabbit integration:
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section above
 2. Review the console output for error details
 3. Verify GitHub API permissions and rate limits
@@ -471,4 +486,4 @@ For issues or questions:
 
 ---
 
-*This integration enhances your development workflow by automatically processing CodeRabbit feedback and converting it into actionable tasks and tests.*
+_This integration enhances your development workflow by automatically processing CodeRabbit feedback and converting it into actionable tasks and tests._

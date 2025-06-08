@@ -6,17 +6,15 @@ export default [
     ignores: ['node_modules/**'],
     languageOptions: {
       sourceType: 'module',
-      ecmaVersion: 2021
+      ecmaVersion: 2021,
     },
     plugins: {
-      prettier: prettierPlugin
+      prettier: prettierPlugin,
     },
     rules: {
       'prefer-const': 'error',
       'no-var': 'error',
-      'require-jsdoc': 'warn',
-      'valid-jsdoc': 'warn',
-      'prettier/prettier': 'error'
-    }
-  }
+      'prettier/prettier': 'error',
+    },
+  },
 ];

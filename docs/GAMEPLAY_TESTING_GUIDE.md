@@ -1,6 +1,6 @@
 # Vibe Game - Comprehensive Gameplay Testing Guide
 
-*Version: 2.0 | Updated: 2025-06-05*
+_Version: 2.0 | Updated: 2025-06-05_
 
 ## Overview
 
@@ -22,9 +22,11 @@ This guide covers advanced gameplay testing for the Vibe cosmic beat space shoot
 ## AI Liveness Probe System
 
 ### Overview
+
 The AI Liveness Probe (`js/ai-liveness-probe.js`) is an intelligent monitoring system that continuously validates game state and automatically reports issues.
 
 ### What It Tests
+
 ```javascript
 // Core liveness checks
 ✅ Frame count progression (game loop running)
@@ -35,6 +37,7 @@ The AI Liveness Probe (`js/ai-liveness-probe.js`) is an intelligent monitoring s
 ```
 
 ### Automated Features
+
 - **Real-time monitoring**: Runs continuously during gameplay
 - **Screenshot capture**: Automatically captures failure states
 - **Bug ticket creation**: Integrates with ticketing system
@@ -42,6 +45,7 @@ The AI Liveness Probe (`js/ai-liveness-probe.js`) is an intelligent monitoring s
 - **Failure classification**: Categorizes different types of issues
 
 ### Usage
+
 ```javascript
 // Manual probe execution
 const probeResult = await import('./js/ai-liveness-probe.js');
@@ -52,6 +56,7 @@ console.log('Probe result:', probeResult);
 ```
 
 ### Probe Result Structure
+
 ```javascript
 {
   frameCount: 12345,           // Current frame number
@@ -68,18 +73,21 @@ console.log('Probe result:', probeResult);
 ## CodeRabbit Game Debugging
 
 ### Overview
+
 CodeRabbit-powered debugging system provides AI-driven analysis of game code to identify bugs, performance issues, and stability problems that could affect gameplay.
 
 ### Quick Commands
+
 ```bash
 # Quick health check (30 seconds)
-npm run debug:probe
+bun run debug:probe
 
 # Full analysis with detailed report (2 minutes)
-npm run debug:game
+bun run debug:game
 ```
 
 ### What It Analyzes
+
 ```javascript
 // Critical Issues Detection
 ✅ p5.js instance mode violations (crash prevention)
@@ -91,24 +99,27 @@ npm run debug:game
 ```
 
 ### Game Health Scoring
+
 - **0-30**: Critical - Game has serious stability issues
-- **31-60**: Poor - Multiple performance and reliability problems  
+- **31-60**: Poor - Multiple performance and reliability problems
 - **61-80**: Good - Minor issues, mostly stable
 - **81-100**: Excellent - High quality, production-ready code
 
 ### Integration with Gameplay Testing
+
 ```javascript
 // Before gameplay testing session
-npm run debug:probe  // Check game health first
+bun run debug:probe  // Check game health first
 
 // After finding gameplay issues
-npm run debug:game   // Analyze code for root causes
+bun run debug:game   // Analyze code for root causes
 
 // After fixing bugs
-npm run debug:probe  // Verify improvements
+bun run debug:probe  // Verify improvements
 ```
 
 ### Common Gameplay-Affecting Issues
+
 1. **Player Control Problems**: Null checks missing in player.js
 2. **Enemy AI Glitches**: Frame-rate dependent movement
 3. **Performance Drops**: Memory leaks in GameLoop.js
@@ -116,10 +127,11 @@ npm run debug:probe  // Verify improvements
 5. **Collision Bugs**: p5.js instance mode violations
 
 ### Debugging Workflow for Gameplay Issues
+
 ```
 1. Observe gameplay problem (e.g., stuttering movement)
-2. Run `npm run debug:probe` to check game health
-3. If health score < 80, run `npm run debug:game`
+2. Run `bun run debug:probe` to check game health
+3. If health score < 80, run `bun run debug:game`
 4. Review VIBE_GAME_DEBUGGING_REPORT.md for related issues
 5. Fix critical bugs first (p5.js instance mode, null checks)
 6. Re-test gameplay to verify fix
@@ -127,6 +139,7 @@ npm run debug:probe  // Verify improvements
 ```
 
 ### Output Files
+
 - **VIBE_GAME_DEBUGGING_REPORT.md**: Detailed analysis with line-by-line issues
 - **VIBE_GAME_BUG_FIXING_CHECKLIST.md**: Actionable checklist with progress tracking
 - **Console Output**: Real-time health score and issue counts
@@ -136,6 +149,7 @@ npm run debug:probe  // Verify improvements
 ## Gameplay Testing Layers
 
 ### Layer 1: Critical Functionality (MUST PASS)
+
 ```javascript
 // Game Initialization
 ✅ Game starts without errors
@@ -151,6 +165,7 @@ npm run debug:probe  // Verify improvements
 ```
 
 ### Layer 2: Core Mechanics (SHOULD PASS)
+
 ```javascript
 // Combat System
 ✅ Player shooting mechanics
@@ -166,6 +181,7 @@ npm run debug:probe  // Verify improvements
 ```
 
 ### Layer 3: Advanced Features (NICE TO PASS)
+
 ```javascript
 // Audio System
 ✅ Beat synchronization
@@ -181,6 +197,7 @@ npm run debug:probe  // Verify improvements
 ```
 
 ### Layer 4: Performance & Polish (OPTIMIZATION)
+
 ```javascript
 // Performance Metrics
 ✅ Stable 60 FPS
@@ -194,6 +211,7 @@ npm run debug:probe  // Verify improvements
 ## Automated Testing Infrastructure
 
 ### Browser-Based Testing Suite
+
 **File**: `js/comprehensive-test-suite.js`
 
 ```javascript
@@ -208,28 +226,31 @@ window.comprehensiveTestSuite.testGameplay();
 ```
 
 ### Playwright Gameplay Probes
+
 **File**: `tests/gameplay-probe.test.js`
 
 ```bash
 # Run headless gameplay probes
-npm test
+bun test
 
 # With browser UI
-npm run test:headed
+bun run test:headed
 ```
 
 ### Console Test Runner
+
 **File**: `js/test-runner.js`
 
 ```javascript
 // Available in browser console
-testRunner.quickCheck();           // Quick health check
-testRunner.runFullTests();         // Complete test suite
-testRunner.testGameMechanics();    // Gameplay-specific tests
-testRunner.checkBugPatterns();     // Bug pattern detection
+testRunner.quickCheck(); // Quick health check
+testRunner.runFullTests(); // Complete test suite
+testRunner.testGameMechanics(); // Gameplay-specific tests
+testRunner.checkBugPatterns(); // Bug pattern detection
 ```
 
 ### Extended Gameplay Testing
+
 **File**: `js/extended-gameplay-test.js`
 
 ```javascript
@@ -249,6 +270,7 @@ await tester.runExtendedTest();
 ```
 
 ### Testing Interface Summary
+
 ```
 F7  - Extended Gameplay Test (3-minute stress test)
 F9  - Full Comprehensive Test Suite
@@ -263,6 +285,7 @@ T   - Toggle Test Mode (auto-movement & shooting)
 ## Manual Testing Procedures
 
 ### Pre-Game Testing Checklist
+
 ```
 □ Server running on localhost:5500
 □ No console errors on page load
@@ -272,6 +295,7 @@ T   - Toggle Test Mode (auto-movement & shooting)
 ```
 
 ### Core Gameplay Testing
+
 ```
 □ Player Movement (WASD)
   - Smooth movement in all directions
@@ -295,6 +319,7 @@ T   - Toggle Test Mode (auto-movement & shooting)
 ```
 
 ### Advanced Feature Testing
+
 ```
 □ Test Mode (T key)
   - Automated movement works
@@ -317,6 +342,7 @@ T   - Toggle Test Mode (auto-movement & shooting)
 ## Performance Testing
 
 ### FPS Monitoring
+
 ```javascript
 // Real-time FPS monitoring
 window.comprehensiveTestSuite.startPerformanceMonitoring();
@@ -326,17 +352,19 @@ console.log('Current FPS:', window.frameRate || 'Unknown');
 ```
 
 ### Memory Usage Testing
+
 ```javascript
 // Memory usage check
 const memoryInfo = performance.memory;
 console.log('Memory usage:', {
   used: Math.round(memoryInfo.usedJSHeapSize / 1048576) + ' MB',
   total: Math.round(memoryInfo.totalJSHeapSize / 1048576) + ' MB',
-  limit: Math.round(memoryInfo.jsHeapSizeLimit / 1048576) + ' MB'
+  limit: Math.round(memoryInfo.jsHeapSizeLimit / 1048576) + ' MB',
 });
 ```
 
 ### Stress Testing
+
 ```javascript
 // Spawn multiple enemies for stress testing
 for (let i = 0; i < 10; i++) {
@@ -352,6 +380,7 @@ window.comprehensiveTestSuite.testEntityLimits();
 ## Bug Detection & Reporting
 
 ### Automated Bug Detection
+
 The system automatically detects common bug patterns:
 
 ```javascript
@@ -366,6 +395,7 @@ The system automatically detects common bug patterns:
 ```
 
 ### Bug Reporting Integration
+
 ```javascript
 // Automatic bug ticket creation
 {
@@ -380,6 +410,7 @@ The system automatically detects common bug patterns:
 ```
 
 ### Manual Bug Reporting
+
 ```javascript
 // Create manual bug report
 window.comprehensiveTestSuite.reportBug(
@@ -394,9 +425,10 @@ window.comprehensiveTestSuite.reportBug(
 ## Testing Workflows
 
 ### Development Workflow
+
 ```bash
-1. Start development server: npm run dev
-2. Run gameplay probes: npm test
+1. Start development server: bun run dev
+2. Run gameplay probes: bun test
 3. Open browser: http://localhost:5500
 4. Run quick health check: F10
 5. Perform manual testing
@@ -405,14 +437,16 @@ window.comprehensiveTestSuite.reportBug(
 ```
 
 ### CI/CD Integration
+
 ```bash
 # Automated testing in CI pipeline
-npm test                    # Exit code 0 = pass, 1 = fail
-npm run test:gameplay      # Gameplay-specific tests
-npm run test:performance   # Performance benchmarks
+bun test                    # Exit code 0 = pass, 1 = fail
+bun run test:gameplay      # Gameplay-specific tests
+bun run test:performance   # Performance benchmarks
 ```
 
 ### Bug Investigation Workflow
+
 ```bash
 1. Reproduce the issue
 2. Check console for errors
@@ -425,6 +459,7 @@ npm run test:performance   # Performance benchmarks
 ```
 
 ### Release Testing Checklist
+
 ```
 □ All automated tests pass
 □ Manual gameplay testing complete
@@ -441,6 +476,7 @@ npm run test:performance   # Performance benchmarks
 ## Advanced Testing Techniques
 
 ### Probe-Driven Development
+
 ```javascript
 // Use probes to validate assumptions
 const validateGameState = async () => {
@@ -454,6 +490,7 @@ const validateGameState = async () => {
 ```
 
 ### Real-Time Monitoring
+
 ```javascript
 // Continuous monitoring during development
 setInterval(async () => {
@@ -465,11 +502,12 @@ setInterval(async () => {
 ```
 
 ### Automated Regression Testing
+
 ```javascript
 // Test suite runs automatically on file changes
 // See package.json scripts for configuration
-npm run test:watch        // Watch mode for continuous testing
-npm run test:regression   // Full regression test suite
+bun run test:watch        // Watch mode for continuous testing
+bun run test:regression   // Full regression test suite
 ```
 
 ---
@@ -477,6 +515,7 @@ npm run test:regression   // Full regression test suite
 ## Troubleshooting Common Issues
 
 ### Game Won't Start
+
 ```javascript
 // Check critical initialization
 1. Verify all imports are correct
@@ -486,6 +525,7 @@ npm run test:regression   // Full regression test suite
 ```
 
 ### Performance Issues
+
 ```javascript
 // Performance debugging
 1. Monitor FPS: window.frameRate
@@ -495,6 +535,7 @@ npm run test:regression   // Full regression test suite
 ```
 
 ### Audio Problems
+
 ```javascript
 // Audio troubleshooting
 1. Check audio context state
@@ -508,6 +549,7 @@ npm run test:regression   // Full regression test suite
 ## Best Practices
 
 ### Testing Philosophy
+
 1. **Test reality first** - Does the game actually work?
 2. **Fail fast** - Catch critical issues immediately
 3. **Automate everything** - Reduce manual testing burden
@@ -515,6 +557,7 @@ npm run test:regression   // Full regression test suite
 5. **Test continuously** - Don't wait for release
 
 ### Code Quality
+
 1. **Write testable code** - Favor pure functions
 2. **Use dependency injection** - Make testing easier
 3. **Handle errors gracefully** - Fail safely
@@ -522,6 +565,7 @@ npm run test:regression   // Full regression test suite
 5. **Monitor performance** - Track metrics continuously
 
 ### Team Collaboration
+
 1. **Share test results** - Keep everyone informed
 2. **Document test procedures** - Make testing repeatable
 3. **Review test coverage** - Ensure comprehensive testing
@@ -535,6 +579,7 @@ npm run test:regression   // Full regression test suite
 The Vibe game testing infrastructure provides comprehensive coverage from basic functionality to advanced performance monitoring. The AI Liveness Probe system ensures continuous quality validation, while the multi-layered testing approach catches issues at every level.
 
 **Key Benefits:**
+
 - ✅ **Automated issue detection** with intelligent probes
 - ✅ **Comprehensive test coverage** across all game systems
 - ✅ **Real-time monitoring** during development
@@ -546,7 +591,8 @@ This testing system ensures the Vibe game maintains production-ready quality whi
 
 ---
 
-*For additional testing resources, see:*
+_For additional testing resources, see:_
+
 - [MCP Playwright Testing Guide](./MCP_PLAYWRIGHT_TESTING_GUIDE.md)
 - [Ticketing System Guide](./TICKETING_SYSTEM_GUIDE.md)
 - [Testing Report](../TESTING_REPORT.md)

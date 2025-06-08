@@ -2,27 +2,35 @@
   "name": "vibe-game",
   "version": "2.0.0",
   "description": "A p5.js geometric space shooter survival game with procedural graphics",
+  "type": "module",
   "main": "index.html",
   "scripts": {
-    "serve": "five-server --port=5500",
-    "watch-bugs": "node move-bug-reports.js",
-    "predev": "npx kill-port 5500 3001",
-    "dev": "concurrently \"npm run serve\" \"npm run watch-bugs\" \"npm run api\"",
-    "test": "playwright test",
-    "test:headed": "playwright test --headed",
-    "test:debug": "playwright test --debug",
-    "test:mcp": "node run-mcp-tests.js",
-    "test:comprehensive": "npm test && npm run test:mcp",
-    "debug:probe": "node js/game-debugging-probe.js",
-    "coderabbit:analyze": "node js/coderabbit-review-processor.js",
-    "coderabbit:integrate": "node js/coderabbit-testing-integration.js",
-    "coderabbit:workflow": "npm run coderabbit:integrate",
-    "coderabbit:tickets": "node js/coderabbit-ticket-tracker.js",
-    "coderabbit:list": "node js/coderabbit-ticket-tracker.js list",
-    "coderabbit:stats": "node js/coderabbit-ticket-tracker.js stats",
-    "api": "node ticket-api.js",
-    "lint": "eslint \"**/*.js\"",
-    "format": "prettier --write \"**/*.{js,md,json}\""
+    "serve": "bun run five-server --port=5500",
+    "watch-bugs": "bun run move-bug-reports.js",
+    "predev": "bunx kill-port 5500 3001",
+    "dev": "concurrently \"bun run serve\" \"bun run watch-bugs\" \"bun run api\"",
+    "dev:parallel": "bun run --parallel serve watch-bugs api",
+    "test": "bun test",
+    "test:playwright": "bunx playwright test",
+    "test:headed": "bunx playwright test --headed",
+    "test:debug": "bunx playwright test --debug",
+    "test:mcp": "bun run run-mcp-tests.js",
+    "test:comprehensive": "bun run test:playwright && bun run test:mcp",
+    "api": "bun run ticket-api.js",
+    "lint": "bunx eslint \"**/*.js\"",
+    "format": "bunx prettier --write \"**/*.{js,md,json}\"",
+    "clean": "Remove-Item -Recurse -Force node_modules, bun.lockb -ErrorAction SilentlyContinue",
+    "fresh": "bun run clean && bun install"
+  },
+  "bun": {
+    "dev": {
+      "port": 5500,
+      "hot": true,
+      "watch": ["js/**/*.js", "index.html", "*.css"]
+    },
+    "test": {
+      "preload": ["./test-setup.js"]
+    }
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",

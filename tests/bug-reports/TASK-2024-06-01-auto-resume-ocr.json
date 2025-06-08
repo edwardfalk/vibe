@@ -8,7 +8,12 @@
   "createdAt": "2024-06-01T12:00:00Z",
   "updatedAt": "2024-06-01T12:00:00Z",
   "history": [
-    { "status": "open", "timestamp": "2024-06-01T12:00:00Z", "action": "created", "details": "Task ticket created by AI at user request." }
+    {
+      "status": "open",
+      "timestamp": "2024-06-01T12:00:00Z",
+      "action": "created",
+      "details": "Task ticket created by AI at user request."
+    }
   ],
   "artifacts": [],
   "relatedTickets": []

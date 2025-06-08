@@ -3,12 +3,7 @@
   "title": "Bug: Bug Report Modal Does Not Close After Submission",
   "type": "bug",
   "description": "After submitting a bug report via the modal, the modal does not close even though the ticket is created and the backend responds. The modal should set its status to 'success' and close after a short delay, but it remains open. This affects both manual and automated (AI/Playwright) workflows.",
-  "tags": [
-    "modal",
-    "ticketing",
-    "UI",
-    "workflow"
-  ],
+  "tags": ["modal", "ticketing", "UI", "workflow"],
   "status": "resolved",
   "timestamp": "2024-06-01T10:30:00Z",
   "history": [

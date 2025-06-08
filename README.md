@@ -5,18 +5,20 @@
 > For rules and standards, see [.cursorrules](./.cursorrules).
 
 ## Documentation Map
+
 - [.cursorrules](./.cursorrules): Core rules and standards (architecture, coding, workflow)
 - [docs/TICKETING_SYSTEM_GUIDE.md](./docs/TICKETING_SYSTEM_GUIDE.md): Ticketing system schema and workflow
 - [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
 - [docs/MCP_TOOLS_GUIDE.md](./docs/MCP_TOOLS_GUIDE.md): Advanced MCP tool usage and best practices
 - [docs/AUDIO_CONFIGURATION_GUIDE.md](./docs/AUDIO_CONFIGURATION_GUIDE.md): Audio setup and tuning
 - [docs/DESIGN.md](./docs/DESIGN.md): Game design and Cosmic Beat System
-- [docs/DEV_SERVER_SETUP.md](./docs/DEV_SERVER_SETUP.md): Local dev server & testing quickstart
 
 ## Overview
+
 Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
 
 **Technology Stack:**
+
 - **Engine**: p5.js 1.7.0 (migrated from Phaser for better modularity)
 - **Architecture**: ES modules with strict dependency injection
 - **Development**: MCP tools integration for advanced automation
@@ -29,6 +31,7 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 ---
 
 ## Project Structure & Architecture
+
 - **Strict modular architecture**: All code is organized by system or entity (see `/js/`).
 - **No legacy/monolithic files**: Only use modular files listed in `.cursorrules` and `/js/`.
 - **Core Systems**: `GameLoop.js`, `GameState.js`, `CameraSystem.js`, `SpawnSystem.js`, `CollisionSystem.js`, `UIRenderer.js`, `BackgroundRenderer.js`, `TestMode.js`
@@ -42,6 +45,7 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 ---
 
 ## Ticketing System
+
 - **All work (bugs, features, enhancements, tasks) is tracked via the modular ticketing system.**
 - Tickets are structured JSON files in `tests/bug-reports/`.
 - Use `ticketManager.js` and `ticket-api.js` for all ticket management (in-game, admin, automation).
@@ -53,9 +57,10 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 ---
 
 ## Development & Testing
+
 - **Dev server**: Five Server runs on port 5500 (`http://localhost:5500`).
 - **Backend server**: Runs on port 3001 for ticket API and automation.
-- **Start all servers with `npm run dev`** (kills ports 5500/3001 if needed).
+- **Start all servers with `bun run dev`** (kills ports 5500/3001 if needed).
 - **Testing**: Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
 - **Test mode**: Press 'T' in-game to enable scripted testing.
 - **Bug-report modal**: Open with 'B' + 'R' or UI button. Keyboard: Enter/Ctrl+Enter = Save, Escape = Cancel.
@@ -64,6 +69,7 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 ---
 
 ## Coding Standards
+
 - **Simplicity, readability, maintainability, testability, reusability.**
 - **Multi-AI Model Compatibility**: Strict consistency standards ensure identical behavior across different AI models.
 - Use ES modules (`import`/`export`) with mandatory dependency injection patterns.
@@ -72,19 +78,21 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 - **Constructor Signatures**: All enemy classes use exact signature: `constructor(x, y, type, config, p, audio)`.
 - **Console Logging**: All logs must use emoji prefixes (🎮 Game state, 🎵 Audio, 🗡️ Combat, etc.).
 - **Timing System**: Use `deltaTimeMs` for frame-independent calculations, normalized to 60fps baseline.
- - Use early returns, descriptive names, and clear error handling.
- - All code must pass ESLint and Prettier before commit. Run `npm run lint` to check linting and `npm run format` to apply Prettier formatting.
+- Use early returns, descriptive names, and clear error handling.
+- All code must pass ESLint and Prettier before commit. Run `bun run lint` to check linting and `bun run format` to apply Prettier formatting.
 - **See `.cursorrules` for complete standards and mandatory patterns.**
 
 ---
 
 ## Memory Management
+
 - Uses a structured knowledge graph for entities, relations, and observations.
 - See `.cursorrules` for workflow and best practices.
 
 ---
 
 ## Audio & Visuals
+
 - Audio system is modular and beat-synced.
 - Visual effects are handled by `visualEffects.js` and `effects.js`.
 - See `docs/AUDIO_CONFIGURATION_GUIDE.md` for setup.
@@ -92,6 +100,7 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 ---
 
 ## Contributing
+
 - **All changes must follow modular architecture and ticketing workflow.**
 - Update `.cursorrules` and this README if architecture or standards change.
 - See `.cursorrules` for rules on memory, testing, and coding standards.
@@ -99,6 +108,7 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 ---
 
 ## References
+
 - `.cursorrules`: Core standards and workflow reference
 - `docs/TICKETING_SYSTEM_GUIDE.md`: Ticketing system documentation
 - `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`: Automated testing guide
@@ -108,6 +118,7 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 ---
 
 ## License
+
 MIT
 
 ## Testing
@@ -118,43 +129,46 @@ Vibe uses a comprehensive automated testing system with probe-driven testing and
 
 1. **MCP Probe-Driven Tests** - Comprehensive game state and behavior testing
    ```bash
-   npm run test:mcp
+   bun run test:mcp
    ```
 2. **Playwright Gameplay Probes** - Headless browser tests using probe scripts
+
    ```bash
-   npm test          # Headless
-   npm run test:headed   # With browser UI
-   npm run test:debug    # Debug mode
+   bun test          # Headless
+bun run test:headed   # With browser UI
+bun run test:debug    # Debug mode
    ```
 
 3. **Comprehensive Test Suite** - Runs all automated tests
+
    ```bash
-   npm run test:comprehensive
+   bun run test:comprehensive
    ```
 
 4. **Game Debugging** - Basic health check and analysis
    ```bash
-    npm run debug:probe   # Game health check + summary
-    ```
+    bun run debug:probe   # Game health check + summary
+   ```
 5. **CodeRabbit Integration** - Automated review processing
-    ```bash
-    npm run coderabbit:analyze    # Analyze CodeRabbit reviews only
-    npm run coderabbit:integrate  # Full integration (analysis + tickets + tests)
-    npm run coderabbit:workflow   # Complete CodeRabbit workflow
-    ```
+   ```bash
+   bun run coderabbit:analyze    # Analyze CodeRabbit reviews only
+bun run coderabbit:integrate  # Full integration (analysis + tickets + tests)
+bun run coderabbit:workflow   # Complete CodeRabbit workflow
+   ```
 
 ### Probe-Driven Testing
 
 The game uses specialized probe files for different aspects:
 
 - **`js/ai-liveness-probe.js`** - Basic game state and entity presence
-- **`js/enemy-ai-probe.js`** - Enemy AI behavior and interactions  
+- **`js/enemy-ai-probe.js`** - Enemy AI behavior and interactions
 - **`js/audio-system-probe.js`** - Audio system and beat synchronization
 - **`js/combat-collision-probe.js`** - Combat mechanics and collision detection
 - **`js/ui-score-probe.js`** - UI elements and score system
 - **`js/game-debugging-probe.js`** - Bug detection and game health analysis
 
 Each probe automatically:
+
 - Tests specific game systems
 - Captures screenshots on failure
 - Creates bug tickets via the ticketing system
@@ -163,6 +177,7 @@ Each probe automatically:
 ### MCP Playwright Integration
 
 The testing system uses MCP (Model Context Protocol) Playwright tools for:
+
 - Browser automation and control
 - JavaScript evaluation in game context
 - Screenshot capture and artifact management
@@ -171,6 +186,7 @@ The testing system uses MCP (Model Context Protocol) Playwright tools for:
 ### Test Artifacts
 
 Test results and artifacts are saved to:
+
 - **Screenshots**: `test-results/`
 - **Bug Reports**: `tests/bug-reports/`
 - **Test Reports**: `test-results/mcp-automated-test-report-*.json`
@@ -181,14 +197,15 @@ Test results and artifacts are saved to:
 The development server includes automated testing capabilities:
 
 ```bash
-npm run dev  # Starts game server, bug watcher, and API server
+bun run dev  # Starts game server, bug watcher, and API server
 ```
 
 Then in another terminal:
-```bash
-npm run test:comprehensive  # Run all automated tests
 
-npm run debug:probe         # Game health check
+```bash
+bun run test:comprehensive  # Run all automated tests
+
+bun run debug:probe         # Game health check
 ```
 
 ### Test Configuration
@@ -200,6 +217,6 @@ npm run debug:probe         # Game health check
 - **Automated Bug Reporting**: Enabled
 
 For detailed testing documentation, see:
+
 - [MCP Playwright Testing Guide](docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md)
 - [Ticketing System Guide](docs/TICKETING_SYSTEM_GUIDE.md)
-

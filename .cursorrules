@@ -90,6 +90,7 @@
 - The `predev` script kills any process on ports 5500 and 3001 before starting dev servers.
 - The `dev` script starts Five Server (frontend), bug watcher, and ticket API server in parallel.
 - If port 5500 is in use, Five Server will use another port (e.g., 56555); always check the console for the actual port.
+- **Preferred Environment:** Windows 11 + PowerShell 7 + Bun for optimal performance and Windows-native tooling.
 
 ---
 
@@ -161,7 +162,7 @@
 - Use ES modules (`import`/`export`) for all new code unless otherwise specified.
 - Handle errors gracefully and consistently; use early returns and clear error messages.
 - Write code that is easy to test (favor pure functions, dependency injection where possible).
-- Manage dependencies via `package.json` and npm; do not add libraries without team review.
+- Manage dependencies via `package.json` and Bun; do not add libraries without team review.
 
 **Dependency Injection & Global Access:**
 - Prefer constructor injection for dependencies (e.g., audio, cameraSystem) in new modules

@@ -3,11 +3,7 @@
   "title": "File deletion tool fails in bug-reports directory",
   "type": "bug",
   "description": "Creating a file in tests/bug-reports/ works, but deletion via the available tool fails with 'file not found' even when the file exists. This blocks automated cleanup and may indicate a deeper issue with file operations in the environment. Steps to reproduce: 1) Create a file in tests/bug-reports/. 2) Attempt to delete it using the tool. 3) Observe failure. Expected: File is deleted. Actual: Tool reports file not found.",
-  "tags": [
-    "filesystem",
-    "automation",
-    "tooling"
-  ],
+  "tags": ["filesystem", "automation", "tooling"],
   "status": "Closed",
   "history": [
     {
@@ -23,7 +19,8 @@
     {
       "timestamp": "2025-06-01T22:00:00Z",
       "action": "root cause analysis",
-      "details": "Discovered that the built-in delete_file tool only works with relative paths from the workspace root, not absolute paths. Previous failures were due to using absolute paths. Deletion with a relative path works as expected. Solution: Always use relative paths with delete_file, and absolute paths with MCP commands."    }
+      "details": "Discovered that the built-in delete_file tool only works with relative paths from the workspace root, not absolute paths. Previous failures were due to using absolute paths. Deletion with a relative path works as expected. Solution: Always use relative paths with delete_file, and absolute paths with MCP commands."
+    }
   ],
   "artifacts": [],
   "verification": [

@@ -11,6 +11,7 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 ---
 
 ## Why MCP Playwright?
+
 - **Full browser control for AI/agents**
 - **Custom JavaScript evaluation**: Inspect any in-game variable, simulate input, and trigger screenshots
 - **Structured, actionable results**: Go beyond console logs and UI checks
@@ -31,6 +32,7 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 - See `js/ai-liveness-probe.js` for implementation details.
 
 ### Automated Bug Reporting for Probe Failures
+
 - **All probe-driven failures are now automatically reported as tickets via the API.**
 - The liveness probe and any future probe scripts should, on failure, create a bug ticket using the ticketManager API (`js/ticketManager.js`).
 - The ticket includes a concise ID, title, failure description, timestamp, probe state, and (if available) a screenshot as an artifact.
@@ -42,6 +44,7 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 ## Core Concepts
 
 ### Liveness/Heartbeat Probe
+
 - Ensures the game is truly running (not just error-free)
 - Checks: game loop, player, enemies, BeatClock, audio
 - Example probe: [`js/ai-liveness-probe.js`](js/ai-liveness-probe.js)
@@ -52,10 +55,12 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
   - This documentation is intentionally high-level to allow for future improvements.
 
 ### mcp_playwright_playwright_evaluate
+
 - Runs any JavaScript in the game's browser context
 - Returns structured results for AI/agent analysis
 
 ### Screenshots on Failure
+
 - Triggered automatically by probes on critical failure or edge cases
 - Helps diagnose "silent failures" and edge conditions
 
@@ -84,7 +89,9 @@ const fs = require('fs');
 const probeScript = fs.readFileSync('js/ai-liveness-probe.js', 'utf8');
 
 // Use MCP Playwright to evaluate
-const result = await mcp_playwright_playwright_evaluate({ script: probeScript });
+const result = await mcp_playwright_playwright_evaluate({
+  script: probeScript,
+});
 
 // Check results
 if (!result.frameCountIncreased) {
@@ -98,6 +105,7 @@ if (result.moveBlockedByEdge) {
 ---
 
 ## Best Practices
+
 - Always run a liveness/heartbeat probe before and after scenario tests
 - Use structured result objects for all probes
 - Trigger screenshots for all critical failures or edge cases
@@ -107,6 +115,7 @@ if (result.moveBlockedByEdge) {
 ---
 
 ## Troubleshooting
+
 - If a probe returns `false` for a check, review the returned object and screenshot
 - If the player is blocked by an edge, reset position before further movement tests
 - If BeatClock is not ticking, check game initialization and timing
@@ -115,6 +124,7 @@ if (result.moveBlockedByEdge) {
 ---
 
 ## Reference: Example Probes
+
 - **Liveness/heartbeat:** [`js/ai-liveness-probe.js`](js/ai-liveness-probe.js)
 - **Enemy AI probe:** Check enemy count, types, and behaviors
 - **Audio system probe:** Check audio context, sound playback, TTS
@@ -123,6 +133,7 @@ if (result.moveBlockedByEdge) {
 ---
 
 ## See Also
+
 - [README.md](../README.md) (Quick Start)
 - [tests/](../tests/) (All Playwright tests must now be probe-driven using MCP Playwright. Manual .spec.js tests are deprecated and should not be used.)
 
@@ -132,7 +143,7 @@ if (result.moveBlockedByEdge) {
 ## Bug Report Automation
 
 - The bug report watcher script (`move-bug-reports.js`) is included in the project root.
-- When running `npm run dev`, both the dev server and the watcher are started together.
+- When running `bun run dev`, both the dev server and the watcher are started together.
 - Any bug report files (markdown, JSON, PNG) downloaded from the browser are automatically moved from your Downloads folder to `tests/bug-reports/`.
 - This ensures all manual and automated bug reports are organized and accessible for both human and AI/agent debugging.
-- You can also run the watcher alone with `npm run watch-bugs`.
+- You can also run the watcher alone with `bun run watch-bugs`.
