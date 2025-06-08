@@ -13,10 +13,10 @@
 
   const result = {
     frameCount: typeof frameCount !== 'undefined' ? frameCount : null,
-    gameState: window.gameState ? window.gameState.gameState : null,
-    playerAlive: !!window.player && !window.player.markedForRemoval,
+    gameState: window.gameState?.gameState ?? null,
+    playerAlive: !!window.player && !window.player?.markedForRemoval,
     enemyCount: Array.isArray(window.enemies)
-      ? window.enemies.filter((e) => !e.markedForRemoval).length
+      ? window.enemies.filter((e) => !e?.markedForRemoval).length
       : 0,
     timestamp: Date.now(),
     failure: null,
@@ -40,7 +40,7 @@
   // If failure, trigger screenshot, log state, and file bug report
   if (result.failure) {
     let screenshotData = null;
-    if (window.mcp && window.mcp.screenshot) {
+    if (window.mcp?.screenshot) {
       // If MCP API is available, capture screenshot and get base64
       screenshotData = await window.mcp.screenshot(
         'failure-' + result.failure.replace(/\s+/g, '-')
@@ -52,7 +52,7 @@
     // Log state for diagnosis
     console.error('Liveness/Entity Probe Failure:', result);
     // Automated bug reporting via ticketManager API
-    if (ticketManager && ticketManager.createTicket) {
+    if (ticketManager?.createTicket) {
       try {
         const shortId = random().toString(36).substr(2, 6);
         const ticketData = {
