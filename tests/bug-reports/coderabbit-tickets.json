@@ -14,7 +14,11 @@
       "createdAt": "2025-06-05T17:44:15.554Z",
       "updatedAt": "2025-06-05T18:11:29.268Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "bug"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "bug"
+      ],
       "history": [
         {
           "action": "created",
@@ -51,7 +55,11 @@
       "createdAt": "2025-06-05T17:44:15.566Z",
       "updatedAt": "2025-06-05T17:44:42.517Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "style"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "style"
+      ],
       "history": [
         {
           "action": "created",
@@ -81,7 +89,11 @@
       "createdAt": "2025-06-05T17:44:15.569Z",
       "updatedAt": "2025-06-05T17:57:06.798Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "security"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "security"
+      ],
       "history": [
         {
           "action": "created",
@@ -116,7 +128,11 @@
       "createdAt": "2025-06-05T17:44:15.574Z",
       "updatedAt": "2025-06-05T17:59:10.563Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "general"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "general"
+      ],
       "history": [
         {
           "action": "created",
@@ -146,7 +162,11 @@
       "createdAt": "2025-06-05T17:44:15.581Z",
       "updatedAt": "2025-06-05T17:58:15.680Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "documentation"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "documentation"
+      ],
       "history": [
         {
           "action": "created",
@@ -176,7 +196,11 @@
       "createdAt": "2025-06-05T17:44:15.584Z",
       "updatedAt": "2025-06-05T17:57:39.143Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "performance"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "performance"
+      ],
       "history": [
         {
           "action": "created",
@@ -200,16 +224,27 @@
       "category": "bug",
       "pullRequest": 2,
       "reviewUrl": "https://github.com/edwardfalk/vibe/pull/2#pullrequestreview-2901053040",
-      "status": "open",
+      "status": "resolved",
       "createdAt": "2025-06-05T18:17:56.657Z",
-      "updatedAt": "2025-06-05T18:17:56.661Z",
+      "updatedAt": "2025-06-08T21:59:03.910Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "bug"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "bug"
+      ],
       "history": [
         {
           "action": "created",
           "timestamp": "2025-06-05T18:17:56.661Z",
           "note": "Ticket created from CodeRabbit review"
+        },
+        {
+          "action": "status_change",
+          "oldStatus": "open",
+          "newStatus": "resolved",
+          "timestamp": "2025-06-08T21:59:03.910Z",
+          "note": "Resolved: File mcp-automated-test-runner.js no longer exists in the codebase - issue resolved by file removal"
         }
       ]
     },
@@ -227,7 +262,11 @@
       "createdAt": "2025-06-05T18:17:56.663Z",
       "updatedAt": "2025-06-05T18:21:42.317Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "style"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "style"
+      ],
       "history": [
         {
           "action": "created",
@@ -257,7 +296,11 @@
       "createdAt": "2025-06-05T18:17:56.668Z",
       "updatedAt": "2025-06-05T18:19:53.923Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "security"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "security"
+      ],
       "history": [
         {
           "action": "created",
@@ -285,7 +328,11 @@
       "createdAt": "2025-06-05T18:17:56.673Z",
       "updatedAt": "2025-06-05T18:17:56.675Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "general"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "general"
+      ],
       "history": [
         {
           "action": "created",
@@ -308,7 +355,11 @@
       "createdAt": "2025-06-05T18:17:56.678Z",
       "updatedAt": "2025-06-05T18:17:56.680Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "documentation"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "documentation"
+      ],
       "history": [
         {
           "action": "created",
@@ -331,7 +382,11 @@
       "createdAt": "2025-06-05T18:17:56.682Z",
       "updatedAt": "2025-06-05T18:17:56.684Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "performance"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "performance"
+      ],
       "history": [
         {
           "action": "created",
@@ -348,16 +403,27 @@
       "category": "bug",
       "pullRequest": 2,
       "reviewUrl": "https://github.com/edwardfalk/vibe/pull/2#pullrequestreview-2901053040",
-      "status": "open",
+      "status": "resolved",
       "createdAt": "2025-06-05T18:18:51.589Z",
-      "updatedAt": "2025-06-05T18:18:51.593Z",
+      "updatedAt": "2025-06-08T21:59:03.910Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "bug"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "bug"
+      ],
       "history": [
         {
           "action": "created",
           "timestamp": "2025-06-05T18:18:51.593Z",
           "note": "Ticket created from CodeRabbit review"
+        },
+        {
+          "action": "status_change",
+          "oldStatus": "open",
+          "newStatus": "resolved",
+          "timestamp": "2025-06-08T21:59:03.910Z",
+          "note": "Resolved: File mcp-automated-test-runner.js no longer exists in the codebase - issue resolved by file removal"
         }
       ]
     },
@@ -375,7 +441,11 @@
       "createdAt": "2025-06-05T18:18:51.598Z",
       "updatedAt": "2025-06-05T18:21:48.976Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "style"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "style"
+      ],
       "history": [
         {
           "action": "created",
@@ -403,7 +473,11 @@
       "createdAt": "2025-06-05T18:18:51.604Z",
       "updatedAt": "2025-06-05T18:18:51.607Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "general"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "general"
+      ],
       "history": [
         {
           "action": "created",
@@ -424,7 +498,11 @@
       "createdAt": "2025-06-05T18:18:51.609Z",
       "updatedAt": "2025-06-05T18:18:51.612Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "documentation"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "documentation"
+      ],
       "history": [
         {
           "action": "created",
@@ -445,7 +523,11 @@
       "createdAt": "2025-06-05T18:18:51.615Z",
       "updatedAt": "2025-06-05T18:18:51.618Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "testing"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "testing"
+      ],
       "history": [
         {
           "action": "created",
@@ -466,7 +548,11 @@
       "createdAt": "2025-06-05T18:18:51.620Z",
       "updatedAt": "2025-06-05T18:18:51.623Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "bug"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "bug"
+      ],
       "history": [
         {
           "action": "created",
@@ -487,7 +573,11 @@
       "createdAt": "2025-06-05T18:18:51.629Z",
       "updatedAt": "2025-06-05T18:18:51.632Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "style"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "style"
+      ],
       "history": [
         {
           "action": "created",
@@ -508,7 +598,11 @@
       "createdAt": "2025-06-05T18:18:51.635Z",
       "updatedAt": "2025-06-05T18:18:51.638Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "performance"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "performance"
+      ],
       "history": [
         {
           "action": "created",
@@ -531,7 +625,11 @@
       "createdAt": "2025-06-05T18:18:51.641Z",
       "updatedAt": "2025-06-05T18:20:00.608Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "security"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "security"
+      ],
       "history": [
         {
           "action": "created",
@@ -559,7 +657,11 @@
       "createdAt": "2025-06-05T18:18:51.649Z",
       "updatedAt": "2025-06-05T18:18:51.652Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "general"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "general"
+      ],
       "history": [
         {
           "action": "created",
@@ -580,7 +682,11 @@
       "createdAt": "2025-06-05T18:18:51.655Z",
       "updatedAt": "2025-06-05T18:18:51.657Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "bug"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "bug"
+      ],
       "history": [
         {
           "action": "created",
@@ -601,7 +707,11 @@
       "createdAt": "2025-06-05T18:18:51.661Z",
       "updatedAt": "2025-06-05T18:18:51.664Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "testing"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "testing"
+      ],
       "history": [
         {
           "action": "created",
@@ -622,7 +732,11 @@
       "createdAt": "2025-06-05T18:18:51.667Z",
       "updatedAt": "2025-06-05T18:18:51.669Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "general"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "general"
+      ],
       "history": [
         {
           "action": "created",
@@ -645,7 +759,11 @@
       "createdAt": "2025-06-05T18:18:51.671Z",
       "updatedAt": "2025-06-05T18:18:51.674Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "documentation"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "documentation"
+      ],
       "history": [
         {
           "action": "created",
@@ -666,7 +784,11 @@
       "createdAt": "2025-06-05T18:18:51.678Z",
       "updatedAt": "2025-06-05T18:18:51.682Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "general"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "general"
+      ],
       "history": [
         {
           "action": "created",
@@ -687,7 +809,11 @@
       "createdAt": "2025-06-05T18:18:51.685Z",
       "updatedAt": "2025-06-05T18:18:51.688Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "refactoring"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "refactoring"
+      ],
       "history": [
         {
           "action": "created",
@@ -708,7 +834,11 @@
       "createdAt": "2025-06-05T18:18:51.690Z",
       "updatedAt": "2025-06-05T18:18:51.697Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "bug"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "bug"
+      ],
       "history": [
         {
           "action": "created",
@@ -729,7 +859,11 @@
       "createdAt": "2025-06-05T18:18:51.706Z",
       "updatedAt": "2025-06-05T18:18:51.715Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "style"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "style"
+      ],
       "history": [
         {
           "action": "created",
@@ -750,7 +884,11 @@
       "createdAt": "2025-06-05T18:18:51.718Z",
       "updatedAt": "2025-06-05T18:18:51.722Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "testing"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "testing"
+      ],
       "history": [
         {
           "action": "created",
@@ -771,7 +909,11 @@
       "createdAt": "2025-06-05T18:18:51.726Z",
       "updatedAt": "2025-06-05T18:18:51.731Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "documentation"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "documentation"
+      ],
       "history": [
         {
           "action": "created",
@@ -792,7 +934,11 @@
       "createdAt": "2025-06-05T18:18:51.734Z",
       "updatedAt": "2025-06-05T18:18:51.736Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "performance"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "performance"
+      ],
       "history": [
         {
           "action": "created",
@@ -811,16 +957,27 @@
       "reviewUrl": "https://github.com/edwardfalk/vibe/pull/1#pullrequestreview-2900516752",
       "file": "js/coderabbit-game-debugger.js",
       "line": null,
-      "status": "open",
+      "status": "resolved",
       "createdAt": "2025-06-05T18:18:51.739Z",
-      "updatedAt": "2025-06-05T18:18:51.742Z",
+      "updatedAt": "2025-06-08T23:40:00.000Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "performance"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "performance"
+      ],
       "history": [
         {
           "action": "created",
           "timestamp": "2025-06-05T18:18:51.742Z",
           "note": "Ticket created from CodeRabbit review"
+        },
+        {
+          "action": "status_change",
+          "oldStatus": "open",
+          "newStatus": "resolved",
+          "timestamp": "2025-06-08T23:40:00.000Z",
+          "note": "Resolved: File js/coderabbit-game-debugger.js no longer exists in the codebase - issue resolved by file removal"
         }
       ]
     },
@@ -836,7 +993,11 @@
       "createdAt": "2025-06-05T18:18:51.747Z",
       "updatedAt": "2025-06-05T18:18:51.749Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "general"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "general"
+      ],
       "history": [
         {
           "action": "created",
@@ -857,7 +1018,11 @@
       "createdAt": "2025-06-05T18:18:51.753Z",
       "updatedAt": "2025-06-05T18:18:51.755Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "bug"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "bug"
+      ],
       "history": [
         {
           "action": "created",
@@ -878,7 +1043,11 @@
       "createdAt": "2025-06-05T18:18:51.757Z",
       "updatedAt": "2025-06-05T18:18:51.762Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "performance"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "performance"
+      ],
       "history": [
         {
           "action": "created",
@@ -899,7 +1068,11 @@
       "createdAt": "2025-06-05T18:18:51.766Z",
       "updatedAt": "2025-06-05T18:18:51.770Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "testing"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "testing"
+      ],
       "history": [
         {
           "action": "created",
@@ -920,7 +1093,11 @@
       "createdAt": "2025-06-05T18:18:51.772Z",
       "updatedAt": "2025-06-05T18:18:51.775Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "documentation"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "documentation"
+      ],
       "history": [
         {
           "action": "created",
@@ -941,7 +1118,11 @@
       "createdAt": "2025-06-05T18:18:51.779Z",
       "updatedAt": "2025-06-05T18:18:51.782Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "general"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "general"
+      ],
       "history": [
         {
           "action": "created",
@@ -962,7 +1143,11 @@
       "createdAt": "2025-06-05T18:18:51.786Z",
       "updatedAt": "2025-06-05T18:18:51.788Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "testing"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "testing"
+      ],
       "history": [
         {
           "action": "created",
@@ -983,7 +1168,11 @@
       "createdAt": "2025-06-05T18:18:51.792Z",
       "updatedAt": "2025-06-05T18:18:51.795Z",
       "source": "coderabbit",
-      "tags": ["coderabbit", "automated", "bug"],
+      "tags": [
+        "coderabbit",
+        "automated",
+        "bug"
+      ],
       "history": [
         {
           "action": "created",
@@ -995,9 +1184,9 @@
   },
   "statistics": {
     "total": 42,
-    "open": 32,
+    "open": 30,
     "inProgress": 0,
-    "resolved": 10,
+    "resolved": 12,
     "closed": 0
   }
 }
