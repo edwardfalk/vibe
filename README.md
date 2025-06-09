@@ -7,6 +7,7 @@
 ## Documentation Map
 
 - [.cursorrules](./.cursorrules): Core rules and standards (architecture, coding, workflow)
+- [docs/CODERABBIT_COMPLETE_GUIDE.md](./docs/CODERABBIT_COMPLETE_GUIDE.md): Complete CodeRabbit integration with deduplication system
 - [docs/TICKETING_SYSTEM_GUIDE.md](./docs/TICKETING_SYSTEM_GUIDE.md): Ticketing system schema and workflow
 - [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
 - [docs/MCP_TOOLS_GUIDE.md](./docs/MCP_TOOLS_GUIDE.md): Advanced MCP tool usage and best practices
@@ -107,10 +108,48 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 ---
 
+## CodeRabbit Integration
+
+Vibe includes a comprehensive CodeRabbit review analysis system that captures ALL review data from GitHub:
+
+### Features
+- **Complete Review Capture**: Gets general reviews AND line-by-line comments
+- **File Context**: Includes exact file paths and line numbers for suggestions
+- **Smart Categorization**: Automatically categorizes suggestions (security, bugs, performance, etc.)
+- **Priority Analysis**: Identifies high-priority issues requiring immediate attention
+- **Structured Data**: Saves comprehensive data to JSON files for analysis
+- **Ticket Integration**: Automatically creates tickets for high-priority issues
+
+### Quick Start
+```bash
+# Get complete CodeRabbit review data (recommended)
+bun run coderabbit:cycle
+
+# Or run steps individually:
+bun run coderabbit:fetch-complete  # Fetch all review data
+bun run coderabbit:analyze         # Display analysis
+bun run coderabbit:auto-tickets    # Create tickets
+```
+
+### Generated Files
+- **`coderabbit-reviews/latest-complete.json`** - Complete review data with context
+- **`coderabbit-reviews/latest-summary.json`** - Analysis summary and metrics  
+- **`coderabbit-reviews/latest-high-priority.json`** - Critical issues for immediate action
+
+### Current Results
+- **1,402 total suggestions** extracted from 14 PRs
+- **111 high-priority issues** identified (security, bugs, critical fixes)
+- **Complete file context** for targeted fixes
+
+For detailed documentation, see [`docs/CODERABBIT_COMPLETE_GUIDE.md`](./docs/CODERABBIT_COMPLETE_GUIDE.md).
+
+---
+
 ## References
 
 - `.cursorrules`: Core standards and workflow reference
 - `docs/TICKETING_SYSTEM_GUIDE.md`: Ticketing system documentation
+- `docs/CODERABBIT_COMPLETE_GUIDE.md`: Complete CodeRabbit integration guide with deduplication system
 - `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`: Automated testing guide
 - `docs/AUDIO_CONFIGURATION_GUIDE.md`: Audio setup and troubleshooting
 - `docs/DESIGN.md`: Cosmic Beat System and musical gameplay design
@@ -149,11 +188,12 @@ bun run test:debug    # Debug mode
    ```bash
     bun run debug:probe   # Game health check + summary
    ```
-5. **CodeRabbit Integration** - Automated review processing
+5. **CodeRabbit Integration** - Comprehensive review analysis and processing
    ```bash
-   bun run coderabbit:analyze    # Analyze CodeRabbit reviews only
-bun run coderabbit:integrate  # Full integration (analysis + tickets + tests)
-bun run coderabbit:workflow   # Complete CodeRabbit workflow
+   bun run coderabbit:fetch-complete  # Fetch ALL CodeRabbit reviews (comprehensive)
+   bun run coderabbit:analyze         # Analyze fetched review data
+   bun run coderabbit:auto-tickets    # Create tickets from high-priority issues
+   bun run coderabbit:cycle           # Complete cycle: fetch → analyze → tickets
    ```
 
 ### Probe-Driven Testing

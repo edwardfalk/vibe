@@ -1,0 +1,27 @@
+{
+  "id": "CR-2025-06-09-bug-3ks3",
+  "type": "bug",
+  "title": "Bug Fix: Improve beat timing health check for unit consiste...",
+  "description": "## CodeRabbit Suggestion\n\n**Category:** bug\n**Priority:** high\n**Source PR:** #undefined\n\n### Suggestion Details\nImprove beat timing health check for unit consistency and inactive state: The current logic in js/audio-system-probe.js (lines 90–101) may throw NaN or emit critical failures when the page is hidden or audio is paused.\n\n### Implementation Notes\n- Review the original CodeRabbit suggestion in PR #undefined\n- Implement the suggested changes following project coding standards\n- Test thoroughly before creating a pull request\n- Update this ticket status when work begins and completes\n\n### Acceptance Criteria\n- [ ] Review original CodeRabbit suggestion\n- [ ] Implement suggested changes\n- [ ] Add appropriate tests\n- [ ] Update documentation if needed\n- [ ] Create pull request with changes\n- [ ] Verify CodeRabbit approval in new PR\n\n### Tracking\n- **Suggestion Hash:** dW5kZWZpbmVkLWJ1Zy1JbXByb3ZlIGJl\n- **Generated:** 2025-06-09T00:41:14.726Z\n\n---\n*This ticket was automatically generated from CodeRabbit review suggestions.*",
+  "tags": [
+    "coderabbit",
+    "bug",
+    "auto-generated"
+  ],
+  "status": "open",
+  "priority": "high",
+  "source": "coderabbit",
+  "pullRequest": "#undefined",
+  "coderabbitSuggestion": "Improve beat timing health check for unit consistency and inactive state: The current logic in js/audio-system-probe.js (lines 90–101) may throw NaN or emit critical failures when the page is hidden or audio is paused.",
+  "suggestionHash": "dW5kZWZpbmVkLWJ1Zy1JbXByb3ZlIGJl",
+  "file": null,
+  "line": null,
+  "reviewUrl": null,
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-09T00:41:14.726Z",
+  "updatedAt": "2025-06-09T00:41:14.726Z",
+  "timestamp": "2025-06-09T00:41:14.726Z",
+  "history": [],
+  "verification": []
+}

@@ -8,16 +8,25 @@
     "security",
     "auto-generated"
   ],
-  "status": "open",
+  "status": "resolved",
   "priority": "high",
   "source": "coderabbit",
   "pullRequest": "#13",
   "coderabbitSuggestion": "Excellent security improvement using environment variables....",
+  "resolution": "Security improvement already implemented with centralized configuration",
   "artifacts": [],
   "relatedTickets": [],
   "createdAt": "2025-06-08T23:05:48.322Z",
-  "updatedAt": "2025-06-08T23:05:48.322Z",
+  "updatedAt": "2025-01-08T01:54:00.000Z",
   "timestamp": "2025-06-08T23:05:48.322Z",
-  "history": [],
+  "history": [
+    {
+      "action": "status_change",
+      "oldStatus": "open",
+      "newStatus": "resolved",
+      "timestamp": "2025-01-08T01:54:00.000Z",
+      "note": "Security improvement already implemented with centralized configuration"
+    }
+  ],
   "verification": []
 }

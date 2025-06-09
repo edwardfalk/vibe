@@ -1,0 +1,27 @@
+{
+  "id": "CR-2025-06-09-bug-zouq",
+  "type": "bug",
+  "title": "Bug Fix: `window.player.velocity` is undefined – dash test ...",
+  "description": "## CodeRabbit Suggestion\n\n**Category:** bug\n**Priority:** high\n**Source PR:** #undefined\n\n### Suggestion Details\n`window.player.velocity` is undefined – dash test will crash: Most game objects expose\n\n### Implementation Notes\n- Review the original CodeRabbit suggestion in PR #undefined\n- Implement the suggested changes following project coding standards\n- Test thoroughly before creating a pull request\n- Update this ticket status when work begins and completes\n\n### Acceptance Criteria\n- [ ] Review original CodeRabbit suggestion\n- [ ] Implement suggested changes\n- [ ] Add appropriate tests\n- [ ] Update documentation if needed\n- [ ] Create pull request with changes\n- [ ] Verify CodeRabbit approval in new PR\n\n### Tracking\n- **Suggestion Hash:** dW5kZWZpbmVkLWJ1Zy1gd2luZG93LnBs\n- **Generated:** 2025-06-09T00:41:16.540Z\n\n---\n*This ticket was automatically generated from CodeRabbit review suggestions.*",
+  "tags": [
+    "coderabbit",
+    "bug",
+    "auto-generated"
+  ],
+  "status": "open",
+  "priority": "high",
+  "source": "coderabbit",
+  "pullRequest": "#undefined",
+  "coderabbitSuggestion": "`window.player.velocity` is undefined – dash test will crash: Most game objects expose",
+  "suggestionHash": "dW5kZWZpbmVkLWJ1Zy1gd2luZG93LnBs",
+  "file": null,
+  "line": null,
+  "reviewUrl": null,
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-09T00:41:16.540Z",
+  "updatedAt": "2025-06-09T00:41:16.540Z",
+  "timestamp": "2025-06-09T00:41:16.540Z",
+  "history": [],
+  "verification": []
+}

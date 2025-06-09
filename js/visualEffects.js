@@ -100,67 +100,27 @@ class VisualEffectsManager {
   }
 
   drawSpaceGradient(p) {
+    // Create dynamic space gradient
     p.push();
     p.noFill();
+
     for (let i = 0; i <= p.height; i += 2) {
       const inter = p.map(i, 0, p.height, 0, 1);
-      const c1 = p.color(15, 5, 35);
-      const c2 = p.color(60, 30, 80);
-      const c3 = p.color(25, 15, 45);
+      const c1 = p.color(15, 5, 35); // Deep space purple
+      const c2 = p.color(60, 30, 80); // Lighter purple
+      const c3 = p.color(25, 15, 45); // Mid purple
+
       let currentColor;
       if (inter < 0.5) {
         currentColor = p.lerpColor(c1, c3, inter * 2);
       } else {
         currentColor = p.lerpColor(c3, c2, (inter - 0.5) * 2);
       }
+
       p.stroke(currentColor);
       p.line(0, i, p.width, i);
     }
-
-    // Base space gradient
-    this.drawSpaceGradient();
-
-    // Only draw advanced effects if initialized
-    if (this.initialized) {
-      // Animated aurora effects
-      this.drawAuroras(camera);
-
-      // Dynamic nebula clouds
-      this.drawNebulae(camera);
-
-      // Cosmic dust particles
-      this.drawCosmicDust(camera);
-
-      // Distant stars with twinkle effects
-      this.drawEnhancedStars(camera);
-    }
-
-    // Ensure blend mode is reset to normal after all effects
-    blendMode(BLEND);
-  }
-
-  drawSpaceGradient() {
-    // Create dynamic space gradient
-    push();
-    noFill();
-
-    for (let i = 0; i <= height; i += 2) {
-      const inter = map(i, 0, height, 0, 1);
-      const c1 = color(15, 5, 35); // Deep space purple
-      const c2 = color(60, 30, 80); // Lighter purple
-      const c3 = color(25, 15, 45); // Mid purple
-
-      let currentColor;
-      if (inter < 0.5) {
-        currentColor = lerpColor(c1, c3, inter * 2);
-      } else {
-        currentColor = lerpColor(c3, c2, (inter - 0.5) * 2);
-      }
-
-      stroke(currentColor);
-      line(0, i, width, i);
-    }
-    pop();
+    p.pop();
   }
 
   drawAuroras(p, camera) {

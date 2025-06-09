@@ -6,7 +6,7 @@
  */
 
 import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -238,7 +238,7 @@ class MCPTestRunner {
 }
 
 // Run tests if this file is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     const runner = new MCPTestRunner();
     runner.runAllTests().catch(error => {
         console.error('💥 Test runner crashed:', error);
