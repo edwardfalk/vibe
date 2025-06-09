@@ -15,7 +15,7 @@ test.describe('Gameplay Probes', () => {
       () => window.gameState && window.player && window.audio
     );
     const probe = await page.evaluate(async () => {
-      const mod = await import('../js/ai-liveness-probe.js');
+      const mod = await import('/js/ai-liveness-probe.js');
       return mod.default;
     });
     expect(probe.failure).toBeNull();

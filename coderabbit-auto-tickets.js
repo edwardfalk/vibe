@@ -8,12 +8,16 @@ import { fetchCodeRabbitReviews } from './pull-coderabbit-reviews.js';
 import { TicketManager } from './ticketManager.js';
 import { CONFIG } from './js/config.js';
 import { logError, retryOperation } from './js/errorHandler.js';
+import fs from 'fs/promises';
+import path from 'path';
 
 class CodeRabbitTicketCreator {
   constructor() {
     this.ticketManager = new TicketManager();
     this.createdTickets = [];
     this.skippedSuggestions = [];
+    this.processedSuggestionsFile = 'tests/bug-reports/processed-coderabbit-suggestions.json';
+    this.processedSuggestions = new Set();
   }
 
   /**
@@ -23,17 +27,23 @@ class CodeRabbitTicketCreator {
     console.log('🤖 Starting CodeRabbit auto-ticket creation...\n');
 
     try {
-      // Get CodeRabbit reviews
-      const reviews = await this.getCodeRabbitData();
+      // Load previously processed suggestions
+      await this.loadProcessedSuggestions();
 
-      // Extract high-priority suggestions
-      const suggestions = this.extractHighPrioritySuggestions(reviews);
+      // Get latest CodeRabbit reviews
+      const reviews = await this.getLatestCodeRabbitData();
+
+      // Extract high-priority suggestions that haven't been processed
+      const suggestions = this.extractNewHighPrioritySuggestions(reviews);
 
       // Check for existing tickets to avoid duplicates
       const existingTickets = await this.getExistingCodeRabbitTickets();
 
       // Create tickets for new suggestions
       await this.createTicketsForSuggestions(suggestions, existingTickets);
+
+      // Save processed suggestions
+      await this.saveProcessedSuggestions();
 
       // Report summary
       this.reportSummary();
@@ -44,100 +54,103 @@ class CodeRabbitTicketCreator {
   }
 
   /**
-   * Get CodeRabbit review data
+   * Load previously processed suggestions from file
    */
-  async getCodeRabbitData() {
-    console.log('📥 Fetching CodeRabbit reviews...');
+  async loadProcessedSuggestions() {
+    try {
+      const data = await fs.readFile(this.processedSuggestionsFile, 'utf8');
+      const processed = JSON.parse(data);
+      this.processedSuggestions = new Set(processed.suggestions || []);
+      console.log(`📋 Loaded ${this.processedSuggestions.size} previously processed suggestions`);
+    } catch (error) {
+      console.log('📋 No previous processed suggestions found, starting fresh');
+      this.processedSuggestions = new Set();
+    }
+  }
 
-    // Capture console output from fetchCodeRabbitReviews
-    const originalLog = console.log;
-    let capturedOutput = '';
+  /**
+   * Save processed suggestions to file
+   */
+  async saveProcessedSuggestions() {
+    try {
+      const data = {
+        lastUpdated: new Date().toISOString(),
+        suggestions: Array.from(this.processedSuggestions)
+      };
+      await fs.writeFile(this.processedSuggestionsFile, JSON.stringify(data, null, 2));
+      console.log(`💾 Saved ${this.processedSuggestions.size} processed suggestions`);
+    } catch (error) {
+      console.error('⚠️ Failed to save processed suggestions:', error);
+    }
+  }
 
-    console.log = (...args) => {
-      capturedOutput += args.join(' ') + '\n';
-      originalLog(...args);
-    };
+  /**
+   * Generate unique hash for a suggestion to track if it's been processed
+   */
+  generateSuggestionHash(suggestion) {
+    // Create a unique identifier based on PR, category, and key parts of the text
+    const key = `${suggestion.prNumber}-${suggestion.category}-${suggestion.text.substring(0, 100)}`;
+    return Buffer.from(key).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 32);
+  }
+
+  /**
+   * Get latest CodeRabbit review data from the analysis files
+   */
+  async getLatestCodeRabbitData() {
+    console.log('📥 Loading latest CodeRabbit analysis data...');
 
     try {
-      await fetchCodeRabbitReviews();
-      console.log = originalLog;
-      return this.parseCodeRabbitOutput(capturedOutput);
+      // Read the latest summary to get overview
+      const summaryPath = 'coderabbit-reviews/latest-summary.json';
+      const summaryData = await fs.readFile(summaryPath, 'utf8');
+      const summary = JSON.parse(summaryData);
+
+      // Read high-priority issues
+      const highPriorityPath = 'coderabbit-reviews/latest-high-priority.json';
+      const highPriorityData = await fs.readFile(highPriorityPath, 'utf8');
+      const highPriority = JSON.parse(highPriorityData);
+
+      console.log(`📊 Found ${summary.totalSuggestions} total suggestions across ${summary.totalPRs} PRs`);
+      console.log(`🚨 High-priority issues: ${summary.priorities.high}`);
+
+      return {
+        summary,
+        highPriority: highPriority.suggestions || []
+      };
     } catch (error) {
-      console.log = originalLog;
+      console.error('❌ Failed to load CodeRabbit data:', error);
       throw error;
     }
   }
 
   /**
-   * Parse CodeRabbit output to extract structured data
+   * Extract new high-priority suggestions that haven't been processed
    */
-  parseCodeRabbitOutput(output) {
-    const lines = output.split('\n');
-    const reviews = [];
-    let currentPR = null;
-    let currentSuggestions = [];
+  extractNewHighPrioritySuggestions(data) {
+    const suggestions = [];
+    const highPrioritySuggestions = data.highPriority;
 
-    for (const line of lines) {
-      // Detect PR sections
-      const prMatch = line.match(/🔍 Checking PR #(\d+): (.+)/);
-      if (prMatch) {
-        if (currentPR) {
-          reviews.push({
-            ...currentPR,
-            suggestions: currentSuggestions,
-          });
-        }
-        currentPR = {
-          number: prMatch[1],
-          title: prMatch[2],
-          suggestions: [],
-        };
-        currentSuggestions = [];
+    console.log(`🔍 Processing ${highPrioritySuggestions.length} high-priority suggestions...`);
+
+    for (const suggestion of highPrioritySuggestions) {
+      // Generate hash to check if already processed
+      const hash = this.generateSuggestionHash(suggestion);
+      
+      if (this.processedSuggestions.has(hash)) {
+        console.log(`⏭️ Skipping already processed: ${suggestion.category} in PR #${suggestion.prNumber}`);
         continue;
       }
 
-      // Detect high-priority suggestions
-      const suggestionMatch = line.match(/- (security|bug|performance): (.+)/);
-      if (suggestionMatch && currentPR) {
-        currentSuggestions.push({
-          category: suggestionMatch[1],
-          text: suggestionMatch[2],
-          priority: 'high',
-          pr: currentPR.number,
+      // Only process high-priority suggestions
+      if (suggestion.priority === 'high') {
+        suggestions.push({
+          ...suggestion,
+          hash
         });
       }
     }
 
-    // Add the last PR
-    if (currentPR) {
-      reviews.push({
-        ...currentPR,
-        suggestions: currentSuggestions,
-      });
-    }
-
-    return reviews;
-  }
-
-  /**
-   * Extract high-priority suggestions from reviews
-   */
-  extractHighPrioritySuggestions(reviews) {
-    const suggestions = [];
-
-    for (const review of reviews) {
-      for (const suggestion of review.suggestions) {
-        if (suggestion.priority === 'high') {
-          suggestions.push({
-            ...suggestion,
-            prTitle: review.title,
-            prNumber: review.number,
-          });
-        }
-      }
-    }
-
-    console.log(`🎯 Found ${suggestions.length} high-priority suggestions`);
+    console.log(`🎯 Found ${suggestions.length} new high-priority suggestions to process`);
     return suggestions;
   }
 
@@ -193,6 +206,12 @@ class CodeRabbitTicketCreator {
         // Create ticket
         const ticket = await this.createTicketFromSuggestion(suggestion);
         this.createdTickets.push(ticket);
+        
+        // Mark suggestion as processed
+        if (suggestion.hash) {
+          this.processedSuggestions.add(suggestion.hash);
+        }
+        
         console.log(`✅ Created ticket: ${ticket.id}`);
       } catch (error) {
         console.error(
@@ -206,14 +225,49 @@ class CodeRabbitTicketCreator {
    * Check if a suggestion is a duplicate
    */
   isDuplicateSuggestion(suggestion, existingTickets) {
-    return existingTickets.some((ticket) => {
-      // Check if same PR and similar category
-      return (
-        ticket.pullRequest === `#${suggestion.prNumber}` &&
-        ticket.tags.includes(suggestion.category) &&
-        ticket.status !== 'closed'
-      );
+    // First check if we've already processed this suggestion hash
+    if (suggestion.hash && this.processedSuggestions.has(suggestion.hash)) {
+      return true;
+    }
+
+    // Check against existing tickets
+    const isDuplicate = existingTickets.some((ticket) => {
+      // Check if same PR and similar category and similar content
+      const samePR = ticket.pullRequest === `#${suggestion.prNumber}`;
+      const sameCategory = ticket.tags && ticket.tags.includes(suggestion.category);
+      const notClosed = ticket.status !== 'closed' && ticket.status !== 'resolved';
+      
+      // Also check for similar suggestion text to catch variations
+      const similarText = ticket.coderabbitSuggestion && 
+        suggestion.text && 
+        this.calculateTextSimilarity(ticket.coderabbitSuggestion, suggestion.text) > 0.8;
+
+      return samePR && sameCategory && notClosed && (similarText || 
+        (ticket.coderabbitSuggestion === suggestion.text));
     });
+
+    return isDuplicate;
+  }
+
+  /**
+   * Calculate text similarity between two strings (simple approach)
+   */
+  calculateTextSimilarity(text1, text2) {
+    if (!text1 || !text2) return 0;
+    
+    const normalize = (str) => str.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+    const norm1 = normalize(text1);
+    const norm2 = normalize(text2);
+    
+    if (norm1 === norm2) return 1;
+    
+    // Simple word overlap similarity
+    const words1 = new Set(norm1.split(/\s+/));
+    const words2 = new Set(norm2.split(/\s+/));
+    const intersection = new Set([...words1].filter(x => words2.has(x)));
+    const union = new Set([...words1, ...words2]);
+    
+    return intersection.size / union.size;
   }
 
   /**
@@ -233,6 +287,10 @@ class CodeRabbitTicketCreator {
       source: 'coderabbit',
       pullRequest: `#${suggestion.prNumber}`,
       coderabbitSuggestion: suggestion.text,
+      suggestionHash: suggestion.hash, // Track the hash for future deduplication
+      file: suggestion.file || null,
+      line: suggestion.line || null,
+      reviewUrl: suggestion.reviewUrl || null,
       artifacts: [],
       relatedTickets: [],
       createdAt: new Date().toISOString(),
@@ -289,12 +347,15 @@ class CodeRabbitTicketCreator {
    * Generate ticket description from suggestion
    */
   generateTicketDescription(suggestion) {
+    const fileInfo = suggestion.file ? `**File:** ${suggestion.file}${suggestion.line ? ` (Line ${suggestion.line})` : ''}\n` : '';
+    const reviewLink = suggestion.reviewUrl ? `**Review Link:** ${suggestion.reviewUrl}\n` : '';
+    
     return `## CodeRabbit Suggestion
 
 **Category:** ${suggestion.category}
 **Priority:** ${suggestion.priority}
-**Source PR:** #${suggestion.prNumber} - ${suggestion.prTitle}
-
+**Source PR:** #${suggestion.prNumber}${suggestion.prTitle ? ` - ${suggestion.prTitle}` : ''}
+${fileInfo}${reviewLink}
 ### Suggestion Details
 ${suggestion.text}
 
@@ -311,6 +372,10 @@ ${suggestion.text}
 - [ ] Update documentation if needed
 - [ ] Create pull request with changes
 - [ ] Verify CodeRabbit approval in new PR
+
+### Tracking
+- **Suggestion Hash:** ${suggestion.hash}
+- **Generated:** ${new Date().toISOString()}
 
 ---
 *This ticket was automatically generated from CodeRabbit review suggestions.*`;
@@ -365,3 +430,4 @@ if (import.meta.url.includes('coderabbit-auto-tickets.js')) {
 }
 
 export { CodeRabbitTicketCreator };
+

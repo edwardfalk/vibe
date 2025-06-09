@@ -18,8 +18,12 @@
     "test:comprehensive": "bun run test:playwright && bun run test:mcp",
     "api": "bun run ticket-api.js",
     "coderabbit:pull": "bun pull-coderabbit-reviews.js",
+    "coderabbit:fetch-complete": "bun fetch-complete-coderabbit-reviews.js",
+    "coderabbit:analyze": "bun analyze-coderabbit-data.js",
     "coderabbit:auto-tickets": "bun coderabbit-auto-tickets.js",
-    "coderabbit:cycle": "bun run coderabbit:pull && bun run coderabbit:auto-tickets",
+    "coderabbit:resolve-outdated": "bun resolve-outdated-coderabbit-tickets.js",
+    "coderabbit:workflow": "bun coderabbit-ticket-workflow.js",
+    "coderabbit:cycle": "bun run coderabbit:fetch-complete && bun run coderabbit:analyze && bun run coderabbit:workflow",
     "setup": "cp .env.example .env && echo 'Please edit .env with your GitHub token'",
     "validate-env": "node -e \"import('./js/config.js').then(() => console.log('✅ Environment validation passed'))\"",
     "lint": "bunx eslint \"**/*.js\"",
@@ -53,10 +57,12 @@
     "vitest": "^3.2.2"
   },
   "dependencies": {
+    "compression": "^1.8.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "jszip": "^3.10.1",
-    "p5": "^1.7.0"
+    "p5": "^1.7.0",
+    "zod": "^3.25.56"
   },
   "keywords": [
     "game",

@@ -97,7 +97,7 @@ class TicketManager {
       console.log('🎫 Ticket updated:', ticket.id);
       return ticket;
     } catch (error) {
-      console.error('❌ Failed to update ticket:', error);
+      logError(error, { operation: 'updateTicket', ticketId });
       throw error;
     }
   }
@@ -125,7 +125,7 @@ class TicketManager {
 
       return ticket;
     } catch (error) {
-      console.error('❌ Failed to get ticket:', error);
+      logError(error, { operation: 'getTicket', ticketId });
       throw error;
     }
   }
@@ -153,7 +153,7 @@ class TicketManager {
 
       return tickets;
     } catch (error) {
-      console.error('❌ Failed to list tickets:', error);
+      logError(error, { operation: 'listTickets' });
       throw error;
     }
   }

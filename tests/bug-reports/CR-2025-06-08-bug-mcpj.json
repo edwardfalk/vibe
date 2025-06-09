@@ -8,16 +8,25 @@
     "bug",
     "auto-generated"
   ],
-  "status": "open",
+  "status": "resolved",
   "priority": "high",
   "source": "coderabbit",
   "pullRequest": "#10",
   "coderabbitSuggestion": "using the `recursive` option and adding error handling for more robust directory...",
+  "resolution": "Generic incomplete suggestion - resolved as not actionable",
   "artifacts": [],
   "relatedTickets": [],
   "createdAt": "2025-06-08T23:05:48.628Z",
-  "updatedAt": "2025-06-08T23:05:48.628Z",
+  "updatedAt": "2025-01-08T01:51:00.000Z",
   "timestamp": "2025-06-08T23:05:48.629Z",
-  "history": [],
+  "history": [
+    {
+      "action": "status_change",
+      "oldStatus": "open",
+      "newStatus": "resolved",
+      "timestamp": "2025-01-08T01:51:00.000Z",
+      "note": "Generic incomplete suggestion - resolved as not actionable"
+    }
+  ],
   "verification": []
 }
