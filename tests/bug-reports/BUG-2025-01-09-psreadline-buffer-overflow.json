@@ -1,0 +1,80 @@
+{
+  "id": "BUG-2025-01-09-psreadline-buffer-overflow",
+  "type": "bug",
+  "title": "PSReadLine Buffer Overflow in Cursor Terminal",
+  "description": "PSReadLine version 2.3.6 causes severe buffer overflow exceptions in Cursor terminal, making PowerShell commands unreliable and causing frequent crashes.",
+  "severity": "high",
+  "priority": "high",
+  "status": "documented",
+  "tags": ["powershell", "terminal", "psreadline", "cursor", "buffer-overflow", "development-environment"],
+  "reporter": "AI Assistant",
+  "assignee": "Development Team",
+  "created": "2025-01-09T15:53:00Z",
+  "updated": "2025-01-09T15:53:00Z",
+  "environment": {
+    "os": "Windows 10.0.26100",
+    "powershell": "7.5.1",
+    "psreadline": "2.3.6+d2e770f93b7a53d8660a6402eb29d1ae1c35e767",
+    "cursor": "Latest",
+    "terminal": "Cursor Integrated Terminal"
+  },
+  "reproduction_steps": [
+    "1. Open Cursor with Vibe project",
+    "2. Open integrated PowerShell terminal",
+    "3. Run any complex command with pipes: `Get-Process | Where-Object {$_.ProcessName -like '*code*'}`",
+    "4. Observe ArgumentOutOfRangeException with cursor positioning",
+    "5. Notice BufferHeight: 1 in error details"
+  ],
+  "expected_behavior": "PowerShell commands should execute normally without buffer overflow exceptions",
+  "actual_behavior": "Commands crash with ArgumentOutOfRangeException, terminal becomes unstable, commands get cut off or repeated",
+  "error_details": {
+    "exception": "System.ArgumentOutOfRangeException",
+    "message": "The value must be greater than or equal to zero and less than the console's buffer size in that dimension. (Parameter 'top')",
+    "buffer_width": 95,
+    "buffer_height": 1,
+    "stack_trace": "at System.ConsolePal.SetCursorPosition(Int32 left, Int32 top)"
+  },
+  "workarounds": [
+    "Remove PSReadLine module temporarily: `Remove-Module PSReadLine -Force`",
+    "Use simple commands without complex piping",
+    "Use external PowerShell window for complex operations",
+    "Apply safe PSReadLine configuration with disabled features"
+  ],
+  "solutions_implemented": [
+    "Created comprehensive PowerShell Issues Guide (docs/POWERSHELL_ISSUES_GUIDE.md)",
+    "Updated PowerShell profile with error-handled PSReadLine configuration",
+    "Created fix script (scripts/powershell/fix-psreadline.ps1)",
+    "Documented working vs problematic commands",
+    "Provided alternative command patterns"
+  ],
+  "testing_notes": [
+    "✅ Simple commands work: ls, cd, pwd, Get-Date",
+    "✅ Bun commands work: bun run dev, bun install",
+    "❌ Complex piped commands fail consistently",
+    "❌ Where-Object operations trigger buffer overflow",
+    "❌ Long parameter lists cause issues"
+  ],
+  "impact_assessment": {
+    "development_workflow": "High - Affects daily PowerShell usage",
+    "automation": "Medium - Scripts need workarounds",
+    "testing": "Low - Most testing uses other tools",
+    "deployment": "Low - Production doesn't use Cursor terminal"
+  },
+  "related_issues": [
+    "PowerShell/PSReadLine#3796 - Buffer overflow in VS Code",
+    "microsoft/vscode#185174 - Terminal integration issues"
+  ],
+  "artifacts": [
+    "docs/POWERSHELL_ISSUES_GUIDE.md",
+    "scripts/powershell/fix-psreadline.ps1",
+    "scripts/powershell/vibe-powershell-profile.ps1"
+  ],
+  "next_actions": [
+    "Monitor PSReadLine updates for official fixes",
+    "Test alternative terminal configurations",
+    "Evaluate switching to bash/zsh for development",
+    "Implement automated PowerShell stability testing"
+  ],
+  "confidence_level": 9,
+  "resolution_timeline": "Workarounds implemented immediately, permanent fix depends on PSReadLine/Cursor updates"
+} 

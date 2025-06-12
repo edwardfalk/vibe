@@ -32,6 +32,37 @@
 
 **2. Ticketing System: Bugs, Features, Enhancements, Tasks**
 
+ 🚀 Ticketing system Quick Reference:
+
+**Create a ticket:**
+```sh
+bun run ticket:create type=bug title="My bug" tags=ai,urgent checklist='["step1","step2"]'
+```
+**Update a ticket:**
+```sh
+bun run ticket:update id=BUG-... status=closed
+```
+**Get a ticket:**
+```sh
+bun run ticket:get id=BUG-...
+```
+**List all tickets:**
+```sh
+bun run ticket:list
+```
+**Check off a checklist step:**
+```sh
+bun run ticket:check id=BUG-... step="step1" result="Passed"
+```
+**Get the latest/focused ticket:**
+```sh
+bun run ticket:latest
+```
+**Set a ticket as focus:**
+```sh
+bun run ticket:update id=BUG-... tags=focus,ai,testing
+```
+
 - The ticketing system is a core, modular subsystem.
 - All work (bugs, features, enhancements, tasks) must be tracked via the ticketing system.
 - Full documentation, schema, API usage, and workflow best practices are now in the dedicated guide:
@@ -42,7 +73,6 @@
 - **All tickets created via the API must include a unique `id` field. The backend will reject tickets without an `id`. See the guide for example payloads.**
 - Tickets support tags, status, history, artifacts (screenshots, logs), and related tickets.
 - The bug-report watcher script (`move-bug-reports.js`) auto-moves artifacts to the correct folder.
-- No ZIP download option is provided; all artifacts must be saved to the bug-reports folder.
 - The AI must be able to programmatically open the bug-report modal and access the same data as a human tester.
 - All feature/enhancement work should be logged through the same metadata-rich JSON ticket workflow.
 - **Known issue:** If the bug report modal does not close after submission, this is tracked as bug ticket `BR-2024-06-01-modal-bug-001`. See the guide for troubleshooting steps.
@@ -75,7 +105,7 @@
 **Best Practices:**
 - Prefer built-in tools for simple, day-to-day edits.
 - Use MCP tools for batch, advanced, or automation tasks.
-- Always check path requirements (absolute for MCP, relative for built-in).
+- Always check path requirements (absolute for MCP filesystem, relative for built-in).
 - For advanced Playwright workflows, see [MCP_PLAYWRIGHT_TESTING_GUIDE.md](./MCP_PLAYWRIGHT_TESTING_GUIDE.md).
 
 **Example: Automated Bug Ticket Creation**
@@ -91,6 +121,14 @@
 - The `dev` script starts Five Server (frontend), bug watcher, and ticket API server in parallel.
 - If port 5500 is in use, Five Server will use another port (e.g., 56555); always check the console for the actual port.
 - **Preferred Environment:** Windows 11 + PowerShell 7 + Bun for optimal performance and Windows-native tooling.
+
+**Shell and Path Standards (MANDATORY):**
+- **ALWAYS use PowerShell 7 (pwsh) as the default shell** - NOT bash, WSL, or cmd
+- **ALWAYS use Windows-style paths** (e.g., `C:\CursorWorkspace\projects\vibe`) - NOT Unix-style paths (`/c/...`)
+- **ALWAYS use `bun` and `bunx`** instead of `npm` and `npx`
+- **Terminal commands must work in PowerShell** - avoid bash-specific syntax
+- **File paths in scripts must use Windows format** with backslashes or forward slashes that work in PowerShell
+- If terminal shows `/c/...` paths, navigate to proper Windows path: `Set-Location "C:\CursorWorkspace\projects\vibe"`
 
 ---
 
@@ -159,6 +197,8 @@
 - Order functions so that those composing others appear earlier in the file.
 - If you encounter a bug or suboptimal code, add a `// TODO:` comment outlining the problem.
 - All code must pass linting (ESLint) and formatting (Prettier) checks before commit. See README for setup.
+- **ESLint Configuration:** Use `bunx eslint . --ext .js` for Windows compatibility instead of glob patterns
+- **Linting Commands:** `bun run lint` (check), `bun run lint:fix` (auto-fix), both work in PowerShell
 - Use ES modules (`import`/`export`) for all new code unless otherwise specified.
 - Handle errors gracefully and consistently; use early returns and clear error messages.
 - Write code that is easy to test (favor pure functions, dependency injection where possible).

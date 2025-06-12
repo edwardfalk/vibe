@@ -50,6 +50,19 @@ let effectsManager;
 let visualEffectsManager;
 let audio;
 
+// Sync local variables to window globals after restart
+window.updateGameLoopLocals = function() {
+  player = window.player;
+  enemies = window.enemies;
+  playerBullets = window.playerBullets;
+  enemyBullets = window.enemyBullets;
+  activeBombs = window.activeBombs;
+  explosionManager = window.explosionManager;
+  effectsManager = window.effectsManager;
+  visualEffectsManager = window.visualEffectsManager;
+  audio = window.audio;
+};
+
 // Global system references for easy access
 window.player = null;
 window.enemies = [];
