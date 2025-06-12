@@ -56,4 +56,7 @@ backups/
 # Game development artifacts
 *.psd
 *.ai
-*.sketch 
+*.sketch
+
+# Debug logs
+.debug/ 

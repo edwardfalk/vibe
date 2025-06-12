@@ -6,6 +6,10 @@
 import { CONFIG } from './config.js';
 import fs from 'fs/promises';
 import path from 'path';
+import { DebugLogger } from './DebugLogger.js';
+
+process.on('uncaughtException', err => DebugLogger.log('Uncaught Exception', err));
+process.on('unhandledRejection', err => DebugLogger.log('Unhandled Rejection', err));
 
 /**
  * Enhanced error class with context
@@ -189,3 +193,5 @@ export function safeJsonParse(jsonString, defaultValue = null) {
     return defaultValue;
   }
 }
+
+throw new Error('Intentional error for DebugLogger test');

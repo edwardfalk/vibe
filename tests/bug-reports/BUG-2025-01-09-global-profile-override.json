@@ -1,0 +1,83 @@
+{
+  "id": "BUG-2025-01-09-global-profile-override",
+  "type": "bug",
+  "title": "Fix Script Overwrote Global PowerShell Profile Breaking Modular Setups",
+  "description": "The fix-psreadline.ps1 script overwrote $PROFILE.CurrentUserAllHosts with the Vibe profile, causing ALL PowerShell sessions to load Vibe functions and breaking user's modular PowerShell setup.",
+  "severity": "critical",
+  "priority": "high",
+  "status": "resolved",
+  "tags": ["powershell", "profile", "global-override", "modular-setup", "fix-script", "configuration"],
+  "reporter": "User",
+  "assignee": "AI Assistant",
+  "created": "2025-01-09T16:15:00Z",
+  "updated": "2025-01-09T16:15:00Z",
+  "environment": {
+    "os": "Windows 10.0.26100",
+    "powershell": "7.5.1",
+    "affected_profile": "$PROFILE.CurrentUserAllHosts",
+    "script": "scripts/powershell/fix-psreadline.ps1"
+  },
+  "reproduction_steps": [
+    "1. Run scripts/powershell/fix-psreadline.ps1",
+    "2. Script copies Vibe profile to $PROFILE.CurrentUserAllHosts",
+    "3. Open external PowerShell terminal",
+    "4. Observe Vibe functions and branding load globally",
+    "5. Try to use modular PowerShell setup - fails due to override"
+  ],
+  "expected_behavior": "Fix script should only affect project-specific profiles, not global system profiles",
+  "actual_behavior": "Fix script overwrote global AllHosts profile, forcing Vibe functions in ALL PowerShell sessions and breaking modular setups",
+  "root_cause": {
+    "issue": "Script used $PROFILE.CurrentUserAllHosts instead of project-specific profile",
+    "code_location": "scripts/powershell/fix-psreadline.ps1 lines 87-95",
+    "problematic_code": "Copy-Item $vibeProfilePath $profilePath -Force",
+    "profile_affected": "CurrentUserAllHosts (global for all PowerShell hosts)"
+  },
+  "impact_assessment": {
+    "scope": "Global - affects ALL PowerShell sessions",
+    "user_experience": "Critical - breaks modular PowerShell workflows",
+    "development": "High - interferes with other projects",
+    "system_integrity": "Medium - doesn't break system but overrides user config"
+  },
+  "solution_implemented": {
+    "fix_script": "scripts/powershell/restore-system-profile.ps1",
+    "actions": [
+      "Detect Vibe content in AllHosts profile",
+      "Create backup of current (overwritten) profile",
+      "Restore original profile from backup if available",
+      "Create minimal AllHosts profile if no backup exists",
+      "Preserve user's modular setup capability"
+    ]
+  },
+  "prevention_measures": [
+    "Never modify $PROFILE.CurrentUserAllHosts in project scripts",
+    "Use workspace-specific configurations instead",
+    "Test profile scripts in isolated environments",
+    "Document profile loading order clearly",
+    "Add warnings about global profile modifications"
+  ],
+  "lessons_learned": [
+    "PowerShell profile hierarchy is critical to understand",
+    "AllHosts profiles override everything downstream",
+    "Modular setups require clean global profiles",
+    "Always backup before modifying system profiles",
+    "Project-specific profiles should stay project-specific"
+  ],
+  "testing_notes": [
+    "✅ Restore script successfully detects override",
+    "✅ Backup creation works properly", 
+    "✅ Original profile restoration functional",
+    "✅ Minimal profile creation as fallback",
+    "✅ User's modular setup preserved"
+  ],
+  "related_issues": [
+    "BUG-2025-01-09-psreadline-buffer-overflow"
+  ],
+  "artifacts": [
+    "scripts/powershell/restore-system-profile.ps1",
+    "docs/POWERSHELL_ISSUES_GUIDE.md (updated)",
+    "Profile backups with timestamps"
+  ],
+  "resolution_timeline": "Immediate - fix script created and tested",
+  "confidence_level": 10,
+  "user_feedback": "User was going crazy trying to figure out why modular setup wasn't working - this explains everything!"
+} 

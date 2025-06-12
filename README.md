@@ -6,6 +6,7 @@
 
 ## Documentation Map
 
+- [docs/PROJECT_VISION.md](./docs/PROJECT_VISION.md): Project vision, design pillars, and development philosophy
 - [.cursorrules](./.cursorrules): Core rules and standards (architecture, coding, workflow)
 - [docs/CODERABBIT_COMPLETE_GUIDE.md](./docs/CODERABBIT_COMPLETE_GUIDE.md): Complete CodeRabbit integration with deduplication system
 - [docs/TICKETING_SYSTEM_GUIDE.md](./docs/TICKETING_SYSTEM_GUIDE.md): Ticketing system schema and workflow
@@ -16,7 +17,15 @@
 
 ## Overview
 
-Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
+Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. The beat is made with the beatClock. Sound effects, ambient noise and certain enemy actions happens with the beat. This is not something that should really be noticed when playing and controlling the player other than that the sounds together build the "music" in the game. The stabber, for example, is an enemy that tries to stab you with what from the beginning was a "laser knife" but now is more of a weird beak. The stabber makes a screech when attacking, but the game is made such that the stabber moves slowly near the player until he falls into the correct beat on 3.5 in the 4/4 beat where he can make his dissonant screech (all the other sounds harmonizes) and thereby syncopating the other sounds. Enememies with dark bass sounds act on beat 1 as bass drums, lighter punchy sounds fall in as snares, etc.
+
+The main character is a bizarre mad action hero/antihero that walks around in the middle of outer space blasting aliens that are a strange mix of murderous psychopaths, whiny babies and bumbling idiots. At the same time. The grunts are the simplest enemies, they have a baby-like voice and asks for their mommy and what the password is for the wifi while attacking and trying to kill you. They shoot and try to keep their distance. The stabbers make eerie female psycho noises and make dashing attacks when near. You can dash away yourself or shoot to keep them back. The rushers .. rush. and try to blow themselves up as close to you as possible. The tanks are giants with armor that shoot giant plasma balls that goes straight through both enemies and the player killing them instantly. If you kill a tank they collapse into a plasma cloud that's not healthy at all to enter. If you manage to get close enough to one you place a nuclear time bomb on it and have 3 seconds to get the hell out of there. When the bomb explodes the tank together with the nuke forms a radioactive greenish plasma cloud with particles in it. That cloud is even worse. 
+
+The player character fires quickly and makes a quarter note hihat beat. An idea to expand the game with is to have a shotgun power-up that fires more slowly, and you would get a damage bonus if you fire exactly on beat 1. If you keep the button pressed you could fire a little bit faster, but too get the damage bonus you would have to wait a moment longer and fire manually. 
+
+ Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
+
+For the project's core vision, design pillars, and development philosophy, see [`docs/PROJECT_VISION.md`](./docs/PROJECT_VISION.md).
 
 **Technology Stack:**
 
@@ -30,6 +39,36 @@ The project features a robust ticketing system for all bugs, features, and enhan
 For a detailed explanation of the Cosmic Beat System and musical gameplay, see [`docs/DESIGN.md`](./docs/DESIGN.md).
 
 ---
+
+## 📁 Project Structure
+
+```
+vibe/
+├── 📁 js/                          # Core game modules (modular architecture)
+│   ├── 🎮 GameLoop.js              # Main game loop and coordination
+│   ├── 🎵 Audio.js                 # Audio system and beat synchronization
+│   ├── 👾 player.js                # Player entity and controls
+│   ├── 🤖 BaseEnemy.js             # Base enemy class
+│   ├── 🤖 [Enemy types].js         # Grunt, Rusher, Tank, Stabber
+│   ├── 💥 effects.js               # Visual effects system
+│   ├── 🎯 CollisionSystem.js       # Collision detection
+│   ├── 📷 CameraSystem.js          # Camera and screen shake
+│   ├── 🎫 ticketManager.js         # Bug reporting and tickets
+│   └── 📁 explosions/              # Explosion effects subsystem
+├── 📁 docs/                        # Documentation
+│   ├── 📁 archive/                 # Archived documentation
+│   └── 📁 vision/                  # Project vision documents
+├── 📁 scripts/                     # Utility scripts
+│   ├── 📁 powershell/              # PowerShell environment scripts
+│   ├── 🔧 move-bug-reports.js      # Bug report file watcher
+│   ├── 🧪 run-mcp-tests.js         # MCP testing utilities
+│   └── 🎫 update-ticket-status.js  # Ticket management utilities
+├── 📁 tests/                       # Testing infrastructure
+│   └── 📁 bug-reports/             # Bug report storage
+├── 🌐 index.html                   # Game entry point
+├── 🎫 ticket-api.js                # Ticket API server
+└── 📦 package.json                 # Dependencies and scripts
+```
 
 ## Project Structure & Architecture
 
@@ -54,6 +93,33 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 - Each ticket must have a unique `id` and specify a `type` (`bug`, `feature`, `enhancement`, `task`).
 - Artifacts (screenshots, logs) are grouped per ticket and auto-moved by `move-bug-reports.js`.
 - The AI and automated scripts have full access to the ticketing system and bug-report modal.
+
+## Ticketing System CLI (AI/Automation/Dev)
+
+The recommended way to create, update, get, and list tickets from the command line or scripts is via the ticket CLI wrappers:
+
+### Usage
+
+- **Create a ticket:**
+  ```sh
+  bun run ticket:create type=bug title="My bug" status=open tags=test,urgent
+  ```
+- **Update a ticket:**
+  ```sh
+  bun run ticket:update id=BUG-... status=closed
+  ```
+- **Get a ticket:**
+  ```sh
+  bun run ticket:get id=BUG-...
+  ```
+- **List all tickets:**
+  ```sh
+  bun run ticket:list
+  ```
+
+Arguments are passed as key=value pairs. For `tags`, use a comma-separated list (e.g., `tags=ai,urgent`).
+
+This CLI is cross-platform, robust, and hides all curl/PowerShell/JSON quirks. It is the preferred interface for AI, automation, and scripting.
 
 ---
 
@@ -147,6 +213,7 @@ For detailed documentation, see [`docs/CODERABBIT_COMPLETE_GUIDE.md`](./docs/COD
 
 ## References
 
+- `docs/PROJECT_VISION.md`: Project vision, design pillars, and development philosophy
 - `.cursorrules`: Core standards and workflow reference
 - `docs/TICKETING_SYSTEM_GUIDE.md`: Ticketing system documentation
 - `docs/CODERABBIT_COMPLETE_GUIDE.md`: Complete CodeRabbit integration guide with deduplication system
@@ -260,3 +327,16 @@ For detailed testing documentation, see:
 
 - [MCP Playwright Testing Guide](docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md)
 - [Ticketing System Guide](docs/TICKETING_SYSTEM_GUIDE.md)
+
+## 🆕 Packages Workspace Layout (in progress)
+
+```
+packages/
+  core/       # Game loop, global state, timing, math utils, config
+  entities/   # Player, enemies, bullets
+  systems/    # Camera, spawning, collision, UI, background, test mode
+  fx/         # Explosions, visual effects, particles
+  tooling/    # Ticket manager, debug logger, Playwright probes
+```
+
+> NOTE: Migration from `/js` to workspaces is happening incrementally. Stubs exist in `/js` to keep the game running during the transition.

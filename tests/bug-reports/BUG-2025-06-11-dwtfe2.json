@@ -1,0 +1,42 @@
+{
+  "id": "BUG-2025-06-11-dwtfe2",
+  "type": "bug",
+  "title": "Game does not start: black screen with UI only",
+  "status": "open",
+  "tags": [
+    "focus",
+    "urgent"
+  ],
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "checklist": [
+    {
+      "step": "Reproduce",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    },
+    {
+      "step": "Diagnose",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    },
+    {
+      "step": "Fix",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    },
+    {
+      "step": "Verify",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    }
+  ],
+  "createdAt": "2025-06-11T23:42:48.092Z",
+  "updatedAt": "2025-06-11T23:42:48.092Z",
+  "verification": []
+}

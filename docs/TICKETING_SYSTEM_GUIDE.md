@@ -1,11 +1,43 @@
 # Ticketing System Guide
 
-> **Purpose:**  
-> This guide documents the modular ticketing system: schema, API, workflows, and best practices.  
-> For rules, see [.cursorrules](../.cursorrules).
+## 🚀 Quick Reference
 
-> **This document is the authoritative reference for Vibe's modular ticketing system.**
-> For architecture and coding standards, see the main `README.md` and `.cursorrules`.
+**Create a ticket:**
+```sh
+bun run ticket:create type=bug title="My bug" tags=ai,urgent checklist='["step1","step2"]'
+```
+**Update a ticket:**
+```sh
+bun run ticket:update id=BUG-... status=closed
+```
+**Get a ticket:**
+```sh
+bun run ticket:get id=BUG-...
+```
+**List all tickets:**
+```sh
+bun run ticket:list
+```
+**Check off a checklist step:**
+```sh
+bun run ticket:check id=BUG-... step="step1" result="Passed"
+```
+**Get the latest/focused ticket:**
+```sh
+bun run ticket:latest
+```
+**Set a ticket as focus:**
+```sh
+bun run ticket:update id=BUG-... tags=focus,ai,testing
+```
+
+**Ticket ID format:**
+- Always: `<TYPE>-<YYYY-MM-DD>-<random6>` (e.g., `BUG-2024-06-11-abc123`)
+
+**Ambiguity rules:**
+- If a ticket is tagged `focus` and not closed, it is always considered the "active" ticket.
+- If no ticket is focused, the most recently updated, not closed ticket is used.
+- If all are closed, you get a clear message.
 
 ---
 
@@ -74,6 +106,78 @@ Each ticket must include:
   "createdAt": "2024-06-01T12:00:00Z",
   "updatedAt": "2024-06-01T12:00:00Z"
 }
+```
+
+## 3a. Multi-Step Tickets & Checklists
+
+**Tickets can include a checklist field for multi-step actions, plans, or verification sequences.**
+
+### Checklist Structure
+- `checklist`: Array of steps, each as an object: `{ step, done, result, timestamp }`
+- Example:
+  ```json
+  "checklist": [
+    { "step": "Reproduce bug", "done": true, "result": "Confirmed", "timestamp": "2024-06-09T15:00:00Z" },
+    { "step": "Fix bug", "done": false, "result": null, "timestamp": null },
+    { "step": "Verify fix", "done": false, "result": null, "timestamp": null }
+  ]
+  ```
+
+### CLI Usage
+- **Create a ticket with checklist:**
+  ```sh
+  bun run ticket:create type=bug title="Test ticket" checklist='["Reproduce bug","Fix bug","Verify fix"]'
+  ```
+- **Check off a step:**
+  ```sh
+  bun run ticket:check id=BUG-... step="Reproduce bug" result="Confirmed"
+  ```
+- **Update checklist (advanced):**
+  ```sh
+  bun run ticket:update id=BUG-... checklist='[{"step":"Fix bug","done":true,"result":"Patched","timestamp":"2024-06-09T15:10:00Z"}]'
+  ```
+
+### Best Practices
+- Use checklists to plan, track, and verify multi-step tickets.
+- Each step can be checked off with a result and timestamp.
+- AI and automation should always update and confirm checklist progress.
+- Use `bun run ticket:get id=...` to see current checklist status.
+
+## 3b. Getting the Latest or Focused Ticket
+
+**To always get the right ticket (for AI or devs):**
+
+- Use the `latest` CLI command:
+  ```sh
+  bun run ticket:latest
+  ```
+- This will:
+  1. Return the ticket tagged with `focus` (and not closed), if any.
+  2. If none, return the most recently updated, not closed ticket.
+  3. If all are closed, print "No active tickets found."
+- The CLI prints a message indicating which logic was used (focus or fallback).
+
+### How to Set/Unset Focus
+- To set a ticket as "in focus":
+  ```sh
+  bun run ticket:update id=BUG-... tags=focus,ai,testing
+  ```
+- To remove focus, update the ticket without the `focus` tag:
+  ```sh
+  bun run ticket:update id=BUG-... tags=ai,testing
+  ```
+- Only one ticket should be in focus at a time for clarity. If multiple are focused, the most recently updated is used and a warning is printed.
+
+### Why This Avoids Ambiguity
+- "Latest" means "the one you are working on" if you set focus, not just the most recent.
+- If you don't set focus, you still get the most recently updated, not closed ticket.
+- If all are closed, you get a clear message.
+
+### Example
+```sh
+bun run ticket:update id=BUG-123 tags=focus,ai,testing
+bun run ticket:latest
+# Output: Returning focused ticket: BUG-123
 ```
 
 ---
@@ -151,7 +255,7 @@ createTicket(ticket);
   - `artifacts`: Array of file paths (relative to ticket folder)
   - `relatedTickets`: Array of ticket IDs
   - `createdAt`, `updatedAt`: ISO timestamps
-- If you create a ticket JSON file directly (due to backend downtime), ensure it follows the schema and folder structure. When the backend is available, use the API to register the ticket and move artifacts if needed. Mark the migration in the ticket’s `history` array.
+- If you create a ticket JSON file directly (due to backend downtime), ensure it follows the schema and folder structure. When the backend is available, use the API to register the ticket and move artifacts if needed. Mark the migration in the ticket's `history` array.
 - Reference this guide for updates and troubleshooting.
 
 ---
