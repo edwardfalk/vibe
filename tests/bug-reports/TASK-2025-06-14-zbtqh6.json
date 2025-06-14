@@ -1,0 +1,49 @@
+{
+  "id": "TASK-2025-06-14-zbtqh6",
+  "type": "task",
+  "title": "Stabilize ticketing workflow for AI agents",
+  "status": "open",
+  "tags": [
+    "ticketing",
+    "focus",
+    "priority-medium"
+  ],
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "checklist": [
+    {
+      "step": "Fix PowerShell quoting issues",
+      "done": true,
+      "result": "Replaced PowerShell wrapper with Bun direct call in package.json",
+      "timestamp": "2025-06-14T15:55:00.000Z"
+    },
+    {
+      "step": "Auto-start Ticket API in dev script",
+      "done": true,
+      "result": "Added bun run api to dev script earlier; verified present.",
+      "timestamp": "2025-06-14T15:55:00.000Z"
+    },
+    {
+      "step": "Improve CLI error messages",
+      "done": true,
+      "result": "Added showErrorAndExit helper with examples in ticket-cli.js",
+      "timestamp": "2025-06-14T16:05:00.000Z"
+    },
+    {
+      "step": "Add docs & examples",
+      "done": true,
+      "result": "Appended troubleshooting section with new examples to TICKETING_SYSTEM_GUIDE.md",
+      "timestamp": "2025-06-14T16:05:00.000Z"
+    },
+    {
+      "step": "Add Playwright probe for ticket creation",
+      "done": true,
+      "result": "Implemented tests/ticket-creation-probe.test.js",
+      "timestamp": "2025-06-14T16:05:00.000Z"
+    }
+  ],
+  "createdAt": "2025-06-14T13:46:08.897Z",
+  "updatedAt": "2025-06-14T16:05:00.000Z",
+  "verification": []
+}

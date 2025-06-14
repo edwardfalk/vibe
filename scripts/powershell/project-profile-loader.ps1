@@ -10,7 +10,7 @@ param(
 function Load-ProjectProfile {
     param([string]$Project)
     
-    $profilesPath = "C:\CursorWorkspace\profiles"
+    $profilesPath = "D:\projects\profiles"
     
     # Auto-detect project if not specified
     if (-not $Project) {
@@ -42,7 +42,7 @@ function Load-ProjectProfile {
 }
 
 # Create profiles directory if it doesn't exist
-$profilesPath = "C:\CursorWorkspace\profiles"
+$profilesPath = "D:\projects\profiles"
 if (-not (Test-Path $profilesPath)) {
     New-Item -ItemType Directory -Path $profilesPath -Force | Out-Null
 }

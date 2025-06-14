@@ -51,6 +51,7 @@
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { random, randomRange, floor } from './mathUtils.js';
+import { SFXManager } from './audio/SFXManager.js';
 
 export class Audio {
   /**
@@ -306,6 +307,13 @@ export class Audio {
       tank: { rate: 0.5, pitch: 0.2, volume: 0.4 }, // Reduced from 1.0 to 0.4
       stabber: { rate: 0.8, pitch: 2.0, volume: 0.4 }, // Fixed: was 0.4, comment said 0.3
     };
+
+    // Initialise dedicated SFX Manager (first extraction step)
+    this.sfxManager = new SFXManager(this);
+
+    // Override legacy methods to delegate to SFX manager
+    this.playSound = (...a) => this.sfxManager.playSound(...a);
+    this.playTone = (...a) => this.sfxManager.playTone(...a);
 
     console.log('🎵 Optimized Audio System ready');
   }
@@ -694,11 +702,11 @@ export class Audio {
       playerY = this.player.y;
     }
     // Ensure entity.x and entity.y are valid numbers
-    let ex =
+    const ex =
       entity && typeof entity.x === 'number' && !isNaN(entity.x)
         ? entity.x
         : 400;
-    let ey =
+    const ey =
       entity && typeof entity.y === 'number' && !isNaN(entity.y)
         ? entity.y
         : 300;

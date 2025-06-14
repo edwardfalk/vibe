@@ -11,6 +11,8 @@ import {
   ceil,
 } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
+import { speakAmbient } from './EnemySpeechUtils.js';
+import { addMotionTrail, maybeAddMotionTrail } from './EnemyFXUtils.js';
 
 /**
  * Stabber class - Melee assassin with armor system
@@ -90,11 +92,7 @@ class Stabber extends BaseEnemy {
     if (this.stabChantTimer > 0) this.stabChantTimer -= dt;
 
     // Update motion trail timer
-    this.motionTrailTimer += deltaTimeMs;
-    if (this.motionTrailTimer >= this.motionTrailInterval) {
-      this.drawMotionTrail();
-      this.motionTrailTimer = 0;
-    }
+    maybeAddMotionTrail(this, deltaTimeMs, [255, 140, 0]);
 
     // Handle atmospheric chanting
     if (this.stabChantTimer <= 0 && this.speechCooldown <= 0) {
@@ -446,7 +444,7 @@ class Stabber extends BaseEnemy {
     const angleDifference = Math.abs(playerDiff);
     const maxStabAngle = Math.PI / 6;
     const inStabDirection = angleDifference <= maxStabAngle;
-    let result = {
+    const result = {
       type: 'stabber-miss',
       x: tipX,
       y: tipY,
@@ -576,28 +574,11 @@ class Stabber extends BaseEnemy {
    * Trigger ambient speech specific to stabbers
    */
   triggerAmbientSpeech() {
-    if (window.audio && this.speechCooldown <= 0) {
-      if (
-        window.beatClock &&
-        window.beatClock.canStabberAttack() &&
-        random() < 0.2
-      ) {
-        const stabberLines = [
-          'STAB!',
-          'SLICE!',
-          'CUT!',
-          'POKE!',
-          'ACUPUNCTURE!',
-          'LITTLE PRICK!',
-          'STABBY MCSTABFACE!',
-          'NEEDLE THERAPY!',
-          'I COLLECT BELLY BUTTONS!',
-        ];
-        const randomLine = stabberLines[floor(random() * stabberLines.length)];
-        window.audio.speak(this, randomLine, 'stabber');
-        this.speechCooldown = this.maxSpeechCooldown;
-      }
-    }
+    speakAmbient(this, 'stabber', {
+      probability: 0.2,
+      beatList: [3.5], // off-beat accent
+      beatMultiplier: 2,
+    });
   }
 
   /**
@@ -623,14 +604,7 @@ class Stabber extends BaseEnemy {
    * Note: This is now called from updateSpecificBehavior based on deltaTime timer
    */
   drawMotionTrail() {
-    if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
-      try {
-        const trailColor = [255, 140, 0];
-        visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
-      } catch (error) {
-        console.log('⚠️ Stabber trail error:', error);
-      }
-    }
+    addMotionTrail(this.x, this.y, [255, 140, 0], 3);
   }
 
   /**
@@ -680,8 +654,8 @@ class Stabber extends BaseEnemy {
    */
   drawWeapon(s) {
     // Base knife dimensions
-    let knifeLength = s * 0.6; // Base length
-    let knifeWidth = s * 0.2; // Base width
+    const knifeLength = s * 0.6; // Base length
+    const knifeWidth = s * 0.2; // Base width
     let extensionFactor = 1.0; // Default (retracted)
     const extendedFactor = 2.0; // New fixed extension (about half of old max)
     let isExtended = false;
@@ -694,7 +668,7 @@ class Stabber extends BaseEnemy {
     // Color: always white when extended or retracted
     this.p.fill(255, 255, 255);
 
-    let currentKnifeLength = s * 0.6 * extensionFactor;
+    const currentKnifeLength = s * 0.6 * extensionFactor;
 
     // Draw main blade
     this.p.beginShape();

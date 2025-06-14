@@ -63,20 +63,37 @@ const API = 'http://localhost:3001/api/tickets';
 function parseTags(tags) {
   if (!tags) return [];
   if (Array.isArray(tags)) return tags;
-  return tags.split(',').map(t => t.trim()).filter(Boolean);
+  return tags
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean);
 }
 function parseChecklist(cl) {
   if (!cl) return [];
   if (typeof cl === 'string') {
     try {
       const arr = JSON.parse(cl);
-      return arr.map(s => typeof s === 'string' ? { step: s, done: false, result: null, timestamp: null } : s);
+      return arr.map((s) =>
+        typeof s === 'string'
+          ? { step: s, done: false, result: null, timestamp: null }
+          : s
+      );
     } catch {
       // fallback: comma-separated
-      return cl.split(',').map(s => ({ step: s.trim(), done: false, result: null, timestamp: null }));
+      return cl.split(',').map((s) => ({
+        step: s.trim(),
+        done: false,
+        result: null,
+        timestamp: null,
+      }));
     }
   }
-  if (Array.isArray(cl)) return cl.map(s => typeof s === 'string' ? { step: s, done: false, result: null, timestamp: null } : s);
+  if (Array.isArray(cl))
+    return cl.map((s) =>
+      typeof s === 'string'
+        ? { step: s, done: false, result: null, timestamp: null }
+        : s
+    );
   return [];
 }
 // Unified ticket ID generation (matches ticketManager.js)
@@ -89,10 +106,18 @@ function generateTicketId(type = 'bug') {
 
 async function handleError(action, err) {
   const msg = err.message || '';
-  if (msg.includes('ConnectionRefused') || msg.includes('connect ECONNREFUSED')) {
-    console.error('⚠️  Ticket API not reachable. Attempting to auto-start on port 3001...');
+  if (
+    msg.includes('ConnectionRefused') ||
+    msg.includes('connect ECONNREFUSED')
+  ) {
+    console.error(
+      '⚠️  Ticket API not reachable. Attempting to auto-start on port 3001...'
+    );
     const { spawn } = await import('child_process');
-    const apiProc = spawn('bun', ['run', 'ticket-api.js'], { stdio: 'inherit', shell: true });
+    const apiProc = spawn('bun', ['run', 'ticket-api.js'], {
+      stdio: 'inherit',
+      shell: true,
+    });
     // Wait up to 3 seconds for server
     setTimeout(async () => {
       try {
@@ -108,13 +133,33 @@ async function handleError(action, err) {
     }, 3000);
   } else {
     console.error(`Error ${action}:`, msg);
-    console.error('⚠️  Ticket API unreachable? Ensure the server is running on port 3001 (bun run api).');
+    console.error(
+      '⚠️  Ticket API unreachable? Ensure the server is running on port 3001 (bun run api).'
+    );
     process.exit(1);
   }
 }
 
+function showErrorAndExit(msg, example = '') {
+  console.error(`⛔ ${msg}`);
+  if (example) console.error(`👉 Example: ${example}`);
+  process.exit(1);
+}
+
 async function main() {
   if (cmd === 'create') {
+    if (!params.title) {
+      showErrorAndExit(
+        'create requires title="..."',
+        'bun run ticket:create type=bug title="Game crashes on start" tags=ai,urgent'
+      );
+    }
+    if (!params.type) {
+      showErrorAndExit(
+        'create requires type=bug|feature|enhancement|task',
+        'bun run ticket:create type=feature title="Add co-op mode"'
+      );
+    }
     const ticket = {
       id: params.id || generateTicketId(params.type || 'bug'),
       type: params.type || 'bug',
@@ -126,13 +171,13 @@ async function main() {
       relatedTickets: [],
       checklist: parseChecklist(params.checklist),
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
     try {
       const res = await fetch(API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ticket)
+        body: JSON.stringify(ticket),
       });
       const result = await res.json();
       console.log('Ticket created:', result);
@@ -141,19 +186,22 @@ async function main() {
     }
   } else if (cmd === 'update') {
     if (!params.id) {
-      console.error('Error: update requires id=...');
-      process.exit(1);
+      showErrorAndExit(
+        'update requires id=...',
+        'bun run ticket:update id=BUG-... status=closed'
+      );
     }
     const updates = { ...params };
     delete updates.id;
     if (updates.tags) updates.tags = parseTags(updates.tags);
-    if (updates.checklist) updates.checklist = parseChecklist(updates.checklist);
+    if (updates.checklist)
+      updates.checklist = parseChecklist(updates.checklist);
     updates.updatedAt = new Date().toISOString();
     try {
       const res = await fetch(`${API}/${params.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
+        body: JSON.stringify(updates),
       });
       const result = await res.json();
       console.log('Ticket updated:', result);
@@ -162,8 +210,7 @@ async function main() {
     }
   } else if (cmd === 'get') {
     if (!params.id) {
-      console.error('Error: get requires id=...');
-      process.exit(1);
+      showErrorAndExit('get requires id=...', 'bun run ticket:get id=BUG-123');
     }
     try {
       const res = await fetch(`${API}/${params.id}`);
@@ -182,8 +229,10 @@ async function main() {
     }
   } else if (cmd === 'check') {
     if (!params.id || !params.step) {
-      console.error('Error: check requires id=... and step=...');
-      process.exit(1);
+      showErrorAndExit(
+        'check requires id=... and step=...',
+        'bun run ticket:check id=BUG-123 step="Reproduce bug" result="Confirmed"'
+      );
     }
     // Fetch ticket, update checklist
     try {
@@ -193,7 +242,9 @@ async function main() {
         console.error('No checklist found on ticket.');
         process.exit(1);
       }
-      const idx = ticket.checklist.findIndex(item => item.step === params.step);
+      const idx = ticket.checklist.findIndex(
+        (item) => item.step === params.step
+      );
       if (idx === -1) {
         console.error('Checklist step not found.');
         process.exit(1);
@@ -206,10 +257,16 @@ async function main() {
       const patchRes = await fetch(`${API}/${params.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ checklist: ticket.checklist, updatedAt: ticket.updatedAt })
+        body: JSON.stringify({
+          checklist: ticket.checklist,
+          updatedAt: ticket.updatedAt,
+        }),
       });
       const updated = await patchRes.json();
-      console.log(`Checklist step '${params.step}' checked for ticket ${params.id}:`, updated.checklist[idx]);
+      console.log(
+        `Checklist step '${params.step}' checked for ticket ${params.id}:`,
+        updated.checklist[idx]
+      );
     } catch (err) {
       await handleError('checking checklist step', err);
     }
@@ -223,24 +280,42 @@ async function main() {
         process.exit(0);
       }
       // Fetch all ticket details
-      Promise.all(files.map(async (file) => {
-        const r = await fetch(`${API}/${file}`);
-        return await r.json();
-      })).then(tickets => {
+      Promise.all(
+        files.map(async (file) => {
+          const r = await fetch(`${API}/${file}`);
+          return await r.json();
+        })
+      ).then((tickets) => {
         // Prefer focused, not closed
-        const focused = tickets.filter(t => Array.isArray(t.tags) && t.tags.includes('focus') && t.status !== 'closed');
+        const focused = tickets.filter(
+          (t) =>
+            Array.isArray(t.tags) &&
+            t.tags.includes('focus') &&
+            t.status !== 'closed'
+        );
         if (focused.length > 0) {
           // If multiple, pick most recently updated
-          focused.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
+          focused.sort(
+            (a, b) =>
+              new Date(b.updatedAt || b.createdAt) -
+              new Date(a.updatedAt || a.createdAt)
+          );
           console.log('Returning focused ticket:', focused[0].id);
           console.log(focused[0]);
           process.exit(0);
         }
         // Else, most recently updated, not closed
-        const active = tickets.filter(t => t.status !== 'closed');
+        const active = tickets.filter((t) => t.status !== 'closed');
         if (active.length > 0) {
-          active.sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt));
-          console.log('No focused ticket found. Returning most recently updated active ticket:', active[0].id);
+          active.sort(
+            (a, b) =>
+              new Date(b.updatedAt || b.createdAt) -
+              new Date(a.updatedAt || a.createdAt)
+          );
+          console.log(
+            'No focused ticket found. Returning most recently updated active ticket:',
+            active[0].id
+          );
           console.log(active[0]);
           process.exit(0);
         }
@@ -253,14 +328,20 @@ async function main() {
     }
   } else {
     console.log('Usage:');
-    console.log('  bun run scripts/ticket-cli.js create type=bug title="..." status=open tags=ai,urgent checklist="[\"step1\",\"step2\"]"');
-    console.log('  bun run scripts/ticket-cli.js update id=BUG-... status=closed');
+    console.log(
+      '  bun run scripts/ticket-cli.js create type=bug title="..." status=open tags=ai,urgent checklist="[\"step1\",\"step2\"]"'
+    );
+    console.log(
+      '  bun run scripts/ticket-cli.js update id=BUG-... status=closed'
+    );
     console.log('  bun run scripts/ticket-cli.js get id=BUG-...');
     console.log('  bun run scripts/ticket-cli.js list');
-    console.log('  bun run scripts/ticket-cli.js check id=BUG-... step="step1" result="Passed"');
+    console.log(
+      '  bun run scripts/ticket-cli.js check id=BUG-... step="step1" result="Passed"'
+    );
     console.log('  bun run scripts/ticket-cli.js latest');
     process.exit(1);
   }
 }
 
-main(); 
+main();

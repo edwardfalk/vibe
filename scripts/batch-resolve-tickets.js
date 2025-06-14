@@ -4,14 +4,17 @@ const path = require('path');
 const TICKETS_DIR = './tests/bug-reports';
 
 // Get all CodeRabbit tickets from June 8, 2025
-const ticketFiles = fs.readdirSync(TICKETS_DIR)
-  .filter(file => file.startsWith('CR-2025-06-08-') && file.endsWith('.json'));
+const ticketFiles = fs
+  .readdirSync(TICKETS_DIR)
+  .filter(
+    (file) => file.startsWith('CR-2025-06-08-') && file.endsWith('.json')
+  );
 
 console.log(`Found ${ticketFiles.length} CodeRabbit tickets to resolve`);
 
 let resolved = 0;
 
-ticketFiles.forEach(ticketFile => {
+ticketFiles.forEach((ticketFile) => {
   const ticketPath = path.join(TICKETS_DIR, ticketFile);
   const ticketData = JSON.parse(fs.readFileSync(ticketPath, 'utf8'));
 
@@ -23,15 +26,20 @@ ticketFiles.forEach(ticketFile => {
 
   // Determine resolution reason
   let resolution = '';
-  
-  if (ticketData.description.includes('...') || 
-      ticketData.coderabbitSuggestion?.includes('...') ||
-      ticketData.title.includes('...')) {
+
+  if (
+    ticketData.description.includes('...') ||
+    ticketData.coderabbitSuggestion?.includes('...') ||
+    ticketData.title.includes('...')
+  ) {
     resolution = 'Generic/incomplete suggestion - resolved as not actionable';
-  } else if (ticketData.type === 'enhancement' && 
-             ticketData.tags?.includes('security') &&
-             ticketData.description.includes('environment variables')) {
-    resolution = 'Security improvement already implemented with centralized configuration';
+  } else if (
+    ticketData.type === 'enhancement' &&
+    ticketData.tags?.includes('security') &&
+    ticketData.description.includes('environment variables')
+  ) {
+    resolution =
+      'Security improvement already implemented with centralized configuration';
   } else {
     resolution = 'CodeRabbit suggestion reviewed and resolved';
   }
@@ -46,7 +54,7 @@ ticketFiles.forEach(ticketFile => {
     oldStatus: 'open',
     newStatus: 'resolved',
     timestamp: new Date().toISOString(),
-    note: resolution
+    note: resolution,
   });
 
   // Write back to file
@@ -55,4 +63,4 @@ ticketFiles.forEach(ticketFile => {
   resolved++;
 });
 
-console.log(`\n📊 Resolution Summary: ${resolved} tickets resolved`); 
+console.log(`\n📊 Resolution Summary: ${resolved} tickets resolved`);

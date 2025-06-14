@@ -1,27 +1,57 @@
 // Configuration for Vibe game (moved to @vibe/core)
 
-import dotenv from 'dotenv';
-
-dotenv.config();
+// Conditionally load dotenv only in Node.js environment
+let processEnv = {};
+try {
+  if (typeof process !== 'undefined' && process.env) {
+    processEnv = process.env;
+    // Load .env in Node context for local dev – ignored in browser
+    try {
+      // Dynamically import dotenv without top-level await to preserve browser compatibility
+      import('dotenv')
+        .then((dotenv) => {
+          // Some bundlers put the exports on `.default`
+          const dot = dotenv.default || dotenv;
+          if (typeof dot.config === 'function') {
+            dot.config();
+          }
+        })
+        .catch(() => {
+          /* Ignore if dotenv fails to load (e.g., browser context) */
+        });
+      processEnv = process.env;
+    } catch (_) {
+      /* dotenv not available or cannot be loaded in this context */
+    }
+  }
+} catch (_) {
+  /* process undefined in browser – ignore */
+}
 
 function validateEnvironment() {
   const warnings = [];
   const errors = [];
 
-  if (!process.env.GITHUB_TOKEN) {
-    warnings.push('GITHUB_TOKEN not set - GitHub API requests will be rate limited');
-  } else if (process.env.GITHUB_TOKEN.length < 20) {
+  if (!processEnv.GITHUB_TOKEN) {
+    warnings.push(
+      'GITHUB_TOKEN not set - GitHub API requests will be rate limited'
+    );
+  } else if (processEnv.GITHUB_TOKEN.length < 20) {
     errors.push('GITHUB_TOKEN appears to be invalid (too short)');
   }
 
-  const ticketPort = parseInt(process.env.TICKET_API_PORT);
+  const ticketPort = parseInt(processEnv.TICKET_API_PORT);
   if (isNaN(ticketPort) || ticketPort < 1000 || ticketPort > 65535) {
-    warnings.push(`Invalid TICKET_API_PORT: ${process.env.TICKET_API_PORT}, using default 3001`);
+    warnings.push(
+      `Invalid TICKET_API_PORT: ${processEnv.TICKET_API_PORT}, using default 3001`
+    );
   }
 
-  const devPort = parseInt(process.env.DEV_SERVER_PORT);
+  const devPort = parseInt(processEnv.DEV_SERVER_PORT);
   if (isNaN(devPort) || devPort < 1000 || devPort > 65535) {
-    warnings.push(`Invalid DEV_SERVER_PORT: ${process.env.DEV_SERVER_PORT}, using default 5500`);
+    warnings.push(
+      `Invalid DEV_SERVER_PORT: ${processEnv.DEV_SERVER_PORT}, using default 5500`
+    );
   }
 
   warnings.forEach((warning) => console.warn(`⚠️ ${warning}`));
@@ -36,7 +66,7 @@ function validateEnvironment() {
 
 const CONFIG = {
   GITHUB: {
-    TOKEN: process.env.GITHUB_TOKEN || null,
+    TOKEN: processEnv.GITHUB_TOKEN || null,
     API_URL: 'https://api.github.com',
     OWNER: 'edwardfalk',
     REPO: 'vibe',
@@ -46,31 +76,30 @@ const CONFIG = {
     },
   },
   TICKET_API: {
-    PORT: parseInt(process.env.TICKET_API_PORT) || 3001,
-    HOST: process.env.TICKET_API_HOST || 'localhost',
+    PORT: parseInt(processEnv.TICKET_API_PORT) || 3001,
+    HOST: processEnv.TICKET_API_HOST || 'localhost',
     get BASE_URL() {
       return `http://${this.HOST}:${this.PORT}/api/tickets`;
     },
   },
   DEV_SERVER: {
-    PORT: parseInt(process.env.DEV_SERVER_PORT) || 5500,
+    PORT: parseInt(processEnv.DEV_SERVER_PORT) || 5500,
   },
   CODERABBIT: {
-    AUTO_TICKETS: process.env.CODERABBIT_AUTO_TICKETS === 'true',
-    REVIEW_THRESHOLD: process.env.CODERABBIT_REVIEW_THRESHOLD || 'high',
+    AUTO_TICKETS: processEnv.CODERABBIT_AUTO_TICKETS === 'true',
+    REVIEW_THRESHOLD: processEnv.CODERABBIT_REVIEW_THRESHOLD || 'high',
     MAX_SUGGESTIONS: 50,
   },
   SECURITY: {
-    NODE_ENV: process.env.NODE_ENV || 'development',
-    LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+    NODE_ENV: processEnv.NODE_ENV || 'development',
+    LOG_LEVEL: processEnv.LOG_LEVEL || 'info',
   },
   PATHS: {
     BUG_REPORTS: 'tests/bug-reports',
     SCREENSHOTS: 'tests/screenshots',
     LOGS: 'logs',
   },
-  GOOGLE_CLOUD_TTS_API_KEY:
-    (typeof process !== 'undefined' && process.env && process.env.GOOGLE_CLOUD_TTS_API_KEY) || '',
+  GOOGLE_CLOUD_TTS_API_KEY: processEnv.GOOGLE_CLOUD_TTS_API_KEY || '',
   TTS_SETTINGS: {
     USE_CLOUD_TTS: false,
     TTS_VOLUME: 0.6,
@@ -92,7 +121,13 @@ const CONFIG = {
     GRUNT: { AMBIENT_MIN: 3, AMBIENT_MAX: 8, COOLDOWN: 4 },
     TANK: { AMBIENT_MIN: 8, AMBIENT_MAX: 20, COOLDOWN: 12 },
     RUSHER: { AMBIENT_MIN: 4, AMBIENT_MAX: 10, COOLDOWN: 6 },
-    STABBER: { AMBIENT_MIN: 6, AMBIENT_MAX: 14, COOLDOWN: 8, CHANT_MIN: 3, CHANT_MAX: 6 },
+    STABBER: {
+      AMBIENT_MIN: 6,
+      AMBIENT_MAX: 14,
+      COOLDOWN: 8,
+      CHANT_MIN: 3,
+      CHANT_MAX: 6,
+    },
   },
   STABBER_SETTINGS: {
     MIN_STAB_DISTANCE: 200,
@@ -103,6 +138,8 @@ const CONFIG = {
 };
 
 const validation = validateEnvironment();
-console.log(`🔧 Configuration loaded (${validation.warnings} warnings, ${validation.errors} errors)`);
+console.log(
+  `🔧 Configuration loaded (${validation.warnings} warnings, ${validation.errors} errors)`
+);
 
-export { CONFIG }; 
+export { CONFIG };

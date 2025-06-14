@@ -230,13 +230,49 @@ createTicket(ticket);
 
 ---
 
-## 7. Known Issues & Troubleshooting
+## 7. CLI Troubleshooting & Error Messages
 
-- **Modal not closing after submission:**
-  - Tracked as bug ticket `BR-2024-06-01-modal-bug-001`.
-  - See README for troubleshooting steps.
-- **Artifacts not moved:** Ensure `move-bug-reports.js` is running.
-- **ID collision:** Always generate unique IDs for new tickets.
+The `ticket-cli.js` tool now prints **explicit, emoji-prefixed errors** to keep you on track. If you see
+something like:
+
+```text
+⛔ create requires title="..."
+👉 Example: bun run ticket:create type=bug title="Game crashes on start" tags=ai,urgent
+```
+
+…just follow the example and retry. Common pitfalls:
+
+| Error | Meaning | Quick Fix |
+|-------|---------|-----------|
+| `⛔ create requires title="..."` | You omitted the `title` param | Add `title="…"` (quotes needed if spaces) |
+| `⛔ update requires id=...` | Missing `id` on update | Pass `id=BUG-…` |
+| `⛔ check requires id=... and step=...` | Both `id` and `step` are mandatory | Provide both params |
+
+### New examples
+
+```pwsh
+# Feature ticket with checklist
+bun run ticket:create type=feature title="Co-op mode" tags=multiplayer checklist='["Design","Implement","QA"]'
+
+# Close a bug ticket
+bun run ticket:update id=BUG-2025-06-14-ab12cd status=closed
+
+# Mark a checklist step as done
+bun run ticket:check id=TASK-2025-06-14-xyz123 step="Design" result="Completed wireframe"
+```
+
+If the Ticket API is not running, the CLI attempts to **auto-start it** on port **3001**. If that fails,
+you'll see:
+
+```text
+⚠️  Ticket API not reachable. Attempting to auto-start on port 3001...
+```
+
+Wait a couple seconds; if it still cannot connect, start it manually:
+
+```pwsh
+bun run api
+```
 
 ---
 

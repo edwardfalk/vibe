@@ -40,9 +40,12 @@ export class GameState {
       this.level++;
       const nextLevelIncrease = this.level * 150;
       this.nextLevelThreshold += nextLevelIncrease;
-      console.log(`🎉 LEVEL UP! Now level ${this.level}. Next at ${this.nextLevelThreshold}`);
+      console.log(
+        `🎉 LEVEL UP! Now level ${this.level}. Next at ${this.nextLevelThreshold}`
+      );
       if (window.cameraSystem) window.cameraSystem.addShake(15, 30);
-      if (window.audio && window.player) window.audio.speakPlayerLine(window.player, 'start');
+      if (window.audio && window.player)
+        window.audio.speakPlayerLine(window.player, 'start');
     }
   }
 
@@ -63,8 +66,11 @@ export class GameState {
     } else if (newState === 'gameOver') {
       this.gameOverTimer = 0;
       this.resetKillStreak();
-      if (window.audio && window.player) window.audio.speakPlayerLine(window.player, 'death');
-      console.log(`💀 Game Over! Score: ${this.score}, Level: ${this.level}, Kills: ${this.totalKills}`);
+      if (window.audio && window.player)
+        window.audio.speakPlayerLine(window.player, 'death');
+      console.log(
+        `💀 Game Over! Score: ${this.score}, Level: ${this.level}, Kills: ${this.totalKills}`
+      );
     }
   }
 
@@ -77,7 +83,12 @@ export class GameState {
 
     if (window.player && window.player.p) {
       const p = window.player.p;
-      window.player = new window.Player(p, p.width / 2, p.height / 2, window.cameraSystem);
+      window.player = new window.Player(
+        p,
+        p.width / 2,
+        p.height / 2,
+        window.cameraSystem
+      );
     }
     if (window.cameraSystem) {
       window.cameraSystem.x = 0;
@@ -87,8 +98,13 @@ export class GameState {
     }
     window.explosionManager = new window.ExplosionManager();
     window.effectsManager = new window.EffectsManager();
-    if (window.visualEffectsManager && window.visualEffectsManager.backgroundLayers) {
-      window.visualEffectsManager = new window.VisualEffectsManager(window.visualEffectsManager.backgroundLayers);
+    if (
+      window.visualEffectsManager &&
+      window.visualEffectsManager.backgroundLayers
+    ) {
+      window.visualEffectsManager = new window.VisualEffectsManager(
+        window.visualEffectsManager.backgroundLayers
+      );
     }
     window.audio = window.audio || null;
     window.speechManager = null;
@@ -107,17 +123,21 @@ export class GameState {
     this.gameState = 'playing';
 
     if (window.spawnSystem) window.spawnSystem.spawnEnemies(1);
-    if (typeof window.updateGameLoopLocals === 'function') window.updateGameLoopLocals();
+    if (typeof window.updateGameLoopLocals === 'function')
+      window.updateGameLoopLocals();
 
     setTimeout(() => {
-      if (window.audio && window.player) window.audio.speakPlayerLine(window.player, 'start');
+      if (window.audio && window.player)
+        window.audio.speakPlayerLine(window.player, 'start');
     }, 500);
 
     console.log('✅ Robust game restart complete.');
   }
 
   getAccuracy() {
-    return this.shotsFired > 0 ? Math.round((this.totalKills / this.shotsFired) * 100) : 0;
+    return this.shotsFired > 0
+      ? Math.round((this.totalKills / this.shotsFired) * 100)
+      : 0;
   }
   getProgressToNextLevel() {
     const currentLevelStart = this.nextLevelThreshold - this.level * 150;
@@ -135,4 +155,4 @@ export class GameState {
       }
     }
   }
-} 
+}

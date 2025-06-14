@@ -1,12 +1,12 @@
-const { test, expect } = require('@playwright/test');
-const { DebugLogger } = require('../js/DebugLogger.js');
-process.on('uncaughtException', err => DebugLogger.log('Uncaught Exception (test)', err));
-process.on('unhandledRejection', err => DebugLogger.log('Unhandled Rejection (test)', err));
+import { test, expect } from 'playwright/test';
+import { DebugLogger } from '../js/DebugLogger.js';
+
+process.on('uncaughtException', (err) => DebugLogger.log('Uncaught Exception (test)', err));
+process.on('unhandledRejection', (err) => DebugLogger.log('Unhandled Rejection (test)', err));
+
 beforeAll(() => {
   DebugLogger.log('Playwright test suite started');
 });
-
-throw new Error('Intentional test error for DebugLogger check');
 
 // Basic gameplay probe using Playwright evaluation
 

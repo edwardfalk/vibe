@@ -361,7 +361,7 @@ export class ExplosionManager {
       this.explosions.push(new Explosion(x, y, 'enemy'));
     }
 
-    let effectName = `${enemyType}-${killMethod}-kill`;
+    const effectName = `${enemyType}-${killMethod}-kill`;
     console.log(
       `💥 ${enemyType} killed by ${killMethod} - created ${effectName} effect`
     );

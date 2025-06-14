@@ -75,8 +75,8 @@ function gco { git checkout $args }
 function glog { git log --oneline --graph --decorate }
 
 # Project Navigation
-function proj { Set-Location "C:\CursorWorkspace\projects" }
-function vibe { Set-Location "C:\CursorWorkspace\projects\vibe" }
+function proj { Set-Location "D:\projects" }
+function vibe { Set-Location "D:\projects\vibe" }
 
 # ============================================================================
 # Vibe Game Development Functions
@@ -222,7 +222,7 @@ function prompt {
     }
     
     # Shorten path if in projects directory
-    $displayPath = $currentPath -replace [regex]::Escape("C:\CursorWorkspace\projects\"), ""
+    $displayPath = $currentPath -replace [regex]::Escape("D:\projects\\"), ""
     if ($displayPath.Length -lt $currentPath.Length) {
         $displayPath = " $displayPath"
     } else {
@@ -284,7 +284,7 @@ Write-Host "  gs, ga, gc, gp, gl, gd, gb, gco, glog - Git shortcuts"
 Write-Host ""
 
 # Auto-navigate to Vibe project if not already there
-if (-not $PWD.Path.Contains("vibe") -and (Test-Path "C:\CursorWorkspace\projects\vibe")) {
+if (-not $PWD.Path.Contains("vibe") -and (Test-Path "D:\projects\vibe")) {
     vibe
     Write-Host "📍 Auto-navigated to Vibe project" -ForegroundColor Green
 }

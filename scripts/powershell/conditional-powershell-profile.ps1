@@ -29,7 +29,7 @@ function gco { git checkout $args }
 function glog { git log --oneline --graph --decorate }
 
 # Project Navigation
-function proj { Set-Location "C:\CursorWorkspace\projects" }
+function proj { Set-Location "D:\projects" }
 
 # ============================================================================
 # Project Detection and Loading
@@ -54,7 +54,7 @@ function Load-VibeProfile {
     Write-Host "🎮 Loading Vibe Game Development Profile..." -ForegroundColor Magenta
     
     # Vibe-specific aliases and functions
-    function vibe { Set-Location "C:\CursorWorkspace\projects\vibe" }
+    function vibe { Set-Location "D:\projects\vibe" }
     function start-vibe { bun run dev }
     function test-vibe { bun run test:comprehensive }
     function lint-vibe { bun run lint }
@@ -118,7 +118,7 @@ function Load-CursorAIProfile {
     Write-Host "🤖 Loading Cursor AI Intelligence Profile..." -ForegroundColor Blue
     
     # Cursor AI specific functions
-    function cai { Set-Location "C:\CursorWorkspace\projects\cursor-ai-intelligence" }
+    function cai { Set-Location "D:\projects\cursor-ai-intelligence" }
     function start-hub { 
         Set-Location packages/service-hub
         Start-Process pwsh -ArgumentList "-NoExit", "-Command", "bun start"
@@ -194,7 +194,7 @@ function prompt {
     }
     
     # Shorten path
-    $displayPath = $currentPath -replace [regex]::Escape("C:\CursorWorkspace\projects\"), ""
+    $displayPath = $currentPath -replace [regex]::Escape("D:\projects\\"), ""
     if ($displayPath.Length -lt $currentPath.Length) {
         $displayPath = " $displayPath"
     } else {

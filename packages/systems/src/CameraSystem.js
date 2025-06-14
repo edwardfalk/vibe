@@ -15,7 +15,10 @@ export class CameraSystem {
     this.interpolationSpeed = 0.15;
   }
   addShake(intensity, duration = 20) {
-    this.screenShake.intensity = Math.max(this.screenShake.intensity, intensity);
+    this.screenShake.intensity = Math.max(
+      this.screenShake.intensity,
+      intensity
+    );
     this.screenShake.duration = Math.max(this.screenShake.duration, duration);
   }
   update() {
@@ -39,7 +42,10 @@ export class CameraSystem {
     p.push();
     if (this.screenShake.duration > 0) {
       this.screenShake.duration--;
-      p.translate(randomRange(-this.screenShake.intensity, this.screenShake.intensity), randomRange(-this.screenShake.intensity, this.screenShake.intensity));
+      p.translate(
+        randomRange(-this.screenShake.intensity, this.screenShake.intensity),
+        randomRange(-this.screenShake.intensity, this.screenShake.intensity)
+      );
     }
     p.translate(p.width / 2 - this.x, p.height / 2 - this.y);
   }
@@ -48,25 +54,43 @@ export class CameraSystem {
   }
   worldToScreen(worldX, worldY) {
     const p = this.p;
-    return { x: worldX - this.x + p.width / 2, y: worldY - this.y + p.height / 2 };
+    return {
+      x: worldX - this.x + p.width / 2,
+      y: worldY - this.y + p.height / 2,
+    };
   }
   screenToWorld(screenX, screenY) {
     const p = this.p;
-    return { x: screenX + this.x - p.width / 2, y: screenY + this.y - p.height / 2 };
+    return {
+      x: screenX + this.x - p.width / 2,
+      y: screenY + this.y - p.height / 2,
+    };
   }
   isVisible(worldX, worldY, margin = 50) {
     const p = this.p;
     const screen = this.worldToScreen(worldX, worldY);
-    return screen.x >= -margin && screen.x <= p.width + margin && screen.y >= -margin && screen.y <= p.height + margin;
+    return (
+      screen.x >= -margin &&
+      screen.x <= p.width + margin &&
+      screen.y >= -margin &&
+      screen.y <= p.height + margin
+    );
   }
   getBounds() {
     const p = this.p;
     const topLeft = this.screenToWorld(0, 0);
     const bottomRight = this.screenToWorld(p.width, p.height);
-    return { left: topLeft.x, top: topLeft.y, right: bottomRight.x, bottom: bottomRight.y, width: bottomRight.x - topLeft.x, height: bottomRight.y - topLeft.y };
+    return {
+      left: topLeft.x,
+      top: topLeft.y,
+      right: bottomRight.x,
+      bottom: bottomRight.y,
+      width: bottomRight.x - topLeft.x,
+      height: bottomRight.y - topLeft.y,
+    };
   }
   reset() {
     this.x = this.y = this.targetX = this.targetY = 0;
     this.screenShake = { intensity: 0, duration: 0 };
   }
-} 
+}

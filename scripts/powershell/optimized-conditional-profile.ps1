@@ -64,7 +64,7 @@ function gco { git checkout $args }
 function glog { git log --oneline --graph --decorate }
 
 # Project Navigation
-function proj { Set-Location "C:\CursorWorkspace\projects" }
+function proj { Set-Location "D:\projects" }
 
 # ============================================================================
 # Project Configuration Registry (Scalable)
@@ -172,7 +172,7 @@ function Load-ProjectProfile {
     }
     
     # Generate navigation function
-    $navFunction = "function global:$project { Set-Location `"C:\CursorWorkspace\projects\$project`" }"
+    $navFunction = "function global:$project { Set-Location \`"D:\projects\$project\`" }"
     Invoke-Expression $navFunction
     
     # Generate project commands dynamically
@@ -284,7 +284,7 @@ function prompt {
     }
     
     # Shorten path
-    $displayPath = $currentPath -replace [regex]::Escape("C:\CursorWorkspace\projects\"), ""
+    $displayPath = $currentPath -replace [regex]::Escape("D:\projects\\"), ""
     if ($displayPath.Length -lt $currentPath.Length) {
         $displayPath = " $displayPath"
     } else {

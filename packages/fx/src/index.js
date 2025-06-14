@@ -6,4 +6,4 @@ export * from './visualEffects.js';
 export * from './explosions/Explosion.js';
 export * from './explosions/PlasmaCloud.js';
 export * from './explosions/RadioactiveDebris.js';
-export * from './explosions/ExplosionManager.js'; 
+export * from './explosions/ExplosionManager.js';

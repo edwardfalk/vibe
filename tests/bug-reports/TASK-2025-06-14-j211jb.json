@@ -1,0 +1,37 @@
+{
+  "id": "TASK-2025-06-14-j211jb",
+  "type": "task",
+  "title": "GameLoop modularization",
+  "status": "closed",
+  "tags": [
+    "roadmap",
+    "focus",
+    "high"
+  ],
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "checklist": [
+    {
+      "step": "Extract BulletSystem from GameLoop",
+      "done": true,
+      "result": "Completed",
+      "timestamp": "2025-06-14T15:30:00.000Z"
+    },
+    {
+      "step": "Extract BombSystem from GameLoop",
+      "done": true,
+      "result": "Completed",
+      "timestamp": "2025-06-14T15:30:00.000Z"
+    },
+    {
+      "step": "Extract InputSystem from GameLoop",
+      "done": true,
+      "result": "Completed",
+      "timestamp": "2025-06-14T15:50:00.000Z"
+    }
+  ],
+  "createdAt": "2025-06-14T13:43:20.913Z",
+  "updatedAt": "2025-06-14T15:50:00.000Z",
+  "verification": []
+}

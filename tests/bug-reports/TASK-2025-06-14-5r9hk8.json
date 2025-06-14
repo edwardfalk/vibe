@@ -1,0 +1,42 @@
+{
+  "id": "TASK-2025-06-14-5r9hk8",
+  "type": "task",
+  "title": "Integrate RemoteConsoleLogger into dev workflow",
+  "status": "open",
+  "tags": [
+    "observability",
+    "roadmap"
+  ],
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "checklist": [
+    {
+      "step": "[\\ Add import in index.html\\",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    },
+    {
+      "step": "\\Environment toggle\\",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    },
+    {
+      "step": "\\Docs update\\",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    },
+    {
+      "step": "\\Test remote logging\\]",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    }
+  ],
+  "createdAt": "2025-06-14T14:10:32.000Z",
+  "updatedAt": "2025-06-14T14:10:32.000Z",
+  "verification": []
+}

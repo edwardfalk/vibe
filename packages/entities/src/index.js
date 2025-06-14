@@ -8,4 +8,4 @@ export { Grunt } from './Grunt.js';
 export { Rusher } from './Rusher.js';
 export { Tank } from './Tank.js';
 export { Stabber } from './Stabber.js';
-export { EnemyFactory } from './EnemyFactory.js'; 
+export { EnemyFactory } from './EnemyFactory.js';
