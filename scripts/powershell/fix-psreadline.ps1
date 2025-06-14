@@ -85,7 +85,7 @@ if (Test-Path $profilePath) {
 
 # Apply the fixed profile
 Write-Host "`n📝 Applying Fixed Profile..." -ForegroundColor Yellow
-$vibeProfilePath = "C:\CursorWorkspace\projects\vibe\scripts\powershell\vibe-powershell-profile.ps1"
+$vibeProfilePath = "D:\projects\vibe\scripts\powershell\vibe-powershell-profile.ps1"
 if (Test-Path $vibeProfilePath) {
     try {
         # Ensure profile directory exists

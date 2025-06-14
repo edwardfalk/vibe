@@ -1,6 +1,7 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, atan2, min, max } from '@vibe/core';
+import { floor, random, sqrt, min, max } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
+import { shouldAvoidFriendlyFire } from './EnemyAIUtils.js';
 
 /**
  * Grunt class - Tactical ranged combat AI
@@ -158,7 +159,7 @@ class Grunt extends BaseEnemy {
     if (distance < 300 && this.shootCooldown <= 0) {
       if (window.beatClock && window.beatClock.canGruntShoot()) {
         // Check for friendly fire avoidance
-        if (!this.shouldAvoidFriendlyFire()) {
+        if (!shouldAvoidFriendlyFire(this, this.aimAngle)) {
           this.shootCooldown = 45 + random(30); // Faster shooting for ranged combat
           this.muzzleFlash = 4;
           return this.createBullet();
@@ -178,65 +179,6 @@ class Grunt extends BaseEnemy {
     }
 
     return null;
-  }
-
-  /**
-   * Check if grunt should avoid friendly fire
-   */
-  shouldAvoidFriendlyFire() {
-    if (!window.enemies) return false;
-    // Defensive: If aimAngle is not set, skip friendly fire check to avoid NaN results
-    if (!this.aimAngle && this.aimAngle !== 0) return false;
-
-    const bulletPath = {
-      startX: this.x,
-      startY: this.y,
-      angle: this.aimAngle,
-      range: 400, // Check 400 pixels ahead
-    };
-
-    for (const otherEnemy of window.enemies) {
-      if (otherEnemy === this) continue; // Skip self
-
-      // Calculate if other enemy is in the line of fire
-      const dx = otherEnemy.x - this.x;
-      const dy = otherEnemy.y - this.y;
-      const distanceToOther = sqrt(dx * dx + dy * dy);
-
-      if (distanceToOther < bulletPath.range) {
-        // Calculate angle to other enemy
-        const angleToOther = atan2(dy, dx);
-        // Minimal angular difference (handle wrap-around)
-        const angleDifference = Math.abs(angleToOther - bulletPath.angle);
-        const normalizedAngleDiff = Math.min(
-          angleDifference,
-          Math.PI * 2 - angleDifference
-        );
-
-        // If other enemy is within 15 degrees of aim angle, consider avoiding
-        if (normalizedAngleDiff < Math.PI / 12) {
-          // 15 degrees
-          // 70% chance to avoid shooting (grunts try to avoid but aren't perfect)
-          if (random() < 0.7) {
-            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-              console.log(
-                `🎖️ Grunt avoiding friendly fire - ${otherEnemy.type} in line of fire`
-              );
-            }
-            return true;
-          } else {
-            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-              console.log(
-                `🎖️ Grunt shooting anyway - ${otherEnemy.type} in the way but mission priority!`
-              );
-            }
-            return false;
-          }
-        }
-      }
-    }
-
-    return false;
   }
 
   /**

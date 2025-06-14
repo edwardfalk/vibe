@@ -9,8 +9,11 @@ import {
   PI,
   TWO_PI,
   normalizeAngle,
+  min,
+  max,
 } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
+import { speakAmbient } from './EnemySpeechUtils.js';
 
 /**
  * Tank class - Heavy artillery with charging system
@@ -187,28 +190,7 @@ class Tank extends BaseEnemy {
    * Trigger ambient speech specific to tanks
    */
   triggerAmbientSpeech() {
-    if (window.audio && this.speechCooldown <= 0) {
-      if (
-        window.beatClock &&
-        window.beatClock.isOnBeat([1]) &&
-        random() < 0.25
-      ) {
-        const tankLines = [
-          'HEAVY ARTILLERY!',
-          'SIEGE MODE!',
-          'CRUSH!',
-          'PULVERIZE!',
-          'DEVASTATE!',
-          'DO YOU LIFT BRO?',
-          'SIZE MATTERS!',
-          'BIG MUSCLES!',
-          'ALPHA MALE!',
-        ];
-        const randomLine = tankLines[floor(random() * tankLines.length)];
-        window.audio.speak(this, randomLine, 'tank');
-        this.speechCooldown = this.maxSpeechCooldown;
-      }
-    }
+    speakAmbient(this, 'tank', { probability: 0.25, beatList: [1] });
   }
 
   /**
@@ -448,7 +430,7 @@ class Tank extends BaseEnemy {
       }
       return died;
     }
-    let impactAngle = normalizeAngle(bulletAngle - this.aimAngle + PI);
+    const impactAngle = normalizeAngle(bulletAngle - this.aimAngle + PI);
     const PI_4 = PI / 4; // 45 degrees
     const THREE_PI_4 = (3 * PI) / 4; // 135 degrees
 

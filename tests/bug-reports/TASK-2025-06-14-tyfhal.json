@@ -1,0 +1,43 @@
+{
+  "id": "TASK-2025-06-14-tyfhal",
+  "type": "task",
+  "title": "Split Audio.js into modular sub-systems",
+  "status": "open",
+  "tags": [
+    "roadmap",
+    "focus",
+    "high"
+  ],
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "checklist": [
+    {
+      "step": "Extract SFX manager",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    },
+    {
+      "step": "Extract Music manager",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    },
+    {
+      "step": "Refactor Audio signals",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    },
+    {
+      "step": "Update imports",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    }
+  ],
+  "createdAt": "2025-06-14T13:43:42.207Z",
+  "updatedAt": "2025-06-14T13:43:42.207Z",
+  "verification": []
+}

@@ -19,4 +19,4 @@ try {
   console.log('🧹 .debug cleanup complete');
 } catch (e) {
   console.log('⚠️ .debug cleanup failed:', e);
-} 
+}

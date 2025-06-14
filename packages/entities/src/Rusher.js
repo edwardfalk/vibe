@@ -1,6 +1,8 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { floor, random, sqrt, sin, cos } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
+import { speakAmbient } from './EnemySpeechUtils.js';
+import { addMotionTrail, maybeAddMotionTrail } from './EnemyFXUtils.js';
 
 /**
  * Rusher class - Suicide bomber mechanics
@@ -51,10 +53,8 @@ class Rusher extends BaseEnemy {
     const dt = deltaTimeMs / 16.6667; // Normalize to 60fps baseline
 
     // Update motion trail timer
-    this.motionTrailTimer += deltaTimeMs;
-    if (this.isCharging && this.motionTrailTimer >= this.motionTrailInterval) {
-      this.drawMotionTrail();
-      this.motionTrailTimer = 0;
+    if (this.isCharging) {
+      maybeAddMotionTrail(this, deltaTimeMs, [255, 100, 100]);
     }
 
     if (this.exploding) {
@@ -152,25 +152,7 @@ class Rusher extends BaseEnemy {
    * Trigger ambient speech specific to rushers
    */
   triggerAmbientSpeech() {
-    if (window.audio && this.speechCooldown <= 0) {
-      if (window.beatClock && random() < 0.15) {
-        const rusherLines = [
-          'KAMIKAZE TIME!',
-          'SUICIDE RUN!',
-          'INCOMING!',
-          'BOOM!',
-          'EXPLOSIVE DIARRHEA!',
-          'LEEROY JENKINS!',
-          'WHEEE!',
-          "CAN'T STOP!",
-          'YOLO!',
-          'KAMIKAZE PIZZA PARTY!',
-        ];
-        const randomLine = rusherLines[floor(random() * rusherLines.length)];
-        window.audio.speak(this, randomLine, 'rusher');
-        this.speechCooldown = this.maxSpeechCooldown;
-      }
-    }
+    speakAmbient(this, 'rusher', { probability: 0.15 });
   }
 
   /**
@@ -209,14 +191,7 @@ class Rusher extends BaseEnemy {
    * Note: This is now called from updateSpecificBehavior based on deltaTime timer
    */
   drawMotionTrail() {
-    if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
-      try {
-        const trailColor = [255, 100, 100];
-        visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
-      } catch (error) {
-        console.log('⚠️ Rusher trail error:', error);
-      }
-    }
+    addMotionTrail(this.x, this.y, [255, 100, 100], 3);
   }
 
   /**

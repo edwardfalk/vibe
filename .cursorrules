@@ -100,7 +100,7 @@ bun run ticket:update id=BUG-... tags=focus,ai,testing
 - **Filesystem Operations**
   - Use for: Batch file reads, precise line edits, directory management, and metadata.
   - Key tools: `mcp_filesystem_read_file`, `mcp_filesystem_edit_file`, `mcp_filesystem_list_directory`, etc.
-  - Path: **Absolute paths required** (e.g., `C:\CursorWorkspace\projects\vibe\...`)
+  - Path: **Absolute paths required** (e.g., `D:\projects\vibe\...`)
 
 **Best Practices:**
 - Prefer built-in tools for simple, day-to-day edits.
@@ -124,11 +124,11 @@ bun run ticket:update id=BUG-... tags=focus,ai,testing
 
 **Shell and Path Standards (MANDATORY):**
 - **ALWAYS use PowerShell 7 (pwsh) as the default shell** - NOT bash, WSL, or cmd
-- **ALWAYS use Windows-style paths** (e.g., `C:\CursorWorkspace\projects\vibe`) - NOT Unix-style paths (`/c/...`)
+- **ALWAYS use Windows-style paths** (e.g., `D:\projects\vibe`) - NOT Unix-style paths (`/c/...`)
 - **ALWAYS use `bun` and `bunx`** instead of `npm` and `npx`
 - **Terminal commands must work in PowerShell** - avoid bash-specific syntax
 - **File paths in scripts must use Windows format** with backslashes or forward slashes that work in PowerShell
-- If terminal shows `/c/...` paths, navigate to proper Windows path: `Set-Location "C:\CursorWorkspace\projects\vibe"`
+- If terminal shows `/c/...` paths, navigate to proper Windows path: `Set-Location "D:\projects\vibe"`
 
 ---
 

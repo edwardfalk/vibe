@@ -1,7 +1,14 @@
 /**
  * SpawnSystem - enemy spawning logic (moved to @vibe/systems)
  */
-import { floor, min, max, random, sin, cos, sqrt, round } from '@vibe/core/mathUtils.js';
+import {
+  floor,
+  min,
+  max,
+  random,
+  sin,
+  cos,
+} from '@vibe/core/mathUtils.js';
 import { EnemyFactory } from '../../../js/EnemyFactory.js';
 
 export class SpawnSystem {
@@ -21,7 +28,8 @@ export class SpawnSystem {
     this.enemySpawnTimer++;
     const currentSpawnRate = max(
       this.minSpawnRate,
-      this.baseSpawnRate - (window.gameState.level - 1) * this.spawnRateDecreasePerLevel
+      this.baseSpawnRate -
+        (window.gameState.level - 1) * this.spawnRateDecreasePerLevel
     );
     if (this.enemySpawnTimer >= currentSpawnRate) {
       this.enemySpawnTimer = 0;
@@ -45,7 +53,12 @@ export class SpawnSystem {
     for (let i = 0; i < count; i++) {
       const enemyType = this.getEnemyTypeForLevel(level);
       const spawnPos = this.findSpawnPosition();
-      const enemy = this.enemyFactory.createEnemy(spawnPos.x, spawnPos.y, enemyType, p);
+      const enemy = this.enemyFactory.createEnemy(
+        spawnPos.x,
+        spawnPos.y,
+        enemyType,
+        p
+      );
       window.enemies.push(enemy);
       console.log(`👾 Spawned ${enemyType} at level ${level}`);
     }
@@ -67,14 +80,21 @@ export class SpawnSystem {
 
   findSpawnPosition() {
     const player = window.player;
-    if (!player) return { x: random(100, 700), y: random(100, 500) };
+    if (!player)
+      return { x: random(100, 700), y: random(100, 500) };
+
     const p = player.p;
+    const margin = 50;
+    const MIN_PLAYER_DISTANCE = 400;
+    const MIN_PLAYER_DISTANCE_SQ = MIN_PLAYER_DISTANCE * MIN_PLAYER_DISTANCE;
+    const MIN_ENEMY_DISTANCE = 200;
+    const MIN_ENEMY_DISTANCE_SQ = MIN_ENEMY_DISTANCE * MIN_ENEMY_DISTANCE;
+
     let attempts = 0;
     let spawnX, spawnY;
     do {
-      const margin = 50;
-      const side = floor(random(4));
-      switch (side) {
+      // Pick a random side of the screen to spawn from (0–3)
+      switch (floor(random(4))) {
         case 0:
           spawnX = random(0, p.width);
           spawnY = -margin;
@@ -87,15 +107,37 @@ export class SpawnSystem {
           spawnX = random(0, p.width);
           spawnY = p.height + margin;
           break;
-        case 3:
+        default:
           spawnX = -margin;
           spawnY = random(0, p.height);
-          break;
       }
-      const distanceFromPlayer = this.getDistance(spawnX, spawnY, player.x, player.y);
-      if (distanceFromPlayer < 400) { attempts++; continue; }
-      attempts++;
-      if (window.enemies && window.enemies.some(e => this.getDistance(spawnX, spawnY, e.x, e.y) < 200)) continue;
+
+      // Reject positions too close to the player
+      const distToPlayerSq = this.getDistanceSq(
+        spawnX,
+        spawnY,
+        player.x,
+        player.y
+      );
+      if (distToPlayerSq < MIN_PLAYER_DISTANCE_SQ) {
+        attempts++;
+        continue;
+      }
+
+      // Reject positions too close to existing enemies
+      if (
+        window.enemies &&
+        window.enemies.some(
+          (e) =>
+            this.getDistanceSq(spawnX, spawnY, e.x, e.y) <
+            MIN_ENEMY_DISTANCE_SQ
+        )
+      ) {
+        attempts++;
+        continue;
+      }
+
+      // Accept the spawn position
       break;
     } while (attempts < 50);
 
@@ -108,8 +150,10 @@ export class SpawnSystem {
     return { x: spawnX, y: spawnY };
   }
 
-  getDistance(x1, y1, x2, y2) {
-    return sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  getDistanceSq(x1, y1, x2, y2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    return dx * dx + dy * dy;
   }
 
   reset() {
@@ -124,4 +168,4 @@ export class SpawnSystem {
     console.log(`🎯 Force spawned ${enemyType}`);
     return enemy;
   }
-} 
+}

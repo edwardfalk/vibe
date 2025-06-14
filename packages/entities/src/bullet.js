@@ -9,11 +9,9 @@ import {
   sin,
   cos,
   atan2,
-  sqrt,
   PI,
   TWO_PI,
   normalizeAngle,
-  dist,
 } from '@vibe/core';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
@@ -230,7 +228,8 @@ export class Bullet {
     if (!this.active) return false;
 
     const threshold = (this.size + target.size) * 0.5;
-    const distance = this._pointSegmentDistance(
+    const thresholdSq = threshold * threshold;
+    const distanceSq = this._pointSegmentDistanceSq(
       target.x,
       target.y,
       this.prevX,
@@ -238,7 +237,7 @@ export class Bullet {
       this.x,
       this.y
     );
-    return distance < threshold;
+    return distanceSq < thresholdSq;
   }
 
   destroy() {
@@ -265,18 +264,23 @@ export class Bullet {
   }
 
   /**
-   * Distance from point (px,py) to segment (x1,y1)-(x2,y2)
+   * Squared distance from point (px,py) to segment (x1,y1)-(x2,y2)
+   * Avoids costly Math.sqrt; suitable for threshold comparisons.
    */
-  _pointSegmentDistance(px, py, x1, y1, x2, y2) {
+  _pointSegmentDistanceSq(px, py, x1, y1, x2, y2) {
     const dx = x2 - x1;
     const dy = y2 - y1;
     if (dx === 0 && dy === 0) {
-      return dist(px, py, x1, y1);
+      const dx1 = px - x1;
+      const dy1 = py - y1;
+      return dx1 * dx1 + dy1 * dy1;
     }
     const t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy);
     const clamped = Math.max(0, Math.min(1, t));
     const lx = x1 + clamped * dx;
     const ly = y1 + clamped * dy;
-    return dist(px, py, lx, ly);
+    const dx2 = px - lx;
+    const dy2 = py - ly;
+    return dx2 * dx2 + dy2 * dy2;
   }
 }

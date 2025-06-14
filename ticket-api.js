@@ -8,6 +8,39 @@ const TICKETS_DIR = path.join(__dirname, 'tests/bug-reports');
 const app = express();
 app.use(express.json());
 
+// Allow cross-origin requests from Five Server (port 5500) and others during local dev
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Handle preflight quickly
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
+
+// -----------------------------------------------------------------------------
+// Remote debug logging endpoint
+// -----------------------------------------------------------------------------
+// Allows the game running in the browser (port 5500) to POST console log entries
+// to the server. Logs are written via DebugLogger to the `.debug/YYYY-MM-DD.log`
+// file so that they can be inspected later when diagnosing issues.
+// -----------------------------------------------------------------------------
+const { DebugLogger } = require('./js/DebugLogger.js');
+
+app.post('/api/logs', (req, res) => {
+  try {
+    const { level = 'log', message = '', stack = '' } = req.body || {};
+    const combinedMessage = `[${level.toUpperCase()}] ${message}`;
+    DebugLogger.log(combinedMessage, stack);
+    res.status(204).end();
+  } catch (err) {
+    console.error('⚠️  Failed to write remote log:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // List all tickets
 app.get('/api/tickets', (req, res) => {
   fs.readdir(TICKETS_DIR, (err, files) => {
@@ -66,7 +99,7 @@ app.patch('/api/tickets/:id', (req, res) => {
   const file = path.join(TICKETS_DIR, req.params.id);
   fs.readFile(file, 'utf8', (err, data) => {
     if (err) return res.status(404).json({ error: 'Ticket not found' });
-    let ticket = JSON.parse(data);
+    const ticket = JSON.parse(data);
     Object.assign(ticket, req.body);
     try {
       ensureTicketMetadata(ticket, false);
@@ -83,4 +116,7 @@ app.patch('/api/tickets/:id', (req, res) => {
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Ticket API running on http://localhost:${PORT}/api/tickets`);
+  console.log(
+    `Remote log endpoint available at http://localhost:${PORT}/api/logs`
+  );
 });

@@ -34,7 +34,10 @@ function moveBugFiles() {
         fs.renameSync(src, dest);
         DebugLogger.log(`Moved bug report artifact: ${src} -> ${dest}`);
       } catch (err) {
-        DebugLogger.log(`Failed to move bug report artifact: ${src} -> ${dest}`, err);
+        DebugLogger.log(
+          `Failed to move bug report artifact: ${src} -> ${dest}`,
+          err
+        );
         throw err;
       }
     }

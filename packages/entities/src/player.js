@@ -534,7 +534,8 @@ export class Player {
       if (window.beatClock) {
         // For now, allow shooting every few frames instead of strict quarter-beat timing
         const elapsed = Date.now() - (this.lastShotTime || 0);
-        if (elapsed > 100) { // 100ms = ~6 frames at 60fps
+        if (elapsed > 100) {
+          // 100ms = ~6 frames at 60fps
           this.lastShotTime = Date.now();
           console.log('🎯 CONTINUOUS SHOT - firing with relaxed timing');
           return this.fireBullet();
@@ -559,7 +560,9 @@ export class Player {
     const bulletX = this.x + cos(this.aimAngle) * bulletDistance;
     const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
 
-    console.log(`🔫 Player firing bullet: aim=${(this.aimAngle * 180 / Math.PI).toFixed(1)}° pos=(${bulletX.toFixed(1)}, ${bulletY.toFixed(1)})`);
+    console.log(
+      `🔫 Player firing bullet: aim=${((this.aimAngle * 180) / Math.PI).toFixed(1)}° pos=(${bulletX.toFixed(1)}, ${bulletY.toFixed(1)})`
+    );
 
     return new Bullet(bulletX, bulletY, this.aimAngle, 8, 'player');
   }

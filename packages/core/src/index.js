@@ -6,4 +6,4 @@ export * from './mathUtils.js';
 export * from './config.js';
 export { BeatClock } from './BeatClock.js';
 export { GameState } from './GameState.js';
-export { Audio } from './Audio.js'; 
+export { Audio } from './Audio.js';

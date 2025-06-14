@@ -7,7 +7,9 @@ export class BeatClock {
     this.startTime = Date.now();
     this.tolerance = 100; // ms tolerance for on-beat
     this.beatsPerMeasure = 4;
-    console.log(`🎵 BeatClock initialized: ${bpm} BPM (${this.beatInterval}ms per beat)`);
+    console.log(
+      `🎵 BeatClock initialized: ${bpm} BPM (${this.beatInterval}ms per beat)`
+    );
   }
   getCurrentBeat() {
     const elapsed = Date.now() - this.startTime;
@@ -25,7 +27,9 @@ export class BeatClock {
   }
   isOnBeat(beats = null) {
     const timeToNext = this.getTimeToNextBeat();
-    const onBeat = timeToNext <= this.tolerance || timeToNext >= this.beatInterval - this.tolerance;
+    const onBeat =
+      timeToNext <= this.tolerance ||
+      timeToNext >= this.beatInterval - this.tolerance;
     if (!beats || !Array.isArray(beats)) return onBeat;
     if (!onBeat) return false;
     const currentBeat = this.getCurrentBeat() + 1;
@@ -98,4 +102,4 @@ export class BeatClock {
   get currentBeat() {
     return this.getCurrentBeat();
   }
-} 
+}

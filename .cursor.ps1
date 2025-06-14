@@ -9,7 +9,7 @@ $env:PREFERRED_PACKAGE_MANAGER = "bun"
 $env:ENVIRONMENT = "development"
 
 # Navigationskommando
-function vibe { Set-Location "C:\CursorWorkspace\projects\vibe" }
+function vibe { Set-Location "D:\projects\vibe" }
 
 # 🎮 Kommandon
 function vibe-start  { bun run dev }

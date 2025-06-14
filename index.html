@@ -50,6 +50,11 @@
         }
       }
     </script>
+    <!-- Remote console logger (captures early errors before game boots) -->
+    <script type="module">
+      import { setupRemoteConsoleLogger } from '/js/RemoteConsoleLogger.js';
+      setupRemoteConsoleLogger();
+    </script>
 </head>
 <body>
     <div id="ui">
