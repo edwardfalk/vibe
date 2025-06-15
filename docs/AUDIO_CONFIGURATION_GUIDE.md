@@ -6,11 +6,27 @@
 
 ## 📁 File Location
 
-All audio configuration is in: `js/Audio.js`
+All audio configuration lives in `packages/core/src/Audio.js` (moved from `js/Audio.js` after 2025 modularisation).
+
+**Sound ID Registry** – Every legal SFX identifier is defined once in `packages/core/src/audio/SoundIds.js` (`SOUND` enum). When adding a new sound:
+
+1. Add a config block in `Audio.sounds`.
+2. Add the same key to `SoundIds.js`.
+3. Use it via `SOUND.myNewId` to avoid typos.
+
+The build will throw if the registry and config diverge.
+
+**Player Event Bus** – Audio spatialisation now tracks the live Player via the `playerChanged` global event. Any place that creates a new Player **must** dispatch:
+
+```javascript
+window.dispatchEvent(new CustomEvent('playerChanged', { detail: window.player }));
+```
+
+Failure to emit the event will break distance-based volume/panning.
 
 ## 🔊 Sound Effects Configuration
 
-### Location: Lines ~70-100 in Audio.js
+### Location: Lines ~70-100 in `packages/core/src/Audio.js`
 
 Each sound effect has these properties:
 
@@ -50,7 +66,7 @@ plasmaCloud: {
 
 ## 🎤 Speech Configuration
 
-### Location: Lines ~105-111 in Audio.js
+### Location: Lines ~105-111 in `packages/core/src/Audio.js`
 
 Each character voice has these properties:
 
@@ -80,7 +96,7 @@ stabber: { rate: 0.9, pitch: 1.9, volume: 0.3 }   // Sharp, precise
 
 ## 🌊 Distance-Based Atmospheric Effects
 
-### Location: Lines ~285-350 in Audio.js
+### Location: Lines ~285-350 in `packages/core/src/Audio.js`
 
 Ambient enemy sounds get enhanced effects based on distance:
 
@@ -170,7 +186,7 @@ const distortionAmount = 20 + normalizedDistance * 40;
 
 ## 🎵 Master Volume Control
 
-### Location: Line ~25 in Audio.js
+### Location: Line ~25 in `packages/core/src/Audio.js`
 
 ```javascript
 this.volume = 0.7; // Master volume (0.0-1.0)
@@ -183,7 +199,7 @@ this.volume = 0.7; // Master volume (0.0-1.0)
 
 ## 🔄 Testing Changes
 
-1. Save the `js/Audio.js` file
+1. Save the `packages/core/src/Audio.js` file
 2. Refresh the game in your browser
 3. Listen to the changes during gameplay
 4. Adjust parameters as needed
@@ -196,3 +212,15 @@ this.volume = 0.7; // Master volume (0.0-1.0)
 - Speech volumes are now reduced to be background to sound effects
 - Distant enemies get more reverb, distortion, and mystical delays
 - Player sounds always play at full volume regardless of position
+
+## Sound ID Registry
+
+All sound-effect names are centralized in `packages/core/src/audio/SoundIds.js` and re-exported via `@vibe/core` as `SOUND`.  Game code must reference `SOUND.someId` instead of raw strings.  The Audio class validates that every registry key has a sound config and vice-versa at runtime – missing mappings will throw during startup.
+
+Example:
+```js
+import { SOUND } from '@vibe/core';
+window.audio.playSound(SOUND.gruntPop, x, y);
+```
+
+Old calls like `playSound('gruntPop', …)` should be migrated to the constant form (legacy helpers inside `Audio.js` are already updated).  This guarantees typo-safety and keeps the codebase refactor-ready.
