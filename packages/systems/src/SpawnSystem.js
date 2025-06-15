@@ -1,14 +1,7 @@
 /**
  * SpawnSystem - enemy spawning logic (moved to @vibe/systems)
  */
-import {
-  floor,
-  min,
-  max,
-  random,
-  sin,
-  cos,
-} from '@vibe/core/mathUtils.js';
+import { floor, min, max, random, sin, cos } from '@vibe/core/mathUtils.js';
 import { EnemyFactory } from '../../../js/EnemyFactory.js';
 
 export class SpawnSystem {
@@ -80,8 +73,7 @@ export class SpawnSystem {
 
   findSpawnPosition() {
     const player = window.player;
-    if (!player)
-      return { x: random(100, 700), y: random(100, 500) };
+    if (!player) return { x: random(100, 700), y: random(100, 500) };
 
     const p = player.p;
     const margin = 50;
@@ -129,8 +121,7 @@ export class SpawnSystem {
         window.enemies &&
         window.enemies.some(
           (e) =>
-            this.getDistanceSq(spawnX, spawnY, e.x, e.y) <
-            MIN_ENEMY_DISTANCE_SQ
+            this.getDistanceSq(spawnX, spawnY, e.x, e.y) < MIN_ENEMY_DISTANCE_SQ
         )
       ) {
         attempts++;

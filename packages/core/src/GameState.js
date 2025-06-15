@@ -89,6 +89,10 @@ export class GameState {
         p.height / 2,
         window.cameraSystem
       );
+      // Notify systems of the new player reference (event-bus pattern)
+      window.dispatchEvent(
+        new CustomEvent('playerChanged', { detail: window.player })
+      );
     }
     if (window.cameraSystem) {
       window.cameraSystem.x = 0;
@@ -105,6 +109,10 @@ export class GameState {
       window.visualEffectsManager = new window.VisualEffectsManager(
         window.visualEffectsManager.backgroundLayers
       );
+      // Initialize visual effects manager with current p5 instance
+      if (window.player && window.player.p) {
+        window.visualEffectsManager.init(window.player.p);
+      }
     }
     window.audio = window.audio || null;
     window.speechManager = null;

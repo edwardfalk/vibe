@@ -1,8 +1,12 @@
 import { test, expect } from 'playwright/test';
 import { DebugLogger } from '../js/DebugLogger.js';
 
-process.on('uncaughtException', (err) => DebugLogger.log('Uncaught Exception (test)', err));
-process.on('unhandledRejection', (err) => DebugLogger.log('Unhandled Rejection (test)', err));
+process.on('uncaughtException', (err) =>
+  DebugLogger.log('Uncaught Exception (test)', err)
+);
+process.on('unhandledRejection', (err) =>
+  DebugLogger.log('Unhandled Rejection (test)', err)
+);
 
 beforeAll(() => {
   DebugLogger.log('Playwright test suite started');
@@ -33,7 +37,10 @@ test.describe('Gameplay Probes', () => {
         }
       });
       if (probe.failure || probe.error) {
-        DebugLogger.log('Liveness probe import or runtime failure', probe.error || probe.failure);
+        DebugLogger.log(
+          'Liveness probe import or runtime failure',
+          probe.error || probe.failure
+        );
       }
       expect(probe.failure).toBeNull();
       expect(probe.playerAlive).toBe(true);

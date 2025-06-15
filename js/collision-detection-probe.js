@@ -3,7 +3,7 @@
 
 (async function () {
   const { random } = await import('./mathUtils.js');
-  
+
   // Import ticketManager API if available
   let ticketManager = null;
   try {
@@ -17,37 +17,44 @@
     collisionSystem: {
       exists: !!window.collisionSystem,
       methods: {},
-      functionality: {}
+      functionality: {},
     },
     bulletCollisions: {
-      playerBullets: Array.isArray(window.playerBullets) ? window.playerBullets.length : 0,
-      enemyBullets: Array.isArray(window.enemyBullets) ? window.enemyBullets.length : 0,
-      testResults: {}
+      playerBullets: Array.isArray(window.playerBullets)
+        ? window.playerBullets.length
+        : 0,
+      enemyBullets: Array.isArray(window.enemyBullets)
+        ? window.enemyBullets.length
+        : 0,
+      testResults: {},
     },
     contactCollisions: {
       enemies: Array.isArray(window.enemies) ? window.enemies.length : 0,
       player: !!window.player,
-      testResults: {}
+      testResults: {},
     },
     warnings: [],
     criticalFailures: [],
-    failure: null
+    failure: null,
   };
 
   // Check if collision system exists and has required methods
   if (window.collisionSystem) {
     const requiredMethods = [
       'checkBulletCollisions',
-      'checkContactCollisions', 
+      'checkContactCollisions',
       'checkPlayerBulletsVsEnemies',
       'checkEnemyBulletsVsPlayer',
-      'checkEnemyBulletsVsEnemies'
+      'checkEnemyBulletsVsEnemies',
     ];
 
     for (const method of requiredMethods) {
-      result.collisionSystem.methods[method] = typeof window.collisionSystem[method] === 'function';
+      result.collisionSystem.methods[method] =
+        typeof window.collisionSystem[method] === 'function';
       if (!result.collisionSystem.methods[method]) {
-        result.criticalFailures.push(`CollisionSystem missing method: ${method}`);
+        result.criticalFailures.push(
+          `CollisionSystem missing method: ${method}`
+        );
       }
     }
 
@@ -64,7 +71,9 @@
         result.collisionSystem.functionality.contactCollisions = true;
       }
     } catch (error) {
-      result.criticalFailures.push(`Collision system execution error: ${error.message}`);
+      result.criticalFailures.push(
+        `Collision system execution error: ${error.message}`
+      );
       result.collisionSystem.functionality.error = error.message;
     }
   } else {
@@ -113,7 +122,8 @@
 
   // Check for collision-related configuration
   if (window.CONFIG?.GAME_SETTINGS?.DEBUG_COLLISIONS !== undefined) {
-    result.collisionSystem.debugMode = window.CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS;
+    result.collisionSystem.debugMode =
+      window.CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS;
   } else {
     result.warnings.push('DEBUG_COLLISIONS configuration not found');
   }
@@ -126,7 +136,7 @@
   // If failure detected, capture diagnostic information and create bug report
   if (result.failure) {
     let screenshotData = null;
-    
+
     // Capture screenshot if possible
     if (window.mcp?.screenshot) {
       try {
@@ -138,7 +148,9 @@
       }
     } else if (document.querySelector('canvas')) {
       try {
-        screenshotData = document.querySelector('canvas').toDataURL('image/png');
+        screenshotData = document
+          .querySelector('canvas')
+          .toDataURL('image/png');
       } catch (e) {
         console.log('⚠️ Canvas screenshot failed:', e);
       }
@@ -151,7 +163,7 @@
       player: !!window.player,
       enemies: window.enemies?.length || 0,
       playerBullets: window.playerBullets?.length || 0,
-      enemyBullets: window.enemyBullets?.length || 0
+      enemyBullets: window.enemyBullets?.length || 0,
     });
 
     // Create automated bug report
@@ -179,13 +191,19 @@
           ],
           verification: [],
           relatedTickets: [],
-          tags: ['automated', 'collision', 'probe', 'critical']
+          tags: ['automated', 'collision', 'probe', 'critical'],
         };
-        
+
         await ticketManager.createTicket(ticketData);
-        console.log('🎫 Automated collision bug ticket created:', ticketData.id);
+        console.log(
+          '🎫 Automated collision bug ticket created:',
+          ticketData.id
+        );
       } catch (err) {
-        console.error('⚠️ Failed to create automated collision bug ticket:', err);
+        console.error(
+          '⚠️ Failed to create automated collision bug ticket:',
+          err
+        );
       }
     }
   } else if (result.warnings.length > 0) {
@@ -195,4 +213,4 @@
   }
 
   return result;
-})(); 
+})();

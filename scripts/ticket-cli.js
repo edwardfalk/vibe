@@ -30,8 +30,30 @@ const argv = minimist(process.argv.slice(2));
 const [cmd] = argv._;
 
 function buildParamsFromArgv() {
+  // Clone named args first (those passed as --key=value)
   const p = { ...argv };
-  delete p._;
+  delete p._; // remove positional array
+
+  // ---------------------------------------------------------------------
+  // Support "key=value" positional args (PowerShell-friendly)
+  // Doc examples use: bun run ticket:create type=bug title="My bug" ...
+  // minimist **does not** treat plain "key=value" as named, so we parse
+  // remaining positionals (after the command itself) manually.
+  // This makes the CLI work exactly as the docs illustrate on Windows.
+  // ---------------------------------------------------------------------
+  const positionalPairs = argv._.slice(1); // skip the command token
+  positionalPairs.forEach((token) => {
+    const idx = token.indexOf('=');
+    if (idx > 0) {
+      const key = token.slice(0, idx);
+      const value = token.slice(idx + 1);
+      // If key already exists from a named arg, named arg wins.
+      if (p[key] === undefined) {
+        p[key] = value;
+      }
+    }
+  });
+
   // allow --step multi, convert to checklist
   if (Array.isArray(p.step)) {
     p.checklist = p.step;
@@ -198,7 +220,10 @@ async function main() {
       updates.checklist = parseChecklist(updates.checklist);
     updates.updatedAt = new Date().toISOString();
     try {
-      const res = await fetch(`${API}/${params.id}`, {
+      const fileName = params.id.endsWith('.json')
+        ? params.id
+        : `${params.id}.json`;
+      const res = await fetch(`${API}/${fileName}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -213,7 +238,10 @@ async function main() {
       showErrorAndExit('get requires id=...', 'bun run ticket:get id=BUG-123');
     }
     try {
-      const res = await fetch(`${API}/${params.id}`);
+      const fileName = params.id.endsWith('.json')
+        ? params.id
+        : `${params.id}.json`;
+      const res = await fetch(`${API}/${fileName}`);
       const result = await res.json();
       console.log('Ticket:', result);
     } catch (err) {
@@ -236,7 +264,10 @@ async function main() {
     }
     // Fetch ticket, update checklist
     try {
-      const res = await fetch(`${API}/${params.id}`);
+      const fileName = params.id.endsWith('.json')
+        ? params.id
+        : `${params.id}.json`;
+      const res = await fetch(`${API}/${fileName}`);
       const ticket = await res.json();
       if (!Array.isArray(ticket.checklist)) {
         console.error('No checklist found on ticket.');
@@ -254,7 +285,7 @@ async function main() {
       ticket.checklist[idx].timestamp = new Date().toISOString();
       ticket.updatedAt = new Date().toISOString();
       // PATCH update
-      const patchRes = await fetch(`${API}/${params.id}`, {
+      const patchRes = await fetch(`${API}/${fileName}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -282,7 +313,8 @@ async function main() {
       // Fetch all ticket details
       Promise.all(
         files.map(async (file) => {
-          const r = await fetch(`${API}/${file}`);
+          const fileName = file.endsWith('.json') ? file : `${file}.json`;
+          const r = await fetch(`${API}/${fileName}`);
           return await r.json();
         })
       ).then((tickets) => {

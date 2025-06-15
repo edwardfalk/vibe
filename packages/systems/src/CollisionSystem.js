@@ -103,7 +103,11 @@ export class CollisionSystem {
         if (!bullet.checkCollision(enemy)) continue;
 
         // 💥 Collision!
-        const killResult = enemy.takeDamage(bullet.damage, bullet.angle, 'bullet');
+        const killResult = enemy.takeDamage(
+          bullet.damage,
+          bullet.angle,
+          'bullet'
+        );
 
         // Remove / deactivate bullet unless it is penetrating
         if (!bullet.penetrating) {
@@ -205,7 +209,11 @@ export class CollisionSystem {
         if (!bullet.checkCollision(enemy)) continue;
 
         // Friendly-fire!
-        const killResult = enemy.takeDamage(bullet.damage, bullet.angle, 'friendly-fire');
+        const killResult = enemy.takeDamage(
+          bullet.damage,
+          bullet.angle,
+          'friendly-fire'
+        );
 
         if (!bullet.penetrating) {
           bullet.destroy?.();

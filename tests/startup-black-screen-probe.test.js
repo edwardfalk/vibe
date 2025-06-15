@@ -27,7 +27,9 @@ test.describe('Startup Black-Screen Probe', () => {
       const status = await page.evaluate(() => {
         return {
           playerExists: Boolean(window.player),
-          enemiesCount: Array.isArray(window.enemies) ? window.enemies.length : -1,
+          enemiesCount: Array.isArray(window.enemies)
+            ? window.enemies.length
+            : -1,
           gameState: window.gameState?.gameState || null,
         };
       });
@@ -47,4 +49,4 @@ test.describe('Startup Black-Screen Probe', () => {
       throw err;
     }
   });
-}); 
+});

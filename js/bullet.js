@@ -1,1 +1,1 @@
-export { Bullet } from '../packages/entities/src/bullet.js'; 
+export { Bullet } from '../packages/entities/src/bullet.js';

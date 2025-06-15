@@ -1,4 +1,5 @@
 import { random } from '../mathUtils.js';
+import { SOUND } from './SoundIds.js';
 
 export class SFXManager {
   /**
@@ -19,10 +20,18 @@ export class SFXManager {
   playSound(soundName, x = null, y = null) {
     if (!this.audio.ensureAudioContext()) return;
 
+    // Fail fast in development if unknown ID
+    if (!Object.values(SOUND).includes(soundName)) {
+      throw new Error(
+        `❌ Unknown sound id: ${soundName}. Add it to SoundIds.js and Audio.sounds`
+      );
+    }
+
     const soundConfig = this.audio.sounds[soundName];
     if (!soundConfig) {
-      console.warn(`❌ Sound not found: ${soundName}`);
-      return;
+      throw new Error(
+        `❌ Sound config missing: ${soundName}. Define it in Audio.sounds`
+      );
     }
 
     this.playTone(soundConfig, x, y);
@@ -49,7 +58,8 @@ export class SFXManager {
     const volumeVariation = 1 + (random() - 0.5) * 0.15;
     const durationVariation = 1 + (random() - 0.5) * 0.2;
 
-    oscillator.type = config.waveform === 'noise' ? 'sawtooth' : config.waveform;
+    oscillator.type =
+      config.waveform === 'noise' ? 'sawtooth' : config.waveform;
     const startFreq = config.frequency * frequencyVariation;
     oscillator.frequency.setValueAtTime(startFreq, ctx.currentTime);
 
@@ -58,14 +68,21 @@ export class SFXManager {
       const endFreq = config.sweep.to * frequencyVariation;
       const sweepDuration = config.duration * durationVariation;
       if (config.sweep.curve === 'exponential') {
-        oscillator.frequency.exponentialRampToValueAtTime(Math.max(0.1, endFreq), ctx.currentTime + sweepDuration);
+        oscillator.frequency.exponentialRampToValueAtTime(
+          Math.max(0.1, endFreq),
+          ctx.currentTime + sweepDuration
+        );
       } else {
-        oscillator.frequency.linearRampToValueAtTime(endFreq, ctx.currentTime + sweepDuration);
+        oscillator.frequency.linearRampToValueAtTime(
+          endFreq,
+          ctx.currentTime + sweepDuration
+        );
       }
     }
 
     // Player position (defaults to centre)
-    let playerX = 400, playerY = 300;
+    let playerX = 400,
+      playerY = 300;
     if (audio.player) {
       playerX = audio.player.x;
       playerY = audio.player.y;
@@ -75,16 +92,23 @@ export class SFXManager {
     let panValue = 0;
 
     if (x !== null && y !== null) {
-      const isPlayerSound = Math.abs(x - playerX) < 1 && Math.abs(y - playerY) < 1;
+      const isPlayerSound =
+        Math.abs(x - playerX) < 1 && Math.abs(y - playerY) < 1;
       if (!isPlayerSound) {
-        volume = config.volume * volumeVariation * this.calculateVolume(x, y, playerX, playerY);
+        volume =
+          config.volume *
+          volumeVariation *
+          this.calculateVolume(x, y, playerX, playerY);
         panValue = this.calculatePan(x, playerX);
       }
     }
 
     gainNode.gain.setValueAtTime(0, ctx.currentTime);
     gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + config.duration * durationVariation);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.001,
+      ctx.currentTime + config.duration * durationVariation
+    );
 
     panNode.pan.setValueAtTime(panValue, ctx.currentTime);
 
@@ -99,7 +123,9 @@ export class SFXManager {
     }
 
     // Ambient / reverb check
-    const soundName = Object.keys(audio.sounds).find((k) => audio.sounds[k] === config);
+    const soundName = Object.keys(audio.sounds).find(
+      (k) => audio.sounds[k] === config
+    );
     const ambientSet = new Set([
       'enemyIdle',
       'stabberChant',
@@ -186,4 +212,4 @@ export class SFXManager {
     lfo.start(ctx.currentTime);
     lfo.stop(ctx.currentTime + duration);
   }
-} 
+}

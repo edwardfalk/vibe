@@ -2,7 +2,13 @@
  * Basic explosion effects system
  * Handles particle-based explosions for various game events
  */
-import { randomRange as random, TWO_PI, PI, explosionFX, explosionPalette } from '@vibe/core';
+import {
+  randomRange as random,
+  TWO_PI,
+  PI,
+  explosionFX,
+  explosionPalette,
+} from '@vibe/core';
 
 // --- Global FX tuning --------------------------------------------------
 // Use centralised explosionFX config; fall back to neutral multipliers if a
@@ -78,9 +84,7 @@ export class Explosion {
     }
 
     // Apply global tuning
-    particleCount = Math.round(
-      particleCount * FX_TUNING.particleMultiplier
-    );
+    particleCount = Math.round(particleCount * FX_TUNING.particleMultiplier);
 
     // REMOVED: Screen shake application - game.js handles this better
 
@@ -272,9 +276,11 @@ export class Explosion {
 
     if (type.includes('bullet-kill') || type.includes('plasma-kill')) {
       if (type.includes('grunt')) return this.getParticleColor('grunt-death');
-      if (type.includes('stabber')) return this.getParticleColor('stabber-death');
+      if (type.includes('stabber'))
+        return this.getParticleColor('stabber-death');
       if (type.includes('tank')) return this.getParticleColor('tank-death');
-      if (type.includes('rusher')) return this.getParticleColor('rusher-explosion');
+      if (type.includes('rusher'))
+        return this.getParticleColor('rusher-explosion');
     }
 
     // Fallback default palette

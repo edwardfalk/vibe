@@ -1,4 +1,4 @@
-import { sin, cos, random } from '@vibe/core';
+import { sin, cos, randomRange as random } from '@vibe/core';
 
 // Advanced Visual Effects System for Vibe
 // Leverages p5.js power for stunning graphics
@@ -17,6 +17,10 @@ class VisualEffectsManager {
     this.chromaticAberration = 0;
     this.timeOffset = 0;
     this.initialized = false;
+    // Store a reference to the p5 instance once available
+    this.pInstance = null;
+    // Track whether we've already warned about missing p5 to avoid spam
+    this._warnedMissingP = false;
 
     // Color palettes
     this.nebulaPalette = [
@@ -36,16 +40,41 @@ class VisualEffectsManager {
     ];
 
     this.backgroundLayers = backgroundLayers;
+
+    // --- Performance cache for space gradient -------------------------
+    this._gradientBuffer = null; // p5.Graphics buffer
+    this._gradientNeedsRefresh = true;
+    this._gradientRefreshInterval = 300; // frames between refreshes
+    this._gradientFrameCounter = 0;
   }
 
   // Initialize after p5.js is ready
   init(p) {
     if (this.initialized) return;
 
+    // Prefer supplied p; fall back to cached instance; finally try window.player.p
+    this.pInstance =
+      p ||
+      this.pInstance ||
+      (typeof window !== 'undefined' && window.player && window.player.p
+        ? window.player.p
+        : null);
+
+    // If no p5 instance yet, skip without spamming the console
+    if (!this.pInstance) {
+      if (!this._warnedMissingP) {
+        console.warn(
+          '⚠️ Visual effects init skipped: p5 instance not yet ready'
+        );
+        this._warnedMissingP = true;
+      }
+      return;
+    }
+
     try {
-      // Initialize cosmic dust and auroras
-      this.initCosmicDust(p);
-      this.initAuroras(p);
+      // Initialize cosmic dust and auroras using resolved p5 instance
+      this.initCosmicDust(this.pInstance);
+      this.initAuroras(this.pInstance);
       this.initialized = true;
       console.log('✨ Visual effects fully initialized');
     } catch (error) {
@@ -100,27 +129,43 @@ class VisualEffectsManager {
   }
 
   drawSpaceGradient(p) {
-    // Create dynamic space gradient
-    p.push();
-    p.noFill();
-
-    for (let i = 0; i <= p.height; i += 2) {
-      const inter = p.map(i, 0, p.height, 0, 1);
-      const c1 = p.color(15, 5, 35); // Deep space purple
-      const c2 = p.color(60, 30, 80); // Lighter purple
-      const c3 = p.color(25, 15, 45); // Mid purple
-
-      let currentColor;
-      if (inter < 0.5) {
-        currentColor = p.lerpColor(c1, c3, inter * 2);
-      } else {
-        currentColor = p.lerpColor(c3, c2, (inter - 0.5) * 2);
-      }
-
-      p.stroke(currentColor);
-      p.line(0, i, p.width, i);
+    // Refresh buffer periodically or when size changes
+    if (
+      !this._gradientBuffer ||
+      this._gradientBuffer.width !== p.width ||
+      this._gradientBuffer.height !== p.height ||
+      this._gradientNeedsRefresh
+    ) {
+      this._createGradientBuffer(p);
+      this._gradientNeedsRefresh = false;
     }
-    p.pop();
+
+    // Draw cached gradient
+    if (this._gradientBuffer) {
+      p.image(this._gradientBuffer, 0, 0);
+    }
+
+    // Increment frame counter and flag refresh when due
+    this._gradientFrameCounter++;
+    if (this._gradientFrameCounter >= this._gradientRefreshInterval) {
+      this._gradientFrameCounter = 0;
+      this._gradientNeedsRefresh = true;
+    }
+  }
+
+  _createGradientBuffer(p) {
+    this._gradientBuffer = p.createGraphics(p.width, p.height);
+    const g = this._gradientBuffer;
+    g.noFill();
+    for (let i = 0; i <= p.height; i += 2) {
+      const inter = g.map(i, 0, p.height, 0, 1);
+      const c1 = g.color(15, 5, 35);
+      const c2 = g.color(60, 30, 80);
+      const c3 = g.color(25, 15, 45);
+      let currentColor = inter < 0.5 ? g.lerpColor(c1, c3, inter * 2) : g.lerpColor(c3, c2, (inter - 0.5) * 2);
+      g.stroke(currentColor);
+      g.line(0, i, p.width, i);
+    }
   }
 
   drawAuroras(p, camera) {
@@ -233,7 +278,7 @@ class VisualEffectsManager {
   // Particle system for explosions and effects
   addExplosionParticles(x, y, type = 'normal') {
     if (!this.initialized) {
-      this.init();
+      this.init(this.pInstance || (window.player && window.player.p));
       if (!this.initialized) return;
     }
 
@@ -270,7 +315,7 @@ class VisualEffectsManager {
 
   addMuzzleFlashParticles(x, y, angle, isPlayer = true) {
     if (!this.initialized) {
-      this.init();
+      this.init(this.pInstance || (window.player && window.player.p));
       if (!this.initialized) return;
     }
 
@@ -308,7 +353,7 @@ class VisualEffectsManager {
 
   addMotionTrail(x, y, color, size = 3) {
     if (!this.initialized) {
-      this.init();
+      this.init(this.pInstance || (window.player && window.player.p));
       if (!this.initialized) return;
     }
 

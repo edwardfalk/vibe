@@ -1,1 +1,1 @@
-export { Audio } from '../packages/core/src/Audio.js'; 
+export { Audio } from '../packages/core/src/Audio.js';

@@ -40,7 +40,11 @@ function bench(fn) {
 const sqrtRes = bench(getDistance);
 const sqRes = bench(getDistanceSq);
 
-console.log(`\nDistance vs DistanceSq (${ITERATIONS.toLocaleString()} iterations)`);
+console.log(
+  `\nDistance vs DistanceSq (${ITERATIONS.toLocaleString()} iterations)`
+);
 console.log(`sqrt version : ${sqrtRes.duration.toFixed(2)} ms`);
 console.log(`squared ver. : ${sqRes.duration.toFixed(2)} ms`);
-console.log(`Speedup      : ${(sqrtRes.duration / sqRes.duration).toFixed(2)}×`); 
+console.log(
+  `Speedup      : ${(sqrtRes.duration / sqRes.duration).toFixed(2)}×`
+);

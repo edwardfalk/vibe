@@ -52,4 +52,4 @@ test.describe('Ticket CLI workflow (AI stable)', () => {
     const latestOut = run('bun run ticket:latest');
     expect(latestOut).toMatch(created.id);
   });
-}); 
+});

@@ -53,20 +53,8 @@ const LINES = {
     'YOLO!',
     'KAMIKAZE PIZZA PARTY!',
   ],
-  stabber: [
-    'STAB!',
-    'FEEL THE BLADE!',
-    'KNIVES OUT!',
-    'CUT YOU!',
-    'SLICING!',
-  ],
-  tank: [
-    'CRUSH!',
-    'HEAVY METAL!',
-    'ROLLING IN!',
-    'BASS DRUM!',
-    'BIG BOOM!',
-  ],
+  stabber: ['STAB!', 'FEEL THE BLADE!', 'KNIVES OUT!', 'CUT YOU!', 'SLICING!'],
+  tank: ['CRUSH!', 'HEAVY METAL!', 'ROLLING IN!', 'BASS DRUM!', 'BIG BOOM!'],
 };
 
 function randomLine(type) {
@@ -102,4 +90,4 @@ export function speakAmbient(
     return true;
   }
   return false;
-} 
+}

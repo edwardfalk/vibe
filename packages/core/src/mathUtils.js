@@ -5,7 +5,6 @@ export const min = Math.min;
 export const floor = Math.floor;
 export const ceil = Math.ceil;
 export const round = Math.round;
-export const random = Math.random;
 export const sin = Math.sin;
 export const cos = Math.cos;
 export const atan2 = Math.atan2;
@@ -46,10 +45,19 @@ export function normalizeAngle(angle) {
  * Random number in [min, max)
  * Mirrors p5.random behavior if single arg provided.
  */
-export function randomRange(min, max) {
-  if (max === undefined) {
-    max = min;
-    min = 0;
+export function random(minOrMax = undefined, max = undefined) {
+  // No arguments → 0-1
+  if (typeof minOrMax === 'undefined') {
+    return Math.random();
   }
-  return random() * (max - min) + min;
+
+  // Single argument → range [0, arg)
+  if (typeof max === 'undefined') {
+    return Math.random() * minOrMax;
+  }
+
+  // Two arguments → range [min, max)
+  return Math.random() * (max - minOrMax) + minOrMax;
 }
+
+export const randomRange = random;

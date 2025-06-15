@@ -44,7 +44,9 @@ function setupRemoteConsoleLogger(apiUrl = 'http://localhost:3001/api/logs') {
     };
   });
 
-  console.log('🪵 RemoteConsoleLogger active – logs will be sent to Ticket API');
+  console.log(
+    '🪵 RemoteConsoleLogger active – logs will be sent to Ticket API'
+  );
 }
 
 export { setupRemoteConsoleLogger };
@@ -63,7 +65,9 @@ if (typeof window !== 'undefined') {
         body: JSON.stringify({
           level: 'error',
           message: event.message || 'Uncaught error',
-          stack: event.error ? event.error.stack : event.filename + ':' + event.lineno,
+          stack: event.error
+            ? event.error.stack
+            : event.filename + ':' + event.lineno,
         }),
         keepalive: true,
       }).catch(() => {});
@@ -78,11 +82,13 @@ if (typeof window !== 'undefined') {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           level: 'error',
-          message: event.reason ? event.reason.message || String(event.reason) : 'Unhandled rejection',
+          message: event.reason
+            ? event.reason.message || String(event.reason)
+            : 'Unhandled rejection',
           stack: event.reason && event.reason.stack ? event.reason.stack : '',
         }),
         keepalive: true,
       }).catch(() => {});
     } catch (_) {}
   });
-} 
+}

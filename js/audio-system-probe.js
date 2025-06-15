@@ -3,7 +3,7 @@
 
 (async function () {
   const { random } = await import('./mathUtils.js');
-  
+
   // Import ticketManager API if available
   let ticketManager = null;
   try {
@@ -18,7 +18,7 @@
       exists: !!window.audio,
       context: null,
       methods: {},
-      functionality: {}
+      functionality: {},
     },
     beatClock: {
       exists: !!window.beatClock,
@@ -26,11 +26,11 @@
       beatTimingHealthy: false,
       currentBeat: null,
       bpm: null,
-      lastBeatTime: null
+      lastBeatTime: null,
     },
     warnings: [],
     criticalFailures: [],
-    failure: null
+    failure: null,
   };
 
   // Check audio system
@@ -45,14 +45,14 @@
     // Check required audio methods
     const requiredMethods = [
       'playPlayerShoot',
-      'playPlayerHit', 
+      'playPlayerHit',
       'playHit',
       'playExplosion',
       'playEnemyOhNo',
       'playGruntPop',
       'playStabberOhNo',
       'playRusherOhNo',
-      'playTankOhNo'
+      'playTankOhNo',
     ];
 
     for (const method of requiredMethods) {
@@ -68,7 +68,7 @@
       if (typeof window.audio.init === 'function') {
         result.audio.functionality.canInitialize = true;
       }
-      
+
       // Check if audio context is accessible
       if (window.audio.audioContext) {
         result.audio.functionality.contextAccessible = true;
@@ -90,13 +90,18 @@
     // Check beat timing health
     if (result.beatClock.lastBeatTime) {
       const timeSinceLastBeat = Date.now() - result.beatClock.lastBeatTime;
-      const expectedBeatInterval = result.beatClock.bpm ? (60000 / result.beatClock.bpm) : 1000;
-      
+      const expectedBeatInterval = result.beatClock.bpm
+        ? 60000 / result.beatClock.bpm
+        : 1000;
+
       // Consider timing healthy if within 2x expected interval
-      result.beatClock.beatTimingHealthy = timeSinceLastBeat < (expectedBeatInterval * 2);
-      
+      result.beatClock.beatTimingHealthy =
+        timeSinceLastBeat < expectedBeatInterval * 2;
+
       if (!result.beatClock.beatTimingHealthy) {
-        result.warnings.push('Beat timing appears unhealthy - too long since last beat');
+        result.warnings.push(
+          'Beat timing appears unhealthy - too long since last beat'
+        );
         result.criticalFailures.push('BeatClock timing unhealthy');
       }
     } else {
@@ -119,7 +124,7 @@
     result.audio.configuration = {
       masterVolume: window.CONFIG.AUDIO_SETTINGS.MASTER_VOLUME,
       sfxVolume: window.CONFIG.AUDIO_SETTINGS.SFX_VOLUME,
-      musicVolume: window.CONFIG.AUDIO_SETTINGS.MUSIC_VOLUME
+      musicVolume: window.CONFIG.AUDIO_SETTINGS.MUSIC_VOLUME,
     };
   } else {
     result.warnings.push('Audio configuration not found');
@@ -133,7 +138,7 @@
   // If failure detected, capture diagnostic information and create bug report
   if (result.failure) {
     let screenshotData = null;
-    
+
     // Capture screenshot if possible
     if (window.mcp?.screenshot) {
       try {
@@ -145,7 +150,9 @@
       }
     } else if (document.querySelector('canvas')) {
       try {
-        screenshotData = document.querySelector('canvas').toDataURL('image/png');
+        screenshotData = document
+          .querySelector('canvas')
+          .toDataURL('image/png');
       } catch (e) {
         console.log('⚠️ Canvas screenshot failed:', e);
       }
@@ -157,7 +164,7 @@
       audioExists: !!window.audio,
       beatClockExists: !!window.beatClock,
       audioContext: window.audio?.audioContext?.state,
-      beatClockActive: window.beatClock?.isActive
+      beatClockActive: window.beatClock?.isActive,
     });
 
     // Create automated bug report
@@ -185,9 +192,9 @@
           ],
           verification: [],
           relatedTickets: [],
-          tags: ['automated', 'audio', 'probe', 'critical']
+          tags: ['automated', 'audio', 'probe', 'critical'],
         };
-        
+
         await ticketManager.createTicket(ticketData);
         console.log('🎫 Automated audio bug ticket created:', ticketData.id);
       } catch (err) {
@@ -201,4 +208,4 @@
   }
 
   return result;
-})(); 
+})();

@@ -2,14 +2,7 @@
 // Requires core game globals via window.* as per Vibe standards.
 // Math utilities from core package.
 
-import {
-  sqrt,
-  max,
-  floor,
-  atan2,
-  cos,
-  sin,
-} from '@vibe/core/mathUtils.js';
+import { sqrt, max, floor, atan2, cos, sin } from '@vibe/core/mathUtils.js';
 
 /**
  * BombSystem – static utility for updating active tank bombs every frame.
@@ -51,7 +44,9 @@ export class BombSystem {
         tank
       ) {
         window.audio.speak(tank, secondsLeft.toString(), 'player');
-        console.log(`⏰ TIME BOMB COUNTDOWN: ${secondsLeft} (Tank ID: ${tank.id})`);
+        console.log(
+          `⏰ TIME BOMB COUNTDOWN: ${secondsLeft} (Tank ID: ${tank.id})`
+        );
       }
 
       if (bomb.timer > 0) continue; // still ticking
@@ -83,7 +78,9 @@ export class BombSystem {
           const distance = sqrt(distSq);
           const dmg = max(10, floor(40 * (1 - distance / EXPLOSION_RADIUS)));
 
-          console.log(`💥 Player took ${dmg} bomb damage (distance ${distance.toFixed(1)})`);
+          console.log(
+            `💥 Player took ${dmg} bomb damage (distance ${distance.toFixed(1)})`
+          );
           window.audio?.playPlayerHit();
           window.gameState?.resetKillStreak();
 
@@ -92,7 +89,10 @@ export class BombSystem {
             console.log('💀 PLAYER KILLED BY TANK BOMB!');
           } else {
             // Massive knockback
-            const angle = atan2(window.player.y - bomb.y, window.player.x - bomb.x);
+            const angle = atan2(
+              window.player.y - bomb.y,
+              window.player.x - bomb.x
+            );
             const force = 15;
             window.player.velocity.x += cos(angle) * force;
             window.player.velocity.y += sin(angle) * force;
@@ -116,7 +116,12 @@ export class BombSystem {
         if (result === true) {
           console.log(`💥 ${enemy.type} destroyed by tank bomb`);
           if (window.collisionSystem) {
-            window.collisionSystem.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
+            window.collisionSystem.handleEnemyDeath(
+              enemy,
+              enemy.type,
+              enemy.x,
+              enemy.y
+            );
           }
           enemies.splice(j, 1);
           window.gameState?.addKill();
@@ -131,4 +136,4 @@ export class BombSystem {
       bombs.splice(i, 1);
     }
   }
-} 
+}

@@ -1,1 +1,1 @@
-export { Rusher } from '../packages/entities/src/Rusher.js'; 
+export { Rusher } from '../packages/entities/src/Rusher.js';

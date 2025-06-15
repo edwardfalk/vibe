@@ -2,6 +2,7 @@
 // Requires the Audio system for sound playback.
 
 import { floor } from '../mathUtils.js';
+import { SOUND } from './SoundIds.js';
 
 /**
  * MusicManager – drives a simple 4-beat backing track using existing SFX.
@@ -45,13 +46,13 @@ export class MusicManager {
    */
   triggerBeat(beat) {
     // Hi-hat (quiet)
-    this.audio.playSound('playerShoot');
+    this.audio.playSound(SOUND.playerShoot);
 
     if (beat === 1 || beat === 3) {
-      this.audio.playSound('tankEnergy'); // Kick
+      this.audio.playSound(SOUND.tankEnergy); // Kick
     }
     if (beat === 2 || beat === 4) {
-      this.audio.playSound('alienShoot'); // Snare
+      this.audio.playSound(SOUND.alienShoot); // Snare
     }
   }
-} 
+}
