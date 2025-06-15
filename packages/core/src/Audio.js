@@ -52,6 +52,7 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { random, randomRange, floor } from './mathUtils.js';
 import { SFXManager } from './audio/SFXManager.js';
+import { SOUND } from './audio/SoundIds.js';
 
 export class Audio {
   /**
@@ -203,7 +204,7 @@ export class Audio {
         waveform: 'triangle',
         volume: 0.4,
         duration: 0.15,
-      },
+      }, // Sharp accent: cutting through
       enemyIdle: {
         frequency: 200,
         waveform: 'sine',
@@ -296,6 +297,18 @@ export class Audio {
         volume: 0.25,
         duration: 0.18,
       }, // Quick, soft "ow" fallback
+      stabberKnifeExtend: {
+        frequency: 2000,
+        waveform: 'triangle',
+        volume: 0.3,
+        duration: 0.12,
+      },
+      stabberKnifeHit: {
+        frequency: 2600,
+        waveform: 'square',
+        volume: 0.45,
+        duration: 0.05,
+      },
     };
 
     // Voice configuration - REDUCED VOLUMES for background speech effect
@@ -315,7 +328,33 @@ export class Audio {
     this.playSound = (...a) => this.sfxManager.playSound(...a);
     this.playTone = (...a) => this.sfxManager.playTone(...a);
 
+    // Validate registry vs config in development builds
+    try {
+      this.validateSoundRegistry();
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+
     console.log('🎵 Optimized Audio System ready');
+
+    // Register listener to keep player reference in sync on global event bus
+    window.addEventListener('playerChanged', (e) => {
+      if (e && e.detail) {
+        this.setPlayer(e.detail);
+      }
+    });
+  }
+
+  /**
+   * Update the internal player reference used for spatial audio calculations.
+   * Safe to call multiple times; ignores invalid or duplicate inputs.
+   * @param {Player} newPlayer - The current live player instance.
+   */
+  setPlayer(newPlayer) {
+    if (!newPlayer || newPlayer === this.player) return;
+    this.player = newPlayer;
+    console.log('🔊 Audio player reference updated');
   }
 
   // ========================================================================
@@ -1143,106 +1182,106 @@ export class Audio {
 
   // Sound effects
   playPlayerShoot(x, y) {
-    this.playSound('playerShoot', x, y);
+    this.playSound(SOUND.playerShoot, x, y);
   }
   playAlienShoot(x, y) {
-    this.playSound('alienShoot', x, y);
+    this.playSound(SOUND.alienShoot, x, y);
   }
   playExplosion(x, y) {
-    this.playSound('explosion', x, y);
+    this.playSound(SOUND.explosion, x, y);
   }
   playHit(x, y) {
-    this.playSound('hit', x, y);
+    this.playSound(SOUND.hit, x, y);
   }
   playPlayerHit() {
-    this.playSound('playerHit');
+    this.playSound(SOUND.playerHit);
   }
   playEnemyHit(x, y) {
-    this.playSound('hit', x, y);
+    this.playSound(SOUND.hit, x, y);
   }
   playRusherScream(x, y) {
-    this.playSound('rusherScream', x, y);
+    this.playSound(SOUND.rusherScream, x, y);
   }
   playTankEnergyBall(x, y) {
-    this.playSound('tankEnergy', x, y);
+    this.playSound(SOUND.tankEnergy, x, y);
   }
   playStabAttack(x, y) {
-    this.playSound('stabAttack', x, y);
+    this.playSound(SOUND.stabAttack, x, y);
   }
   playEnemyFrying(x, y) {
-    this.playSound('enemyFrying', x, y);
+    this.playSound(SOUND.enemyFrying, x, y);
   }
 
   // NEW CHARACTER-BUILDING SOUND METHODS
   playPlasmaCloud(x, y) {
-    this.playSound('plasmaCloud', x, y);
+    this.playSound(SOUND.plasmaCloud, x, y);
   }
   playTankCharging(x, y) {
-    this.playSound('tankCharging', x, y);
+    this.playSound(SOUND.tankCharging, x, y);
   }
   playTankPower(x, y) {
-    this.playSound('tankPower', x, y);
+    this.playSound(SOUND.tankPower, x, y);
   }
   playStabberChant(x, y) {
-    this.playSound('stabberChant', x, y);
+    this.playSound(SOUND.stabberChant, x, y);
   }
   playGruntAdvance(x, y) {
-    this.playSound('gruntAdvance', x, y);
+    this.playSound(SOUND.gruntAdvance, x, y);
   }
   playGruntRetreat(x, y) {
-    this.playSound('gruntRetreat', x, y);
+    this.playSound(SOUND.gruntRetreat, x, y);
   }
   playRusherCharge(x, y) {
-    this.playSound('rusherCharge', x, y);
+    this.playSound(SOUND.rusherCharge, x, y);
   }
   playStabberKnife(x, y) {
-    this.playSound('stabberKnife', x, y);
+    this.playSound(SOUND.stabberKnife, x, y);
   }
   playEnemyIdle(x, y) {
-    this.playSound('enemyIdle', x, y);
+    this.playSound(SOUND.enemyIdle, x, y);
   }
   playTankPowerUp(x, y) {
-    this.playSound('tankPowerUp', x, y);
+    this.playSound(SOUND.tankPowerUp, x, y);
   }
   playStabberStalk(x, y) {
-    this.playSound('stabberStalk', x, y);
+    this.playSound(SOUND.stabberStalk, x, y);
   }
   playStabberDash(x, y) {
-    this.playSound('stabberDash', x, y);
+    this.playSound(SOUND.stabberDash, x, y);
   }
 
   // NEW GRUNT AMBIENT SOUND METHODS
   playGruntMalfunction(x, y) {
-    this.playSound('gruntMalfunction', x, y);
+    this.playSound(SOUND.gruntMalfunction, x, y);
   }
   playGruntBeep(x, y) {
-    this.playSound('gruntBeep', x, y);
+    this.playSound(SOUND.gruntBeep, x, y);
   }
   playGruntWhir(x, y) {
-    this.playSound('gruntWhir', x, y);
+    this.playSound(SOUND.gruntWhir, x, y);
   }
   playGruntError(x, y) {
-    this.playSound('gruntError', x, y);
+    this.playSound(SOUND.gruntError, x, y);
   }
   playGruntGlitch(x, y) {
-    this.playSound('gruntGlitch', x, y);
+    this.playSound(SOUND.gruntGlitch, x, y);
   }
 
   // NEW SATISFYING KILL SOUND METHODS - The good stuff!
   playGruntPop(x, y) {
-    this.playSound('gruntPop', x, y);
+    this.playSound(SOUND.gruntPop, x, y);
   }
   playEnemyOhNo(x, y) {
-    this.playSound('enemyOhNo', x, y);
+    this.playSound(SOUND.enemyOhNo, x, y);
   }
   playStabberOhNo(x, y) {
-    this.playSound('stabberOhNo', x, y);
+    this.playSound(SOUND.stabberOhNo, x, y);
   }
   playRusherOhNo(x, y) {
-    this.playSound('rusherOhNo', x, y);
+    this.playSound(SOUND.rusherOhNo, x, y);
   }
   playTankOhNo(x, y) {
-    this.playSound('tankOhNo', x, y);
+    this.playSound(SOUND.tankOhNo, x, y);
   }
 
   // Speech methods (simplified - no Promises)
@@ -1473,12 +1512,37 @@ export class Audio {
 
   // MISSING METHODS - Added to fix silent sounds after refactoring
   playBombExplosion(x, y) {
-    this.playSound('explosion', x, y);
+    this.playSound(SOUND.explosion, x, y);
   } // Bombs use explosion sound
   playRusherExplosion(x, y) {
-    this.playSound('explosion', x, y);
+    this.playSound(SOUND.explosion, x, y);
   } // Rusher explosions use explosion sound
   playStabberAttack(x, y) {
-    this.playSound('stabAttack', x, y);
+    this.playSound(SOUND.stabAttack, x, y);
   } // Stabber attacks use stabAttack sound
+
+  /**
+   * Development-time safety: ensure every SOUND id has a config and vice-versa.
+   * Throws an Error if any mismatch is found so problems surface immediately.
+   */
+  validateSoundRegistry() {
+    const registryKeys = Object.values(SOUND);
+    const configKeys = Object.keys(this.sounds);
+    const missingInConfig = registryKeys.filter((k) => !configKeys.includes(k));
+    const missingInRegistry = configKeys.filter((k) => !registryKeys.includes(k));
+    if (missingInConfig.length || missingInRegistry.length) {
+      const details = [
+        missingInConfig.length
+          ? `→ Missing configs for: ${missingInConfig.join(', ')}`
+          : null,
+        missingInRegistry.length
+          ? `→ Missing registry IDs for: ${missingInRegistry.join(', ')}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join('\n');
+      throw new Error(`Sound registry mismatch detected!\n${details}`);
+    }
+    console.log('✅ Sound registry validated –', configKeys.length, 'entries');
+  }
 }
