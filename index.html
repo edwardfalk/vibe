@@ -46,13 +46,15 @@
           "@vibe/fx": "/packages/fx/src/index.js",
           "@vibe/fx/": "/packages/fx/src/",
           "@vibe/tooling": "/packages/tooling/src/index.js",
-          "@vibe/tooling/": "/packages/tooling/src/"
+          "@vibe/tooling/": "/packages/tooling/src/",
+          "@vibe/game": "/packages/game/src/index.js",
+          "@vibe/game/": "/packages/game/src/"
         }
       }
     </script>
     <!-- Remote console logger (captures early errors before game boots) -->
     <script type="module">
-      import { setupRemoteConsoleLogger } from '/js/RemoteConsoleLogger.js';
+      import { setupRemoteConsoleLogger } from '@vibe/tooling';
       setupRemoteConsoleLogger();
     </script>
 </head>
@@ -88,8 +90,8 @@
       import '@vibe/systems';
       import '@vibe/entities';
       import '@vibe/fx';
-      // Start game loop (still uses legacy internal imports)
-      import '/js/GameLoop.js';
+      // Start game loop via new @vibe/game package (uses legacy code internally for now)
+      import '@vibe/game';
     </script>
 </body>
 </html> 

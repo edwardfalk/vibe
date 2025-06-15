@@ -63,7 +63,8 @@ export class RadioactiveDebris {
     return null;
   }
 
-  draw() {
+  draw(p) {
+    const { push, pop, translate, fill, noStroke, ellipse, textAlign, textSize, sin, map, color, red, green, blue, cos, random, constrain, dist, TWO_PI } = p;
     if (!this.active) return;
 
     push();

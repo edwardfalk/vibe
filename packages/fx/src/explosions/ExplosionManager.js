@@ -175,6 +175,26 @@ class EnemyFragmentExplosion {
   }
 
   draw(p) {
+    // Bind p5 instance methods for concise use while keeping instance-mode safety
+    const {
+      push,
+      pop,
+      translate,
+      rotate,
+      fill,
+      noStroke,
+      ellipse,
+      rect,
+      beginShape,
+      endShape,
+      vertex,
+      map,
+      red,
+      green,
+      blue,
+      cos,
+      sin,
+    } = p;
     if (!this.active) return;
 
     // Draw central explosion first (behind fragments)

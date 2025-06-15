@@ -8,24 +8,15 @@
  * - Stabbers = Off-beat accent (beat 3.5)
  */
 
-import { Player } from './player.js';
-import { EnemyFactory } from './EnemyFactory.js';
-import { ExplosionManager } from './explosions/ExplosionManager.js';
-import { GameState } from './GameState.js';
-import { CameraSystem } from './CameraSystem.js';
-import { SpawnSystem } from './SpawnSystem.js';
-import { BackgroundRenderer } from './BackgroundRenderer.js';
-import { UIRenderer } from './UIRenderer.js';
-import { CollisionSystem } from './CollisionSystem.js';
-import { TestMode } from './TestMode.js';
-import { Audio } from './Audio.js';
-import { BeatClock } from './BeatClock.js';
-import { MusicManager } from '../packages/core/src/audio/MusicManager.js';
-import { Bullet } from './bullet.js';
-import { EffectsManager } from './effects.js';
-import VisualEffectsManager from './visualEffects.js';
-import { CONFIG } from './config.js';
+import { Player, EnemyFactory, Bullet } from '@vibe/entities';
+import { ExplosionManager, EffectsManager } from '@vibe/fx';
+import VisualEffectsManager from '@vibe/fx/visualEffects.js';
 import {
+  GameState,
+  Audio,
+  BeatClock,
+  MusicManager,
+  CONFIG,
   sqrt,
   max,
   min,
@@ -36,11 +27,19 @@ import {
   atan2,
   cos,
   sin,
-} from './mathUtils.js';
-import { setupRemoteConsoleLogger } from './RemoteConsoleLogger.js';
-import { BulletSystem } from '../packages/systems/src/BulletSystem.js';
-import { BombSystem } from '../packages/systems/src/BombSystem.js';
-import { InputSystem } from '../packages/systems/src/InputSystem.js';
+} from '@vibe/core';
+import {
+  CameraSystem,
+  SpawnSystem,
+  BackgroundRenderer,
+  UIRenderer,
+  CollisionSystem,
+  TestMode,
+  BulletSystem,
+  BombSystem,
+  InputSystem,
+} from '@vibe/systems';
+import { setupRemoteConsoleLogger } from '@vibe/tooling';
 
 // Core game objects
 let player;
@@ -354,6 +353,9 @@ function draw(p) {
 }
 
 function updateGame(p) {
+  // Resync local references to dynamic global arrays (enemies may be reassigned)
+  enemies = window.enemies;
+
   // Update BeatClock every frame for accurate rhythm timing
   if (window.beatClock && typeof window.beatClock.update === 'function') {
     window.beatClock.update();
@@ -885,3 +887,15 @@ window.Player = Player;
 
 // Initialise input system once at module load
 InputSystem.initialize();
+
+// Bridge modular classes to legacy global namespace for backward compatibility (temporary during migration)
+if (typeof window !== 'undefined') {
+  window.ExplosionManager = ExplosionManager;     // Needed by GameState.restart()
+  window.EffectsManager = EffectsManager;       // Needed by GameState.restart()
+  window.VisualEffectsManager = VisualEffectsManager; // Needed by GameState.restart()
+  // Game systems & entities referenced inside GameState.restart()
+  window.Player        = Player;
+  window.SpawnSystem   = SpawnSystem;
+  window.CollisionSystem = CollisionSystem;
+  window.BeatClock     = BeatClock;
+}

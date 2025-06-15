@@ -1,14 +1,10 @@
-// DEPRECATED: RemoteConsoleLogger moved to @vibe/tooling
-console.warn('RemoteConsoleLogger.js has moved to @vibe/tooling. Update your imports.');
-export { setupRemoteConsoleLogger } from '../packages/tooling/src/RemoteConsoleLogger.js';
-
 // RemoteConsoleLogger.js - Browser-side automatic console logger
 // Requires fetch API (modern browsers). Sends console logs to Ticket API server
 // so that they are persisted to .debug logs for later analysis.
 
 // IMPORTANT: This module should only execute in a browser context.
 function setupRemoteConsoleLogger(apiUrl = 'http://localhost:3001/api/logs') {
-  if (typeof window === 'undefined') return; // Node/test safegaurd
+  if (typeof window === 'undefined') return; // Node/test safeguard
   if (window.__remoteConsoleLoggerSetup) return;
   window.__remoteConsoleLoggerSetup = true;
 
@@ -50,6 +46,8 @@ function setupRemoteConsoleLogger(apiUrl = 'http://localhost:3001/api/logs') {
 
   console.log('🪵 RemoteConsoleLogger active – logs will be sent to Ticket API');
 }
+
+export { setupRemoteConsoleLogger };
 
 // -----------------------------------------------------------------------------
 // Attach global error handlers so that uncaught exceptions make it to the server
