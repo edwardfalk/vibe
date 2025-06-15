@@ -642,7 +642,7 @@ function updateGame(p) {
 
   // Update explosion manager and handle damage events
   if (explosionManager) {
-    const damageEvents = explosionManager.update();
+    const damageEvents = explosionManager.update(p.deltaTime);
 
     // Process area damage events from plasma clouds and radioactive debris
     if (damageEvents && damageEvents.length > 0) {

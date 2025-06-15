@@ -1,7 +1,7 @@
 import { Explosion } from './Explosion.js';
 import { RadioactiveDebris } from './RadioactiveDebris.js';
 import { PlasmaCloud } from './PlasmaCloud.js';
-import { random, TWO_PI, cos, sin } from '@vibe/core';
+import { randomRange as random, TWO_PI, cos, sin } from '@vibe/core';
 
 /**
  * Explosion management system
@@ -120,27 +120,29 @@ class EnemyFragmentExplosion {
     }
   }
 
-  update() {
-    this.timer++;
+  update(deltaTimeMs) {
+    const dtFactor = (deltaTimeMs || 16.6667) / 16.6667;
+
+    this.timer += dtFactor;
 
     // Update fragments
     for (let i = this.fragments.length - 1; i >= 0; i--) {
       const fragment = this.fragments[i];
 
       // Move fragment
-      fragment.x += fragment.vx;
-      fragment.y += fragment.vy;
+      fragment.x += fragment.vx * dtFactor;
+      fragment.y += fragment.vy * dtFactor;
 
       // Apply physics
-      fragment.vy += fragment.gravity;
-      fragment.vx *= fragment.friction;
-      fragment.vy *= fragment.friction;
+      fragment.vy += fragment.gravity * dtFactor;
+      fragment.vx *= Math.pow(fragment.friction, dtFactor);
+      fragment.vy *= Math.pow(fragment.friction, dtFactor);
 
       // Rotate
-      fragment.rotation += fragment.rotationSpeed;
+      fragment.rotation += fragment.rotationSpeed * dtFactor;
 
       // Reduce life
-      fragment.life--;
+      fragment.life -= dtFactor;
 
       // Remove dead fragments
       if (fragment.life <= 0) {
@@ -149,15 +151,16 @@ class EnemyFragmentExplosion {
     }
 
     // Update central explosion
-    this.centralExplosion.timer++;
+    this.centralExplosion.timer += dtFactor;
     for (let i = this.centralExplosion.particles.length - 1; i >= 0; i--) {
       const particle = this.centralExplosion.particles[i];
 
-      particle.x += particle.vx;
-      particle.y += particle.vy;
-      particle.vx *= 0.95;
-      particle.vy *= 0.95;
-      particle.life--;
+      particle.x += particle.vx * dtFactor;
+      particle.y += particle.vy * dtFactor;
+      const frictionFactor = Math.pow(0.95, dtFactor);
+      particle.vx *= frictionFactor;
+      particle.vy *= frictionFactor;
+      particle.life -= dtFactor;
 
       if (particle.life <= 0) {
         this.centralExplosion.particles.splice(i, 1);
@@ -393,17 +396,21 @@ export class ExplosionManager {
     // console.log(`✨ Created beautiful fragment explosion for ${enemy.type} at (${x}, ${y})`);
   }
 
-  update() {
+  /**
+   * Update all explosion-related FX.
+   * @param {number} deltaTimeMs - Frame time in milliseconds (defaults to baseline 16.67)
+   */
+  update(deltaTimeMs = 16.6667) {
     // Update explosions
     for (let i = this.explosions.length - 1; i >= 0; i--) {
-      this.explosions[i].update();
+      this.explosions[i].update(deltaTimeMs);
       if (!this.explosions[i].active) {
         this.explosions.splice(i, 1);
       }
     }
     // Update fragment explosions
     for (let i = this.fragmentExplosions.length - 1; i >= 0; i--) {
-      this.fragmentExplosions[i].update();
+      this.fragmentExplosions[i].update(deltaTimeMs);
       if (!this.fragmentExplosions[i].active) {
         this.fragmentExplosions.splice(i, 1);
       }
