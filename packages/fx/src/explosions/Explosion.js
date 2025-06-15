@@ -2,7 +2,19 @@
  * Basic explosion effects system
  * Handles particle-based explosions for various game events
  */
-import { random, TWO_PI } from '@vibe/core';
+import { randomRange as random, TWO_PI, PI, explosionFX, explosionPalette } from '@vibe/core';
+
+// --- Global FX tuning --------------------------------------------------
+// Use centralised explosionFX config; fall back to neutral multipliers if a
+// field is missing so bad edits won't crash the game.
+const FX_TUNING = {
+  particleMultiplier: 1,
+  sizeMultiplier: 1,
+  lifeMultiplier: 1,
+  glowRange: [0, 1],
+  ...explosionFX,
+};
+
 export class Explosion {
   constructor(x, y, type = 'enemy') {
     this.x = x;
@@ -28,11 +40,15 @@ export class Explosion {
       particleCount = 25; // Increased from 12 for much more dramatic explosion
       this.flashIntensity = 0.4; // Increased from 0.2 for more dramatic flash
     } else if (type === 'grunt-bullet-kill') {
-      particleCount = 8; // Increased for better visual feedback
-      this.flashIntensity = 0; // No flash for basic enemies
+      particleCount = 16; // Noticeable pop
+      this.flashIntensity = 0.15; // brief flash
+      this.hasShockwave = true;
+      this.maxShockwaveRadius = 60;
     } else if (type === 'grunt-plasma-kill') {
-      particleCount = 10; // More particles for plasma kill visibility
-      this.flashIntensity = 0; // No flash
+      particleCount = 20;
+      this.flashIntensity = 0.25;
+      this.hasShockwave = true;
+      this.maxShockwaveRadius = 70;
     } else if (type === 'rusher-bullet-kill') {
       particleCount = 6; // Reduced from 10
       this.flashIntensity = 0; // No flash for common enemy
@@ -60,6 +76,11 @@ export class Explosion {
       particleCount = 3; // Reduced from 6
       this.flashIntensity = 0; // No flash for basic hits
     }
+
+    // Apply global tuning
+    particleCount = Math.round(
+      particleCount * FX_TUNING.particleMultiplier
+    );
 
     // REMOVED: Screen shake application - game.js handles this better
 
@@ -178,17 +199,26 @@ export class Explosion {
         y: y + random(-3, 3),
         vx: random(vxRange[0], vxRange[1]),
         vy: random(vyRange[0], vyRange[1]),
-        size: random(sizeRange[0], sizeRange[1]),
+        size: random(
+          sizeRange[0] * FX_TUNING.sizeMultiplier,
+          sizeRange[1] * FX_TUNING.sizeMultiplier
+        ),
         color: this.getParticleColor(type),
-        life: random(lifeRange[0], lifeRange[1]),
-        maxLife: random(lifeRange[0], lifeRange[1]),
+        life: random(
+          lifeRange[0] * FX_TUNING.lifeMultiplier,
+          lifeRange[1] * FX_TUNING.lifeMultiplier
+        ),
+        maxLife: random(
+          lifeRange[0] * FX_TUNING.lifeMultiplier,
+          lifeRange[1] * FX_TUNING.lifeMultiplier
+        ),
         rotation: random(TWO_PI),
         rotationSpeed: random(-0.2, 0.2), // Reduced rotation speed
         // Simplified physics
         trail: [],
         gravity: random(0.01, 0.05), // Reduced gravity
         friction: random(0.99, 0.998), // Reduced friction
-        glow: random(0.2, 0.5), // Reduced glow intensity
+        glow: random(FX_TUNING.glowRange[0], FX_TUNING.glowRange[1]),
         sparkle: random() < 0.1, // Reduced sparkle chance from 30% to 10%
         isArmor: false,
       });
@@ -237,85 +267,32 @@ export class Explosion {
   }
 
   getParticleColor(type) {
-    if (type === 'tank-plasma') {
-      const colors = [
-        [138, 43, 226],
-        [64, 224, 208],
-        [255, 20, 147],
-        [255, 255, 255],
-        [0, 191, 255],
-        [255, 215, 0],
-      ];
-      return random(colors);
-    } else if (type === 'rusher-explosion') {
-      const colors = [
-        [255, 20, 147],
-        [255, 69, 0],
-        [255, 215, 0],
-        [255, 255, 255],
-        [255, 140, 0],
-        [255, 182, 193],
-        [255, 255, 0],
-      ];
-      return random(colors);
-    } else if (type === 'grunt-death') {
-      const colors = [
-        [50, 205, 50],
-        [0, 255, 127],
-        [34, 139, 34],
-        [255, 255, 255],
-        [144, 238, 144],
-        [0, 255, 0],
-      ];
-      return random(colors);
-    } else if (type === 'stabber-death') {
-      const colors = [
-        [255, 215, 0],
-        [255, 255, 0],
-        [255, 140, 0],
-        [255, 255, 255],
-        [218, 165, 32],
-        [255, 248, 220],
-      ];
-      return random(colors);
-    } else if (type === 'tank-death') {
-      const colors = [
-        [138, 43, 226],
-        [123, 104, 238],
-        [72, 61, 139],
-        [255, 255, 255],
-        [0, 191, 255],
-        [147, 112, 219],
-      ];
-      return random(colors);
-    } else if (type.includes('bullet-kill') || type.includes('plasma-kill')) {
-      if (type.includes('grunt')) {
-        return this.getParticleColor('grunt-death');
-      } else if (type.includes('stabber')) {
-        return this.getParticleColor('stabber-death');
-      } else if (type.includes('tank')) {
-        return this.getParticleColor('tank-death');
-      } else if (type.includes('rusher')) {
-        return this.getParticleColor('rusher-explosion');
-      }
+    const palette = explosionPalette[type];
+    if (palette) return random(palette);
+
+    if (type.includes('bullet-kill') || type.includes('plasma-kill')) {
+      if (type.includes('grunt')) return this.getParticleColor('grunt-death');
+      if (type.includes('stabber')) return this.getParticleColor('stabber-death');
+      if (type.includes('tank')) return this.getParticleColor('tank-death');
+      if (type.includes('rusher')) return this.getParticleColor('rusher-explosion');
     }
-    const colors = [
-      [255, 69, 0],
-      [255, 140, 0],
-      [255, 215, 0],
-      [255, 255, 255],
-      [255, 20, 147],
-      [138, 43, 226],
-    ];
-    return random(colors);
+
+    // Fallback default palette
+    return random(explosionPalette.default);
   }
 
-  update() {
-    this.timer++;
+  /**
+   * Update explosion physics and lifetime.
+   * @param {number} deltaTimeMs - Frame time in milliseconds (defaults to 16.67ms ~60 FPS)
+   */
+  update(deltaTimeMs = 16.6667) {
+    const dtFactor = deltaTimeMs / 16.6667;
+
+    this.timer += dtFactor;
 
     // Update shockwave with safety bounds
     if (this.hasShockwave && this.shockwaveRadius < this.maxShockwaveRadius) {
-      this.shockwaveRadius += this.maxShockwaveRadius / 20; // Expand over 20 frames
+      this.shockwaveRadius += (this.maxShockwaveRadius / 20) * dtFactor; // Expand over ~20 frames at baseline
 
       // Safety check: ensure shockwave doesn't exceed maximum
       if (this.shockwaveRadius >= this.maxShockwaveRadius) {
@@ -327,20 +304,20 @@ export class Explosion {
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
 
-      // Apply physics
+      // Apply physics (frame-rate independent)
       p.vx *= p.friction;
       p.vy *= p.friction;
-      p.vy += p.gravity;
+      p.vy += p.gravity * dtFactor;
 
       // Update position
-      p.x += p.vx;
-      p.y += p.vy;
+      p.x += p.vx * dtFactor;
+      p.y += p.vy * dtFactor;
 
       // Update rotation
-      p.rotation += p.rotationSpeed;
+      p.rotation += p.rotationSpeed * dtFactor;
 
       // Update life
-      p.life--;
+      p.life -= dtFactor;
 
       // Update trail
       if (p.trail.length > 5) {
@@ -357,10 +334,10 @@ export class Explosion {
     // Update sparkles (energy rings)
     for (let i = this.sparkles.length - 1; i >= 0; i--) {
       const s = this.sparkles[i];
-      s.life--;
+      s.life -= dtFactor;
 
       if (s.type === 'energyRing') {
-        s.radius += (s.maxRadius - s.radius) * 0.1;
+        s.radius += (s.maxRadius - s.radius) * 0.1 * dtFactor;
 
         // Safety check: ensure energy rings don't exceed maximum
         if (s.radius >= s.maxRadius) {

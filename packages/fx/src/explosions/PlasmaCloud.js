@@ -3,6 +3,11 @@
  * Creates dangerous plasma zones that persist and deal area damage
  */
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
+import { randomRange as random, sin, dist, TWO_PI } from '@vibe/core';
+
+// Local clamp helper (p5.constrain equivalent)
+const clamp = (val, min, max) => (val < min ? min : val > max ? max : val);
+
 export class PlasmaCloud {
   constructor(x, y) {
     this.x = x;
@@ -34,10 +39,10 @@ export class PlasmaCloud {
     this.damageTimer++;
 
     // Update particles
-    for (const p of this.particles) {
-      p.angle += p.speed;
-      p.distance += sin(this.timer * 0.05 + p.angle) * 0.5;
-      p.distance = constrain(p.distance, 20, this.maxRadius);
+    for (const particle of this.particles) {
+      particle.angle += particle.speed;
+      particle.distance += sin(this.timer * 0.05 + particle.angle) * 0.5;
+      particle.distance = clamp(particle.distance, 20, this.maxRadius);
     }
 
     // Check if cloud is finished
@@ -60,83 +65,82 @@ export class PlasmaCloud {
   }
 
   draw(p) {
-    const { push, pop, translate, fill, noStroke, ellipse, textAlign, textSize, sin, map, color, red, green, blue, cos, random, constrain, dist, TWO_PI } = p;
     if (!this.active) return;
 
-    push();
-    translate(this.x, this.y);
+    p.push();
+    p.translate(this.x, this.y);
 
     // Draw pulsing cosmic aurora danger zone
     const pulse = sin(this.timer * 0.1) * 0.3 + 0.7;
-    const alpha = map(this.timer, 0, this.maxTimer, 150, 50);
+    const alpha = p.map(this.timer, 0, this.maxTimer, 150, 50);
     const colorShift = this.timer * 0.02;
 
     // Outer warning circle - deep pink aurora
-    fill(255, 20, 147, alpha * 0.3);
-    noStroke();
-    ellipse(0, 0, this.maxRadius * 2 * pulse);
+    p.fill(255, 20, 147, alpha * 0.3);
+    p.noStroke();
+    p.ellipse(0, 0, this.maxRadius * 2 * pulse);
 
     // Middle aurora ring - blue violet
-    fill(138, 43, 226, alpha * 0.4);
-    ellipse(0, 0, this.maxRadius * 1.5 * pulse);
+    p.fill(138, 43, 226, alpha * 0.4);
+    p.ellipse(0, 0, this.maxRadius * 1.5 * pulse);
 
     // Inner damage zone - turquoise energy
-    fill(64, 224, 208, alpha * 0.5);
-    ellipse(0, 0, this.radius * 2 * pulse);
+    p.fill(64, 224, 208, alpha * 0.5);
+    p.ellipse(0, 0, this.radius * 2 * pulse);
 
     // Cosmic aurora plasma particles
-    for (const p of this.particles) {
-      const x = cos(p.angle) * p.distance;
-      const y = sin(p.angle) * p.distance;
+    for (const particle of this.particles) {
+      const x = p.cos(particle.angle) * particle.distance;
+      const y = p.sin(particle.angle) * particle.distance;
 
       // Cycle through cosmic aurora colors
-      const colorPhase = (p.angle + colorShift) % (TWO_PI * 2);
+      const colorPhase = (particle.angle + colorShift) % (TWO_PI * 2);
       let particleColor;
       if (colorPhase < TWO_PI * 0.5) {
-        particleColor = color(138, 43, 226); // Blue violet
+        particleColor = p.color(138, 43, 226); // Blue violet
       } else if (colorPhase < TWO_PI) {
-        particleColor = color(64, 224, 208); // Turquoise
+        particleColor = p.color(64, 224, 208); // Turquoise
       } else if (colorPhase < TWO_PI * 1.5) {
-        particleColor = color(255, 20, 147); // Deep pink
+        particleColor = p.color(255, 20, 147); // Deep pink
       } else {
-        particleColor = color(255, 215, 0); // Gold
+        particleColor = p.color(255, 215, 0); // Gold
       }
 
-      fill(
-        red(particleColor),
-        green(particleColor),
-        blue(particleColor),
-        p.brightness * (alpha / 150)
+      p.fill(
+        p.red(particleColor),
+        p.green(particleColor),
+        p.blue(particleColor),
+        particle.brightness * (alpha / 150)
       );
-      noStroke();
-      ellipse(x, y, p.size);
+      p.noStroke();
+      p.ellipse(x, y, particle.size);
 
       // Enhanced particle glow with aurora colors
-      fill(
-        red(particleColor) + 50,
-        green(particleColor) + 50,
-        blue(particleColor) + 50,
-        p.brightness * 0.3 * (alpha / 150)
+      p.fill(
+        p.red(particleColor) + 50,
+        p.green(particleColor) + 50,
+        p.blue(particleColor) + 50,
+        particle.brightness * 0.3 * (alpha / 150)
       );
-      ellipse(x, y, p.size * 2);
+      p.ellipse(x, y, particle.size * 2);
 
       // Add sparkle effect for bright particles
-      if (p.brightness > 200) {
-        fill(255, 255, 255, p.brightness * 0.4 * (alpha / 150));
-        ellipse(x, y, p.size * 0.5);
+      if (particle.brightness > 200) {
+        p.fill(255, 255, 255, particle.brightness * 0.4 * (alpha / 150));
+        p.ellipse(x, y, particle.size * 0.5);
       }
     }
 
     // Warning text
     if (this.timer < 120) {
       // Show warning for first 2 seconds
-      fill(255, 255, 255, alpha);
-      textAlign(CENTER, CENTER);
-      textSize(12);
-      text('PLASMA HAZARD', 0, -this.maxRadius - 20);
+      p.fill(255, 255, 255, alpha);
+      p.textAlign(p.CENTER, p.CENTER);
+      p.textSize(12);
+      p.text('PLASMA HAZARD', 0, -this.maxRadius - 20);
     }
 
-    pop();
+    p.pop();
   }
 
   checkDamage(target) {

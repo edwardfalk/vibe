@@ -1,4 +1,8 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
+import { randomRange as random, sin, dist, TWO_PI } from '@vibe/core';
+
+// Local clamp helper (p5.constrain equivalent)
+const clamp = (val, min, max) => (val < min ? min : val > max ? max : val);
 
 /**
  * Radioactive debris system for bomb explosion effects
@@ -36,12 +40,12 @@ export class RadioactiveDebris {
     this.damageTimer++;
 
     // Update particles with radioactive drift
-    for (const p of this.particles) {
-      p.angle += p.speed;
-      p.glowPhase += 0.08; // Pulsing glow
+    for (const particle of this.particles) {
+      particle.angle += particle.speed;
+      particle.glowPhase += 0.08; // Pulsing glow
       // Radioactive particles drift outward slowly
-      p.distance += sin(this.timer * 0.02 + p.angle) * 0.3;
-      p.distance = constrain(p.distance, 15, this.maxRadius);
+      particle.distance += sin(this.timer * 0.02 + particle.angle) * 0.3;
+      particle.distance = clamp(particle.distance, 15, this.maxRadius);
     }
 
     // Check if debris is finished
@@ -64,84 +68,88 @@ export class RadioactiveDebris {
   }
 
   draw(p) {
-    const { push, pop, translate, fill, noStroke, ellipse, textAlign, textSize, sin, map, color, red, green, blue, cos, random, constrain, dist, TWO_PI } = p;
     if (!this.active) return;
 
-    push();
-    translate(this.x, this.y);
+    p.push();
+    p.translate(this.x, this.y);
 
     // Radioactive pulsing effect
     const pulse = sin(this.timer * 0.15) * 0.2 + 0.8;
-    const alpha = map(this.timer, 0, this.maxTimer, 120, 30); // Fades slower than plasma
+    const alpha = p.map(this.timer, 0, this.maxTimer, 120, 30); // Fades slower than plasma
     const radioactiveShift = this.timer * 0.03;
 
     // Outer radioactive warning zone - sickly green
-    fill(50, 205, 50, alpha * 0.25);
-    noStroke();
-    ellipse(0, 0, this.maxRadius * 2 * pulse);
+    p.fill(50, 205, 50, alpha * 0.25);
+    p.noStroke();
+    p.ellipse(0, 0, this.maxRadius * 2 * pulse);
 
     // Middle contamination ring - yellow-green
-    fill(154, 205, 50, alpha * 0.35);
-    ellipse(0, 0, this.maxRadius * 1.4 * pulse);
+    p.fill(154, 205, 50, alpha * 0.35);
+    p.ellipse(0, 0, this.maxRadius * 1.4 * pulse);
 
     // Inner damage zone - bright toxic yellow
-    fill(255, 255, 0, alpha * 0.4);
-    ellipse(0, 0, this.radius * 2 * pulse);
+    p.fill(255, 255, 0, alpha * 0.4);
+    p.ellipse(0, 0, this.radius * 2 * pulse);
 
     // Radioactive debris particles
-    for (const p of this.particles) {
-      const x = cos(p.angle) * p.distance;
-      const y = sin(p.angle) * p.distance;
+    for (const particle of this.particles) {
+      const x = p.cos(particle.angle) * particle.distance;
+      const y = p.sin(particle.angle) * particle.distance;
 
       // Cycle through radioactive colors (green/yellow spectrum)
-      const colorPhase = (p.angle + radioactiveShift) % TWO_PI;
+      const colorPhase = (particle.angle + radioactiveShift) % TWO_PI;
       let particleColor;
       if (colorPhase < TWO_PI * 0.33) {
-        particleColor = color(50, 205, 50); // Lime green
+        particleColor = p.color(50, 205, 50); // Lime green
       } else if (colorPhase < TWO_PI * 0.66) {
-        particleColor = color(255, 255, 0); // Yellow
+        particleColor = p.color(255, 255, 0); // Yellow
       } else {
-        particleColor = color(154, 205, 50); // Yellow-green
+        particleColor = p.color(154, 205, 50); // Yellow-green
       }
 
       // Pulsing glow effect
-      const glowIntensity = sin(p.glowPhase) * 0.3 + 0.7;
+      const glowIntensity = p.sin(particle.glowPhase) * 0.3 + 0.7;
 
-      fill(
-        red(particleColor),
-        green(particleColor),
-        blue(particleColor),
-        p.brightness * glowIntensity * (alpha / 120)
+      p.fill(
+        p.red(particleColor),
+        p.green(particleColor),
+        p.blue(particleColor),
+        particle.brightness * glowIntensity * (alpha / 120)
       );
-      noStroke();
-      ellipse(x, y, p.size);
+      p.noStroke();
+      p.ellipse(x, y, particle.size);
 
       // Radioactive glow
-      fill(
-        red(particleColor) + 30,
-        green(particleColor) + 30,
-        blue(particleColor) + 30,
-        p.brightness * 0.4 * glowIntensity * (alpha / 120)
+      p.fill(
+        p.red(particleColor) + 30,
+        p.green(particleColor) + 30,
+        p.blue(particleColor) + 30,
+        particle.brightness * 0.4 * glowIntensity * (alpha / 120)
       );
-      ellipse(x, y, p.size * 1.8);
+      p.ellipse(x, y, particle.size * 1.8);
 
       // Bright radioactive core for intense particles
-      if (p.brightness > 150) {
-        fill(255, 255, 255, p.brightness * 0.5 * glowIntensity * (alpha / 120));
-        ellipse(x, y, p.size * 0.4);
+      if (particle.brightness > 150) {
+        p.fill(
+          255,
+          255,
+          255,
+          particle.brightness * 0.5 * glowIntensity * (alpha / 120)
+        );
+        p.ellipse(x, y, particle.size * 0.4);
       }
     }
 
     // Warning text with radioactive symbol
     if (this.timer < 180) {
       // Show warning for first 3 seconds
-      fill(255, 255, 0, alpha);
-      textAlign(CENTER, CENTER);
-      textSize(10);
-      text('☢ RADIOACTIVE DEBRIS ☢', 0, -this.maxRadius - 15);
+      p.fill(255, 255, 0, alpha);
+      p.textAlign(p.CENTER, p.CENTER);
+      p.textSize(10);
+      p.text('☢ RADIOACTIVE DEBRIS ☢', 0, -this.maxRadius - 15);
     }
 
-    pop();
+    p.pop();
   }
 
   checkDamage(target) {
