@@ -134,7 +134,9 @@ class EffectsManager {
       p.rect(-this.shake.x, -this.shake.y, p.width, p.height);
     }
 
-    p.pop(); // End screen shake translation
+    // NOTE: No matching p.push() is performed in this method, so calling p.pop() here
+    // caused an unbalanced matrix stack and p5 warnings.
+    // Removed to keep push/pop pairs balanced.
   }
 
   // Screen shake methods

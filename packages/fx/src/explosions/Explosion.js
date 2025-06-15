@@ -28,10 +28,10 @@ export class Explosion {
       particleCount = 25; // Increased from 12 for much more dramatic explosion
       this.flashIntensity = 0.4; // Increased from 0.2 for more dramatic flash
     } else if (type === 'grunt-bullet-kill') {
-      particleCount = 3; // Drastically reduced from 6 - grunts are too common
+      particleCount = 8; // Increased for better visual feedback
       this.flashIntensity = 0; // No flash for basic enemies
     } else if (type === 'grunt-plasma-kill') {
-      particleCount = 4; // Reduced from 8
+      particleCount = 10; // More particles for plasma kill visibility
       this.flashIntensity = 0; // No flash
     } else if (type === 'rusher-bullet-kill') {
       particleCount = 6; // Reduced from 10

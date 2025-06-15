@@ -236,7 +236,7 @@ class Tank extends BaseEnemy {
     const chassisFrontX = s * 0.5; // X-coordinate of the front of the main chassis.
 
     // Front Armor (Tank's local +X side - its nose)
-    push();
+    this.p.push();
     if (!this.frontArmorDestroyed) {
       this.p.fill(120, 120, 140);
       this.p.stroke(60, 60, 70);
@@ -262,10 +262,10 @@ class Tank extends BaseEnemy {
         armorPlateLength * 0.8
       );
     }
-    pop();
+    this.p.pop();
 
     // Left Armor (Tank's local -Y side)
-    push();
+    this.p.push();
     if (!this.leftArmorDestroyed) {
       this.p.fill(100, 100, 120);
       this.p.stroke(50, 50, 60);
@@ -289,10 +289,10 @@ class Tank extends BaseEnemy {
         armorPlateThickness
       );
     }
-    pop();
+    this.p.pop();
 
     // Right Armor (Tank's local +Y side)
-    push();
+    this.p.push();
     if (!this.rightArmorDestroyed) {
       this.p.fill(100, 100, 120);
       this.p.stroke(50, 50, 60);
@@ -315,7 +315,7 @@ class Tank extends BaseEnemy {
         armorPlateThickness
       );
     }
-    pop();
+    this.p.pop();
   }
 
   /**

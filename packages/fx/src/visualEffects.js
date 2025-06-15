@@ -428,6 +428,13 @@ class VisualEffectsManager {
       this.bloomIntensity = 0;
     }, duration * 16.67);
   }
+
+  // Compatibility wrapper – some legacy enemy code expects addExplosion(...)
+  // with signature (x, y, radius, colorArr, gravity, minSize, maxSize).
+  // We ignore extra params for now and just delegate to addExplosionParticles.
+  addExplosion(x, y /*, ...rest */) {
+    this.addExplosionParticles(x, y, 'normal');
+  }
 }
 
 // Enhanced glow effect function

@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, sin, cos } from '@vibe/core';
+import { floor, random, sqrt, sin, cos, ceil } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
 import { speakAmbient } from './EnemySpeechUtils.js';
 import { addMotionTrail, maybeAddMotionTrail } from './EnemyFXUtils.js';
