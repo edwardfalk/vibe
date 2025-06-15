@@ -16,4 +16,4 @@ export const explosionFX = {
 
   /** Random glow intensity range [min, max] */
   glowRange: [0.3, 0.8],
-}; 
+};

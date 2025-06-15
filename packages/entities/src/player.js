@@ -512,47 +512,41 @@ export class Player {
   }
 
   shoot() {
-    // IMPROVED SHOOTING SYSTEM: First shot immediate, continuous fire on quarter-beats
-    this.wantsToContinueShooting = true; // Player wants to shoot
+    // Rhythm-locked shooting: first shot instant, subsequent shots only on quarter-beats
+    this.wantsToContinueShooting = true;
 
-    // Check if this is the start of shooting (first shot)
+    // Initialise state when the player starts holding the trigger
     if (!this.isCurrentlyShooting) {
       this.isCurrentlyShooting = true;
       this.firstShotFired = false;
     }
 
-    if (this.shootCooldownMs <= 0) {
-      // First shot is always immediate for responsive feel
-      if (!this.firstShotFired) {
-        this.firstShotFired = true;
-        console.log('🎯 FIRST SHOT - firing immediately');
-        return this.fireBullet();
-      }
+    // Enforce BeatClock timing when available
+    const beatClockReady = window.beatClock && typeof window.beatClock.canPlayerShootQuarterBeat === 'function';
+    const onQuarterBeat = beatClockReady ? window.beatClock.canPlayerShootQuarterBeat() : true;
 
-      // TEMPORARY FIX: Allow continuous shooting for debugging
-      // TODO: Re-enable quarter-beat timing after fixing collision detection
-      if (window.beatClock) {
-        // For now, allow shooting every few frames instead of strict quarter-beat timing
-        const elapsed = Date.now() - (this.lastShotTime || 0);
-        if (elapsed > 100) {
-          // 100ms = ~6 frames at 60fps
-          this.lastShotTime = Date.now();
-          console.log('🎯 CONTINUOUS SHOT - firing with relaxed timing');
-          return this.fireBullet();
-        }
-        return null;
-      } else {
-        // No beat clock available, fire with normal cooldown (fallback)
-        console.log('🎯 FALLBACK SHOT - no beat clock');
-        return this.fireBullet();
-      }
+    // Block shots that are off-beat when BeatClock is active
+    if (beatClockReady && !onQuarterBeat) {
+      return null;
     }
-    console.log('🎯 SHOT BLOCKED - cooldown active:', this.shootCooldownMs);
-    return null;
+
+    // Cool-down check
+    if (this.shootCooldownMs > 0) {
+      return null;
+    }
+
+    // First shot is always allowed for snappy response
+    if (!this.firstShotFired) {
+      this.firstShotFired = true;
+    }
+
+    return this.fireBullet();
   }
 
   fireBullet() {
-    this.shootCooldownMs = 17; // At least one frame at 60fps (was 5)
+    // Set cooldown to a quarter-beat interval when BeatClock is present, otherwise 150 ms fallback
+    const quarterBeatMs = window.beatClock ? window.beatClock.beatInterval / 4 : 150;
+    this.shootCooldownMs = quarterBeatMs;
     this.muzzleFlash = 4;
 
     // Calculate bullet spawn position

@@ -537,7 +537,7 @@ export class UIRenderer {
   _addBugReportButton() {
     if (document.getElementById('bugReportBtn')) return;
     // Robustness: log when button is added
-            console.log('🖥️ [UIRenderer] Adding bug report button');
+    console.log('🖥️ [UIRenderer] Adding bug report button');
     const btn = document.createElement('button');
     btn.id = 'bugReportBtn';
     btn.innerText = '🐞 Report Bug';
@@ -793,7 +793,7 @@ export class UIRenderer {
       // Always ensure type is present
       if (!ticket.type) ticket.type = typeSelect ? typeSelect.value : 'bug';
       // Related to
-      let relatedTo = relatedToSelect ? relatedToSelect.value : '';
+      const relatedTo = relatedToSelect ? relatedToSelect.value : '';
       try {
         await this._saveBugReport(
           ticket,
@@ -1061,7 +1061,7 @@ export class UIRenderer {
     const screenshotData =
       this._pendingInitialScreenshot || this._captureCanvasScreenshot();
     // Save meta.json (append or create)
-    let meta = {
+    const meta = {
       ticketName: ticket.name || ticket.title,
       ticketUID: ticket.uid || ticket.id,
       description: desc,

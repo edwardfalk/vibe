@@ -55,7 +55,7 @@ let visualEffectsManager;
 let audio;
 
 // Sync local variables to window globals after restart
-window.updateGameLoopLocals = function() {
+window.updateGameLoopLocals = function () {
   player = window.player;
   enemies = window.enemies;
   playerBullets = window.playerBullets;
@@ -192,6 +192,10 @@ function setup(p) {
   // Initialize player at center
   player = new Player(p, p.width / 2, p.height / 2, window.cameraSystem);
   window.player = player;
+  // Inform all systems that player reference changed (event-bus pattern)
+  window.dispatchEvent(
+    new CustomEvent('playerChanged', { detail: window.player })
+  );
 
   // Initialize global arrays
   window.enemies = enemies;
@@ -206,19 +210,21 @@ function setup(p) {
   // Initialize effects systems
   effectsManager = new EffectsManager();
   window.effectsManager = effectsManager;
-  
+
   if (!window.visualEffectsManager) {
     window.visualEffectsManager = new VisualEffectsManager(
       window.backgroundLayers
     );
+    // Ensure visual effects system is fully initialized once p5 is ready
+    window.visualEffectsManager.init(p);
   }
   console.log('✨ Visual effects enabled - full rendering active');
-    
-    // Initialize unified audio system
-    if (!window.audio) {
-        window.audio = new Audio(p, window.player);
-    }
-    console.log('🎵 Unified audio system initialized');
+
+  // Initialize unified audio system
+  if (!window.audio) {
+    window.audio = new Audio(p, window.player);
+  }
+  console.log('🎵 Unified audio system initialized');
 
   // Initialize modular systems
   if (!window.gameState) {
@@ -890,12 +896,12 @@ InputSystem.initialize();
 
 // Bridge modular classes to legacy global namespace for backward compatibility (temporary during migration)
 if (typeof window !== 'undefined') {
-  window.ExplosionManager = ExplosionManager;     // Needed by GameState.restart()
-  window.EffectsManager = EffectsManager;       // Needed by GameState.restart()
+  window.ExplosionManager = ExplosionManager; // Needed by GameState.restart()
+  window.EffectsManager = EffectsManager; // Needed by GameState.restart()
   window.VisualEffectsManager = VisualEffectsManager; // Needed by GameState.restart()
   // Game systems & entities referenced inside GameState.restart()
-  window.Player        = Player;
-  window.SpawnSystem   = SpawnSystem;
+  window.Player = Player;
+  window.SpawnSystem = SpawnSystem;
   window.CollisionSystem = CollisionSystem;
-  window.BeatClock     = BeatClock;
+  window.BeatClock = BeatClock;
 }

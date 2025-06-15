@@ -39,11 +39,12 @@
     "tickets:update": "bun run scripts/update-ticket-status.js",
     "tickets:batch-resolve": "bun run scripts/batch-resolve-tickets.js",
     "cleanup:debug": "bun run scripts/cleanup-debug.js",
-    "ticket:create": "bun run scripts/ticket-cli.js create",
-    "ticket:update": "bun run scripts/ticket-cli.js update",
-    "ticket:get": "bun run scripts/ticket-cli.js get",
-    "ticket:list": "bun run scripts/ticket-cli.js list",
-    "ticket:check": "bun run scripts/ticket-cli.js check"
+    "ticket:create": "bun run scripts/ticket-cli.js create --",
+    "ticket:update": "bun run scripts/ticket-cli.js update --",
+    "ticket:get": "bun run scripts/ticket-cli.js get --",
+    "ticket:list": "bun run scripts/ticket-cli.js list --",
+    "ticket:latest": "bun run scripts/ticket-cli.js latest --",
+    "ticket:check": "bun run scripts/ticket-cli.js check --"
   },
   "bun": {
     "dev": {

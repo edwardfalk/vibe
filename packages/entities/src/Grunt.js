@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, min, max } from '@vibe/core';
+import { floor, random, sqrt, min, max, SOUND } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
 import { shouldAvoidFriendlyFire } from './EnemyAIUtils.js';
 
@@ -129,7 +129,7 @@ class Grunt extends BaseEnemy {
         ) {
           if (random() < 0.3) {
             // 30% chance on beats 2&4
-            window.audio.playSound('gruntRetreat', this.x, this.y);
+            window.audio.playSound(SOUND.gruntRetreat, this.x, this.y);
           }
         }
       } else if (distance > tooFar) {
@@ -145,7 +145,7 @@ class Grunt extends BaseEnemy {
         ) {
           if (random() < 0.25) {
             // 25% chance on beats 2&4
-            window.audio.playSound('gruntAdvance', this.x, this.y);
+            window.audio.playSound(SOUND.gruntAdvance, this.x, this.y);
           }
         }
       } else {
@@ -189,11 +189,11 @@ class Grunt extends BaseEnemy {
       // Grunt weird noises sync to beats 2&4 with 40% chance
       if (window.beatClock.isOnBeat([2, 4]) && random() < 0.4) {
         const weirdSounds = [
-          'gruntMalfunction',
-          'gruntBeep',
-          'gruntWhir',
-          'gruntError',
-          'gruntGlitch',
+          SOUND.gruntMalfunction,
+          SOUND.gruntBeep,
+          SOUND.gruntWhir,
+          SOUND.gruntError,
+          SOUND.gruntGlitch,
         ];
         const randomSound = weirdSounds[floor(random() * weirdSounds.length)];
         window.audio.playSound(randomSound, this.x, this.y);
@@ -351,7 +351,7 @@ class Grunt extends BaseEnemy {
           );
         }
         if (!ttsSuccess && window.audio.playSound) {
-          window.audio.playSound('gruntOw', this.x, this.y);
+          window.audio.playSound(SOUND.gruntOw, this.x, this.y);
           if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
             console.log('🔊 Fallback gruntOw sound played.');
           }
@@ -390,7 +390,7 @@ class Grunt extends BaseEnemy {
         );
       }
       if (!ttsSuccess && window.audio.playSound) {
-        window.audio.playSound('gruntOw', this.x, this.y);
+        window.audio.playSound(SOUND.gruntOw, this.x, this.y);
         if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
           console.log('🔊 Fallback gruntOw sound played.');
         }

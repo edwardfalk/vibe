@@ -42,4 +42,4 @@ export class DebugLogger {
 // Add CommonJS export for compatibility
 if (typeof module !== 'undefined') {
   module.exports = { DebugLogger };
-} 
+}

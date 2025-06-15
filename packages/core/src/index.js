@@ -10,3 +10,4 @@ export { Audio } from './Audio.js';
 export { MusicManager } from './audio/MusicManager.js';
 export { explosionFX } from './fxConfig.js';
 export { explosionPalette } from './fxPalette.js';
+export { SOUND } from './audio/SoundIds.js';

@@ -3,7 +3,7 @@
 
 (async function () {
   const { random } = await import('./mathUtils.js');
-  
+
   // Import ticketManager API if available
   let ticketManager = null;
   try {
@@ -15,7 +15,7 @@
   const probeRunner = {
     async runAllProbes() {
       console.log('🔍 Starting comprehensive probe system...');
-      
+
       const results = {
         timestamp: Date.now(),
         probes: {},
@@ -23,51 +23,68 @@
           total: 0,
           passed: 0,
           failed: 0,
-          warnings: 0
+          warnings: 0,
         },
-        overallHealth: 'unknown'
+        overallHealth: 'unknown',
       };
 
       // List of available probes
       const probes = [
-        { name: 'liveness', module: './ai-liveness-probe.js', description: 'Game liveness and entity presence' },
-        { name: 'collision', module: './collision-detection-probe.js', description: 'Collision detection system' },
-        { name: 'audio', module: './audio-system-probe.js', description: 'Audio system and beat clock' }
+        {
+          name: 'liveness',
+          module: './ai-liveness-probe.js',
+          description: 'Game liveness and entity presence',
+        },
+        {
+          name: 'collision',
+          module: './collision-detection-probe.js',
+          description: 'Collision detection system',
+        },
+        {
+          name: 'audio',
+          module: './audio-system-probe.js',
+          description: 'Audio system and beat clock',
+        },
       ];
 
       // Run each probe
       for (const probe of probes) {
         try {
           console.log(`🔍 Running ${probe.name} probe: ${probe.description}`);
-          
+
           const probeModule = await import(probe.module);
           const result = await probeModule.default;
-          
+
           results.probes[probe.name] = {
             ...result,
             description: probe.description,
-            status: result.failure ? 'failed' : (result.warnings?.length > 0 ? 'warning' : 'passed')
+            status: result.failure
+              ? 'failed'
+              : result.warnings?.length > 0
+                ? 'warning'
+                : 'passed',
           };
 
           results.summary.total++;
-          
+
           if (result.failure) {
             results.summary.failed++;
             console.log(`❌ ${probe.name} probe failed: ${result.failure}`);
           } else if (result.warnings?.length > 0) {
             results.summary.warnings++;
-            console.log(`⚠️ ${probe.name} probe passed with warnings: ${result.warnings.length} issues`);
+            console.log(
+              `⚠️ ${probe.name} probe passed with warnings: ${result.warnings.length} issues`
+            );
           } else {
             results.summary.passed++;
             console.log(`✅ ${probe.name} probe passed`);
           }
-          
         } catch (error) {
           console.error(`💥 Error running ${probe.name} probe:`, error);
           results.probes[probe.name] = {
             error: error.message,
             status: 'error',
-            description: probe.description
+            description: probe.description,
           };
           results.summary.failed++;
           results.summary.total++;
@@ -103,28 +120,37 @@
       console.log('=====================================');
       console.log(`🕐 Timestamp: ${new Date(results.timestamp).toISOString()}`);
       console.log(`🎯 Overall Health: ${results.overallHealth.toUpperCase()}`);
-      console.log(`📈 Summary: ${results.summary.passed}/${results.summary.total} passed, ${results.summary.failed} failed, ${results.summary.warnings} warnings`);
-      
+      console.log(
+        `📈 Summary: ${results.summary.passed}/${results.summary.total} passed, ${results.summary.failed} failed, ${results.summary.warnings} warnings`
+      );
+
       console.log('\n🔍 PROBE DETAILS:');
       for (const [name, probe] of Object.entries(results.probes)) {
-        const statusIcon = probe.status === 'passed' ? '✅' : 
-                          probe.status === 'warning' ? '⚠️' : 
-                          probe.status === 'error' ? '💥' : '❌';
-        
-        console.log(`${statusIcon} ${name.toUpperCase()}: ${probe.description}`);
-        
+        const statusIcon =
+          probe.status === 'passed'
+            ? '✅'
+            : probe.status === 'warning'
+              ? '⚠️'
+              : probe.status === 'error'
+                ? '💥'
+                : '❌';
+
+        console.log(
+          `${statusIcon} ${name.toUpperCase()}: ${probe.description}`
+        );
+
         if (probe.failure) {
           console.log(`   💀 Failure: ${probe.failure}`);
         }
-        
+
         if (probe.warnings?.length > 0) {
           console.log(`   ⚠️ Warnings: ${probe.warnings.join(', ')}`);
         }
-        
+
         if (probe.criticalFailures?.length > 0) {
           console.log(`   🔥 Critical: ${probe.criticalFailures.join(', ')}`);
         }
-        
+
         if (probe.error) {
           console.log(`   💥 Error: ${probe.error}`);
         }
@@ -137,9 +163,13 @@
       } else if (results.overallHealth === 'good') {
         console.log('👍 Systems are stable with minor issues to address.');
       } else if (results.overallHealth === 'degraded') {
-        console.log('⚠️ Some systems need attention. Address warnings to improve stability.');
+        console.log(
+          '⚠️ Some systems need attention. Address warnings to improve stability.'
+        );
       } else {
-        console.log('🚨 CRITICAL: Multiple system failures detected. Immediate action required!');
+        console.log(
+          '🚨 CRITICAL: Multiple system failures detected. Immediate action required!'
+        );
       }
 
       console.log('=====================================\n');
@@ -151,7 +181,10 @@
       try {
         const shortId = random().toString(36).substr(2, 8);
         const failedProbes = Object.entries(results.probes)
-          .filter(([_, probe]) => probe.status === 'failed' || probe.status === 'error')
+          .filter(
+            ([_, probe]) =>
+              probe.status === 'failed' || probe.status === 'error'
+          )
           .map(([name, probe]) => `${name}: ${probe.failure || probe.error}`)
           .join('; ');
 
@@ -169,8 +202,10 @@
             {
               type: 'comprehensive_probe_failure',
               description: `Multiple system failures detected`,
-              failedProbes: Object.keys(results.probes).filter(name => 
-                results.probes[name].status === 'failed' || results.probes[name].status === 'error'
+              failedProbes: Object.keys(results.probes).filter(
+                (name) =>
+                  results.probes[name].status === 'failed' ||
+                  results.probes[name].status === 'error'
               ),
               overallHealth: results.overallHealth,
               at: new Date().toISOString(),
@@ -178,9 +213,15 @@
           ],
           verification: [],
           relatedTickets: [],
-          tags: ['automated', 'comprehensive', 'probe', 'critical', 'system-health']
+          tags: [
+            'automated',
+            'comprehensive',
+            'probe',
+            'critical',
+            'system-health',
+          ],
         };
-        
+
         await ticketManager.createTicket(ticketData);
         console.log('🎫 Critical system health ticket created:', ticketData.id);
       } catch (err) {
@@ -195,18 +236,25 @@
         player: !!window.player,
         gameState: !!window.gameState,
         audio: !!window.audio,
-        collisionSystem: !!window.collisionSystem
+        collisionSystem: !!window.collisionSystem,
       };
 
-      const healthScore = Object.values(basicChecks).filter(Boolean).length / Object.keys(basicChecks).length;
-      
+      const healthScore =
+        Object.values(basicChecks).filter(Boolean).length /
+        Object.keys(basicChecks).length;
+
       return {
         timestamp: Date.now(),
         healthScore: Math.round(healthScore * 100),
         checks: basicChecks,
-        status: healthScore >= 0.8 ? 'healthy' : healthScore >= 0.6 ? 'degraded' : 'critical'
+        status:
+          healthScore >= 0.8
+            ? 'healthy'
+            : healthScore >= 0.6
+              ? 'degraded'
+              : 'critical',
       };
-    }
+    },
   };
 
   // Expose probe runner globally for easy access
@@ -219,4 +267,4 @@
   }
 
   return probeRunner;
-})(); 
+})();

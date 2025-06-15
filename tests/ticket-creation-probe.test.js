@@ -52,4 +52,4 @@ test.describe('Ticketing workflow probes', () => {
     expect(fetched.id).toBe(id);
     expect(fetched.title).toBe(ticket.title);
   });
-}); 
+});

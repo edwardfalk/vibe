@@ -1,0 +1,30 @@
+{
+  "id": "BUG-2025-06-15-agf2j0",
+  "type": "bug",
+  "title": "CLI_Test_Bug",
+  "status": "open",
+  "tags": [
+    "ai",
+    "test"
+  ],
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "checklist": [
+    {
+      "step": "step1",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    },
+    {
+      "step": "step2",
+      "done": false,
+      "result": null,
+      "timestamp": null
+    }
+  ],
+  "createdAt": "2025-06-15T18:12:18.062Z",
+  "updatedAt": "2025-06-15T18:12:18.062Z",
+  "verification": []
+}

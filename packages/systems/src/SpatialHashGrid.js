@@ -38,4 +38,4 @@ export class SpatialHashGrid {
     }
     return out;
   }
-} 
+}

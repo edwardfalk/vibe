@@ -29,4 +29,4 @@ export function maybeAddMotionTrail(
     addMotionTrail(entity.x, entity.y, color, thickness);
     entity[TIMER_KEY] = 0;
   }
-} 
+}

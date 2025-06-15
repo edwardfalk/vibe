@@ -276,6 +276,14 @@ bun run ticket:update id=BUG-... tags=focus,ai,testing
   - ❌ Incorrect: `window.someTemporaryVariable` // Not core system
   - 🎯 Rationale: Clear hierarchy prevents globals abuse while allowing necessary coordination
 
+  **Event-bus requirement:** Whenever the Player instance is created or recreated, code must execute:
+
+  ```javascript
+  window.dispatchEvent(new CustomEvent('playerChanged', { detail: window.player }));
+  ```
+
+  This keeps Audio and other listening systems synchronized with the live player. Missing the dispatch is considered a breaking violation.
+
 - **p5.js Instance Mode Standards (MANDATORY):**
   - ALL drawing functions MUST use `this.p.` or `p.` prefix in instance mode
   - ✅ Correct: `this.p.fill(255, 0, 0)`, `this.p.ellipse(x, y, w, h)`, `this.p.textAlign(this.p.CENTER)`
@@ -294,6 +302,8 @@ bun run ticket:update id=BUG-... tags=focus,ai,testing
   - ✅ Correct: `return null` // No action taken
   - ❌ Incorrect: `return true`, `return false` // Ambiguous boolean returns
   - 🎯 Rationale: Structured returns enable GameLoop.js to handle all attack types consistently across AI models
+
+- **Sound Effects Safety: All SFX names MUST be defined in `packages/core/src/audio/SoundIds.js` (`SOUND` registry) and have matching configs in `Audio.sounds`. The build will throw if mismatch.**
 
 ---
 

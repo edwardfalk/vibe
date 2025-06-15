@@ -32,5 +32,5 @@ export const SOUND = Object.freeze({
   tankOhNo: 'tankOhNo',
   gruntOw: 'gruntOw',
   stabberKnifeExtend: 'stabberKnifeExtend',
-  stabberKnifeHit: 'stabberKnifeHit'
-}); 
+  stabberKnifeHit: 'stabberKnifeHit',
+});

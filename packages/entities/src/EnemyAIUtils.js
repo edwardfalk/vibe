@@ -34,7 +34,8 @@ export function shouldAvoidFriendlyFire(
   tolerance = PI / 12,
   avoidProb = 0.7
 ) {
-  if (!window.enemies || aimAngle === undefined || aimAngle === null) return false;
+  if (!window.enemies || aimAngle === undefined || aimAngle === null)
+    return false;
 
   const rangeSq = range * range;
   const { x, y } = self;
@@ -53,4 +54,4 @@ export function shouldAvoidFriendlyFire(
     }
   }
   return false;
-} 
+}

@@ -54,4 +54,4 @@ export const explosionPalette = {
     [255, 20, 147],
     [138, 43, 226],
   ],
-}; 
+};

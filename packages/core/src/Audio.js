@@ -1529,7 +1529,9 @@ export class Audio {
     const registryKeys = Object.values(SOUND);
     const configKeys = Object.keys(this.sounds);
     const missingInConfig = registryKeys.filter((k) => !configKeys.includes(k));
-    const missingInRegistry = configKeys.filter((k) => !registryKeys.includes(k));
+    const missingInRegistry = configKeys.filter(
+      (k) => !registryKeys.includes(k)
+    );
     if (missingInConfig.length || missingInRegistry.length) {
       const details = [
         missingInConfig.length

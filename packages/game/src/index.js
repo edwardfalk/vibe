@@ -6,4 +6,4 @@
 import '/js/GameLoop.js';
 
 // Export nothing – this module exists for its side-effect.
-export {}; 
+export {};

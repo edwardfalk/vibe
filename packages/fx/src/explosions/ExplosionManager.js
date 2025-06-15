@@ -356,8 +356,10 @@ export class ExplosionManager {
       }
     } else if (enemyType === 'tank') {
       if (killMethod === 'bullet') {
-        // Armor fragments - blue violet metal debris
+        // Armor fragments - blue violet metal debris and resulting plasma cloud
         this.explosions.push(new Explosion(x, y, 'tank-bullet-kill'));
+        // Tanks now always spawn a plasma cloud on bullet death for visual consistency
+        this.addPlasmaCloud(x, y);
       } else if (killMethod === 'plasma') {
         // Massive energy discharge - blue plasma chain reaction
         this.explosions.push(new Explosion(x, y, 'tank-plasma-kill'));

@@ -14,6 +14,7 @@ import {
 } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
 import { speakAmbient } from './EnemySpeechUtils.js';
+import { SOUND } from '@vibe/core';
 
 /**
  * Tank class - Heavy artillery with charging system
@@ -141,7 +142,7 @@ class Tank extends BaseEnemy {
       if (window.audio && window.beatClock) {
         // Tank power sounds play on beat 1 with 25% chance
         if (window.beatClock.isOnBeat([1]) && random() < 0.25) {
-          window.audio.playSound('tankPower', this.x, this.y);
+          window.audio.playSound(SOUND.tankPower, this.x, this.y);
         }
       }
 
@@ -149,7 +150,7 @@ class Tank extends BaseEnemy {
       if (this.chargeTime >= 1 && this.chargeTime < 1 + dt && window.audio) {
         console.log('🔋 Tank starting to charge!');
         window.audio.speak(this, 'CHARGING!', 'tank');
-        window.audio.playSound('tankCharging', this.x, this.y);
+        window.audio.playSound(SOUND.tankCharging, this.x, this.y);
       } else if (
         this.chargeTime >= this.maxChargeTime / 2 &&
         this.chargeTime < this.maxChargeTime / 2 + dt &&
@@ -157,7 +158,7 @@ class Tank extends BaseEnemy {
       ) {
         console.log('⚡ Tank 50% charged!');
         window.audio.speak(this, 'POWER UP!', 'tank');
-        window.audio.playSound('tankPowerUp', this.x, this.y);
+        window.audio.playSound(SOUND.tankPowerUp, this.x, this.y);
       }
 
       if (this.chargeTime >= this.maxChargeTime) {
@@ -443,14 +444,15 @@ class Tank extends BaseEnemy {
       // Calculate overflow damage if incoming damage exceeds armor HP
       const prevHP = this.frontArmorHP;
       this.frontArmorHP -= amount;
-      if (window.audio) window.audio.playSound('hit', this.x, this.y);
+      if (window.audio) window.audio.playSound(SOUND.hit, this.x, this.y);
       if (this.frontArmorHP <= 0) {
         // Armor destroyed, propagate leftover damage to main body
         const leftover = -this.frontArmorHP; // positive overflow
         this.frontArmorDestroyed = true;
         this.frontArmorHP = 0;
         console.log('💥 Tank Front Armor Destroyed!');
-        if (window.audio) window.audio.playSound('explosion', this.x, this.y);
+        if (window.audio)
+          window.audio.playSound(SOUND.explosion, this.x, this.y);
         // TODO: Add visual effect for front armor breaking
         this.hitFlash = 8;
         if (leftover > 0) {
@@ -471,14 +473,15 @@ class Tank extends BaseEnemy {
       // Calculate overflow damage if incoming damage exceeds armor HP
       const prevHP = this.leftArmorHP;
       this.leftArmorHP -= amount;
-      if (window.audio) window.audio.playSound('hit', this.x, this.y);
+      if (window.audio) window.audio.playSound(SOUND.hit, this.x, this.y);
       if (this.leftArmorHP <= 0) {
         // Armor destroyed, propagate leftover damage to main body
         const leftover = -this.leftArmorHP; // positive overflow
         this.leftArmorDestroyed = true;
         this.leftArmorHP = 0;
         console.log('💥 Tank Left Armor Destroyed!');
-        if (window.audio) window.audio.playSound('explosion', this.x, this.y);
+        if (window.audio)
+          window.audio.playSound(SOUND.explosion, this.x, this.y);
         // TODO: Add visual effect for armor breaking
         this.hitFlash = 8;
         if (leftover > 0) {
@@ -499,14 +502,15 @@ class Tank extends BaseEnemy {
       // Calculate overflow damage if incoming damage exceeds armor HP
       const prevHP = this.rightArmorHP;
       this.rightArmorHP -= amount;
-      if (window.audio) window.audio.playSound('hit', this.x, this.y);
+      if (window.audio) window.audio.playSound(SOUND.hit, this.x, this.y);
       if (this.rightArmorHP <= 0) {
         // Armor destroyed, propagate leftover damage to main body
         const leftover = -this.rightArmorHP; // positive overflow
         this.rightArmorDestroyed = true;
         this.rightArmorHP = 0;
         console.log('💥 Tank Right Armor Destroyed!');
-        if (window.audio) window.audio.playSound('explosion', this.x, this.y);
+        if (window.audio)
+          window.audio.playSound(SOUND.explosion, this.x, this.y);
         // TODO: Add visual effect for armor breaking
         this.hitFlash = 8;
         if (leftover > 0) {

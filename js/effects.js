@@ -1,1 +1,1 @@
-export * from '../packages/fx/src/effects.js'; 
+export * from '../packages/fx/src/effects.js';

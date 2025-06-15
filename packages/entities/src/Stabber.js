@@ -13,6 +13,7 @@ import {
 import { CONFIG } from '@vibe/core';
 import { speakAmbient } from './EnemySpeechUtils.js';
 import { addMotionTrail, maybeAddMotionTrail } from './EnemyFXUtils.js';
+import { SOUND } from '@vibe/core';
 
 /**
  * Stabber class - Melee assassin with armor system
@@ -278,8 +279,8 @@ class Stabber extends BaseEnemy {
 
       // Play warning sounds
       if (this.stabWarningTime === 1 && window.audio) {
-        window.audio.playSound('stabberStalk', this.x, this.y);
-        window.audio.playSound('stabberKnife', this.x, this.y);
+        window.audio.playSound(SOUND.stabberStalk, this.x, this.y);
+        window.audio.playSound(SOUND.stabberKnife, this.x, this.y);
 
         const stabWarnings = [
           'STAB TIME!',
@@ -300,7 +301,7 @@ class Stabber extends BaseEnemy {
 
         // Play explosive dash sound
         if (window.audio) {
-          window.audio.playSound('stabberDash', this.x, this.y);
+          window.audio.playSound(SOUND.stabberDash, this.x, this.y);
         }
 
         console.log(`🚀 Stabber starting explosive dash attack!`);
@@ -318,7 +319,7 @@ class Stabber extends BaseEnemy {
         window.beatClock &&
         window.beatClock.canStabberAttack()
       ) {
-        window.audio.playSound('stabberKnifeExtend', this.x, this.y);
+        window.audio.playSound(SOUND.stabberKnifeExtend, this.x, this.y);
       }
       this.stabPreparingTime += dt;
 
@@ -483,7 +484,7 @@ class Stabber extends BaseEnemy {
       }
       // Play hit sound
       if (window.audio) {
-        window.audio.playSound('stabberKnifeHit', tipX, tipY);
+        window.audio.playSound(SOUND.stabberKnifeHit, tipX, tipY);
       }
     }
     // Check enemy hits (friendly fire)
@@ -543,7 +544,7 @@ class Stabber extends BaseEnemy {
         }
         // Play hit sound
         if (window.audio) {
-          window.audio.playSound('stabberKnifeHit', tipX, tipY);
+          window.audio.playSound(SOUND.stabberKnifeHit, tipX, tipY);
         }
       }
     }
@@ -714,7 +715,7 @@ class Stabber extends BaseEnemy {
     // Dramatic charging animation with building energy
     const pulse = sin(frameCount * 3.0) * 0.5 + 0.5;
     const chargePulse = sin(frameCount * 1.5) * 0.3 + 0.7;
-    const warningRadius = this.size * (1.2 + stabPercent * 0.8); // Growing energy field
+    const warningRadius = this.size * (0.6 + stabPercent * 0.4); // Reduced radius
 
     // Building energy circle - intensifying over time
     this.p.fill(255, 150, 0, 40 + stabPercent * 60 + pulse * 40);
