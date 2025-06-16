@@ -523,6 +523,57 @@ export class UIRenderer {
       }
     }
 
+    // Toggle AUDIO DEBUG overlay/logs with F10 key
+    if (key === 'F10') {
+      const enabled = !(window.DEBUG_AUDIO || window.debug_audio);
+      window.DEBUG_AUDIO = enabled;
+      window.debug_audio = enabled; // alias
+      localStorage.setItem('debugAudio', enabled ? '1' : '0');
+      console.log(`🎚️ Audio debug ${enabled ? 'ON' : 'OFF'} (F10 to toggle)`);
+      this._showToast(`Audio debug ${enabled ? 'ON' : 'OFF'}`);
+      return true;
+    }
+
+    // Edge exploration / test suites via function keys
+    if (key === 'F6') {
+      if (this.testModeManager) {
+        this.testModeManager.setEnabled(true);
+        this.testModeManager.setMovementPattern('edges');
+        this._showToast('Edge exploration test (F6)');
+        console.log('🧪 Edge exploration test activated (F6)');
+      }
+      return true;
+    }
+
+    if (key === 'F7') {
+      if (this.testModeManager) {
+        this.testModeManager.setEnabled(true);
+        this.testModeManager.runTestSuite();
+        // Auto-disable after 3 min (3*60*60 frames ~ 10800) counted inside test mode? Use timeout.
+        setTimeout(() => {
+          if (this.testModeManager.enabled) {
+            this.testModeManager.setEnabled(false);
+            this._showToast('F7 test completed');
+          }
+        }, 180000); // 3 minutes
+        this._showToast('Comprehensive 3-minute test (F7)');
+        console.log('🧪 Comprehensive test suite (F7) started');
+      }
+      return true;
+    }
+
+    if (key === 'F8') {
+      if (this.testModeManager) {
+        this.testModeManager.setEnabled(true);
+        this.testModeManager.setMovementPattern('edges');
+        this.testModeManager.setEnemySpawnInterval(120);
+        this.testModeManager.setShootInterval(5);
+        this._showToast('Survival edge test (F8)');
+        console.log('🛡️ Survival edge test (F8) activated');
+      }
+      return true;
+    }
+
     return false;
   }
 

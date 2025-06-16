@@ -522,8 +522,12 @@ export class Player {
     }
 
     // Enforce BeatClock timing when available
-    const beatClockReady = window.beatClock && typeof window.beatClock.canPlayerShootQuarterBeat === 'function';
-    const onQuarterBeat = beatClockReady ? window.beatClock.canPlayerShootQuarterBeat() : true;
+    const beatClockReady =
+      window.beatClock &&
+      typeof window.beatClock.canPlayerShootQuarterBeat === 'function';
+    const onQuarterBeat = beatClockReady
+      ? window.beatClock.canPlayerShootQuarterBeat()
+      : true;
 
     // Block shots that are off-beat when BeatClock is active
     if (beatClockReady && !onQuarterBeat) {
@@ -545,7 +549,9 @@ export class Player {
 
   fireBullet() {
     // Set cooldown to a quarter-beat interval when BeatClock is present, otherwise 150 ms fallback
-    const quarterBeatMs = window.beatClock ? window.beatClock.beatInterval / 4 : 150;
+    const quarterBeatMs = window.beatClock
+      ? window.beatClock.beatInterval / 4
+      : 150;
     this.shootCooldownMs = quarterBeatMs;
     this.muzzleFlash = 4;
 

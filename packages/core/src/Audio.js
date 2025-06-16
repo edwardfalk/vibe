@@ -67,7 +67,14 @@ export class Audio {
     this.masterGain = null;
     this.initialized = false;
     this.enabled = true;
-    this.volume = 0.7;
+    // Master volume (increased from 0.7 → 1.0 for better baseline loudness)
+    this.volume = 1.0;
+
+    // Per-category gain multipliers for quick balancing (🔊 sfx, 🗣️ speech)
+    this.categoryGain = {
+      sfx: 1.0,
+      speech: 1.5, // speech needs a boost to cut through
+    };
 
     // Effects nodes
     this.effects = {
@@ -749,12 +756,14 @@ export class Audio {
       entity && typeof entity.y === 'number' && !isNaN(entity.y)
         ? entity.y
         : 300;
-    // Ensure TTS volume respects master volume, per-voice config, and distance attenuation
+    // Ensure TTS volume respects master volume, per-voice config, distance attenuation (clamped), and speech gain
+    const distanceAtt = Math.max(
+      0.5, // never drop below half volume for speech so lines remain audible
+      this.calculateVolume(ex, ey, playerX, playerY)
+    );
     utterance.volume = Math.min(
       1,
-      config.volume *
-        this.calculateVolume(ex, ey, playerX, playerY) *
-        this.volume
+      config.volume * distanceAtt * this.volume * (this.categoryGain?.speech || 1)
     );
 
     // Enhanced voice selection with effects
