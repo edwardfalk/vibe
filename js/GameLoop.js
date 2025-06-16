@@ -176,6 +176,11 @@ if (!window.uiKeyListenersAdded) {
         'T',
         'e',
         'E',
+        'F6',
+        'F7',
+        'F8',
+        'F10',
+        '1','2','3','4',
         ' ',
       ];
       if (singleActionKeys.includes(event.key) && window.uiRenderer) {

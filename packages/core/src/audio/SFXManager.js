@@ -103,6 +103,26 @@ export class SFXManager {
       }
     }
 
+    // Apply per-category gain (SFX) before scheduling envelope
+    volume *= audio.categoryGain?.sfx || 1;
+
+    // -------------------------------------------------------------------
+    // 📊 DEBUG INFO SETUP (captures values before envelope scheduling)
+    // -------------------------------------------------------------------
+    const soundName = Object.keys(audio.sounds).find(
+      (k) => audio.sounds[k] === config
+    ) || 'unknown';
+
+    const debugEnabled =
+      window.DEBUG_AUDIO || window.debug_audio || localStorage.getItem('debugAudio') === '1';
+    const dx = x !== null && x !== undefined ? x - playerX : 0;
+    const dy = y !== null && y !== undefined ? y - playerY : 0;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    // Rough on-screen heuristic (800×600 viewport centred on player)
+    const isOnScreen = Math.abs(dx) <= 400 && Math.abs(dy) <= 300;
+    let debugReverb = 0;
+    let debugDry = 0;
+
     gainNode.gain.setValueAtTime(0, ctx.currentTime);
     gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01);
     gainNode.gain.exponentialRampToValueAtTime(
@@ -111,6 +131,20 @@ export class SFXManager {
     );
 
     panNode.pan.setValueAtTime(panValue, ctx.currentTime);
+
+    // Optional debug output for quick balancing tweaks with spatial info
+    if (debugEnabled) {
+      console.log('🎵', {
+        name: soundName,
+        gain: volume.toFixed(2),
+        dist: distance.toFixed(1),
+        pan: panValue.toFixed(2),
+        onscreen: isOnScreen,
+        reverb: debugReverb,
+        dry: debugDry,
+        pos: `(${Math.round(x ?? playerX)},${Math.round(y ?? playerY)})`,
+      });
+    }
 
     // Node graph – oscillator ▶ tremoloGain ▶ gain ▶ pan ▶ (reverb?) ▶ master
     const tremoloGain = ctx.createGain();
@@ -123,9 +157,6 @@ export class SFXManager {
     }
 
     // Ambient / reverb check
-    const soundName = Object.keys(audio.sounds).find(
-      (k) => audio.sounds[k] === config
-    );
     const ambientSet = new Set([
       'enemyIdle',
       'stabberChant',
@@ -140,7 +171,6 @@ export class SFXManager {
     ]);
 
     if (ambientSet.has(soundName) && audio.effects.reverb) {
-      const distance = Math.sqrt((x - playerX) ** 2 + (y - playerY) ** 2);
       const normalizedDistance = Math.min(distance / 600, 1);
 
       const reverbGain = ctx.createGain();
@@ -149,6 +179,7 @@ export class SFXManager {
 
       const reverbIntensity = 0.15 + normalizedDistance * 0.15;
       reverbGain.gain.setValueAtTime(reverbIntensity, ctx.currentTime);
+      debugReverb = reverbIntensity.toFixed(2);
 
       const lowpassFreq = 1400 - normalizedDistance * 600;
       lowPassFilter.type = 'lowpass';
@@ -167,6 +198,7 @@ export class SFXManager {
       const dryGain = ctx.createGain();
       const dryMix = 0.9 - normalizedDistance * 0.15;
       dryGain.gain.setValueAtTime(dryMix, ctx.currentTime);
+      debugDry = dryMix.toFixed(2);
       panNode.connect(dryGain);
       dryGain.connect(audio.masterGain);
     } else {
