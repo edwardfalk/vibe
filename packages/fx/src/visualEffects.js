@@ -1,4 +1,4 @@
-import { sin, cos, randomRange as random } from '@vibe/core';
+import { sin, cos, random } from '../../core/src/mathUtils.js';
 
 // Advanced Visual Effects System for Vibe
 // Leverages p5.js power for stunning graphics
@@ -78,7 +78,10 @@ class VisualEffectsManager {
       this.initialized = true;
       console.log('✨ Visual effects fully initialized');
     } catch (error) {
-      console.log('⚠️ Visual effects initialization failed:', error);
+      console.error(
+        '⚠️ Visual effects initialization failed:',
+        error?.stack || error
+      );
     }
   }
 
@@ -162,7 +165,10 @@ class VisualEffectsManager {
       const c1 = g.color(15, 5, 35);
       const c2 = g.color(60, 30, 80);
       const c3 = g.color(25, 15, 45);
-      let currentColor = inter < 0.5 ? g.lerpColor(c1, c3, inter * 2) : g.lerpColor(c3, c2, (inter - 0.5) * 2);
+      const currentColor =
+        inter < 0.5
+          ? g.lerpColor(c1, c3, inter * 2)
+          : g.lerpColor(c3, c2, (inter - 0.5) * 2);
       g.stroke(currentColor);
       g.line(0, i, p.width, i);
     }
