@@ -8,9 +8,13 @@
 import { spawn } from 'child_process';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
+import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+const FIVE_SERVER_PORT = 5500;
+const TICKET_API_PORT = 3001;
 
 class MCPTestRunner {
   constructor() {
@@ -247,6 +251,99 @@ class MCPTestRunner {
     process.exit(failCount > 0 ? 1 : 0);
   }
 }
+
+async function killPort(port) {
+  try {
+    await new Promise((resolve, reject) => {
+      const kill = spawn('kill-port', [port], { shell: true });
+      kill.on('close', (code) => code === 0 ? resolve() : reject());
+    });
+  } catch (err) {
+    DebugLogger.log(`Failed to kill port ${port}:`, err);
+  }
+}
+
+async function startDevServer() {
+  await killPort(FIVE_SERVER_PORT);
+  const server = spawn('bunx', ['five-server', '.', '--port', FIVE_SERVER_PORT], {
+    shell: true,
+    stdio: 'inherit',
+  });
+  
+  // Wait for server to be ready
+  await new Promise((resolve) => {
+    server.stdout?.on('data', (data) => {
+      if (data.toString().includes('Server running')) {
+        resolve();
+      }
+    });
+    // Fallback timeout after 5s
+    setTimeout(resolve, 5000);
+  });
+  
+  return server;
+}
+
+async function startTicketApi() {
+  await killPort(TICKET_API_PORT);
+  const api = spawn('bun', ['run', 'ticket-api.js'], {
+    shell: true,
+    stdio: 'inherit',
+  });
+  
+  // Wait for API to be ready
+  await new Promise((r) => setTimeout(r, 2000));
+  return api;
+}
+
+async function runTests() {
+  DebugLogger.log('Starting MCP probe test run');
+  
+  try {
+    // Start services
+    const server = await startDevServer();
+    const api = await startTicketApi();
+    
+    // Run Playwright tests in debug mode
+    const playwright = spawn('bunx', ['playwright', 'test', '--debug'], {
+      shell: true,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        PWDEBUG: '1', // Enable Playwright Inspector
+      },
+    });
+    
+    // Wait for tests to complete
+    await new Promise((resolve, reject) => {
+      playwright.on('close', (code) => {
+        if (code === 0) {
+          DebugLogger.log('All tests passed successfully');
+          resolve();
+        } else {
+          DebugLogger.log(`Tests failed with code ${code}`);
+          reject(new Error(`Tests failed with code ${code}`));
+        }
+      });
+    });
+    
+    // Clean shutdown
+    server.kill();
+    api.kill();
+    await killPort(FIVE_SERVER_PORT);
+    await killPort(TICKET_API_PORT);
+    
+  } catch (err) {
+    DebugLogger.log('Test run failed:', err);
+    process.exit(1);
+  }
+}
+
+// Run tests
+runTests().catch((err) => {
+  DebugLogger.log('Fatal error:', err);
+  process.exit(1);
+});
 
 // Run tests if this file is executed directly
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

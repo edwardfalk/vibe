@@ -32,7 +32,13 @@
 
 **2. Ticketing System: Bugs, Features, Enhancements, Tasks**
 
- 🚀 Ticketing system Quick Reference:
+- All ticket operations must use the shared `TicketCore` library through:
+  - Browser-based `ticketManager.js` (in-game and admin UI)
+  - Node.js `ticket-api.js` (API server)
+  - CLI tools (`ticket-cli.js`)
+- If the API is down, or if ticket scripts are missing or broken, manually inspect JSON files in tests/bug-reports/ and open the latest file by date/ID. See the troubleshooting/manual workflow section in TICKETING_SYSTEM_GUIDE.md for details.
+
+🚀 Ticketing system Quick Reference:
 
 **Create a ticket:**
 ```sh
@@ -62,6 +68,10 @@ bun run ticket:latest
 ```sh
 bun run ticket:update id=BUG-... tags=focus,ai,testing
 ```
+
+> **Heads-up:**
+> • `tags=` is comma-split only when unquoted (`tags=ai,workflow`). If you quote the value, it will be treated as a single string; use JSON array syntax instead (`tags='["ai","workflow"]'`).  
+> • Checklist entries accept either plain strings or objects (`{"step":"Fix","done":false}`) for more control.
 
 - The ticketing system is a core, modular subsystem.
 - All work (bugs, features, enhancements, tasks) must be tracked via the ticketing system.

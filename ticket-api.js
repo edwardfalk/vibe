@@ -1,9 +1,9 @@
 // ticket-api.js
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
 
-const TICKETS_DIR = path.join(__dirname, 'tests/bug-reports');
+// Dynamic import for ESM TicketCore
+const TicketCorePath = path.resolve(__dirname, 'packages/core/src/TicketCore.js');
 
 const app = express();
 app.use(express.json());
@@ -27,7 +27,7 @@ app.use((req, res, next) => {
 // to the server. Logs are written via DebugLogger to the `.debug/YYYY-MM-DD.log`
 // file so that they can be inspected later when diagnosing issues.
 // -----------------------------------------------------------------------------
-const { DebugLogger } = require('./js/DebugLogger.js');
+const { DebugLogger } = require('./packages/tooling/src/DebugLogger.js');
 
 app.post('/api/logs', (req, res) => {
   try {
@@ -41,76 +41,72 @@ app.post('/api/logs', (req, res) => {
   }
 });
 
-// List all tickets
-app.get('/api/tickets', (req, res) => {
-  fs.readdir(TICKETS_DIR, (err, files) => {
-    if (err) return res.status(500).json({ error: err.message });
-    const tickets = files.filter((f) => f.endsWith('.json'));
+// Health check endpoint
+app.head('/api/health', (req, res) => {
+  res.status(200).end();
+});
+
+// List all tickets with filtering and pagination
+app.get('/api/tickets', async (req, res) => {
+  try {
+    const TicketCore = await import(TicketCorePath);
+    const { status, focus, limit, offset } = req.query;
+    const tickets = await TicketCore.listTickets({
+      status: status || undefined,
+      focus: focus === 'true',
+      limit: limit ? parseInt(limit, 10) : 100,
+      offset: offset ? parseInt(offset, 10) : 0,
+    });
+    TicketCore.log('info', '📋', `Listed ${tickets.length} tickets`);
     res.json(tickets);
-  });
+  } catch (err) {
+    console.error('❌ Failed to list tickets:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Get a ticket by ID (filename)
-app.get('/api/tickets/:id', (req, res) => {
-  const file = path.join(TICKETS_DIR, req.params.id);
-  if (!file.endsWith('.json'))
-    return res.status(400).json({ error: 'Invalid ticket id' });
-  fs.readFile(file, 'utf8', (err, data) => {
-    if (err) return res.status(404).json({ error: 'Ticket not found' });
-    res.json(JSON.parse(data));
-  });
+// Get a ticket by ID
+app.get('/api/tickets/:id', async (req, res) => {
+  try {
+    const TicketCore = await import(TicketCorePath);
+    const ticket = await TicketCore.readTicket(req.params.id);
+    TicketCore.log('info', '🔎', `Read ticket ${req.params.id}`);
+    res.json(ticket);
+  } catch (err) {
+    console.error('❌ Failed to read ticket:', err);
+    res.status(404).json({ error: err.message });
+  }
 });
-
-// Helper: validate and initialize ticket metadata
-function ensureTicketMetadata(ticket, isNew = false) {
-  if (!ticket.id) throw new Error('Missing ticket id');
-  if (!ticket.title) throw new Error('Missing ticket title');
-  if (!ticket.type)
-    throw new Error('Missing ticket type (bug, enhancement, feature, task)');
-  const allowedTypes = ['bug', 'enhancement', 'feature', 'task'];
-  if (!allowedTypes.includes(ticket.type))
-    throw new Error('Invalid ticket type');
-  // Initialize required fields if missing
-  if (isNew && !ticket.status) ticket.status = 'Open';
-  if (!Array.isArray(ticket.history)) ticket.history = [];
-  if (!Array.isArray(ticket.artifacts)) ticket.artifacts = [];
-  if (!Array.isArray(ticket.verification)) ticket.verification = [];
-  if (!Array.isArray(ticket.relatedTickets)) ticket.relatedTickets = [];
-  // Optionally, add more fields as needed
-}
 
 // Create a new ticket
-app.post('/api/tickets', (req, res) => {
-  const ticket = req.body;
+app.post('/api/tickets', async (req, res) => {
   try {
-    ensureTicketMetadata(ticket, true);
+    const TicketCore = await import(TicketCorePath);
+    const ticket = req.body;
+    await TicketCore.ensureMeta(ticket, true);
+    const written = await TicketCore.writeTicket(ticket);
+    TicketCore.log('info', '📝', `Created ticket ${written.id}`);
+    res.status(201).json(written);
   } catch (err) {
-    return res.status(400).json({ error: err.message });
+    console.error('❌ Failed to create ticket:', err);
+    res.status(400).json({ error: err.message });
   }
-  const file = path.join(TICKETS_DIR, ticket.id + '.json');
-  fs.writeFile(file, JSON.stringify(ticket, null, 2), (err) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json(ticket);
-  });
 });
 
 // Update a ticket (partial update)
-app.patch('/api/tickets/:id', (req, res) => {
-  const file = path.join(TICKETS_DIR, req.params.id);
-  fs.readFile(file, 'utf8', (err, data) => {
-    if (err) return res.status(404).json({ error: 'Ticket not found' });
-    const ticket = JSON.parse(data);
+app.patch('/api/tickets/:id', async (req, res) => {
+  try {
+    const TicketCore = await import(TicketCorePath);
+    let ticket = await TicketCore.readTicket(req.params.id);
     Object.assign(ticket, req.body);
-    try {
-      ensureTicketMetadata(ticket, false);
-    } catch (err2) {
-      return res.status(400).json({ error: err2.message });
-    }
-    fs.writeFile(file, JSON.stringify(ticket, null, 2), (err2) => {
-      if (err2) return res.status(500).json({ error: err2.message });
-      res.json(ticket);
-    });
-  });
+    await TicketCore.ensureMeta(ticket, false);
+    const written = await TicketCore.writeTicket(ticket);
+    TicketCore.log('info', '✏️', `Updated ticket ${written.id}`);
+    res.json(written);
+  } catch (err) {
+    console.error('❌ Failed to update ticket:', err);
+    res.status(400).json({ error: err.message });
+  }
 });
 
 const PORT = 3001;

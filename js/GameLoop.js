@@ -40,6 +40,9 @@ import {
   InputSystem,
 } from '@vibe/systems';
 import { setupRemoteConsoleLogger } from '@vibe/tooling';
+import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
+import ProfilerOverlay from '@vibe/fx/ProfilerOverlay.js';
+import AdaptiveLODManager from '@vibe/fx/AdaptiveLODManager.js';
 
 // Core game objects
 let player;
@@ -95,6 +98,9 @@ window.arrowUpPressed = false;
 window.arrowDownPressed = false;
 window.arrowLeftPressed = false;
 window.arrowRightPressed = false;
+
+// Attach profiler overlay for global access
+window.profilerOverlay = ProfilerOverlay;
 
 // Input event handler helpers
 function onKeyDown(e) {
@@ -168,8 +174,7 @@ if (!window.uiKeyListenersAdded) {
       const singleActionKeys = [
         'r',
         'R',
-        'p',
-        'P',
+        'Escape',
         'm',
         'M',
         't',
@@ -189,6 +194,18 @@ if (!window.uiKeyListenersAdded) {
     }
   });
   window.uiKeyListenersAdded = true;
+}
+
+// Add key toggle for profiler overlay (P key) once
+if (!window.profilerOverlayToggleAdded) {
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'p' || e.key === 'P') && !e.repeat) {
+      if (window.profilerOverlay) {
+        window.profilerOverlay.toggle();
+      }
+    }
+  });
+  window.profilerOverlayToggleAdded = true;
 }
 
 function setup(p) {
@@ -306,6 +323,9 @@ function setup(p) {
 }
 
 function draw(p) {
+  // Begin profiler frame timing
+  EffectsProfiler.startFrame();
+
   // Ensure global frameCount is updated for all modules and probes (p5 instance mode)
   window.frameCount = p.frameCount;
 
@@ -361,6 +381,15 @@ function draw(p) {
   if (window.uiRenderer) {
     window.uiRenderer.drawUI(p);
   }
+
+  // ------------------ Profiler overlay (after UI) ------------------
+  EffectsProfiler.endFrame();
+  if (window.profilerOverlay) {
+    window.profilerOverlay.draw(p);
+  }
+
+  // Adaptive LOD adjustment
+  AdaptiveLODManager.update();
 }
 
 function updateGame(p) {

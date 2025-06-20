@@ -1,4 +1,6 @@
 import { sin, cos, random } from '../../core/src/mathUtils.js';
+import EffectsProfiler from './EffectsProfiler.js';
+import { getEnemyConfig, effectsConfig } from './effectsConfig.js';
 
 // Advanced Visual Effects System for Vibe
 // Leverages p5.js power for stunning graphics
@@ -288,19 +290,38 @@ class VisualEffectsManager {
       if (!this.initialized) return;
     }
 
-    const particleCount = type === 'rusher-explosion' ? 25 : 15;
-    const colors =
-      type === 'tank'
-        ? [
-            [100, 50, 200],
-            [150, 100, 255],
-            [200, 150, 255],
-          ]
-        : [
-            [255, 100, 50],
-            [255, 150, 100],
-            [255, 200, 150],
-          ];
+    // Derive enemy key (strip suffix like '-explosion') for config lookup
+    const enemyKey = (type || 'grunt').split('-')[0];
+    const cfg = getEnemyConfig(enemyKey);
+
+    // Lod multiplier reduces particle count when Adaptive LOD is active
+    const lod = effectsConfig.global.lodMultiplier || 1;
+
+    const particleCount = cfg.burst?.count
+      ? Math.max(4, Math.round(cfg.burst.count * lod))
+      : type === 'rusher-explosion'
+      ? 25
+      : 15;
+
+    const colors = cfg.burst?.palette
+      ? cfg.burst.palette
+      : type === 'tank'
+      ? [
+          [100, 50, 200],
+          [150, 100, 255],
+          [200, 150, 255],
+        ]
+      : [
+          [255, 100, 50],
+          [255, 150, 100],
+          [255, 200, 150],
+        ];
+
+    // Profiling hook
+    EffectsProfiler.registerEffect('explosion', {
+      enemy: enemyKey,
+      count: particleCount,
+    });
 
     for (let i = 0; i < particleCount; i++) {
       this.particles.push({

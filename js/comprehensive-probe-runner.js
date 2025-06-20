@@ -2,12 +2,12 @@
 // Comprehensive Probe System Runner and Reporter
 
 (async function () {
-  const { random } = await import('./mathUtils.js');
+  const { random } = await import('../packages/core/src/mathUtils.js');
 
   // Import ticketManager API if available
   let ticketManager = null;
   try {
-    ticketManager = await import('./ticketManager.js');
+    ticketManager = await import('../packages/tooling/src/ticketManager.js');
   } catch (e) {
     // Not available in all contexts
   }

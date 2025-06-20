@@ -17,6 +17,7 @@
     "test:headed": "bunx playwright test --headed",
     "test:debug": "bunx playwright test --debug",
     "test:mcp": "bun run scripts/run-mcp-tests.js",
+    "test:probes": "bun run scripts/run-mcp-tests.js",
     "test:comprehensive": "bun run test:playwright && bun run test:mcp",
     "api": "bun run ticket-api.js",
     "coderabbit:pull": "bun pull-coderabbit-reviews.js",
@@ -39,12 +40,12 @@
     "tickets:update": "bun run scripts/update-ticket-status.js",
     "tickets:batch-resolve": "bun run scripts/batch-resolve-tickets.js",
     "cleanup:debug": "bun run scripts/cleanup-debug.js",
-    "ticket:create": "bun run scripts/ticket-cli.js create --",
-    "ticket:update": "bun run scripts/ticket-cli.js update --",
-    "ticket:get": "bun run scripts/ticket-cli.js get --",
-    "ticket:list": "bun run scripts/ticket-cli.js list --",
-    "ticket:latest": "bun run scripts/ticket-cli.js latest --",
-    "ticket:check": "bun run scripts/ticket-cli.js check --"
+    "ticket:create": "bun run js/ticketManager.js create",
+    "ticket:update": "bun run js/ticketManager.js update",
+    "ticket:get": "bun run js/ticketManager.js get",
+    "ticket:list": "bun run js/ticketManager.js list",
+    "ticket:latest": "bun run js/ticketManager.js latest",
+    "ticket:check": "bun run js/ticketManager.js check"
   },
   "bun": {
     "dev": {
@@ -57,16 +58,15 @@
     }
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.0",
     "concurrently": "^9.1.2",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
-    "@playwright/test": "^1.53.0",
     "five-server": "^0.4.4",
     "kill-port": "^2.0.1",
     "live-server": "^1.2.2",
-    "playwright": "^1.53.0",
     "prettier": "^3.5.3",
     "tsx": "^4.19.4",
     "vitest": "^3.2.2"

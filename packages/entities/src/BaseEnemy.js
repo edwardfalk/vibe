@@ -1,6 +1,8 @@
 import { Bullet } from './bullet.js';
 import { CONFIG } from '@vibe/core';
-import { random, randomRange, sin, cos, atan2 } from '@vibe/core';
+import { sin, cos, atan2, randomRange, random, sqrt, floor, max, min } from '@vibe/core';
+import { getEnemyConfig, effectsConfig } from '@vibe/fx/effectsConfig.js';
+import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
@@ -186,12 +188,18 @@ export class BaseEnemy {
       try {
         // Check if currently speaking (has active speech timer)
         const isSpeaking = this.speechTimer > 0;
-        const speechGlowIntensity = isSpeaking ? 0.8 : 0.3;
+        const cfg = getEnemyConfig(this.type);
+        const baseGlow = cfg.glow || {};
+
+        const intensityBase = baseGlow.alpha ? baseGlow.alpha / 255 : 0.3;
+        const speechGlowIntensity = isSpeaking
+          ? intensityBase * 1.6
+          : intensityBase;
         const speechGlowSize = isSpeaking ? 1.3 : 1.0;
 
-        // Get type-specific glow color
-        const glowColor = this.getGlowColor(isSpeaking);
-        const glowSize = this.getGlowSize() * speechGlowSize;
+        const glowColorArr = baseGlow.color || [255, 255, 255];
+        const glowColor = this.p.color(...glowColorArr);
+        const glowSize = (baseGlow.sizeMult || 1.0) * this.size * speechGlowSize;
 
         drawGlow(this.x, this.y, glowSize, glowColor, speechGlowIntensity);
 
@@ -210,6 +218,9 @@ export class BaseEnemy {
             );
           }
         }
+
+        // Profiling hook
+        EffectsProfiler.registerEffect('glow', { enemy: this.type });
       } catch (error) {
         console.log('⚠️ Enemy glow error:', error);
       }

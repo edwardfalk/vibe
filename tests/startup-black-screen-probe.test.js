@@ -1,5 +1,5 @@
-import { test, expect } from 'playwright/test';
-import { DebugLogger } from '../js/DebugLogger.js';
+import { test, expect } from '@playwright/test';
+import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 /**
  * Startup Black-Screen Probe
@@ -13,6 +13,10 @@ import { DebugLogger } from '../js/DebugLogger.js';
  */
 
 test.describe('Startup Black-Screen Probe', () => {
+  test.beforeAll(() => {
+    DebugLogger.log('Playwright startup black screen probe started');
+  });
+
   test('Game enters playing state after launch', async ({ page }, testInfo) => {
     try {
       await page.goto('/');

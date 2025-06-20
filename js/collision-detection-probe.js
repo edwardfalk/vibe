@@ -7,7 +7,7 @@
   // Import ticketManager API if available
   let ticketManager = null;
   try {
-    ticketManager = await import('./ticketManager.js');
+    ticketManager = await import('../packages/tooling/src/ticketManager.js');
   } catch (e) {
     // Not available in all contexts
   }
