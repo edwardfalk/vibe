@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { DebugLogger } = require('../js/DebugLogger.js');
+const { DebugLogger } = require('../packages/tooling/src/DebugLogger.js');
 
 // CONFIGURATION
 const downloadsDir = path.join(os.homedir(), 'Downloads');

@@ -1,5 +1,5 @@
-import { test, expect } from 'playwright/test';
-import { DebugLogger } from '../js/DebugLogger.js';
+import { test, expect } from '@playwright/test';
+import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 process.on('uncaughtException', (err) =>
   DebugLogger.log('Uncaught Exception (test)', err)
@@ -8,7 +8,7 @@ process.on('unhandledRejection', (err) =>
   DebugLogger.log('Unhandled Rejection (test)', err)
 );
 
-beforeAll(() => {
+test.beforeAll(() => {
   DebugLogger.log('Playwright test suite started');
 });
 

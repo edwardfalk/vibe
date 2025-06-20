@@ -60,7 +60,7 @@ class FinalDebuggingVerification {
 
     try {
       const visualEffectsContent = await fs.readFile(
-        join(__dirname, 'js/visualEffects.js'),
+        join(__dirname, 'packages/fx/src/visualEffects.js'),
         'utf8'
       );
 

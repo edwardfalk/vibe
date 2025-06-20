@@ -5,12 +5,47 @@
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
 import { floor, ceil, min, random } from '@vibe/core';
-import {
-  createTicket,
-  updateTicket,
-  loadTicket,
-  listTickets,
-} from '@vibe/tooling';
+// import {
+//   createTicket,
+//   updateTicket,
+//   loadTicket,
+//   listTickets,
+// } from '@vibe/tooling';
+
+// Browser-safe ticket API client
+const API_BASE_URL = 'http://localhost:3001/api/tickets';
+
+async function createTicket(ticketData) {
+  const res = await fetch(API_BASE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(ticketData),
+  });
+  if (!res.ok) throw new Error('Failed to create ticket');
+  return await res.json();
+}
+
+async function updateTicket(ticketId, updates) {
+  const res = await fetch(`${API_BASE_URL}/${ticketId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error('Failed to update ticket');
+  return await res.json();
+}
+
+async function loadTicket(ticketId) {
+  const res = await fetch(`${API_BASE_URL}/${ticketId}`);
+  if (!res.ok) throw new Error('Failed to load ticket');
+  return await res.json();
+}
+
+async function listTickets() {
+  const res = await fetch(API_BASE_URL);
+  if (!res.ok) throw new Error('Failed to list tickets');
+  return await res.json();
+}
 
 /**
  * @param {GameState} gameState - The game state object (dependency injected for modularity)
@@ -435,7 +470,7 @@ export class UIRenderer {
       }
     }
 
-    if (key === 'p' || key === 'P') {
+    if (key === 'Escape') {
       if (this.gameState.gameState === 'playing') {
         this.gameState.setGameState('paused');
         console.log('⏸️ Game paused');

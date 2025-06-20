@@ -1,0 +1,21 @@
+{
+  "type": "bug",
+  "title": "Test bug",
+  "tags": [
+    "ai",
+    "urgent"
+  ],
+  "checklist": [
+    "step1",
+    "step2"
+  ],
+  "id": "BUG-2025-06-17-a85401",
+  "status": "open",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-17T17:10:45.687Z",
+  "updatedAt": "2025-06-17T17:10:45.688Z",
+  "slug": "test-bug",
+  "folder": "2025-06-17T17-10-45-688Z_BUG-2025-06-17-a85401_test-bug"
+}

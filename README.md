@@ -44,41 +44,41 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 ```
 vibe/
-├── 📁 js/                          # Core game modules (modular architecture)
-│   ├── 🎮 GameLoop.js              # Main game loop and coordination
-│   ├── 🎵 Audio.js                 # Audio system and beat synchronization
-│   ├── 👾 player.js                # Player entity and controls
-│   ├── 🤖 BaseEnemy.js             # Base enemy class
-│   ├── 🤖 [Enemy types].js         # Grunt, Rusher, Tank, Stabber
-│   ├── 💥 effects.js               # Visual effects system
-│   ├── 🎯 CollisionSystem.js       # Collision detection
-│   ├── 📷 CameraSystem.js          # Camera and screen shake
-│   ├── 🎫 ticketManager.js         # Bug reporting and tickets
-│   └── 📁 explosions/              # Explosion effects subsystem
-├── 📁 docs/                        # Documentation
-│   ├── 📁 archive/                 # Archived documentation
-│   └── 📁 vision/                  # Project vision documents
-├── 📁 scripts/                     # Utility scripts
-│   ├── 📁 powershell/              # PowerShell environment scripts
-│   ├── 🔧 move-bug-reports.js      # Bug report file watcher
-│   ├── 🧪 run-mcp-tests.js         # MCP testing utilities
-│   └── 🎫 update-ticket-status.js  # Ticket management utilities
-├── 📁 tests/                       # Testing infrastructure
-│   └── 📁 bug-reports/             # Bug report storage
-├── 🌐 index.html                   # Game entry point
-├── 🎫 ticket-api.js                # Ticket API server
-└── 📦 package.json                 # Dependencies and scripts
+├── 📁 packages/                   # All new and modular code (core, systems, entities, fx, tooling)
+│   ├── core/                      # Game loop, global state, timing, math utils, config
+│   ├── entities/                  # Player, enemies, bullets
+│   ├── systems/                   # Camera, spawning, collision, UI, background, test mode
+│   ├── fx/                        # Explosions, visual effects, particles
+│   └── tooling/                   # Ticket manager, debug logger, Playwright probes
+├── 📁 js/                         # Thin wrappers, glue, or legacy entry points only
+│   ├── GameLoop.js                # Main game loop (entry point)
+│   ├── ...                        # Compatibility stubs, migration glue
+│   └── explosions/                # (legacy, being migrated)
+├── 📁 docs/                       # Documentation
+│   ├── archive/                   # Archived documentation
+│   └── vision/                    # Project vision documents
+├── 📁 scripts/                    # Utility scripts
+│   ├── powershell/                # PowerShell environment scripts
+│   ├── move-bug-reports.js        # Bug report file watcher
+│   ├── run-mcp-tests.js           # MCP testing utilities
+│   └── update-ticket-status.js    # Ticket management utilities
+├── 📁 tests/                      # Testing infrastructure
+│   └── bug-reports/               # Bug report storage
+├── 🌐 index.html                  # Game entry point
+├── 🎫 ticket-api.js               # Ticket API server
+└── 📦 package.json                # Dependencies and scripts
 ```
 
 ## Project Structure & Architecture
 
-- **Strict modular architecture**: All code is organized by system or entity (see `/js/`).
-- **No legacy/monolithic files**: Only use modular files listed in `.cursorrules` and `/js/`.
-- **Core Systems**: `GameLoop.js`, `GameState.js`, `CameraSystem.js`, `SpawnSystem.js`, `CollisionSystem.js`, `UIRenderer.js`, `BackgroundRenderer.js`, `TestMode.js`
-- **Entities**: `player.js`, `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js`, `EnemyFactory.js`, `bullet.js`
-- **Support**: `Audio.js`, `BeatClock.js`, `visualEffects.js`, `effects.js`, `config.js`, `mathUtils.js`
-- **Other**: `ticketManager.js`, `ai-liveness-probe.js`
-- **See `/js/` for the full, up-to-date list.**
+- **Strict modular architecture:** All new and modular code lives in `packages/` (`core`, `systems`, `entities`, `fx`, `tooling`).
+- **No legacy/monolithic files:** Only use modular files listed in `.cursorrules` and under `packages/`.
+- **js/** is for wrappers, glue, or legacy entry points only. Do not add new code to `js/`.
+- **Core Systems:** See `packages/systems/` for main systems (GameLoop, GameState, CameraSystem, etc.)
+- **Entities:** See `packages/entities/` for Player, BaseEnemy, Grunt, Rusher, Tank, Stabber, EnemyFactory, bullet, etc.
+- **Support:** See `packages/core/` for Audio, BeatClock, visualEffects, effects, config, mathUtils, etc.
+- **Other:** Ticketing, probes, and debug helpers are in `packages/tooling/`.
+- **See `packages/` for the full, up-to-date list.**
 
 > **Always consult the latest `.cursorrules` for the single source of truth on architecture, coding standards, and best practices.**
 
@@ -88,7 +88,10 @@ vibe/
 
 - **All work (bugs, features, enhancements, tasks) is tracked via the modular ticketing system.**
 - Tickets are structured JSON files in `tests/bug-reports/`.
-- Use `ticketManager.js` and `ticket-api.js` for all ticket management (in-game, admin, automation).
+- The system uses a shared `TicketCore` library for consistent ticket operations across:
+  - Browser-based `ticketManager.js` (in-game and admin UI)
+  - Node.js `ticket-api.js` (API server)
+  - CLI tools (`ticket-cli.js`)
 - **See [`docs/TICKETING_SYSTEM_GUIDE.md`](./docs/TICKETING_SYSTEM_GUIDE.md) for full documentation, schema, and workflow.**
 - Each ticket must have a unique `id` and specify a `type` (`bug`, `feature`, `enhancement`, `task`).
 - Artifacts (screenshots, logs) are grouped per ticket and auto-moved by `move-bug-reports.js`.
@@ -96,28 +99,30 @@ vibe/
 
 ## Ticketing System CLI (AI/Automation/Dev)
 
-The recommended way to create, update, get, and list tickets from the command line or scripts is via the ticket CLI wrappers:
+The recommended way to create, update, get, and list tickets from the command line or scripts is via the ticket CLI:
 
-### Usage
+```bash
+# Create a ticket
+bun run ticket:create type=bug title="My bug" tags=ai,urgent checklist='["step1","step2"]'
 
-- **Create a ticket:**
-  ```sh
-  bun run ticket:create type=bug title="My bug" status=open tags=test,urgent
-  ```
-- **Update a ticket:**
-  ```sh
-  bun run ticket:update id=BUG-... status=closed
-  ```
-- **Get a ticket:**
-  ```sh
-  bun run ticket:get id=BUG-...
-  ```
-- **List all tickets:**
-  ```sh
-  bun run ticket:list
-  ```
+# Update a ticket
+bun run ticket:update id=BUG-... status=closed
 
-Arguments are passed as key=value pairs. For `tags`, use a comma-separated list (e.g., `tags=ai,urgent`).
+# Get a ticket
+bun run ticket:get id=BUG-...
+
+# List all tickets
+bun run ticket:list
+
+# Check off a checklist step
+bun run ticket:check id=BUG-... step="step1" result="Passed"
+
+# Get the latest/focused ticket
+bun run ticket:latest
+
+# Set a ticket as focus
+bun run ticket:update id=BUG-... tags=focus,ai,testing
+```
 
 This CLI is cross-platform, robust, and hides all curl/PowerShell/JSON quirks. It is the preferred interface for AI, automation, and scripting.
 

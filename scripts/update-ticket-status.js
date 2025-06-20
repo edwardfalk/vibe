@@ -2,7 +2,7 @@
  * Simple script to update ticket status
  */
 
-import { TicketManager } from '../js/ticketManager.js';
+import { TicketManager } from '../packages/tooling/src/ticketManager.js';
 
 async function updateTicketStatus(ticketId, status, resolution = '') {
   const ticketManager = new TicketManager();

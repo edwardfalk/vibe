@@ -2,11 +2,11 @@
 // Probe: Liveness and Entity Presence with Automated Bug Reporting
 
 (async function () {
-  const { random } = await import('./mathUtils.js');
+  const { random } = await import('../packages/core/src/mathUtils.js');
   // Import ticketManager API if available (assume browser context with ES modules)
   let ticketManager = null;
   try {
-    ticketManager = await import('./ticketManager.js');
+    ticketManager = await import('../packages/tooling/src/ticketManager.js');
   } catch (e) {
     // Not available in all contexts
   }

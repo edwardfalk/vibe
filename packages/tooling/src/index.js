@@ -3,5 +3,5 @@
 
 export {};
 
-export * from './ticketManager.js';
+// export * from './ticketManager.js'; // REMOVED: Node-only, not browser-safe
 export { setupRemoteConsoleLogger } from './RemoteConsoleLogger.js';

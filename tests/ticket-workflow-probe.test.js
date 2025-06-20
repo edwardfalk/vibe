@@ -1,5 +1,6 @@
-import { test, expect } from 'playwright/test';
+import { test, expect } from '@playwright/test';
 import { spawnSync, spawn } from 'child_process';
+import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 /** Helper to run shell commands and capture stdout. Throws on non-zero exit. */
 function run(cmd) {
@@ -23,6 +24,10 @@ async function ensureTicketApi() {
   apiProc.unref();
   await new Promise((r) => setTimeout(r, 3000));
 }
+
+test.beforeAll(() => {
+  DebugLogger.log('Playwright ticket workflow probe started');
+});
 
 test.describe('Ticket CLI workflow (AI stable)', () => {
   test('create → update → checklist → latest', async () => {
