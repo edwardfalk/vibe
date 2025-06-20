@@ -1,0 +1,15 @@
+{
+  "name": "@vibe/systems",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "description": "Game systems: camera, spawning, collision, UI, background, testing mode.",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@vibe/core": "workspace:*",
+    "@vibe/entities": "workspace:*"
+  }
+} 

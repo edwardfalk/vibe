@@ -1,0 +1,7 @@
+{
+  "name": "@vibe/game",
+  "version": "0.1.0",
+  "description": "Game orchestrator package for Vibe",
+  "type": "module",
+  "exports": "./src/index.js"
+} 

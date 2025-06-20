@@ -303,7 +303,7 @@ The Model Context Protocol (MCP) is a universal, open standard for connecting AI
 - **How to Use:**
   ```js
   mcp_filesystem_read_file({
-    path: 'C:/CursorWorkspace/projects/vibe/README.md',
+    path: 'D:/projects/vibe/README.md',
   });
   ```
 - **Best Practices:** Use absolute paths; check file size for large files.
@@ -689,7 +689,7 @@ The Model Context Protocol (MCP) is a universal, open standard for connecting AI
   - Will fail with a "path should be..." error if given an absolute path
 
 - **MCP Filesystem tools** (write, read, edit, move, etc.):
-  - Only accept **absolute paths** (e.g., `C:/CursorWorkspace/projects/vibe/file-command-tests/native-test/test.txt`)
+  - Only accept **absolute paths** (e.g., `D:/projects/vibe/file-command-tests/native-test/test.txt`)
   - Will fail with "Access denied" if given a relative path or a path outside allowed directories
 
 ---
@@ -700,7 +700,7 @@ Before using MCP filesystem tools, always check which absolute paths are permitt
 
 ```js
 mcp_filesystem_list_allowed_directories({});
-// Returns: [ "C:/CursorWorkspace/projects", ... ]
+// Returns: [ "D:/projects", ... ]
 ```
 
 **Best Practice:**
@@ -770,8 +770,8 @@ The MCP filesystem server also provides tools for working with XML files.
 
 ```js
 mcp_filesystem_xml_to_json({
-  xmlPath: 'C:/CursorWorkspace/projects/vibe/data/sample.xml',
-  jsonPath: 'C:/CursorWorkspace/projects/vibe/data/sample.json',
+  xmlPath: 'D:/projects/vibe/data/sample.xml',
+  jsonPath: 'D:/projects/vibe/data/sample.json',
   options: { format: true, indentSize: 2 },
 });
 ```
@@ -796,7 +796,7 @@ mcp_filesystem_xml_to_json({
 1. **Always use `dryRun` for MCP edits and review the diff.**
 2. **Backup the file before any real edit.**
 3. **Apply the edit.**
-4. **Immediately read and validate the file’s content and structure.**
+4. **Immediately read and validate the file's content and structure.**
 5. **If the file is corrupted or missing expected content, restore from backup.**
 6. **Optionally, run a linter/validator for code or config files.**
 7. **Delete the backup if the edit is successful.**

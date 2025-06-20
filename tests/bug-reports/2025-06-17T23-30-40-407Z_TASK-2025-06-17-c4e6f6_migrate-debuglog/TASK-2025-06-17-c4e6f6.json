@@ -1,0 +1,21 @@
+{
+  "type": "task",
+  "title": "Migrate DebugLogger.js to packages/tooling and update all imports",
+  "tags": "refactor,modularization,logging",
+  "checklist": [
+    "Move DebugLogger.js to packages/tooling/src/DebugLogger.js",
+    "Update all imports to new path",
+    "Deprecate old js/DebugLogger.js with error",
+    "Verify no legacy imports remain",
+    "Document migration in ticket system"
+  ],
+  "id": "TASK-2025-06-17-c4e6f6",
+  "status": "open",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-17T23:30:40.406Z",
+  "updatedAt": "2025-06-17T23:30:40.407Z",
+  "slug": "migrate-debuglog",
+  "folder": "2025-06-17T23-30-40-407Z_TASK-2025-06-17-c4e6f6_migrate-debuglog"
+}

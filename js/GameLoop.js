@@ -8,23 +8,15 @@
  * - Stabbers = Off-beat accent (beat 3.5)
  */
 
-import { Player } from './player.js';
-import { EnemyFactory } from './EnemyFactory.js';
-import { ExplosionManager } from './explosions/ExplosionManager.js';
-import { GameState } from './GameState.js';
-import { CameraSystem } from './CameraSystem.js';
-import { SpawnSystem } from './SpawnSystem.js';
-import { BackgroundRenderer } from './BackgroundRenderer.js';
-import { UIRenderer } from './UIRenderer.js';
-import { CollisionSystem } from './CollisionSystem.js';
-import { TestMode } from './TestMode.js';
-import { Audio } from './Audio.js';
-import { BeatClock } from './BeatClock.js';
-import { Bullet } from './bullet.js';
-import { EffectsManager } from './effects.js';
-import VisualEffectsManager from './visualEffects.js';
-import { CONFIG } from './config.js';
+import { Player, EnemyFactory, Bullet } from '@vibe/entities';
+import { ExplosionManager, EffectsManager } from '@vibe/fx';
+import VisualEffectsManager from '@vibe/fx/visualEffects.js';
 import {
+  GameState,
+  Audio,
+  BeatClock,
+  MusicManager,
+  CONFIG,
   sqrt,
   max,
   min,
@@ -35,7 +27,22 @@ import {
   atan2,
   cos,
   sin,
-} from './mathUtils.js';
+} from '@vibe/core';
+import {
+  CameraSystem,
+  SpawnSystem,
+  BackgroundRenderer,
+  UIRenderer,
+  CollisionSystem,
+  TestMode,
+  BulletSystem,
+  BombSystem,
+  InputSystem,
+} from '@vibe/systems';
+import { setupRemoteConsoleLogger } from '@vibe/tooling';
+import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
+import ProfilerOverlay from '@vibe/fx/ProfilerOverlay.js';
+import AdaptiveLODManager from '@vibe/fx/AdaptiveLODManager.js';
 
 // Core game objects
 let player;
@@ -49,6 +56,19 @@ let explosionManager;
 let effectsManager;
 let visualEffectsManager;
 let audio;
+
+// Sync local variables to window globals after restart
+window.updateGameLoopLocals = function () {
+  player = window.player;
+  enemies = window.enemies;
+  playerBullets = window.playerBullets;
+  enemyBullets = window.enemyBullets;
+  activeBombs = window.activeBombs;
+  explosionManager = window.explosionManager;
+  effectsManager = window.effectsManager;
+  visualEffectsManager = window.visualEffectsManager;
+  audio = window.audio;
+};
 
 // Global system references for easy access
 window.player = null;
@@ -78,6 +98,9 @@ window.arrowUpPressed = false;
 window.arrowDownPressed = false;
 window.arrowLeftPressed = false;
 window.arrowRightPressed = false;
+
+// Attach profiler overlay for global access
+window.profilerOverlay = ProfilerOverlay;
 
 // Input event handler helpers
 function onKeyDown(e) {
@@ -151,14 +174,18 @@ if (!window.uiKeyListenersAdded) {
       const singleActionKeys = [
         'r',
         'R',
-        'p',
-        'P',
+        'Escape',
         'm',
         'M',
         't',
         'T',
         'e',
         'E',
+        'F6',
+        'F7',
+        'F8',
+        'F10',
+        '1','2','3','4',
         ' ',
       ];
       if (singleActionKeys.includes(event.key) && window.uiRenderer) {
@@ -169,12 +196,28 @@ if (!window.uiKeyListenersAdded) {
   window.uiKeyListenersAdded = true;
 }
 
+// Add key toggle for profiler overlay (P key) once
+if (!window.profilerOverlayToggleAdded) {
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'p' || e.key === 'P') && !e.repeat) {
+      if (window.profilerOverlay) {
+        window.profilerOverlay.toggle();
+      }
+    }
+  });
+  window.profilerOverlayToggleAdded = true;
+}
+
 function setup(p) {
   p.createCanvas(800, 600);
 
   // Initialize player at center
   player = new Player(p, p.width / 2, p.height / 2, window.cameraSystem);
   window.player = player;
+  // Inform all systems that player reference changed (event-bus pattern)
+  window.dispatchEvent(
+    new CustomEvent('playerChanged', { detail: window.player })
+  );
 
   // Initialize global arrays
   window.enemies = enemies;
@@ -189,19 +232,21 @@ function setup(p) {
   // Initialize effects systems
   effectsManager = new EffectsManager();
   window.effectsManager = effectsManager;
-  
+
   if (!window.visualEffectsManager) {
     window.visualEffectsManager = new VisualEffectsManager(
       window.backgroundLayers
     );
+    // Ensure visual effects system is fully initialized once p5 is ready
+    window.visualEffectsManager.init(p);
   }
   console.log('✨ Visual effects enabled - full rendering active');
-    
-    // Initialize unified audio system
-    if (!window.audio) {
-        window.audio = new Audio(p, window.player);
-    }
-    console.log('🎵 Unified audio system initialized');
+
+  // Initialize unified audio system
+  if (!window.audio) {
+    window.audio = new Audio(p, window.player);
+  }
+  console.log('🎵 Unified audio system initialized');
 
   // Initialize modular systems
   if (!window.gameState) {
@@ -263,6 +308,12 @@ function setup(p) {
     console.log('🎵 BeatClock initialized and assigned to window.beatClock');
   }
 
+  // Background music (kick/snare/hat) synced to BeatClock
+  if (!window.musicManager) {
+    window.musicManager = new MusicManager(window.audio, window.beatClock);
+    console.log('🎶 Music manager initialised');
+  }
+
   // Initial enemy spawn
   if (window.spawnSystem) {
     window.spawnSystem.spawnEnemies(1);
@@ -272,6 +323,9 @@ function setup(p) {
 }
 
 function draw(p) {
+  // Begin profiler frame timing
+  EffectsProfiler.startFrame();
+
   // Ensure global frameCount is updated for all modules and probes (p5 instance mode)
   window.frameCount = p.frameCount;
 
@@ -327,12 +381,29 @@ function draw(p) {
   if (window.uiRenderer) {
     window.uiRenderer.drawUI(p);
   }
+
+  // ------------------ Profiler overlay (after UI) ------------------
+  EffectsProfiler.endFrame();
+  if (window.profilerOverlay) {
+    window.profilerOverlay.draw(p);
+  }
+
+  // Adaptive LOD adjustment
+  AdaptiveLODManager.update();
 }
 
 function updateGame(p) {
+  // Resync local references to dynamic global arrays (enemies may be reassigned)
+  enemies = window.enemies;
+
   // Update BeatClock every frame for accurate rhythm timing
   if (window.beatClock && typeof window.beatClock.update === 'function') {
     window.beatClock.update();
+  }
+
+  // Music update (beat-sync)
+  if (window.musicManager) {
+    window.musicManager.update();
   }
 
   // Test mode - automated movement and shooting
@@ -368,16 +439,16 @@ function updateGame(p) {
     }
   }
 
-  // Update bullets
-  updateBullets(p);
+  // Update bullets via modular system
+  updateBullets();
 
   // Immediately process bullet collisions to catch hits before enemies move
   if (window.collisionSystem) {
     window.collisionSystem.checkBulletCollisions();
   }
 
-  // Update bombs
-  updateBombs(p);
+  // Update bombs via modular system
+  updateBombs();
 
   // Update enemies
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -611,7 +682,7 @@ function updateGame(p) {
 
   // Update explosion manager and handle damage events
   if (explosionManager) {
-    const damageEvents = explosionManager.update();
+    const damageEvents = explosionManager.update(p.deltaTime);
 
     // Process area damage events from plasma clouds and radioactive debris
     if (damageEvents && damageEvents.length > 0) {
@@ -806,171 +877,12 @@ function handleAreaDamageEvents(damageEvents) {
   }
 }
 
-function updateBullets(p) {
-  // Update player bullets
-  for (let i = playerBullets.length - 1; i >= 0; i--) {
-    const bullet = playerBullets[i];
-    bullet.update();
-
-    if (bullet.isOffScreen()) {
-      playerBullets.splice(i, 1);
-    }
-  }
-
-  // Update enemy bullets
-  for (let i = enemyBullets.length - 1; i >= 0; i--) {
-    const bullet = enemyBullets[i];
-    bullet.update();
-
-    if (bullet.isOffScreen()) {
-      console.log(
-        `➖ Removing enemy bullet (off-screen): ${bullet.owner} at (${Math.round(bullet.x)}, ${Math.round(bullet.y)}) - Remaining: ${enemyBullets.length - 1}`
-      );
-      enemyBullets.splice(i, 1);
-    }
-  }
+function updateBullets() {
+  BulletSystem.update();
 }
 
-function updateBombs(p) {
-  for (let i = activeBombs.length - 1; i >= 0; i--) {
-    const bomb = activeBombs[i];
-    bomb.timer--;
-
-    // Find the tank that placed this bomb to update its position
-    const tank = enemies.find((e) => e.id === bomb.tankId);
-    if (tank) {
-      bomb.x = tank.x;
-      bomb.y = tank.y;
-    }
-
-    // Show countdown warnings
-    const secondsLeft = Math.ceil(bomb.timer / 60);
-    if (secondsLeft <= 3 && secondsLeft > 0 && bomb.timer % 60 === 0) {
-      if (window.audio && window.audio.speak && tank) {
-        window.audio.speak(tank, secondsLeft.toString(), 'player');
-        console.log(
-          `⏰ TIME BOMB COUNTDOWN: ${secondsLeft} (Tank ID: ${tank.id}) - Voice: Player`
-        );
-      }
-    }
-
-    if (bomb.timer <= 0) {
-      // BOMB EXPLODES!
-      console.log(
-        `💥 TANK TIME BOMB EXPLODED! Massive damage at (${bomb.x}, ${bomb.y})`
-      );
-
-      // Create massive explosion effects
-      if (explosionManager) {
-        explosionManager.addExplosion(bomb.x, bomb.y, 'tank-plasma');
-        explosionManager.addRadioactiveDebris(bomb.x, bomb.y);
-        explosionManager.addPlasmaCloud(bomb.x, bomb.y);
-      }
-
-      if (window.audio) {
-        window.audio.playBombExplosion(bomb.x, bomb.y);
-      }
-
-      if (window.cameraSystem) {
-        window.cameraSystem.addShake(20, 40); // Massive screen shake
-      }
-
-      // Apply massive damage to everything in explosion radius
-      const explosionRadius = 250; // Large damage radius
-      const explosionRadiusSq = explosionRadius * explosionRadius;
-
-      // Damage player if in range
-      if (window.player) {
-        const dx = bomb.x - window.player.x;
-        const dy = bomb.y - window.player.y;
-        const playerDistSq = dx * dx + dy * dy;
-        if (playerDistSq < explosionRadiusSq) {
-          const playerDistance = sqrt(playerDistSq); // Only for proportional damage
-          const damage = max(
-            10,
-            floor(40 * (1 - playerDistance / explosionRadius))
-          );
-          console.log(
-            `💥 Player took ${damage} bomb damage! Distance: ${playerDistance.toFixed(1)}`
-          );
-
-          if (window.audio) {
-            window.audio.playPlayerHit();
-          }
-
-          if (window.gameState) {
-            window.gameState.resetKillStreak();
-          }
-
-          if (window.player.takeDamage(damage, 'tank-bomb')) {
-            if (window.gameState) {
-              window.gameState.setGameState('gameOver');
-            }
-            console.log('💀 PLAYER KILLED BY TANK BOMB!');
-          } else {
-            // Apply massive knockback
-            const knockbackAngle = atan2(
-              window.player.y - bomb.y,
-              window.player.x - bomb.x
-            );
-            const knockbackForce = 15;
-            window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
-            window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
-          }
-        }
-      }
-
-      // Damage enemies in range (including the tank that placed the bomb)
-      for (let j = enemies.length - 1; j >= 0; j--) {
-        const enemy = enemies[j];
-        const dx = bomb.x - enemy.x;
-        const dy = bomb.y - enemy.y;
-        const enemyDistSq = dx * dx + dy * dy;
-        if (enemyDistSq < explosionRadiusSq) {
-          const enemyDistance = sqrt(enemyDistSq); // Only for proportional damage
-          const damage = max(
-            5,
-            floor(30 * (1 - enemyDistance / explosionRadius))
-          );
-          const damageResult = enemy.takeDamage(damage, null, 'bomb');
-
-          if (damageResult === true) {
-            // Enemy killed by bomb
-            console.log(`💥 ${enemy.type} destroyed by tank bomb explosion!`);
-
-            // Special message if the tank destroyed itself
-            if (enemy.id === bomb.tankId) {
-              console.log(`💀 TANK DESTROYED BY TIME BOMB! Self-destruction!`);
-            }
-
-            if (window.collisionSystem) {
-              window.collisionSystem.handleEnemyDeath(
-                enemy,
-                enemy.type,
-                enemy.x,
-                enemy.y
-              );
-            }
-
-            enemies.splice(j, 1);
-
-            if (window.gameState) {
-              window.gameState.addKill();
-              window.gameState.addScore(20); // Bomb kills worth more points
-            }
-          } else if (damageResult === 'exploding') {
-            // Rusher started exploding from bomb
-            if (window.explosionManager) {
-              window.explosionManager.addExplosion(enemy.x, enemy.y, 'hit');
-            }
-            console.log(
-              `💥 Stabber friendly fire caused ${enemy.type} to explode!`
-            );
-          }
-        }
-      }
-    }
-  }
+function updateBombs() {
+  BombSystem.update();
 }
 
 // --- p5.js instance mode initialization for ES module compatibility ---
@@ -1002,3 +914,28 @@ function unlockAudioAndShowCanvas() {
 }
 window.addEventListener('pointerdown', unlockAudioAndShowCanvas);
 window.addEventListener('keydown', unlockAudioAndShowCanvas);
+
+// -----------------------------------------------------------------------------
+// Activate browser-side remote logging as early as possible. This captures all
+// console output (log/info/warn/error) and POSTs it to the Ticket API running
+// on port 3001 where it is persisted to `.debug/` for later troubleshooting.
+// -----------------------------------------------------------------------------
+setupRemoteConsoleLogger();
+
+// Expose Player class as global for robust restart logic
+window.Player = Player;
+
+// Initialise input system once at module load
+InputSystem.initialize();
+
+// Bridge modular classes to legacy global namespace for backward compatibility (temporary during migration)
+if (typeof window !== 'undefined') {
+  window.ExplosionManager = ExplosionManager; // Needed by GameState.restart()
+  window.EffectsManager = EffectsManager; // Needed by GameState.restart()
+  window.VisualEffectsManager = VisualEffectsManager; // Needed by GameState.restart()
+  // Game systems & entities referenced inside GameState.restart()
+  window.Player = Player;
+  window.SpawnSystem = SpawnSystem;
+  window.CollisionSystem = CollisionSystem;
+  window.BeatClock = BeatClock;
+}

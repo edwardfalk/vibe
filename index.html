@@ -33,6 +33,30 @@
         }
 
     </style>
+    <!-- Import map for internal @vibe/* packages -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@vibe/core": "/packages/core/src/index.js",
+          "@vibe/core/": "/packages/core/src/",
+          "@vibe/systems": "/packages/systems/src/index.js",
+          "@vibe/systems/": "/packages/systems/src/",
+          "@vibe/entities": "/packages/entities/src/index.js",
+          "@vibe/entities/": "/packages/entities/src/",
+          "@vibe/fx": "/packages/fx/src/index.js",
+          "@vibe/fx/": "/packages/fx/src/",
+          "@vibe/tooling": "/packages/tooling/src/index.js",
+          "@vibe/tooling/": "/packages/tooling/src/",
+          "@vibe/game": "/packages/game/src/index.js",
+          "@vibe/game/": "/packages/game/src/"
+        }
+      }
+    </script>
+    <!-- Remote console logger (captures early errors before game boots) -->
+    <script type="module">
+      import { setupRemoteConsoleLogger } from '@vibe/tooling';
+      setupRemoteConsoleLogger();
+    </script>
 </head>
 <body>
     <div id="ui">
@@ -42,12 +66,13 @@
         <div style="margin-top: 10px; font-size: 12px;">
             <div id="soundStatus">🔇 Click or press M to enable sound</div>
             <div>💥 WASD to move, Mouse to aim & shoot</div>
-            <div>💨 Press Space to dash</div>
+            <div>💨 Press E to dash</div>
             <div>⏸️ Press P to pause/resume</div>
             <div>🧪 Press T to toggle test mode (auto-movement & shooting)</div>
-            <div>🚀 Press F7 for 3-minute extended gameplay test</div>
-            <div>📍 Press F6 for edge exploration test (visits all screen edges)</div>
-            <div>🛡️ Press F8 for enhanced edge exploration (with survival strategies)</div>
+            <div>📍 Press F6 for edge exploration test</div>
+            <div>🚀 Press F7 for 3-minute comprehensive test</div>
+            <div>🛡️ Press F8 for survival edge test</div>
+            <div>🎚️ Press F10 to toggle audio debug logs</div>
         </div>
     </div>
     
@@ -59,42 +84,15 @@
       <div>4: Stabber</div>
     </div>
     
-    <!-- Core configuration and utilities -->
-    <script type="module" src="js/config.js"></script>
-    <script type="module" src="js/BeatClock.js"></script>
-    <script type="module" src="js/Audio.js"></script>
-    
-    <!-- New modular systems (load before game objects) -->
-    <script type="module" src="js/GameState.js"></script>
-    <script type="module" src="js/CameraSystem.js"></script>
-    <script type="module" src="js/SpawnSystem.js"></script>
-    <script type="module" src="js/BackgroundRenderer.js"></script>
-    <script type="module" src="js/UIRenderer.js"></script>
-    <script type="module" src="js/CollisionSystem.js"></script>
-    <script type="module" src="js/TestMode.js"></script>
-    
-    <!-- Modular explosion system -->
-    <script type="module" src="js/explosions/Explosion.js"></script>
-    <script type="module" src="js/explosions/PlasmaCloud.js"></script>
-    <script type="module" src="js/explosions/RadioactiveDebris.js"></script>
-    <script type="module" src="js/explosions/ExplosionManager.js"></script>
-    
-    <!-- Game objects and effects -->
-    <script type="module" src="js/effects.js"></script>
-    <script type="module" src="js/visualEffects.js"></script>
-    <script type="module" src="js/player.js"></script>
-    
-    <!-- Modular enemy system (load in dependency order) -->
-    <script type="module" src="js/BaseEnemy.js"></script>
-    <script type="module" src="js/Grunt.js"></script>
-    <script type="module" src="js/Rusher.js"></script>
-    <script type="module" src="js/Tank.js"></script>
-    <script type="module" src="js/Stabber.js"></script>
-    <script type="module" src="js/EnemyFactory.js"></script>
-    
-    <script type="module" src="js/bullet.js"></script>
-    
-    <!-- Main game loop (load last) -->
-    <script type="module" src="js/GameLoop.js"></script>
+    <!-- Vibe bootstrap -->
+    <script type="module">
+      // Load side-effect barrels (systems register stubs & globals)
+      import '@vibe/core';
+      import '@vibe/systems';
+      import '@vibe/entities';
+      import '@vibe/fx';
+      // Start game loop via new @vibe/game package (uses legacy code internally for now)
+      import '@vibe/game';
+    </script>
 </body>
 </html> 

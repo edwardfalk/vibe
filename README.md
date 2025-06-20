@@ -6,7 +6,9 @@
 
 ## Documentation Map
 
+- [docs/PROJECT_VISION.md](./docs/PROJECT_VISION.md): Project vision, design pillars, and development philosophy
 - [.cursorrules](./.cursorrules): Core rules and standards (architecture, coding, workflow)
+- [docs/CODERABBIT_COMPLETE_GUIDE.md](./docs/CODERABBIT_COMPLETE_GUIDE.md): Complete CodeRabbit integration with deduplication system
 - [docs/TICKETING_SYSTEM_GUIDE.md](./docs/TICKETING_SYSTEM_GUIDE.md): Ticketing system schema and workflow
 - [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
 - [docs/MCP_TOOLS_GUIDE.md](./docs/MCP_TOOLS_GUIDE.md): Advanced MCP tool usage and best practices
@@ -15,7 +17,15 @@
 
 ## Overview
 
-Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
+Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. The beat is made with the beatClock. Sound effects, ambient noise and certain enemy actions happens with the beat. This is not something that should really be noticed when playing and controlling the player other than that the sounds together build the "music" in the game. The stabber, for example, is an enemy that tries to stab you with what from the beginning was a "laser knife" but now is more of a weird beak. The stabber makes a screech when attacking, but the game is made such that the stabber moves slowly near the player until he falls into the correct beat on 3.5 in the 4/4 beat where he can make his dissonant screech (all the other sounds harmonizes) and thereby syncopating the other sounds. Enememies with dark bass sounds act on beat 1 as bass drums, lighter punchy sounds fall in as snares, etc.
+
+The main character is a bizarre mad action hero/antihero that walks around in the middle of outer space blasting aliens that are a strange mix of murderous psychopaths, whiny babies and bumbling idiots. At the same time. The grunts are the simplest enemies, they have a baby-like voice and asks for their mommy and what the password is for the wifi while attacking and trying to kill you. They shoot and try to keep their distance. The stabbers make eerie female psycho noises and make dashing attacks when near. You can dash away yourself or shoot to keep them back. The rushers .. rush. and try to blow themselves up as close to you as possible. The tanks are giants with armor that shoot giant plasma balls that goes straight through both enemies and the player killing them instantly. If you kill a tank they collapse into a plasma cloud that's not healthy at all to enter. If you manage to get close enough to one you place a nuclear time bomb on it and have 3 seconds to get the hell out of there. When the bomb explodes the tank together with the nuke forms a radioactive greenish plasma cloud with particles in it. That cloud is even worse. 
+
+The player character fires quickly and makes a quarter note hihat beat. An idea to expand the game with is to have a shotgun power-up that fires more slowly, and you would get a damage bonus if you fire exactly on beat 1. If you keep the button pressed you could fire a little bit faster, but too get the damage bonus you would have to wait a moment longer and fire manually. 
+
+ Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
+
+For the project's core vision, design pillars, and development philosophy, see [`docs/PROJECT_VISION.md`](./docs/PROJECT_VISION.md).
 
 **Technology Stack:**
 
@@ -30,15 +40,45 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 ---
 
+## 📁 Project Structure
+
+```
+vibe/
+├── 📁 packages/                   # All new and modular code (core, systems, entities, fx, tooling)
+│   ├── core/                      # Game loop, global state, timing, math utils, config
+│   ├── entities/                  # Player, enemies, bullets
+│   ├── systems/                   # Camera, spawning, collision, UI, background, test mode
+│   ├── fx/                        # Explosions, visual effects, particles
+│   └── tooling/                   # Ticket manager, debug logger, Playwright probes
+├── 📁 js/                         # Thin wrappers, glue, or legacy entry points only
+│   ├── GameLoop.js                # Main game loop (entry point)
+│   ├── ...                        # Compatibility stubs, migration glue
+│   └── explosions/                # (legacy, being migrated)
+├── 📁 docs/                       # Documentation
+│   ├── archive/                   # Archived documentation
+│   └── vision/                    # Project vision documents
+├── 📁 scripts/                    # Utility scripts
+│   ├── powershell/                # PowerShell environment scripts
+│   ├── move-bug-reports.js        # Bug report file watcher
+│   ├── run-mcp-tests.js           # MCP testing utilities
+│   └── update-ticket-status.js    # Ticket management utilities
+├── 📁 tests/                      # Testing infrastructure
+│   └── bug-reports/               # Bug report storage
+├── 🌐 index.html                  # Game entry point
+├── 🎫 ticket-api.js               # Ticket API server
+└── 📦 package.json                # Dependencies and scripts
+```
+
 ## Project Structure & Architecture
 
-- **Strict modular architecture**: All code is organized by system or entity (see `/js/`).
-- **No legacy/monolithic files**: Only use modular files listed in `.cursorrules` and `/js/`.
-- **Core Systems**: `GameLoop.js`, `GameState.js`, `CameraSystem.js`, `SpawnSystem.js`, `CollisionSystem.js`, `UIRenderer.js`, `BackgroundRenderer.js`, `TestMode.js`
-- **Entities**: `player.js`, `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js`, `EnemyFactory.js`, `bullet.js`
-- **Support**: `Audio.js`, `BeatClock.js`, `visualEffects.js`, `effects.js`, `config.js`, `mathUtils.js`
-- **Other**: `ticketManager.js`, `ai-liveness-probe.js`
-- **See `/js/` for the full, up-to-date list.**
+- **Strict modular architecture:** All new and modular code lives in `packages/` (`core`, `systems`, `entities`, `fx`, `tooling`).
+- **No legacy/monolithic files:** Only use modular files listed in `.cursorrules` and under `packages/`.
+- **js/** is for wrappers, glue, or legacy entry points only. Do not add new code to `js/`.
+- **Core Systems:** See `packages/systems/` for main systems (GameLoop, GameState, CameraSystem, etc.)
+- **Entities:** See `packages/entities/` for Player, BaseEnemy, Grunt, Rusher, Tank, Stabber, EnemyFactory, bullet, etc.
+- **Support:** See `packages/core/` for Audio, BeatClock, visualEffects, effects, config, mathUtils, etc.
+- **Other:** Ticketing, probes, and debug helpers are in `packages/tooling/`.
+- **See `packages/` for the full, up-to-date list.**
 
 > **Always consult the latest `.cursorrules` for the single source of truth on architecture, coding standards, and best practices.**
 
@@ -48,11 +88,43 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 - **All work (bugs, features, enhancements, tasks) is tracked via the modular ticketing system.**
 - Tickets are structured JSON files in `tests/bug-reports/`.
-- Use `ticketManager.js` and `ticket-api.js` for all ticket management (in-game, admin, automation).
+- The system uses a shared `TicketCore` library for consistent ticket operations across:
+  - Browser-based `ticketManager.js` (in-game and admin UI)
+  - Node.js `ticket-api.js` (API server)
+  - CLI tools (`ticket-cli.js`)
 - **See [`docs/TICKETING_SYSTEM_GUIDE.md`](./docs/TICKETING_SYSTEM_GUIDE.md) for full documentation, schema, and workflow.**
 - Each ticket must have a unique `id` and specify a `type` (`bug`, `feature`, `enhancement`, `task`).
 - Artifacts (screenshots, logs) are grouped per ticket and auto-moved by `move-bug-reports.js`.
 - The AI and automated scripts have full access to the ticketing system and bug-report modal.
+
+## Ticketing System CLI (AI/Automation/Dev)
+
+The recommended way to create, update, get, and list tickets from the command line or scripts is via the ticket CLI:
+
+```bash
+# Create a ticket
+bun run ticket:create type=bug title="My bug" tags=ai,urgent checklist='["step1","step2"]'
+
+# Update a ticket
+bun run ticket:update id=BUG-... status=closed
+
+# Get a ticket
+bun run ticket:get id=BUG-...
+
+# List all tickets
+bun run ticket:list
+
+# Check off a checklist step
+bun run ticket:check id=BUG-... step="step1" result="Passed"
+
+# Get the latest/focused ticket
+bun run ticket:latest
+
+# Set a ticket as focus
+bun run ticket:update id=BUG-... tags=focus,ai,testing
+```
+
+This CLI is cross-platform, robust, and hides all curl/PowerShell/JSON quirks. It is the preferred interface for AI, automation, and scripting.
 
 ---
 
@@ -107,10 +179,49 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 ---
 
+## CodeRabbit Integration
+
+Vibe includes a comprehensive CodeRabbit review analysis system that captures ALL review data from GitHub:
+
+### Features
+- **Complete Review Capture**: Gets general reviews AND line-by-line comments
+- **File Context**: Includes exact file paths and line numbers for suggestions
+- **Smart Categorization**: Automatically categorizes suggestions (security, bugs, performance, etc.)
+- **Priority Analysis**: Identifies high-priority issues requiring immediate attention
+- **Structured Data**: Saves comprehensive data to JSON files for analysis
+- **Ticket Integration**: Automatically creates tickets for high-priority issues
+
+### Quick Start
+```bash
+# Get complete CodeRabbit review data (recommended)
+bun run coderabbit:cycle
+
+# Or run steps individually:
+bun run coderabbit:fetch-complete  # Fetch all review data
+bun run coderabbit:analyze         # Display analysis
+bun run coderabbit:auto-tickets    # Create tickets
+```
+
+### Generated Files
+- **`coderabbit-reviews/latest-complete.json`** - Complete review data with context
+- **`coderabbit-reviews/latest-summary.json`** - Analysis summary and metrics  
+- **`coderabbit-reviews/latest-high-priority.json`** - Critical issues for immediate action
+
+### Current Results
+- **1,402 total suggestions** extracted from 14 PRs
+- **111 high-priority issues** identified (security, bugs, critical fixes)
+- **Complete file context** for targeted fixes
+
+For detailed documentation, see [`docs/CODERABBIT_COMPLETE_GUIDE.md`](./docs/CODERABBIT_COMPLETE_GUIDE.md).
+
+---
+
 ## References
 
+- `docs/PROJECT_VISION.md`: Project vision, design pillars, and development philosophy
 - `.cursorrules`: Core standards and workflow reference
 - `docs/TICKETING_SYSTEM_GUIDE.md`: Ticketing system documentation
+- `docs/CODERABBIT_COMPLETE_GUIDE.md`: Complete CodeRabbit integration guide with deduplication system
 - `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`: Automated testing guide
 - `docs/AUDIO_CONFIGURATION_GUIDE.md`: Audio setup and troubleshooting
 - `docs/DESIGN.md`: Cosmic Beat System and musical gameplay design
@@ -149,11 +260,12 @@ bun run test:debug    # Debug mode
    ```bash
     bun run debug:probe   # Game health check + summary
    ```
-5. **CodeRabbit Integration** - Automated review processing
+5. **CodeRabbit Integration** - Comprehensive review analysis and processing
    ```bash
-   bun run coderabbit:analyze    # Analyze CodeRabbit reviews only
-bun run coderabbit:integrate  # Full integration (analysis + tickets + tests)
-bun run coderabbit:workflow   # Complete CodeRabbit workflow
+   bun run coderabbit:fetch-complete  # Fetch ALL CodeRabbit reviews (comprehensive)
+   bun run coderabbit:analyze         # Analyze fetched review data
+   bun run coderabbit:auto-tickets    # Create tickets from high-priority issues
+   bun run coderabbit:cycle           # Complete cycle: fetch → analyze → tickets
    ```
 
 ### Probe-Driven Testing
@@ -220,3 +332,16 @@ For detailed testing documentation, see:
 
 - [MCP Playwright Testing Guide](docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md)
 - [Ticketing System Guide](docs/TICKETING_SYSTEM_GUIDE.md)
+
+## 🆕 Packages Workspace Layout (in progress)
+
+```
+packages/
+  core/       # Game loop, global state, timing, math utils, config
+  entities/   # Player, enemies, bullets
+  systems/    # Camera, spawning, collision, UI, background, test mode
+  fx/         # Explosions, visual effects, particles
+  tooling/    # Ticket manager, debug logger, Playwright probes
+```
+
+> NOTE: Migration from `/js` to workspaces is happening incrementally. Stubs exist in `/js` to keep the game running during the transition.
