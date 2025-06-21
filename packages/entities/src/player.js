@@ -352,7 +352,7 @@ export class Player {
 
     // Enhanced muzzle flash with glow
     if (this.muzzleFlash > 0) {
-      const flashSize = this.muzzleFlash * 0.4;
+      const flashSize = this.muzzleFlash * 0.8;
       const flashIntensity = this.muzzleFlash / 10;
 
       // Outer glow
@@ -392,8 +392,25 @@ export class Player {
     p.ellipse(-eyeOffset, -s * 0.25, eyeSize);
     p.ellipse(eyeOffset, -s * 0.25, eyeSize);
 
+    // Sunglasses (slightly larger)
+    p.fill(20); // Very dark gray/black
+    const lensW = eyeSize * 1.92; // 20% larger than before
+    const lensH = eyeSize * 1.32; // 20% larger than before
+    p.ellipse(-eyeOffset, -s * 0.25, lensW, lensH); // Left lens
+    p.ellipse(eyeOffset, -s * 0.25, lensW, lensH);  // Right lens
+
+    // Bridge
+    p.stroke(20);
+    p.strokeWeight(2);
+    p.line(-eyeOffset + lensW/2.5, -s * 0.25, eyeOffset - lensW/2.5, -s * 0.25);
+
+    // Arms
+    p.line(-eyeOffset - lensW/2, -s * 0.25, -eyeOffset - lensW, -s * 0.28);
+    p.line(eyeOffset + lensW/2, -s * 0.25, eyeOffset + lensW, -s * 0.28);
+    p.noStroke();
+
     // Small cosmic horns for flair
-    p.fill(128, 0, 128);
+    /* p.fill(128, 0, 128);
     p.triangle(
       -s * 0.12,
       -s * 0.35,
@@ -401,8 +418,8 @@ export class Player {
       -s * 0.55,
       -s * 0.01,
       -s * 0.35
-    );
-    p.triangle(s * 0.12, -s * 0.35, s * 0.05, -s * 0.55, s * 0.01, -s * 0.35);
+    ); */
+    //p.triangle(s * 0.12, -s * 0.35, s * 0.05, -s * 0.55, s * 0.01, -s * 0.35);
 
     // Add cosmic glow effect when healthy
     if (this.health > this.maxHealth * 0.7) {
