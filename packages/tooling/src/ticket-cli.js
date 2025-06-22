@@ -10,7 +10,7 @@ import {
   readTicket,
   listTickets,
   ensureMeta,
-  log
+  log,
 } from '../../core/src/TicketCore.js';
 
 function parseArgs(argv) {
@@ -21,7 +21,11 @@ function parseArgs(argv) {
       const k = arg.slice(0, eq);
       let v = arg.slice(eq + 1);
       if (v.startsWith('[') || v.startsWith('{')) {
-        try { v = JSON.parse(v); } catch { /* leave as string */ }
+        try {
+          v = JSON.parse(v);
+        } catch {
+          /* leave as string */
+        }
       } else if (v.includes(',')) {
         v = v.split(',');
       }
@@ -32,9 +36,14 @@ function parseArgs(argv) {
 }
 
 async function main() {
-  const [,, verb, ...rest] = process.argv;
-  if (!verb || !['create','update','get','list','latest','check'].includes(verb)) {
-    console.log('📝 Usage: bun run packages/tooling/src/ticket-cli.js <verb> k1=v1 k2=v2 ...');
+  const [, , verb, ...rest] = process.argv;
+  if (
+    !verb ||
+    !['create', 'update', 'get', 'list', 'latest', 'check'].includes(verb)
+  ) {
+    console.log(
+      '📝 Usage: bun run packages/tooling/src/ticket-cli.js <verb> k1=v1 k2=v2 ...'
+    );
     console.log('Verbs: create, update, get, list, latest, check');
     process.exit(1);
   }
@@ -49,7 +58,7 @@ async function main() {
       console.log(JSON.stringify(ticket, null, 2));
     } else if (verb === 'update') {
       if (!args.id) throw new Error('id required');
-      let ticket = await readTicket(args.id);
+      const ticket = await readTicket(args.id);
       Object.assign(ticket, args);
       ensureMeta(ticket, false);
       const updated = await writeTicket(ticket);
@@ -76,14 +85,24 @@ async function main() {
       }
     } else if (verb === 'check') {
       if (!args.id || !args.step) throw new Error('id and step required');
-      let ticket = await readTicket(args.id);
+      const ticket = await readTicket(args.id);
       if (!Array.isArray(ticket.checklist)) ticket.checklist = [];
-      const idx = ticket.checklist.findIndex(s => s.step === args.step);
+      const idx = ticket.checklist.findIndex((s) => s.step === args.step);
       const now = new Date().toISOString();
       if (idx >= 0) {
-        ticket.checklist[idx] = { ...ticket.checklist[idx], done: true, result: args.result || 'Checked', timestamp: now };
+        ticket.checklist[idx] = {
+          ...ticket.checklist[idx],
+          done: true,
+          result: args.result || 'Checked',
+          timestamp: now,
+        };
       } else {
-        ticket.checklist.push({ step: args.step, done: true, result: args.result || 'Checked', timestamp: now });
+        ticket.checklist.push({
+          step: args.step,
+          done: true,
+          result: args.result || 'Checked',
+          timestamp: now,
+        });
       }
       ensureMeta(ticket, false);
       const updated = await writeTicket(ticket);
@@ -96,4 +115,4 @@ async function main() {
   }
 }
 
-main(); 
+main();

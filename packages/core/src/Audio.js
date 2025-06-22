@@ -310,11 +310,23 @@ export class Audio {
         volume: 0.3,
         duration: 0.12,
       },
-      stabberKnifeHit: {
-        frequency: 2600,
+      stabberKnifeHit1: {
+        frequency: 3200,
+        waveform: 'sawtooth',
+        volume: 0.55,
+        duration: 0.07,
+      },
+      stabberKnifeHit2: {
+        frequency: 2800,
+        waveform: 'triangle',
+        volume: 0.5,
+        duration: 0.09,
+      },
+      stabberKnifeHit3: {
+        frequency: 3500,
         waveform: 'square',
-        volume: 0.45,
-        duration: 0.05,
+        volume: 0.6,
+        duration: 0.06,
       },
     };
 
@@ -763,7 +775,10 @@ export class Audio {
     );
     utterance.volume = Math.min(
       1,
-      config.volume * distanceAtt * this.volume * (this.categoryGain?.speech || 1)
+      config.volume *
+        distanceAtt *
+        this.volume *
+        (this.categoryGain?.speech || 1)
     );
 
     // Enhanced voice selection with effects
@@ -1529,6 +1544,17 @@ export class Audio {
   playStabberAttack(x, y) {
     this.playSound(SOUND.stabAttack, x, y);
   } // Stabber attacks use stabAttack sound
+
+  playStabberHit(x, y) {
+    // Randomly pick one of the metallic hit sounds
+    const variants = [
+      'stabberKnifeHit1',
+      'stabberKnifeHit2',
+      'stabberKnifeHit3',
+    ];
+    const pick = variants[Math.floor(Math.random() * variants.length)];
+    this.playSound(pick, x, y);
+  }
 
   /**
    * Development-time safety: ensure every SOUND id has a config and vice-versa.

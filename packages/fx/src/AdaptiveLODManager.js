@@ -18,12 +18,18 @@ function update() {
   if (!stats || !stats.avg) return;
   const avgMs = parseFloat(stats.avg);
 
-  if (avgMs > LOWER_THRESHOLD && effectsConfig.global.lodMultiplier > MIN_MULT) {
+  if (
+    avgMs > LOWER_THRESHOLD &&
+    effectsConfig.global.lodMultiplier > MIN_MULT
+  ) {
     effectsConfig.global.lodMultiplier = Math.max(
       MIN_MULT,
       effectsConfig.global.lodMultiplier - ADJUST_STEP
     );
-  } else if (avgMs < UPPER_THRESHOLD && effectsConfig.global.lodMultiplier < MAX_MULT) {
+  } else if (
+    avgMs < UPPER_THRESHOLD &&
+    effectsConfig.global.lodMultiplier < MAX_MULT
+  ) {
     effectsConfig.global.lodMultiplier = Math.min(
       MAX_MULT,
       effectsConfig.global.lodMultiplier + ADJUST_STEP
@@ -31,4 +37,4 @@ function update() {
   }
 }
 
-export default { update }; 
+export default { update };

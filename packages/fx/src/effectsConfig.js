@@ -97,4 +97,4 @@ export const effectsConfig = {
 // Convenience helper ---------------------------------------------------------
 export function getEnemyConfig(type = '') {
   return effectsConfig[type] || {};
-} 
+}

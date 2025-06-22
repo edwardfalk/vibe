@@ -106,8 +106,22 @@ export class CollisionSystem {
         const killResult = enemy.takeDamage(
           bullet.damage,
           bullet.angle,
-          'bullet'
+          'bullet',
+          bullet.x,
+          bullet.y
         );
+
+        // Play hit sound for every bullet hit (before checking for death)
+        if (window.audio) {
+          if (
+            enemy.type === 'stabber' &&
+            typeof window.audio.playStabberHit === 'function'
+          ) {
+            window.audio.playStabberHit(enemy.x, enemy.y);
+          } else if (typeof window.audio.playHit === 'function') {
+            window.audio.playHit(enemy.x, enemy.y);
+          }
+        }
 
         // Remove / deactivate bullet unless it is penetrating
         if (!bullet.penetrating) {
@@ -154,7 +168,12 @@ export class CollisionSystem {
       if (!bullet.checkCollision(player)) continue;
 
       // Player hit!
-      const lethal = player.takeDamage(bullet.damage, 'bullet');
+      const lethal = player.takeDamage(
+        bullet.damage,
+        'bullet',
+        bullet.x,
+        bullet.y
+      );
       window.audio?.playPlayerHit();
       window.gameState?.resetKillStreak();
 
@@ -212,7 +231,9 @@ export class CollisionSystem {
         const killResult = enemy.takeDamage(
           bullet.damage,
           bullet.angle,
-          'friendly-fire'
+          'friendly-fire',
+          bullet.x,
+          bullet.y
         );
 
         if (!bullet.penetrating) {
@@ -240,7 +261,12 @@ export class CollisionSystem {
   handleEnemyDeath(enemy, type, x, y) {
     // Explosion & gore!
     const killMethod = enemy.lastDamageSource || 'bullet';
-    if (window.explosionManager?.addKillEffect) {
+    if (type === 'grunt') {
+      // Use a green-tinted explosion for Grunt deaths
+      if (window.explosionManager?.addExplosion) {
+        window.explosionManager.addExplosion(x, y, 'grunt-green');
+      }
+    } else if (window.explosionManager?.addKillEffect) {
       window.explosionManager.addKillEffect(x, y, type, killMethod);
     } else {
       // Fallback generic explosion
@@ -290,7 +316,12 @@ export class CollisionSystem {
       const dx = x - window.player.x;
       const dy = y - window.player.y;
       if (dx * dx + dy * dy < radiusSq) {
-        const lethal = window.player.takeDamage?.(damage, 'rusher-explosion');
+        const lethal = window.player.takeDamage?.(
+          damage,
+          'rusher-explosion',
+          x,
+          y
+        );
         window.audio?.playPlayerHit();
         window.gameState?.resetKillStreak();
         if (lethal) {
@@ -309,7 +340,13 @@ export class CollisionSystem {
         const dy = y - enemy.y;
         if (dx * dx + dy * dy >= radiusSq) continue;
 
-        const killResult = enemy.takeDamage?.(damage, null, 'rusher-explosion');
+        const killResult = enemy.takeDamage?.(
+          damage,
+          null,
+          'rusher-explosion',
+          x,
+          y
+        );
         if (killResult === true) {
           this.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
           enemy.markedForRemoval = true;

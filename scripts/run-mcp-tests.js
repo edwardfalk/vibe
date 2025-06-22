@@ -256,7 +256,7 @@ async function killPort(port) {
   try {
     await new Promise((resolve, reject) => {
       const kill = spawn('kill-port', [port], { shell: true });
-      kill.on('close', (code) => code === 0 ? resolve() : reject());
+      kill.on('close', (code) => (code === 0 ? resolve() : reject()));
     });
   } catch (err) {
     DebugLogger.log(`Failed to kill port ${port}:`, err);
@@ -265,11 +265,15 @@ async function killPort(port) {
 
 async function startDevServer() {
   await killPort(FIVE_SERVER_PORT);
-  const server = spawn('bunx', ['five-server', '.', '--port', FIVE_SERVER_PORT], {
-    shell: true,
-    stdio: 'inherit',
-  });
-  
+  const server = spawn(
+    'bunx',
+    ['five-server', '.', '--port', FIVE_SERVER_PORT],
+    {
+      shell: true,
+      stdio: 'inherit',
+    }
+  );
+
   // Wait for server to be ready
   await new Promise((resolve) => {
     server.stdout?.on('data', (data) => {
@@ -280,7 +284,7 @@ async function startDevServer() {
     // Fallback timeout after 5s
     setTimeout(resolve, 5000);
   });
-  
+
   return server;
 }
 
@@ -290,7 +294,7 @@ async function startTicketApi() {
     shell: true,
     stdio: 'inherit',
   });
-  
+
   // Wait for API to be ready
   await new Promise((r) => setTimeout(r, 2000));
   return api;
@@ -298,12 +302,12 @@ async function startTicketApi() {
 
 async function runTests() {
   DebugLogger.log('Starting MCP probe test run');
-  
+
   try {
     // Start services
     const server = await startDevServer();
     const api = await startTicketApi();
-    
+
     // Run Playwright tests in debug mode
     const playwright = spawn('bunx', ['playwright', 'test', '--debug'], {
       shell: true,
@@ -313,7 +317,7 @@ async function runTests() {
         PWDEBUG: '1', // Enable Playwright Inspector
       },
     });
-    
+
     // Wait for tests to complete
     await new Promise((resolve, reject) => {
       playwright.on('close', (code) => {
@@ -326,13 +330,12 @@ async function runTests() {
         }
       });
     });
-    
+
     // Clean shutdown
     server.kill();
     api.kill();
     await killPort(FIVE_SERVER_PORT);
     await killPort(TICKET_API_PORT);
-    
   } catch (err) {
     DebugLogger.log('Test run failed:', err);
     process.exit(1);

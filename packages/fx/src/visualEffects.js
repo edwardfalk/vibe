@@ -300,22 +300,22 @@ class VisualEffectsManager {
     const particleCount = cfg.burst?.count
       ? Math.max(4, Math.round(cfg.burst.count * lod))
       : type === 'rusher-explosion'
-      ? 25
-      : 15;
+        ? 25
+        : 15;
 
     const colors = cfg.burst?.palette
       ? cfg.burst.palette
       : type === 'tank'
-      ? [
-          [100, 50, 200],
-          [150, 100, 255],
-          [200, 150, 255],
-        ]
-      : [
-          [255, 100, 50],
-          [255, 150, 100],
-          [255, 200, 150],
-        ];
+        ? [
+            [100, 50, 200],
+            [150, 100, 255],
+            [200, 150, 255],
+          ]
+        : [
+            [255, 100, 50],
+            [255, 150, 100],
+            [255, 200, 150],
+          ];
 
     // Profiling hook
     EffectsProfiler.registerEffect('explosion', {

@@ -2,7 +2,16 @@
 // Enhanced ticket management with error handling and caching
 // Backend runs on port 3001 as defined in ticket-api.js
 
-import { listTickets as coreListTickets, writeTicket, readTicket, ensureMeta, validateId, log, slugify, generateId } from '../../core/src/TicketCore.js';
+import {
+  listTickets as coreListTickets,
+  writeTicket,
+  readTicket,
+  ensureMeta,
+  validateId,
+  log,
+  slugify,
+  generateId,
+} from '../../core/src/TicketCore.js';
 
 // Default API base URL (can be overridden in constructor)
 const API_BASE_URL = 'http://localhost:3001/api/tickets';

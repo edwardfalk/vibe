@@ -109,12 +109,14 @@ export class SFXManager {
     // -------------------------------------------------------------------
     // 📊 DEBUG INFO SETUP (captures values before envelope scheduling)
     // -------------------------------------------------------------------
-    const soundName = Object.keys(audio.sounds).find(
-      (k) => audio.sounds[k] === config
-    ) || 'unknown';
+    const soundName =
+      Object.keys(audio.sounds).find((k) => audio.sounds[k] === config) ||
+      'unknown';
 
     const debugEnabled =
-      window.DEBUG_AUDIO || window.debug_audio || localStorage.getItem('debugAudio') === '1';
+      window.DEBUG_AUDIO ||
+      window.debug_audio ||
+      localStorage.getItem('debugAudio') === '1';
     const dx = x !== null && x !== undefined ? x - playerX : 0;
     const dy = y !== null && y !== undefined ? y - playerY : 0;
     const distance = Math.sqrt(dx * dx + dy * dy);

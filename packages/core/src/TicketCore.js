@@ -39,9 +39,11 @@ function folderName(ticket) {
 
 function ensureMeta(ticket, isNew = false) {
   if (!ticket.id) throw new Error('Missing ticket id');
-  if (!TICKET_ID_REGEX.test(ticket.id)) throw new Error('Invalid ticket id format');
+  if (!TICKET_ID_REGEX.test(ticket.id))
+    throw new Error('Invalid ticket id format');
   if (!ticket.title) throw new Error('Missing ticket title');
-  if (!ticket.type || !ALLOWED_TYPES.includes(ticket.type)) throw new Error('Invalid ticket type');
+  if (!ticket.type || !ALLOWED_TYPES.includes(ticket.type))
+    throw new Error('Invalid ticket type');
   if (isNew && !ticket.status) ticket.status = 'open';
   if (!Array.isArray(ticket.history)) ticket.history = [];
   if (!Array.isArray(ticket.artifacts)) ticket.artifacts = [];
@@ -54,7 +56,8 @@ function ensureMeta(ticket, isNew = false) {
 
 function validateId(id) {
   if (!TICKET_ID_REGEX.test(id)) throw new Error('Invalid ticket id');
-  if (id.includes('..') || id.includes('/') || id.includes('\\')) throw new Error('Path traversal detected');
+  if (id.includes('..') || id.includes('/') || id.includes('\\'))
+    throw new Error('Path traversal detected');
 }
 
 async function writeTicket(ticket) {
@@ -81,7 +84,9 @@ async function readTicket(id) {
       const data = await fs.readFile(file, 'utf8');
       const ticket = JSON.parse(data);
       return { ...ticket };
-    } catch (e) { /* not found, keep searching */ }
+    } catch (e) {
+      /* not found, keep searching */
+    }
   }
   throw new Error(`Ticket ${id} not found`);
 }
@@ -95,13 +100,19 @@ async function listTickets({ status, focus, limit = 100, offset = 0 } = {}) {
     const files = await fs.readdir(path.join(TICKETS_DIR, folder));
     for (const file of files) {
       if (!file.endsWith('.json')) continue;
-      const data = await fs.readFile(path.join(TICKETS_DIR, folder, file), 'utf8');
+      const data = await fs.readFile(
+        path.join(TICKETS_DIR, folder, file),
+        'utf8'
+      );
       const ticket = JSON.parse(data);
       tickets.push(ticket);
     }
   }
-  if (status) tickets = tickets.filter(t => t.status === status);
-  if (focus) tickets = tickets.filter(t => t.tags && t.tags.includes('focus') && t.status !== 'closed');
+  if (status) tickets = tickets.filter((t) => t.status === status);
+  if (focus)
+    tickets = tickets.filter(
+      (t) => t.tags && t.tags.includes('focus') && t.status !== 'closed'
+    );
   tickets.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   return tickets.slice(offset, offset + limit);
 }
@@ -115,5 +126,5 @@ export {
   listTickets,
   ensureMeta,
   log,
-  validateId
-}; 
+  validateId,
+};

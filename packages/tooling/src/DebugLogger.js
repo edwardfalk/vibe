@@ -36,4 +36,4 @@ export class DebugLogger {
       console.log('⚠️ DebugLogger failed:', e);
     }
   }
-} 
+}

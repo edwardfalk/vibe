@@ -46,7 +46,11 @@ class ProfilerOverlay {
     y += lineHeight;
     p.text(`max ms: ${stats.max}`, pad + 4, y);
     y += lineHeight;
-    p.text(`LOD  : ${effectsConfig.global.lodMultiplier.toFixed(2)}`, pad + 4, y);
+    p.text(
+      `LOD  : ${effectsConfig.global.lodMultiplier.toFixed(2)}`,
+      pad + 4,
+      y
+    );
 
     // Counters
     y += lineHeight / 2;
@@ -64,4 +68,4 @@ class ProfilerOverlay {
 }
 
 const overlay = new ProfilerOverlay();
-export default overlay; 
+export default overlay;

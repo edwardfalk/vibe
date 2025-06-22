@@ -13,8 +13,8 @@ class EnemyFactory {
     // Enemy type configurations
     this.configs = {
       grunt: {
-        size: 26,
-        health: 2,
+        size: 54,
+        health: 15,
         speed: 1.2,
         colorValues: [50, 205, 50], // Store as array, convert to color when needed
         class: Grunt,

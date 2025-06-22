@@ -184,4 +184,4 @@ export function safeJsonParse(jsonString, defaultValue = null) {
     logError(error, { operation: 'jsonParse', input: jsonString });
     return defaultValue;
   }
-} 
+}

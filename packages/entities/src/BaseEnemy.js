@@ -1,6 +1,16 @@
 import { Bullet } from './bullet.js';
 import { CONFIG } from '@vibe/core';
-import { sin, cos, atan2, randomRange, random, sqrt, floor, max, min } from '@vibe/core';
+import {
+  sin,
+  cos,
+  atan2,
+  randomRange,
+  random,
+  sqrt,
+  floor,
+  max,
+  min,
+} from '@vibe/core';
 import { getEnemyConfig, effectsConfig } from '@vibe/fx/effectsConfig.js';
 import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
 
@@ -199,7 +209,8 @@ export class BaseEnemy {
 
         const glowColorArr = baseGlow.color || [255, 255, 255];
         const glowColor = this.p.color(...glowColorArr);
-        const glowSize = (baseGlow.sizeMult || 1.0) * this.size * speechGlowSize;
+        const glowSize =
+          (baseGlow.sizeMult || 1.0) * this.size * speechGlowSize;
 
         drawGlow(this.x, this.y, glowSize, glowColor, speechGlowIntensity);
 

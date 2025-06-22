@@ -397,16 +397,21 @@ export class Player {
     const lensW = eyeSize * 1.92; // 20% larger than before
     const lensH = eyeSize * 1.32; // 20% larger than before
     p.ellipse(-eyeOffset, -s * 0.25, lensW, lensH); // Left lens
-    p.ellipse(eyeOffset, -s * 0.25, lensW, lensH);  // Right lens
+    p.ellipse(eyeOffset, -s * 0.25, lensW, lensH); // Right lens
 
     // Bridge
     p.stroke(20);
     p.strokeWeight(2);
-    p.line(-eyeOffset + lensW/2.5, -s * 0.25, eyeOffset - lensW/2.5, -s * 0.25);
+    p.line(
+      -eyeOffset + lensW / 2.5,
+      -s * 0.25,
+      eyeOffset - lensW / 2.5,
+      -s * 0.25
+    );
 
     // Arms
-    p.line(-eyeOffset - lensW/2, -s * 0.25, -eyeOffset - lensW, -s * 0.28);
-    p.line(eyeOffset + lensW/2, -s * 0.25, eyeOffset + lensW, -s * 0.28);
+    p.line(-eyeOffset - lensW / 2, -s * 0.25, -eyeOffset - lensW, -s * 0.28);
+    p.line(eyeOffset + lensW / 2, -s * 0.25, eyeOffset + lensW, -s * 0.28);
     p.noStroke();
 
     // Small cosmic horns for flair

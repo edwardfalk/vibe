@@ -3,7 +3,10 @@ const express = require('express');
 const path = require('path');
 
 // Dynamic import for ESM TicketCore
-const TicketCorePath = path.resolve(__dirname, 'packages/core/src/TicketCore.js');
+const TicketCorePath = path.resolve(
+  __dirname,
+  'packages/core/src/TicketCore.js'
+);
 
 const app = express();
 app.use(express.json());
@@ -97,7 +100,7 @@ app.post('/api/tickets', async (req, res) => {
 app.patch('/api/tickets/:id', async (req, res) => {
   try {
     const TicketCore = await import(TicketCorePath);
-    let ticket = await TicketCore.readTicket(req.params.id);
+    const ticket = await TicketCore.readTicket(req.params.id);
     Object.assign(ticket, req.body);
     await TicketCore.ensureMeta(ticket, false);
     const written = await TicketCore.writeTicket(ticket);

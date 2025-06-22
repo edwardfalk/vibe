@@ -10,8 +10,8 @@ import { shouldAvoidFriendlyFire } from './EnemyAIUtils.js';
 class Grunt extends BaseEnemy {
   constructor(x, y, type, config, p, audio) {
     const gruntConfig = {
-      size: 26,
-      health: 2,
+      size: 54,
+      health: 15,
       speed: 1.2,
       color: p.color(50, 205, 50), // Lime green
     };
@@ -255,70 +255,112 @@ class Grunt extends BaseEnemy {
    * Draw grunt-specific body shape with round, bumbling baby-like features
    */
   drawBody(s) {
-    // Main round body (baby-like proportions)
+    // Hit flash overlay if recently hit
+    if (this.hitFlash > 0) {
+      this.p.push();
+      this.p.noStroke();
+      this.p.fill(255, 255, 255, 120);
+      this.p.ellipse(0, 0, s * 1.2, s * 1.3);
+      this.p.pop();
+    }
+    // Amorphous, blobby body using overlapping ellipses
     this.p.fill(this.bodyColor);
     this.p.noStroke();
-    this.p.ellipse(0, 0, s, s * 0.9); // Rounder main body
+    for (let i = 0; i < 5; i++) {
+      const angle =
+        (Math.PI * 2 * i) / 5 +
+        this.p.frameCount * 0.01 * (i % 2 === 0 ? 1 : -1);
+      const r1 =
+        s * 0.45 + this.p.noise(this.p.frameCount * 0.01 + i) * s * 0.15;
+      const r2 =
+        s * 0.55 + this.p.noise(this.p.frameCount * 0.02 - i) * s * 0.18;
+      const x = Math.cos(angle) * r1 * 0.5;
+      const y = Math.sin(angle) * r2 * 0.5;
+      this.p.ellipse(
+        x,
+        y,
+        s * 0.7 + Math.sin(angle + this.p.frameCount * 0.02) * s * 0.15,
+        s * 0.9 + Math.cos(angle - this.p.frameCount * 0.015) * s * 0.12
+      );
+    }
 
-    // Round baby-like head (larger and rounder)
-    this.p.fill(
-      this.bodyColor.levels[0] + 20,
-      this.bodyColor.levels[1] + 20,
-      this.bodyColor.levels[2] + 20
-    );
-    this.p.ellipse(0, -s * 0.4, s * 0.8, s * 0.8); // Big round head
-
-    // Simple round helmet (baby helmet style)
-    this.p.fill(120, 120, 150); // Gray helmet color
-    this.p.arc(0, -s * 0.4, s * 0.85, s * 0.5, this.p.PI, this.p.TWO_PI);
-
-    // Small gold triangle badge (looks official but cute)
-    this.p.fill(255, 215, 0); // Gold
-    this.p.triangle(0, -s * 0.6, -s * 0.06, -s * 0.5, s * 0.06, -s * 0.5);
-
-    // BIG ROUND BUMBLING EYES (different sizes for silly look)
-    this.p.fill(100, 255, 100); // Bright green eyes
-    this.p.ellipse(-s * 0.15, -s * 0.35, s * 0.16); // Left eye (bigger and rounder)
-    this.p.ellipse(s * 0.12, -s * 0.38, s * 0.12); // Right eye (smaller, slightly offset)
-
-    // Eye highlights (make them look innocent/bumbling)
-    this.p.fill(255);
-    this.p.ellipse(-s * 0.12, -s * 0.32, s * 0.06); // Left highlight (bigger)
-    this.p.ellipse(s * 0.15, -s * 0.36, s * 0.04); // Right highlight (smaller)
-
-    // SHORT STUMPY ANTENNAE (baby-like proportions)
-    this.p.stroke(this.bodyColor);
-    this.p.strokeWeight(3); // Thicker for baby look
-    this.p.line(-s * 0.15, -s * 0.7, -s * 0.18, -s * 0.85); // Left antenna (shorter)
-    this.p.line(s * 0.15, -s * 0.7, s * 0.18, -s * 0.85); // Right antenna (shorter)
-
-    // Round antenna bobbles (bigger and more prominent)
-    this.p.fill(100, 255, 100); // Matching eye color
+    // Add subtle glow effect
+    this.p.push();
     this.p.noStroke();
-    this.p.ellipse(-s * 0.18, -s * 0.85, s * 0.12); // Left bobble (bigger)
-    this.p.ellipse(s * 0.18, -s * 0.85, s * 0.12); // Right bobble (bigger)
-
-    // Chubby little arms
     this.p.fill(
-      this.bodyColor.levels[0] + 10,
-      this.bodyColor.levels[1] + 10,
-      this.bodyColor.levels[2] + 10
+      this.bodyColor.levels[0],
+      this.bodyColor.levels[1],
+      this.bodyColor.levels[2],
+      40
     );
-    this.p.ellipse(-s * 0.4, -s * 0.1, s * 0.2, s * 0.35); // Left arm (round)
-    this.p.ellipse(s * 0.4, -s * 0.1, s * 0.2, s * 0.35); // Right arm (round)
+    this.p.ellipse(0, 0, s * 1.5, s * 1.5);
+    this.p.pop();
 
-    // Little round hands
-    this.p.fill(this.bodyColor);
-    this.p.ellipse(-s * 0.45, s * 0.05, s * 0.12); // Left hand
-    this.p.ellipse(s * 0.45, s * 0.05, s * 0.12); // Right hand
-
-    // Minimal tactical gear (just a belt so they look "official")
+    // Big, wobbly baby head
+    const headWobble = Math.sin(this.p.frameCount * 0.07) * s * 0.04;
     this.p.fill(
       this.bodyColor.levels[0] + 30,
       this.bodyColor.levels[1] + 30,
       this.bodyColor.levels[2] + 30
     );
-    this.p.rect(-s * 0.3, s * 0.1, s * 0.6, s * 0.08); // Simple belt
+    this.p.ellipse(0 + headWobble, -s * 0.55, s * 0.85, s * 0.85);
+
+    // Huge silly eyes (slightly cross-eyed)
+    this.p.fill(100, 255, 100);
+    this.p.ellipse(-s * 0.18 + headWobble * 0.7, -s * 0.6, s * 0.19, s * 0.19);
+    this.p.ellipse(s * 0.13 + headWobble * 0.7, -s * 0.6, s * 0.16, s * 0.16);
+    // Pupils
+    this.p.fill(40, 80, 40);
+    this.p.ellipse(-s * 0.18 + headWobble * 0.7, -s * 0.6, s * 0.07, s * 0.09);
+    this.p.ellipse(s * 0.13 + headWobble * 0.7, -s * 0.6, s * 0.06, s * 0.08);
+    // Eye highlights
+    this.p.fill(255);
+    this.p.ellipse(-s * 0.15 + headWobble * 0.7, -s * 0.58, s * 0.03);
+    this.p.ellipse(s * 0.15 + headWobble * 0.7, -s * 0.58, s * 0.02);
+
+    // Simple mouth (little "o" shape)
+    this.p.fill(60, 30, 30);
+    this.p.ellipse(0 + headWobble, -s * 0.48, s * 0.07, s * 0.04);
+
+    // Chubby arms
+    this.p.fill(
+      this.bodyColor.levels[0] + 20,
+      this.bodyColor.levels[1] + 20,
+      this.bodyColor.levels[2] + 20
+    );
+    this.p.ellipse(-s * 0.5, -s * 0.1, s * 0.28, s * 0.5);
+    this.p.ellipse(s * 0.5, -s * 0.1, s * 0.28, s * 0.5);
+    // Big hands
+    this.p.fill(this.bodyColor);
+    this.p.ellipse(-s * 0.6, s * 0.18, s * 0.15);
+    this.p.ellipse(s * 0.6, s * 0.18, s * 0.15);
+
+    // Gold badge
+    this.p.fill(255, 215, 0);
+    this.p.triangle(0, -s * 0.9, -s * 0.07, -s * 0.7, s * 0.07, -s * 0.7);
+
+    // Silly weapon (plunger blaster) in left hand
+    this.p.push();
+    this.p.translate(-s * 0.65, s * 0.18);
+    this.p.rotate(-0.3);
+    // Handle
+    this.p.fill(180, 100, 60);
+    this.p.rect(-s * 0.03, 0, s * 0.06, s * 0.18, s * 0.03);
+    // Plunger cup
+    this.p.fill(255, 100, 100);
+    this.p.ellipse(0, s * 0.13, s * 0.13, s * 0.09);
+    // Silly "scope"
+    this.p.fill(200, 200, 255);
+    this.p.ellipse(0, -s * 0.04, s * 0.05, s * 0.03);
+    this.p.pop();
+
+    // Belt
+    this.p.fill(
+      this.bodyColor.levels[0] + 40,
+      this.bodyColor.levels[1] + 40,
+      this.bodyColor.levels[2] + 40
+    );
+    this.p.rect(-s * 0.38, s * 0.22, s * 0.76, s * 0.11);
   }
 
   /**
@@ -328,12 +370,56 @@ class Grunt extends BaseEnemy {
    * This ensures all death effects are triggered exactly once, preventing double explosions or score increments.
    * This pattern is unique to Grunt and not used for other enemies unless they require similar dramatic or audio effects.
    */
-  takeDamage(amount, bulletAngle = null, damageSource = null) {
+  takeDamage(
+    amount,
+    bulletAngle = null,
+    damageSource = null,
+    hitX = null,
+    hitY = null
+  ) {
     // Debug: Log all takeDamage events for Grunt only if collision debug is enabled
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
-        `[GRUNT DEBUG] takeDamage called: health(before)=${this.health}, amount=${amount}, markedForRemoval=${this.markedForRemoval}, damageSource=${damageSource}`
+        `[GRUNT DEBUG] takeDamage called: health(before)=${this.health}, amount=${amount}, markedForRemoval=${this.markedForRemoval}, damageSource=${damageSource}, hit=(${hitX},${hitY})`
       );
+    }
+    // Particle burst on bullet/friendly-fire hit (not stabber melee)
+    if (
+      (damageSource === 'bullet' || damageSource === 'friendly-fire') &&
+      typeof visualEffectsManager !== 'undefined' &&
+      visualEffectsManager
+    ) {
+      const px = hitX !== null ? hitX : this.x;
+      const py = hitY !== null ? hitY : this.y;
+      for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) {
+        visualEffectsManager.particles.push({
+          x: px,
+          y: py,
+          vx: Math.cos(Math.random() * Math.PI * 2) * 4,
+          vy: Math.sin(Math.random() * Math.PI * 2) * 4,
+          size: 3 + Math.random() * 2,
+          life: 32,
+          maxLife: 32,
+          color: [
+            Math.max(0, this.bodyColor.levels[0] - 30),
+            Math.max(0, this.bodyColor.levels[1] - 30),
+            Math.max(0, this.bodyColor.levels[2] - 30),
+          ],
+          type: 'grunt-hit',
+          gravity: 0.08,
+          fade: 0.04,
+        });
+      }
+      // Play silly hit sound (avoid spam)
+      if (
+        window.audio &&
+        window.audio.playSound &&
+        (!this._lastHitSoundFrame ||
+          this.p.frameCount - this._lastHitSoundFrame > 8)
+      ) {
+        window.audio.playSound(SOUND.gruntOw, this.x, this.y);
+        this._lastHitSoundFrame = this.p.frameCount;
+      }
     }
     if (
       damageSource === 'stabber_melee' &&
@@ -397,7 +483,56 @@ class Grunt extends BaseEnemy {
       }
       this.speechCooldown = 60; // 1s cooldown to avoid spam
     }
+    // Custom kill explosion for Grunt
+    if (
+      died &&
+      typeof visualEffectsManager !== 'undefined' &&
+      visualEffectsManager
+    ) {
+      // Use a palette based on the Grunt's color
+      const base = this.bodyColor.levels;
+      const palette = [
+        [base[0], base[1], base[2]],
+        [
+          Math.max(0, base[0] - 40),
+          Math.max(0, base[1] - 40),
+          Math.max(0, base[2] - 40),
+        ],
+        [
+          Math.min(255, base[0] + 40),
+          Math.min(255, base[1] + 40),
+          Math.min(255, base[2] + 40),
+        ],
+      ];
+      for (let i = 0; i < 18; i++) {
+        visualEffectsManager.particles.push({
+          x: this.x,
+          y: this.y,
+          vx: Math.cos(Math.random() * Math.PI * 2) * (3 + Math.random() * 3),
+          vy: Math.sin(Math.random() * Math.PI * 2) * (3 + Math.random() * 3),
+          size: 7 + Math.random() * 5,
+          life: 38 + Math.random() * 10,
+          maxLife: 38 + Math.random() * 10,
+          color: palette[Math.floor(Math.random() * palette.length)],
+          type: 'grunt-explosion',
+          gravity: 0.09,
+          fade: 0.03,
+        });
+      }
+    }
     return died;
+  }
+
+  /**
+   * More accurate hitbox for big oval Grunt
+   */
+  checkCollision(other) {
+    // Ellipse collision: (dx/a)^2 + (dy/b)^2 <= 1, with 20% larger hitbox (covers helmet)
+    const dx = this.x - other.x;
+    const dy = this.y - other.y;
+    const a = this.size * 0.52 * 1.2; // slightly wider to cover helmet
+    const b = this.size * 0.62 * 1.2; // slightly taller to cover helmet
+    return (dx * dx) / (a * a) + (dy * dy) / (b * b) <= 1;
   }
 }
 
