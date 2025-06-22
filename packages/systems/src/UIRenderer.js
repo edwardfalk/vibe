@@ -4,7 +4,7 @@
 
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
-import { floor, ceil, min, random } from '@vibe/core';
+import { floor, ceil, min, random, SOUND } from '@vibe/core';
 // import {
 //   createTicket,
 //   updateTicket,
@@ -115,6 +115,25 @@ export class UIRenderer {
     this._inputHistory = [];
     this._trackInputHistory();
     this._createToast(); // Add toast/banner for confirmations
+
+    this.uiMode = 'game'; // 'game', 'audioLab', etc.
+    this.audioLab = {
+      active: false,
+      soundIds: Object.keys(window.SOUND || (audio && audio.sounds) || {}),
+      selected: 0,
+      lastPlay: 0,
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      if (e.key === 'F9') {
+        this.toggleAudioLab();
+      }
+      if (this.uiMode === 'audioLab') {
+        this.handleAudioLabKey(e.key);
+        e.preventDefault();
+      }
+    });
   }
 
   // Update HTML UI elements
@@ -440,6 +459,10 @@ export class UIRenderer {
 
   // Draw all UI elements
   drawUI(p) {
+    if (this.uiMode === 'audioLab') {
+      this.drawAudioLabMenu(p);
+      return;
+    }
     // Draw in-game UI elements
     this.drawLevelProgress(p);
     this.drawKillStreakIndicator(p);
@@ -1269,5 +1292,98 @@ export class UIRenderer {
     }
     this._addScreenshotThumbnail(screenshotData);
     this._showToast(`Screenshot ${this.screenshotCount} saved!`);
+  }
+
+  toggleAudioLab() {
+    if (this.uiMode === 'audioLab') {
+      this.uiMode = 'game';
+      this.audioLab.active = false;
+    } else {
+      this.uiMode = 'audioLab';
+      this.audioLab.active = true;
+      // Refresh sound list in case new SFX were added
+      this.audioLab.soundIds = Object.keys(window.SOUND || (this.audio && this.audio.sounds) || {});
+      this.audioLab.selected = 0;
+    }
+  }
+
+  handleAudioLabKey(key) {
+    const lab = this.audioLab;
+    if (!lab.active) return;
+    if (key === 'Escape') {
+      this.toggleAudioLab();
+      return;
+    }
+    if (key === 'ArrowUp') {
+      lab.selected = (lab.selected - 1 + lab.soundIds.length) % lab.soundIds.length;
+    }
+    if (key === 'ArrowDown') {
+      lab.selected = (lab.selected + 1) % lab.soundIds.length;
+    }
+    if (key === 'Enter' || key === ' ') {
+      const id = lab.soundIds[lab.selected];
+      if (window.audio && window.audio.playSound) {
+        // Play at player position if available, else center
+        const x = (this.player && this.player.x) || 400;
+        const y = (this.player && this.player.y) || 300;
+        window.audio.playSound(SOUND[id], x, y);
+        lab.lastPlay = Date.now();
+      }
+    }
+  }
+
+  drawAudioLabMenu(p) {
+    const lab = this.audioLab;
+    if (!lab.active) return;
+    p.push();
+    // Overlay background
+    p.fill(0, 0, 0, 220);
+    p.rect(0, 0, p.width, p.height);
+    // Title
+    p.textAlign(p.CENTER, p.TOP);
+    p.textSize(32);
+    p.fill(255, 255, 100);
+    p.text('AUDIO LAB', p.width / 2, 40);
+    // Instructions
+    p.textSize(16);
+    p.fill(200);
+    p.text('Up/Down: Select  Enter/Space: Play  Esc: Exit', p.width / 2, 80);
+    // List SFX
+    const startY = 120;
+    const lineH = 28;
+    const visible = 16;
+    const offset = Math.max(0, lab.selected - Math.floor(visible / 2));
+    for (let i = 0; i < Math.min(visible, lab.soundIds.length); i++) {
+      const idx = i + offset;
+      if (idx >= lab.soundIds.length) break;
+      const y = startY + i * lineH;
+      if (idx === lab.selected) {
+        p.fill(100, 255, 200);
+        p.rect(p.width / 2 - 220, y - 4, 440, lineH + 4, 8);
+        p.fill(0);
+      } else {
+        p.fill(255);
+      }
+      p.textAlign(p.LEFT, p.CENTER);
+      p.textSize(20);
+      p.text(lab.soundIds[idx], p.width / 2 - 200, y + lineH / 2);
+      // Show config details for selected
+      if (idx === lab.selected && this.audio && this.audio.sounds) {
+        const cfg = this.audio.sounds[lab.soundIds[idx]];
+        p.textAlign(p.LEFT, p.TOP);
+        p.textSize(14);
+        p.fill(200, 200, 255);
+        let details = '';
+        if (cfg) {
+          if (cfg.variants) {
+            details = cfg.variants.map((v, vi) => `Variant ${vi + 1}: freq ${v.frequency}Hz, ${v.waveform}, vol ${v.volume}, dur ${v.duration}s`).join(' | ');
+          } else {
+            details = `freq ${cfg.frequency}Hz, ${cfg.waveform}, vol ${cfg.volume}, dur ${cfg.duration}s`;
+          }
+        }
+        p.text(details, p.width / 2 - 200, y + lineH + 2);
+      }
+    }
+    p.pop();
   }
 }

@@ -64,6 +64,48 @@ plasmaCloud: {
 - **square**: Hollow, robotic (good for mechanical sounds)
 - **triangle**: Soft, flute-like (good for ethereal sounds)
 
+### Variant-Array Pattern (2025+)
+
+Some SFX (e.g., hit sounds) now use a `variants` array in their config:
+
+```js
+stabberKnifeHit: {
+  variants: [
+    { frequency: 3200, waveform: 'sawtooth', volume: 0.55, duration: 0.07 },
+    { frequency: 2800, waveform: 'triangle', volume: 0.5, duration: 0.09 },
+    { frequency: 3500, waveform: 'square', volume: 0.6, duration: 0.06 },
+  ]
+}
+```
+
+Only one registry entry is needed in `SoundIds.js` (e.g., `stabberKnifeHit`). The SFXManager will pick a random variant at runtime.
+
+### New SFX Stubs (2025)
+- `uiConfirm`: UI confirm/accept sound
+- `uiCancel`: UI cancel/back sound
+- `bulletMetalHit`: Bullet hitting metal (impact feedback)
+- `onBeatBonus`: On-beat bonus/feedback
+- `cosmicWind`: Ambient cosmic wind layer
+
+### Enemy/Combat SFX (2025 Roadmap)
+
+The following SFX are now implemented and documented in `Audio.js` and `SoundIds.js`:
+
+- `gruntPop`: Main grunt death pop (volume: 0.6)
+- `gruntPopEcho`: Grunt death echo (volume: 0.3)
+- `tankDeathThump`: Tank death sub-bass thump (volume: 0.7)
+- `rusherDeathFizz`: Rusher death fizz (volume: 0.22)
+- `stabberDeathClink`: Stabber death metallic clink (volume: 0.32)
+- `enemyChargeUp`: Enemy/tank special attack charge-up (volume: 0.28)
+
+#### SFX Volume Tuning
+- Main death SFX (e.g., `gruntPop`, `tankDeathThump`) are set in the 0.6–0.7 range for strong feedback.
+- Echo/fizz/secondary effects (e.g., `gruntPopEcho`, `rusherDeathFizz`) are set lower (0.2–0.3) for subtlety, but can be raised for more presence.
+- All SFX volumes are relative to the master and category gain (see Audio.js for details).
+- As of June 2025, `gruntPop` and `gruntPopEcho` have been increased for better audibility.
+
+All SFX are now documented in `Audio.js` and `SoundIds.js`. This guide is current as of June 2025.
+
 ## 🎤 Speech Configuration
 
 ### Location: Lines ~105-111 in `packages/core/src/Audio.js`
@@ -224,3 +266,29 @@ window.audio.playSound(SOUND.gruntPop, x, y);
 ```
 
 Old calls like `playSound('gruntPop', …)` should be migrated to the constant form (legacy helpers inside `Audio.js` are already updated).  This guarantees typo-safety and keeps the codebase refactor-ready.
+
+## 🌌 Ambient & Atmospheric SFX
+
+The following ambient/atmospheric SFX are implemented in `Audio.js` and are processed with distance-based effects (reverb, lowpass, distortion) for spatial immersion:
+
+| Sound ID         | Frequency | Waveform   | Volume | Duration | Intended Effect                |
+|------------------|-----------|------------|--------|----------|-------------------------------|
+| enemyIdle        | 200       | sine       | 0.1    | 0.8      | Subtle enemy hum, background  |
+| stabberChant     | 1800      | triangle   | 0.3    | 0.5      | Eerie, ritualistic chant      |
+| gruntMalfunction | 180       | sawtooth   | 0.12   | 0.4      | Glitchy, robotic error        |
+| gruntBeep        | 800       | triangle   | 0.08   | 0.15     | Short, robotic beep           |
+| gruntWhir        | 300       | sine       | 0.1    | 0.6      | Mechanical whirring           |
+| gruntError       | 220       | square     | 0.1    | 0.2      | Error/failure tone            |
+| gruntGlitch      | 150       | sawtooth   | 0.09   | 0.25     | Glitchy, digital noise        |
+| stabberStalk     | 1600      | triangle   | 0.25   | 0.4      | Tense stalking, suspense      |
+| cosmicWind       | 60        | noise      | 0.08   | 3.0      | Cosmic wind, deep ambience    |
+
+- **Subtle SFX**: `enemyIdle`, `gruntBeep`, `gruntWhir`, `gruntError`, `gruntGlitch`, `cosmicWind` (low volume, background texture)
+- **Prominent SFX**: `stabberChant`, `stabberStalk`, `gruntMalfunction` (higher volume, foreground atmosphere)
+
+### Distance-Based Effects
+- All ambient SFX above are processed with reverb, lowpass filtering, and mild distortion based on distance from the player (see Audio.js, playTone method).
+- Distant enemies sound more echoey, filtered, and mystical; close enemies are clearer and drier.
+- These effects are tuned for subtlety (see code comments for reverbIntensity, lowpassFreq, distortionAmount).
+
+**Reference:** See `Audio.js` for all config details and effect processing. This guide is current as of June 2025.

@@ -64,3 +64,35 @@ if (beatClock.isOnBeat([2, 4])) {
 ---
 
 _For further details on the ticketing system, coding standards, and architecture, see the README and .cursorrules._
+
+## Event-Bus Driven Visual Effects System
+
+Vibe's visual feedback is now powered by a decoupled event-bus architecture:
+
+**Flow Diagram:**
+```
+[Entity (e.g. Tank, Grunt)]
+      │
+      ▼
+[EnemyEventBus.emitXYZ()]
+      │
+      ▼
+[window.dispatchEvent(CustomEvent)]
+      │
+      ▼
+[VFXDispatcher (central listener)]
+      │
+      ├──> [VisualEffectsManager] (particles, cracks, debris, sparks)
+      └──> [EffectsManager] (screen shake, flash)
+```
+
+**Key Points:**
+- Entities never call VFX methods directly; they emit events (`enemyHit`, `armorDamaged`, `armorBroken`, `enemyKilled`).
+- `VFXDispatcher` listens for these events and triggers the appropriate visual/screen effects.
+- All VFX are balanced via `effectsConfig.js` and can be throttled by `AdaptiveLODManager`.
+- Procedural cracks and debris are now standard for destructible armor (e.g., Tank).
+- Knock-back is applied to Grunts and can be extended to other enemies.
+
+**Probes:**
+- **Tank Armor Break Probe:** Simulates repeated hits to a tank's armor, asserts cracks and debris appear.
+- **Grunt Knock-back Probe:** Simulates a bullet hit to a grunt, asserts position change (knock-back).

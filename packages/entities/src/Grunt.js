@@ -520,6 +520,13 @@ class Grunt extends BaseEnemy {
         });
       }
     }
+    if (
+      died &&
+      window.audio &&
+      typeof window.audio.playSound === 'function'
+    ) {
+      window.audio.playSound(SOUND.gruntPopEcho, this.x, this.y);
+    }
     return died;
   }
 

@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, sin, cos, ceil } from '@vibe/core';
+import { floor, random, sqrt, sin, cos, ceil, SOUND } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
 import { speakAmbient } from './EnemySpeechUtils.js';
 import { addMotionTrail, maybeAddMotionTrail } from './EnemyFXUtils.js';
@@ -68,6 +68,9 @@ class Rusher extends BaseEnemy {
 
       if (this.explosionTimer >= explosionTime) {
         // Create explosion
+        if (window.audio && typeof window.audio.playSound === 'function') {
+          window.audio.playSound(SOUND.rusherDeathFizz, this.x, this.y);
+        }
         return {
           type: 'rusher-explosion',
           x: this.x,

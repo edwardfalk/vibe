@@ -37,4 +37,10 @@ function update() {
   }
 }
 
+function shouldRender(className) {
+  // TODO: Implement per-class LOD logic. For now, always render.
+  return true;
+}
+
 export default { update };
+export { shouldRender };

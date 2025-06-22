@@ -381,4 +381,12 @@ bun run ticket:update id=BUG-... tags=focus,ai,testing
 
 ---
 
+**Event-Bus VFX System Rules**
+- All new visual effects must use the event-bus pattern (emit events via EnemyEventBus, never call visualEffectsManager directly from entities).
+- VFXDispatcher is the only module that translates gameplay events into visual/screen effects.
+- All VFX must be testable via Playwright probes.
+- Update effectsConfig.js for all balancing and tuning.
+
+---
+
 **End of File**

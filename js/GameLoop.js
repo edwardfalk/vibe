@@ -42,7 +42,8 @@ import {
 import { setupRemoteConsoleLogger } from '@vibe/tooling';
 import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
 import ProfilerOverlay from '@vibe/fx/ProfilerOverlay.js';
-import AdaptiveLODManager from '@vibe/fx/AdaptiveLODManager.js';
+import AdaptiveLODManager, { shouldRender as adaptiveShouldRender } from '@vibe/fx/AdaptiveLODManager.js';
+import VFXDispatcher from '@vibe/fx/VFXDispatcher.js';
 
 // Core game objects
 let player;
@@ -241,6 +242,16 @@ function setup(p) {
     window.visualEffectsManager.init(p);
   }
   console.log('✨ Visual effects enabled - full rendering active');
+
+  // Initialize VFX dispatcher (event-bus bridge)
+  if (!window.vfxDispatcher) {
+    window.vfxDispatcher = new VFXDispatcher({
+      visualFX: window.visualEffectsManager,
+      screenFX: window.effectsManager,
+      lodManager: { shouldRender: adaptiveShouldRender },
+    });
+    console.log('✨ VFXDispatcher initialized');
+  }
 
   // Initialize unified audio system
   if (!window.audio) {

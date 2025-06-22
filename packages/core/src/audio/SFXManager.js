@@ -20,7 +20,6 @@ export class SFXManager {
   playSound(soundName, x = null, y = null) {
     if (!this.audio.ensureAudioContext()) return;
 
-    // Fail fast in development if unknown ID
     if (!Object.values(SOUND).includes(soundName)) {
       throw new Error(
         `❌ Unknown sound id: ${soundName}. Add it to SoundIds.js and Audio.sounds`
@@ -34,7 +33,13 @@ export class SFXManager {
       );
     }
 
-    this.playTone(soundConfig, x, y);
+    // Variant-array support
+    if (Array.isArray(soundConfig.variants) && soundConfig.variants.length > 0) {
+      const idx = Math.floor(random() * soundConfig.variants.length);
+      this.playTone(soundConfig.variants[idx], x, y, soundName);
+    } else {
+      this.playTone(soundConfig, x, y, soundName);
+    }
   }
 
   /**
@@ -44,8 +49,9 @@ export class SFXManager {
    * @param {object} config - Frequency / envelope definition taken from Audio.sounds.
    * @param {number|null} [x]
    * @param {number|null} [y]
+   * @param {string} [soundName] - For debug/peak logging
    */
-  playTone(config, x, y) {
+  playTone(config, x, y, soundName = 'unknown') {
     const audio = this.audio;
     const ctx = audio.audioContext;
 
@@ -109,10 +115,6 @@ export class SFXManager {
     // -------------------------------------------------------------------
     // 📊 DEBUG INFO SETUP (captures values before envelope scheduling)
     // -------------------------------------------------------------------
-    const soundName =
-      Object.keys(audio.sounds).find((k) => audio.sounds[k] === config) ||
-      'unknown';
-
     const debugEnabled =
       window.DEBUG_AUDIO ||
       window.debug_audio ||
@@ -120,7 +122,6 @@ export class SFXManager {
     const dx = x !== null && x !== undefined ? x - playerX : 0;
     const dy = y !== null && y !== undefined ? y - playerY : 0;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    // Rough on-screen heuristic (800×600 viewport centred on player)
     const isOnScreen = Math.abs(dx) <= 400 && Math.abs(dy) <= 300;
     let debugReverb = 0;
     let debugDry = 0;
@@ -205,6 +206,30 @@ export class SFXManager {
       dryGain.connect(audio.masterGain);
     } else {
       panNode.connect(audio.masterGain);
+    }
+
+    // --- DEBUG_AUDIO_PEAK: true-peak and LUFS logging ---
+    if (window.DEBUG_AUDIO_PEAK) {
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      const bufferLength = analyser.fftSize;
+      const dataArray = new Float32Array(bufferLength);
+      panNode.connect(analyser);
+      analyser.connect(audio.masterGain);
+      setTimeout(() => {
+        analyser.getFloatTimeDomainData(dataArray);
+        let peak = 0;
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          const v = Math.abs(dataArray[i]);
+          if (v > peak) peak = v;
+          sum += v * v;
+        }
+        const rms = Math.sqrt(sum / bufferLength);
+        // LUFS rough estimate: -0.691 + 10*log10(rms^2)
+        const lufs = -0.691 + 10 * Math.log10(rms * rms);
+        console.log(`🔊 [${soundName}] true-peak: ${(20 * Math.log10(peak)).toFixed(1)} dBFS, LUFS: ${lufs.toFixed(1)}`);
+      }, Math.max(10, config.duration * 500));
     }
 
     oscillator.start(ctx.currentTime);

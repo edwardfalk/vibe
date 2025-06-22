@@ -507,6 +507,67 @@ class VisualEffectsManager {
   addExplosion(x, y /*, ...rest */) {
     this.addExplosionParticles(x, y, 'normal');
   }
+
+  /**
+   * Add a quick star-burst spark when a bullet or melee hit connects.
+   * @param {number} x
+   * @param {number} y
+   * @param {number} intensity - scales particle count
+   */
+  addHitSpark(x, y, intensity = 1) {
+    const count = Math.round(4 * intensity);
+    for (let i = 0; i < count; i++) {
+      this.particles.push({
+        x,
+        y,
+        vx: random(-3, 3),
+        vy: random(-3, 3),
+        size: 2 + random(0, 2),
+        life: 18,
+        maxLife: 18,
+        color: [255, 220, 180],
+        type: 'hit-spark',
+        gravity: 0.02,
+        fade: 0.05,
+      });
+    }
+  }
+
+  /**
+   * Overlay dynamic cracks on armour.  Implementation is a stub for now – we
+   * just trigger a brief white flash so players get immediate feedback.  A
+   * more detailed procedural crack graphic can be cached later.
+   * @param {number} x
+   * @param {number} y
+   * @param {number} damageFrac 0 = no damage, 1 = fully broken
+   */
+  addCrackOverlay(x, y, damageFrac = 0.5 /* unused for now */, part = '') {
+    // Simple flash placeholder while full crack shader is developed
+    this.triggerBloom(0.2 + damageFrac * 0.3, 12);
+  }
+
+  /**
+   * Debris shards when armour breaks – radial triangular particles.
+   */
+  addDebrisShards(x, y, count = 12) {
+    for (let i = 0; i < count; i++) {
+      const angle = random(0, Math.PI * 2);
+      const speed = random(2, 6);
+      this.particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 4 + random(0, 3),
+        life: 40 + random(-8, 8),
+        maxLife: 40,
+        color: [200, 200, 255],
+        type: 'debris',
+        gravity: 0.1,
+        fade: 0.03,
+      });
+    }
+  }
 }
 
 // Enhanced glow effect function

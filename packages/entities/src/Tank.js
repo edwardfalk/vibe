@@ -15,6 +15,7 @@ import {
 import { CONFIG } from '@vibe/core';
 import { speakAmbient } from './EnemySpeechUtils.js';
 import { SOUND } from '@vibe/core';
+import { EnemyEventBus } from './EnemyEventBus.js';
 
 /**
  * Tank class - Heavy artillery with charging system
@@ -180,6 +181,9 @@ class Tank extends BaseEnemy {
         // Start charging
         this.chargingShot = true;
         this.chargeTime = 0;
+        if (window.audio && typeof window.audio.playSound === 'function') {
+          window.audio.playSound(SOUND.enemyChargeUp, this.x, this.y);
+        }
         console.log('🎯 Tank starting charge sequence!');
       }
     }
@@ -223,10 +227,14 @@ class Tank extends BaseEnemy {
     this.p.rect(-s * 0.55, s * 0.55, s * 1.1, s * 0.15); // Bottom of treads
 
     // Draw Destructible Armor Pieces (these are drawn relative to the tank's center after rotation)
-    this.drawArmorPlates(s);
+    this.drawArmorPlates(s, {
+      front: this.frontArmorDestroyed ? 0 : this.frontArmorHP / 120,
+      left: this.leftArmorDestroyed ? 0 : this.leftArmorHP / 80,
+      right: this.rightArmorDestroyed ? 0 : this.rightArmorHP / 80,
+    });
   }
 
-  drawArmorPlates(s) {
+  drawArmorPlates(s, armorFrac = { front: 1, left: 1, right: 1 }) {
     // We are in the Tank's local coordinate system, centered and rotated.
     // Main chassis' local Y extents are roughly -s*0.6 to +s*0.6.
     // Main chassis' local X extents are roughly -s*0.5 to +s*0.5.
@@ -317,6 +325,59 @@ class Tank extends BaseEnemy {
       );
     }
     this.p.pop();
+
+    // For front armor
+    if (!this.frontArmorDestroyed && armorFrac.front < 1) {
+      this.p.push();
+      this.p.stroke(220, 220, 255, 180 * (1 - armorFrac.front));
+      this.p.strokeWeight(2);
+      // Draw 2-4 jagged cracks vertically
+      for (let c = 0; c < 2 + Math.floor((1 - armorFrac.front) * 3); c++) {
+        const x0 = chassisFrontX + 4 + c * 6;
+        let y = -armorPlateLength * 0.4 + 4;
+        for (let seg = 0; seg < 5; seg++) {
+          const x1 = x0 + random(-2, 2);
+          const y1 = y + (armorPlateLength * 0.8) / 5 + random(-2, 2);
+          this.p.line(x0, y, x1, y1);
+          y = y1;
+        }
+      }
+      this.p.pop();
+    }
+    // For left armor
+    if (!this.leftArmorDestroyed && armorFrac.left < 1) {
+      this.p.push();
+      this.p.stroke(220, 220, 255, 180 * (1 - armorFrac.left));
+      this.p.strokeWeight(2);
+      for (let c = 0; c < 2 + Math.floor((1 - armorFrac.left) * 2); c++) {
+        let x = -armorPlateLength / 2 + 6 + c * 12;
+        const y0 = -chassisSideY - armorPlateThickness + 2;
+        for (let seg = 0; seg < 4; seg++) {
+          const x1 = x + (armorPlateLength / 4) + random(-2, 2);
+          const y1 = y0 + random(-2, 2);
+          this.p.line(x, y0, x1, y1);
+          x = x1;
+        }
+      }
+      this.p.pop();
+    }
+    // For right armor
+    if (!this.rightArmorDestroyed && armorFrac.right < 1) {
+      this.p.push();
+      this.p.stroke(220, 220, 255, 180 * (1 - armorFrac.right));
+      this.p.strokeWeight(2);
+      for (let c = 0; c < 2 + Math.floor((1 - armorFrac.right) * 2); c++) {
+        let x = -armorPlateLength / 2 + 6 + c * 12;
+        const y0 = chassisSideY + armorPlateThickness + armorPlateThickness / 2;
+        for (let seg = 0; seg < 4; seg++) {
+          const x1 = x + (armorPlateLength / 4) + random(-2, 2);
+          const y1 = y0 + random(-2, 2);
+          this.p.line(x, y0, x1, y1);
+          x = x1;
+        }
+      }
+      this.p.pop();
+    }
   }
 
   /**
@@ -427,7 +488,9 @@ class Tank extends BaseEnemy {
       const died = super.takeDamage(amount, bulletAngle, damageSource);
       if (died) {
         console.log('💀 Tank Died (main health depleted).');
-        // Death effects handled in BaseEnemy or CollisionSystem
+        if (died && window.audio && typeof window.audio.playSound === 'function') {
+          window.audio.playSound(SOUND.tankDeathThump, this.x, this.y);
+        }
       }
       return died;
     }
@@ -446,6 +509,7 @@ class Tank extends BaseEnemy {
       this.frontArmorHP -= amount;
       if (window.audio) window.audio.playSound(SOUND.hit, this.x, this.y);
       if (this.frontArmorHP <= 0) {
+        EnemyEventBus.emitArmorBroken({ id: this.id, part: 'front', x: this.x, y: this.y });
         // Armor destroyed, propagate leftover damage to main body
         const leftover = -this.frontArmorHP; // positive overflow
         this.frontArmorDestroyed = true;
@@ -459,9 +523,25 @@ class Tank extends BaseEnemy {
           // Pass overflow damage to main body
           return super.takeDamage(leftover, bulletAngle, damageSource);
         }
+        // Emit armor damaged progress
+        EnemyEventBus.emitArmorDamaged({
+          id: this.id,
+          part: 'front',
+          x: this.x,
+          y: this.y,
+          armorRemaining: Math.max(0, this.frontArmorHP) / 120,
+        });
         return false; // No overflow, armor absorbed
       }
       this.hitFlash = 8;
+      // Emit armor damaged progress
+      EnemyEventBus.emitArmorDamaged({
+        id: this.id,
+        part: 'front',
+        x: this.x,
+        y: this.y,
+        armorRemaining: Math.max(0, this.frontArmorHP) / 120,
+      });
       return false; // Armor absorbed
     }
     // Check Left Armor Hit (impactAngle between PI/4 and 3PI/4)
@@ -475,6 +555,7 @@ class Tank extends BaseEnemy {
       this.leftArmorHP -= amount;
       if (window.audio) window.audio.playSound(SOUND.hit, this.x, this.y);
       if (this.leftArmorHP <= 0) {
+        EnemyEventBus.emitArmorBroken({ id: this.id, part: 'left', x: this.x, y: this.y });
         // Armor destroyed, propagate leftover damage to main body
         const leftover = -this.leftArmorHP; // positive overflow
         this.leftArmorDestroyed = true;
@@ -488,9 +569,25 @@ class Tank extends BaseEnemy {
           // Pass overflow damage to main body
           return super.takeDamage(leftover, bulletAngle, damageSource);
         }
+        // Emit armor damaged progress
+        EnemyEventBus.emitArmorDamaged({
+          id: this.id,
+          part: 'left',
+          x: this.x,
+          y: this.y,
+          armorRemaining: Math.max(0, this.leftArmorHP) / 80,
+        });
         return false; // No overflow, armor absorbed
       }
       this.hitFlash = 8;
+      // Emit armor damaged progress
+      EnemyEventBus.emitArmorDamaged({
+        id: this.id,
+        part: 'left',
+        x: this.x,
+        y: this.y,
+        armorRemaining: Math.max(0, this.leftArmorHP) / 80,
+      });
       return false; // Armor absorbed
     }
     // Check Right Armor Hit (impactAngle between -3PI/4 and -PI/4)
@@ -504,6 +601,7 @@ class Tank extends BaseEnemy {
       this.rightArmorHP -= amount;
       if (window.audio) window.audio.playSound(SOUND.hit, this.x, this.y);
       if (this.rightArmorHP <= 0) {
+        EnemyEventBus.emitArmorBroken({ id: this.id, part: 'right', x: this.x, y: this.y });
         // Armor destroyed, propagate leftover damage to main body
         const leftover = -this.rightArmorHP; // positive overflow
         this.rightArmorDestroyed = true;
@@ -517,9 +615,25 @@ class Tank extends BaseEnemy {
           // Pass overflow damage to main body
           return super.takeDamage(leftover, bulletAngle, damageSource);
         }
+        // Emit armor damaged progress
+        EnemyEventBus.emitArmorDamaged({
+          id: this.id,
+          part: 'right',
+          x: this.x,
+          y: this.y,
+          armorRemaining: Math.max(0, this.rightArmorHP) / 80,
+        });
         return false; // No overflow, armor absorbed
       }
       this.hitFlash = 8;
+      // Emit armor damaged progress
+      EnemyEventBus.emitArmorDamaged({
+        id: this.id,
+        part: 'right',
+        x: this.x,
+        y: this.y,
+        armorRemaining: Math.max(0, this.rightArmorHP) / 80,
+      });
       return false; // Armor absorbed
     }
 
@@ -558,7 +672,9 @@ class Tank extends BaseEnemy {
     const died = super.takeDamage(amount, bulletAngle, damageSource);
     if (died) {
       console.log('💀 Tank Died (main health depleted).');
-      // Death effects handled in BaseEnemy or CollisionSystem
+      if (died && window.audio && typeof window.audio.playSound === 'function') {
+        window.audio.playSound(SOUND.tankDeathThump, this.x, this.y);
+      }
     }
     return died;
   }

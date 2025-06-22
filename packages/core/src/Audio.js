@@ -72,8 +72,8 @@ export class Audio {
 
     // Per-category gain multipliers for quick balancing (🔊 sfx, 🗣️ speech)
     this.categoryGain = {
-      sfx: 1.0,
-      speech: 1.5, // speech needs a boost to cut through
+      sfx: 0.7,
+      speech: 1.2, // speech needs a boost to cut through
     };
 
     // Effects nodes
@@ -100,29 +100,29 @@ export class Audio {
     this.sounds = {
       // MUSICAL WEAPONS: Each enemy type becomes an instrument
       playerShoot: {
-        frequency: 480,
+        frequency: 392, // G4 (A-minor pentatonic)
         waveform: 'sawtooth',
-        volume: 0.2,
-        duration: 0.01,
+        volume: 0.4,
+        duration: 0.02,
       }, // Hi-hat: crisp, high, short
       alienShoot: {
-        frequency: 800,
+        frequency: 330, // E4 (A-minor pentatonic)
         waveform: 'square',
-        volume: 0.25,
+        volume: 0.5,
         duration: 0.15,
       }, // Snare: punchy, mid-range
       tankEnergy: {
-        frequency: 80,
+        frequency: 110, // A2 (A-minor pentatonic)
         waveform: 'sine',
-        volume: 0.7,
+        volume: 0.8,
         duration: 1.0,
-      }, // ENHANCED: Fatter bass drum with more volume and duration
+      }, // Kick: fatter bass drum
       stabAttack: {
         frequency: 2000,
         waveform: 'sawtooth',
-        volume: 0.3,
-        duration: 0.1,
-      }, // Sharp accent: cutting through
+        volume: 0.6,
+        duration: 0.8,
+      },
 
       // NON-MUSICAL SOUNDS: Effects and ambience - ENHANCED EXPLOSIONS
       explosion: {
@@ -146,13 +146,13 @@ export class Audio {
       rusherScream: {
         frequency: 800,
         waveform: 'sawtooth',
-        volume: 0.4,
+        volume: 0.6,
         duration: 1.0,
       },
       enemyFrying: {
         frequency: 1400,
         waveform: 'noise',
-        duration: 0.3,
+        duration: 0.5,
         volume: 0.3,
       }, // ENHANCED: Higher frequency for better audibility
       stabberDash: {
@@ -184,7 +184,7 @@ export class Audio {
       stabberChant: {
         frequency: 1800,
         waveform: 'triangle',
-        volume: 0.3,
+        volume: 0.42,
         duration: 0.5,
       },
       gruntAdvance: {
@@ -209,13 +209,13 @@ export class Audio {
       stabberKnife: {
         frequency: 2200,
         waveform: 'triangle',
-        volume: 0.4,
+        volume: 0.6,
         duration: 0.15,
       }, // Sharp accent: cutting through
       enemyIdle: {
         frequency: 200,
         waveform: 'sine',
-        volume: 0.1,
+        volume: 0.07,
         duration: 0.8,
       },
       tankPowerUp: {
@@ -227,7 +227,7 @@ export class Audio {
       stabberStalk: {
         frequency: 1600,
         waveform: 'triangle',
-        volume: 0.25,
+        volume: 0.16,
         duration: 0.4,
       },
 
@@ -235,7 +235,7 @@ export class Audio {
       gruntPop: {
         frequency: 1200,
         waveform: 'triangle',
-        volume: 0.4,
+        volume: 0.6,
         duration: 0.08,
       }, // Crisp, satisfying POP!
       enemyOhNo: {
@@ -271,31 +271,31 @@ export class Audio {
       gruntMalfunction: {
         frequency: 180,
         waveform: 'sawtooth',
-        volume: 0.12,
+        volume: 0.08,
         duration: 0.4,
       },
       gruntBeep: {
         frequency: 800,
         waveform: 'triangle',
-        volume: 0.08,
+        volume: 0.05,
         duration: 0.15,
       },
       gruntWhir: {
         frequency: 300,
         waveform: 'sine',
-        volume: 0.1,
+        volume: 0.06,
         duration: 0.6,
       },
       gruntError: {
         frequency: 220,
         waveform: 'square',
-        volume: 0.1,
+        volume: 0.06,
         duration: 0.2,
       },
       gruntGlitch: {
         frequency: 150,
         waveform: 'sawtooth',
-        volume: 0.09,
+        volume: 0.05,
         duration: 0.25,
       },
       gruntOw: {
@@ -307,26 +307,136 @@ export class Audio {
       stabberKnifeExtend: {
         frequency: 2000,
         waveform: 'triangle',
-        volume: 0.3,
+        volume: 0.6,
         duration: 0.12,
       },
-      stabberKnifeHit1: {
-        frequency: 3200,
-        waveform: 'sawtooth',
-        volume: 0.55,
-        duration: 0.07,
+      stabberKnifeHit: {
+        variants: [
+          {
+            frequency: 3200,
+            waveform: 'sawtooth',
+            volume: 0.55,
+            duration: 0.07,
+          },
+          {
+            frequency: 2800,
+            waveform: 'triangle',
+            volume: 0.5,
+            duration: 0.09,
+          },
+          {
+            frequency: 3500,
+            waveform: 'square',
+            volume: 0.6,
+            duration: 0.06,
+          },
+        ],
       },
-      stabberKnifeHit2: {
-        frequency: 2800,
+
+      // --- New SFX stubs (TODO: design these) ---
+      uiConfirm: {
+        frequency: 1760, // A6
+        waveform: 'triangle',
+        volume: 0.3,
+        duration: 0.07,
+        // TODO: Design UI confirm sound
+      },
+      uiCancel: {
+        frequency: 130.81, // C3
+        waveform: 'triangle',
+        volume: 0.25,
+        duration: 0.09,
+        // TODO: Design UI cancel sound
+      },
+      bulletMetalHit: {
+        frequency: 659.25, // E5
         waveform: 'triangle',
         volume: 0.5,
-        duration: 0.09,
+        duration: 0.04,
+        // TODO: Design bullet metal hit
       },
-      stabberKnifeHit3: {
-        frequency: 3500,
-        waveform: 'square',
-        volume: 0.6,
-        duration: 0.06,
+      onBeatBonus: {
+        frequency: 440, // A4 (arpeggio to be implemented)
+        waveform: 'triangle',
+        volume: 0.4,
+        duration: 0.12,
+        // TODO: Implement arpeggio for on-beat bonus
+      },
+      cosmicWind: {
+        frequency: 60,
+        waveform: 'noise',
+        volume: 0.05,
+        duration: 3.0,
+        tremolo: true,
+        // TODO: Design cosmic wind ambient
+      },
+      // --- Enemy/Combat SFX (2025 Roadmap) ---
+      enemySpawnWhoosh: {
+        frequency: 80, // Low whoosh
+        waveform: 'noise',
+        volume: 0.3,
+        duration: 0.22,
+        // TODO: Tune filter/pan for spawn location
+      },
+      gruntPopEcho: {
+        frequency: 1200, // Echo after main pop
+        waveform: 'triangle',
+        volume: 0.3,
+        duration: 0.18,
+        // TODO: Add subtle delay/reverb
+      },
+      tankDeathThump: {
+        frequency: 55, // A1 sub-bass
+        waveform: 'sine',
+        volume: 1.0,
+        duration: 0.64,
+        // TODO: Add short decay, maybe a little distortion
+      },
+      rusherDeathFizz: {
+        frequency: 400,
+        waveform: 'noise',
+        volume: 0.22,
+        duration: 0.19,
+        sweep: { to: 1200, curve: 'linear' },
+        // TODO: Tune for fizz/rise
+      },
+      stabberDeathClink: {
+        frequency: 2600,
+        waveform: 'triangle',
+        volume: 0.32,
+        duration: 0.07,
+        // TODO: Make extra metallic if needed
+      },
+      enemyChargeUp: {
+        frequency: 220,
+        waveform: 'sawtooth',
+        volume: 0.28,
+        duration: 0.5,
+        sweep: { to: 880, curve: 'exponential' },
+        tremolo: true,
+        // TODO: Sync to beat, tune for drama
+      },
+      // --- New Ambient SFX ---
+      cosmicDrone: {
+        frequency: 44, // Deep, slow-moving drone
+        waveform: 'sine',
+        volume: 0.04,
+        duration: 6.0,
+        // TODO: Tune for deep cosmic background
+      },
+      cosmicChimes: {
+        frequency: 1760, // High, sparkling chimes
+        waveform: 'triangle',
+        volume: 0.07,
+        duration: 0.18,
+        // TODO: Tune for rare, sparkling effect
+      },
+      cosmicPulse: {
+        frequency: 110, // Slow cosmic heartbeat
+        waveform: 'sawtooth',
+        volume: 0.06,
+        duration: 0.5,
+        // TODO: Tune for slow cosmic pulse
       },
     };
 
@@ -334,10 +444,10 @@ export class Audio {
     this.voiceConfig = {
       // Player voice tweaked for mysterious tone
       player: { rate: 0.85, pitch: 0.15, volume: 0.5 },
-      grunt: { rate: 0.6, pitch: 1.6, volume: 0.3 }, // Reduced from 0.8 to 0.3
-      rusher: { rate: 1.4, pitch: 1.5, volume: 0.35 }, // Reduced from 0.9 to 0.35
-      tank: { rate: 0.5, pitch: 0.2, volume: 0.4 }, // Reduced from 1.0 to 0.4
-      stabber: { rate: 0.8, pitch: 2.0, volume: 0.4 }, // Fixed: was 0.4, comment said 0.3
+      grunt: { rate: 0.6, pitch: 1.6, volume: 0.5 }, // Reduced from 0.8 to 0.3
+      rusher: { rate: 1.4, pitch: 1.5, volume: 0.65 }, // Reduced from 0.9 to 0.35
+      tank: { rate: 0.5, pitch: 0.2, volume: 0.6 }, // Reduced from 1.0 to 0.4
+      stabber: { rate: 0.8, pitch: 2.0, volume: 0.9 }, // Fixed: was 0.4, comment said 0.3
     };
 
     // Initialise dedicated SFX Manager (first extraction step)
@@ -363,6 +473,16 @@ export class Audio {
         this.setPlayer(e.detail);
       }
     });
+
+    this.cosmicPulseTimer = 0;
+    this.nextCosmicPulseInterval = 1500 + randomRange(-300, 300); // ms
+    this.lastCosmicPulseMeasure = -1;
+
+    // --- Ambient SFX state ---
+    this.cosmicDroneGain = null;
+    this.cosmicDroneActive = false;
+    this.cosmicChimesTimer = performance.now();
+    this.nextCosmicChimesInterval = 12000 + randomRange(0, 18000); // 12–30s
   }
 
   /**
@@ -398,6 +518,27 @@ export class Audio {
 
       this.initialized = true;
       console.log('✅ Audio system initialized');
+
+      this.cosmicPulseTimer = performance.now();
+      this.nextCosmicPulseInterval = 1500 + randomRange(-300, 300);
+
+      // --- Fade in cosmicDrone on init ---
+      if (this.audioContext) {
+        this.cosmicDroneGain = this.audioContext.createGain();
+        this.cosmicDroneGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+        this.cosmicDroneActive = true;
+        // Play cosmicDrone as a looping oscillator
+        const droneOsc = this.audioContext.createOscillator();
+        droneOsc.type = this.sounds.cosmicDrone.waveform;
+        droneOsc.frequency.setValueAtTime(this.sounds.cosmicDrone.frequency, this.audioContext.currentTime);
+        droneOsc.connect(this.cosmicDroneGain);
+        this.cosmicDroneGain.connect(this.masterGain);
+        droneOsc.start();
+        // Fade in
+        this.cosmicDroneGain.gain.linearRampToValueAtTime(this.sounds.cosmicDrone.volume, this.audioContext.currentTime + 3.0);
+        this._cosmicDroneOsc = droneOsc;
+        // TODO: Add slow LFO for subtle movement
+      }
     } catch (error) {
       console.error('❌ Audio initialization failed:', error);
       this.enabled = false;
@@ -1532,6 +1673,46 @@ export class Audio {
   update() {
     // Update text display system
     this.updateTexts();
+
+    // Cosmic Pulse: play only on first beat of each measure, volume peaks on 2nd/4th measure
+    if (window.beatClock) {
+      const totalBeats = window.beatClock.getTotalBeats();
+      const beatsPerMeasure = window.beatClock.beatsPerMeasure;
+      const beatInMeasure = (totalBeats % beatsPerMeasure) + 1;
+      const measureNum = Math.floor(totalBeats / beatsPerMeasure) + 1;
+      if (beatInMeasure === 1 && measureNum !== this.lastCosmicPulseMeasure) {
+        // Only trigger once per measure
+        this.lastCosmicPulseMeasure = measureNum;
+        // Randomize interval for organic feel
+        this.nextCosmicPulseInterval = 1500 + randomRange(-300, 300);
+        // Volume: loudest on 2nd or 4th measure, softer otherwise
+        const baseVol = this.sounds.cosmicPulse.volume;
+        const isLoud = (measureNum % 2 === 0) || (measureNum % 4 === 0);
+        const modVol = baseVol * (isLoud ? 1.0 : 0.6);
+        // Play only if enough time has passed since last pulse
+        const now = performance.now();
+        if (now - this.cosmicPulseTimer > this.nextCosmicPulseInterval) {
+          // Temporarily override volume for this pulse
+          const origVol = this.sounds.cosmicPulse.volume;
+          this.sounds.cosmicPulse.volume = modVol;
+          this.playSound(SOUND.cosmicPulse);
+          this.sounds.cosmicPulse.volume = origVol;
+          this.cosmicPulseTimer = now;
+        }
+      }
+    }
+
+    // --- CosmicChimes: rare sparkle, only if player is alive and not in menu ---
+    const now = performance.now();
+    if (
+      now - this.cosmicChimesTimer > this.nextCosmicChimesInterval &&
+      window.player && !window.gameState?.isMenu && !window.gameState?.isGameOver
+    ) {
+      this.playSound(SOUND.cosmicChimes, window.player.x, window.player.y);
+      this.cosmicChimesTimer = now;
+      this.nextCosmicChimesInterval = 12000 + randomRange(0, 18000); // 12–30s
+      // TODO: Optionally sync to beat or trigger on special events
+    }
   }
 
   // MISSING METHODS - Added to fix silent sounds after refactoring
@@ -1546,14 +1727,7 @@ export class Audio {
   } // Stabber attacks use stabAttack sound
 
   playStabberHit(x, y) {
-    // Randomly pick one of the metallic hit sounds
-    const variants = [
-      'stabberKnifeHit1',
-      'stabberKnifeHit2',
-      'stabberKnifeHit3',
-    ];
-    const pick = variants[Math.floor(Math.random() * variants.length)];
-    this.playSound(pick, x, y);
+    this.playSound(SOUND.stabberKnifeHit, x, y);
   }
 
   /**
@@ -1581,5 +1755,18 @@ export class Audio {
       throw new Error(`Sound registry mismatch detected!\n${details}`);
     }
     console.log('✅ Sound registry validated –', configKeys.length, 'entries');
+  }
+
+  disable() {
+    // ... existing code ...
+    // --- Fade out cosmicDrone on disable ---
+    if (this.cosmicDroneGain) {
+      this.cosmicDroneGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 2.0);
+      setTimeout(() => {
+        if (this._cosmicDroneOsc) this._cosmicDroneOsc.stop();
+        this.cosmicDroneActive = false;
+      }, 2200);
+    }
+    // ... existing code ...
   }
 }

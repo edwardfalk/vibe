@@ -147,3 +147,14 @@ if (result.moveBlockedByEdge) {
 - Any bug report files (markdown, JSON, PNG) downloaded from the browser are automatically moved from your Downloads folder to `tests/bug-reports/`.
 - This ensures all manual and automated bug reports are organized and accessible for both human and AI/agent debugging.
 - You can also run the watcher alone with `bun run watch-bugs`.
+
+## VFX Probes
+
+- **tank-armor-break-probe:**
+  - Asserts cracks and debris appear when tank armor is damaged and broken.
+- **grunt-knockback-probe:**
+  - Asserts grunt moves after a bullet hit (knock-back).
+
+**How to run:**
+- `bunx playwright test tests/tank-armor-break-probe.test.js`
+- `bunx playwright test tests/grunt-knockback-probe.test.js`

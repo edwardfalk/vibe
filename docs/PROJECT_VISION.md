@@ -1,7 +1,7 @@
 # Vibe Project Vision
 
 ## Purpose
-Vibe is a bizarre, half-mad, rhythm-driven space shooter where every action is synced to the cosmic beat. The goal: deliver a wild, energetic, and musically-charged gameplay experience that's as fun to build as it is to play.
+Vibe is a bizarre, half-mad, rhythm-driven space shooter where every action is synced to the cosmic beat. The goal: deliver a wild, energetic, and musically-charged gameplay experience that's as fun to build as it is to play. There is no music soundtrack; the music is made while playing by the sound effects and speech.
 
 ## Core Design Pillars
 - **Cosmic Beat System:** The game world pulses to a universal rhythm. Enemies, bullets, and even the UI dance to the beat. If it doesn't groove, it doesn't ship.

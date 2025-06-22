@@ -18,6 +18,7 @@ export const effectsConfig = {
   // Per-enemy overrides ------------------------------------------------------
   // Values not supplied fall back to the sensible defaults inside helpers.
   stabber: {
+    effectWeight: 1.0,
     glow: {
       // Matches knife core orange-white
       color: [255, 140, 0],
@@ -38,6 +39,7 @@ export const effectsConfig = {
   },
 
   grunt: {
+    effectWeight: 0.8,
     glow: {
       // Soft green that matches eye colour
       color: [50, 200, 50],
@@ -57,6 +59,7 @@ export const effectsConfig = {
   },
 
   rusher: {
+    effectWeight: 0.9,
     glow: {
       // Pinkish red charger
       color: [255, 100, 150],
@@ -76,6 +79,7 @@ export const effectsConfig = {
   },
 
   tank: {
+    effectWeight: 1.0,
     glow: {
       color: [100, 50, 200],
       alpha: 130,

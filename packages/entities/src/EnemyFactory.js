@@ -2,7 +2,7 @@ import { Grunt } from './Grunt.js';
 import { Rusher } from './Rusher.js';
 import { Tank } from './Tank.js';
 import { Stabber } from './Stabber.js';
-import { random } from '@vibe/core';
+import { random, SOUND } from '@vibe/core';
 
 /**
  * EnemyFactory class - Handles enemy creation and type management
@@ -89,6 +89,12 @@ class EnemyFactory {
 
     // Create the enemy using the appropriate class with correct constructor signature
     const enemy = new EnemyClass(x, y, type, config, p, audio || window.audio);
+
+    // Play spawn SFX
+    const audioSystem = audio || window.audio;
+    if (audioSystem && typeof audioSystem.playSound === 'function') {
+      audioSystem.playSound(SOUND.enemySpawnWhoosh, x, y);
+    }
 
     console.log(
       `🏭 EnemyFactory created ${type} at (${x.toFixed(0)}, ${y.toFixed(0)})`

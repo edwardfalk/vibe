@@ -13,6 +13,7 @@ import {
 } from '@vibe/core';
 import { getEnemyConfig, effectsConfig } from '@vibe/fx/effectsConfig.js';
 import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
+import { EnemyEventBus } from './EnemyEventBus.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
@@ -45,6 +46,8 @@ export class BaseEnemy {
     this.velocity = { x: 0, y: 0 };
     this.aimAngle = 0;
     this.animFrame = randomRange(0, p.TWO_PI);
+    this.knockVX = 0;
+    this.knockVY = 0;
 
     // Combat
     this.shootCooldown = 0;
@@ -130,9 +133,13 @@ export class BaseEnemy {
       this.aimAngle = atan2(dy, dx);
     }
 
-    // Apply velocity
-    this.x += this.velocity.x;
-    this.y += this.velocity.y;
+    // Apply velocity and transient knock-back impulse
+    this.x += this.velocity.x + this.knockVX;
+    this.y += this.velocity.y + this.knockVY;
+
+    // Decay knock-back each frame for smooth slowdown
+    this.knockVX *= 0.85;
+    this.knockVY *= 0.85;
 
     // Handle ambient speech timing
     this.updateAmbientSpeech(deltaTimeMs);
@@ -534,7 +541,20 @@ export class BaseEnemy {
     }
     this.health -= amount;
     this.hitFlash = 8;
+
+    // Broadcast enemyHit event for VFX systems
+    EnemyEventBus.emitEnemyHit({
+      id: this.id,
+      type: this.type,
+      x: this.x,
+      y: this.y,
+      damage: amount,
+      bulletAngle,
+      damageSource,
+    });
+
     if (this.health <= 0) {
+      EnemyEventBus.emitEnemyKilled({ id: this.id, type: this.type, x: this.x, y: this.y });
       return true; // Enemy died
     }
     return false;
@@ -546,5 +566,16 @@ export class BaseEnemy {
   checkCollision(other) {
     const distance = this.p.dist(this.x, this.y, other.x, other.y);
     return distance < (this.size + other.size) * 0.85;
+  }
+
+  /**
+   * Apply an instantaneous impulse (knock-back) to the enemy. Used by VFXDispatcher
+   * when bullets connect, etc.
+   * @param {number} angle – radians direction
+   * @param {number} strength – scalar speed magnitude
+   */
+  applyImpulse(angle, strength = 1) {
+    this.knockVX += Math.cos(angle) * strength;
+    this.knockVY += Math.sin(angle) * strength;
   }
 }

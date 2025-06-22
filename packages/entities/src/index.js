@@ -9,3 +9,4 @@ export { Rusher } from './Rusher.js';
 export { Tank } from './Tank.js';
 export { Stabber } from './Stabber.js';
 export { EnemyFactory } from './EnemyFactory.js';
+export { EnemyEventBus, ENEMY_HIT, ARMOR_DAMAGED, ARMOR_BROKEN, ENEMY_KILLED } from './EnemyEventBus.js';

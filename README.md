@@ -166,7 +166,8 @@ This CLI is cross-platform, robust, and hides all curl/PowerShell/JSON quirks. I
 ## Audio & Visuals
 
 - Audio system is modular and beat-synced.
-- Visual effects are handled by `visualEffects.js` and `effects.js`.
+- Visual effects are triggered via a global event-bus system (`EnemyEventBus` + `VFXDispatcher`), ensuring all feedback is modular, testable, and balanced.
+- See `docs/DESIGN.md` for a full diagram and explanation of the new VFX system.
 - See `docs/AUDIO_CONFIGURATION_GUIDE.md` for setup.
 
 ---

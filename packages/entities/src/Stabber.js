@@ -356,6 +356,18 @@ class Stabber extends BaseEnemy {
         // Lock attack direction
         this.stabDirection = this.aimAngle;
 
+        // Stabber always says a line when attacking
+        if (window.audio) {
+          const stabWarnings = [
+            'STAB TIME!',
+            'SLICE AND DICE!',
+            'ACUPUNCTURE TIME!',
+            'STABBY MCSTABFACE!',
+          ];
+          const warning = stabWarnings[floor(random() * stabWarnings.length)];
+          window.audio.speak(this, warning, 'stabber');
+        }
+
         console.log(
           `⚠️ Stabber entering warning phase, direction locked at ${((this.stabDirection * 180) / Math.PI).toFixed(1)}°`
         );
@@ -576,7 +588,7 @@ class Stabber extends BaseEnemy {
    */
   triggerAmbientSpeech() {
     speakAmbient(this, 'stabber', {
-      probability: 0.2,
+      probability: 0.35,
       beatList: [3.5], // off-beat accent
       beatMultiplier: 2,
     });
@@ -835,6 +847,9 @@ class Stabber extends BaseEnemy {
     this.hitFlash = 8;
 
     if (this.health <= 0) {
+      if (window.audio && typeof window.audio.playSound === 'function') {
+        window.audio.playSound(SOUND.stabberDeathClink, this.x, this.y);
+      }
       return true; // Enemy died
     }
     return false;
