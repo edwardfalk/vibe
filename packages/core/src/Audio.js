@@ -335,7 +335,7 @@ export class Audio {
 
       // --- New SFX stubs (TODO: design these) ---
       uiConfirm: {
-        frequency: 1760, // A6
+        frequency: 523.25, // C5
         waveform: 'triangle',
         volume: 0.3,
         duration: 0.07,
@@ -438,6 +438,20 @@ export class Audio {
         duration: 0.5,
         // TODO: Tune for slow cosmic pulse
       },
+      uiPauseToggle: {
+        frequency: 220, // A3
+        waveform: 'sine',
+        volume: 0.3,
+        duration: 0.2,
+        sweep: { to: 330, curve: 'exponential' }, // Sweeps to E4
+      },
+      armorBreak: {
+        frequency: 300,
+        waveform: 'noise',
+        volume: 0.8,
+        duration: 0.5,
+        sweep: { to: 100, curve: 'linear' },
+      }, // Loud, crunching sound of armor shattering
     };
 
     // Voice configuration - REDUCED VOLUMES for background speech effect

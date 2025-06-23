@@ -22,7 +22,8 @@ export function angleDiff(a, b) {
  *
  * @param {object} self - The enemy instance evaluating the shot (expects x, y, aimAngle).
  * @param {number} aimAngle - Absolute aim angle in radians.
- * @param {number} range     - Max distance to consider (default 400).
+ * @param {object} grid - The spatial hash grid for collision detection.
+ * @param {number} range - Max distance to consider (default 400).
  * @param {number} tolerance - Angular tolerance in radians (default 15°).
  * @param {number} avoidProb - Probability [0-1] to avoid when a friend is in line (default 0.7).
  * @returns {boolean} true if the shot should be avoided.
@@ -30,28 +31,24 @@ export function angleDiff(a, b) {
 export function shouldAvoidFriendlyFire(
   self,
   aimAngle,
+  grid,
   range = 400,
   tolerance = PI / 12,
   avoidProb = 0.7
 ) {
-  if (!window.enemies || aimAngle === undefined || aimAngle === null)
-    return false;
+  if (!grid || aimAngle === undefined || aimAngle === null) return false;
 
-  const rangeSq = range * range;
   const { x, y } = self;
 
-  for (const enemy of window.enemies) {
+  // Query neighbors in a cone shape for efficiency
+  const potentialObstacles = grid.coneQuery(x, y, aimAngle, range, tolerance);
+
+  for (const enemy of potentialObstacles) {
     if (enemy === self) continue;
 
-    const dx = enemy.x - x;
-    const dy = enemy.y - y;
-    if (dx * dx + dy * dy > rangeSq) continue; // too far
-
-    const angleToEnemy = atan2(dy, dx);
-    if (angleDiff(angleToEnemy, aimAngle) < tolerance) {
-      // Friend in line of fire
-      return random() < avoidProb;
-    }
+    // A nearby enemy is in the line of fire, decide whether to abort shot
+    return random() < avoidProb;
   }
+
   return false;
 }

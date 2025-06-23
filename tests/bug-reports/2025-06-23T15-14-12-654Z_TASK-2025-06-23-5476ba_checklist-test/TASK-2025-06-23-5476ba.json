@@ -1,0 +1,29 @@
+{
+  "id": "TASK-2025-06-23-5476ba",
+  "type": "task",
+  "title": "Checklist Test",
+  "checklist": [
+    {
+      "step": "Step 1",
+      "done": false
+    },
+    {
+      "step": "Step 2",
+      "done": false
+    }
+  ],
+  "slug": "checklist-test",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T15:14:12.654Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T15:14:12.654Z",
+  "updatedAt": "2025-06-23T15:14:12.654Z",
+  "folder": "2025-06-23T15-14-12-654Z_TASK-2025-06-23-5476ba_checklist-test"
+}

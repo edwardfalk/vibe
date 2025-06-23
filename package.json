@@ -6,7 +6,7 @@
   "workspaces": ["packages/*"],
   "main": "index.html",
   "scripts": {
-    "serve": "bun run five-server --port=5500",
+    "serve": "bun run five-server --port=5500 --ignore=playwright-report,test-results,coderabbit-reviews",
     "watch-bugs": "bun run scripts/move-bug-reports.js",
     "predev": "bunx kill-port 5500 3001",
     "dev": "concurrently -r --kill-others-on-fail \"bun run serve\" \"bun run watch-bugs\" \"bun run api\"",
@@ -18,8 +18,10 @@
     "test:debug": "bunx playwright test --debug",
     "test:mcp": "bun run scripts/run-mcp-tests.js",
     "test:probes": "bun run scripts/run-mcp-tests.js",
+    "test:cli": "vitest run tests/cli/",
+    "test:api": "vitest --run tests/api/ticket-api.test.js",
     "test:comprehensive": "bun run test:playwright && bun run test:mcp",
-    "api": "bun run ticket-api.js",
+    "api": "bun ticket-api.js",
     "coderabbit:pull": "bun pull-coderabbit-reviews.js",
     "coderabbit:fetch-complete": "bun fetch-complete-coderabbit-reviews.js",
     "coderabbit:analyze": "bun analyze-coderabbit-data.js",
@@ -40,12 +42,9 @@
     "tickets:update": "bun run scripts/update-ticket-status.js",
     "tickets:batch-resolve": "bun run scripts/batch-resolve-tickets.js",
     "cleanup:debug": "bun run scripts/cleanup-debug.js",
-    "ticket:create": "bun run js/ticketManager.js create",
-    "ticket:update": "bun run js/ticketManager.js update",
-    "ticket:get": "bun run js/ticketManager.js get",
-    "ticket:list": "bun run js/ticketManager.js list",
-    "ticket:latest": "bun run js/ticketManager.js latest",
-    "ticket:check": "bun run js/ticketManager.js check"
+    "generate:pw-rules": "bun run scripts/generate-playwright-rules.js",
+    "probe:liveness": "bunx playwright test tests/startup-black-screen-probe.test.js",
+    "probe:tickets": "bunx playwright test tests/ticket-creation-probe.test.js"
   },
   "bun": {
     "dev": {
@@ -59,6 +58,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.53.0",
+    "@types/supertest": "^6.0.3",
     "concurrently": "^9.1.2",
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.28.0",
@@ -68,6 +68,7 @@
     "kill-port": "^2.0.1",
     "live-server": "^1.2.2",
     "prettier": "^3.5.3",
+    "supertest": "^7.1.1",
     "tsx": "^4.19.4",
     "vitest": "^3.2.2"
   },
@@ -75,7 +76,9 @@
     "compression": "^1.8.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
+    "get-stream": "^9.0.1",
     "jszip": "^3.10.1",
+    "minimist": "^1.2.8",
     "p5": "^1.7.0",
     "test": "^3.3.0",
     "zod": "^3.25.56"

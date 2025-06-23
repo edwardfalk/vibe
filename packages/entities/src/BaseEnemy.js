@@ -219,7 +219,7 @@ export class BaseEnemy {
         const glowSize =
           (baseGlow.sizeMult || 1.0) * this.size * speechGlowSize;
 
-        drawGlow(this.x, this.y, glowSize, glowColor, speechGlowIntensity);
+        drawGlow(this.p, this.x, this.y, glowSize, glowColor, speechGlowIntensity);
 
         // Add extra pulsing glow for aggressive speech
         if (isSpeaking && this.audio) {
@@ -228,6 +228,7 @@ export class BaseEnemy {
           if (myText && myText.isAggressive) {
             const aggressivePulse = sin(p.frameCount * 0.8) * 0.3 + 0.5;
             drawGlow(
+              this.p,
               this.x,
               this.y,
               this.size * 2,
@@ -245,337 +246,203 @@ export class BaseEnemy {
     }
   }
 
-  /**
-   * Get glow color for this enemy type - can be overridden by subclasses
-   */
   getGlowColor(isSpeaking) {
-    if (this.type === 'tank') {
-      return isSpeaking
-        ? this.p.color(150, 100, 255)
-        : this.p.color(100, 50, 200);
-    } else if (this.type === 'rusher') {
-      return isSpeaking
-        ? this.p.color(255, 150, 200)
-        : this.p.color(255, 100, 150);
-    } else if (this.type === 'stabber') {
-      return isSpeaking
-        ? this.p.color(255, 200, 50)
-        : this.p.color(255, 140, 0);
-    } else {
-      // Grunt default
-      return isSpeaking
-        ? this.p.color(100, 255, 100)
-        : this.p.color(50, 200, 50);
+    const cfg = getEnemyConfig(this.type);
+    const glowConfig = cfg.glow || {};
+    const baseColor = this.p.color(
+      ...(glowConfig.color || [255, 255, 255])
+    );
+
+    if (isSpeaking) {
+      // Make glow brighter/whiter when speaking
+      return this.p.lerpColor(baseColor, this.p.color(255), 0.4);
     }
+    return baseColor;
   }
 
-  /**
-   * Get glow size for this enemy type
-   */
   getGlowSize() {
-    if (this.type === 'tank') {
-      return this.size * 1.5;
-    } else if (this.type === 'rusher' || this.type === 'stabber') {
-      return this.size * 1.2;
-    } else {
-      return this.size * 1.1;
-    }
+    const isSpeaking = this.speechTimer > 0;
+    const baseSize =
+      (getEnemyConfig(this.type).glow?.sizeMult || 1.0) * this.size;
+    return isSpeaking ? baseSize * 1.3 : baseSize;
   }
 
-  /**
-   * Draw method - handles common rendering and calls specific draw methods
-   */
   draw(p = this.p) {
-    // Debug: Log enemy type and position every 30 frames
-    if (
-      typeof p.frameCount !== 'undefined' &&
-      p.frameCount % 30 === 0 &&
-      CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS
-    ) {
-      console.log(
-        `[ENEMY DRAW] type=${this.type} x=${this.x.toFixed(1)} y=${this.y.toFixed(1)} health=${this.health} visible=${this.isVisible ? this.isVisible : 'n/a'}`
-      );
-    }
-    // Draw glow effects first
-    this.drawGlow(p);
-
-    // Add motion trail for fast enemies (can be overridden)
-    this.drawMotionTrail();
+    if (this.health <= 0) return;
 
     p.push();
     p.translate(this.x, this.y);
-    p.rotate(this.aimAngle);
+    p.rotate(this.aimAngle + p.PI / 2);
 
-    const s = this.size;
-    let bobble = sin(this.animFrame) * 2;
-    let waddle = cos(this.animFrame * 0.8) * 1.5;
-
-    // Allow subclasses to modify animation
-    const animationMods = this.getAnimationModifications();
-    bobble += animationMods.bobble;
-    waddle += animationMods.waddle;
-
-    // Apply animation offsets
-    p.translate(waddle, bobble);
-
-    // Hit flash effect
     if (this.hitFlash > 0) {
-      p.tint(255, 255, 255, 100);
-      const hitIntensity = this.hitFlash / 8;
-      const shakeX = randomRange(-hitIntensity * 4, hitIntensity * 4);
-      const shakeY = randomRange(-hitIntensity * 3, hitIntensity * 3);
-      p.translate(shakeX, shakeY);
-
-      // Comical size distortion when hit
-      const distortion = 1 + sin(p.frameCount * 2) * hitIntensity * 0.1;
-      p.scale(distortion, 1 / distortion);
+      const flashAlpha = (this.hitFlash / 4) * 150;
+      p.fill(255, 255, 255, flashAlpha);
+      p.ellipse(0, 0, this.size * 1.5, this.size * 1.5);
     }
 
-    // Draw main body (subclasses implement specific shapes)
+    const s = this.size;
     this.drawBody(s, p);
-
-    // Draw common elements
     this.drawHead(s, p);
     this.drawArms(s, p);
     this.drawWeapon(s, p);
+    this.drawSpecificIndicators(p);
 
     p.pop();
 
-    // Draw UI elements
     this.drawHealthBar(p);
     this.drawSpeechBubble(p);
-
-    // Draw type-specific indicators
-    this.drawSpecificIndicators(p);
-
-    p.noTint();
+    this.drawGlow(p);
   }
 
-  /**
-   * Get animation modifications - can be overridden by subclasses
-   */
-  getAnimationModifications() {
-    return { bobble: 0, waddle: 0 };
-  }
-
-  /**
-   * Draw motion trail - can be overridden by subclasses
-   */
   drawMotionTrail() {
-    // Base implementation does nothing - subclasses can override
+    // Default: no trail. Override in subclasses like Rusher
   }
 
-  /**
-   * Draw main body - must be implemented by subclasses
-   */
   drawBody(s, p) {
-    // Default body shape
-    p.fill(this.bodyColor);
-    p.noStroke();
-    p.ellipse(0, 0, s, s * 0.8);
+    p.fill(this.skinColor);
+    p.stroke(this.helmetColor);
+    p.strokeWeight(3);
+    p.ellipse(0, 0, s, s);
   }
 
-  /**
-   * Draw head
-   */
   drawHead(s, p) {
-    // Head
-    p.fill(this.skinColor);
-    p.ellipse(s * 0.1, -s * 0.3, s * 0.6, s * 0.5);
-
-    // Helmet
     p.fill(this.helmetColor);
-    p.arc(s * 0.1, -s * 0.35, s * 0.65, s * 0.4, p.PI, p.TWO_PI);
-
-    // Eyes
-    p.fill(this.eyeColor);
-    p.ellipse(s * 0.25, -s * 0.35, s * 0.12, s * 0.08);
-    p.ellipse(s * 0.05, -s * 0.35, s * 0.12, s * 0.08);
-
-    // Eye glow
-    p.fill(255, 255, 255, 120);
-    p.ellipse(s * 0.27, -s * 0.36, s * 0.06, s * 0.04);
-    p.ellipse(s * 0.07, -s * 0.36, s * 0.06, s * 0.04);
-  }
-
-  /**
-   * Draw arms
-   */
-  drawArms(s, p) {
-    // Left arm
-    p.fill(this.skinColor);
-    p.ellipse(-s * 0.25, s * 0.1, s * 0.2, s * 0.4);
-
-    // Right arm
-    p.ellipse(s * 0.45, s * 0.1, s * 0.2, s * 0.4);
-  }
-
-  /**
-   * Draw weapon - can be overridden by subclasses
-   */
-  drawWeapon(s, p) {
-    // Basic weapon
-    p.fill(this.weaponColor);
-    p.rect(s * 0.4, -s * 0.05, s * 0.3, s * 0.1);
-
-    // Muzzle flash
-    if (this.muzzleFlash > 0) {
-      p.fill(255, 255, 100, this.muzzleFlash * 30);
-      p.ellipse(s * 0.7, 0, s * 0.2, s * 0.1);
-      this.muzzleFlash--;
-    }
-  }
-
-  /**
-   * Draw health bar
-   */
-  drawHealthBar(p) {
-    if (this.health < this.maxHealth && !this.markedForRemoval) {
-      const barWidth = this.size * 1.2;
-      const barHeight = 4;
-      const barY = this.y - this.size * 0.8;
-      // Debug: Log health bar rendering only if collision debug is enabled
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-        console.log(
-          `[ENEMY DEBUG] drawHealthBar: type=${this.type} health=${this.health} maxHealth=${this.maxHealth} at (${this.x.toFixed(1)},${this.y.toFixed(1)})`
-        );
-      }
-      // Background bar
-      p.fill(100, 100, 100);
-      p.rect(this.x - barWidth / 2, barY, barWidth, barHeight);
-      // Health bar
-      const healthPercent = this.health / this.maxHealth;
-      const healthColor =
-        healthPercent > 0.5
-          ? p.color(0, 255, 0)
-          : healthPercent > 0.25
-            ? p.color(255, 255, 0)
-            : p.color(255, 0, 0);
-      p.fill(healthColor);
-      p.rect(this.x - barWidth / 2, barY, barWidth * healthPercent, barHeight);
-      // Visual cue: Draw red X if health is zero or negative
-      if (this.health <= 0) {
-        p.stroke(255, 0, 0);
-        p.strokeWeight(3);
-        p.line(
-          this.x - barWidth / 2,
-          barY,
-          this.x + barWidth / 2,
-          barY + barHeight
-        );
-        p.line(
-          this.x + barWidth / 2,
-          barY,
-          this.x - barWidth / 2,
-          barY + barHeight
-        );
-        p.noStroke();
-      }
-    }
-  }
-
-  /**
-   * Draw speech bubble
-   */
-  drawSpeechBubble(p) {
-    if (!this.speechText) return;
-
-    // Simple text above head - smaller and closer
-    p.fill(255, 255, 255);
-    p.stroke(0, 0, 0);
-    p.strokeWeight(1);
-    p.textAlign(p.CENTER, p.CENTER);
-    p.textSize(10);
-    p.text(this.speechText, this.x, this.y - this.size - 15);
     p.noStroke();
+    p.rect(-s / 2, -s / 2, s, s / 2);
+
+    p.fill(this.eyeColor);
+    p.ellipse(-s / 4, -s / 4, s / 8, s / 8);
+    p.ellipse(s / 4, -s / 4, s / 8, s / 8);
   }
 
-  /**
-   * Draw type-specific indicators - should be overridden by subclasses
-   */
+  drawArms(s, p) {
+    p.fill(this.skinColor);
+    p.stroke(this.helmetColor);
+    p.strokeWeight(2);
+    p.rect(-s / 2 - 5, -5, 5, 10);
+    p.rect(s / 2, -5, 5, 10);
+  }
+
+  drawWeapon(s, p) {
+    p.fill(this.weaponColor);
+    p.noStroke();
+    p.rect(-s / 8, -s, s / 4, s / 2);
+  }
+
+  drawHealthBar(p) {
+    if (this.health < this.maxHealth) {
+      const barWidth = this.size;
+      const barHeight = 5;
+      const barX = this.x - barWidth / 2;
+      const barY = this.y + this.size / 2 + 5;
+
+      p.fill(0, 0, 0, 150);
+      p.rect(barX, barY, barWidth, barHeight);
+
+      const healthPercentage = this.health / this.maxHealth;
+      let healthColor;
+      if (healthPercentage > 0.5) {
+        healthColor = p.color(0, 255, 0);
+      } else if (healthPercentage > 0.25) {
+        healthColor = p.color(255, 255, 0);
+      } else {
+        healthColor = p.color(255, 0, 0);
+      }
+
+      p.fill(healthColor);
+      p.rect(barX, barY, barWidth * healthPercentage, barHeight);
+    }
+  }
+
+  drawSpeechBubble(p) {
+    if (this.speechText && this.speechTimer > 0) {
+      const alpha = min(1, this.speechTimer / 20) * 255;
+      const bubblePadding = 10;
+      const bubbleY = this.y - this.size / 2 - 30;
+
+      p.textSize(16);
+      p.textAlign(p.CENTER, p.CENTER);
+      const textW = p.textWidth(this.speechText) + bubblePadding * 2;
+      const textH = p.textAscent() + p.textDescent() + bubblePadding * 2;
+
+      p.fill(0, 0, 0, alpha * 0.7);
+      p.stroke(255, 255, 255, alpha);
+      p.rect(this.x - textW / 2, bubbleY - textH / 2, textW, textH, 10);
+
+      p.fill(255, 255, 255, alpha);
+      p.noStroke();
+      p.text(this.speechText, this.x, bubbleY);
+    }
+  }
+
   drawSpecificIndicators(p) {
-    // Base implementation does nothing
+    // Can be implemented by subclasses (e.g., Tank's armor)
   }
 
-  /**
-   * Create bullet - should be overridden by subclasses
-   */
   createBullet() {
-    const bulletDistance = this.size * 0.9;
-    const bulletX = this.x + cos(this.aimAngle) * bulletDistance;
-    const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
+    const bulletSpeed = 5;
+    const bulletSize = 8;
+    const bulletDamage = 5;
+    const bulletColor = [255, 0, 0];
+    const bulletRange = 500;
 
-    // Create bullet with enemy type information
-    const bullet = new Bullet(
-      bulletX,
-      bulletY,
+    return new Bullet(
+      this.x,
+      this.y,
       this.aimAngle,
-      4,
-      `enemy-${this.type}`
+      bulletSpeed,
+      bulletSize,
+      bulletColor,
+      bulletDamage,
+      bulletRange,
+      this.p,
+      'enemy-grunt' // Pass owner type
     );
-    bullet.ownerId = this.id; // Use unique enemy ID to prevent self-shooting
-
-    // Play alien shooting sound
-    if (this.audio) {
-      this.audio.playAlienShoot(this.x, this.y);
-    }
-
-    // DEBUG: Log bullet creation only if collision debug is enabled
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `🔫 ${this.type} created bullet at (${Math.round(bulletX)}, ${Math.round(bulletY)}) angle=${Math.round((this.aimAngle * 180) / Math.PI)}° owner="${bullet.owner}" ownerId="${bullet.ownerId}"`
-      );
-    }
-
-    return bullet;
   }
 
-  /**
-   * Take damage - handles basic damage logic
-   */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[DEBUG] Grunt takeDamage called: health=${this.health} markedForRemoval=${this.markedForRemoval}`
-      );
-    }
-    this.health -= amount;
-    this.hitFlash = 8;
+    if (this.health <= 0) return;
 
-    // Broadcast enemyHit event for VFX systems
+    this.health -= amount;
+    this.hitFlash = 4; // 4 frames of white flash
+
+    // Emit an event for other systems to consume (VFX, audio, etc.)
     EnemyEventBus.emitEnemyHit({
-      id: this.id,
-      type: this.type,
+      id: this.id, // Pass the unique ID
       x: this.x,
       y: this.y,
-      damage: amount,
-      bulletAngle,
-      damageSource,
+      type: this.type,
+      damageSource: damageSource,
+      bulletAngle: bulletAngle,
     });
 
     if (this.health <= 0) {
-      EnemyEventBus.emitEnemyKilled({ id: this.id, type: this.type, x: this.x, y: this.y });
-      return true; // Enemy died
+      // Use the new, specific event for enemy death
+      EnemyEventBus.emitEnemyKilled({
+        x: this.x,
+        y: this.y,
+        type: this.type,
+      });
+
+      // Let game state know this enemy is gone
+      if (window.gameState) {
+        window.gameState.enemyKilled(this.type);
+      }
     }
-    return false;
   }
 
-  /**
-   * Check collision with another object
-   */
   checkCollision(other) {
-    const distance = this.p.dist(this.x, this.y, other.x, other.y);
-    return distance < (this.size + other.size) * 0.85;
+    const distance = sqrt(
+      (this.x - other.x) * (this.x - other.x) +
+        (this.y - other.y) * (this.y - other.y)
+    );
+    return distance < this.size / 2 + other.size / 2;
   }
 
-  /**
-   * Apply an instantaneous impulse (knock-back) to the enemy. Used by VFXDispatcher
-   * when bullets connect, etc.
-   * @param {number} angle – radians direction
-   * @param {number} strength – scalar speed magnitude
-   */
   applyImpulse(angle, strength = 1) {
-    this.knockVX += Math.cos(angle) * strength;
-    this.knockVY += Math.sin(angle) * strength;
+    if (angle !== null) {
+      this.knockVX += cos(angle) * strength;
+      this.knockVY += sin(angle) * strength;
+    }
   }
 }

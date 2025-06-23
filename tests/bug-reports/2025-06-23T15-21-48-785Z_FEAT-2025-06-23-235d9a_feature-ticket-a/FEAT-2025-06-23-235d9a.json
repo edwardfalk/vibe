@@ -1,0 +1,24 @@
+{
+  "id": "FEAT-2025-06-23-235d9a",
+  "type": "feature",
+  "title": "Feature Ticket _api-test-ticket_",
+  "status": "in-progress",
+  "tags": [
+    "testing",
+    "feature"
+  ],
+  "focus": true,
+  "history": [
+    {
+      "timestamp": "2025-06-23T15:21:48.785Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T15:21:48.785Z",
+  "updatedAt": "2025-06-23T15:21:48.785Z",
+  "slug": "feature-ticket-a",
+  "folder": "2025-06-23T15-21-48-785Z_FEAT-2025-06-23-235d9a_feature-ticket-a"
+}

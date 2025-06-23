@@ -3,6 +3,9 @@
 // routes them to VisualEffectsManager (particles) and EffectsManager (screen
 // shake / flash).  This keeps entity code decoupled from concrete VFX calls.
 
+// [BUGFIX: see ticket "Legacy explosionManager triggers wrong VFX colors"]
+// VFXDispatcher is now a strict delegate to visualEffectsManager, or a stub if not needed.
+
 import { ENEMY_HIT, ARMOR_DAMAGED, ARMOR_BROKEN, ENEMY_KILLED } from '@vibe/entities';
 import { effectsConfig } from './effectsConfig.js';
 

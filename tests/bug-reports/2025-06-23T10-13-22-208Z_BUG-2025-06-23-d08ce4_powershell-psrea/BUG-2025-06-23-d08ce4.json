@@ -1,0 +1,22 @@
+{
+  "type": "bug",
+  "title": "PowerShell PSReadLine crashes with long commands",
+  "description": "The PowerShell terminal is repeatedly crashing with a System.ArgumentOutOfRangeException in PSReadLine when executing long commands. This disrupts the workflow and requires re-running commands.",
+  "impact": "moderate",
+  "tags": [
+    "powershell",
+    "terminal",
+    "tooling"
+  ],
+  "id": "BUG-2025-06-23-d08ce4",
+  "status": "closed",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T10:13:22.208Z",
+  "updatedAt": "2025-06-23T11:27:23.036Z",
+  "slug": "powershell-psrea",
+  "folder": "2025-06-23T10-13-22-208Z_BUG-2025-06-23-d08ce4_powershell-psrea",
+  "resolution": "fixed",
+  "comment": "Permanently fixed the PSReadLine crash in the Cursor terminal by adding conditional logic to the PowerShell profile (C:\\Users\\edwar\\Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1) to prevent the module from loading when inside the IDE's terminal (where TERM_PROGRAM equals 'vscode')."
+}

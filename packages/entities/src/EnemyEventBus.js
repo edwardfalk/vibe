@@ -21,6 +21,15 @@ function _dispatch(name, detail) {
 }
 
 export const EnemyEventBus = {
+  /**
+   * Dispatches a custom event.
+   * @param {string} name The name of the event.
+   * @param {object} detail The data to pass with the event.
+   */
+  emit(name, detail) {
+    _dispatch(name, detail);
+  },
+
   emitEnemyHit(detail) {
     _dispatch(ENEMY_HIT, detail);
   },

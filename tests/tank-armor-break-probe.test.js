@@ -1,16 +1,35 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './playwright.setup.js';
 
 test.describe('Tank Armor Break VFX Probe', () => {
   test('Cracks and debris appear when tank armor breaks', async ({ page }) => {
-    await page.goto('/');
+    try {
+      await page.goto('http://localhost:5500/', { timeout: 10000 });
+      console.log('Page URL after goto:', page.url());
+      console.log('Page content:', await page.content());
+    } catch (e) {
+      console.error('Navigation failed:', e);
+    }
     await page.waitForSelector('canvas');
     // Click canvas to enable audio/context
     await page.evaluate(() => {
       const canvas = document.querySelector('canvas');
       canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    // Wait for tank to spawn
+
+    // Manually spawn a tank for the test
+    await page.evaluate(() => {
+      if (window.spawnSystem) {
+        const player = window.player;
+        // Spawn the tank near the player but not directly on top
+        window.spawnSystem.forceSpawn('tank', player.x + 150, player.y);
+      } else {
+        console.error("window.spawnSystem is not available to the test.");
+      }
+    });
+
+    // Wait for tank to be in the enemies array
     await page.waitForFunction(() => (window.enemies || []).some(e => e.type === 'tank'));
+    
     // Run the probe
     const result = await page.evaluate(async () => {
       const mod = await import('/js/tank-armor-break-probe.js');

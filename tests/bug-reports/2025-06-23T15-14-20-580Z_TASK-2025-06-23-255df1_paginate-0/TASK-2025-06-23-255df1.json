@@ -1,0 +1,22 @@
+{
+  "id": "TASK-2025-06-23-255df1",
+  "type": "task",
+  "title": "Paginate 0",
+  "tags": [
+    "even"
+  ],
+  "slug": "paginate-0",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T15:14:20.580Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T15:14:20.580Z",
+  "updatedAt": "2025-06-23T15:14:20.580Z",
+  "folder": "2025-06-23T15-14-20-580Z_TASK-2025-06-23-255df1_paginate-0"
+}

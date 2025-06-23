@@ -1,0 +1,22 @@
+{
+  "id": "TASK-2025-06-23-3513d4",
+  "type": "task",
+  "title": "Paginate 4",
+  "tags": [
+    "even"
+  ],
+  "slug": "paginate-4",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T15:16:09.850Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T15:16:09.850Z",
+  "updatedAt": "2025-06-23T15:16:09.850Z",
+  "folder": "2025-06-23T15-16-09-850Z_TASK-2025-06-23-3513d4_paginate-4"
+}

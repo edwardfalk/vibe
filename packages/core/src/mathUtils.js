@@ -51,12 +51,20 @@ export function random(minOrMax = undefined, max = undefined) {
     return Math.random();
   }
 
-  // Single argument → range [0, arg)
+  // NEW: If first argument is an array → pick a random element (p5.js compatibility)
+  if (Array.isArray(minOrMax)) {
+    const arr = minOrMax;
+    // Guard against empty array – return undefined to avoid NaN cascades
+    if (arr.length === 0) return undefined;
+    return arr[floor(Math.random() * arr.length)];
+  }
+
+  // Single numeric argument → range [0, arg)
   if (typeof max === 'undefined') {
     return Math.random() * minOrMax;
   }
 
-  // Two arguments → range [min, max)
+  // Two numeric arguments → range [min, max)
   return Math.random() * (max - minOrMax) + minOrMax;
 }
 

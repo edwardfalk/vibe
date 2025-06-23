@@ -1,5 +1,14 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './playwright.setup.js';
 import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
+
+// Print all browser console logs to the test runner output for every test
+// This makes browser-side errors and logs visible in CI and local runs
+test.beforeEach(async ({ page }) => {
+  page.on('console', msg => {
+    // Print all browser logs to the test runner output
+    console.log(`[browser][${msg.type()}] ${msg.text()}`);
+  });
+});
 
 process.on('uncaughtException', (err) =>
   DebugLogger.log('Uncaught Exception (test)', err)

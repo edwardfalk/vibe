@@ -1,0 +1,40 @@
+{
+  "id": "TASK-2025-06-23-7ad17d",
+  "type": "task",
+  "title": "History Test",
+  "slug": "history-test",
+  "status": "in-progress",
+  "history": [
+    {
+      "timestamp": "2025-06-23T13:34:46.868Z",
+      "action": "created",
+      "user": "system"
+    },
+    {
+      "timestamp": "2025-06-23T13:34:46.932Z",
+      "action": "updated",
+      "user": "system",
+      "changes": [
+        {
+          "field": "status",
+          "oldValue": "open",
+          "newValue": "in-progress"
+        },
+        {
+          "field": "tags",
+          "newValue": [
+            "history-test"
+          ]
+        }
+      ]
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T13:34:46.868Z",
+  "updatedAt": "2025-06-23T13:34:46.932Z",
+  "folder": "2025-06-23T13-34-46-868Z_TASK-2025-06-23-7ad17d_history-test",
+  "tags": [
+    "history-test"
+  ]
+}

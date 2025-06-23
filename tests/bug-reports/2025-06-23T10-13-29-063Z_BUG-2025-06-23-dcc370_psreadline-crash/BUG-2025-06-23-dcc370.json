@@ -1,0 +1,26 @@
+{
+  "type": "bug",
+  "title": "PSReadLine crash",
+  "id": "BUG-2025-06-23-dcc370",
+  "status": "closed",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T10:13:29.063Z",
+  "updatedAt": "2025-06-23T10:16:18.287Z",
+  "slug": "psreadline-crash",
+  "folder": "2025-06-23T10-13-29-063Z_BUG-2025-06-23-dcc370_psreadline-crash",
+  "description": [
+    "The PowerShell terminal is repeatedly crashing with a System.ArgumentOutOfRangeException in PSReadLine",
+    " likely due to a compatibility issue with the IDE's terminal emulation having a small buffer size (BufferHeight: 1). The immediate fix is to remove the PSReadLine module for the session."
+  ],
+  "impact": "moderate",
+  "tags": [
+    "powershell",
+    "terminal",
+    "tooling",
+    "psreadline",
+    "cursor-ide-bug"
+  ],
+  "resolution": "duplicate of BUG-2025-06-23-d08ce4"
+}

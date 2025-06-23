@@ -1,0 +1,35 @@
+{
+  "id": "TASK-2025-06-23-0bafcf",
+  "type": "task",
+  "title": "Related A",
+  "slug": "related-a",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T13:52:55.997Z",
+      "action": "created",
+      "user": "system"
+    },
+    {
+      "timestamp": "2025-06-23T13:52:56.221Z",
+      "action": "updated",
+      "user": "system",
+      "changes": [
+        {
+          "field": "relatedTickets",
+          "oldValue": [],
+          "newValue": [
+            "TASK-2025-06-23-bb4b16"
+          ]
+        }
+      ]
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [
+    "TASK-2025-06-23-bb4b16"
+  ],
+  "createdAt": "2025-06-23T13:52:55.997Z",
+  "updatedAt": "2025-06-23T13:52:56.221Z",
+  "folder": "2025-06-23T13-52-55-997Z_TASK-2025-06-23-0bafcf_related-a"
+}

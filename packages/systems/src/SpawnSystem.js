@@ -42,7 +42,7 @@ export class SpawnSystem {
   spawnEnemies(count) {
     if (!window.enemies) window.enemies = [];
     const level = window.gameState ? window.gameState.level : 1;
-    const p = window.player && window.player.p;
+    const p = window.p || (window.player && window.player.p);
     for (let i = 0; i < count; i++) {
       const enemyType = this.getEnemyTypeForLevel(level);
       const spawnPos = this.findSpawnPosition();
@@ -73,72 +73,57 @@ export class SpawnSystem {
 
   findSpawnPosition() {
     const player = window.player;
-    if (!player) return { x: random(100, 700), y: random(100, 500) };
+    if (!player) {
+      return { x: random(100, 700), y: random(100, 500) };
+    }
 
-    const p = player.p;
-    const margin = 50;
-    const MIN_PLAYER_DISTANCE = 400;
-    const MIN_PLAYER_DISTANCE_SQ = MIN_PLAYER_DISTANCE * MIN_PLAYER_DISTANCE;
-    const MIN_ENEMY_DISTANCE = 200;
-    const MIN_ENEMY_DISTANCE_SQ = MIN_ENEMY_DISTANCE * MIN_ENEMY_DISTANCE;
-
+    const MIN_ENEMY_DISTANCE_SQ = 100 * 100; // 100px should be enough
     let attempts = 0;
     let spawnX, spawnY;
+
     do {
-      // Pick a random side of the screen to spawn from (0–3)
-      switch (floor(random(4))) {
-        case 0:
-          spawnX = random(0, p.width);
-          spawnY = -margin;
-          break;
-        case 1:
-          spawnX = p.width + margin;
-          spawnY = random(0, p.height);
-          break;
-        case 2:
-          spawnX = random(0, p.width);
-          spawnY = p.height + margin;
-          break;
-        default:
-          spawnX = -margin;
-          spawnY = random(0, p.height);
-      }
+      const angle = random() * Math.PI * 2;
+      const radius = random(500, 800); // Slightly smaller ring
+      spawnX = player.x + cos(angle) * radius;
+      spawnY = player.y + sin(angle) * radius;
 
-      // Reject positions too close to the player
-      const distToPlayerSq = this.getDistanceSq(
-        spawnX,
-        spawnY,
-        player.x,
-        player.y
+      // Use the spatial hash grid for a fast check of the local area
+      const neighbors = window.collisionSystem?.grid?.neighbors(spawnX, spawnY) || [];
+
+      if (neighbors.length === 0) {
+        return { x: spawnX, y: spawnY }; // Area is empty, this is a valid spot
+      }
+      
+      const isTooClose = neighbors.some(
+        e => this.getDistanceSq(spawnX, spawnY, e.x, e.y) < MIN_ENEMY_DISTANCE_SQ
       );
-      if (distToPlayerSq < MIN_PLAYER_DISTANCE_SQ) {
-        attempts++;
-        continue;
+
+      if (!isTooClose) {
+        return { x: spawnX, y: spawnY }; // Valid position found
       }
 
-      // Reject positions too close to existing enemies
-      if (
-        window.enemies &&
-        window.enemies.some(
-          (e) =>
-            this.getDistanceSq(spawnX, spawnY, e.x, e.y) < MIN_ENEMY_DISTANCE_SQ
-        )
-      ) {
-        attempts++;
-        continue;
+      attempts++;
+    } while (attempts < 100); // Increased attempts
+
+    // Fallback: Spiral search for a free spot
+    console.warn(`⚠️ Could not find random spawn position after 100 attempts. Starting spiral search.`);
+    let spiralAngle = random() * Math.PI * 2;
+    let spiralRadius = 500;
+    for (let i = 0; i < 200; i++) { // Spiral for max 200 steps
+      spiralAngle += 0.2; // Radian increment
+      spiralRadius += 2; // Move outwards
+      spawnX = player.x + cos(spiralAngle) * spiralRadius;
+      spawnY = player.y + sin(spiralAngle) * spiralRadius;
+      
+      const neighbors = window.collisionSystem?.grid?.neighbors(spawnX, spawnY) || [];
+      if (neighbors.length === 0) {
+        console.log(`✅ Found valid spawn position via spiral search at attempt ${i + 1}`);
+        return { x: spawnX, y: spawnY };
       }
-
-      // Accept the spawn position
-      break;
-    } while (attempts < 50);
-
-    if (attempts >= 50) {
-      console.warn('⚠️ Could not find good spawn position, using fallback');
-      const angle = random(0, Math.PI * 2);
-      spawnX = player.x + cos(angle) * 600;
-      spawnY = player.y + sin(angle) * 600;
     }
-    return { x: spawnX, y: spawnY };
+
+    console.error('💥 Catastrophic spawn failure: Could not find any valid spawn position after spiral search.');
+    return { x: player.x, y: player.y }; // Last resort
   }
 
   getDistanceSq(x1, y1, x2, y2) {
@@ -153,10 +138,15 @@ export class SpawnSystem {
   }
 
   forceSpawn(enemyType, x, y) {
+    console.log(`[SpawnSystem] forceSpawn called: type=${enemyType}, x=${x}, y=${y}`);
     if (!window.enemies) window.enemies = [];
-    const enemy = this.enemyFactory.createEnemy(x, y, enemyType);
-    window.enemies.push(enemy);
-    console.log(`🎯 Force spawned ${enemyType}`);
+    const p = window.p || (window.player && window.player.p);
+    const audio = window.audio;
+    const enemy = this.enemyFactory.createEnemy(x, y, enemyType, p, audio);
+    if (enemy) {
+      window.enemies.push(enemy);
+      console.log(`🎯 Force spawned ${enemyType}`);
+    }
     return enemy;
   }
 }

@@ -1,0 +1,59 @@
+{
+  "id": "TASK-2025-06-23-17a870",
+  "type": "task",
+  "title": "Checklist Test",
+  "checklist": [
+    {
+      "step": "Step 1",
+      "done": false
+    },
+    {
+      "step": "Step 2",
+      "done": true
+    }
+  ],
+  "slug": "checklist-test",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T13:55:46.139Z",
+      "action": "created",
+      "user": "system"
+    },
+    {
+      "timestamp": "2025-06-23T13:55:46.385Z",
+      "action": "updated",
+      "user": "system",
+      "changes": [
+        {
+          "field": "checklist",
+          "oldValue": [
+            {
+              "step": "Step 1",
+              "done": false
+            },
+            {
+              "step": "Step 2",
+              "done": false
+            }
+          ],
+          "newValue": [
+            {
+              "step": "Step 1",
+              "done": false
+            },
+            {
+              "step": "Step 2",
+              "done": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T13:55:46.139Z",
+  "updatedAt": "2025-06-23T13:55:46.385Z",
+  "folder": "2025-06-23T13-55-46-139Z_TASK-2025-06-23-17a870_checklist-test"
+}

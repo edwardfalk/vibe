@@ -2,6 +2,11 @@
 # Multi-Project PowerShell Profile
 # ============================================================================
 
+# PSReadLine Hotfix for IDE Terminal
+if ($env:TERM_PROGRAM -eq 'vscode') {
+    Remove-Module -Name PSReadLine -Force
+}
+
 # Set PowerShell to UTF-8 encoding
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [System.Text.Encoding]::UTF8

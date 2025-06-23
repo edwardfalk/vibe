@@ -1,0 +1,19 @@
+{
+  "id": "TASK-2025-06-23-c91bfe",
+  "type": "task",
+  "title": "GPD Test",
+  "slug": "gpd-test",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T13:34:43.289Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T13:34:43.289Z",
+  "updatedAt": "2025-06-23T13:34:43.289Z",
+  "folder": "2025-06-23T13-34-43-289Z_TASK-2025-06-23-c91bfe_gpd-test"
+}

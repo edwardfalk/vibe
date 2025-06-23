@@ -1,0 +1,23 @@
+{
+  "id": "BUG-2025-06-23-e558fb",
+  "type": "bug",
+  "title": "Bug Ticket _api-test-ticket_",
+  "status": "open",
+  "tags": [
+    "testing",
+    "bug"
+  ],
+  "history": [
+    {
+      "timestamp": "2025-06-23T15:23:46.479Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T15:23:46.479Z",
+  "updatedAt": "2025-06-23T15:23:46.479Z",
+  "slug": "bug-ticket-api-t",
+  "folder": "2025-06-23T15-23-46-479Z_BUG-2025-06-23-e558fb_bug-ticket-api-t"
+}

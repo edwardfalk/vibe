@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './playwright.setup.js';
 import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 process.on('uncaughtException', (err) =>
@@ -26,6 +26,9 @@ test.describe('Performance Probe', () => {
       );
       // Spawn 20 of each enemy type for stress
       await page.evaluate(() => {
+        // Reset my custom render profiler before the test
+        window.renderProfiler?.reset();
+
         const types = ['grunt', 'rusher', 'tank', 'stabber'];
         if (window.spawnSystem && typeof window.spawnSystem.spawnEnemy === 'function') {
           types.forEach((t) => {

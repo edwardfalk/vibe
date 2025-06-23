@@ -32,53 +32,26 @@
 
 **2. Ticketing System: Bugs, Features, Enhancements, Tasks**
 
-- All ticket operations must use the shared `TicketCore` library through:
-  - Browser-based `ticketManager.js` (in-game and admin UI)
-  - Node.js `ticket-api.js` (API server)
-  - CLI tools (`ticket-cli.js`)
-- If the API is down, or if ticket scripts are missing or broken, manually inspect JSON files in tests/bug-reports/ and open the latest file by date/ID. See the troubleshooting/manual workflow section in TICKETING_SYSTEM_GUIDE.md for details.
+- All ticket operations must use the shared `TicketCore` library via the REST API server.
+  - The primary interface is the `ticket-api.js` server.
+  - Browser-based tools like `packages/tooling/src/ticketManager.js` act as clients to this API.
+  - The CLI tools have been removed.
+- If the API is down, manually inspect JSON files in tests/bug-reports/. See the troubleshooting/manual workflow section in TICKETING_SYSTEM_GUIDE.md for details.
 
-🚀 Ticketing system Quick Reference:
+🚀 Ticketing system API Quick Reference:
 
-**Create a ticket:**
-```sh
-bun run ticket:create type=bug title="My bug" tags=ai,urgent checklist='["step1","step2"]'
-```
-**Update a ticket:**
-```sh
-bun run ticket:update id=BUG-... status=closed
-```
-**Get a ticket:**
-```sh
-bun run ticket:get id=BUG-...
-```
-**List all tickets:**
-```sh
-bun run ticket:list
-```
-**Check off a checklist step:**
-```sh
-bun run ticket:check id=BUG-... step="step1" result="Passed"
-```
-**Get the latest/focused ticket:**
-```sh
-bun run ticket:latest
-```
-**Set a ticket as focus:**
-```sh
-bun run ticket:update id=BUG-... tags=focus,ai,testing
-```
-
-> **Heads-up:**
-> • `tags=` is comma-split only when unquoted (`tags=ai,workflow`). If you quote the value, it will be treated as a single string; use JSON array syntax instead (`tags='["ai","workflow"]'`).  
-> • Checklist entries accept either plain strings or objects (`{"step":"Fix","done":false}`) for more control.
+- **List Tickets:** `GET /api/tickets`
+- **Create Ticket:** `POST /api/tickets`
+- **Get Ticket:** `GET /api/tickets/:id`
+- **Update Ticket:** `PATCH /api/tickets/:id`
+- **Delete Ticket:** `DELETE /api/tickets/:id`
 
 - The ticketing system is a core, modular subsystem.
-- All work (bugs, features, enhancements, tasks) must be tracked via the ticketing system.
+- All work (bugs, features, enhancements, tasks) must be tracked via the ticketing system API.
 - Full documentation, schema, API usage, and workflow best practices are now in the dedicated guide:
   - ➡️ **See [`TICKETING_SYSTEM_GUIDE.md`](./TICKETING_SYSTEM_GUIDE.md) for all details.**
 - Tickets are structured JSON files stored in `tests/bug-reports/`.
-- Use the provided API endpoints (`ticket-api.js`) and JS modules (`ticketManager.js`) for all ticket management (in-game, admin, automation).
+- Use the provided API endpoints (`ticket-api.js`) and JS modules (`packages/tooling/src/ticketManager.js`) for all ticket management (in-game, admin, automation).
 - Each ticket must specify a `type` field: `bug`, `feature`, `enhancement`, or `task`.
 - **All tickets created via the API must include a unique `id` field. The backend will reject tickets without an `id`. See the guide for example payloads.**
 - Tickets support tags, status, history, artifacts (screenshots, logs), and related tickets.
@@ -121,7 +94,7 @@ bun run ticket:update id=BUG-... tags=focus,ai,testing
 **Example: Automated Bug Ticket Creation**
 1. Run probe-driven test with MCP Playwright.
 2. On failure, capture screenshot and logs.
-3. Use `ticketManager.js` and `ticket-api.js` to create a new bug ticket with artifacts.
+3. Use `packages/tooling/src/ticketManager.js` and `ticket-api.js` to create a new bug ticket with artifacts.
 4. Artifacts are auto-moved to the correct folder by `move-bug-reports.js`.
 
 ---

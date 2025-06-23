@@ -159,7 +159,13 @@ class Grunt extends BaseEnemy {
     if (distance < 300 && this.shootCooldown <= 0) {
       if (window.beatClock && window.beatClock.canGruntShoot()) {
         // Check for friendly fire avoidance
-        if (!shouldAvoidFriendlyFire(this, this.aimAngle)) {
+        if (
+          !shouldAvoidFriendlyFire(
+            this,
+            this.aimAngle,
+            window.collisionSystem?.grid
+          )
+        ) {
           this.shootCooldown = 45 + random(30); // Faster shooting for ranged combat
           this.muzzleFlash = 4;
           return this.createBullet();
@@ -383,44 +389,6 @@ class Grunt extends BaseEnemy {
         `[GRUNT DEBUG] takeDamage called: health(before)=${this.health}, amount=${amount}, markedForRemoval=${this.markedForRemoval}, damageSource=${damageSource}, hit=(${hitX},${hitY})`
       );
     }
-    // Particle burst on bullet/friendly-fire hit (not stabber melee)
-    if (
-      (damageSource === 'bullet' || damageSource === 'friendly-fire') &&
-      typeof visualEffectsManager !== 'undefined' &&
-      visualEffectsManager
-    ) {
-      const px = hitX !== null ? hitX : this.x;
-      const py = hitY !== null ? hitY : this.y;
-      for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) {
-        visualEffectsManager.particles.push({
-          x: px,
-          y: py,
-          vx: Math.cos(Math.random() * Math.PI * 2) * 4,
-          vy: Math.sin(Math.random() * Math.PI * 2) * 4,
-          size: 3 + Math.random() * 2,
-          life: 32,
-          maxLife: 32,
-          color: [
-            Math.max(0, this.bodyColor.levels[0] - 30),
-            Math.max(0, this.bodyColor.levels[1] - 30),
-            Math.max(0, this.bodyColor.levels[2] - 30),
-          ],
-          type: 'grunt-hit',
-          gravity: 0.08,
-          fade: 0.04,
-        });
-      }
-      // Play silly hit sound (avoid spam)
-      if (
-        window.audio &&
-        window.audio.playSound &&
-        (!this._lastHitSoundFrame ||
-          this.p.frameCount - this._lastHitSoundFrame > 8)
-      ) {
-        window.audio.playSound(SOUND.gruntOw, this.x, this.y);
-        this._lastHitSoundFrame = this.p.frameCount;
-      }
-    }
     if (
       damageSource === 'stabber_melee' &&
       this.health > 0 &&
@@ -460,65 +428,6 @@ class Grunt extends BaseEnemy {
       console.log(
         `[GRUNT DEBUG] Grunt at (${this.x.toFixed(1)},${this.y.toFixed(1)}) died and should be removed.`
       );
-    }
-    if (
-      damageSource === 'stabber_melee' &&
-      !died &&
-      window.audio &&
-      this.speechCooldown <= 0
-    ) {
-      const ttsSuccess = window.audio.speak(this, 'ow', 'grunt', true); // force = true
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-        console.log(
-          '💬 Grunt stabbed (survived): trying to say "ow" (TTS success:',
-          ttsSuccess,
-          ')'
-        );
-      }
-      if (!ttsSuccess && window.audio.playSound) {
-        window.audio.playSound(SOUND.gruntOw, this.x, this.y);
-        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-          console.log('🔊 Fallback gruntOw sound played.');
-        }
-      }
-      this.speechCooldown = 60; // 1s cooldown to avoid spam
-    }
-    // Custom kill explosion for Grunt
-    if (
-      died &&
-      typeof visualEffectsManager !== 'undefined' &&
-      visualEffectsManager
-    ) {
-      // Use a palette based on the Grunt's color
-      const base = this.bodyColor.levels;
-      const palette = [
-        [base[0], base[1], base[2]],
-        [
-          Math.max(0, base[0] - 40),
-          Math.max(0, base[1] - 40),
-          Math.max(0, base[2] - 40),
-        ],
-        [
-          Math.min(255, base[0] + 40),
-          Math.min(255, base[1] + 40),
-          Math.min(255, base[2] + 40),
-        ],
-      ];
-      for (let i = 0; i < 18; i++) {
-        visualEffectsManager.particles.push({
-          x: this.x,
-          y: this.y,
-          vx: Math.cos(Math.random() * Math.PI * 2) * (3 + Math.random() * 3),
-          vy: Math.sin(Math.random() * Math.PI * 2) * (3 + Math.random() * 3),
-          size: 7 + Math.random() * 5,
-          life: 38 + Math.random() * 10,
-          maxLife: 38 + Math.random() * 10,
-          color: palette[Math.floor(Math.random() * palette.length)],
-          type: 'grunt-explosion',
-          gravity: 0.09,
-          fade: 0.03,
-        });
-      }
     }
     if (
       died &&

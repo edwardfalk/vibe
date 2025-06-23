@@ -1,0 +1,23 @@
+{
+  "id": "BUG-2025-06-23-87d3a8",
+  "type": "bug",
+  "title": "API Test 2",
+  "status": "closed",
+  "tags": [
+    "api",
+    "focus"
+  ],
+  "slug": "api-test-2",
+  "history": [
+    {
+      "timestamp": "2025-06-23T15:13:42.064Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T15:13:42.064Z",
+  "updatedAt": "2025-06-23T15:13:42.064Z",
+  "folder": "2025-06-23T15-13-42-064Z_BUG-2025-06-23-87d3a8_api-test-2"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "TASK-2025-06-23-bbfb55",
+  "type": "task",
+  "title": "Another Task _api-test-ticket_",
+  "status": "closed",
+  "history": [
+    {
+      "timestamp": "2025-06-23T15:21:57.098Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T15:21:57.098Z",
+  "updatedAt": "2025-06-23T15:21:57.098Z",
+  "slug": "another-task-api",
+  "folder": "2025-06-23T15-21-57-098Z_TASK-2025-06-23-bbfb55_another-task-api"
+}

@@ -1,0 +1,22 @@
+{
+  "type": "task",
+  "title": "Enhance PowerShell Profile with Starship, Zoxide, and Aliases",
+  "description": "Update the PowerShell profile to integrate starship for a modern prompt, zoxide for smart navigation, and create aliases for modern tools like exa and bat. This improves the command-line experience.",
+  "tags": [
+    "powershell",
+    "profile",
+    "dev-experience",
+    "tooling"
+  ],
+  "id": "TASK-2025-06-23-70e459",
+  "status": "closed",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T11:33:33.172Z",
+  "updatedAt": "2025-06-23T11:33:50.899Z",
+  "slug": "enhance-powershe",
+  "folder": "2025-06-23T11-33-33-172Z_TASK-2025-06-23-70e459_enhance-powershe",
+  "resolution": "fixed",
+  "comment": "Enhanced the PowerShell profile with Starship, Zoxide, and aliases for exa and bat. The terminal must be restarted for changes to take effect."
+}

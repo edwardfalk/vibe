@@ -100,7 +100,8 @@ export class GameState {
       window.cameraSystem.targetX = 0;
       window.cameraSystem.targetY = 0;
     }
-    window.explosionManager = new window.ExplosionManager();
+    // [BUGFIX: see ticket "Legacy explosionManager triggers wrong VFX colors"]
+    // All legacy explosion manager logic removed. Only event-bus VFX system is re-initialized on restart.
     window.effectsManager = new window.EffectsManager();
     if (
       window.visualEffectsManager &&

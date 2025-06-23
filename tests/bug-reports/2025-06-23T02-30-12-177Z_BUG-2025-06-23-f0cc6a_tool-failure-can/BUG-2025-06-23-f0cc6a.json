@@ -1,0 +1,23 @@
+{
+  "type": "bug",
+  "title": "Tool Failure: Cannot Revert Files",
+  "description": [
+    "edit_file tool fails to revert files",
+    " blocking debugging."
+  ],
+  "steps": [
+    "Attempt to revert a file.",
+    "Observe no changes are applied."
+  ],
+  "impact": "critical",
+  "id": "BUG-2025-06-23-f0cc6a",
+  "status": "closed",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T02:30:12.177Z",
+  "updatedAt": "2025-06-23T10:11:59.314Z",
+  "slug": "tool-failure-can",
+  "folder": "2025-06-23T02-30-12-177Z_BUG-2025-06-23-f0cc6a_tool-failure-can",
+  "resolution": "duplicate of BUG-2025-06-23-b9b952"
+}

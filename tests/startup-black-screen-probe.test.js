@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './playwright.setup.js';
 import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 /**

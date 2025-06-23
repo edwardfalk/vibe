@@ -1,0 +1,23 @@
+{
+  "id": "TASK-2025-06-23-deb271",
+  "type": "task",
+  "title": "Checklist Test",
+  "checklist": [
+    {
+      "step": "Step 1",
+      "done": false
+    },
+    {
+      "step": "Step 2",
+      "done": true
+    }
+  ],
+  "slug": "checklist-test",
+  "status": "open",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T13:30:57.022Z",
+  "updatedAt": "2025-06-23T13:30:57.063Z",
+  "folder": "2025-06-23T13-30-57-022Z_TASK-2025-06-23-deb271_checklist-test"
+}

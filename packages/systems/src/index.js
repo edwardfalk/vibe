@@ -10,3 +10,4 @@ export { TestMode } from './TestMode.js';
 export { BulletSystem } from './BulletSystem.js';
 export { BombSystem } from './BombSystem.js';
 export { InputSystem } from './InputSystem.js';
+export { SpatialHashGrid } from './SpatialHashGrid.js';

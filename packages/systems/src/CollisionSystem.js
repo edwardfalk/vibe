@@ -6,6 +6,8 @@ import { SpatialHashGrid } from './SpatialHashGrid.js';
 // Default countdown for tank time bombs (in frames)
 const TIME_BOMB_FRAMES = 180; // 3 seconds at 60fps
 
+// TODO: Create a ticket to safely remove ExplosionManager if the new event-bus/config-driven VFX system is now the only handler for all enemy explosions.
+
 export class CollisionSystem {
   constructor() {
     this.friendlyFireEnabled = true;
@@ -18,43 +20,84 @@ export class CollisionSystem {
     this.checkEnemyBulletsVsEnemies();
   }
 
-  // Contact player ↔ enemy collisions
+  // Contact player ↔ enemy and enemy ↔ enemy collisions
   checkContactCollisions() {
-    if (!window.player || !window.enemies) return;
-    for (let i = window.enemies.length - 1; i >= 0; i--) {
-      const enemy = window.enemies[i];
-      if (enemy.checkCollision(window.player)) {
-        let damage = 0;
-        let shouldPlaceBomb = false;
-        switch (enemy.type) {
-          case 'grunt':
-            damage = 1;
-            break;
-          case 'tank':
-            shouldPlaceBomb = true;
-            break;
-        }
-        if (damage > 0) {
-          window.audio?.playPlayerHit();
-          window.gameState?.resetKillStreak();
-        }
-        if (window.player.takeDamage(damage, `${enemy.type}-contact`)) {
-          window.gameState?.setGameState('gameOver');
-          return;
-        } else if (shouldPlaceBomb) {
-          window.activeBombs = window.activeBombs || [];
-          if (window.activeBombs.length < 3) {
-            const timer = TIME_BOMB_FRAMES;
-            window.activeBombs.push({
-              x: enemy.x,
-              y: enemy.y,
-              timer,
-              maxTimer: timer,
-              tankId: enemy.id,
-            });
-          }
+    if (!this.grid) return;
+
+    // Player vs. Nearby Enemies
+    if (window.player) {
+      const nearbyEnemies = this.grid.neighbors(window.player.x, window.player.y);
+      for (const enemy of nearbyEnemies) {
+        if (enemy.checkCollision(window.player)) {
+          this.handlePlayerEnemyContact(window.player, enemy);
         }
       }
+    }
+
+    // Enemy vs. Enemy
+    const allEnemies = window.enemies || [];
+    for (const enemy of allEnemies) {
+      if (enemy.markedForRemoval) continue;
+      const nearbyEnemies = this.grid.neighbors(enemy.x, enemy.y);
+      for (const other of nearbyEnemies) {
+        if (enemy === other || other.markedForRemoval) continue;
+
+        // Simple circle-based collision and separation
+        const distSq = (enemy.x - other.x) ** 2 + (enemy.y - other.y) ** 2;
+        const requiredDist = enemy.size / 2 + other.size / 2;
+        if (distSq < requiredDist ** 2) {
+          this.handleEnemyEnemyContact(enemy, other);
+        }
+      }
+    }
+  }
+
+  handlePlayerEnemyContact(player, enemy) {
+    let damage = 0;
+    let shouldPlaceBomb = false;
+    switch (enemy.type) {
+      case 'grunt':
+        damage = 1;
+        break;
+      case 'tank':
+        shouldPlaceBomb = true;
+        break;
+    }
+    if (damage > 0) {
+      window.audio?.playPlayerHit();
+      window.gameState?.resetKillStreak();
+    }
+    if (player.takeDamage(damage, `${enemy.type}-contact`)) {
+      window.gameState?.setGameState('gameOver');
+    } else if (shouldPlaceBomb) {
+      window.activeBombs = window.activeBombs || [];
+      if (window.activeBombs.length < 3) {
+        const timer = TIME_BOMB_FRAMES;
+        window.activeBombs.push({
+          x: enemy.x,
+          y: enemy.y,
+          timer,
+          maxTimer: timer,
+          tankId: enemy.id,
+        });
+      }
+    }
+  }
+  
+  handleEnemyEnemyContact(enemy, other) {
+    // Simple push-apart logic to prevent stacking
+    const dx = other.x - enemy.x;
+    const dy = other.y - enemy.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const overlap = (enemy.size / 2 + other.size / 2) - distance;
+    if (overlap > 0) {
+      const pushX = (dx / distance) * overlap * 0.5;
+      const pushY = (dy / distance) * overlap * 0.5;
+      
+      enemy.x -= pushX;
+      enemy.y -= pushY;
+      other.x += pushX;
+      other.y += pushY;
     }
   }
 
@@ -70,13 +113,8 @@ export class CollisionSystem {
     const bullets = window.playerBullets;
     const enemies = window.enemies;
 
-    // Build spatial grid if many enemies for faster look-ups
-    const useGrid = enemies.length > 80;
-    let grid;
-    if (useGrid) {
-      grid = new SpatialHashGrid(120);
-      for (const e of enemies) grid.insert(e);
-    }
+    // Use the centralized spatial grid for faster look-ups
+    const useGrid = this.grid && enemies.length > 20; // Lower threshold
 
     // Pre-compute thresholds (radius^2) – assumes fairly uniform bullet sizes
     for (let i = bullets.length - 1; i >= 0; i--) {
@@ -85,7 +123,7 @@ export class CollisionSystem {
 
       let bulletRemoved = false;
 
-      const enemyList = useGrid ? grid.neighbors(bullet.x, bullet.y) : enemies;
+      const enemyList = useGrid ? this.grid.neighbors(bullet.x, bullet.y) : enemies;
 
       // Bullet vs every enemy (reverse order to allow safe splice)
       for (let j = enemyList.length - 1; j >= 0; j--) {
@@ -139,8 +177,8 @@ export class CollisionSystem {
           window.gameState?.addKill();
           window.gameState?.addScore(10);
         } else if (killResult === 'exploding') {
-          // Special behaviour – already handled inside enemy class but we still add VFX/audio
-          window.explosionManager?.addExplosion(enemy.x, enemy.y, 'hit');
+          // [BUGFIX: see ticket "Legacy explosionManager triggers wrong VFX colors"]
+          // All explosions now handled by event-bus VFX system only.
           window.audio?.playHit(enemy.x, enemy.y);
         }
 
@@ -198,19 +236,14 @@ export class CollisionSystem {
     const bullets = window.enemyBullets;
     const enemies = window.enemies;
 
-    // Build spatial grid if many enemies for faster look-ups
-    const useGrid = enemies.length > 80;
-    let grid;
-    if (useGrid) {
-      grid = new SpatialHashGrid(120);
-      for (const e of enemies) grid.insert(e);
-    }
+    // Use the centralized spatial grid for faster look-ups
+    const useGrid = this.grid && enemies.length > 20; // Lower threshold
 
     for (let i = bullets.length - 1; i >= 0; i--) {
       const bullet = bullets[i];
       if (!bullet.active) continue;
 
-      const enemyList = useGrid ? grid.neighbors(bullet.x, bullet.y) : enemies;
+      const enemyList = useGrid ? this.grid.neighbors(bullet.x, bullet.y) : enemies;
 
       for (let j = enemyList.length - 1; j >= 0; j--) {
         const enemy = enemyList[j];
@@ -247,7 +280,8 @@ export class CollisionSystem {
           window.gameState?.addKill();
           window.gameState?.addScore(5); // smaller reward
         } else if (killResult === 'exploding') {
-          window.explosionManager?.addExplosion(enemy.x, enemy.y, 'hit');
+          // [BUGFIX: see ticket "Legacy explosionManager triggers wrong VFX colors"]
+          // All explosions now handled by event-bus VFX system only.
           window.audio?.playHit(enemy.x, enemy.y);
         }
 
@@ -259,19 +293,9 @@ export class CollisionSystem {
 
   // Visual/SFX helper – centralized enemy death handling
   handleEnemyDeath(enemy, type, x, y) {
-    // Explosion & gore!
-    const killMethod = enemy.lastDamageSource || 'bullet';
-    if (type === 'grunt') {
-      // Use a green-tinted explosion for Grunt deaths
-      if (window.explosionManager?.addExplosion) {
-        window.explosionManager.addExplosion(x, y, 'grunt-green');
-      }
-    } else if (window.explosionManager?.addKillEffect) {
-      window.explosionManager.addKillEffect(x, y, type, killMethod);
-    } else {
-      // Fallback generic explosion
-      window.explosionManager?.addExplosion(x, y, 'enemy');
-    }
+    // [BUGFIX: see ticket "Legacy explosionManager triggers wrong VFX colors"]
+    // All explosions now handled by event-bus VFX system only.
+    // No legacy ExplosionManager call here.
 
     // Special enemy-type audio or default explosion
     switch (type) {
@@ -309,7 +333,8 @@ export class CollisionSystem {
     const radiusSq = radius * radius;
 
     // Visual FX – forward to explosion manager
-    window.explosionManager?.addExplosion(x, y, 'rusher-explosion');
+    // [BUGFIX: see ticket "Legacy explosionManager triggers wrong VFX colors"]
+    // All explosions now handled by event-bus VFX system only.
 
     // Damage player if inside blast radius
     if (window.player) {

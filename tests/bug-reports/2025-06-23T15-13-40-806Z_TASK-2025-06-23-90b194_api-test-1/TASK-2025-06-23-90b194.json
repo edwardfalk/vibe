@@ -1,0 +1,23 @@
+{
+  "id": "TASK-2025-06-23-90b194",
+  "type": "task",
+  "title": "API Test 1",
+  "status": "open",
+  "tags": [
+    "api",
+    "test"
+  ],
+  "slug": "api-test-1",
+  "history": [
+    {
+      "timestamp": "2025-06-23T15:13:40.806Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T15:13:40.806Z",
+  "updatedAt": "2025-06-23T15:13:40.806Z",
+  "folder": "2025-06-23T15-13-40-806Z_TASK-2025-06-23-90b194_api-test-1"
+}

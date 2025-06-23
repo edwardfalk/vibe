@@ -1,0 +1,20 @@
+{
+  "id": "TASK-2025-06-23-e7b07a",
+  "type": "task",
+  "title": "Invalid Field Type",
+  "tags": "should-be-array",
+  "slug": "invalid-field-ty",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T13:52:57.610Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T13:52:57.610Z",
+  "updatedAt": "2025-06-23T13:52:57.610Z",
+  "folder": "2025-06-23T13-52-57-610Z_TASK-2025-06-23-e7b07a_invalid-field-ty"
+}

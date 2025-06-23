@@ -1,0 +1,13 @@
+{
+  "type": "bug",
+  "title": "My test",
+  "slug": "my-test",
+  "id": "BUG-2025-06-23-045567",
+  "status": "open",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T12:02:57.666Z",
+  "updatedAt": "2025-06-23T12:02:57.667Z",
+  "folder": "2025-06-23T12-02-57-666Z_BUG-2025-06-23-045567_my-test"
+}

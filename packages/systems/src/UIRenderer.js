@@ -496,10 +496,12 @@ export class UIRenderer {
     if (key === 'Escape') {
       if (this.gameState.gameState === 'playing') {
         this.gameState.setGameState('paused');
+        if (this.audio) this.audio.playSound(SOUND.uiPauseToggle);
         console.log('⏸️ Game paused');
         return true;
       } else if (this.gameState.gameState === 'paused') {
         this.gameState.setGameState('playing');
+        if (this.audio) this.audio.playSound(SOUND.uiPauseToggle);
         console.log('▶️ Game resumed');
         return true;
       }
@@ -630,6 +632,35 @@ export class UIRenderer {
         console.log('🛡️ Survival edge test (F8) activated');
       }
       return true;
+    }
+
+    // Enemy spawn hotkeys (1-4)
+    if (this.gameState.gameState === 'playing' && window.spawnSystem) {
+      const enemyMap = {
+        '1': 'grunt',
+        '2': 'stabber',
+        '3': 'rusher',
+        '4': 'tank',
+      };
+      if (enemyMap[key]) {
+        console.log(`[UIRenderer] Key ${key} pressed. window.spawnSystem:`, window.spawnSystem);
+        // Spawn at random position away from player
+        const p = this.player && this.player.p;
+        const px = this.player ? this.player.x : 400;
+        const py = this.player ? this.player.y : 300;
+        let x = Math.random() * (p ? p.width : 800);
+        let y = Math.random() * (p ? p.height : 600);
+        // Ensure not too close to player
+        let tries = 0;
+        while (((x - px) ** 2 + (y - py) ** 2) < 200*200 && tries < 10) {
+          x = Math.random() * (p ? p.width : 800);
+          y = Math.random() * (p ? p.height : 600);
+          tries++;
+        }
+        window.spawnSystem.forceSpawn(enemyMap[key], x, y);
+        this._showToast(`Spawned ${enemyMap[key]}`);
+        return true;
+      }
     }
 
     return false;

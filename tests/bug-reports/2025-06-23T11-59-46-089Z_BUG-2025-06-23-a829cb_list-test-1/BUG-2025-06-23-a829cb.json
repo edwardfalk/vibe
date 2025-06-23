@@ -1,0 +1,14 @@
+{
+  "type": "bug",
+  "title": "List Test 1",
+  "status": "open",
+  "slug": "list-test-1",
+  "id": "BUG-2025-06-23-a829cb",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T11:59:46.089Z",
+  "updatedAt": "2025-06-23T11:59:50.716Z",
+  "folder": "2025-06-23T11-59-46-089Z_BUG-2025-06-23-a829cb_list-test-1",
+  "tags": "focus"
+}

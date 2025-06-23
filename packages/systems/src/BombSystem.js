@@ -57,9 +57,8 @@ export class BombSystem {
       );
 
       // Visual FX
-      window.explosionManager?.addExplosion(bomb.x, bomb.y, 'tank-plasma');
-      window.explosionManager?.addRadioactiveDebris(bomb.x, bomb.y);
-      window.explosionManager?.addPlasmaCloud(bomb.x, bomb.y);
+      // [BUGFIX: see ticket "Legacy explosionManager triggers wrong VFX colors"]
+      // All explosions now handled by event-bus VFX system only.
 
       // Audio & camera
       window.audio?.playBombExplosion(bomb.x, bomb.y);
@@ -127,7 +126,6 @@ export class BombSystem {
           window.gameState?.addKill();
           window.gameState?.addScore(20);
         } else if (result === 'exploding') {
-          window.explosionManager?.addExplosion(enemy.x, enemy.y, 'hit');
           console.log(`💥 Friendly bomb triggered ${enemy.type} explosion`);
         }
       }

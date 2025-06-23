@@ -86,45 +86,16 @@ vibe/
 
 ## Ticketing System
 
-- **All work (bugs, features, enhancements, tasks) is tracked via the modular ticketing system.**
-- Tickets are structured JSON files in `tests/bug-reports/`.
-- The system uses a shared `TicketCore` library for consistent ticket operations across:
-  - Browser-based `ticketManager.js` (in-game and admin UI)
-  - Node.js `ticket-api.js` (API server)
-  - CLI tools (`ticket-cli.js`)
-- **See [`docs/TICKETING_SYSTEM_GUIDE.md`](./docs/TICKETING_SYSTEM_GUIDE.md) for full documentation, schema, and workflow.**
-- Each ticket must have a unique `id` and specify a `type` (`bug`, `feature`, `enhancement`, `task`).
-- Artifacts (screenshots, logs) are grouped per ticket and auto-moved by `move-bug-reports.js`.
-- The AI and automated scripts have full access to the ticketing system and bug-report modal.
+The project uses a robust REST API for all ticket management.
 
-## Ticketing System CLI (AI/Automation/Dev)
+**API Quick Reference:**
+- **List Tickets:** `GET /api/tickets`
+- **Create Ticket:** `POST /api/tickets`
+- **Get Ticket:** `GET /api/tickets/:id`
+- **Update Ticket:** `PATCH /api/tickets/:id`
+- **Delete Ticket:** `DELETE /api/tickets/:id`
 
-The recommended way to create, update, get, and list tickets from the command line or scripts is via the ticket CLI:
-
-```bash
-# Create a ticket
-bun run ticket:create type=bug title="My bug" tags=ai,urgent checklist='["step1","step2"]'
-
-# Update a ticket
-bun run ticket:update id=BUG-... status=closed
-
-# Get a ticket
-bun run ticket:get id=BUG-...
-
-# List all tickets
-bun run ticket:list
-
-# Check off a checklist step
-bun run ticket:check id=BUG-... step="step1" result="Passed"
-
-# Get the latest/focused ticket
-bun run ticket:latest
-
-# Set a ticket as focus
-bun run ticket:update id=BUG-... tags=focus,ai,testing
-```
-
-This CLI is cross-platform, robust, and hides all curl/PowerShell/JSON quirks. It is the preferred interface for AI, automation, and scripting.
+For the full guide on API endpoints, parameters, and `curl` examples, see the [TICKETING_SYSTEM_GUIDE.md](docs/TICKETING_SYSTEM_GUIDE.md).
 
 ---
 

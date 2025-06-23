@@ -202,26 +202,26 @@ class Stabber extends BaseEnemy {
           );
 
           // Spawn hit visual effect
-          if (
-            typeof visualEffectsManager !== 'undefined' &&
-            visualEffectsManager &&
-            this.stabDirection !== null
-          ) {
-            const impactX =
-              this.x + cos(this.stabDirection) * (this.meleeReach * 0.9); // Slightly back from full reach
-            const impactY =
-              this.y + sin(this.stabDirection) * (this.meleeReach * 0.9);
-            // Using a small, sharp explosion effect
-            visualEffectsManager.addExplosion(
-              impactX,
-              impactY,
-              20,
-              [255, 255, 100],
-              0.5,
-              5,
-              8
-            );
-          }
+          // if (
+          //   typeof visualEffectsManager !== 'undefined' &&
+          //   visualEffectsManager &&
+          //   this.stabDirection !== null
+          // ) {
+          //     const impactX =
+          //       this.x + cos(this.stabDirection) * (this.meleeReach * 0.9); // Slightly back from full reach
+          //     const impactY =
+          //       this.y + sin(this.stabDirection) * (this.meleeReach * 0.9);
+          //     // Using a small, sharp explosion effect
+          //     visualEffectsManager.addExplosion(
+          //       impactX,
+          //       impactY,
+          //       20,
+          //       [255, 255, 100],
+          //       0.5,
+          //       5,
+          //       8
+          //     );
+          // }
 
           // Apply damage to player if hit
           // if (hitResult.playerHit && window.player && typeof window.player.takeDamage === 'function') {
@@ -474,15 +474,6 @@ class Stabber extends BaseEnemy {
       result.hitType = 'player';
       // Spark effect at tip
       if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
-        visualEffectsManager.addExplosion(
-          tipX,
-          tipY,
-          10,
-          [255, 255, 180],
-          0.7,
-          3,
-          8
-        );
         // Red splash effect
         visualEffectsManager.addExplosion(
           tipX,
@@ -534,15 +525,6 @@ class Stabber extends BaseEnemy {
           typeof visualEffectsManager !== 'undefined' &&
           visualEffectsManager
         ) {
-          visualEffectsManager.addExplosion(
-            tipX,
-            tipY,
-            10,
-            [255, 255, 180],
-            0.7,
-            3,
-            8
-          );
           // Red splash effect
           visualEffectsManager.addExplosion(
             tipX,
@@ -564,12 +546,15 @@ class Stabber extends BaseEnemy {
     if (result.type === 'stabber-miss') {
       if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
         try {
+          // Red splash effect
           visualEffectsManager.addExplosion(
             this.x,
             this.y,
-            15,
-            [255, 215, 0],
-            0.8
+            14,
+            [255, 40, 40],
+            0.5,
+            2,
+            10
           );
         } catch (error) {
           console.log('⚠️ Stabber miss explosion error:', error);

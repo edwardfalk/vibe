@@ -1,8 +1,18 @@
 // grunt-knockback-probe.js
 // Probe: Grunt knock-back VFX
 
-(async function () {
-  const grunt = (window.enemies || []).find(e => e.type === 'grunt');
+async function waitForGrunt(timeout = 5000) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    const grunt = (window.enemies || []).find(e => e.type === 'grunt');
+    if (grunt) return grunt;
+    await new Promise(r => setTimeout(r, 50));
+  }
+  return null;
+}
+
+export default (async function () {
+  const grunt = await waitForGrunt();
   const result = {
     foundGrunt: !!grunt,
     initialX: null,
@@ -22,8 +32,10 @@
   result.initialX = grunt.x;
   result.initialY = grunt.y;
 
-  // Simulate a bullet hit from the left (angle = 0)
+  // Simulate a bullet hit from the left (angle = 0).
+  // The game's VFXDispatcher should handle applying the impulse.
   grunt.takeDamage(5, 0, 'bullet');
+  
   await new Promise(r => setTimeout(r, 50));
 
   result.afterHitX = grunt.x;

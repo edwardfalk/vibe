@@ -10,12 +10,12 @@
     "Document migration in ticket system"
   ],
   "id": "TASK-2025-06-17-c4e6f6",
-  "status": "open",
+  "status": "closed",
   "history": [],
   "artifacts": [],
   "relatedTickets": [],
   "createdAt": "2025-06-17T23:30:40.406Z",
-  "updatedAt": "2025-06-17T23:30:40.407Z",
+  "updatedAt": "2025-06-23T00:53:13.394Z",
   "slug": "migrate-debuglog",
   "folder": "2025-06-17T23-30-40-407Z_TASK-2025-06-17-c4e6f6_migrate-debuglog"
 }

@@ -1,0 +1,43 @@
+{
+  "id": "TASK-2025-06-23-5c714c",
+  "type": "task",
+  "title": "Artifact Test",
+  "artifacts": [
+    {
+      "type": "log",
+      "path": "test.log",
+      "description": "Test log"
+    }
+  ],
+  "slug": "artifact-test",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T13:57:22.062Z",
+      "action": "created",
+      "user": "system"
+    },
+    {
+      "timestamp": "2025-06-23T13:57:22.150Z",
+      "action": "updated",
+      "user": "system",
+      "changes": [
+        {
+          "field": "artifacts",
+          "oldValue": [],
+          "newValue": [
+            {
+              "type": "log",
+              "path": "test.log",
+              "description": "Test log"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T13:57:22.062Z",
+  "updatedAt": "2025-06-23T13:57:22.150Z",
+  "folder": "2025-06-23T13-57-22-062Z_TASK-2025-06-23-5c714c_artifact-test"
+}

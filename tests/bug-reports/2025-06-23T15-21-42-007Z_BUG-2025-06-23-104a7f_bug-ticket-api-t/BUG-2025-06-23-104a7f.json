@@ -1,0 +1,23 @@
+{
+  "id": "BUG-2025-06-23-104a7f",
+  "type": "bug",
+  "title": "Bug Ticket _api-test-ticket_",
+  "status": "open",
+  "tags": [
+    "testing",
+    "bug"
+  ],
+  "history": [
+    {
+      "timestamp": "2025-06-23T15:21:42.007Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T15:21:42.007Z",
+  "updatedAt": "2025-06-23T15:21:42.007Z",
+  "slug": "bug-ticket-api-t",
+  "folder": "2025-06-23T15-21-42-007Z_BUG-2025-06-23-104a7f_bug-ticket-api-t"
+}

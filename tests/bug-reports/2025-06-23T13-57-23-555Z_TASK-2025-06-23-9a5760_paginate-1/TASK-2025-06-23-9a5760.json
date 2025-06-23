@@ -1,0 +1,22 @@
+{
+  "id": "TASK-2025-06-23-9a5760",
+  "type": "bug",
+  "title": "Paginate 1",
+  "tags": [
+    "odd"
+  ],
+  "slug": "paginate-1",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T13:57:23.555Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T13:57:23.555Z",
+  "updatedAt": "2025-06-23T13:57:23.555Z",
+  "folder": "2025-06-23T13-57-23-555Z_TASK-2025-06-23-9a5760_paginate-1"
+}

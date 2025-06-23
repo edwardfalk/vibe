@@ -1,0 +1,17 @@
+{
+  "id": "TASK-2025-06-23-c15991",
+  "type": "task",
+  "title": "API Test 1",
+  "status": "open",
+  "tags": [
+    "api",
+    "test"
+  ],
+  "slug": "api-test-1",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T12:07:42.432Z",
+  "updatedAt": "2025-06-23T12:07:42.432Z",
+  "folder": "2025-06-23T12-07-42-432Z_TASK-2025-06-23-c15991_api-test-1"
+}

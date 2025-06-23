@@ -1,0 +1,36 @@
+{
+  "id": "TASK-2025-06-23-8f4414",
+  "type": "task",
+  "title": "Updated Title",
+  "slug": "gpd-test",
+  "status": "in-progress",
+  "history": [
+    {
+      "timestamp": "2025-06-23T15:11:38.457Z",
+      "action": "created",
+      "user": "system"
+    },
+    {
+      "timestamp": "2025-06-23T15:11:38.535Z",
+      "action": "updated",
+      "user": "system",
+      "changes": [
+        {
+          "field": "status",
+          "oldValue": "open",
+          "newValue": "in-progress"
+        },
+        {
+          "field": "title",
+          "oldValue": "GPD Test",
+          "newValue": "Updated Title"
+        }
+      ]
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T15:11:38.457Z",
+  "updatedAt": "2025-06-23T15:11:38.535Z",
+  "folder": "2025-06-23T15-11-38-457Z_TASK-2025-06-23-8f4414_gpd-test"
+}

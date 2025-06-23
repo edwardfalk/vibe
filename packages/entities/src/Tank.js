@@ -15,7 +15,7 @@ import {
 import { CONFIG } from '@vibe/core';
 import { speakAmbient } from './EnemySpeechUtils.js';
 import { SOUND } from '@vibe/core';
-import { EnemyEventBus } from './EnemyEventBus.js';
+import { EnemyEventBus, ARMOR_BROKEN } from './EnemyEventBus.js';
 
 /**
  * Tank class - Heavy artillery with charging system
@@ -509,16 +509,18 @@ class Tank extends BaseEnemy {
       this.frontArmorHP -= amount;
       if (window.audio) window.audio.playSound(SOUND.hit, this.x, this.y);
       if (this.frontArmorHP <= 0) {
-        EnemyEventBus.emitArmorBroken({ id: this.id, part: 'front', x: this.x, y: this.y });
+        this.frontArmorDestroyed = true;
+        this.audio.playSound(SOUND.armorBreak, this.x, this.y);
+        EnemyEventBus.emit(ARMOR_BROKEN, {
+          x: this.x,
+          y: this.y,
+          size: this.size * 1.2,
+          type: 'front',
+        });
+        console.log('💥 Tank front armor destroyed!');
         // Armor destroyed, propagate leftover damage to main body
         const leftover = -this.frontArmorHP; // positive overflow
-        this.frontArmorDestroyed = true;
         this.frontArmorHP = 0;
-        console.log('💥 Tank Front Armor Destroyed!');
-        if (window.audio)
-          window.audio.playSound(SOUND.explosion, this.x, this.y);
-        // TODO: Add visual effect for front armor breaking
-        this.hitFlash = 8;
         if (leftover > 0) {
           // Pass overflow damage to main body
           return super.takeDamage(leftover, bulletAngle, damageSource);
@@ -555,16 +557,18 @@ class Tank extends BaseEnemy {
       this.leftArmorHP -= amount;
       if (window.audio) window.audio.playSound(SOUND.hit, this.x, this.y);
       if (this.leftArmorHP <= 0) {
-        EnemyEventBus.emitArmorBroken({ id: this.id, part: 'left', x: this.x, y: this.y });
+        this.leftArmorDestroyed = true;
+        this.audio.playSound(SOUND.armorBreak, this.x, this.y);
+        EnemyEventBus.emit(ARMOR_BROKEN, {
+          x: this.x,
+          y: this.y,
+          size: this.size,
+          type: 'left',
+        });
+        console.log('💥 Tank left armor destroyed!');
         // Armor destroyed, propagate leftover damage to main body
         const leftover = -this.leftArmorHP; // positive overflow
-        this.leftArmorDestroyed = true;
         this.leftArmorHP = 0;
-        console.log('💥 Tank Left Armor Destroyed!');
-        if (window.audio)
-          window.audio.playSound(SOUND.explosion, this.x, this.y);
-        // TODO: Add visual effect for armor breaking
-        this.hitFlash = 8;
         if (leftover > 0) {
           // Pass overflow damage to main body
           return super.takeDamage(leftover, bulletAngle, damageSource);
@@ -601,16 +605,18 @@ class Tank extends BaseEnemy {
       this.rightArmorHP -= amount;
       if (window.audio) window.audio.playSound(SOUND.hit, this.x, this.y);
       if (this.rightArmorHP <= 0) {
-        EnemyEventBus.emitArmorBroken({ id: this.id, part: 'right', x: this.x, y: this.y });
+        this.rightArmorDestroyed = true;
+        this.audio.playSound(SOUND.armorBreak, this.x, this.y);
+        EnemyEventBus.emit(ARMOR_BROKEN, {
+          x: this.x,
+          y: this.y,
+          size: this.size,
+          type: 'right',
+        });
+        console.log('💥 Tank right armor destroyed!');
         // Armor destroyed, propagate leftover damage to main body
         const leftover = -this.rightArmorHP; // positive overflow
-        this.rightArmorDestroyed = true;
         this.rightArmorHP = 0;
-        console.log('💥 Tank Right Armor Destroyed!');
-        if (window.audio)
-          window.audio.playSound(SOUND.explosion, this.x, this.y);
-        // TODO: Add visual effect for armor breaking
-        this.hitFlash = 8;
         if (leftover > 0) {
           // Pass overflow damage to main body
           return super.takeDamage(leftover, bulletAngle, damageSource);

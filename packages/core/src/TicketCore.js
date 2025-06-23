@@ -6,6 +6,12 @@ import crypto from 'crypto';
 const TICKETS_DIR = path.resolve(process.cwd(), 'tests/bug-reports');
 const ALLOWED_TYPES = ['bug', 'feature', 'enhancement', 'task'];
 const TICKET_ID_REGEX = /^[A-Z]{2,4}-\d{4}-\d{2}-\d{2}-[a-z0-9]{6,}$/i;
+const DEBUG_LOG_FILE = path.resolve(process.cwd(), 'debug-ticketcore.log');
+
+// Simple file logger
+function debugLog(msg) {
+  fs.appendFile(DEBUG_LOG_FILE, `${new Date().toISOString()} - ${msg}\n`);
+}
 
 function log(level, emoji, msg) {
   const out = `${emoji} [TicketCore] ${msg}`;
@@ -32,12 +38,26 @@ function generateId(type = 'bug', title = '') {
 }
 
 function folderName(ticket) {
-  const iso = new Date().toISOString().replace(/[:.]/g, '-');
+  const iso = ticket.createdAt
+    ? new Date(ticket.createdAt).toISOString().replace(/[:.]/g, '-')
+    : new Date().toISOString().replace(/[:.]/g, '-');
   const slug = slugify(ticket.title || ticket.id || 'ticket', 16);
   return `${iso}_${ticket.id}_${slug}`;
 }
 
+function validateTicketFields(ticket) {
+  // Type checks
+  if (ticket.tags && !Array.isArray(ticket.tags)) throw new Error('Invalid type for tags: must be array');
+  if (ticket.checklist && !Array.isArray(ticket.checklist)) throw new Error('Invalid type for checklist: must be array');
+  if (ticket.artifacts && !Array.isArray(ticket.artifacts)) throw new Error('Invalid type for artifacts: must be array');
+  if (ticket.relatedTickets && !Array.isArray(ticket.relatedTickets)) throw new Error('Invalid type for relatedTickets: must be array');
+  // Reasonable limits
+  if (ticket.title && ticket.title.length > 256) throw new Error('Error: Title too long (max 256 chars)');
+  if (ticket.description && ticket.description.length > 2048) throw new Error('Error: Description too long (max 2048 chars)');
+}
+
 function ensureMeta(ticket, isNew = false) {
+  validateTicketFields(ticket);
   if (!ticket.id) throw new Error('Missing ticket id');
   if (!TICKET_ID_REGEX.test(ticket.id))
     throw new Error('Invalid ticket id format');
@@ -50,8 +70,30 @@ function ensureMeta(ticket, isNew = false) {
   if (!Array.isArray(ticket.relatedTickets)) ticket.relatedTickets = [];
   if (!ticket.createdAt) ticket.createdAt = new Date().toISOString();
   ticket.updatedAt = new Date().toISOString();
-  ticket.slug = slugify(ticket.title, 16);
-  ticket.folder = folderName(ticket);
+
+  if (isNew || !ticket.slug) {
+    ticket.slug = slugify(ticket.title, 16);
+  }
+  if (isNew || !ticket.folder) {
+    ticket.folder = folderName(ticket);
+  }
+
+  if (isNew) {
+    addHistoryEntry(ticket, 'created');
+  }
+}
+
+function addHistoryEntry(ticket, action, details = {}) {
+    if (!Array.isArray(ticket.history)) {
+        ticket.history = [];
+    }
+    const newEntry = {
+        timestamp: new Date().toISOString(),
+        action,
+        user: 'system', // For now, user is always system.
+        ...details,
+    };
+    ticket.history.push(newEntry);
 }
 
 function validateId(id) {
@@ -60,8 +102,8 @@ function validateId(id) {
     throw new Error('Path traversal detected');
 }
 
-async function writeTicket(ticket) {
-  ensureMeta(ticket, true);
+async function writeTicket(ticket, isNew = false) {
+  ensureMeta(ticket, isNew);
   const folder = path.join(TICKETS_DIR, ticket.folder);
   await fs.mkdir(folder, { recursive: true });
   const tmp = path.join(folder, `tmp-${ticket.id}.json`);
@@ -74,45 +116,91 @@ async function writeTicket(ticket) {
 
 async function readTicket(id) {
   validateId(id);
-  // Find ticket in all subfolders
   const folders = await fs.readdir(TICKETS_DIR);
-  for (const folder of folders) {
-    const stat = await fs.stat(path.join(TICKETS_DIR, folder));
-    if (!stat.isDirectory()) continue;
-    const file = path.join(TICKETS_DIR, folder, `${id}.json`);
-    try {
+  const folderName = folders.find(f => f.includes(id));
+
+  if (!folderName) {
+      throw new Error(`Ticket ${id} not found`);
+  }
+  const file = path.join(TICKETS_DIR, folderName, `${id}.json`);
+  try {
       const data = await fs.readFile(file, 'utf8');
       const ticket = JSON.parse(data);
       return { ...ticket };
-    } catch (e) {
-      /* not found, keep searching */
-    }
+  } catch (e) {
+      throw new Error(`Ticket ${id} not found`);
   }
-  throw new Error(`Ticket ${id} not found`);
 }
 
-async function listTickets({ status, focus, limit = 100, offset = 0 } = {}) {
+async function deleteTicket(id) {
+  validateId(id);
   const folders = await fs.readdir(TICKETS_DIR);
+  const folderName = folders.find(f => f.includes(id));
+
+  if (!folderName) {
+    // If folder doesn't exist, we can consider it deleted.
+    log('warn', '⚠️', `Folder for ticket ${id} not found, assuming already deleted.`);
+    return { id: id, status: 'deleted' };
+  }
+  
+  const folderPath = path.join(TICKETS_DIR, folderName);
+  try {
+    await fs.rm(folderPath, { recursive: true, force: true });
+    log('info', '🗑️', `Deleted ticket ${id} and folder ${folderName}`);
+    return { id: id, status: 'deleted' };
+  } catch (err) {
+    log('error', '❌', `Failed to delete folder for ticket ${id}: ${err.message}`);
+    throw err;
+  }
+}
+
+async function listTickets({ type, status, focus, limit = 100, offset = 0 } = {}) {
+  const dirents = await fs.readdir(TICKETS_DIR, { withFileTypes: true });
   let tickets = [];
-  for (const folder of folders) {
-    const stat = await fs.stat(path.join(TICKETS_DIR, folder));
-    if (!stat.isDirectory()) continue;
-    const files = await fs.readdir(path.join(TICKETS_DIR, folder));
-    for (const file of files) {
-      if (!file.endsWith('.json')) continue;
-      const data = await fs.readFile(
-        path.join(TICKETS_DIR, folder, file),
-        'utf8'
-      );
-      const ticket = JSON.parse(data);
-      tickets.push(ticket);
+
+  for (const dirent of dirents) {
+    if (dirent.isDirectory()) {
+      const subDirPath = path.join(TICKETS_DIR, dirent.name);
+      try {
+        const files = await fs.readdir(subDirPath);
+        for (const file of files) {
+          if (file.endsWith('.json')) {
+            const filePath = path.join(subDirPath, file);
+            const data = await fs.readFile(filePath, 'utf8');
+            try {
+              const ticket = JSON.parse(data);
+              tickets.push(ticket);
+            } catch (parseErr) {
+              log('warn', '⚠️', `Skipping invalid JSON file: ${filePath}`);
+            }
+          }
+        }
+      } catch (readDirErr) {
+        log('warn', '⚠️', `Could not read directory: ${subDirPath}`);
+      }
+    } else if (dirent.isFile() && dirent.name.endsWith('.json')) {
+      const filePath = path.join(TICKETS_DIR, dirent.name);
+      const data = await fs.readFile(filePath, 'utf8');
+      try {
+        const ticket = JSON.parse(data);
+        tickets.push(ticket);
+      } catch (parseErr) {
+        log('warn', '⚠️', `Skipping invalid JSON file: ${filePath}`);
+      }
     }
   }
-  if (status) tickets = tickets.filter((t) => t.status === status);
-  if (focus)
+
+  if (type) {
+    tickets = tickets.filter((t) => t.type === type);
+  }
+  if (status) {
+    tickets = tickets.filter((t) => t.status && t.status.trim() === status);
+  }
+  if (focus) {
     tickets = tickets.filter(
       (t) => t.tags && t.tags.includes('focus') && t.status !== 'closed'
     );
+  }
   tickets.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
   return tickets.slice(offset, offset + limit);
 }
@@ -123,8 +211,10 @@ export {
   folderName,
   writeTicket,
   readTicket,
+  deleteTicket,
   listTickets,
   ensureMeta,
+  addHistoryEntry,
   log,
   validateId,
 };

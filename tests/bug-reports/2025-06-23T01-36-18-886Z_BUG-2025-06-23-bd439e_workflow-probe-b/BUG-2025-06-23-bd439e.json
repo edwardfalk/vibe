@@ -1,0 +1,16 @@
+{
+  "type": "bug",
+  "title": "Workflow probe bug",
+  "tags": "probe",
+  "checklist": "[Reproduce,Fix]",
+  "id": "BUG-2025-06-23-bd439e",
+  "status": "closed",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T01:36:18.886Z",
+  "updatedAt": "2025-06-23T10:14:59.958Z",
+  "slug": "workflow-probe-b",
+  "folder": "2025-06-23T01-36-18-886Z_BUG-2025-06-23-bd439e_workflow-probe-b",
+  "resolution": "duplicate of TASK-2025-06-23-bca978"
+}

@@ -294,6 +294,11 @@ class VisualEffectsManager {
     const enemyKey = (type || 'grunt').split('-')[0];
     const cfg = getEnemyConfig(enemyKey);
 
+    // Debug: Log resolved enemyKey and palette for explosions
+    if (effectsConfig.global.debugEffects) {
+      console.log(`💥 [VFX] Explosion for type='${type}' resolved enemyKey='${enemyKey}' palette=`, cfg.burst?.palette);
+    }
+
     // Lod multiplier reduces particle count when Adaptive LOD is active
     const lod = effectsConfig.global.lodMultiplier || 1;
 
@@ -323,19 +328,20 @@ class VisualEffectsManager {
       count: particleCount,
     });
 
+    const sizeMult = cfg.burst?.sizeMult || 1.0;
     for (let i = 0; i < particleCount; i++) {
       this.particles.push({
         x: x,
         y: y,
-        vx: random(-8, 8),
-        vy: random(-8, 8),
-        size: random(3, 8),
+        vx: random(-8, 8) * sizeMult,
+        vy: random(-8, 8) * sizeMult,
+        size: random(3, 8) * sizeMult,
         life: 60,
         maxLife: 60,
         color: random(colors),
         type: 'explosion',
-        gravity: 0.1,
-        fade: random(0.02, 0.05),
+        gravity: cfg.burst?.gravity ?? 0.1,
+        fade: cfg.burst?.fade ?? random(0.02, 0.05),
       });
     }
   }
@@ -568,21 +574,63 @@ class VisualEffectsManager {
       });
     }
   }
+
+  /**
+   * Add a mini burst for hit effects, using miniBurst config if present.
+   */
+  addMiniBurstParticles(x, y, type = 'normal') {
+    if (!this.initialized) {
+      this.init(this.pInstance || (window.player && window.player.p));
+      if (!this.initialized) return;
+    }
+    const enemyKey = (type || 'grunt').split('-')[0];
+    const cfg = getEnemyConfig(enemyKey);
+    const mini = cfg.miniBurst || { count: 3, palette: [[255,255,255]], sizeMult: 0.7, gravity: 0.1, fade: 0.06 };
+    for (let i = 0; i < mini.count; i++) {
+      this.particles.push({
+        x: x,
+        y: y,
+        vx: random(-5, 5) * mini.sizeMult,
+        vy: random(-5, 5) * mini.sizeMult,
+        size: random(2, 5) * mini.sizeMult,
+        life: 30,
+        maxLife: 30,
+        color: random(mini.palette),
+        type: 'mini-burst',
+        gravity: mini.gravity,
+        fade: mini.fade,
+      });
+    }
+  }
 }
 
 // Enhanced glow effect function
 function drawGlow(p, x, y, size, color, intensity = 1) {
-  p.push();
-  p.blendMode(p.ADD);
-  p.noStroke();
-  for (let i = 0; i < 5; i++) {
-    const alpha = p.map(i, 0, 4, intensity * 100, 0);
-    const glowSize = size * (1 + i * 0.3);
-    p.fill(p.red(color), p.green(color), p.blue(color), alpha);
-    p.ellipse(x, y, glowSize, glowSize);
+  if (!p) {
+    console.warn('⚠️ drawGlow called without p5 instance!');
+    return;
   }
-  p.blendMode(p.BLEND);
+  p.push();
+  p.noStroke();
+  p.drawingContext.globalCompositeOperation = 'lighter';
+
+  const steps = 5;
+  const baseAlpha = 50 * intensity;
+
+  for (let i = steps; i > 0; i--) {
+    const ratio = i / steps;
+    const t_size = size * ratio;
+    const t_alpha = baseAlpha * (1 - ratio);
+    
+    const c = p.color(p.red(color), p.green(color), p.blue(color), t_alpha);
+    p.fill(c);
+    p.ellipse(x, y, t_size, t_size);
+  }
+
   p.pop();
+
+  // Profiling hook
+  EffectsProfiler.registerEffect('glow', { intensity });
 }
 
 // Enhanced gradient function

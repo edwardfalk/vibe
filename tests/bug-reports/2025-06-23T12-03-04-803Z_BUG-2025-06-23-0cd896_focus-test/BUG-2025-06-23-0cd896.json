@@ -1,0 +1,14 @@
+{
+  "type": "bug",
+  "title": "Focus Test",
+  "slug": "focus-test",
+  "id": "BUG-2025-06-23-0cd896",
+  "status": "open",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T12:03:04.803Z",
+  "updatedAt": "2025-06-23T12:03:05.963Z",
+  "folder": "2025-06-23T12-03-04-803Z_BUG-2025-06-23-0cd896_focus-test",
+  "tags": "focus"
+}

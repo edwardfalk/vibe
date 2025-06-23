@@ -1,0 +1,18 @@
+{
+  "id": "TASK-2025-06-23-a7b837",
+  "type": "task",
+  "title": "Probe ticket creation",
+  "status": "closed",
+  "tags": [
+    "probe"
+  ],
+  "checklist": [],
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T01:49:05.343Z",
+  "updatedAt": "2025-06-23T10:16:01.096Z",
+  "slug": "probe-ticket-cre",
+  "folder": "2025-06-23T01-49-05-343Z_TASK-2025-06-23-a7b837_probe-ticket-cre",
+  "resolution": "duplicate of TASK-2025-06-23-bca978"
+}

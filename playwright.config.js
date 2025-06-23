@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 // Playwright configuration for Vibe
 // - Launches Five Server via `bun run serve` on port 5500 (reuse if already running)
@@ -8,6 +8,8 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  // globalSetup: './tests/global.setup.js', // Disabled: Manually starting dev server
+  outputDir: './test-results',
   timeout: 30_000,
   retries: 0,
   reporter: [['list'], ['html', { open: 'never' }]],

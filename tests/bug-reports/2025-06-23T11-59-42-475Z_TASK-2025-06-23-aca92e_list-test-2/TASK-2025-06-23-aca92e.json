@@ -1,0 +1,17 @@
+{
+  "type": "task",
+  "title": "List Test 2",
+  "status": "closed",
+  "tags": [
+    "focus",
+    "a"
+  ],
+  "slug": "list-test-2",
+  "id": "TASK-2025-06-23-aca92e",
+  "history": [],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T11:59:42.475Z",
+  "updatedAt": "2025-06-23T11:59:42.476Z",
+  "folder": "2025-06-23T11-59-42-475Z_TASK-2025-06-23-aca92e_list-test-2"
+}

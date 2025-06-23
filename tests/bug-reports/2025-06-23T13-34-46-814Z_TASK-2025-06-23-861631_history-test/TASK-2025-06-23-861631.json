@@ -1,0 +1,19 @@
+{
+  "id": "TASK-2025-06-23-861631",
+  "type": "task",
+  "title": "History Test",
+  "slug": "history-test",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T13:34:46.814Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T13:34:46.814Z",
+  "updatedAt": "2025-06-23T13:34:46.814Z",
+  "folder": "2025-06-23T13-34-46-814Z_TASK-2025-06-23-861631_history-test"
+}

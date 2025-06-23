@@ -1,6 +1,9 @@
 // FX package barrel file
 // TODO: export explosion classes, visual effects after migration.
 
+// [BUGFIX: see ticket "Legacy explosionManager triggers wrong VFX colors"]
+// Only export current, used VFX systems.
+
 export * from './effects.js';
 export * from './visualEffects.js';
 export * from './explosions/Explosion.js';

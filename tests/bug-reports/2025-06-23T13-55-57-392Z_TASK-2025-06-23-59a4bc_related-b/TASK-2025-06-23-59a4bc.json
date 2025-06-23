@@ -1,0 +1,19 @@
+{
+  "id": "TASK-2025-06-23-59a4bc",
+  "type": "task",
+  "title": "Related B",
+  "slug": "related-b",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-23T13:55:57.392Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-23T13:55:57.392Z",
+  "updatedAt": "2025-06-23T13:55:57.392Z",
+  "folder": "2025-06-23T13-55-57-392Z_TASK-2025-06-23-59a4bc_related-b"
+}
