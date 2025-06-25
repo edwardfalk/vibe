@@ -34,11 +34,15 @@ export class TicketService {
 
   async create(ticketData) {
     this.logger.info(`[Service] Creating ticket...`);
+    this.logger.info(`[Service] Incoming ticketData: ${JSON.stringify(ticketData)}`);
+    // Flytta id-generering allra först
+    if (!ticketData.id || typeof ticketData.id !== 'string' || ticketData.id.length < 10) {
+      const { generateId } = this.core;
+      this.logger.info(`[Service] No valid id provided, generating...`);
+      ticketData.id = await generateId(ticketData.type || 'bug');
+      this.logger.info(`[Service] Generated id: ${ticketData.id}`);
+    }
     try {
-      if (!ticketData.id) {
-        throw new HttpError('Ticket ID is required', 400);
-      }
-
       // Prevent duplicates
       try {
         await this.core.readTicket(ticketData.id);
@@ -61,6 +65,7 @@ export class TicketService {
       return written;
     } catch (e) {
       this.logger.error('[Service] Create failed', e);
+      this.logger.error(`[Service] Create failed details: ${e && e.stack ? e.stack : e}`);
       throw new HttpError(e.message, e.statusCode || 400);
     }
   }

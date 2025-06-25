@@ -36,7 +36,7 @@ curl "http://localhost:3001/api/tickets?type=bug&status=open"
 **Create a Ticket:**
 ```sh
 curl -X POST -H "Content-Type: application/json" \
-  -d '{"id": "TASK-123", "type": "task", "title": "My New Task"}' \
+  -d '{"type": "bug", "title": "My New Bug"}' \
   "http://localhost:3001/api/tickets"
 ```
 
@@ -56,6 +56,29 @@ curl -X PATCH -H "Content-Type: application/json" \
 ```sh
 curl -X DELETE "http://localhost:3001/api/tickets/TASK-123"
 ```
+
+### Ticket ID Generation (NEW)
+
+> **Note:** As of June 2024, you no longer need to provide an `id` when creating a ticket. The API will automatically generate a unique, chronologically sortable ID if omitted.
+
+- **Format:** `BUG-2024-06-25T22-15-30-123` (type + ISO8601 date/time with milliseconds)
+- **Collision handling:** If a collision occurs (very rare), an extra digit is appended to ensure uniqueness.
+- **Manual IDs:** If you provide an `id` and it is valid/unique, it will be used as-is.
+
+**Example: Create a Ticket (no id needed):**
+```sh
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"type": "bug", "title": "My New Bug"}' \
+  "http://localhost:3001/api/tickets"
+```
+
+**Example: Create a Ticket (with custom id, optional):**
+```sh
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"id": "BUG-2024-06-25T22-15-30-123", "type": "bug", "title": "My New Bug"}' \
+  "http://localhost:3001/api/tickets"
+```
+
 ---
 
 ## Core Concepts

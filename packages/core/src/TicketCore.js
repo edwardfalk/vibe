@@ -28,13 +28,26 @@ function slugify(title, maxLen = 16) {
     .slice(0, maxLen);
 }
 
-function generateId(type = 'bug', title = '') {
+async function generateId(type = 'bug') {
   const prefix = type.toUpperCase().slice(0, 4);
-  const now = new Date();
-  const date = now.toISOString().slice(0, 10);
-  const ms = now.getTime() % 1000;
-  const rand = crypto.randomBytes(3).toString('hex');
-  return `${prefix}-${date}-${rand}`;
+  let base = new Date().toISOString().replace(/[:.]/g, '-'); // 2024-06-25T22-15-30-123Z
+  base = base.replace('Z', ''); // Ta bort Z
+  let id = `${prefix}-${base}`;
+  let counter = 0;
+  // Kolla om id redan finns, lägg på siffra om det behövs
+  while (true) {
+    try {
+      await readTicket(id);
+      counter++;
+      id = `${prefix}-${base}-${counter}`;
+    } catch (e) {
+      if (e.message && e.message.includes('not found')) {
+        break; // id är unikt
+      }
+      throw e;
+    }
+  }
+  return id;
 }
 
 function folderName(ticket) {
@@ -62,8 +75,11 @@ function validateTicketFields(ticket) {
     throw new Error('Error: Description too long (max 2048 chars)');
 }
 
-function ensureMeta(ticket, isNew = false) {
+async function ensureMeta(ticket, isNew = false) {
   validateTicketFields(ticket);
+  if (isNew && !ticket.id) {
+    ticket.id = await generateId(ticket.type || 'bug');
+  }
   if (!ticket.id) throw new Error('Missing ticket id');
   if (!TICKET_ID_REGEX.test(ticket.id))
     throw new Error('Invalid ticket id format');
@@ -109,7 +125,7 @@ function validateId(id) {
 }
 
 async function writeTicket(ticket, isNew = false) {
-  ensureMeta(ticket, isNew);
+  await ensureMeta(ticket, isNew);
   const folder = path.join(TICKETS_DIR, ticket.folder);
   await fs.mkdir(folder, { recursive: true });
   const tmp = path.join(folder, `tmp-${ticket.id}.json`);
