@@ -206,3 +206,30 @@ My primary recommendation is to attempt **Solution A/B, Action 1**. It has the h
 
 **Next Step:**
 Once each foundational step is verified, proceed to application-level debugging and testing. 
+
+---
+## 10. System Information & Performance Data
+
+This section collects all relevant system information, hardware specs, driver details, and performance data to support troubleshooting and optimization.
+
+### 10.1. What to Collect
+- CPU model, core/thread count, and current utilization
+- RAM size, speed, and usage
+- Storage devices (type, model, health, free space)
+- GPU(s) (model, driver version, VRAM)
+- Network adapters (model, driver version)
+- BIOS/firmware version
+- Windows version/build
+- All installed drivers (name, version, date, provider)
+- Device Manager status (any errors/warnings)
+- Windows Update history (especially driver updates)
+- Event Viewer logs (System, Application, Driver events)
+- Running processes and background services
+- Startup programs
+- DPC latency and interrupt stats
+- Power plan and settings
+- Any known performance bottlenecks or issues
+
+### 10.2. Collected Data
+
+*(Paste or summarize collected data here as it is gathered. Use subsections for each category above.)* 
