@@ -17,6 +17,9 @@ reviews:
   
   # Review entire files for context
   review_full_file: true
+  
+  # Enable auto-reviews on all branches
+  branches: "*"
 
 # Path-based review rules
 path_instructions:

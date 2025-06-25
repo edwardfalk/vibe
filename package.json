@@ -25,6 +25,7 @@
     "coderabbit:auto-tickets": "bun coderabbit-auto-tickets.js",
     "coderabbit:resolve-outdated": "bun resolve-outdated-coderabbit-tickets.js",
     "coderabbit:workflow": "bun coderabbit-ticket-workflow.js",
+    "coderabbit:fetch-new": "bun run scripts/fetch-new-coderabbit-reviews.js",
     "setup": "cp .env.example .env && echo 'Please edit .env with your GitHub token'",
     "validate-env": "node -e \"import('./js/config.js').then(() => console.log('✅ Environment validation passed'))\"",
     "lint": "bunx eslint --cache --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"js/**/*.js\" \"*.js\"",
