@@ -296,7 +296,10 @@ class VisualEffectsManager {
 
     // Debug: Log resolved enemyKey and palette for explosions
     if (effectsConfig.global.debugEffects) {
-      console.log(`💥 [VFX] Explosion for type='${type}' resolved enemyKey='${enemyKey}' palette=`, cfg.burst?.palette);
+      console.log(
+        `💥 [VFX] Explosion for type='${type}' resolved enemyKey='${enemyKey}' palette=`,
+        cfg.burst?.palette
+      );
     }
 
     // Lod multiplier reduces particle count when Adaptive LOD is active
@@ -585,7 +588,13 @@ class VisualEffectsManager {
     }
     const enemyKey = (type || 'grunt').split('-')[0];
     const cfg = getEnemyConfig(enemyKey);
-    const mini = cfg.miniBurst || { count: 3, palette: [[255,255,255]], sizeMult: 0.7, gravity: 0.1, fade: 0.06 };
+    const mini = cfg.miniBurst || {
+      count: 3,
+      palette: [[255, 255, 255]],
+      sizeMult: 0.7,
+      gravity: 0.1,
+      fade: 0.06,
+    };
     for (let i = 0; i < mini.count; i++) {
       this.particles.push({
         x: x,
@@ -601,6 +610,39 @@ class VisualEffectsManager {
         fade: mini.fade,
       });
     }
+  }
+
+  reset() {
+    // Clear all runtime particle/effect arrays and flags so we can re-init cleanly.
+    this.particles = [];
+    this.cosmicDust = [];
+    this.auroras = [];
+    this.bloomIntensity = 0;
+    this.chromaticAberration = 0;
+    this.timeOffset = 0;
+    this.initialized = false;
+    this._warnedMissingP = false;
+    this._gradientBuffer = null;
+    this._gradientNeedsRefresh = true;
+    this._gradientFrameCounter = 0;
+  }
+
+  /**
+   * Primary draw entry expected by GameLoop.js – handles background, particle, and screen effects.
+   * @param {p5} p - The p5 instance to draw with.
+   * @param {CameraSystem} camera - Camera system for parallax (optional).
+   */
+  draw(p, camera = null) {
+    if (!p) return;
+    if (!this.initialized) this.init(p);
+    if (camera) {
+      this.drawEnhancedBackground(p, camera);
+    } else {
+      this.drawEnhancedBackground(p, { x: 0, y: 0 });
+    }
+    this.updateParticles();
+    this.drawParticles(p);
+    this.applyScreenEffects(p);
   }
 }
 
@@ -621,7 +663,7 @@ function drawGlow(p, x, y, size, color, intensity = 1) {
     const ratio = i / steps;
     const t_size = size * ratio;
     const t_alpha = baseAlpha * (1 - ratio);
-    
+
     const c = p.color(p.red(color), p.green(color), p.blue(color), t_alpha);
     p.fill(c);
     p.ellipse(x, y, t_size, t_size);

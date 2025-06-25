@@ -26,7 +26,7 @@ test.beforeAll(() => {
 test.describe('Gameplay Probes', () => {
   test('Liveness probe passes', async ({ page }) => {
     try {
-      await page.goto('/');
+      await page.goto('/index.html');
       await page.waitForSelector('canvas');
       await page.evaluate(() => {
         const canvas = document.querySelector('canvas');
@@ -61,7 +61,7 @@ test.describe('Gameplay Probes', () => {
 
   test('Game mechanics respond', async ({ page }) => {
     try {
-      await page.goto('/');
+      await page.goto('/index.html');
       await page.waitForSelector('canvas');
       await page.evaluate(() => {
         const canvas = document.querySelector('canvas');

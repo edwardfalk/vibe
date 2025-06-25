@@ -34,7 +34,10 @@ export class SFXManager {
     }
 
     // Variant-array support
-    if (Array.isArray(soundConfig.variants) && soundConfig.variants.length > 0) {
+    if (
+      Array.isArray(soundConfig.variants) &&
+      soundConfig.variants.length > 0
+    ) {
       const idx = Math.floor(random() * soundConfig.variants.length);
       this.playTone(soundConfig.variants[idx], x, y, soundName);
     } else {
@@ -66,24 +69,50 @@ export class SFXManager {
 
     oscillator.type =
       config.waveform === 'noise' ? 'sawtooth' : config.waveform;
-    const startFreq = config.frequency * frequencyVariation;
+    // --- Frequency safety guards -------------------------------------------------
+    const startFreqRaw = config.frequency * frequencyVariation;
+    const startFreq =
+      Number.isFinite(startFreqRaw) && startFreqRaw > 0 ? startFreqRaw : 440; // Fallback to A4
     oscillator.frequency.setValueAtTime(startFreq, ctx.currentTime);
 
-    // Optional frequency sweep
-    if (config.sweep) {
+    // Optional frequency sweep (only if the target frequency is valid)
+    if (config.sweep && Number.isFinite(config.sweep.to)) {
       const endFreq = config.sweep.to * frequencyVariation;
       const sweepDuration = config.duration * durationVariation;
-      if (config.sweep.curve === 'exponential') {
-        oscillator.frequency.exponentialRampToValueAtTime(
-          Math.max(0.1, endFreq),
-          ctx.currentTime + sweepDuration
+
+      if (!Number.isFinite(sweepDuration) || sweepDuration <= 0) {
+        console.warn(
+          `⚠️ Invalid sweep duration for sound ${soundName}. Sweep skipped.`
         );
+      } else if (Number.isFinite(endFreq) && endFreq > 0) {
+        if (config.sweep.curve === 'exponential') {
+          try {
+            oscillator.frequency.exponentialRampToValueAtTime(
+              Math.max(0.1, endFreq),
+              ctx.currentTime + sweepDuration
+            );
+          } catch (e) {
+            console.warn('⚠️ exponentialRampToValueAtTime error', e);
+          }
+        } else {
+          try {
+            oscillator.frequency.linearRampToValueAtTime(
+              endFreq,
+              ctx.currentTime + sweepDuration
+            );
+          } catch (e) {
+            console.warn('⚠️ linearRampToValueAtTime error', e);
+          }
+        }
       } else {
-        oscillator.frequency.linearRampToValueAtTime(
-          endFreq,
-          ctx.currentTime + sweepDuration
+        console.warn(
+          `⚠️ Invalid endFreq for sound ${soundName}. Sweep skipped.`
         );
       }
+    } else if (config.sweep) {
+      console.warn(
+        `⚠️ Invalid sweep.to value for sound ${soundName}. Sweep skipped.`
+      );
     }
 
     // Player position (defaults to centre)
@@ -96,6 +125,17 @@ export class SFXManager {
 
     let volume = config.volume * volumeVariation;
     let panValue = 0;
+
+    // Safety guards – ensure volume & pan are finite numbers
+    if (!Number.isFinite(volume) || volume < 0) {
+      console.warn(
+        `⚠️ Non-finite or negative volume '${volume}' for sound ${soundName}. Resetting to 0.5.`
+      );
+      volume = 0.5;
+    }
+    if (!Number.isFinite(panValue)) {
+      panValue = 0;
+    }
 
     if (x !== null && y !== null) {
       const isPlayerSound =
@@ -216,20 +256,25 @@ export class SFXManager {
       const dataArray = new Float32Array(bufferLength);
       panNode.connect(analyser);
       analyser.connect(audio.masterGain);
-      setTimeout(() => {
-        analyser.getFloatTimeDomainData(dataArray);
-        let peak = 0;
-        let sum = 0;
-        for (let i = 0; i < bufferLength; i++) {
-          const v = Math.abs(dataArray[i]);
-          if (v > peak) peak = v;
-          sum += v * v;
-        }
-        const rms = Math.sqrt(sum / bufferLength);
-        // LUFS rough estimate: -0.691 + 10*log10(rms^2)
-        const lufs = -0.691 + 10 * Math.log10(rms * rms);
-        console.log(`🔊 [${soundName}] true-peak: ${(20 * Math.log10(peak)).toFixed(1)} dBFS, LUFS: ${lufs.toFixed(1)}`);
-      }, Math.max(10, config.duration * 500));
+      setTimeout(
+        () => {
+          analyser.getFloatTimeDomainData(dataArray);
+          let peak = 0;
+          let sum = 0;
+          for (let i = 0; i < bufferLength; i++) {
+            const v = Math.abs(dataArray[i]);
+            if (v > peak) peak = v;
+            sum += v * v;
+          }
+          const rms = Math.sqrt(sum / bufferLength);
+          // LUFS rough estimate: -0.691 + 10*log10(rms^2)
+          const lufs = -0.691 + 10 * Math.log10(rms * rms);
+          console.log(
+            `🔊 [${soundName}] true-peak: ${(20 * Math.log10(peak)).toFixed(1)} dBFS, LUFS: ${lufs.toFixed(1)}`
+          );
+        },
+        Math.max(10, config.duration * 500)
+      );
     }
 
     oscillator.start(ctx.currentTime);

@@ -219,7 +219,14 @@ export class BaseEnemy {
         const glowSize =
           (baseGlow.sizeMult || 1.0) * this.size * speechGlowSize;
 
-        drawGlow(this.p, this.x, this.y, glowSize, glowColor, speechGlowIntensity);
+        drawGlow(
+          this.p,
+          this.x,
+          this.y,
+          glowSize,
+          glowColor,
+          speechGlowIntensity
+        );
 
         // Add extra pulsing glow for aggressive speech
         if (isSpeaking && this.audio) {
@@ -249,9 +256,7 @@ export class BaseEnemy {
   getGlowColor(isSpeaking) {
     const cfg = getEnemyConfig(this.type);
     const glowConfig = cfg.glow || {};
-    const baseColor = this.p.color(
-      ...(glowConfig.color || [255, 255, 255])
-    );
+    const baseColor = this.p.color(...(glowConfig.color || [255, 255, 255]));
 
     if (isSpeaking) {
       // Make glow brighter/whiter when speaking

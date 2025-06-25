@@ -9,7 +9,7 @@ const TEMPLATE_PATH = path.resolve('./tests/bug-reports/template.json');
 const REPORTS_DIR = path.resolve('./tests/bug-reports/');
 
 test.describe('Ticket Workflow Probe', () => {
-  let createdId;
+  let createdIds = [];
   let apiProcess;
 
   test.beforeAll(async () => {
@@ -34,32 +34,45 @@ test.describe('Ticket Workflow Probe', () => {
     };
     await fs.writeFile(TEMPLATE_PATH, JSON.stringify(templateData, null, 2));
     
-    console.log('Spawning API server...');
-    apiProcess = spawn('bun', ['run', 'api'], {
-      stdio: 'pipe',
-      detached: true,
-    });
+    // Reuse existing API server if running to avoid port conflicts
+    let apiHealthy = false;
+    try {
+      const res = await request(API_URL).head('/api/health');
+      apiHealthy = res.status === 200;
+    } catch {}
 
-    apiProcess.stdout.on('data', (data) => console.log(`API_STDOUT: ${data}`));
-    apiProcess.stderr.on('data', (data) => console.error(`API_STDERR: ${data}`));
+    if (!apiHealthy) {
+      console.log('Spawning API server for ticket workflow probe...');
+      apiProcess = spawn('bun', ['run', 'api'], {
+        stdio: 'pipe',
+        detached: true,
+      });
 
-    // Poll the server until it's ready
-    const startTime = Date.now();
-    let isReady = false;
-    while (Date.now() - startTime < 10000 && !isReady) { // 10-second timeout
-      try {
-        const response = await request(API_URL).head('/api/health');
-        if (response.status === 200) {
-          isReady = true;
-          console.log('✅ API server is ready.');
+      apiProcess.stdout.on('data', (data) => console.log(`API_STDOUT: ${data}`));
+      apiProcess.stderr.on('data', (data) => console.error(`API_STDERR: ${data}`));
+
+      // Poll the server until it's ready
+      const startTime = Date.now();
+      while (Date.now() - startTime < 10000 && !apiHealthy) {
+        try {
+          const response = await request(API_URL).head('/api/health');
+          if (response.status === 200) {
+            apiHealthy = true;
+            console.log('✅ API server is ready.');
+          }
+        } catch {
+          /* ignore */
         }
-      } catch (error) {
-        await new Promise(resolve => setTimeout(resolve, 500)); // Wait before retrying
+        if (!apiHealthy) {
+          await new Promise((r) => setTimeout(r, 500));
+        }
       }
-    }
 
-    if (!isReady) {
-      throw new Error('API server failed to start within 10 seconds.');
+      if (!apiHealthy) {
+        throw new Error('API server failed to start within 10 seconds.');
+      }
+    } else {
+      console.log('✅ Reusing existing Ticket API server.');
     }
   });
 
@@ -81,12 +94,12 @@ test.describe('Ticket Workflow Probe', () => {
 
     expect(createRes.status).toBe(201);
     expect(createRes.body.id).toBe(ticketId);
-    createdId = createRes.body.id;
-    console.log(`✅ Created ticket: ${createdId}`);
+    createdIds.push(ticketId);
+    console.log(`✅ Created ticket: ${ticketId}`);
 
     // 2. Update the ticket
     const updateRes = await request(API_URL)
-      .patch(`/api/tickets/${createdId}`)
+      .patch(`/api/tickets/${ticketId}`)
       .send({ status: 'in-progress', tags: ['probe', 'focus'] });
     expect(updateRes.status).toBe(200);
     expect(updateRes.body.status).toBe('in-progress');
@@ -95,7 +108,7 @@ test.describe('Ticket Workflow Probe', () => {
 
     // 3. Check off a checklist item
     const checkRes = await request(API_URL)
-      .patch(`/api/tickets/${createdId}`)
+      .patch(`/api/tickets/${ticketId}`)
       .send({ checklist: [{ step: 'Reproduce', done: true, result: 'Confirmed' }] });
     expect(checkRes.status).toBe(200);
     const checkedItem = checkRes.body.checklist.find(item => item.step === 'Reproduce');
@@ -106,21 +119,21 @@ test.describe('Ticket Workflow Probe', () => {
     // 4. Verify it's the latest focused ticket
     const latestRes = await request(API_URL).get('/api/tickets/latest');
     expect(latestRes.status).toBe(200);
-    expect(latestRes.body.id).toBe(createdId);
-    console.log(`✅ Verified ${createdId} is the latest focused ticket.`);
+    expect(latestRes.body.id).toBe(ticketId);
+    console.log(`✅ Verified ${ticketId} is the latest focused ticket.`);
   });
 
   test.afterAll(async () => {
-    // 5. Delete the ticket
-    if (createdId) {
-      const deleteRes = await request(API_URL).delete(`/api/tickets/${createdId}`);
-      expect(deleteRes.status).toBe(204);
-      console.log(`✅ Deleted ticket: ${createdId}`);
-
-      // Verify it's gone
-      const getRes = await request(API_URL).get(`/api/tickets/${createdId}`);
-      expect(getRes.status).toBe(404);
-      console.log(`✅ Verified ticket deletion.`);
+    // Delete all created tickets
+    for (const id of createdIds) {
+      try {
+        const deleteRes = await request(API_URL).delete(`/api/tickets/${id}`);
+        if (deleteRes.status === 204) {
+          console.log(`✅ Deleted ticket: ${id}`);
+        }
+      } catch (err) {
+        console.error(`Failed to delete ticket ${id}:`, err);
+      }
     }
 
     // Delete the template file

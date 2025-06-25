@@ -59,4 +59,9 @@ backups/
 *.sketch
 
 # Debug logs
-.debug/ 
+.debug/
+
+# Docsify build artifact
+docs-site/ 
+
+.specstory/

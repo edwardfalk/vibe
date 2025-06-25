@@ -7,6 +7,16 @@
 
 ---
 
+## Rule Precedence
+1. **Always-applied workspace rules** (auto-injected by infrastructure)
+2. **Repo-specific master rule** – this `.cursorrules` file
+3. **Topic rules** in `.cursor/rules/*.mdc` (architecture, testing, probes, etc.)
+4. **Mode rules** (Architect mode, Agent mode) set at runtime
+
+Lower-level rules may clarify but **must not conflict** with higher-level ones.  When in doubt, the higher entry wins.
+
+---
+
 **1. Project Architecture & File Structure**
 
 - Vibe uses a strict modular architecture.
@@ -23,7 +33,8 @@
 **Legacy Files (Do NOT use):**
 - `js/game.js` (replaced by `GameLoop.js`)
 - `js/enemy.js` (replaced by `BaseEnemy.js` + individual enemy classes)
-- `js/explosion.js` (replaced by `effects.js` + `visualEffects.js`)
+- `js/explosion.js` (replaced by `packages/fx/src/effects.js` + `packages/fx/src/visualEffects.js`)
+- `js/explosions/*` (fully superseded by modular explosion classes under `packages/fx/src/explosions/`)
 
 - Never suggest or implement monolithic or legacy patterns.
 - Update this section and the README.md if the architecture changes.
@@ -33,7 +44,7 @@
 **2. Ticketing System: Bugs, Features, Enhancements, Tasks**
 
 - All ticket operations must use the shared `TicketCore` library via the REST API server.
-  - The primary interface is the `ticket-api.js` server.
+  - The primary interface is the `ticket-api.js` server (thin wrapper around **`packages/api/src/TicketRouter.js` + `TicketService.js`**).
   - Browser-based tools like `packages/tooling/src/ticketManager.js` act as clients to this API.
   - The CLI tools have been removed.
 - If the API is down, manually inspect JSON files in tests/bug-reports/. See the troubleshooting/manual workflow section in TICKETING_SYSTEM_GUIDE.md for details.
@@ -52,9 +63,14 @@
   - ➡️ **See [`TICKETING_SYSTEM_GUIDE.md`](./TICKETING_SYSTEM_GUIDE.md) for all details.**
 - Tickets are structured JSON files stored in `tests/bug-reports/`.
 - Use the provided API endpoints (`ticket-api.js`) and JS modules (`packages/tooling/src/ticketManager.js`) for all ticket management (in-game, admin, automation).
-- Each ticket must specify a `type` field: `bug`, `feature`, `enhancement`, or `task`.
-- **All tickets created via the API must include a unique `id` field. The backend will reject tickets without an `id`. See the guide for example payloads.**
-- Tickets support tags, status, history, artifacts (screenshots, logs), and related tickets.
+- Each ticket **must** include:
+  - `id` – unique identifier (API rejects duplicates)
+  - `type` – `bug`, `feature`, `enhancement`, or `task`
+  - `title` – concise human-readable summary (≤ 60 chars)
+  - `slug` – kebab-case URL slug (auto-derived if omitted)
+
+Recommended optional fields: `tags` (`focus`, `regression`, `needs-design`, etc.), `artifacts`, `history`.
+
 - The bug-report watcher script (`move-bug-reports.js`) auto-moves artifacts to the correct folder.
 - The AI must be able to programmatically open the bug-report modal and access the same data as a human tester.
 - All feature/enhancement work should be logged through the same metadata-rich JSON ticket workflow.
@@ -112,6 +128,7 @@
 - **Terminal commands must work in PowerShell** - avoid bash-specific syntax
 - **File paths in scripts must use Windows format** with backslashes or forward slashes that work in PowerShell
 - If terminal shows `/c/...` paths, navigate to proper Windows path: `Set-Location "D:\projects\vibe"`
+- **Ensure only ONE Bun install**: use the official installer at `%USERPROFILE%\.bun\bin`; remove Scoop/npm/Homebrew copies to avoid CLI timeouts.
 
 ---
 
@@ -288,12 +305,15 @@
 
 - **Sound Effects Safety: All SFX names MUST be defined in `packages/core/src/audio/SoundIds.js` (`SOUND` registry) and have matching configs in `Audio.sounds`. The build will throw if mismatch.**
 
+_See the dedicated consistency specification: [AR-consistency-standards.mdc](mdc:.cursor/rules/AR-consistency-standards.mdc) for constructor signatures, emoji logging map, p5 instance-mode rules, and other strict norms._
+
 ---
 
 **6. Testing & Playwright**
 
-- **Probe-driven testing only:** Remove all manual Playwright `.spec.js` tests; maintain only probe files.
+- **Probe-driven testing only:** Manual Playwright `.spec.js` tests are **prohibited**.  Keep **probe** files only (suffix `*-probe.test.js`).  Delete or archive any remaining `.spec.js` tests.
 - **Use MCP Playwright for all automated tests.**
+- **Preferred automated test entry:** `bun run test:orchestrated` (starts Five-Server + Ticket-API, waits for health checks, runs Playwright + MCP probes deterministically).
 - **Dev server runs on port 5500** (`http://localhost:5500`).
 - **Game must be started before gameplay checks** (restart from game-over if needed).
 - **Activate audio:** Click canvas at (400,300) to enable audio context.
@@ -302,6 +322,10 @@
 - **Artifacts:** All screenshots and logs must be saved in the correct bug-report folder, auto-moved by `move-bug-reports.js`.
 - **Keyboard shortcuts:** In the bug-report modal, Enter/Ctrl+Enter = Save, Escape = Cancel.
 - **AI must be able to open the bug-report modal programmatically and access the same data as a human tester.**
+
+*See linked rule file for the full probe workflow and debugging details.*
+
+_For the full automated-testing workflow (probe conventions, dev server setup, ticket automation), see [AR-testing-and-debugging.mdc](mdc:.cursor/rules/AR-testing-and-debugging.mdc)._
 
 ---
 
@@ -359,6 +383,12 @@
 - VFXDispatcher is the only module that translates gameplay events into visual/screen effects.
 - All VFX must be testable via Playwright probes.
 - Update effectsConfig.js for all balancing and tuning.
+
+---
+
+**11. Security & Secrets**
+
+_See [AR-security.mdc](mdc:.cursor/rules/AR-security.mdc) for the authoritative security & secrets policy._
 
 ---
 

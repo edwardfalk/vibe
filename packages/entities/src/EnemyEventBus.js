@@ -45,4 +45,4 @@ export const EnemyEventBus = {
 };
 
 // Convenience default export for ergonomic imports
-export default EnemyEventBus; 
+export default EnemyEventBus;

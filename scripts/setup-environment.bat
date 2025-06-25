@@ -13,7 +13,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo 🔧 Running PowerShell environment setup...
-powershell -ExecutionPolicy Bypass -File setup-windows-environment.ps1
+powershell -ExecutionPolicy Bypass -File "%~dp0setup-windows-environment.ps1"
 
 if %errorlevel% equ 0 (
     echo.

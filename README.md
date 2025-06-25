@@ -103,8 +103,20 @@ For the full guide on API endpoints, parameters, and `curl` examples, see the [T
 
 - **Dev server**: Five Server runs on port 5500 (`http://localhost:5500`).
 - **Backend server**: Runs on port 3001 for ticket API and automation.
-- **Start all servers with `bun run dev`** (kills ports 5500/3001 if needed).
-- **Testing**: Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
+- **MCP back-end**: Desktop-Commander daemon auto-launches on port **4333** with read/write access to `D:\projects` and `C:\`.
+- **Start ALL services with `bun run dev`** – the script now spins up:
+   1. `desktop-commander` (MCP server, port 4333)
+   2. Five Server (port 5500)
+   3. Bug-report watcher
+   4. Ticket API server (port 3001)
+   Any pre-existing process on ports 5500, 3001, or 4333 is killed automatically.
+- **Testing**: Preferred workflow is the deterministic orchestrated script:
+  ```powershell
+  bun run test:orchestrated   # launches both servers, waits for health checks, runs Playwright + MCP probes
+  ```
+  This replaces direct `bun run test` and avoids flaky port-in-use errors.
+  Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
+- **Bun single-install requirement**: Ensure ONLY the official Windows installer (`%USERPROFILE%\.bun\bin`) is on your PATH. Remove Scoop or other shims to prevent Starship timeout warnings.
 - **Test mode**: Press 'T' in-game to enable scripted testing.
 - **Bug-report modal**: Open with 'B' + 'R' or UI button. Keyboard: Enter/Ctrl+Enter = Save, Escape = Cancel.
 - **Artifacts**: All screenshots/logs saved in `tests/bug-reports/` and grouped by ticket ID.
@@ -242,14 +254,13 @@ bun run test:debug    # Debug mode
 
 ### Probe-Driven Testing
 
-The game uses specialized probe files for different aspects:
+The game uses specialized probe files for different aspects (located in `js/` unless noted):
 
-- **`js/ai-liveness-probe.js`** - Basic game state and entity presence
-- **`js/enemy-ai-probe.js`** - Enemy AI behavior and interactions
-- **`js/audio-system-probe.js`** - Audio system and beat synchronization
-- **`js/combat-collision-probe.js`** - Combat mechanics and collision detection
-- **`js/ui-score-probe.js`** - UI elements and score system
-- **`js/game-debugging-probe.js`** - Bug detection and game health analysis
+- **`js/ai-liveness-probe.js`** – Basic game state & entity presence
+- **`js/audio-system-probe.js`** – Audio system & beat synchronization
+- **`js/collision-detection-probe.js`** – Collision detection & physics
+- **`js/grunt-knockback-probe.js`** – Grunt enemy knock-back behavior
+- **`js/tank-armor-break-probe.js`** – Tank armor break & explosion flow
 
 Each probe automatically:
 

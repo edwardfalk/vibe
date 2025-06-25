@@ -637,13 +637,16 @@ export class UIRenderer {
     // Enemy spawn hotkeys (1-4)
     if (this.gameState.gameState === 'playing' && window.spawnSystem) {
       const enemyMap = {
-        '1': 'grunt',
-        '2': 'stabber',
-        '3': 'rusher',
-        '4': 'tank',
+        1: 'grunt',
+        2: 'stabber',
+        3: 'rusher',
+        4: 'tank',
       };
       if (enemyMap[key]) {
-        console.log(`[UIRenderer] Key ${key} pressed. window.spawnSystem:`, window.spawnSystem);
+        console.log(
+          `[UIRenderer] Key ${key} pressed. window.spawnSystem:`,
+          window.spawnSystem
+        );
         // Spawn at random position away from player
         const p = this.player && this.player.p;
         const px = this.player ? this.player.x : 400;
@@ -652,7 +655,7 @@ export class UIRenderer {
         let y = Math.random() * (p ? p.height : 600);
         // Ensure not too close to player
         let tries = 0;
-        while (((x - px) ** 2 + (y - py) ** 2) < 200*200 && tries < 10) {
+        while ((x - px) ** 2 + (y - py) ** 2 < 200 * 200 && tries < 10) {
           x = Math.random() * (p ? p.width : 800);
           y = Math.random() * (p ? p.height : 600);
           tries++;
@@ -1333,7 +1336,9 @@ export class UIRenderer {
       this.uiMode = 'audioLab';
       this.audioLab.active = true;
       // Refresh sound list in case new SFX were added
-      this.audioLab.soundIds = Object.keys(window.SOUND || (this.audio && this.audio.sounds) || {});
+      this.audioLab.soundIds = Object.keys(
+        window.SOUND || (this.audio && this.audio.sounds) || {}
+      );
       this.audioLab.selected = 0;
     }
   }
@@ -1346,7 +1351,8 @@ export class UIRenderer {
       return;
     }
     if (key === 'ArrowUp') {
-      lab.selected = (lab.selected - 1 + lab.soundIds.length) % lab.soundIds.length;
+      lab.selected =
+        (lab.selected - 1 + lab.soundIds.length) % lab.soundIds.length;
     }
     if (key === 'ArrowDown') {
       lab.selected = (lab.selected + 1) % lab.soundIds.length;
@@ -1407,7 +1413,12 @@ export class UIRenderer {
         let details = '';
         if (cfg) {
           if (cfg.variants) {
-            details = cfg.variants.map((v, vi) => `Variant ${vi + 1}: freq ${v.frequency}Hz, ${v.waveform}, vol ${v.volume}, dur ${v.duration}s`).join(' | ');
+            details = cfg.variants
+              .map(
+                (v, vi) =>
+                  `Variant ${vi + 1}: freq ${v.frequency}Hz, ${v.waveform}, vol ${v.volume}, dur ${v.duration}s`
+              )
+              .join(' | ');
           } else {
             details = `freq ${cfg.frequency}Hz, ${cfg.waveform}, vol ${cfg.volume}, dur ${cfg.duration}s`;
           }
@@ -1416,5 +1427,18 @@ export class UIRenderer {
       }
     }
     p.pop();
+  }
+
+  /**
+   * Public draw entry expected by GameLoop.js
+   * @param {p5} p
+   * @param {GameState} gameState
+   * @param {Player} player
+   */
+  draw(p, gameState = null, player = null) {
+    if (gameState) this.gameState = gameState;
+    if (player) this.player = player;
+    this.updateUI();
+    this.drawUI(p);
   }
 }

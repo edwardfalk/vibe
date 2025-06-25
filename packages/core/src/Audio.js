@@ -472,11 +472,13 @@ export class Audio {
     this.playTone = (...a) => this.sfxManager.playTone(...a);
 
     // Validate registry vs config in development builds
-    try {
-      this.validateSoundRegistry();
-    } catch (e) {
-      console.error(e);
-      throw e;
+    if ((typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') || (typeof window !== 'undefined' && window.__DEV__)) {
+      try {
+        this.validateSoundRegistry();
+      } catch (e) {
+        console.error(e);
+        throw e;
+      }
     }
 
     console.log('🎵 Optimized Audio System ready');
@@ -539,17 +541,26 @@ export class Audio {
       // --- Fade in cosmicDrone on init ---
       if (this.audioContext) {
         this.cosmicDroneGain = this.audioContext.createGain();
-        this.cosmicDroneGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+        this.cosmicDroneGain.gain.setValueAtTime(
+          0,
+          this.audioContext.currentTime
+        );
         this.cosmicDroneActive = true;
         // Play cosmicDrone as a looping oscillator
         const droneOsc = this.audioContext.createOscillator();
         droneOsc.type = this.sounds.cosmicDrone.waveform;
-        droneOsc.frequency.setValueAtTime(this.sounds.cosmicDrone.frequency, this.audioContext.currentTime);
+        droneOsc.frequency.setValueAtTime(
+          this.sounds.cosmicDrone.frequency,
+          this.audioContext.currentTime
+        );
         droneOsc.connect(this.cosmicDroneGain);
         this.cosmicDroneGain.connect(this.masterGain);
         droneOsc.start();
         // Fade in
-        this.cosmicDroneGain.gain.linearRampToValueAtTime(this.sounds.cosmicDrone.volume, this.audioContext.currentTime + 3.0);
+        this.cosmicDroneGain.gain.linearRampToValueAtTime(
+          this.sounds.cosmicDrone.volume,
+          this.audioContext.currentTime + 3.0
+        );
         this._cosmicDroneOsc = droneOsc;
         // TODO: Add slow LFO for subtle movement
       }
@@ -1701,7 +1712,7 @@ export class Audio {
         this.nextCosmicPulseInterval = 1500 + randomRange(-300, 300);
         // Volume: loudest on 2nd or 4th measure, softer otherwise
         const baseVol = this.sounds.cosmicPulse.volume;
-        const isLoud = (measureNum % 2 === 0) || (measureNum % 4 === 0);
+        const isLoud = measureNum % 2 === 0 || measureNum % 4 === 0;
         const modVol = baseVol * (isLoud ? 1.0 : 0.6);
         // Play only if enough time has passed since last pulse
         const now = performance.now();
@@ -1720,7 +1731,9 @@ export class Audio {
     const now = performance.now();
     if (
       now - this.cosmicChimesTimer > this.nextCosmicChimesInterval &&
-      window.player && !window.gameState?.isMenu && !window.gameState?.isGameOver
+      window.player &&
+      !window.gameState?.isMenu &&
+      !window.gameState?.isGameOver
     ) {
       this.playSound(SOUND.cosmicChimes, window.player.x, window.player.y);
       this.cosmicChimesTimer = now;
@@ -1768,14 +1781,70 @@ export class Audio {
         .join('\n');
       throw new Error(`Sound registry mismatch detected!\n${details}`);
     }
-    console.log('✅ Sound registry validated –', configKeys.length, 'entries');
+    // Additional numeric validation to catch NaN/Infinity before runtime
+    const numericProps = ['frequency', 'volume', 'duration'];
+    for (const [key, cfg] of Object.entries(this.sounds)) {
+      for (const prop of numericProps) {
+        if (cfg[prop] !== undefined && !Number.isFinite(cfg[prop])) {
+          throw new Error(
+            `Sound config error: ${key}.${prop} is not a finite number`
+          );
+        }
+      }
+      if (
+        cfg.sweep &&
+        cfg.sweep.to !== undefined &&
+        !Number.isFinite(cfg.sweep.to)
+      ) {
+        throw new Error(
+          `Sound config error: ${key}.sweep.to is not a finite number`
+        );
+      }
+    }
+
+    // Validate variant arrays
+    const validateConfig = (cfg, keyPath) => {
+      for (const prop of numericProps) {
+        if (cfg[prop] !== undefined && !Number.isFinite(cfg[prop])) {
+          throw new Error(
+            `Sound config error: ${keyPath}.${prop} is not a finite number`
+          );
+        }
+      }
+      if (
+        cfg.sweep &&
+        cfg.sweep.to !== undefined &&
+        !Number.isFinite(cfg.sweep.to)
+      ) {
+        throw new Error(
+          `Sound config error: ${keyPath}.sweep.to is not a finite number`
+        );
+      }
+    };
+
+    for (const [key, cfg] of Object.entries(this.sounds)) {
+      if (Array.isArray(cfg.variants)) {
+        cfg.variants.forEach((variant, idx) =>
+          validateConfig(variant, `${key}.variants[${idx}]`)
+        );
+      }
+    }
+
+    console.log(
+      '✅ Sound registry & values validated –',
+      configKeys.length,
+      'entries'
+    );
   }
 
   disable() {
     // ... existing code ...
     // --- Fade out cosmicDrone on disable ---
     if (this.cosmicDroneGain) {
-      this.cosmicDroneGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 2.0);
+      this.cosmicDroneGain.gain.linearRampToValueAtTime(
+        0,
+        this.audioContext.currentTime + 2.0
+      );
       setTimeout(() => {
         if (this._cosmicDroneOsc) this._cosmicDroneOsc.stop();
         this.cosmicDroneActive = false;

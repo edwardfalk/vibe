@@ -4,18 +4,24 @@ import path from 'path';
 
 // Correctly handle file URL to path conversion on Windows
 const __filename = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(process.platform === 'win32' ? __filename.substring(1) : __filename);
+const __dirname = path.dirname(
+  process.platform === 'win32' ? __filename.substring(1) : __filename
+);
 
 const TESTS_DIR = path.resolve(__dirname, '../tests');
 const RULES_DIR = path.resolve(__dirname, '../.cursor/rules');
-const WORKFLOW_RULE_REF = '[ticketing-playwright-workflow.mdc](mdc:ticketing-playwright-workflow.mdc)';
+const WORKFLOW_RULE_REF =
+  '[ticketing-playwright-workflow.mdc](mdc:ticketing-playwright-workflow.mdc)';
 
 // Function to convert camelCase/kebab-case to Title Case
 const toTitleCase = (str) => {
   return str
     .replace(/([A-Z])/g, ' $1')
     .replace(/[_-]/g, ' ')
-    .replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase())
+    .replace(
+      /\w\S*/g,
+      (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+    )
     .replace(' Js', '.js')
     .trim();
 };
@@ -64,11 +70,13 @@ async function main() {
       console.log(`✅ Generated rule: ${ruleFileName}`);
     }
 
-    console.log(`\n🎉 Successfully generated ${testFiles.length} Playwright test rules.`);
+    console.log(
+      `\n🎉 Successfully generated ${testFiles.length} Playwright test rules.`
+    );
   } catch (err) {
     console.error('❌ Failed to generate Playwright rules:', err);
     process.exit(1);
   }
 }
 
-main(); 
+main();

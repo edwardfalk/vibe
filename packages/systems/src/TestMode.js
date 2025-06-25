@@ -32,6 +32,11 @@ export class TestMode {
     // Logging
     this.logInterval = 60; // frames between position logs
     this.lastLogFrame = 0;
+
+    // Expose test mode instance to window for automated Playwright probes
+    if (typeof window !== 'undefined') {
+      window.testRunner = this;
+    }
   }
 
   // Enable/disable test mode
@@ -347,5 +352,43 @@ export class TestMode {
         console.log('✅ Test suite completed');
       }
     }, 5000); // Change pattern every 5 seconds
+  }
+
+  /**
+   * Public draw entry expected by GameLoop.js. Currently draws nothing but can
+   * be extended to visualise automated testing.
+   * @param {p5} p
+   */
+  draw(p) {
+    if (!this.enabled || !p) return;
+    // Simple visual cue: draw a small red dot at player position when test mode is on
+    p.push();
+    p.fill(255, 0, 0, 180);
+    p.noStroke();
+    p.ellipse(this.player.x, this.player.y, 6, 6);
+    p.pop();
+  }
+
+  /**
+   * Lightweight test helper invoked by Playwright probes.
+   * Verifies that basic mechanics (movement, shooting, enemy presence) work.
+   * Returns an object with boolean flags.
+   */
+  async testGameMechanics() {
+    // Ensure the test mode performs one update cycle to guarantee bullets etc.
+    if (!this.enabled) this.toggle();
+
+    // Simulate a few frames to allow spawn system & auto-shooting.
+    for (let i = 0; i < 120; i++) {
+      this.update();
+    }
+
+    const movement =
+      typeof this.player.x === 'number' && typeof this.player.y === 'number';
+    const shooting =
+      Array.isArray(window.playerBullets) && window.playerBullets.length > 0;
+    const enemies = Array.isArray(window.enemies) && window.enemies.length > 0;
+
+    return { movement, shooting, enemies };
   }
 }

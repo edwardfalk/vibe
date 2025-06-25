@@ -17,4 +17,4 @@ describe('mathUtils.random – array input', () => {
     const single = [42];
     expect(random(single)).toBe(42);
   });
-}); 
+});

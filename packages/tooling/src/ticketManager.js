@@ -222,3 +222,16 @@ export async function loadTicket(ticketId) {
 export async function listTickets() {
   return defaultManager.listTickets();
 }
+
+// Expose TicketManager globally in browser contexts so Playwright E2E tests can access it
+if (typeof window !== 'undefined') {
+  window.TicketManager = TicketManager;
+  // Also expose TicketCore helpers if available (for ID generation etc.)
+  import('../../core/src/TicketCore.js')
+    .then((mod) => {
+      window.TicketCore = { generateId: mod.generateId };
+    })
+    .catch(() => {
+      /* ignore */
+    });
+}

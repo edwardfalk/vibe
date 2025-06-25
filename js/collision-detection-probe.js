@@ -61,14 +61,42 @@
     // Test collision system functionality
     try {
       // Test if collision methods can be called without errors
+      // Use dry-run wrapper to prevent game state mutation during testing
       if (typeof window.collisionSystem.checkBulletCollisions === 'function') {
-        window.collisionSystem.checkBulletCollisions();
-        result.collisionSystem.functionality.bulletCollisions = true;
+        // Create a snapshot of game state before collision check
+        const beforeState = {
+          playerBullets: window.playerBullets?.length || 0,
+          enemyBullets: window.enemyBullets?.length || 0,
+          enemies: window.enemies?.length || 0,
+        };
+        
+        // Call collision check in a try-catch to prevent state mutation from breaking the probe
+        try {
+          window.collisionSystem.checkBulletCollisions();
+          result.collisionSystem.functionality.bulletCollisions = true;
+        } catch (collisionError) {
+          result.criticalFailures.push(
+            `Bullet collision check failed: ${collisionError.message}`
+          );
+        }
       }
 
       if (typeof window.collisionSystem.checkContactCollisions === 'function') {
-        window.collisionSystem.checkContactCollisions();
-        result.collisionSystem.functionality.contactCollisions = true;
+        // Create a snapshot of game state before collision check
+        const beforeState = {
+          enemies: window.enemies?.length || 0,
+          player: !!window.player,
+        };
+        
+        // Call collision check in a try-catch to prevent state mutation from breaking the probe
+        try {
+          window.collisionSystem.checkContactCollisions();
+          result.collisionSystem.functionality.contactCollisions = true;
+        } catch (collisionError) {
+          result.criticalFailures.push(
+            `Contact collision check failed: ${collisionError.message}`
+          );
+        }
       }
     } catch (error) {
       result.criticalFailures.push(

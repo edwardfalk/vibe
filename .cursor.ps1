@@ -9,7 +9,11 @@ $env:PREFERRED_PACKAGE_MANAGER = "bun"
 $env:ENVIRONMENT = "development"
 
 # Navigationskommando
-function vibe { Set-Location "D:\projects\vibe" }
+function vibe {
+    $root = $env:VIBE_PROJECTS_ROOT
+    if ($null -eq $root) { $root = "D:\projects" }
+    Set-Location (Join-Path $root 'vibe')
+}
 
 # 🎮 Kommandon
 function vibe-start  { bun run dev }

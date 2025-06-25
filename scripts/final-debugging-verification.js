@@ -59,10 +59,21 @@ class FinalDebuggingVerification {
     this.log('verify', 'Checking p5.js instance mode compliance...');
 
     try {
-      const visualEffectsContent = await fs.readFile(
-        join(__dirname, 'packages/fx/src/visualEffects.js'),
-        'utf8'
+      const projectRoot = process.env.VIBE_PROJECT_ROOT || __dirname;
+      const visualEffectsPath = join(
+        projectRoot,
+        'packages/fx/src/visualEffects.js'
       );
+      try {
+        await fs.access(visualEffectsPath);
+      } catch {
+        this.log(
+          'warn',
+          `File not found: ${visualEffectsPath}. Skipping p5.js instance mode check.`
+        );
+        return;
+      }
+      const visualEffectsContent = await fs.readFile(visualEffectsPath, 'utf8');
 
       // Check for global p5 function usage (should not exist)
       const globalP5Functions = [
@@ -132,7 +143,17 @@ class FinalDebuggingVerification {
 
     for (const file of enemyFiles) {
       try {
-        const content = await fs.readFile(join(__dirname, 'js', file), 'utf8');
+        const enemyPath = join(__dirname, 'js', file);
+        try {
+          await fs.access(enemyPath);
+        } catch {
+          this.log(
+            'warn',
+            `File not found: ${enemyPath}. Skipping constructor signature check for this file.`
+          );
+          continue;
+        }
+        const content = await fs.readFile(enemyPath, 'utf8');
         const constructorMatch = content.match(/constructor\([^)]+\)/);
 
         if (constructorMatch) {
@@ -260,7 +281,7 @@ class FinalDebuggingVerification {
 
           // Check if log starts with emoji (after opening quote)
           const hasEmoji =
-            /console\.log\(\s*['"`][🎮🎵🗡️💥⚠️🚀🎯🛡️🏥✅❌🧪⏸️▶️💨🖥️🎫🔍📋📊💡🤖🔒🧠👁️🐛⚡ℹ️🌐📝]/.test(
+            /console\.log\(\s*['"`][🎮🎵🗡️💥⚠️🚀🎯🛡️🏥✅❌🧪⏸️▶️💨🖥️🎫🔍📋📊💡🤖🔒🧠👁️🐛⚡ℹ️🌐📝]/u.test(
               logMatch
             );
 

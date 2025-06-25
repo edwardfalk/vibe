@@ -71,13 +71,13 @@ export class SpatialHashGrid {
       const cellKeyRight = this._hash(pointRightX, pointRightY);
 
       if (this.map.has(cellKeyCenter)) {
-        this.map.get(cellKeyCenter).forEach(item => results.add(item));
+        this.map.get(cellKeyCenter).forEach((item) => results.add(item));
       }
       if (this.map.has(cellKeyLeft)) {
-        this.map.get(cellKeyLeft).forEach(item => results.add(item));
+        this.map.get(cellKeyLeft).forEach((item) => results.add(item));
       }
       if (this.map.has(cellKeyRight)) {
-        this.map.get(cellKeyRight).forEach(item => results.add(item));
+        this.map.get(cellKeyRight).forEach((item) => results.add(item));
       }
     }
 

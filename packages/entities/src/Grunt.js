@@ -429,11 +429,7 @@ class Grunt extends BaseEnemy {
         `[GRUNT DEBUG] Grunt at (${this.x.toFixed(1)},${this.y.toFixed(1)}) died and should be removed.`
       );
     }
-    if (
-      died &&
-      window.audio &&
-      typeof window.audio.playSound === 'function'
-    ) {
+    if (died && window.audio && typeof window.audio.playSound === 'function') {
       window.audio.playSound(SOUND.gruntPopEcho, this.x, this.y);
     }
     return died;

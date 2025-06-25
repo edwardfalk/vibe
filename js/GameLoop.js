@@ -8,9 +8,14 @@
  * - Stabbers = Off-beat accent (beat 3.5)
  */
 
+console.log('🟢 [DEBUG] GameLoop.js: Top of file');
+
 import { Player, EnemyFactory, Bullet } from '@vibe/entities';
+console.log('🟢 [DEBUG] GameLoop.js: Imported entities');
 import { ExplosionManager, EffectsManager } from '@vibe/fx';
+console.log('🟢 [DEBUG] GameLoop.js: Imported FX');
 import VisualEffectsManager from '@vibe/fx/visualEffects.js';
+console.log('🟢 [DEBUG] GameLoop.js: Imported VisualEffectsManager');
 import {
   GameState,
   Audio,
@@ -28,6 +33,7 @@ import {
   cos,
   sin,
 } from '@vibe/core';
+console.log('🟢 [DEBUG] GameLoop.js: Imported core');
 import {
   CameraSystem,
   SpawnSystem,
@@ -40,15 +46,20 @@ import {
   InputSystem,
   SpatialHashGrid,
 } from '@vibe/systems';
+console.log('🟢 [DEBUG] GameLoop.js: Imported systems');
 import { setupRemoteConsoleLogger } from '@vibe/tooling';
+console.log('🟢 [DEBUG] GameLoop.js: Imported tooling');
 import ProfilerOverlay from '@vibe/fx/ProfilerOverlay.js';
+console.log('🟢 [DEBUG] GameLoop.js: Imported ProfilerOverlay');
 import AdaptiveLODManager, { shouldRender as adaptiveShouldRender } from '@vibe/fx/AdaptiveLODManager.js';
+console.log('🟢 [DEBUG] GameLoop.js: Imported AdaptiveLODManager');
 import VFXDispatcher from '@vibe/fx/VFXDispatcher.js';
+console.log('🟢 [DEBUG] GameLoop.js: Imported VFXDispatcher');
 import { Grunt } from '@vibe/entities/Grunt.js';
 import { Tank } from '@vibe/entities/Tank.js';
 import { ENEMY_HIT } from '@vibe/entities';
 import { EnemyEventBus } from '@vibe/entities';
-import { Debris, ScorePopup } from '@vibe/fx/visualEffects';
+console.log('🟢 [DEBUG] GameLoop.js: Imported all remaining modules');
 
 // Core game objects
 let player;
@@ -220,6 +231,7 @@ const state = {
 };
 
 function setup(p) {
+  console.log('🟢 [DEBUG] GameLoop.js: Entered setup(p)');
   console.log('[VIBE DEBUG] setup(p) called');
   p.createCanvas(800, 600);
   p.frameRate(60);
@@ -253,6 +265,11 @@ function setup(p) {
     console.log('📷 Camera system initialized');
   }
 
+  if (!window.collisionSystem) {
+    window.collisionSystem = new CollisionSystem();
+    console.log('💢 Collision system initialized');
+  }
+
   if (!window.spawnSystem) {
     window.spawnSystem = new SpawnSystem(p, window.audio);
     console.log('👾 Spawn system initialized');
@@ -275,18 +292,39 @@ function setup(p) {
   }
 
   if (!window.backgroundRenderer) {
-    window.backgroundRenderer = new BackgroundRenderer(p);
+    window.backgroundRenderer = new BackgroundRenderer(
+      p,
+      window.cameraSystem,
+      window.player,
+      window.gameState
+    );
     console.log('🌌 Background renderer initialized');
   }
 
   if (!window.uiRenderer) {
-    window.uiRenderer = new UIRenderer(p);
+    window.uiRenderer = new UIRenderer(
+      window.gameState,
+      window.player,
+      window.audio,
+      window.cameraSystem,
+      window.testMode
+    );
     console.log('🖥️ UI renderer initialized');
   }
 
   if (!window.testMode) {
-    window.testMode = new TestMode(p);
+    window.testMode = new TestMode(window.player);
     console.log('🧪 Test mode manager initialized');
+  }
+
+  // Ensure at least one enemy exists for automated probes
+  if (window.spawnSystem && window.enemies && window.enemies.length === 0) {
+    try {
+      window.spawnSystem.spawnEnemies?.(1);
+      console.log('👾 Initial enemy spawned for probes');
+    } catch (err) {
+      console.warn('⚠️ Failed to spawn initial enemy:', err);
+    }
   }
 
   console.log('🎮 Game setup complete - all systems initialized');
@@ -402,7 +440,7 @@ function restartGame(p) {
   state.isGameOver = false;
   state.isPaused = false;
 
-  window.player = new Player(p.width / 2, p.height / 2, p);
+  window.player = new Player(p, p.width / 2, p.height / 2, window.cameraSystem);
   window.enemies = [];
   window.bullets = [];
   window.playerBullets = [];
@@ -410,7 +448,12 @@ function restartGame(p) {
   // Reset systems
   if (window.gameState) window.gameState.reset();
   if (window.spawnSystem) window.spawnSystem.reset();
-  if (window.visualEffectsManager) window.visualEffectsManager.reset();
+  if (
+    window.visualEffectsManager &&
+    typeof window.visualEffectsManager.reset === 'function'
+  ) {
+    window.visualEffectsManager.reset();
+  }
 
   // Let other systems know the player has changed
   if (window.dispatchEvent) {
@@ -441,3 +484,17 @@ export default {
   keyPressed,
   restartGame,
 };
+
+console.log('🟢 [DEBUG] GameLoop.js: Before p5 instance creation');
+console.log('setup:', typeof setup, 'draw:', typeof draw, 'keyPressed:', typeof keyPressed);
+if (typeof window !== 'undefined' && typeof window.p5 !== 'undefined') {
+  console.log('🟢 [DEBUG] GameLoop.js: Creating p5 instance');
+  new window.p5((p) => {
+    // Bind our module functions to the p5 instance
+    p.setup = () => setup(p);
+    p.draw = () => draw(p);
+    p.keyPressed = () => keyPressed(p);
+  });
+} else {
+  console.log('🔴 [DEBUG] GameLoop.js: window.p5 is undefined');
+}

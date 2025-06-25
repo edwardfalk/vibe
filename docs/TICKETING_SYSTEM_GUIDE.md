@@ -8,6 +8,24 @@ This guide provides a comprehensive overview of the Vibe ticketing system. All t
 
 The API runs at `http://localhost:3001`. All requests and responses are JSON.
 
+> ℹ️  The port can be overridden by setting the `TICKET_API_PORT` environment variable before starting the server (see `ticket-api.js`).
+
+### Available Query Parameters
+
+| Param   | Description | Example |
+|---------|-------------|---------|
+| `type`  | Filter by ticket type (`bug`, `feature`, `enhancement`, `task`) | `/api/tickets?type=bug` |
+| `status`| Filter by status (`open`, `in-progress`, `closed`, etc.) | `/api/tickets?status=open` |
+| `focus` | If `true`, return only "focus" tickets (high priority) | `/api/tickets?focus=true` |
+| `limit` | Max results (default 100) | `/api/tickets?limit=20` |
+| `offset`| Pagination offset | `/api/tickets?limit=20&offset=20` |
+
+---
+
+### Health Check
+
+HEAD `http://localhost:3001/api/health` → `200 OK` if the server is alive.
+
 **List Tickets:**
 ```sh
 curl "http://localhost:3001/api/tickets"
@@ -45,7 +63,7 @@ curl -X DELETE "http://localhost:3001/api/tickets/TASK-123"
 The ticketing system is designed for:
 - **Automation:** Integrates with Playwright tests.
 - **Metadata-rich tickets:** All tickets are structured JSON files.
-- **Centralized Logic:** The `ticket-api.js` server is the single entry point for all operations, using `TicketCore.js` for file system interactions.
+- **Centralized Logic:** The `ticket-api.js` server is the single entry point and delegates to **`packages/api/src/TicketRouter.js`** → **`TicketService.js`** → **`TicketCore.js`** for all logic and persistence.
 
 ---
 

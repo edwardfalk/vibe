@@ -47,13 +47,19 @@ function folderName(ticket) {
 
 function validateTicketFields(ticket) {
   // Type checks
-  if (ticket.tags && !Array.isArray(ticket.tags)) throw new Error('Invalid type for tags: must be array');
-  if (ticket.checklist && !Array.isArray(ticket.checklist)) throw new Error('Invalid type for checklist: must be array');
-  if (ticket.artifacts && !Array.isArray(ticket.artifacts)) throw new Error('Invalid type for artifacts: must be array');
-  if (ticket.relatedTickets && !Array.isArray(ticket.relatedTickets)) throw new Error('Invalid type for relatedTickets: must be array');
+  if (ticket.tags && !Array.isArray(ticket.tags))
+    throw new Error('Invalid type for tags: must be array');
+  if (ticket.checklist && !Array.isArray(ticket.checklist))
+    throw new Error('Invalid type for checklist: must be array');
+  if (ticket.artifacts && !Array.isArray(ticket.artifacts))
+    throw new Error('Invalid type for artifacts: must be array');
+  if (ticket.relatedTickets && !Array.isArray(ticket.relatedTickets))
+    throw new Error('Invalid type for relatedTickets: must be array');
   // Reasonable limits
-  if (ticket.title && ticket.title.length > 256) throw new Error('Error: Title too long (max 256 chars)');
-  if (ticket.description && ticket.description.length > 2048) throw new Error('Error: Description too long (max 2048 chars)');
+  if (ticket.title && ticket.title.length > 256)
+    throw new Error('Error: Title too long (max 256 chars)');
+  if (ticket.description && ticket.description.length > 2048)
+    throw new Error('Error: Description too long (max 2048 chars)');
 }
 
 function ensureMeta(ticket, isNew = false) {
@@ -84,16 +90,16 @@ function ensureMeta(ticket, isNew = false) {
 }
 
 function addHistoryEntry(ticket, action, details = {}) {
-    if (!Array.isArray(ticket.history)) {
-        ticket.history = [];
-    }
-    const newEntry = {
-        timestamp: new Date().toISOString(),
-        action,
-        user: 'system', // For now, user is always system.
-        ...details,
-    };
-    ticket.history.push(newEntry);
+  if (!Array.isArray(ticket.history)) {
+    ticket.history = [];
+  }
+  const newEntry = {
+    timestamp: new Date().toISOString(),
+    action,
+    user: 'system', // For now, user is always system.
+    ...details,
+  };
+  ticket.history.push(newEntry);
 }
 
 function validateId(id) {
@@ -117,44 +123,58 @@ async function writeTicket(ticket, isNew = false) {
 async function readTicket(id) {
   validateId(id);
   const folders = await fs.readdir(TICKETS_DIR);
-  const folderName = folders.find(f => f.includes(id));
+  const folderName = folders.find((f) => f.includes(id));
 
   if (!folderName) {
-      throw new Error(`Ticket ${id} not found`);
+    throw new Error(`Ticket ${id} not found`);
   }
   const file = path.join(TICKETS_DIR, folderName, `${id}.json`);
   try {
-      const data = await fs.readFile(file, 'utf8');
-      const ticket = JSON.parse(data);
-      return { ...ticket };
+    const data = await fs.readFile(file, 'utf8');
+    const ticket = JSON.parse(data);
+    return { ...ticket };
   } catch (e) {
-      throw new Error(`Ticket ${id} not found`);
+    throw new Error(`Ticket ${id} not found`);
   }
 }
 
 async function deleteTicket(id) {
   validateId(id);
   const folders = await fs.readdir(TICKETS_DIR);
-  const folderName = folders.find(f => f.includes(id));
+  const folderName = folders.find((f) => f.includes(id));
 
   if (!folderName) {
     // If folder doesn't exist, we can consider it deleted.
-    log('warn', '⚠️', `Folder for ticket ${id} not found, assuming already deleted.`);
+    log(
+      'warn',
+      '⚠️',
+      `Folder for ticket ${id} not found, assuming already deleted.`
+    );
     return { id: id, status: 'deleted' };
   }
-  
+
   const folderPath = path.join(TICKETS_DIR, folderName);
   try {
     await fs.rm(folderPath, { recursive: true, force: true });
     log('info', '🗑️', `Deleted ticket ${id} and folder ${folderName}`);
     return { id: id, status: 'deleted' };
   } catch (err) {
-    log('error', '❌', `Failed to delete folder for ticket ${id}: ${err.message}`);
+    log(
+      'error',
+      '❌',
+      `Failed to delete folder for ticket ${id}: ${err.message}`
+    );
     throw err;
   }
 }
 
-async function listTickets({ type, status, focus, limit = 100, offset = 0 } = {}) {
+async function listTickets({
+  type,
+  status,
+  focus,
+  limit = 100,
+  offset = 0,
+} = {}) {
   const dirents = await fs.readdir(TICKETS_DIR, { withFileTypes: true });
   let tickets = [];
 
@@ -198,7 +218,7 @@ async function listTickets({ type, status, focus, limit = 100, offset = 0 } = {}
   }
   if (focus) {
     tickets = tickets.filter(
-      (t) => t.tags && t.tags.includes('focus') && t.status !== 'closed'
+      (t) => t.tags?.includes('focus') && t.status !== 'closed'
     );
   }
   tickets.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));

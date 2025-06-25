@@ -24,6 +24,14 @@ const counters = Object.create(null);
 // Runtime toggle (updated by GameLoop based on CONFIG)
 let enabled = true;
 
+// Environment check for performance API
+if (typeof performance === 'undefined' || typeof performance.now !== 'function') {
+  // Provide a fallback for performance.now
+  globalThis.performance = {
+    now: () => Date.now(),
+  };
+}
+
 function startFrame() {
   if (!enabled) return;
   frameStart = performance.now();
@@ -67,7 +75,12 @@ function getStats() {
 
 function reset() {
   framePtr = 0;
-  counters.keys = Object.create(null);
+  // Fix: clear all keys in counters
+  for (const key in counters) {
+    if (Object.prototype.hasOwnProperty.call(counters, key)) {
+      delete counters[key];
+    }
+  }
 }
 
 function setEnabled(v) {

@@ -88,14 +88,16 @@ export class SpawnSystem {
       spawnY = player.y + sin(angle) * radius;
 
       // Use the spatial hash grid for a fast check of the local area
-      const neighbors = window.collisionSystem?.grid?.neighbors(spawnX, spawnY) || [];
+      const neighbors =
+        window.collisionSystem?.grid?.neighbors(spawnX, spawnY) || [];
 
       if (neighbors.length === 0) {
         return { x: spawnX, y: spawnY }; // Area is empty, this is a valid spot
       }
-      
+
       const isTooClose = neighbors.some(
-        e => this.getDistanceSq(spawnX, spawnY, e.x, e.y) < MIN_ENEMY_DISTANCE_SQ
+        (e) =>
+          this.getDistanceSq(spawnX, spawnY, e.x, e.y) < MIN_ENEMY_DISTANCE_SQ
       );
 
       if (!isTooClose) {
@@ -106,24 +108,37 @@ export class SpawnSystem {
     } while (attempts < 100); // Increased attempts
 
     // Fallback: Spiral search for a free spot
-    console.warn(`⚠️ Could not find random spawn position after 100 attempts. Starting spiral search.`);
+    console.warn(
+      `⚠️ Could not find random spawn position after 100 attempts. Starting spiral search.`
+    );
     let spiralAngle = random() * Math.PI * 2;
     let spiralRadius = 500;
-    for (let i = 0; i < 200; i++) { // Spiral for max 200 steps
+    for (let i = 0; i < 200; i++) {
+      // Spiral for max 200 steps
       spiralAngle += 0.2; // Radian increment
       spiralRadius += 2; // Move outwards
       spawnX = player.x + cos(spiralAngle) * spiralRadius;
       spawnY = player.y + sin(spiralAngle) * spiralRadius;
-      
-      const neighbors = window.collisionSystem?.grid?.neighbors(spawnX, spawnY) || [];
+
+      // Clamp to screen bounds
+      spawnX = max(0, min(800, spawnX));
+      spawnY = max(0, min(600, spawnY));
+
+      const neighbors =
+        window.collisionSystem?.grid?.neighbors(spawnX, spawnY) || [];
       if (neighbors.length === 0) {
-        console.log(`✅ Found valid spawn position via spiral search at attempt ${i + 1}`);
+        console.log(
+          `✅ Found valid spawn position via spiral search at attempt ${i + 1}`
+        );
         return { x: spawnX, y: spawnY };
       }
     }
 
-    console.error('💥 Catastrophic spawn failure: Could not find any valid spawn position after spiral search.');
-    return { x: player.x, y: player.y }; // Last resort
+    console.error(
+      '💥 Catastrophic spawn failure: Could not find any valid spawn position after spiral search.'
+    );
+    // Clamp last resort to screen bounds
+    return { x: max(0, min(800, player.x)), y: max(0, min(600, player.y)) };
   }
 
   getDistanceSq(x1, y1, x2, y2) {
@@ -138,7 +153,9 @@ export class SpawnSystem {
   }
 
   forceSpawn(enemyType, x, y) {
-    console.log(`[SpawnSystem] forceSpawn called: type=${enemyType}, x=${x}, y=${y}`);
+    console.log(
+      `[SpawnSystem] forceSpawn called: type=${enemyType}, x=${x}, y=${y}`
+    );
     if (!window.enemies) window.enemies = [];
     const p = window.p || (window.player && window.player.p);
     const audio = window.audio;

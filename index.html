@@ -52,10 +52,18 @@
         }
       }
     </script>
-    <!-- Remote console logger (captures early errors before game boots) -->
+    <!-- Remote console logger (opt-in via ?remoteLogs=1 or localStorage.remoteLogs=1) -->
     <script type="module">
       import { setupRemoteConsoleLogger } from '@vibe/tooling';
-      setupRemoteConsoleLogger();
+      const enableRemoteLogger =
+        window.location.search.includes('remoteLogs=1') ||
+        localStorage.getItem('remoteLogs') === '1';
+      if (enableRemoteLogger) {
+        setupRemoteConsoleLogger();
+        console.log('🪵 Remote console logger enabled');
+      } else {
+        console.log('🪵 Remote console logger disabled (opt-in only)');
+      }
     </script>
 </head>
 <body>

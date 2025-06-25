@@ -5,6 +5,16 @@ import { generateId } from '../packages/core/src/TicketCore.js';
 test.describe('Ticketing workflow probes', () => {
   test.beforeAll(async () => {
     DebugLogger.log('Playwright ticket creation probe started');
+    // Check API server health before running test
+    try {
+      const healthRes = await fetch('http://localhost:3001/api/health');
+      if (!healthRes.ok) {
+        throw new Error(`Ticket API health check failed: ${healthRes.status} ${await healthRes.text()}`);
+      }
+    } catch (err) {
+      console.error('Ticket API server is not healthy or not running:', err);
+      throw err;
+    }
   });
 
   test('Create ticket via API and verify', async ({ page }) => {
@@ -27,16 +37,26 @@ test.describe('Ticketing workflow probes', () => {
         updatedAt: new Date().toISOString(),
       };
       // Create
-      const createRes = await fetch('http://localhost:3001/api/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ticket),
-      });
+      let createRes;
+      try {
+        createRes = await fetch('http://localhost:3001/api/tickets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ticket),
+        });
+      } catch (err) {
+        throw new Error(`Network error during ticket creation: ${err}`);
+      }
       expect(createRes.ok, `Ticket creation failed: ${await createRes.text()}`).toBe(
         true
       );
       // Retrieve
-      const getRes = await fetch(`http://localhost:3001/api/tickets/${id}`);
+      let getRes;
+      try {
+        getRes = await fetch(`http://localhost:3001/api/tickets/${id}`);
+      } catch (err) {
+        throw new Error(`Network error during ticket retrieval: ${err}`);
+      }
       expect(getRes.ok).toBe(true);
       const fetched = await getRes.json();
       expect(fetched.id).toBe(id);

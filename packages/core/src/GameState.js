@@ -74,12 +74,22 @@ export class GameState {
     }
   }
 
+  /**
+   * TODO: This method is tightly coupled to window globals (cameraSystem, audio, etc.).
+   * Refactor to use dependency injection for better modularity.
+   */
   restart() {
     console.log('🔄 Robust Restart: Re-initializing systems...');
+    this._resetEntities();
+    // ... rest of restart logic ...
+  }
+
+  _resetEntities() {
     window.enemies = [];
     window.playerBullets = [];
     window.enemyBullets = [];
     window.activeBombs = [];
+  }
 
     if (window.player && window.player.p) {
       const p = window.player.p;
@@ -163,5 +173,29 @@ export class GameState {
         this.restart();
       }
     }
+  }
+
+  update(p, player, enemyCount, deltaTimeMs = 16.6667) {
+    // Core per-frame bookkeeping; extend as needed.
+    // For now, just advance the game-over timer and maybe level progression hooks.
+    this.updateGameOverTimer();
+    // Future: hook in difficulty scaling, per-frame analytics, etc.
+  }
+
+  isGameOver() {
+    return this.gameState === 'gameOver';
+  }
+
+  reset() {
+    // Reset core state fields to initial values without touching other systems.
+    this.score = 0;
+    this.level = 1;
+    this.nextLevelThreshold = 150;
+    this.killStreak = 0;
+    this.totalKills = 0;
+    this.shotsFired = 0;
+    this.gameOverTimer = 0;
+    this.pauseStartTime = 0;
+    this.gameState = 'playing';
   }
 }

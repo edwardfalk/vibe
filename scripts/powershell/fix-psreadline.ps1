@@ -83,9 +83,15 @@ if (Test-Path $profilePath) {
     Write-Host "  ℹ️  No existing profile to backup" -ForegroundColor Gray
 }
 
+# Use environment variable for project root if available
+if ($env:VIBE_PROJECTS_ROOT) {
+    $vibeProfilePath = Join-Path $env:VIBE_PROJECTS_ROOT 'vibe\scripts\powershell\vibe-powershell-profile.ps1'
+} else {
+    $vibeProfilePath = "D:\projects\vibe\scripts\powershell\vibe-powershell-profile.ps1"
+}
+
 # Apply the fixed profile
 Write-Host "`n📝 Applying Fixed Profile..." -ForegroundColor Yellow
-$vibeProfilePath = "D:\projects\vibe\scripts\powershell\vibe-powershell-profile.ps1"
 if (Test-Path $vibeProfilePath) {
     try {
         # Ensure profile directory exists

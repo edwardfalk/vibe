@@ -53,6 +53,12 @@ export class BackgroundRenderer {
         depth: 0.7,
       },
       {
+        name: 'noise_wave',
+        elements: [],
+        speed: 0.2,
+        depth: 0.8,
+      },
+      {
         name: 'medium_stars',
         elements: [],
         speed: 0.5,
@@ -111,8 +117,13 @@ export class BackgroundRenderer {
         },
         alpha: randomRange(0.05, 0.15),
         driftSpeed: randomRange(0.1, 0.3),
+        noiseSeed: randomRange(0, 10000),
       });
     }
+
+    // Noise wave layer
+    const noiseWave = this.parallaxLayers.find((l) => l.name === 'noise_wave');
+    noiseWave.elements.push({ seed: randomRange(0, 10000) });
 
     // Medium stars layer
     const mediumStars = this.parallaxLayers[2];
@@ -184,6 +195,9 @@ export class BackgroundRenderer {
       case 'nebula_clouds':
         this.drawNebulaClouds(layer.elements, p);
         break;
+      case 'noise_wave':
+        this.drawNoiseWave(layer.elements, p);
+        break;
       case 'medium_stars':
         this.drawMediumStars(layer.elements, p);
         break;
@@ -214,12 +228,29 @@ export class BackgroundRenderer {
   drawNebulaClouds(clouds, p = this.p) {
     p.noStroke();
     for (const cloud of clouds) {
-      const drift = p.sin(p.frameCount * cloud.driftSpeed) * 20;
+      const noiseInput =
+        (cloud.x + p.frameCount * cloud.driftSpeed) * 0.002 +
+        (cloud.noiseSeed || 0);
+      const drift = p.noise(noiseInput) * 40 - 20;
       const alpha = cloud.alpha * 255;
-
       p.fill(cloud.color.r, cloud.color.g, cloud.color.b, alpha);
       p.ellipse(cloud.x + drift, cloud.y, cloud.size, cloud.size * 0.6);
     }
+  }
+
+  // Draw noise-driven parallax wave
+  drawNoiseWave(elements, p = this.p) {
+    p.noStroke();
+    p.fill(60, 80, 180, 60);
+    p.beginShape();
+    for (let x = 0; x <= p.width; x += 10) {
+      const n = p.noise(elements[0].seed + x * 0.01, p.frameCount * 0.003);
+      const y = p.height * 0.3 + n * 60;
+      p.vertex(x, y);
+    }
+    p.vertex(p.width, p.height);
+    p.vertex(0, p.height);
+    p.endShape(p.CLOSE);
   }
 
   // Draw medium stars
@@ -609,5 +640,22 @@ export class BackgroundRenderer {
   reset() {
     this.parallaxLayers = [];
     this.parallaxInitialized = false;
+  }
+
+  /**
+   * Primary entry expected by GameLoop.js – wraps all internal background drawing calls.
+   * @param {p5} p - p5 instance (optional; falls back to constructor p)
+   * @param {CameraSystem} cameraSystem - camera (optional; uses this.cameraSystem by default)
+   */
+  draw(p = this.p, cameraSystem = this.cameraSystem) {
+    // Update injected camera reference if supplied
+    if (cameraSystem) this.cameraSystem = cameraSystem;
+
+    // Core parallax layers and space elements
+    this.drawParallaxBackground(p);
+    this.drawEnhancedSpaceElements(p);
+    // Optional aurora / interactive effects
+    this.drawCosmicAuroraBackground(p);
+    this.drawInteractiveBackgroundEffects(p);
   }
 }

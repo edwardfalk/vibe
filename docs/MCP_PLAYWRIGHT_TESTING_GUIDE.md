@@ -19,7 +19,7 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 
 ---
 
-## Automated Liveness & Entity Probes: Failure Handling and Diagnostics
+## Automated Liveness & Entity Probes: Failure Handling and Diagnostics (Current Probe Set)
 
 - All probe-driven tests must include:
   - A liveness probe (draw loop, frameCount, gameState).
@@ -29,7 +29,7 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
   - Log the current state of player, enemies, and gameState.
   - Record the time/frame of failure.
 - This workflow is mandatory for all MCP Playwright tests.
-- See `js/ai-liveness-probe.js` for implementation details.
+- Current liveness probe implementation: [`js/ai-liveness-probe.js`](js/ai-liveness-probe.js)
 
 ### Automated Bug Reporting for Probe Failures
 
@@ -123,19 +123,25 @@ if (result.moveBlockedByEdge) {
 
 ---
 
-## Reference: Example Probes
+## Reference: Current Probes (2025-06)
 
-- **Liveness/heartbeat:** [`js/ai-liveness-probe.js`](js/ai-liveness-probe.js)
-- **Enemy AI probe:** Check enemy count, types, and behaviors
-- **Audio system probe:** Check audio context, sound playback, TTS
-- **UI/score probe:** Check score, health, and UI elements
+| Probe File | Focus | Notes |
+|------------|-------|-------|
+| `js/ai-liveness-probe.js` | Core game liveness (loop, player, enemies) | Mandatory first probe |
+| `js/audio-system-probe.js` | Audio context & beat synchronization | – |
+| `js/collision-detection-probe.js` | Bullet & entity collision handling | – |
+| `js/grunt-knockback-probe.js` | Grunt enemy knock-back physics | – |
+| `js/tank-armor-break-probe.js` | Tank armor break VFX & debris | – |
+| Playwright tests in `tests/` ending `*-probe.test.js` | Browser-level orchestration of above probes | e.g. `performance-probe.test.js`, `startup-black-screen-probe.test.js` |
+
+> **Naming Standard:** All automated Playwright tests **must** end with `*-probe.test.js`.  Manual `.spec.js` tests are deprecated and will be deleted during documentation cleanup.
 
 ---
 
 ## See Also
 
 - [README.md](../README.md) (Quick Start)
-- [tests/](../tests/) (All Playwright tests must now be probe-driven using MCP Playwright. Manual .spec.js tests are deprecated and should not be used.)
+- [tests/](../tests/) – All Playwright tests are probe-driven and follow the `*-probe.test.js` naming pattern.
 
 - The standard dev server is Five Server, running on http://localhost:5500
 - All Playwright/MCP tests should target port 5500

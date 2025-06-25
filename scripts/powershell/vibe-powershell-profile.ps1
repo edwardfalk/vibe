@@ -74,9 +74,14 @@ function gb { git branch $args }
 function gco { git checkout $args }
 function glog { git log --oneline --graph --decorate }
 
+# Project root environment variable for portability
+if (-not $env:VIBE_PROJECTS_ROOT) {
+    $env:VIBE_PROJECTS_ROOT = "D:\projects"
+}
+
 # Project Navigation
-function proj { Set-Location "D:\projects" }
-function vibe { Set-Location "D:\projects\vibe" }
+function proj { Set-Location $env:VIBE_PROJECTS_ROOT }
+function vibe { Set-Location (Join-Path $env:VIBE_PROJECTS_ROOT 'vibe') }
 
 # ============================================================================
 # Vibe Game Development Functions
@@ -294,4 +299,25 @@ if ($PWD.Path.Contains("vibe")) {
     Write-Host "🔍 Checking Vibe development environment..." -ForegroundColor Cyan
     dev-server-status
     ticket-api-status
-} 
+}
+
+# ============================================================================
+# PATH Clean-up (run once per session, keep it short & deterministic)
+# ============================================================================
+try {
+    $segments = $Env:PATH -split ';' | Where-Object { $_.Trim() } | Select-Object -Unique
+    $Env:PATH = ($segments -join ';')
+} catch {
+    Write-Host "⚠️  PATH de-duplication skipped: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
+# ============================================================================
+# Quick Aliases – deterministic test & Bun cleanup
+# ============================================================================
+Set-Alias -Name testv  -Value "bun run test:orchestrated" -Force
+Set-Alias -Name killbun -Value { taskkill /IM bun.exe /F } -Force
+
+# Optional: Bun PowerShell completions (silent failure if Bun upgrades)
+try {
+    Invoke-Expression (& "$Env:USERPROFILE\.bun\bin\bun.exe" completions powershell) | Out-Null
+} catch {} 

@@ -353,7 +353,7 @@ class Tank extends BaseEnemy {
         let x = -armorPlateLength / 2 + 6 + c * 12;
         const y0 = -chassisSideY - armorPlateThickness + 2;
         for (let seg = 0; seg < 4; seg++) {
-          const x1 = x + (armorPlateLength / 4) + random(-2, 2);
+          const x1 = x + armorPlateLength / 4 + random(-2, 2);
           const y1 = y0 + random(-2, 2);
           this.p.line(x, y0, x1, y1);
           x = x1;
@@ -370,7 +370,7 @@ class Tank extends BaseEnemy {
         let x = -armorPlateLength / 2 + 6 + c * 12;
         const y0 = chassisSideY + armorPlateThickness + armorPlateThickness / 2;
         for (let seg = 0; seg < 4; seg++) {
-          const x1 = x + (armorPlateLength / 4) + random(-2, 2);
+          const x1 = x + armorPlateLength / 4 + random(-2, 2);
           const y1 = y0 + random(-2, 2);
           this.p.line(x, y0, x1, y1);
           x = x1;
@@ -488,7 +488,11 @@ class Tank extends BaseEnemy {
       const died = super.takeDamage(amount, bulletAngle, damageSource);
       if (died) {
         console.log('💀 Tank Died (main health depleted).');
-        if (died && window.audio && typeof window.audio.playSound === 'function') {
+        if (
+          died &&
+          window.audio &&
+          typeof window.audio.playSound === 'function'
+        ) {
           window.audio.playSound(SOUND.tankDeathThump, this.x, this.y);
         }
       }
@@ -678,7 +682,11 @@ class Tank extends BaseEnemy {
     const died = super.takeDamage(amount, bulletAngle, damageSource);
     if (died) {
       console.log('💀 Tank Died (main health depleted).');
-      if (died && window.audio && typeof window.audio.playSound === 'function') {
+      if (
+        died &&
+        window.audio &&
+        typeof window.audio.playSound === 'function'
+      ) {
         window.audio.playSound(SOUND.tankDeathThump, this.x, this.y);
       }
     }

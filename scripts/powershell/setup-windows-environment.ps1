@@ -45,7 +45,7 @@ function Test-PowerShellEnvironment {
     Write-LogMessage "check" "Verifying PowerShell environment..."
     
     if ($PSVersionTable.PSVersion.Major -lt 7) {
-        Write-LogMessage "warn" "PowerShell 7+ recommended. Current version: $($PSVersionTable.PSVersion)" "Warning"
+        Write-LogMessage "fail" "PowerShell 7+ required. Current version: $($PSVersionTable.PSVersion). Please upgrade to continue." "Error"
         return $false
     }
     
@@ -143,6 +143,19 @@ function Test-EnhancedTestingSystem {
     }
     
     try {
+        # Check for ES module support in package.json
+        $packageJsonPath = "package.json"
+        $isESModule = $false
+        if (Test-Path $packageJsonPath) {
+            $packageJson = Get-Content $packageJsonPath | ConvertFrom-Json
+            if ($packageJson.type -eq "module") {
+                $isESModule = $true
+            }
+        }
+        if (-not $isESModule) {
+            Write-LogMessage "warn" "package.json does not specify 'type: module'. Node.js ES module import may fail. Skipping import test." "Warning"
+            return $false
+        }
         Write-LogMessage "test" "Running enhanced testing system verification..."
         # Just verify the file can be imported without running full tests
         $testResult = node -e "import('./enhanced-testing-system.js').then(() => console.log('Import successful')).catch(e => { console.error('Import failed:', e.message); process.exit(1); })" 2>$null
@@ -180,7 +193,17 @@ function Repair-PathIssues {
         }
         
         if ($needsUpdate) {
-            Write-LogMessage "info" "Package.json scripts may need manual review for Windows compatibility"
+            Write-LogMessage "info" "Package.json scripts updated for Windows compatibility"
+            try {
+                # Example: update lint script to use double quotes if missing
+                if ($packageJson.scripts.lint -and $packageJson.scripts.lint -notmatch '".*"') {
+                    $packageJson.scripts.lint = '"' + $packageJson.scripts.lint + '"'
+                }
+                $packageJson | ConvertTo-Json -Depth 10 | Set-Content $packageJsonPath -Encoding UTF8
+                Write-LogMessage "pass" "Updated package.json scripts for Windows compatibility" "Success"
+            } catch {
+                Write-LogMessage "fail" "Failed to update package.json: $_" "Error"
+            }
         }
     }
     

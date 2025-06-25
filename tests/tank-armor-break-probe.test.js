@@ -3,7 +3,8 @@ import { test, expect } from './playwright.setup.js';
 test.describe('Tank Armor Break VFX Probe', () => {
   test('Cracks and debris appear when tank armor breaks', async ({ page }) => {
     try {
-      await page.goto('http://localhost:5500/', { timeout: 10000 });
+      await page.goto('/');
+      await page.goto('/index.html');
       console.log('Page URL after goto:', page.url());
       console.log('Page content:', await page.content());
     } catch (e) {

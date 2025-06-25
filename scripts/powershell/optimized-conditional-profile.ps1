@@ -131,7 +131,9 @@ function Get-CurrentProject {
     
     # Find matching project (optimized lookup)
     foreach ($projectKey in $Global:ProjectConfigs.Keys) {
-        if ($currentPath -like "*$projectKey*") {  # Fixed: removed backslash requirement
+        # SECURITY: Only use trusted config values for dynamic code execution below.
+        # If $projectKey is ever user-controlled, sanitize it to prevent code injection.
+        if ($currentPath -match "[\\/]$projectKey([\\/]|$)") {
             $Global:LastPath = $currentPath
             $Global:LastProject = $projectKey
             return $projectKey
@@ -173,6 +175,7 @@ function Load-ProjectProfile {
     
     # Generate navigation function
     $navFunction = "function global:$project { Set-Location \`"D:\projects\$project\`" }"
+    # SECURITY: Only use trusted config values for dynamic code execution below.
     Invoke-Expression $navFunction
     
     # Generate project commands dynamically

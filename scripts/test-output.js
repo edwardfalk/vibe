@@ -1,2 +1,2 @@
-console.log("Hello from test script");
-console.error("Error from test script"); 
+console.log('Hello from test script');
+console.error('Error from test script');

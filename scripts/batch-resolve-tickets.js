@@ -14,9 +14,18 @@ console.log(`Found ${ticketFiles.length} CodeRabbit tickets to resolve`);
 
 let resolved = 0;
 
+// Add error handling for file operations
+
 ticketFiles.forEach((ticketFile) => {
   const ticketPath = path.join(TICKETS_DIR, ticketFile);
-  const ticketData = JSON.parse(fs.readFileSync(ticketPath, 'utf8'));
+  let ticketData;
+  try {
+    const fileContent = fs.readFileSync(ticketPath, 'utf8');
+    ticketData = JSON.parse(fileContent);
+  } catch (err) {
+    console.error(`❌ Failed to read or parse ${ticketFile}:`, err);
+    return;
+  }
 
   // Skip if already resolved
   if (ticketData.status === 'resolved') {
@@ -57,10 +66,14 @@ ticketFiles.forEach((ticketFile) => {
     note: resolution,
   });
 
-  // Write back to file
-  fs.writeFileSync(ticketPath, JSON.stringify(ticketData, null, 2));
-  console.log(`✅ Resolved ${ticketData.id}: ${resolution}`);
-  resolved++;
+  // Write back to file with error handling
+  try {
+    fs.writeFileSync(ticketPath, JSON.stringify(ticketData, null, 2));
+    console.log(`✅ Resolved ${ticketData.id}: ${resolution}`);
+    resolved++;
+  } catch (err) {
+    console.error(`❌ Failed to write ${ticketFile}:`, err);
+  }
 });
 
 console.log(`\n📊 Resolution Summary: ${resolved} tickets resolved`);

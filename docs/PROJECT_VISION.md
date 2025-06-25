@@ -17,7 +17,7 @@ Vibe is a bizarre, half-mad, rhythm-driven space shooter where every action is s
 ## Development Philosophy
 - **Strict Modularity:** No monoliths, no spaghetti. Every feature is a module, every bug is a ticket, every improvement is tracked.
 - **Automation for Sanity:** Ticketing, testing, and memory management are automated to keep the focus on fun and creativity.
-- **Ticketing Serves the Game:** The ticketing system isn't just for chores—it's the backbone that keeps the madness running smoothly. See [TICKETING_SYSTEM_GUIDE.md](mdc:docs/TICKETING_SYSTEM_GUIDE.md) for the current workflow vision.
+- **Ticketing Serves the Game:** The ticketing system isn't just for chores—it's the backbone that keeps the madness running smoothly. See [TICKETING_SYSTEM_GUIDE.md](TICKETING_SYSTEM_GUIDE.md) for the current workflow vision.
 - **Continuous Improvement:** We're always tuning, tweaking, and adding new forms of weirdness. If it makes the game funnier, stranger, or more musical, it's worth doing.
 
 ---

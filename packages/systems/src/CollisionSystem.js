@@ -26,7 +26,10 @@ export class CollisionSystem {
 
     // Player vs. Nearby Enemies
     if (window.player) {
-      const nearbyEnemies = this.grid.neighbors(window.player.x, window.player.y);
+      const nearbyEnemies = this.grid.neighbors(
+        window.player.x,
+        window.player.y
+      );
       for (const enemy of nearbyEnemies) {
         if (enemy.checkCollision(window.player)) {
           this.handlePlayerEnemyContact(window.player, enemy);
@@ -83,17 +86,17 @@ export class CollisionSystem {
       }
     }
   }
-  
+
   handleEnemyEnemyContact(enemy, other) {
     // Simple push-apart logic to prevent stacking
     const dx = other.x - enemy.x;
     const dy = other.y - enemy.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    const overlap = (enemy.size / 2 + other.size / 2) - distance;
+    const overlap = enemy.size / 2 + other.size / 2 - distance;
     if (overlap > 0) {
       const pushX = (dx / distance) * overlap * 0.5;
       const pushY = (dy / distance) * overlap * 0.5;
-      
+
       enemy.x -= pushX;
       enemy.y -= pushY;
       other.x += pushX;
@@ -123,7 +126,9 @@ export class CollisionSystem {
 
       let bulletRemoved = false;
 
-      const enemyList = useGrid ? this.grid.neighbors(bullet.x, bullet.y) : enemies;
+      const enemyList = useGrid
+        ? this.grid.neighbors(bullet.x, bullet.y)
+        : enemies;
 
       // Bullet vs every enemy (reverse order to allow safe splice)
       for (let j = enemyList.length - 1; j >= 0; j--) {
@@ -243,7 +248,9 @@ export class CollisionSystem {
       const bullet = bullets[i];
       if (!bullet.active) continue;
 
-      const enemyList = useGrid ? this.grid.neighbors(bullet.x, bullet.y) : enemies;
+      const enemyList = useGrid
+        ? this.grid.neighbors(bullet.x, bullet.y)
+        : enemies;
 
       for (let j = enemyList.length - 1; j >= 0; j--) {
         const enemy = enemyList[j];
@@ -392,5 +399,22 @@ export class CollisionSystem {
     ) {
       window.enemies[enemyIndex].markedForRemoval = true;
     }
+  }
+
+  /*
+   * Wrapper expected by GameLoop.js. Runs both bullet and contact collision checks
+   * and returns a basic result object. TODO: populate playerHit/enemyHit flags with
+   * actual hit detections once full refactor is done.
+   */
+  checkCollisions(
+    player = null,
+    enemies = [],
+    bullets = [],
+    playerBullets = []
+  ) {
+    this.checkBulletCollisions();
+    this.checkContactCollisions();
+    // Currently, detailed hit info is not calculated in the new system; return false.
+    return { playerHit: false, enemyHit: false };
   }
 }

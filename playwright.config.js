@@ -8,7 +8,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  // globalSetup: './tests/global.setup.js', // Disabled: Manually starting dev server
+  // Ignore non-Playwright tests (e.g., Vitest unit/integration tests) so Playwright
+  // doesn\'t attempt to run them and clash with its own expect implementation.
+  testIgnore: ['**/tests/api/**', '**/tests/cli/**'],
+  globalSetup: './tests/global.setup.js', // Ticket API started/tolerant
   outputDir: './test-results',
   timeout: 30_000,
   retries: 0,

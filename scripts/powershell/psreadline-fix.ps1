@@ -89,6 +89,8 @@ $PSReadLineErrorHandler = {
     $errorLog = "$env:TEMP\psreadline-errors.log"
     "$(Get-Date): $($Exception.Message)" | Out-File -FilePath $errorLog -Append
 }
+# Register the error handler with PSReadLine
+Set-PSReadLineOption -ErrorHandler $PSReadLineErrorHandler
 
 # Set console buffer size to prevent overflow errors
 try {

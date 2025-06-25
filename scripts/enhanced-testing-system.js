@@ -101,7 +101,8 @@ class EnhancedTestingSystem {
           timestamp: Date.now(),
         });
 
-        if (output.includes('Local:') && !serverReady) {
+        // Accept multiple possible indicators of server readiness
+        if ((output.includes('Local:') || output.toLowerCase().includes('listening') || output.toLowerCase().includes('ready')) && !serverReady) {
           serverReady = true;
           this.log('server', 'Development server started successfully');
           this.log('performance', 'Server startup time', {
@@ -260,7 +261,9 @@ class EnhancedTestingSystem {
 
     // Save to file system
     try {
-      const bugReportPath = `tests/bug-reports/automated-${bugReport.id}.json`;
+      const bugReportDir = 'tests/bug-reports';
+      await fs.mkdir(bugReportDir, { recursive: true });
+      const bugReportPath = `${bugReportDir}/automated-${bugReport.id}.json`;
       await fs.writeFile(bugReportPath, JSON.stringify(bugReport, null, 2));
       this.log('info', `Bug report saved to: ${bugReportPath}`);
     } catch (saveError) {

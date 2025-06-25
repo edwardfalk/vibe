@@ -19,7 +19,7 @@ test.describe('Startup Black-Screen Probe', () => {
 
   test('Game enters playing state after launch', async ({ page }, testInfo) => {
     try {
-      await page.goto('/');
+      await page.goto('/index.html');
       await page.waitForSelector('canvas', { timeout: 5000 });
 
       // Simulate user interaction so Audio + p5 start correctly

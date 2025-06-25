@@ -1,8 +1,15 @@
 /**
  * Simple script to update ticket status
+ *
+ * SAFETY GUARD: Requires --confirm flag to run batch update
  */
 
 import { TicketManager } from '../packages/tooling/src/ticketManager.js';
+
+if (!process.argv.includes('--confirm')) {
+  console.error('❌ Refusing to run batch update. Add --confirm to proceed.');
+  process.exit(1);
+}
 
 async function updateTicketStatus(ticketId, status, resolution = '') {
   const ticketManager = new TicketManager();

@@ -24,7 +24,7 @@ const ticketRouter = new TicketRouter(ticketService, logger);
 console.log('[DEBUG] TicketRouter instantiated.');
 
 process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', { promise, reason });
+  logger.error('Unhandled Rejection at:', { promise, reason });
 });
 console.log('[DEBUG] Unhandled rejection handler set.');
 
@@ -44,12 +44,5 @@ if (import.meta.main) {
   logger.info(`✅ Bun Ticket API running on http://localhost:${server.port}`);
 }
 
-export default {
-  port: PORT,
-  fetch: ticketRouter.handle.bind(ticketRouter),
-  error(error) {
-    logger.error('Unhandled error from export', error);
-    return new Response('Internal Server Error', { status: 500 });
-  },
-};
-console.log('[DEBUG] ticket-api.js finished.'); 
+// Add a default export for test environments
+export default server || ticketRouter;

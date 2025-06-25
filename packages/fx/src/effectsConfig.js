@@ -43,7 +43,7 @@ export const effectsConfig = {
         [255, 220, 120],
       ],
       sizeMult: 0.6,
-      gravity: 0.10,
+      gravity: 0.1,
       fade: 0.06,
     },
   },

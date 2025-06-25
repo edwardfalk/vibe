@@ -10,7 +10,12 @@ param(
 function Load-ProjectProfile {
     param([string]$Project)
     
-    $profilesPath = "D:\projects\profiles"
+    # Use environment variable for profiles path if available
+    if ($env:VIBE_PROJECTS_ROOT) {
+        $profilesPath = Join-Path $env:VIBE_PROJECTS_ROOT 'profiles'
+    } else {
+        $profilesPath = "D:\projects\profiles"
+    }
     
     # Auto-detect project if not specified
     if (-not $Project) {
@@ -42,7 +47,11 @@ function Load-ProjectProfile {
 }
 
 # Create profiles directory if it doesn't exist
-$profilesPath = "D:\projects\profiles"
+if ($env:VIBE_PROJECTS_ROOT) {
+    $profilesPath = Join-Path $env:VIBE_PROJECTS_ROOT 'profiles'
+} else {
+    $profilesPath = "D:\projects\profiles"
+}
 if (-not (Test-Path $profilesPath)) {
     New-Item -ItemType Directory -Path $profilesPath -Force | Out-Null
 }
