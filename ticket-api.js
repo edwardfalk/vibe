@@ -45,4 +45,5 @@ if (import.meta.main) {
 }
 
 // Add a default export for test environments
-export default server || ticketRouter;
+// export default server || ticketRouter;
+export { ticketRouter, server };
