@@ -31,6 +31,7 @@ export class DebugLogger {
       logMsg += '\n';
       const logFile = join(DEBUG_DIR, `${dateStr}.log`);
       appendFileSync(logFile, logMsg, 'utf8');
+      console.log('[DebugLogger]', logMsg);
     } catch (e) {
       // Fallback: print to console if file logging fails
       console.log('⚠️ DebugLogger failed:', e);

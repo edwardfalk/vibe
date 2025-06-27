@@ -49,6 +49,8 @@
  * =============================================================================
  */
 
+console.log('🟢 [DEBUG] Audio.js loaded', import.meta.url, Date.now());
+
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { random, randomRange, floor } from './mathUtils.js';
 import { SFXManager } from './audio/SFXManager.js';
@@ -281,10 +283,10 @@ export class Audio {
         duration: 0.15,
       },
       gruntWhir: {
-        frequency: 300,
-        waveform: 'sine',
-        volume: 0.06,
-        duration: 0.6,
+        frequency: 900,
+        waveform: 'triangle',
+        volume: 0.3,
+        duration: 0.2,
       },
       gruntError: {
         frequency: 220,
@@ -293,10 +295,10 @@ export class Audio {
         duration: 0.2,
       },
       gruntGlitch: {
-        frequency: 150,
-        waveform: 'sawtooth',
-        volume: 0.05,
-        duration: 0.25,
+        frequency: 1200,
+        waveform: 'triangle',
+        volume: 0.3,
+        duration: 0.1,
       },
       gruntOw: {
         frequency: 600,
@@ -372,11 +374,10 @@ export class Audio {
       },
       // --- Enemy/Combat SFX (2025 Roadmap) ---
       enemySpawnWhoosh: {
-        frequency: 80, // Low whoosh
-        waveform: 'noise',
-        volume: 0.3,
-        duration: 0.22,
-        // TODO: Tune filter/pan for spawn location
+        frequency: 600,
+        waveform: 'sine',
+        volume: 0.5,
+        duration: 0.2,
       },
       gruntPopEcho: {
         frequency: 1200, // Echo after main pop
@@ -499,6 +500,14 @@ export class Audio {
     this.cosmicDroneActive = false;
     this.cosmicChimesTimer = performance.now();
     this.nextCosmicChimesInterval = 12000 + randomRange(0, 18000); // 12–30s
+
+    // Defensiv kod för voiceConfig-volymer
+    for (const key in this.voiceConfig) {
+      if (!Number.isFinite(this.voiceConfig[key].volume)) {
+        console.warn(`[AUDIO] Non-finite voiceConfig volume for ${key}, setting to 0.7`);
+        this.voiceConfig[key].volume = 0.7;
+      }
+    }
   }
 
   /**
@@ -509,7 +518,7 @@ export class Audio {
   setPlayer(newPlayer) {
     if (!newPlayer || newPlayer === this.player) return;
     this.player = newPlayer;
-    console.log('🔊 Audio player reference updated');
+    console.log('🔊 Audio player reference updated', newPlayer);
   }
 
   // ========================================================================
@@ -679,7 +688,7 @@ export class Audio {
     this.playTone(soundConfig, x, y);
   }
 
-  playTone(config, x, y) {
+  playTone(config, x, y, soundName = 'unknown') {
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
     const panNode = this.audioContext.createStereoPanner();
@@ -720,11 +729,12 @@ export class Audio {
 
     // Get player position for relative audio positioning
     let playerX = 400,
-      playerY = 300; // Default screen center
+      playerY = 300;
     if (typeof this.player !== 'undefined' && this.player) {
       playerX = this.player.x;
       playerY = this.player.y;
     }
+    console.log('[AUDIO DEBUG] playTone: this.player', this.player, 'playerX', playerX, 'playerY', playerY, 'soundName', soundName);
 
     // Configure gain envelope with proper volume calculation and randomness
     let volume = config.volume * volumeVariation;
@@ -771,7 +781,7 @@ export class Audio {
     }
 
     // Check if this is an ambient enemy sound that should have reverb
-    const soundName = Object.keys(this.sounds).find(
+    const resolvedSoundName = Object.keys(this.sounds).find(
       (key) => this.sounds[key] === config
     );
     const isAmbientSound = [
@@ -785,7 +795,7 @@ export class Audio {
       'gruntWhir',
       'gruntError',
       'gruntGlitch',
-    ].includes(soundName);
+    ].includes(resolvedSoundName);
 
     if (isAmbientSound && this.effects.reverb) {
       // OPTIMIZED: Simplified atmospheric effects for better performance
@@ -852,10 +862,10 @@ export class Audio {
   }
 
   calculateVolume(x, y, playerX = 400, playerY = 300) {
-    if (playerX === 400 && typeof this.player !== 'undefined')
-      playerX = this.player.x;
-    if (playerY === 300 && typeof this.player !== 'undefined')
-      playerY = this.player.y;
+    if (![x, y, playerX, playerY].every(Number.isFinite)) {
+      console.error('[AUDIO FATAL] Non-finite position in calculateVolume', { x, y, playerX, playerY });
+      return 1.0;
+    }
     if (x === null || y === null) return 1.0;
 
     // Calculate distance relative to player position instead of screen center
@@ -920,11 +930,12 @@ export class Audio {
 
     // Get player position for relative audio positioning
     let playerX = 400,
-      playerY = 300; // Default screen center
+      playerY = 300;
     if (typeof this.player !== 'undefined' && this.player) {
       playerX = this.player.x;
       playerY = this.player.y;
     }
+    console.log('[AUDIO DEBUG] speak: this.player', this.player, 'playerX', playerX, 'playerY', playerY, 'entity', entity, 'voiceType', voiceType);
     // Ensure entity.x and entity.y are valid numbers
     const ex =
       entity && typeof entity.x === 'number' && !isNaN(entity.x)
@@ -934,6 +945,9 @@ export class Audio {
       entity && typeof entity.y === 'number' && !isNaN(entity.y)
         ? entity.y
         : 300;
+    if (![ex, ey, playerX, playerY].every(Number.isFinite)) {
+      console.error('[AUDIO FATAL] Non-finite position in speak volume calculation', { ex, ey, playerX, playerY, entity, voiceType });
+    }
     // Ensure TTS volume respects master volume, per-voice config, distance attenuation (clamped), and speech gain
     const distanceAtt = Math.max(
       0.5, // never drop below half volume for speech so lines remain audible
@@ -946,6 +960,11 @@ export class Audio {
         this.volume *
         (this.categoryGain?.speech || 1)
     );
+
+    if (!Number.isFinite(utterance.volume)) {
+      console.warn('[AUDIO] Non-finite utterance.volume, setting to 0.7', utterance.volume);
+      utterance.volume = 0.7;
+    }
 
     // Enhanced voice selection with effects
     const voice = this.selectVoiceWithEffects(voiceType, text);

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Minimal Vibe Module Test</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "@vibe/game": "/packages/game/src/index.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="test-status">Waiting for module...</div>
+  <script type="module">
+    document.getElementById('test-status').textContent = 'Module script running!';
+    console.log('🟢 [DEBUG] test-minimal.html: module script running');
+    import('@vibe/game').then(() => {
+      document.getElementById('test-status').textContent = 'Module imported!';
+      console.log('🟢 [DEBUG] test-minimal.html: @vibe/game imported');
+    }).catch(e => {
+      document.getElementById('test-status').textContent = 'Module import failed!';
+      console.error('🔴 [DEBUG] test-minimal.html: @vibe/game import failed', e);
+      // Attempt to log error to local server for diagnosis
+      fetch('/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'error',
+          message: 'test-minimal.html: @vibe/game import failed',
+          error: e && (e.stack || e.message || e.toString()),
+          time: new Date().toISOString()
+        })
+      }).catch(() => {});
+    });
+  </script>
+  <!-- Test: should be blocked by legacy_clamp rule -->
+  <script>console.log('/c/Users/username')</script>
+</body>
+</html>

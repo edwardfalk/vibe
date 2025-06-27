@@ -1,6 +1,8 @@
 import { random } from '../mathUtils.js';
 import { SOUND } from './SoundIds.js';
 
+console.log('🟢 [DEBUG] SFXManager.js loaded', import.meta.url, Date.now());
+
 export class SFXManager {
   /**
    * @param {Audio} audio - The parent Audio system instance.
@@ -57,6 +59,17 @@ export class SFXManager {
   playTone(config, x, y, soundName = 'unknown') {
     const audio = this.audio;
     const ctx = audio.audioContext;
+
+    // DEFENSIV KOLL AV CONFIG
+    if (!config || !Number.isFinite(config.volume)) {
+      console.warn(`[AUDIO] Missing or invalid config for sound '${soundName}', using default.`);
+      config = {
+        frequency: 440,
+        waveform: 'sine',
+        volume: 0.5,
+        duration: 0.2,
+      };
+    }
 
     const oscillator = ctx.createOscillator();
     const gainNode = ctx.createGain();
@@ -115,26 +128,42 @@ export class SFXManager {
       );
     }
 
-    // Player position (defaults to centre)
+    // Defensive: Check for non-finite positions before calculating volume
     let playerX = 400,
       playerY = 300;
-    if (audio.player) {
-      playerX = audio.player.x;
-      playerY = audio.player.y;
+    if (this.audio.player) {
+      playerX = this.audio.player.x;
+      playerY = this.audio.player.y;
+    }
+    if (![x, y, playerX, playerY].every(Number.isFinite)) {
+      console.error('[AUDIO FATAL] Non-finite position in playTone', { x, y, playerX, playerY, soundName });
+      x = 400;
+      y = 300;
+      playerX = 400;
+      playerY = 300;
     }
 
     let volume = config.volume * volumeVariation;
     let panValue = 0;
 
-    // Safety guards – ensure volume & pan are finite numbers
+    // DEFENSIV KOLL OCH LOGGNING
     if (!Number.isFinite(volume) || volume < 0) {
       console.warn(
-        `⚠️ Non-finite or negative volume '${volume}' for sound ${soundName}. Resetting to 0.5.`
+        `⚠️ [AUDIO] Non-finite or negative volume '${volume}' for sound ${soundName}. Resetting to 0.5.`
       );
       volume = 0.5;
     }
-    if (!Number.isFinite(panValue)) {
-      panValue = 0;
+    if (!ctx || !Number.isFinite(ctx.currentTime)) {
+      console.warn(`⚠️ [AUDIO] Invalid ctx.currentTime:`, ctx && ctx.currentTime);
+      ctx.currentTime = 0;
+    }
+    if (!config || !Number.isFinite(config.duration)) {
+      console.warn(`⚠️ [AUDIO] Invalid config.duration:`, config && config.duration);
+      config.duration = 0.2;
+    }
+    if (!Number.isFinite(durationVariation)) {
+      console.warn(`⚠️ [AUDIO] Invalid durationVariation:`, durationVariation);
+      durationVariation = 1;
     }
 
     if (x !== null && y !== null) {
@@ -166,6 +195,18 @@ export class SFXManager {
     let debugReverb = 0;
     let debugDry = 0;
 
+    // MAXIMAL FELLOGGNING
+    if (!Number.isFinite(volume) || !Number.isFinite(ctx.currentTime) || !Number.isFinite(config.duration) || !Number.isFinite(durationVariation)) {
+      console.error('[AUDIO FATAL] Non-finite value for gain ramp:', {
+        soundName,
+        volume,
+        currentTime: ctx.currentTime,
+        duration: config.duration,
+        durationVariation,
+        stack: new Error().stack
+      });
+      return; // Stoppa exekveringen för att undvika krasch
+    }
     gainNode.gain.setValueAtTime(0, ctx.currentTime);
     gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01);
     gainNode.gain.exponentialRampToValueAtTime(
@@ -289,6 +330,10 @@ export class SFXManager {
   }
 
   calculateVolume(x, y, playerX = 400, playerY = 300) {
+    if (![x, y, playerX, playerY].every(Number.isFinite)) {
+      console.error('[AUDIO FATAL] Non-finite position in calculateVolume', { x, y, playerX, playerY });
+      return 1.0;
+    }
     if (x === null || y === null) return 1.0;
     const distance = Math.sqrt((x - playerX) ** 2 + (y - playerY) ** 2);
     const normalizedDistance = Math.min(distance / 600, 1);

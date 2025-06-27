@@ -9,6 +9,11 @@ function setupRemoteConsoleLogger(apiUrl = 'http://localhost:3001/api/logs') {
   window.__remoteConsoleLoggerSetup = true;
   window.__remoteLoggerApiUrl = apiUrl; // Store for global error handlers
 
+  // Global flag to enable/disable remote logging
+  if (typeof window.ENABLE_REMOTE_LOGGING === 'undefined') {
+    window.ENABLE_REMOTE_LOGGING = true;
+  }
+
   const levels = ['log', 'info', 'warn', 'error'];
 
   levels.forEach((level) => {
@@ -16,37 +21,40 @@ function setupRemoteConsoleLogger(apiUrl = 'http://localhost:3001/api/logs') {
     let failureCount = 0; // track consecutive POST failures
     let disabled = false;
     console[level] = (...args) => {
-      if (disabled) {
+      if (disabled || !window.ENABLE_REMOTE_LOGGING) {
         if (original) original(...args);
         return;
       }
       try {
-        // Stringify args for transport (avoid circular refs)
-        const msg = args
-          .map((a) => {
-            if (typeof a === 'string') return a;
-            try {
-              return JSON.stringify(a);
-            } catch (_) {
-              return '[Unserializable]';
-            }
-          })
-          .join(' ');
+        // Only send 'error' and 'warn' remotely
+        if (level === 'error' || level === 'warn') {
+          // Stringify args for transport (avoid circular refs)
+          const msg = args
+            .map((a) => {
+              if (typeof a === 'string') return a;
+              try {
+                return JSON.stringify(a);
+              } catch (_) {
+                return '[Unserializable]';
+              }
+            })
+            .join(' ');
 
-        fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ level, message: msg }),
-          keepalive: true, // allow sendBeacon-like behavior on unload
-        }).catch(() => {
-          failureCount += 1;
-          if (failureCount >= 3 && !disabled) {
-            disabled = true;
-            console.warn(
-              '🪵 RemoteConsoleLogger disabled after 3 failed attempts'
-            );
-          }
-        });
+          fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ level, message: msg }),
+            keepalive: true, // allow sendBeacon-like behavior on unload
+          }).catch(() => {
+            failureCount += 1;
+            if (failureCount >= 3 && !disabled) {
+              disabled = true;
+              console.warn(
+                '🪵 RemoteConsoleLogger disabled after 3 failed attempts'
+              );
+            }
+          });
+        }
       } catch (_) {
         // Ignore logging failures
       }
@@ -98,6 +106,7 @@ if (typeof window !== 'undefined') {
   // Uncaught synchronous errors
   window.addEventListener('error', (event) => {
     if (window.__remoteLoggerDisabled) return;
+    console.log('[REMOTE LOGGER] Global error handler triggered:', event);
     fetch(getApiUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

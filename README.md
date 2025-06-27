@@ -50,10 +50,7 @@ vibe/
 │   ├── systems/                   # Camera, spawning, collision, UI, background, test mode
 │   ├── fx/                        # Explosions, visual effects, particles
 │   └── tooling/                   # Ticket manager, debug logger, Playwright probes
-├── 📁 js/                         # Thin wrappers, glue, or legacy entry points only
-│   ├── GameLoop.js                # Main game loop (entry point)
-│   ├── ...                        # Compatibility stubs, migration glue
-│   └── explosions/                # (legacy, being migrated)
+├── 📁 packages/                   # Modular architecture - all game code organized by domain
 ├── 📁 docs/                       # Documentation
 │   ├── archive/                   # Archived documentation
 │   └── vision/                    # Project vision documents
@@ -73,7 +70,7 @@ vibe/
 
 - **Strict modular architecture:** All new and modular code lives in `packages/` (`core`, `systems`, `entities`, `fx`, `tooling`).
 - **No legacy/monolithic files:** Only use modular files listed in `.cursorrules` and under `packages/`.
-- **js/** is for wrappers, glue, or legacy entry points only. Do not add new code to `js/`.
+- **All code is now in `packages/`** following strict modular architecture principles.
 - **Core Systems:** See `packages/systems/` for main systems (GameLoop, GameState, CameraSystem, etc.)
 - **Entities:** See `packages/entities/` for Player, BaseEnemy, Grunt, Rusher, Tank, Stabber, EnemyFactory, bullet, etc.
 - **Support:** See `packages/core/` for Audio, BeatClock, visualEffects, effects, config, mathUtils, etc.
@@ -254,13 +251,13 @@ bun run test:debug    # Debug mode
 
 ### Probe-Driven Testing
 
-The game uses specialized probe files for different aspects (located in `js/` unless noted):
+The game uses specialized probe files for different aspects (now located in `packages/tooling/src/probes/`):
 
-- **`js/ai-liveness-probe.js`** – Basic game state & entity presence
-- **`js/audio-system-probe.js`** – Audio system & beat synchronization
-- **`js/collision-detection-probe.js`** – Collision detection & physics
-- **`js/grunt-knockback-probe.js`** – Grunt enemy knock-back behavior
-- **`js/tank-armor-break-probe.js`** – Tank armor break & explosion flow
+- **`ai-liveness-probe.js`** – Basic game state & entity presence
+- **`audio-system-probe.js`** – Audio system & beat synchronization
+- **`collision-detection-probe.js`** – Collision detection & physics
+- **`grunt-knockback-probe.js`** – Grunt enemy knock-back behavior
+- **`tank-armor-break-probe.js`** – Tank armor break & explosion flow
 
 Each probe automatically:
 

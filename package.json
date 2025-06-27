@@ -27,9 +27,9 @@
     "coderabbit:workflow": "bun coderabbit-ticket-workflow.js",
     "coderabbit:fetch-new": "bun run scripts/fetch-new-coderabbit-reviews.js",
     "setup": "cp .env.example .env && echo 'Please edit .env with your GitHub token'",
-    "validate-env": "node -e \"import('./js/config.js').then(() => console.log('✅ Environment validation passed'))\"",
-    "lint": "bunx eslint --cache --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"js/**/*.js\" \"*.js\"",
-    "lint:fix": "bunx eslint --cache --fix --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"js/**/*.js\" \"*.js\"",
+    "validate-env": "node -e \"import('./packages/core/src/config.js').then(() => console.log('✅ Environment validation passed'))\"",
+    "lint": "bunx eslint --cache --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"*.js\"",
+    "lint:fix": "bunx eslint --cache --fix --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"*.js\"",
     "format": "bunx prettier --write \"**/*.{js,md,json}\"",
     "clean": "Remove-Item -Recurse -Force node_modules, bun.lockb -ErrorAction SilentlyContinue",
     "fresh": "bun run clean && bun install",
@@ -56,7 +56,7 @@
     "dev": {
       "port": 5500,
       "hot": true,
-      "watch": ["js/**/*.js", "index.html", "*.css"]
+      "watch": ["packages/**/*.js", "index.html", "*.css"]
     },
     "test": {
       "preload": ["./test-setup.js"]

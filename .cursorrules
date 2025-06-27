@@ -23,21 +23,21 @@ Lower-level rules may clarify but **must not conflict** with higher-level ones. 
 - Do NOT reference or use legacy/monolithic files.
 - All new code must be modular, focused, and placed in the correct file.
 
-**Current Modular Files (as of 2024):**
-- Core Systems: `GameLoop.js`, `GameState.js`, `CameraSystem.js`, `SpawnSystem.js`, `CollisionSystem.js`, `UIRenderer.js`, `BackgroundRenderer.js`, `TestMode.js`
-- Entities: `player.js`, `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js`, `EnemyFactory.js`, `bullet.js`
-- Support: `Audio.js`, `BeatClock.js`, `visualEffects.js`, `effects.js`, `config.js`, `mathUtils.js`
-- Other: `ticketManager.js`, `ai-liveness-probe.js`
-- (See `/js/` for the full, up-to-date list. For details, see README.md.)
+**Current Modular Architecture (Fully Migrated):**
+- **Core Systems:** `packages/systems/` - GameLoop, GameState, CameraSystem, SpawnSystem, CollisionSystem, UIRenderer, BackgroundRenderer, TestMode, etc.
+- **Entities:** `packages/entities/` - player, BaseEnemy, Grunt, Rusher, Tank, Stabber, EnemyFactory, bullet, etc.
+- **Core Support:** `packages/core/` - Audio, BeatClock, config, mathUtils, GameState, TicketCore, etc.
+- **Visual Effects:** `packages/fx/` - visualEffects, effects, explosions, VFXDispatcher, etc.
+- **Tooling & Utilities:** `packages/tooling/` - ticketManager, DebugLogger, errorHandler, probes, etc.
+- **API Services:** `packages/api/` - TicketRouter, TicketService for REST API backend.
+- (See `packages/` for the complete, up-to-date modular structure. For details, see README.md.)
 
-**Legacy Files (Do NOT use):**
-- `js/game.js` (replaced by `GameLoop.js`)
-- `js/enemy.js` (replaced by `BaseEnemy.js` + individual enemy classes)
-- `js/explosion.js` (replaced by `packages/fx/src/effects.js` + `packages/fx/src/visualEffects.js`)
-- `js/explosions/*` (fully superseded by modular explosion classes under `packages/fx/src/explosions/`)
-
-- Never suggest or implement monolithic or legacy patterns.
-- Update this section and the README.md if the architecture changes.
+**Migration Complete:**
+- All legacy monolithic files have been fully removed and migrated to the modular `packages/` workspace.
+- The `js/` directory has been completely removed as part of the architectural migration.
+- All core game logic, systems, entities, and effects now reside in the strict modular `packages/` structure.
+- Do not reference, suggest, or reintroduce any monolithic or legacy patterns.
+- All new code must follow the modular `packages/` architecture standards.
 
 ---
 

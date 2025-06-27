@@ -33,7 +33,7 @@ test.describe('Tank Armor Break VFX Probe', () => {
     
     // Run the probe
     const result = await page.evaluate(async () => {
-      const mod = await import('/js/tank-armor-break-probe.js');
+      const mod = await import('@vibe/tooling/src/probes/tank-armor-break-probe.js');
       return mod.default || mod;
     });
     expect(result.foundTank).toBe(true);

@@ -13,7 +13,7 @@ test.describe('Grunt Knock-back VFX Probe', () => {
     await page.waitForFunction(() => (window.enemies || []).some(e => e.type === 'grunt'));
     // Run the probe
     const result = await page.evaluate(async () => {
-      const mod = await import('/js/grunt-knockback-probe.js');
+      const mod = await import('@vibe/tooling/src/probes/grunt-knockback-probe.js');
       return mod.default || mod;
     });
     expect(result.foundGrunt).toBe(true);

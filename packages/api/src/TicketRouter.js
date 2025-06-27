@@ -1,5 +1,7 @@
 // packages/api/src/TicketRouter.js
 
+import { DebugLogger } from '../../tooling/src/DebugLogger.js';
+
 export class TicketRouter {
   constructor(ticketService, logger) {
     this.ticketService = ticketService;
@@ -64,6 +66,23 @@ export class TicketRouter {
   async route(request, pathname, method) {
     if (pathname === '/api/health' && method === 'HEAD') {
       return new Response(null, { status: 200 });
+    }
+
+    if (pathname === '/api/logs' && method === 'POST') {
+      try {
+        const body = await request.json();
+        console.dir(body, { depth: null });
+        const { level, message, stack } = body;
+        console.log(`[REMOTE LOG] level=${level} message=${message} stack=${stack}`);
+        let logMsg = `[${level || 'info'}] ${message}`;
+        DebugLogger.log(logMsg, stack ? { stack } : undefined);
+        return new Response(null, { status: 204 });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Malformed log payload' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     if (pathname.startsWith('/api/tickets')) {

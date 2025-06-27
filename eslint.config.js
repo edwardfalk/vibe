@@ -5,7 +5,6 @@ export default [
     files: ['**/*.js'],
     ignores: [
       'node_modules/**',
-      'js/**',
       '.debug/**',
       'playwright-report/**',
       'test-results/**',

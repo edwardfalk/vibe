@@ -27,6 +27,7 @@ export class GameState {
   addKill() {
     this.totalKills++;
     this.killStreak++;
+    this.checkLevelProgression();
   }
   resetKillStreak() {
     this.killStreak = 0;
@@ -81,16 +82,6 @@ export class GameState {
   restart() {
     console.log('🔄 Robust Restart: Re-initializing systems...');
     this._resetEntities();
-    // ... rest of restart logic ...
-  }
-
-  _resetEntities() {
-    window.enemies = [];
-    window.playerBullets = [];
-    window.enemyBullets = [];
-    window.activeBombs = [];
-  }
-
     if (window.player && window.player.p) {
       const p = window.player.p;
       window.player = new window.Player(
@@ -99,7 +90,11 @@ export class GameState {
         p.height / 2,
         window.cameraSystem
       );
-      // Notify systems of the new player reference (event-bus pattern)
+      if (!Number.isFinite(window.player.x) || !Number.isFinite(window.player.y)) {
+        console.error('[GAME FATAL] Player position invalid after creation', window.player);
+        window.player.x = 400;
+        window.player.y = 300;
+      }
       window.dispatchEvent(
         new CustomEvent('playerChanged', { detail: window.player })
       );
@@ -151,6 +146,13 @@ export class GameState {
     }, 500);
 
     console.log('✅ Robust game restart complete.');
+  }
+
+  _resetEntities() {
+    window.enemies = [];
+    window.playerBullets = [];
+    window.enemyBullets = [];
+    window.activeBombs = [];
   }
 
   getAccuracy() {

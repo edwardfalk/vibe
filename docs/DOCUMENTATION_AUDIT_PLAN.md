@@ -24,7 +24,7 @@
 |------|----------|--------|
 | `.cursorrules` | Core Rule | ✅ (updated) |
 | `README.md` | Root Doc | ✅ |
-| `docs/PROJECT_VISION.md` | Vision | ⚠️ |
+| `docs/PROJECT_VISION.md` | Vision | ✅ |
 | `docs/DESIGN.md` | Design | ✅ |
 | `docs/TICKETING_SYSTEM_GUIDE.md` | Workflow | ✅ |
 | `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md` | Testing | ✅ |

@@ -76,9 +76,12 @@ function validateTicketFields(ticket) {
 }
 
 async function ensureMeta(ticket, isNew = false) {
+  log('info', '🪪', `[ensureMeta] called. isNew=${isNew}, id=${ticket.id}`);
   validateTicketFields(ticket);
   if (isNew && !ticket.id) {
+    log('info', '🪪', `[ensureMeta] id saknas, genererar automatiskt...`);
     ticket.id = await generateId(ticket.type || 'bug');
+    log('info', '🪪', `[ensureMeta] id genererat: ${ticket.id}`);
   }
   if (!ticket.id) throw new Error('Missing ticket id');
   if (!TICKET_ID_REGEX.test(ticket.id))

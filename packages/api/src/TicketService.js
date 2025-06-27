@@ -35,15 +35,10 @@ export class TicketService {
   async create(ticketData) {
     this.logger.info(`[Service] Creating ticket...`);
     this.logger.info(`[Service] Incoming ticketData: ${JSON.stringify(ticketData)}`);
-    // Flytta id-generering allra först
-    if (!ticketData.id || typeof ticketData.id !== 'string' || ticketData.id.length < 10) {
-      const { generateId } = this.core;
-      this.logger.info(`[Service] No valid id provided, generating...`);
-      ticketData.id = await generateId(ticketData.type || 'bug');
-      this.logger.info(`[Service] Generated id: ${ticketData.id}`);
-    }
+    // Id genereras och valideras i core.ensureMeta
     try {
-      // Prevent duplicates
+      await this.core.ensureMeta(ticketData, true);
+      // Prevent duplicates (efter att id genererats i core)
       try {
         await this.core.readTicket(ticketData.id);
         // If it reaches here, the ticket exists
@@ -59,7 +54,6 @@ export class TicketService {
         // All good, ticket does not exist
       }
 
-      await this.core.ensureMeta(ticketData, true);
       const written = await this.core.writeTicket(ticketData);
       this.logger.info(`[Service] Created ticket ${written.id}`);
       return written;

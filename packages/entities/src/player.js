@@ -18,6 +18,11 @@ export class Player {
     this.p = p;
     this.x = x;
     this.y = y;
+    if (!Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      console.error('[PLAYER FATAL] Invalid initial position in Player constructor', { x: this.x, y: this.y, pWidth: p && p.width, pHeight: p && p.height });
+      this.x = 400;
+      this.y = 300;
+    }
     this.cameraSystem = cameraSystem;
     this.size = 32;
     this.health = 100;
@@ -59,7 +64,46 @@ export class Player {
     // Speech is now handled by unified Audio system
   }
 
+  set x(val) {
+    if (!Number.isFinite(val)) {
+      console.error('[PLAYER FATAL] Player x mutated to NaN', val, this);
+    }
+    this._x = val;
+  }
+
+  get x() {
+    return this._x;
+  }
+
+  set y(val) {
+    if (!Number.isFinite(val)) {
+      console.error('[PLAYER FATAL] Player y mutated to NaN', val, this);
+    }
+    this._y = val;
+  }
+
+  get y() {
+    return this._y;
+  }
+
   update(deltaTimeMs) {
+    // Defensive: Check deltaTimeMs
+    if (!Number.isFinite(deltaTimeMs)) {
+      console.error('[PLAYER FATAL] deltaTimeMs is not finite:', deltaTimeMs, this);
+      return;
+    }
+    // Defensive: Check velocity and dashVelocity before use
+    if (!Number.isFinite(this.velocity.x) || !Number.isFinite(this.velocity.y)) {
+      console.error('[PLAYER FATAL] velocity is not finite:', this.velocity, this);
+      this.velocity.x = 0;
+      this.velocity.y = 0;
+    }
+    if (!Number.isFinite(this.dashVelocity.x) || !Number.isFinite(this.dashVelocity.y)) {
+      console.error('[PLAYER FATAL] dashVelocity is not finite:', this.dashVelocity, this);
+      this.dashVelocity.x = 0;
+      this.dashVelocity.y = 0;
+    }
+
     // Log the current game state for debugging - DISABLED to reduce console spam
     // if (window.gameState && window.gameState.gameState) {
     //     console.log('[STATE] gameState:', window.gameState.gameState);
@@ -120,6 +164,14 @@ export class Player {
       const dt = deltaTimeMs / 16.6667; // 60 fps baseline
       this.x += this.velocity.x * dt;
       this.y += this.velocity.y * dt;
+    }
+
+    // Defensive: Check x/y after movement, before constrain
+    if (!Number.isFinite(this.x) || !Number.isFinite(this.y)) {
+      console.error('[PLAYER FATAL] Player position became NaN after movement', this.x, this.y, this);
+      this.x = 400;
+      this.y = 300;
+      return;
     }
 
     // Use world bounds consistent with CameraSystem.js and bullet.js
@@ -193,6 +245,17 @@ export class Player {
     // Update animation
     if (this.isMoving) {
       this.animFrame += 0.15;
+    }
+
+    // Handle shooting (mouse or spacebar held)
+    if (window.playerIsShooting) {
+      const bullet = this.shoot();
+      if (bullet && window.playerBullets) {
+        window.playerBullets.push(bullet);
+        if (window.audio) window.audio.playPlayerShoot(this.x, this.y);
+        if (window.gameState) window.gameState.addShotFired();
+        console.log('🔫 Player shot fired!');
+      }
     }
 
     // Handle dash

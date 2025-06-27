@@ -390,19 +390,19 @@ export class BaseEnemy {
     const bulletDamage = 5;
     const bulletColor = [255, 0, 0];
     const bulletRange = 500;
-
-    return new Bullet(
-      this.x,
-      this.y,
+    // Offset bullet spawn to just outside the enemy's hitbox
+    const offset = (this.size / 2) + (bulletSize / 2) + 2;
+    const spawnX = this.x + Math.cos(this.aimAngle) * offset;
+    const spawnY = this.y + Math.sin(this.aimAngle) * offset;
+    const bullet = new Bullet(
+      spawnX,
+      spawnY,
       this.aimAngle,
       bulletSpeed,
-      bulletSize,
-      bulletColor,
-      bulletDamage,
-      bulletRange,
-      this.p,
       'enemy-grunt' // Pass owner type
     );
+    bullet.ownerId = this.id;
+    return bullet;
   }
 
   takeDamage(amount, bulletAngle = null, damageSource = null) {
@@ -431,7 +431,8 @@ export class BaseEnemy {
 
       // Let game state know this enemy is gone
       if (window.gameState) {
-        window.gameState.enemyKilled(this.type);
+        window.gameState.addKill();
+        window.gameState.addScore(10);
       }
     }
   }

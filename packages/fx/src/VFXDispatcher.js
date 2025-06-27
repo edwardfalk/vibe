@@ -62,7 +62,11 @@ class VFXDispatcher {
   };
 
   onEnemyKilled = (evt) => {
-    // placeholder – explosions already happen elsewhere but we might add global flash here later
+    const d = evt.detail;
+    // Add explosion at the enemy's death location
+    this.visualFX?.addExplosionParticles?.(d.x, d.y, d.type);
+    // Optionally, add screen shake or other effects
+    this.screenFX?.addShake?.(8, 20);
   };
 
   dispose() {

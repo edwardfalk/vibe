@@ -232,13 +232,18 @@ const state = {
 
 function setup(p) {
   console.log('🟢 [DEBUG] GameLoop.js: Entered setup(p)');
-  console.log('[VIBE DEBUG] setup(p) called');
+  console.log('🟢 [DEBUG] GameLoop.js: p.createCanvas called');
   p.createCanvas(800, 600);
   p.frameRate(60);
 
   // Initialize core systems (dependency injection style)
+  if (!window.player) {
+    restartGame(p); // Initial game setup
+    console.log('🔄 Robust Restart: Re-initializing systems...');
+  }
   if (!window.audio) {
-    window.audio = new Audio();
+    window.audio = new Audio(p, window.player);
+    window.audio.setPlayer(window.player);
     console.log('🎵 Unified audio system initialized');
   }
 
@@ -273,11 +278,6 @@ function setup(p) {
   if (!window.spawnSystem) {
     window.spawnSystem = new SpawnSystem(p, window.audio);
     console.log('👾 Spawn system initialized');
-  }
-
-  if (!window.player) {
-    restartGame(p); // Initial game setup
-    console.log('🔄 Robust Restart: Re-initializing systems...');
   }
 
   if (!window.beatClock) {
@@ -360,13 +360,13 @@ function draw(p) {
   // Update core systems
   window.beatClock.update(p);
   window.testMode.update(p, window.player, window.enemies, dt);
-  window.player.handleInput(p);
-  window.player.update(p, window.enemies, p.deltaTime);
+  window.player.update(p.deltaTime);
 
   // Update all enemies
   for (let i = window.enemies.length - 1; i >= 0; i--) {
     const enemy = window.enemies[i];
-    enemy.update(window.player.x, window.player.y, p.deltaTime);
+    const bullet = enemy.update(window.player.x, window.player.y, p.deltaTime);
+    if (bullet) window.enemyBullets.push(bullet);
     if (enemy.health <= 0) {
       window.enemies.splice(i, 1);
     }
@@ -403,11 +403,17 @@ function draw(p) {
   for (const enemy of window.enemies) {
     enemy.draw(p);
   }
-  for (const bullet of window.bullets) {
+  for (let i = window.playerBullets.length - 1; i >= 0; i--) {
+    const bullet = window.playerBullets[i];
+    bullet.update();
     bullet.draw(p);
+    if (!bullet.active) window.playerBullets.splice(i, 1);
   }
-  for (const playerBullet of window.playerBullets) {
-    playerBullet.draw(p);
+  for (let i = window.bullets.length - 1; i >= 0; i--) {
+    const bullet = window.bullets[i];
+    bullet.update();
+    bullet.draw(p);
+    if (!bullet.active) window.bullets.splice(i, 1);
   }
 
   // Draw visual effects
@@ -441,6 +447,11 @@ function restartGame(p) {
   state.isPaused = false;
 
   window.player = new Player(p, p.width / 2, p.height / 2, window.cameraSystem);
+  if (!Number.isFinite(window.player.x) || !Number.isFinite(window.player.y)) {
+    console.error('[GAME FATAL] Player position invalid after creation', window.player);
+    window.player.x = 400;
+    window.player.y = 300;
+  }
   window.enemies = [];
   window.bullets = [];
   window.playerBullets = [];
@@ -456,6 +467,9 @@ function restartGame(p) {
   }
 
   // Let other systems know the player has changed
+  if (window.audio) {
+    window.audio.setPlayer(window.player);
+  }
   if (window.dispatchEvent) {
     window.dispatchEvent(
       new CustomEvent('playerChanged', { detail: window.player })
@@ -487,14 +501,18 @@ export default {
 
 console.log('🟢 [DEBUG] GameLoop.js: Before p5 instance creation');
 console.log('setup:', typeof setup, 'draw:', typeof draw, 'keyPressed:', typeof keyPressed);
-if (typeof window !== 'undefined' && typeof window.p5 !== 'undefined') {
-  console.log('🟢 [DEBUG] GameLoop.js: Creating p5 instance');
-  new window.p5((p) => {
-    // Bind our module functions to the p5 instance
-    p.setup = () => setup(p);
-    p.draw = () => draw(p);
-    p.keyPressed = () => keyPressed(p);
-  });
-} else {
-  console.log('🔴 [DEBUG] GameLoop.js: window.p5 is undefined');
+function createP5InstanceWhenReady() {
+  if (typeof window !== 'undefined' && typeof window.p5 !== 'undefined') {
+    console.log('🟢 [DEBUG] GameLoop.js: Creating p5 instance');
+    new window.p5((p) => {
+      p.setup = () => setup(p);
+      p.draw = () => draw(p);
+      p.keyPressed = () => keyPressed(p);
+    });
+    console.log('🟢 [DEBUG] GameLoop.js: p5 instance created');
+  } else {
+    console.log('🔴 [DEBUG] GameLoop.js: window.p5 is undefined, retrying in 100ms');
+    setTimeout(createP5InstanceWhenReady, 100);
+  }
 }
+createP5InstanceWhenReady();

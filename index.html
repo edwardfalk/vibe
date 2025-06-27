@@ -48,7 +48,13 @@
           "@vibe/tooling": "/packages/tooling/src/index.js",
           "@vibe/tooling/": "/packages/tooling/src/",
           "@vibe/game": "/packages/game/src/index.js",
-          "@vibe/game/": "/packages/game/src/"
+          "@vibe/game/": "/packages/game/src/",
+          "@vibe/tooling/src/probes/ai-liveness-probe.js": "/packages/tooling/src/probes/ai-liveness-probe.js",
+          "@vibe/tooling/src/probes/tank-armor-break-probe.js": "/packages/tooling/src/probes/tank-armor-break-probe.js",
+          "@vibe/tooling/src/probes/grunt-knockback-probe.js": "/packages/tooling/src/probes/grunt-knockback-probe.js",
+          "@vibe/tooling/src/probes/collision-detection-probe.js": "/packages/tooling/src/probes/collision-detection-probe.js",
+          "@vibe/tooling/src/probes/comprehensive-probe-runner.js": "/packages/tooling/src/probes/comprehensive-probe-runner.js",
+          "@vibe/tooling/src/probes/audio-system-probe.js": "/packages/tooling/src/probes/audio-system-probe.js"
         }
       }
     </script>
@@ -94,6 +100,7 @@
     
     <!-- Vibe bootstrap -->
     <script type="module">
+      console.log('🟢 [DEBUG] index.html: module script running');
       // Load side-effect barrels (systems register stubs & globals)
       import '@vibe/core';
       import '@vibe/systems';
