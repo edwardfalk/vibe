@@ -1,6 +1,6 @@
 # Cursor Project Rules Guide
 
-This guide explains how Cursor project rules work, the different types, and best practices for using them in the Vibe project (and beyond).
+This guide explains how Cursor project rules (.mdc in .cursor/rules) work, the different types, and best practices for using them in the Vibe project (and beyond).
 
 ---
 

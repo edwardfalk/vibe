@@ -34,7 +34,9 @@ export class TicketService {
 
   async create(ticketData) {
     this.logger.info(`[Service] Creating ticket...`);
-    this.logger.info(`[Service] Incoming ticketData: ${JSON.stringify(ticketData)}`);
+    this.logger.info(
+      `[Service] Incoming ticketData: ${JSON.stringify(ticketData)}`
+    );
     // Id genereras och valideras i core.ensureMeta
     try {
       await this.core.ensureMeta(ticketData, true);
@@ -59,7 +61,9 @@ export class TicketService {
       return written;
     } catch (e) {
       this.logger.error('[Service] Create failed', e);
-      this.logger.error(`[Service] Create failed details: ${e && e.stack ? e.stack : e}`);
+      this.logger.error(
+        `[Service] Create failed details: ${e && e.stack ? e.stack : e}`
+      );
       throw new HttpError(e.message, e.statusCode || 400);
     }
   }
@@ -76,62 +80,48 @@ export class TicketService {
 
   async update(id, updates) {
     this.logger.info(`[Service] Updating ticket ${id}`);
-    try {
-      const originalTicket = await this.core.readTicket(id);
-      const updatedTicket = { ...originalTicket };
+    const originalTicket = await this.core.readTicket(id);
+    const updatedTicket = { ...originalTicket };
 
-      const allowedFields = [
-        'type',
-        'title',
-        'status',
-        'tags',
-        'checklist',
-        'artifacts',
-        'relatedTickets',
-        'slug',
-        'description',
-      ];
+    const allowedFields = [
+      'type',
+      'title',
+      'status',
+      'tags',
+      'checklist',
+      'artifacts',
+      'relatedTickets',
+      'slug',
+      'description',
+    ];
 
-      const changes = [];
-      for (const key in updates) {
-        if (
-          Object.prototype.hasOwnProperty.call(updates, key) &&
-          allowedFields.includes(key)
-        ) {
-          const oldValue = originalTicket[key];
-          const newValue = updates[key];
-          if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-            changes.push({ field: key, oldValue, newValue });
-          }
-          updatedTicket[key] = newValue;
+    const changes = [];
+    for (const key in updates) {
+      if (
+        Object.prototype.hasOwnProperty.call(updates, key) &&
+        allowedFields.includes(key)
+      ) {
+        const oldValue = originalTicket[key];
+        const newValue = updates[key];
+        if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+          changes.push({ field: key, oldValue, newValue });
         }
+        updatedTicket[key] = newValue;
       }
-
-      if (changes.length > 0) {
-        this.core.addHistoryEntry(updatedTicket, 'updated', { changes });
-      }
-
-      await this.core.ensureMeta(updatedTicket, false);
-      const written = await this.core.writeTicket(updatedTicket);
-      this.logger.info(`[Service] Updated ticket ${written.id}`);
-      return written;
-    } catch (e) {
-      this.logger.error(`[Service] Update failed for ${id}`, e);
-      if (e.message.includes('not found')) {
-        throw new HttpError(`Ticket ${id} not found`, 404);
-      }
-      throw new HttpError(e.message, e.statusCode || 400);
     }
+
+    if (changes.length > 0) {
+      this.core.addHistoryEntry(updatedTicket, 'updated', { changes });
+    }
+
+    await this.core.ensureMeta(updatedTicket, false);
+    const written = await this.core.writeTicket(updatedTicket);
+    this.logger.info(`[Service] Updated ticket ${written.id}`);
+    return written;
   }
 
   async remove(id) {
     this.logger.info(`[Service] Deleting ticket ${id}`);
-    try {
-      await this.core.deleteTicket(id);
-      return { id, status: 'deleted' };
-    } catch (e) {
-      this.logger.error(`[Service] Delete failed for ${id}`, e);
-      throw new HttpError(`Ticket ${id} not found`, 404);
-    }
+    return await this.core.deleteTicket(id);
   }
 }

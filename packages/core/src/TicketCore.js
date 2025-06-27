@@ -2,8 +2,10 @@
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { existsSync, copyFileSync, mkdirSync, rmSync } from 'fs';
 
 const TICKETS_DIR = path.resolve(process.cwd(), 'tests/bug-reports');
+const BACKUP_DIR = path.resolve(process.cwd(), 'backups');
 const ALLOWED_TYPES = ['bug', 'feature', 'enhancement', 'task'];
 const TICKET_ID_REGEX = /^[A-Z]{2,4}-\d{4}-\d{2}-\d{2}-[a-z0-9]{6,}$/i;
 const DEBUG_LOG_FILE = path.resolve(process.cwd(), 'debug-ticketcore.log');
@@ -133,10 +135,15 @@ async function writeTicket(ticket, isNew = false) {
   await fs.mkdir(folder, { recursive: true });
   const tmp = path.join(folder, `tmp-${ticket.id}.json`);
   const final = path.join(folder, `${ticket.id}.json`);
-  await fs.writeFile(tmp, JSON.stringify(ticket, null, 2));
-  await fs.rename(tmp, final);
-  log('info', '🎫', `Wrote ticket ${ticket.id} to ${final}`);
-  return { ...ticket };
+  try {
+    await fs.writeFile(tmp, JSON.stringify(ticket, null, 2));
+    await fs.rename(tmp, final); // atomic on most platforms
+    log('info', '🎫', `Wrote ticket ${ticket.id} to ${final}`);
+    return { ...ticket };
+  } catch (e) {
+    log('error', '❌', `Failed to write ticket ${ticket.id}: ${e.message}`);
+    throw e;
+  }
 }
 
 async function readTicket(id) {

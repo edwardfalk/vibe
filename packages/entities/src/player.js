@@ -19,7 +19,10 @@ export class Player {
     this.x = x;
     this.y = y;
     if (!Number.isFinite(this.x) || !Number.isFinite(this.y)) {
-      console.error('[PLAYER FATAL] Invalid initial position in Player constructor', { x: this.x, y: this.y, pWidth: p && p.width, pHeight: p && p.height });
+      console.error(
+        '[PLAYER FATAL] Invalid initial position in Player constructor',
+        { x: this.x, y: this.y, pWidth: p && p.width, pHeight: p && p.height }
+      );
       this.x = 400;
       this.y = 300;
     }
@@ -89,17 +92,35 @@ export class Player {
   update(deltaTimeMs) {
     // Defensive: Check deltaTimeMs
     if (!Number.isFinite(deltaTimeMs)) {
-      console.error('[PLAYER FATAL] deltaTimeMs is not finite:', deltaTimeMs, this);
+      console.error(
+        '[PLAYER FATAL] deltaTimeMs is not finite:',
+        deltaTimeMs,
+        this
+      );
       return;
     }
     // Defensive: Check velocity and dashVelocity before use
-    if (!Number.isFinite(this.velocity.x) || !Number.isFinite(this.velocity.y)) {
-      console.error('[PLAYER FATAL] velocity is not finite:', this.velocity, this);
+    if (
+      !Number.isFinite(this.velocity.x) ||
+      !Number.isFinite(this.velocity.y)
+    ) {
+      console.error(
+        '[PLAYER FATAL] velocity is not finite:',
+        this.velocity,
+        this
+      );
       this.velocity.x = 0;
       this.velocity.y = 0;
     }
-    if (!Number.isFinite(this.dashVelocity.x) || !Number.isFinite(this.dashVelocity.y)) {
-      console.error('[PLAYER FATAL] dashVelocity is not finite:', this.dashVelocity, this);
+    if (
+      !Number.isFinite(this.dashVelocity.x) ||
+      !Number.isFinite(this.dashVelocity.y)
+    ) {
+      console.error(
+        '[PLAYER FATAL] dashVelocity is not finite:',
+        this.dashVelocity,
+        this
+      );
       this.dashVelocity.x = 0;
       this.dashVelocity.y = 0;
     }
@@ -168,7 +189,12 @@ export class Player {
 
     // Defensive: Check x/y after movement, before constrain
     if (!Number.isFinite(this.x) || !Number.isFinite(this.y)) {
-      console.error('[PLAYER FATAL] Player position became NaN after movement', this.x, this.y, this);
+      console.error(
+        '[PLAYER FATAL] Player position became NaN after movement',
+        this.x,
+        this.y,
+        this
+      );
       this.x = 400;
       this.y = 300;
       return;

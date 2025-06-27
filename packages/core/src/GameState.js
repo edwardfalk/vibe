@@ -90,8 +90,14 @@ export class GameState {
         p.height / 2,
         window.cameraSystem
       );
-      if (!Number.isFinite(window.player.x) || !Number.isFinite(window.player.y)) {
-        console.error('[GAME FATAL] Player position invalid after creation', window.player);
+      if (
+        !Number.isFinite(window.player.x) ||
+        !Number.isFinite(window.player.y)
+      ) {
+        console.error(
+          '[GAME FATAL] Player position invalid after creation',
+          window.player
+        );
         window.player.x = 400;
         window.player.y = 300;
       }

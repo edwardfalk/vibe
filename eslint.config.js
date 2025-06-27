@@ -8,6 +8,7 @@ export default [
       '.debug/**',
       'playwright-report/**',
       'test-results/**',
+      'scripts/scan-secrets.js',
       '.cursor/**',
       '.vscode/**',
     ],
@@ -44,6 +45,10 @@ export default [
         global: 'readonly',
         beforeAll: 'readonly',
         MouseEvent: 'readonly',
+        URL: 'readonly',
+        Response: 'readonly',
+        performance: 'readonly',
+        Bun: 'readonly',
       },
     },
     plugins: {

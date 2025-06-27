@@ -90,7 +90,10 @@ function main() {
       'coderabbit-reviews/actionable-coderabbit-summary.json',
       JSON.stringify(sorted, null, 2)
     );
-    if (sorted.length > 0 && sorted.some(entry => entry.suggestions.length > 0)) {
+    if (
+      sorted.length > 0 &&
+      sorted.some((entry) => entry.suggestions.length > 0)
+    ) {
       console.log('CODERABBIT_EXTRACTION_SUCCESS');
     } else {
       console.log('CODERABBIT_EXTRACTION_EMPTY');

@@ -1,13 +1,13 @@
 // collision-detection-probe.js
 // Probe: Collision Detection System Health and Functionality
 
-(async function () {
-  const { random } = await import('./mathUtils.js');
+export default (async function () {
+  const { random } = await import('@vibe/core/mathUtils.js');
 
   // Import ticketManager API if available
   let ticketManager = null;
   try {
-    ticketManager = await import('../packages/tooling/src/ticketManager.js');
+    ticketManager = await import('/packages/tooling/src/ticketManager.js');
   } catch (e) {
     // Not available in all contexts
   }
@@ -36,6 +36,7 @@
     warnings: [],
     criticalFailures: [],
     failure: null,
+    collisionsChecked: false,
   };
 
   // Check if collision system exists and has required methods
@@ -69,7 +70,7 @@
           enemyBullets: window.enemyBullets?.length || 0,
           enemies: window.enemies?.length || 0,
         };
-        
+
         // Call collision check in a try-catch to prevent state mutation from breaking the probe
         try {
           window.collisionSystem.checkBulletCollisions();
@@ -87,7 +88,7 @@
           enemies: window.enemies?.length || 0,
           player: !!window.player,
         };
-        
+
         // Call collision check in a try-catch to prevent state mutation from breaking the probe
         try {
           window.collisionSystem.checkContactCollisions();
@@ -159,6 +160,9 @@
   // Determine overall failure status
   if (result.criticalFailures.length > 0) {
     result.failure = `Critical collision system failures: ${result.criticalFailures.join(', ')}`;
+  } else {
+    result.failure = null;
+    result.collisionsChecked = true;
   }
 
   // If failure detected, capture diagnostic information and create bug report

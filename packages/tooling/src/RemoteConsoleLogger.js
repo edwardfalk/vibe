@@ -102,7 +102,8 @@ export { setupRemoteConsoleLogger };
 // -----------------------------------------------------------------------------
 if (typeof window !== 'undefined') {
   // Helper to get API URL from window or fallback
-  const getApiUrl = () => window.__remoteLoggerApiUrl || 'http://localhost:3001/api/logs';
+  const getApiUrl = () =>
+    window.__remoteLoggerApiUrl || 'http://localhost:3001/api/logs';
   // Uncaught synchronous errors
   window.addEventListener('error', (event) => {
     if (window.__remoteLoggerDisabled) return;

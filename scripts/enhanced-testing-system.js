@@ -102,7 +102,12 @@ class EnhancedTestingSystem {
         });
 
         // Accept multiple possible indicators of server readiness
-        if ((output.includes('Local:') || output.toLowerCase().includes('listening') || output.toLowerCase().includes('ready')) && !serverReady) {
+        if (
+          (output.includes('Local:') ||
+            output.toLowerCase().includes('listening') ||
+            output.toLowerCase().includes('ready')) &&
+          !serverReady
+        ) {
           serverReady = true;
           this.log('server', 'Development server started successfully');
           this.log('performance', 'Server startup time', {

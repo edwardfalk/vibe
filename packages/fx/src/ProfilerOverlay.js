@@ -23,12 +23,12 @@ class ProfilerOverlay {
 
     const pad = 6;
     const lineHeight = 14;
-    let boxHeight = lineHeight * 7; // base lines (fps + LOD)
+    let boxHeight = lineHeight * 11; // more lines for subsystem timings
     const counterKeys = Object.keys(stats.counters);
     const maxCountersToShow = 4;
     boxHeight += Math.min(counterKeys.length, maxCountersToShow) * lineHeight;
 
-    const boxWidth = 180;
+    const boxWidth = 220;
 
     // Background rect
     p.noStroke();
@@ -51,8 +51,32 @@ class ProfilerOverlay {
       pad + 4,
       y
     );
+    y += lineHeight;
+
+    // Subsystem timings (averaged over last N frames)
+    const timings = stats.counters;
+    p.fill(255, 255, 0);
+    p.text('Subsystem timings (ms):', pad + 4, y);
+    y += lineHeight;
+    const subsystems = [
+      'enemy-update-draw',
+      'bullet-update-draw',
+      'vfx-draw',
+      'collision-check',
+    ];
+    for (const key of subsystems) {
+      if (timings[key]) {
+        p.text(
+          `${key}: ${timings[key].toFixed ? timings[key].toFixed(2) : timings[key]}`,
+          pad + 8,
+          y
+        );
+        y += lineHeight;
+      }
+    }
 
     // Counters
+    p.fill(0, 255, 0);
     y += lineHeight / 2;
     p.text('burst counts:', pad + 4, y);
     y += lineHeight;

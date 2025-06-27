@@ -2,12 +2,12 @@
 // Comprehensive Probe System Runner and Reporter
 
 (async function () {
-  const { random } = await import('../packages/core/src/mathUtils.js');
+  const { random } = await import('@vibe/core/mathUtils.js');
 
   // Import ticketManager API if available
   let ticketManager = null;
   try {
-    ticketManager = await import('../packages/tooling/src/ticketManager.js');
+    ticketManager = await import('/packages/tooling/src/ticketManager.js');
   } catch (e) {
     // Not available in all contexts
   }
@@ -267,4 +267,18 @@
   }
 
   return probeRunner;
+})();
+
+export default (async () => {
+  if (window.probeRunner) return window.probeRunner;
+  return new Promise((resolve) => {
+    const check = () => {
+      if (window.probeRunner) {
+        resolve(window.probeRunner);
+      } else {
+        setTimeout(check, 25);
+      }
+    };
+    check();
+  });
 })();

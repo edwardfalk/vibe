@@ -1,4 +1,5 @@
-import { test, expect } from './playwright.setup.js';
+import { test, expect } from '@playwright/test';
+import { expect as expectPlaywright } from './playwright.setup.js';
 
 test.describe('Tank Armor Break VFX Probe', () => {
   test('Cracks and debris appear when tank armor breaks', async ({ page }) => {

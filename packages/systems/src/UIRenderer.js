@@ -146,11 +146,12 @@ export class UIRenderer {
         ? `Score: ${this.gameState.score.toLocaleString()} (${this.gameState.killStreak}x STREAK!)`
         : `Score: ${this.gameState.score.toLocaleString()}`;
 
-    document.getElementById('score').textContent = scoreText;
-    document.getElementById('health').textContent =
-      `Health: ${this.player.health}`;
-    document.getElementById('level').textContent =
-      `Level: ${this.gameState.level}`;
+    const scoreElem = document.getElementById('score');
+    if (scoreElem) scoreElem.textContent = scoreText;
+    const healthElem = document.getElementById('health');
+    if (healthElem) healthElem.textContent = `Health: ${this.player.health}`;
+    const levelElem = document.getElementById('level');
+    if (levelElem) levelElem.textContent = `Level: ${this.gameState.level}`;
 
     // Add dash cooldown indicator
     this.updateDashIndicator();

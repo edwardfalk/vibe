@@ -51,7 +51,9 @@ import { setupRemoteConsoleLogger } from '@vibe/tooling';
 console.log('🟢 [DEBUG] GameLoop.js: Imported tooling');
 import ProfilerOverlay from '@vibe/fx/ProfilerOverlay.js';
 console.log('🟢 [DEBUG] GameLoop.js: Imported ProfilerOverlay');
-import AdaptiveLODManager, { shouldRender as adaptiveShouldRender } from '@vibe/fx/AdaptiveLODManager.js';
+import AdaptiveLODManager, {
+  shouldRender as adaptiveShouldRender,
+} from '@vibe/fx/AdaptiveLODManager.js';
 console.log('🟢 [DEBUG] GameLoop.js: Imported AdaptiveLODManager');
 import VFXDispatcher from '@vibe/fx/VFXDispatcher.js';
 console.log('🟢 [DEBUG] GameLoop.js: Imported VFXDispatcher');
@@ -60,6 +62,7 @@ import { Tank } from '@vibe/entities/Tank.js';
 import { ENEMY_HIT } from '@vibe/entities';
 import { EnemyEventBus } from '@vibe/entities';
 console.log('🟢 [DEBUG] GameLoop.js: Imported all remaining modules');
+import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
 
 // Core game objects
 let player;
@@ -199,7 +202,10 @@ if (!window.uiKeyListenersAdded) {
         'F7',
         'F8',
         'F10',
-        '1','2','3','4',
+        '1',
+        '2',
+        '3',
+        '4',
         ' ',
       ];
       if (singleActionKeys.includes(event.key) && window.uiRenderer) {
@@ -328,9 +334,25 @@ function setup(p) {
   }
 
   console.log('🎮 Game setup complete - all systems initialized');
+
+  // Attach minimal testRunner for Playwright probes
+  window.testRunner = {
+    async testGameMechanics() {
+      // Check player movement, shooting, and enemy presence
+      const movement =
+        typeof window.player?.x === 'number' &&
+        typeof window.player?.y === 'number';
+      const shooting = Array.isArray(window.playerBullets);
+      const enemies =
+        Array.isArray(window.enemies) && window.enemies.length > 0;
+      return { movement, shooting, enemies };
+    },
+  };
 }
 
 function draw(p) {
+  EffectsProfiler.startFrame();
+  window.frameCount = p.frameCount;
   const p5 = p; // p5 instance
   const now = p.millis();
   const deltaTime = now - (window.lastFrameTime || now);
@@ -362,7 +384,8 @@ function draw(p) {
   window.testMode.update(p, window.player, window.enemies, dt);
   window.player.update(p.deltaTime);
 
-  // Update all enemies
+  // Profile: Enemy update/draw
+  const enemyStart = performance.now();
   for (let i = window.enemies.length - 1; i >= 0; i--) {
     const enemy = window.enemies[i];
     const bullet = enemy.update(window.player.x, window.player.y, p.deltaTime);
@@ -371,21 +394,42 @@ function draw(p) {
       window.enemies.splice(i, 1);
     }
   }
+  for (const enemy of window.enemies) {
+    enemy.draw(p);
+  }
+  EffectsProfiler.registerEffect('enemy-update-draw', {
+    ms: performance.now() - enemyStart,
+  });
 
-  // Update bullets and handle collisions
+  // Profile: Bullet update/draw
+  const bulletStart = performance.now();
+  for (let i = window.playerBullets.length - 1; i >= 0; i--) {
+    const bullet = window.playerBullets[i];
+    bullet.update();
+    bullet.draw(p);
+    if (!bullet.active) window.playerBullets.splice(i, 1);
+  }
+  for (let i = window.bullets.length - 1; i >= 0; i--) {
+    const bullet = window.bullets[i];
+    bullet.update();
+    bullet.draw(p);
+    if (!bullet.active) window.bullets.splice(i, 1);
+  }
+  EffectsProfiler.registerEffect('bullet-update-draw', {
+    ms: performance.now() - bulletStart,
+  });
+
+  // Profile: Collision checks
+  const collisionStart = performance.now();
   const { playerHit, enemyHit } = window.collisionSystem.checkCollisions(
     window.player,
     window.enemies,
     window.bullets,
     window.playerBullets
   );
-  if (playerHit) {
-    window.player.takeDamage(10);
-    window.effectsManager.addHitEffect();
-  }
-  if (enemyHit) {
-    window.effectsManager.addHitEffect();
-  }
+  EffectsProfiler.registerEffect('collision-check', {
+    ms: performance.now() - collisionStart,
+  });
 
   // Spawn new enemies
   window.spawnSystem.update(p, window.player, window.enemies.length);
@@ -400,9 +444,6 @@ function draw(p) {
 
   // Draw game objects
   window.player.draw(p);
-  for (const enemy of window.enemies) {
-    enemy.draw(p);
-  }
   for (let i = window.playerBullets.length - 1; i >= 0; i--) {
     const bullet = window.playerBullets[i];
     bullet.update();
@@ -416,8 +457,12 @@ function draw(p) {
     if (!bullet.active) window.bullets.splice(i, 1);
   }
 
-  // Draw visual effects
+  // Profile: Visual effects draw
+  const vfxStart = performance.now();
   window.visualEffectsManager.draw(p);
+  EffectsProfiler.registerEffect('vfx-draw', {
+    ms: performance.now() - vfxStart,
+  });
 
   p.pop();
 
@@ -425,6 +470,7 @@ function draw(p) {
   window.uiRenderer.draw(p, window.gameState, window.player);
   window.testMode.draw(p);
 
+  EffectsProfiler.endFrame();
   if (CONFIG.GAME_SETTINGS.DEBUG_GAME_LOOP) {
     console.log(
       `[DRAW GAME] camera=(${window.cameraSystem.x.toFixed(2)},${window.cameraSystem.y.toFixed(2)}) enemies=${
@@ -448,7 +494,10 @@ function restartGame(p) {
 
   window.player = new Player(p, p.width / 2, p.height / 2, window.cameraSystem);
   if (!Number.isFinite(window.player.x) || !Number.isFinite(window.player.y)) {
-    console.error('[GAME FATAL] Player position invalid after creation', window.player);
+    console.error(
+      '[GAME FATAL] Player position invalid after creation',
+      window.player
+    );
     window.player.x = 400;
     window.player.y = 300;
   }
@@ -500,7 +549,14 @@ export default {
 };
 
 console.log('🟢 [DEBUG] GameLoop.js: Before p5 instance creation');
-console.log('setup:', typeof setup, 'draw:', typeof draw, 'keyPressed:', typeof keyPressed);
+console.log(
+  'setup:',
+  typeof setup,
+  'draw:',
+  typeof draw,
+  'keyPressed:',
+  typeof keyPressed
+);
 function createP5InstanceWhenReady() {
   if (typeof window !== 'undefined' && typeof window.p5 !== 'undefined') {
     console.log('🟢 [DEBUG] GameLoop.js: Creating p5 instance');
@@ -511,7 +567,9 @@ function createP5InstanceWhenReady() {
     });
     console.log('🟢 [DEBUG] GameLoop.js: p5 instance created');
   } else {
-    console.log('🔴 [DEBUG] GameLoop.js: window.p5 is undefined, retrying in 100ms');
+    console.log(
+      '🔴 [DEBUG] GameLoop.js: window.p5 is undefined, retrying in 100ms'
+    );
     setTimeout(createP5InstanceWhenReady, 100);
   }
 }

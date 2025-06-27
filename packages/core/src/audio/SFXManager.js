@@ -62,7 +62,9 @@ export class SFXManager {
 
     // DEFENSIV KOLL AV CONFIG
     if (!config || !Number.isFinite(config.volume)) {
-      console.warn(`[AUDIO] Missing or invalid config for sound '${soundName}', using default.`);
+      console.warn(
+        `[AUDIO] Missing or invalid config for sound '${soundName}', using default.`
+      );
       config = {
         frequency: 440,
         waveform: 'sine',
@@ -136,7 +138,13 @@ export class SFXManager {
       playerY = this.audio.player.y;
     }
     if (![x, y, playerX, playerY].every(Number.isFinite)) {
-      console.error('[AUDIO FATAL] Non-finite position in playTone', { x, y, playerX, playerY, soundName });
+      console.error('[AUDIO FATAL] Non-finite position in playTone', {
+        x,
+        y,
+        playerX,
+        playerY,
+        soundName,
+      });
       x = 400;
       y = 300;
       playerX = 400;
@@ -154,11 +162,17 @@ export class SFXManager {
       volume = 0.5;
     }
     if (!ctx || !Number.isFinite(ctx.currentTime)) {
-      console.warn(`⚠️ [AUDIO] Invalid ctx.currentTime:`, ctx && ctx.currentTime);
+      console.warn(
+        `⚠️ [AUDIO] Invalid ctx.currentTime:`,
+        ctx && ctx.currentTime
+      );
       ctx.currentTime = 0;
     }
     if (!config || !Number.isFinite(config.duration)) {
-      console.warn(`⚠️ [AUDIO] Invalid config.duration:`, config && config.duration);
+      console.warn(
+        `⚠️ [AUDIO] Invalid config.duration:`,
+        config && config.duration
+      );
       config.duration = 0.2;
     }
     if (!Number.isFinite(durationVariation)) {
@@ -196,14 +210,19 @@ export class SFXManager {
     let debugDry = 0;
 
     // MAXIMAL FELLOGGNING
-    if (!Number.isFinite(volume) || !Number.isFinite(ctx.currentTime) || !Number.isFinite(config.duration) || !Number.isFinite(durationVariation)) {
+    if (
+      !Number.isFinite(volume) ||
+      !Number.isFinite(ctx.currentTime) ||
+      !Number.isFinite(config.duration) ||
+      !Number.isFinite(durationVariation)
+    ) {
       console.error('[AUDIO FATAL] Non-finite value for gain ramp:', {
         soundName,
         volume,
         currentTime: ctx.currentTime,
         duration: config.duration,
         durationVariation,
-        stack: new Error().stack
+        stack: new Error().stack,
       });
       return; // Stoppa exekveringen för att undvika krasch
     }
@@ -331,7 +350,12 @@ export class SFXManager {
 
   calculateVolume(x, y, playerX = 400, playerY = 300) {
     if (![x, y, playerX, playerY].every(Number.isFinite)) {
-      console.error('[AUDIO FATAL] Non-finite position in calculateVolume', { x, y, playerX, playerY });
+      console.error('[AUDIO FATAL] Non-finite position in calculateVolume', {
+        x,
+        y,
+        playerX,
+        playerY,
+      });
       return 1.0;
     }
     if (x === null || y === null) return 1.0;

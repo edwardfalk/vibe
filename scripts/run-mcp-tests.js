@@ -66,7 +66,12 @@ class MCPTestRunner {
       this.serverProcess.stdout.on('data', (data) => {
         const output = data.toString();
         // Accept multiple possible indicators of server readiness
-        if ((output.includes('Local:') || output.toLowerCase().includes('listening') || output.toLowerCase().includes('ready')) && !serverReady) {
+        if (
+          (output.includes('Local:') ||
+            output.toLowerCase().includes('listening') ||
+            output.toLowerCase().includes('ready')) &&
+          !serverReady
+        ) {
           serverReady = true;
           this.log('server', 'Development server started successfully');
           setTimeout(resolve, 2000); // Give server time to fully initialize

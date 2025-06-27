@@ -1,5 +1,16 @@
 # MCP Playwright Testing Guide for AI & Automation
 
+---
+
+**[2025-06-27] Modular Migration Complete**
+
+- All modular migration steps, import map fixes, and Playwright/browser probes now pass.
+- No missing module, duplicate declaration, or fatal runtime errors remain.
+- The game and all systems load and run in the browser, with all core mechanics and liveness checks passing.
+- See the archived roadmap for migration history and details.
+
+---
+
 > **Purpose:**  
 > This guide explains probe-driven Playwright testing, liveness probes, and bug report automation.  
 > For rules, see [.cursorrules](../.cursorrules).

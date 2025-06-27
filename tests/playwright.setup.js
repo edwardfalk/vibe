@@ -2,15 +2,8 @@
 // Extends the base Playwright test runner with custom functionality.
 // See: https://playwright.dev/docs/test-advanced#test-fixtures
 //
-// This setup file does a few things:
-// 1. **Custom Fixtures**: It could add custom fixtures if needed (none currently).
-// 2. **Console Log Interception**: It intercepts all browser console logs.
-//    - It prefixes them with `[BROWSER]` for easy identification.
-//    - It filters out noisy, irrelevant logs from Vite and other tools.
-// 3. **Exports**: It exports the modified `test` and `expect` objects for use
-//    in the actual test files (`*.test.js`).
+// This setup file now only exports helpers. Hooks must be registered in test files.
 
-// Adjust the filter as needed for more/less verbosity.
 import { test as base, expect } from '@playwright/test';
 import fs from 'fs/promises';
 import path from 'path';
@@ -28,7 +21,8 @@ async function ensureResultsDir() {
   }
 }
 
-base.beforeEach(async ({ page }) => {
+// Helper to set up console log interception on a page
+function setupConsoleLogInterception(page) {
   page.on('console', (msg) => {
     const entry = `[${new Date().toISOString()}] [${msg.type()}] ${msg.text()}`;
     if (msg.type() === 'error' || msg.type() === 'warning') {
@@ -38,9 +32,10 @@ base.beforeEach(async ({ page }) => {
       allLogs.push(entry);
     }
   });
-});
+}
 
-base.afterAll(async () => {
+// Helper to write logs after all tests
+async function writeConsoleLogs() {
   await ensureResultsDir();
   try {
     await fs.writeFile(path.join(resultsDir, 'playwright-browser-console-errors.log'), errorWarnLogs.join('\n'), 'utf8');
@@ -54,6 +49,6 @@ base.afterAll(async () => {
       console.error('[Playwright setup] Failed to write full verbose log:', e);
     }
   }
-});
+}
 
-export { base as test, expect }; 
+export { setupConsoleLogInterception, writeConsoleLogs }; 

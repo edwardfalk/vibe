@@ -18,4 +18,4 @@ exec('bun run coderabbit:refresh', (error, stdout, stderr) => {
     console.error('❓ Unexpected output. Manual check recommended.');
     process.exit(1);
   }
-}); 
+});

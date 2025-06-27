@@ -54,6 +54,7 @@ if (beatClock.isOnBeat([2, 4])) {
 - The system is extensible: new enemy types or actions can be mapped to different beats or subdivisions.
 
 ### There are two ideas for how the player shooting should work at the moment, in both the player can click the mouse anytime and start shooting, but exactly what happens differ depending on which method we choose:
+
 1. The first bullet simply waits until on beat 1, 2, 3 or 4 of the measure when the player clicks the mouse button. Player shooting is fast, so the wait will never be long. The player doesn't feel "blocked".
 2. Almost the same as 1, but the first bullet comes immediately, to give a more snappy feel. If the player keeps the mouse button pressed, the rest of the bullets will automatically be fired on-beat. There has to be sensible delay from first "free" shot to the next one that will be on-beat. If for example the player fires a free shot between beat 2 and 3, the on-beat following shot shouldn't be on 3, because that would make the player shoot faster that is "allowed", so it should be on 4. On the other hand, maybe that could be made to be some feature of the game that you can fire faster if you follow this system of clicking for a free shot, waiting until a fast follow-up shot on-beat and then releasing mouse button and almost directly clicking again and so on. 
 

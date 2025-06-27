@@ -73,15 +73,20 @@ export class TicketRouter {
         const body = await request.json();
         console.dir(body, { depth: null });
         const { level, message, stack } = body;
-        console.log(`[REMOTE LOG] level=${level} message=${message} stack=${stack}`);
-        let logMsg = `[${level || 'info'}] ${message}`;
+        console.log(
+          `[REMOTE LOG] level=${level} message=${message} stack=${stack}`
+        );
+        const logMsg = `[${level || 'info'}] ${message}`;
         DebugLogger.log(logMsg, stack ? { stack } : undefined);
         return new Response(null, { status: 204 });
       } catch (e) {
-        return new Response(JSON.stringify({ error: 'Malformed log payload' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+        return new Response(
+          JSON.stringify({ error: 'Malformed log payload' }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
     }
 

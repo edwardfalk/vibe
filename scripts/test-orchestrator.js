@@ -7,8 +7,10 @@
 import { spawn } from 'child_process';
 import net from 'net';
 import { setTimeout as delay } from 'timers/promises';
+import { execSync } from 'child_process';
 
 const ROOT = new URL('..', import.meta.url).pathname;
+console.log('DEBUG: ROOT directory for process spawning is:', ROOT);
 
 /** Simple TCP probe to see if something is listening on the port */
 function isPortOpen(port) {
@@ -52,11 +54,32 @@ async function waitForHttp(url, timeoutMs = 15000) {
 function launch(cmd, args, options = {}) {
   console.log(`🚀 Launching ${cmd} ${args.join(' ')}`);
   return spawn(cmd, args, {
-    cwd: ROOT,
+    cwd: process.cwd(),
     shell: true,
     stdio: 'inherit',
     ...options,
   });
+}
+
+async function getProcessOnPort(port) {
+  try {
+    const output = execSync(`netstat -ano | findstr :${port}`);
+    const lines = output.toString().split('\n').filter(Boolean);
+    if (lines.length === 0) return null;
+    // Take the first listening process
+    const parts = lines[0].trim().split(/\s+/);
+    const pid = parts[parts.length - 1];
+    const tasklist = execSync(`tasklist /FI "PID eq ${pid}"`).toString();
+    const match = tasklist.match(/^(\S+)/m);
+    const procName = match ? match[1] : 'Unknown';
+    let cmdLine = '';
+    try {
+      cmdLine = execSync(`wmic process where ProcessId=${pid} get CommandLine`).toString();
+    } catch {}
+    return { pid, procName, cmdLine };
+  } catch {
+    return null;
+  }
 }
 
 (async () => {
@@ -64,23 +87,52 @@ function launch(cmd, args, options = {}) {
   const servers = [];
 
   // Five-Server (5500)
-  if (!(await isPortOpen(5500))) {
-    await killPort(5500);
+  const proc = await getProcessOnPort(5500);
+  if (proc) {
+    console.log(`[DEBUG] Port 5500 procName: ${proc.procName}`);
+    console.log(`[DEBUG] Port 5500 cmdLine: ${proc.cmdLine}`);
+    if (
+      proc.cmdLine.includes('five-server') &&
+      proc.cmdLine.includes('--port 5500')
+    ) {
+      console.log('✅ Five Server already running on port 5500, reusing.');
+      // Optionally, could check health here
+    } else {
+      console.log(`⚠️ Port 5500 is in use by PID ${proc.pid} (${proc.procName}), not Five Server. Killing and starting fresh.`);
+      await killPort(5500);
+      const five = launch('bunx', [
+        'five-server',
+        '--port',
+        '5500',
+        '--root',
+        'public',
+        '--no-browser',
+      ]);
+      servers.push(five);
+      if (!(await waitForHttp('http://localhost:5500/index.html'))) {
+        console.error(
+          '❌ Five-Server failed to start on port 5500. Make sure nothing else is using this port.'
+        );
+        process.exit(1);
+      }
+    }
+  } else {
+    // Port is free
     const five = launch('bunx', [
       'five-server',
       '--port',
       '5500',
       '--root',
-      '.',
+      'public',
       '--no-browser',
     ]);
     servers.push(five);
     if (!(await waitForHttp('http://localhost:5500/index.html'))) {
-      console.error('❌ Five-Server failed to start');
+      console.error(
+        '❌ Five-Server failed to start on port 5500. Make sure nothing else is using this port.'
+      );
       process.exit(1);
     }
-  } else {
-    console.log('ℹ️ Five-Server already running – reusing.');
   }
 
   // Ticket-API (3001)

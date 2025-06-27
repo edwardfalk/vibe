@@ -1,4 +1,4 @@
-import { test, expect } from './playwright.setup.js';
+import { test, expect } from '@playwright/test';
 import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 import { generateId } from '../packages/core/src/TicketCore.js';
 

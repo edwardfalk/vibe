@@ -7,13 +7,56 @@
   <script type="importmap">
     {
       "imports": {
-        "@vibe/game": "/packages/game/src/index.js"
+        "@vibe/game": "/packages/game/src/index.js",
+        "@vibe/entities": "/packages/entities/src/index.js",
+        "@vibe/entities/Grunt.js": "/packages/entities/src/Grunt.js",
+        "@vibe/entities/Tank.js": "/packages/entities/src/Tank.js",
+        "@vibe/core": "/packages/core/src/index.js",
+        "@vibe/fx": "/packages/fx/src/index.js",
+        "@vibe/systems": "/packages/systems/src/index.js",
+        "@vibe/fx/visualEffects.js": "/packages/fx/src/visualEffects.js",
+        "@vibe/fx/ProfilerOverlay.js": "/packages/fx/src/ProfilerOverlay.js",
+        "@vibe/fx/AdaptiveLODManager.js": "/packages/fx/src/AdaptiveLODManager.js",
+        "@vibe/fx/VFXDispatcher.js": "/packages/fx/src/VFXDispatcher.js",
+        "@vibe/fx/effectsConfig.js": "/packages/fx/src/effectsConfig.js",
+        "@vibe/fx/EffectsProfiler.js": "/packages/fx/src/EffectsProfiler.js",
+        "@vibe/fx/effects.js": "/packages/fx/src/effects.js",
+        "@vibe/fx/explosions/ExplosionManager.js": "/packages/fx/src/explosions/ExplosionManager.js",
+        "@vibe/fx/explosions/PlasmaCloud.js": "/packages/fx/src/explosions/PlasmaCloud.js",
+        "@vibe/fx/explosions/RadioactiveDebris.js": "/packages/fx/src/explosions/RadioactiveDebris.js",
+        "@vibe/fx/explosions/Explosion.js": "/packages/fx/src/explosions/Explosion.js",
+        "@vibe/entities/BaseEnemy.js": "/packages/entities/src/BaseEnemy.js",
+        "@vibe/entities/player.js": "/packages/entities/src/player.js",
+        "@vibe/entities/bullet.js": "/packages/entities/src/bullet.js",
+        "@vibe/entities/Stabber.js": "/packages/entities/src/Stabber.js",
+        "@vibe/entities/Rusher.js": "/packages/entities/src/Rusher.js",
+        "@vibe/entities/EnemyFactory.js": "/packages/entities/src/EnemyFactory.js",
+        "@vibe/entities/EnemySpeechUtils.js": "/packages/entities/src/EnemySpeechUtils.js",
+        "@vibe/entities/EnemyEventBus.js": "/packages/entities/src/EnemyEventBus.js",
+        "@vibe/entities/EnemyFXUtils.js": "/packages/entities/src/EnemyFXUtils.js",
+        "@vibe/entities/EnemyAIUtils.js": "/packages/entities/src/EnemyAIUtils.js",
+        "@vibe/tooling": "/packages/tooling/src/index.js",
+        "@vibe/tooling/ticketManager.js": "/packages/tooling/src/ticketManager.js",
+        "@vibe/tooling/DebugLogger.js": "/packages/tooling/src/DebugLogger.js",
+        "@vibe/tooling/errorHandler.js": "/packages/tooling/src/errorHandler.js",
+        "@vibe/tooling/RemoteConsoleLogger.js": "/packages/tooling/src/RemoteConsoleLogger.js",
+        "@vibe/tooling/probes/ai-liveness-probe.js": "/packages/tooling/src/probes/ai-liveness-probe.js",
+        "@vibe/tooling/probes/audio-system-probe.js": "/packages/tooling/src/probes/audio-system-probe.js",
+        "@vibe/tooling/probes/collision-detection-probe.js": "/packages/tooling/src/probes/collision-detection-probe.js",
+        "@vibe/tooling/probes/comprehensive-probe-runner.js": "/packages/tooling/src/probes/comprehensive-probe-runner.js",
+        "@vibe/tooling/probes/grunt-knockback-probe.js": "/packages/tooling/src/probes/grunt-knockback-probe.js",
+        "@vibe/tooling/probes/tank-armor-break-probe.js": "/packages/tooling/src/probes/tank-armor-break-probe.js",
+        "@vibe/systems/bullet.js": "/packages/entities/src/bullet.js",
+        "@vibe/systems/mathUtils.js": "/packages/core/src/mathUtils.js",
+        "@vibe/core/config.js": "/packages/core/src/config.js",
+        "@vibe/core/mathUtils.js": "/packages/core/src/mathUtils.js"
       }
     }
   </script>
 </head>
 <body>
   <div id="test-status">Waiting for module...</div>
+  <pre id="error-details" style="color: red; background: #222; padding: 8px; display: none;"></pre>
   <script type="module">
     document.getElementById('test-status').textContent = 'Module script running!';
     console.log('🟢 [DEBUG] test-minimal.html: module script running');
@@ -22,7 +65,19 @@
       console.log('🟢 [DEBUG] test-minimal.html: @vibe/game imported');
     }).catch(e => {
       document.getElementById('test-status').textContent = 'Module import failed!';
-      console.error('🔴 [DEBUG] test-minimal.html: @vibe/game import failed', e);
+      const details = [
+        'Error: ' + (e && (e.message || e.toString())),
+        e && e.stack ? '\nStack:\n' + e.stack : '',
+        e && e.fileName ? '\nFile: ' + e.fileName : '',
+        e && e.lineNumber ? '\nLine: ' + e.lineNumber : '',
+        e && e.columnNumber ? '\nColumn: ' + e.columnNumber : '',
+        '\nFull error object:',
+        JSON.stringify(e, Object.getOwnPropertyNames(e), 2)
+      ].join('\n');
+      const errorPre = document.getElementById('error-details');
+      errorPre.textContent = details;
+      errorPre.style.display = 'block';
+      console.error('🔴 [DEBUG] test-minimal.html: @vibe/game import failed', e, details);
       // Attempt to log error to local server for diagnosis
       fetch('/api/logs', {
         method: 'POST',
@@ -30,13 +85,11 @@
         body: JSON.stringify({
           level: 'error',
           message: 'test-minimal.html: @vibe/game import failed',
-          error: e && (e.stack || e.message || e.toString()),
+          error: details,
           time: new Date().toISOString()
         })
       }).catch(() => {});
     });
   </script>
-  <!-- Test: should be blocked by legacy_clamp rule -->
-  <script>console.log('/c/Users/username')</script>
 </body>
 </html>

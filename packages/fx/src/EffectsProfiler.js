@@ -25,7 +25,10 @@ const counters = Object.create(null);
 let enabled = true;
 
 // Environment check for performance API
-if (typeof performance === 'undefined' || typeof performance.now !== 'function') {
+if (
+  typeof performance === 'undefined' ||
+  typeof performance.now !== 'function'
+) {
   // Provide a fallback for performance.now
   globalThis.performance = {
     now: () => Date.now(),

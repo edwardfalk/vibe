@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Grunt Knock-back VFX Probe', () => {
-  test('Grunt moves after bullet hit (knock-back)', async ({ page }) => {
+test.describe('AI Liveness Probe', () => {
+  test('Game loop, player, and enemies are alive', async ({ page }) => {
     await page.goto('/index.html');
     await page.waitForSelector('canvas');
     // Click canvas to enable audio/context
@@ -9,15 +9,13 @@ test.describe('Grunt Knock-back VFX Probe', () => {
       const canvas = document.querySelector('canvas');
       canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    // Wait for grunt to spawn
-    await page.waitForFunction(() => (window.enemies || []).some(e => e.type === 'grunt'));
     // Run the probe
     const result = await page.evaluate(async () => {
-      const mod = await import('@vibe/tooling/src/probes/grunt-knockback-probe.js');
+      const mod = await import('@vibe/tooling/src/probes/ai-liveness-probe.js');
       return mod.default || mod;
     });
-    expect(result.foundGrunt).toBe(true);
-    expect(result.knockbackDelta).toBeGreaterThan(0.5);
     expect(result.failure).toBeNull();
+    expect(result.playerAlive).toBe(true);
+    expect(result.enemyCount).toBeGreaterThan(0);
   });
-}); 
+});

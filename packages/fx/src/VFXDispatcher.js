@@ -6,7 +6,12 @@
 // [BUGFIX: see ticket "Legacy explosionManager triggers wrong VFX colors"]
 // VFXDispatcher is now a strict delegate to visualEffectsManager, or a stub if not needed.
 
-import { ENEMY_HIT, ARMOR_DAMAGED, ARMOR_BROKEN, ENEMY_KILLED } from '@vibe/entities';
+import {
+  ENEMY_HIT,
+  ARMOR_DAMAGED,
+  ARMOR_BROKEN,
+  ENEMY_KILLED,
+} from '@vibe/entities';
 import { effectsConfig } from './effectsConfig.js';
 
 class VFXDispatcher {
@@ -21,6 +26,12 @@ class VFXDispatcher {
     this.screenFX = screenFX;
     this.lod = lodManager || { shouldRender: () => true };
 
+    // Bind event handlers
+    this.onEnemyHit = this.onEnemyHit.bind(this);
+    this.onArmorDamaged = this.onArmorDamaged.bind(this);
+    this.onArmorBroken = this.onArmorBroken.bind(this);
+    this.onEnemyKilled = this.onEnemyKilled.bind(this);
+
     if (typeof window !== 'undefined') {
       window.addEventListener(ENEMY_HIT, this.onEnemyHit);
       window.addEventListener(ARMOR_DAMAGED, this.onArmorDamaged);
@@ -29,45 +40,48 @@ class VFXDispatcher {
     }
   }
 
-  // Arrow fn to preserve `this`
-  onEnemyHit = (evt) => {
+  onEnemyHit(evt) {
     const d = evt.detail;
-    const weight = (effectsConfig[d.type]?.effectWeight) ?? 1;
+    const weight = effectsConfig[d.type]?.effectWeight ?? 1;
     if (this.lod.shouldRender('hitSpark')) {
       this.visualFX?.addHitSpark?.(d.x, d.y, weight);
     }
     // Knock-back for Grunt and others on bullet hit
-    if (d.type === 'grunt' && d.damageSource === 'bullet' && typeof d.bulletAngle === 'number') {
+    if (
+      d.type === 'grunt' &&
+      d.damageSource === 'bullet' &&
+      typeof d.bulletAngle === 'number'
+    ) {
       // Find the grunt instance by id
-      const enemy = (window.enemies || []).find(e => e.id === d.id);
+      const enemy = (window.enemies || []).find((e) => e.id === d.id);
       if (enemy && typeof enemy.applyImpulse === 'function') {
         enemy.applyImpulse(d.bulletAngle, 0.8); // 0.8 = moderate knock-back
       }
     }
-  };
+  }
 
-  onArmorDamaged = (evt) => {
+  onArmorDamaged(evt) {
     const d = evt.detail;
     const damageFrac = 1 - (d.armorRemaining ?? 1);
     this.visualFX?.addCrackOverlay?.(d.x, d.y, damageFrac, d.part);
-  };
+  }
 
-  onArmorBroken = (evt) => {
+  onArmorBroken(evt) {
     const d = evt.detail;
     if (this.lod.shouldRender('debris')) {
       this.visualFX?.addDebrisShards?.(d.x, d.y, 12);
     }
     this.screenFX?.addShake?.(6, 15);
     this.screenFX?.addScreenFlash?.([255, 180, 180], 6);
-  };
+  }
 
-  onEnemyKilled = (evt) => {
+  onEnemyKilled(evt) {
     const d = evt.detail;
     // Add explosion at the enemy's death location
     this.visualFX?.addExplosionParticles?.(d.x, d.y, d.type);
     // Optionally, add screen shake or other effects
     this.screenFX?.addShake?.(8, 20);
-  };
+  }
 
   dispose() {
     if (typeof window === 'undefined') return;
@@ -78,4 +92,4 @@ class VFXDispatcher {
   }
 }
 
-export default VFXDispatcher; 
+export default VFXDispatcher;

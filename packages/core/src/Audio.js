@@ -473,7 +473,12 @@ export class Audio {
     this.playTone = (...a) => this.sfxManager.playTone(...a);
 
     // Validate registry vs config in development builds
-    if ((typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') || (typeof window !== 'undefined' && window.__DEV__)) {
+    if (
+      (typeof process !== 'undefined' &&
+        process.env &&
+        process.env.NODE_ENV === 'development') ||
+      (typeof window !== 'undefined' && window.__DEV__)
+    ) {
       try {
         this.validateSoundRegistry();
       } catch (e) {
@@ -504,7 +509,9 @@ export class Audio {
     // Defensiv kod för voiceConfig-volymer
     for (const key in this.voiceConfig) {
       if (!Number.isFinite(this.voiceConfig[key].volume)) {
-        console.warn(`[AUDIO] Non-finite voiceConfig volume for ${key}, setting to 0.7`);
+        console.warn(
+          `[AUDIO] Non-finite voiceConfig volume for ${key}, setting to 0.7`
+        );
         this.voiceConfig[key].volume = 0.7;
       }
     }
@@ -734,7 +741,16 @@ export class Audio {
       playerX = this.player.x;
       playerY = this.player.y;
     }
-    console.log('[AUDIO DEBUG] playTone: this.player', this.player, 'playerX', playerX, 'playerY', playerY, 'soundName', soundName);
+    console.log(
+      '[AUDIO DEBUG] playTone: this.player',
+      this.player,
+      'playerX',
+      playerX,
+      'playerY',
+      playerY,
+      'soundName',
+      soundName
+    );
 
     // Configure gain envelope with proper volume calculation and randomness
     let volume = config.volume * volumeVariation;
@@ -863,7 +879,12 @@ export class Audio {
 
   calculateVolume(x, y, playerX = 400, playerY = 300) {
     if (![x, y, playerX, playerY].every(Number.isFinite)) {
-      console.error('[AUDIO FATAL] Non-finite position in calculateVolume', { x, y, playerX, playerY });
+      console.error('[AUDIO FATAL] Non-finite position in calculateVolume', {
+        x,
+        y,
+        playerX,
+        playerY,
+      });
       return 1.0;
     }
     if (x === null || y === null) return 1.0;
@@ -935,7 +956,18 @@ export class Audio {
       playerX = this.player.x;
       playerY = this.player.y;
     }
-    console.log('[AUDIO DEBUG] speak: this.player', this.player, 'playerX', playerX, 'playerY', playerY, 'entity', entity, 'voiceType', voiceType);
+    console.log(
+      '[AUDIO DEBUG] speak: this.player',
+      this.player,
+      'playerX',
+      playerX,
+      'playerY',
+      playerY,
+      'entity',
+      entity,
+      'voiceType',
+      voiceType
+    );
     // Ensure entity.x and entity.y are valid numbers
     const ex =
       entity && typeof entity.x === 'number' && !isNaN(entity.x)
@@ -946,7 +978,10 @@ export class Audio {
         ? entity.y
         : 300;
     if (![ex, ey, playerX, playerY].every(Number.isFinite)) {
-      console.error('[AUDIO FATAL] Non-finite position in speak volume calculation', { ex, ey, playerX, playerY, entity, voiceType });
+      console.error(
+        '[AUDIO FATAL] Non-finite position in speak volume calculation',
+        { ex, ey, playerX, playerY, entity, voiceType }
+      );
     }
     // Ensure TTS volume respects master volume, per-voice config, distance attenuation (clamped), and speech gain
     const distanceAtt = Math.max(
@@ -962,7 +997,10 @@ export class Audio {
     );
 
     if (!Number.isFinite(utterance.volume)) {
-      console.warn('[AUDIO] Non-finite utterance.volume, setting to 0.7', utterance.volume);
+      console.warn(
+        '[AUDIO] Non-finite utterance.volume, setting to 0.7',
+        utterance.volume
+      );
       utterance.volume = 0.7;
     }
 

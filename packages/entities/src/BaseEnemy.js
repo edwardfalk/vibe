@@ -391,7 +391,7 @@ export class BaseEnemy {
     const bulletColor = [255, 0, 0];
     const bulletRange = 500;
     // Offset bullet spawn to just outside the enemy's hitbox
-    const offset = (this.size / 2) + (bulletSize / 2) + 2;
+    const offset = this.size / 2 + bulletSize / 2 + 2;
     const spawnX = this.x + Math.cos(this.aimAngle) * offset;
     const spawnY = this.y + Math.sin(this.aimAngle) * offset;
     const bullet = new Bullet(
@@ -410,6 +410,11 @@ export class BaseEnemy {
 
     this.health -= amount;
     this.hitFlash = 4; // 4 frames of white flash
+
+    // Apply knockback impulse for bullet hits
+    if (damageSource === 'bullet' && bulletAngle !== null) {
+      this.applyImpulse(bulletAngle, 10); // Strength can be tuned
+    }
 
     // Emit an event for other systems to consume (VFX, audio, etc.)
     EnemyEventBus.emitEnemyHit({

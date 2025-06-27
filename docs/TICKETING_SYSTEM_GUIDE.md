@@ -1,115 +1,24 @@
-# Ticketing System Guide
+# Ticketing System Guide (Vibe)
 
-This guide provides a comprehensive overview of the Vibe ticketing system. All ticket operations are handled via a REST API.
+## Current State (June 2025)
+- Ticket updates and deletes are immediate and final. There is **no automatic backup**.
+- All ticket operations are handled via the REST API (`localhost:3001`).
+- Tickets are stored as JSON files in `tests/bug-reports/`.
+- Use `scripts/backup-tickets.js` for manual full backup (creates a zip in `/backups/`).
+- Use `scripts/validate-tickets.js` to check ticket integrity.
+- All other ticketing features (API, validation, scripts) are fully functional.
 
----
+## Manual Backup
+- Run: `bun run scripts/backup-tickets.js`
+- Output: `/backups/tickets-backup-<timestamp>.zip`
 
-## API Quick Reference
+## Validation
+- Run: `bun run scripts/validate-tickets.js`
+- Output: List of any corrupt/invalid tickets.
 
-The API runs at `http://localhost:3001`. All requests and responses are JSON.
-
-> ℹ️  The port can be overridden by setting the `TICKET_API_PORT` environment variable before starting the server (see `ticket-api.js`).
-
-### Available Query Parameters
-
-| Param   | Description | Example |
-|---------|-------------|---------|
-| `type`  | Filter by ticket type (`bug`, `feature`, `enhancement`, `task`) | `/api/tickets?type=bug` |
-| `status`| Filter by status (`open`, `in-progress`, `closed`, etc.) | `/api/tickets?status=open` |
-| `focus` | If `true`, return only "focus" tickets (high priority) | `/api/tickets?focus=true` |
-| `limit` | Max results (default 100) | `/api/tickets?limit=20` |
-| `offset`| Pagination offset | `/api/tickets?limit=20&offset=20` |
-
----
-
-### Health Check
-
-HEAD `http://localhost:3001/api/health` → `200 OK` if the server is alive.
-
-**List Tickets:**
-```sh
-curl "http://localhost:3001/api/tickets"
-# With query:
-curl "http://localhost:3001/api/tickets?type=bug&status=open"
-```
-
-**Create a Ticket:**
-```sh
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"type": "bug", "title": "My New Bug"}' \
-  "http://localhost:3001/api/tickets"
-```
-
-**Get a Ticket:**
-```sh
-curl "http://localhost:3001/api/tickets/TASK-123"
-```
-
-**Update a Ticket:**
-```sh
-curl -X PATCH -H "Content-Type: application/json" \
-  -d '{"status": "in-progress"}' \
-  "http://localhost:3001/api/tickets/TASK-123"
-```
-
-**Delete a Ticket:**
-```sh
-curl -X DELETE "http://localhost:3001/api/tickets/TASK-123"
-```
-
-### Ticket ID Generation (NEW)
-
-> **Note:** As of June 2024, you no longer need to provide an `id` when creating a ticket. The API will automatically generate a unique, chronologically sortable ID if omitted.
-
-- **Format:** `BUG-2024-06-25T22-15-30-123` (type + ISO8601 date/time with milliseconds)
-- **Collision handling:** If a collision occurs (very rare), an extra digit is appended to ensure uniqueness.
-- **Manual IDs:** If you provide an `id` and it is valid/unique, it will be used as-is.
-
-**Example: Create a Ticket (no id needed):**
-```sh
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"type": "bug", "title": "My New Bug"}' \
-  "http://localhost:3001/api/tickets"
-```
-
-**Example: Create a Ticket (with custom id, optional):**
-```sh
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"id": "BUG-2024-06-25T22-15-30-123", "type": "bug", "title": "My New Bug"}' \
-  "http://localhost:3001/api/tickets"
-```
+## No Automatic Recovery
+- If you delete or update a ticket, it is permanent unless you have a manual backup.
 
 ---
 
-## Core Concepts
-
-The ticketing system is designed for:
-- **Automation:** Integrates with Playwright tests.
-- **Metadata-rich tickets:** All tickets are structured JSON files.
-- **Centralized Logic:** The `ticket-api.js` server is the single entry point and delegates to **`packages/api/src/TicketRouter.js`** → **`TicketService.js`** → **`TicketCore.js`** for all logic and persistence.
-
----
-
-## Ticket Format (JSON Schema)
-
-A ticket must include:
-- `id` (string, unique)
-- `type` (string: `bug`, `feature`, `enhancement`, `task`)
-- `title` (string)
-- `status` (string: `open`, `in-progress`, `closed`, etc.)
-- Other optional fields: `description`, `tags`, `checklist`, `history`, `artifacts`, `relatedTickets`.
-
----
-
-## Troubleshooting
-
-1.  **Check the API server:** Ensure the dev server (`bun run dev`) is running. You should see logs for the API service.
-2.  **Check port `3001`:** Make sure no other process is blocking the API port.
-3.  **Check JSON format:** When using `curl`, ensure your JSON payloads are correctly formatted and quoted for your shell.
-
-The API provides specific error messages for invalid requests, typically with a `400 Bad Request` status.
-
----
-## Deprecated Interfaces
-
-The old `bun run ticket:*` CLI scripts are **deprecated** and have been removed. Always use the REST API.
+For more, see `docs/TICKETING_BACKUP_AND_RECOVERY.md` and `docs/README.md`.
