@@ -49,7 +49,7 @@
     "docs:serve": "bun run docs:build-index && bunx docsify-cli@latest serve docs-site",
     "docs:build-index": "bun run scripts/generate-rule-index.js",
     "scan:secrets": "bun run scripts/scan-secrets.js",
-    "test:orchestrated": "bun run scripts/test-orchestrator.js",
+    "test:orchestrated": "bun run dev:start && bunx playwright test && bun run dev:stop",
     "mcp": "desktop-commander --port 4333 --allowedDirectories \"['D:\\\\projects','C:\\\\']\"",
     "dev:start": "bun run scripts/dev-server.js start",
     "dev:stop": "bun run scripts/dev-server.js stop",

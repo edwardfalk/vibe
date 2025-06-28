@@ -84,12 +84,16 @@ export async function waitForHttp(url, timeoutMs = 15000) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     try {
-      // Try HEAD then fallback to GET (some endpoints may not implement HEAD or GET 200)
-      let res = await fetch(url, { method: 'HEAD' });
-      if (!res.ok) {
-        res = await fetch(url, { method: 'GET' });
+      // Try HEAD then GET; accept any <500 status as server alive (Five-Server may respond 304)
+      let res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      if (res.status >= 500 || res.status === 405) {
+        // Some static servers don't support HEAD – fall back to GET
+        res = await fetch(url, { method: 'GET', cache: 'no-store' });
       }
-      if (res.ok) return true;
+      if (res.status < 500) {
+        console.log(`[waitForHttp] ${url} alive with status ${res.status}`);
+        return true;
+      }
     } catch {
       // ignore
     }

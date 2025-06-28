@@ -17,6 +17,44 @@ const API_PORT = CONFIG.TICKET_API.PORT;
 const FIVE_EXPECT = 'five-server';
 const API_EXPECT = 'ticket-api.js';
 
+// --- Child-process tracking & cleanup --------------------------------------
+const children = new Set();
+
+/**
+ * Spawn a child process and keep a reference so we can clean it up later.
+ * Uses stdio: 'inherit' and shell: true by default (can be overridden).
+ */
+function spawnTracked(cmd, args, opts = {}) {
+  const cp = spawn(cmd, args, { stdio: 'inherit', shell: true, ...opts });
+  children.add(cp);
+  cp.on('exit', () => children.delete(cp));
+  return cp;
+}
+
+/**
+ * Terminate all tracked child processes.
+ */
+function cleanExit() {
+  for (const cp of children) {
+    if (cp.killed) continue;
+    if (process.platform === 'win32') {
+      // Kill entire process tree on Windows
+      spawn('taskkill', ['/PID', String(cp.pid), '/T', '/F']);
+    } else {
+      cp.kill('SIGTERM');
+    }
+  }
+}
+
+// Handle parent termination signals
+['SIGINT', 'SIGTERM', 'SIGBREAK'].forEach((sig) => {
+  process.on(sig, () => {
+    cleanExit();
+    process.exit(0);
+  });
+});
+process.on('exit', cleanExit);
+
 async function start() {
   // Five-Server
   let proc = getProcessOnPort(DEV_PORT);
@@ -28,10 +66,7 @@ async function start() {
       freePort(DEV_PORT);
     }
     console.log('🚀 Starting Five-Server...');
-    spawn('bunx', ['five-server', '--port', DEV_PORT, '--root', 'public', '--no-browser'], {
-      stdio: 'inherit',
-      shell: true,
-    });
+    spawnTracked('bunx', ['five-server', '--port', DEV_PORT, '--root', 'public', '--no-browser']);
     const ok = await waitForHttp(`http://localhost:${DEV_PORT}/index.html`, 30000);
     if (!ok) {
       console.error('❌ Five-Server failed to become READY');
@@ -50,7 +85,7 @@ async function start() {
       freePort(API_PORT);
     }
     console.log('🚀 Starting Ticket-API...');
-    spawn('bun', ['run', 'api'], { stdio: 'inherit', shell: true });
+    spawnTracked('bun', ['run', 'api']);
     const okApi = await waitForHttp(`http://localhost:${API_PORT}/api/health`, 20000);
     if (!okApi) {
       console.error('❌ Ticket-API failed to start');
@@ -63,10 +98,16 @@ async function start() {
 }
 
 function stop() {
+  if (children.size) {
+    cleanExit();
+    console.log('🛑 Servers stopped (tracked)');
+    return;
+  }
+
   let killed = false;
   if (freePort(DEV_PORT)) killed = true;
   if (freePort(API_PORT)) killed = true;
-  if (killed) console.log('🛑 Servers stopped');
+  if (killed) console.log('🛑 Servers stopped (port sweep)');
   else console.log('ℹ️ No servers running');
 }
 
