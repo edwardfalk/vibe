@@ -6,7 +6,7 @@
   "workspaces": ["packages/*"],
   "main": "index.html",
   "scripts": {
-    "serve": "bun run five-server --port=5500 --ignore=playwright-report,test-results,coderabbit-reviews",
+    "serve": "bun run five-server --port=5500 --root=public --ignore=playwright-report,test-results,coderabbit-reviews",
     "watch-bugs": "bun run scripts/move-bug-reports.js",
     "predev": "bunx kill-port 5500 3001",
     "dev": "concurrently -r --kill-others-on-fail \"bun run serve\" \"bun run watch-bugs\" \"bun run api\"",
@@ -50,7 +50,11 @@
     "docs:build-index": "bun run scripts/generate-rule-index.js",
     "scan:secrets": "bun run scripts/scan-secrets.js",
     "test:orchestrated": "bun run scripts/test-orchestrator.js",
-    "mcp": "desktop-commander --port 4333 --allowedDirectories \"['D:\\\\projects','C:\\\\']\""
+    "mcp": "desktop-commander --port 4333 --allowedDirectories \"['D:\\\\projects','C:\\\\']\"",
+    "dev:start": "bun run scripts/dev-server.js start",
+    "dev:stop": "bun run scripts/dev-server.js stop",
+    "dev:status": "bun run scripts/dev-server.js status",
+    "dev:restart": "bun run scripts/dev-server.js restart"
   },
   "bun": {
     "dev": {

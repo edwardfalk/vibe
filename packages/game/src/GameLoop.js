@@ -69,6 +69,7 @@ let player;
 let enemies = [];
 let playerBullets = [];
 let enemyBullets = [];
+let bullets = [];
 let activeBombs = [];
 
 // Systems
@@ -82,6 +83,7 @@ window.updateGameLoopLocals = function () {
   enemies = window.enemies;
   playerBullets = window.playerBullets;
   enemyBullets = window.enemyBullets;
+  bullets = window.bullets;
   activeBombs = window.activeBombs;
   effectsManager = window.effectsManager;
   visualEffectsManager = window.visualEffectsManager;
@@ -93,6 +95,7 @@ window.player = null;
 window.enemies = [];
 window.playerBullets = playerBullets;
 window.enemyBullets = enemyBullets;
+window.bullets = bullets;
 window.activeBombs = activeBombs;
 window.audio = null;
 window.speechManager = null;

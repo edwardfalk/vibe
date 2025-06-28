@@ -84,7 +84,8 @@ The game has been methodically restored and validated through a series of critic
 - [x] Run all Playwright probes and fix any failing tests
   - [x] Run each probe individually
   - [x] Investigate and fix any failures
-- [x] Manual gameplay validation (**FAILED: no enemies, graphics buggy, core loop broken**)
+- [x] Manual gameplay validation (**PASSED after bullet array fix – enemies spawn, graphics stable**)
+  - [x] Fix undefined `window.bullets` crash in GameLoop (added global initialization)
   - [ ] Play through core loop (start, play, win/lose, restart)
   - [ ] Verify UI updates (score, health, etc.)
   - [ ] Test audio activation and playback
@@ -194,34 +195,65 @@ The game has been methodically restored and validated through a series of critic
 *This document is kept up to date as progress is made. See commit history for details.*
 
 ## Phase X: Dev Server Port Management & Launch Reliability
-**Goal:** Ensure the dev server (Five Server) always starts on the correct port (5500), never double-starts, and is easy to use and document.
+**Goal:** Ensure the dev server (Five-Server) and Ticket-API always start on their canonical ports (5500 / 3001), never double-start, and expose simple start / stop / status commands that Just Work™ in both interactive dev sessions and automated Playwright/MCP runs.
 
-### Subtasks
-- [ ] Audit all scripts that start the dev server (Five Server, live-server, etc.)
-- [ ] Implement a reliable port check: Before starting, check if port 5500 is in use.
-    - If in use, determine if it’s the correct server (Five Server) or a stray process.
-    - If it’s the correct server, reuse it (do not kill).
-    - If it’s a stray process, kill it and start fresh.
-- [ ] Prevent double server launches: Ensure no script or workflow can start two servers on the same port.
-- [ ] Update the orchestrator and dev scripts to:
-    - Always check port 5500 before starting.
-    - Only start the server if not already running.
-    - Optionally, provide a “force restart” option.
-- [ ] Add a “status” script to show if the dev server is running and on which port.
-- [ ] Document the exact workflow:
-    - How to start, stop, and check the dev server.
-    - What to do if the port is busy.
-    - What NOT to do (e.g., never run two dev servers).
-    - Troubleshooting steps for port conflicts.
+### Strategy Overview
+1. **Unify Port Config** – Single source of truth (`DEV_SERVER_PORT`, `TICKET_API_PORT`) in `config.js` (read by all scripts).
+2. **Robust Port Utilities** – New helper `scripts/port-utils.js` with cross-platform functions:
+   * `getProcessOnPort(port)` – return `{pid, cmdLine}` or `null`.
+   * `isExpectedProcess(cmdLine, expect)` – fuzzy match helper.
+   * `freePort(port, expect)` – kill if stray.
+   * `waitForHttp(url, timeoutMs)` – reused by orchestrator & probes.
+3. **Standardised Bun Scripts**
+   * `bun run dev:start` – idempotent start (reuse if healthy, else launch)
+   * `bun run dev:stop` – graceful stop for both servers
+   * `bun run dev:status` – human-readable status table
+   * `bun run dev:restart` – convenience alias (stop ➜ start)
+4. **Refactor `scripts/test-orchestrator.js`**
+   * Replace its bespoke port logic with the new utilities
+   * Respect `--no-server` flag for CI containers that already have server running
+5. **Background Friendly** – All start scripts must:  
+   * print `READY` line when HTTP HEAD passes  
+   * exit with non-zero if health-check fails within 15 s  
+   * trap SIGINT/SIGTERM and cleanly shut down child processes
+6. **PowerShell Helpers** – Optional PS script `tools/dev-server.ps1` providing the same commands for manual PowerShell users (calls JS scripts under the hood).
+7. **Playwright Probe** – New quick probe `startup-dev-server-probe.test.js` that asserts Five-Server HTML response != blank & status 200.
+8. **Docs & Troubleshooting** – Update README + add `docs/DEV_SERVER_WORKFLOW.md` with:
+   * Quick-start (`bun run dev:start`)  
+   * Status & common errors  
+   * "Port already in use" decision tree  
+   * FAQ for CI / GitHub Actions.
 
-**Done Criteria:**
-- Dev server always starts on port 5500 unless intentionally overridden
-- No double server launches
-- Clear, documented workflow for starting/stopping/checking the dev server
-- Troubleshooting steps are documented
+### Detailed Task Breakdown
+- [ ] **X-1** Create `scripts/port-utils.js` (see Strategy 2)
+- [ ] **X-2** Add `DEV_SERVER_PORT` & `TICKET_API_PORT` constants to `packages/core/src/config.js` (export + use everywhere)
+- [ ] **X-3** Update `package.json` scripts section:  
+      - `"dev:start"`  
+      - `"dev:stop"`  
+      - `"dev:status"`  
+      - `"dev:restart"`
+- [ ] **X-4** Migrate existing `serve`, `dev`, `predev` scripts to use new utilities; deprecate legacy script combo.
+- [ ] **X-5** Refactor `scripts/test-orchestrator.js` to import port-utils and remove duplicate code.
+- [ ] **X-6** Write Playwright probe `tests/startup-dev-server-probe.test.js` (quick HEAD check).
+- [ ] **X-7** Add CI step in GitHub Actions to run `bun run dev:start && bun run dev:status`.
+- [ ] **X-8** Create `docs/DEV_SERVER_WORKFLOW.md` with full instructions.
+- [ ] **X-9** Manual QA:  
+      - Run `dev:start`, check READY line.  
+      - Attempt second `dev:start` (should reuse).  
+      - Kill stray process manually and run `dev:status` (should show *stopped*).  
+      - Run `dev:restart` (should succeed).  
+      - Verify Playwright suite passes using new logic.
+- [ ] **X-10** Update roadmap, README, and `.cursorrules` references to new commands.
+
+**Done Criteria (expanded):**
+- Running `bun run dev:start` from a clean shell consistently shows READY within 5-10 s.
+- Running the same command again detects healthy server and exits with code 0 (no duplicate).
+- Attempting to run Five-Server manually on 5500 while the dev script is up yields a clear error and non-zero exit.
+- `bun run test:orchestrated` succeeds without port conflicts.
+- Documentation & scripts lint-clean; Playwright startup probe passes.
 
 **Test/Validation Checkpoint:**
-- Start, stop, and check the dev server multiple times in a row without port conflicts
-- Attempt to start a second server and confirm it is blocked or reuses the existing one
-- Follow documentation to resolve any port issues
+- [ ] Automated: `startup-dev-server-probe` passes.  
+- [ ] Manual: Run start / stop / status sequence 5× in a row without failure.
+- [ ] CI: GitHub Action matrix (Node 20 + Bun 1.*) completes all jobs green.
 

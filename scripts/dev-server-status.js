@@ -19,7 +19,9 @@ function checkPort(port) {
         const procName = match ? match[1] : 'Unknown';
         console.log(`Port ${port} is used by PID ${pid} (${procName})`);
       } catch {
-        console.log(`Port ${port} is used by PID ${pid} (process name unknown)`);
+        console.log(
+          `Port ${port} is used by PID ${pid} (process name unknown)`
+        );
       }
     }
   } catch {

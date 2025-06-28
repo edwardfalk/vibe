@@ -22,20 +22,38 @@ import path from 'path';
       const content = await fs.readFile(filePath, 'utf8');
       // copy file into docs-site/rules/
       await fs.copyFile(filePath, path.join(localRulesDir, file));
+
       const lines = content.split(/\r?\n/);
+
       const titleLine = lines.find((l) => l.startsWith('#')) || file;
-      const lastModLine =
-        lines.find((l) => l.toLowerCase().includes('last modified')) || '';
       const title = titleLine.replace(/^#\s*/, '').trim();
+
+      // description: look for <!-- desc: ... -->
+      let desc = lines.find((l) => /<!--\s*desc:/i.test(l));
+      if (desc) {
+        desc = desc
+          .replace(/<!--\s*desc:\s*/i, '')
+          .replace(/-->.*$/, '')
+          .trim();
+      } else {
+        // fallback: first non-empty, non-heading, non-comment line
+        desc =
+          lines
+            .find((l) => l.trim() && !l.startsWith('#') && !l.startsWith('<'))
+            ?.trim() || '—';
+      }
+
+      const lastModLine = lines.find((l) => /last modified/i.test(l)) || '';
       const lastMod = lastModLine.split(':').pop()?.trim() || '—';
-      return `| [${title}](rules/${file}) | ${lastMod} |`;
+
+      return `| [${title}](rules/${file}) | ${desc} | ${lastMod} |`;
     })
   );
 
   rows.sort();
 
   const header =
-    '# Rule Index\n\n| Rule | Last Modified |\n|------|---------------|\n';
+    '# Rule Index\n\n| Rule | Description | Last Modified |\n|------|-------------|---------------|\n';
   const markdown = header + rows.join('\n') + '\n';
 
   await fs.mkdir(path.dirname(outPath), { recursive: true });
