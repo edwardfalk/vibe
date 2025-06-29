@@ -2,6 +2,8 @@
 
 > Draft v0.1 – generated 2025-06-24
 
+> **Note:** All references to `npm`/`npx` are historical. The project now uses Bun (`bun`/`bunx`) exclusively. `npm install` is forbidden.
+
 This document distills the best practices from Geoffrey Huntley's "You are using Cursor AI incorrectly…" post and the **AI Code Guide** roadmap into a concrete action plan for Vibe.
 
 ## 1  Background & Goals
@@ -64,7 +66,7 @@ actions:
 1. **Rule Generator Script:** `scripts/generate-cursor-rules.js` – scaffolds rule templates with standard front-matter.
 2. **Rule Linter CI:** Extend `validate-rules.js` to run during PR checks; fail if rules reference missing paths/files.
 3. **Proactive Test Stubs:** Rule that creates a matching `*.test.js` skeleton when a new module is added under `packages/*/src/`.
-4. **Legacy Clamp Rules:** Reject Bash-specific paths, `npm install`, and direct edits to legacy `js/game.js`.
+4. **Legacy Clamp Rules:** Reject Bash-specific paths, `npm install` (forbidden—use `bun install`), and direct edits to legacy `js/game.js`.
 5. **Cross-Project Re-Usables:** Move editor-agnostic rules (license header, rule location, commit style) into a shared template repo in future.
 
 ## 6  Inspiration from **AI Code Guide**

@@ -3,9 +3,8 @@
 # ============================================================================
 
 # PSReadLine Hotfix for IDE Terminal
-if ($env:TERM_PROGRAM -eq 'vscode') {
-    Remove-Module -Name PSReadLine -Force
-}
+# Always disable PSReadLine in Cursor/VSCode terminals to prevent buffer overflow errors
+Remove-Module -Name PSReadLine -ErrorAction SilentlyContinue
 
 # Set PowerShell to UTF-8 encoding
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

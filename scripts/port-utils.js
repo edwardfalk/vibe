@@ -100,4 +100,13 @@ export async function waitForHttp(url, timeoutMs = 15000) {
     await delay(1000);
   }
   return false;
+}
+
+export async function waitForPortFree(port, timeoutMs = 5000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (!getProcessOnPort(port)) return true;
+    await delay(250);
+  }
+  return false;
 } 

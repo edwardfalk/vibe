@@ -1,3 +1,16 @@
+---
+title: Ticketing System Guide
+description: Overview of the current Vibe ticketing system, backup, validation, and recovery scripts.
+tags: [ticketing, bug-tracking, workflow, api]
+last_updated: 2025-06-29
+related_files:
+  - packages/api/src/TicketRouter.js
+  - packages/api/src/TicketService.js
+  - scripts/backup-tickets.js
+  - scripts/validate-tickets.js
+author: vibe-team
+---
+
 # Ticketing System Guide (Vibe)
 
 ## Current State (June 2025)
@@ -11,10 +24,12 @@
 ## Manual Backup
 - Run: `bun run scripts/backup-tickets.js`
 - Output: `/backups/tickets-backup-<timestamp>.zip`
+- Errors: Structured JSON via ErrorReporter (`TICKET_BACKUP_FAILURE`).
 
 ## Validation
 - Run: `bun run scripts/validate-tickets.js`
-- Output: List of any corrupt/invalid tickets.
+- Success: `✅ All tickets valid.`
+- Errors: Structured JSON block (`TICKET_VALIDATION_FAILED`) with `issues` array.
 
 ## No Automatic Recovery
 - If you delete or update a ticket, it is permanent unless you have a manual backup.

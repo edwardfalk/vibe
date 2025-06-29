@@ -1,5 +1,7 @@
 # Vibe: Cosmic Beat Space Shooter
 
++[![CI Status](https://github.com/edwardfalk/vibe/actions/workflows/ci-dev-server.yml/badge.svg)](https://github.com/edwardfalk/vibe/actions/workflows/ci-dev-server.yml)
+
 > **Purpose:**  
 > This README provides a project overview, quickstart, and a map to all major documentation.  
 > For rules and standards, see [.cursorrules](./.cursorrules).
@@ -56,8 +58,7 @@ vibe/
 │   └── vision/                    # Project vision documents
 ├── 📁 scripts/                    # Utility scripts
 │   ├── powershell/                # PowerShell environment scripts
-│   ├── move-bug-reports.js        # Bug report file watcher
-│   ├── run-mcp-tests.js           # MCP testing utilities
+│   ├── dev-server.js             # Dev-server orchestrator (start/stop/status)
 │   └── update-ticket-status.js    # Ticket management utilities
 ├── 📁 tests/                      # Testing infrastructure
 │   └── bug-reports/               # Bug report storage
@@ -101,7 +102,7 @@ For the full guide on API endpoints, parameters, and `curl` examples, see the [T
 - **Dev server**: Five Server runs on port 5500 (`http://localhost:5500`).
 - **Backend server**: Runs on port 3001 for ticket API and automation.
 - **MCP back-end**: Desktop-Commander daemon auto-launches on port **4333** with read/write access to `D:\projects` and `C:\`.
-- **Start ALL services with `bun run dev`** – the script now spins up:
+- **Start ALL services with `bun run dev:start`** – the script now spins up (and emits structured JSON errors on failure):
    1. `desktop-commander` (MCP server, port 4333)
    2. Five Server (port 5500)
    3. Bug-report watcher
@@ -109,7 +110,7 @@ For the full guide on API endpoints, parameters, and `curl` examples, see the [T
    Any pre-existing process on ports 5500, 3001, or 4333 is killed automatically.
 - **Testing**: Preferred workflow is the deterministic orchestrated script:
   ```powershell
-  bun run test:orchestrated   # launches both servers, waits for health checks, runs Playwright + MCP probes
+  bun run test:orchestrated   # dev:start ➜ tests ➜ dev:stop
   ```
   This replaces direct `bun run test` and avoids flaky port-in-use errors.
   Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
@@ -219,35 +220,18 @@ Vibe uses a comprehensive automated testing system with probe-driven testing and
 
 ### Test Types
 
-1. **MCP Probe-Driven Tests** - Comprehensive game state and behavior testing
+1. **Full Orchestrated Probe Suite** – spins up dev environment and runs all Playwright probes deterministically
    ```bash
-   bun run test:mcp
+   bun run test:orchestrated   # dev:start ➜ tests ➜ dev:stop
    ```
-2. **Playwright Gameplay Probes** - Headless browser tests using probe scripts
+2. **Playwright Gameplay Probes (manual options)**
 
    ```bash
-   bun test          # Headless
-bun run test:headed   # With browser UI
-bun run test:debug    # Debug mode
+   bunx playwright test            # Headless
+   bunx playwright test --headed   # Browser UI
+   bunx playwright test --debug    # Debug inspector
    ```
-
-3. **Comprehensive Test Suite** - Runs all automated tests
-
-   ```bash
-   bun run test:comprehensive
-   ```
-
-4. **Game Debugging** - Basic health check and analysis
-   ```bash
-    bun run debug:probe   # Game health check + summary
-   ```
-5. **CodeRabbit Integration** - Comprehensive review analysis and processing
-   ```bash
-   bun run coderabbit:fetch-complete  # Fetch ALL CodeRabbit reviews (comprehensive)
-   bun run coderabbit:analyze         # Analyze fetched review data
-   bun run coderabbit:auto-tickets    # Create tickets from high-priority issues
-   bun run coderabbit:cycle           # Complete cycle: fetch → analyze → tickets
-   ```
+3. **Legacy aliases** `test:mcp`, `test:probes` now point to `test:orchestrated`.
 
 ### Probe-Driven Testing
 
@@ -289,7 +273,7 @@ Test results and artifacts are saved to:
 The development server includes automated testing capabilities:
 
 ```bash
-bun run dev  # Starts game server, bug watcher, and API server
+bun run dev:start  # Starts game server, bug watcher, and API server (idempotent)
 ```
 
 Then in another terminal:
@@ -324,4 +308,15 @@ packages/
   tooling/    # Ticket manager, debug logger, Playwright probes
 ```
 
-> NOTE: Migration from `/js` to workspaces is happening incrementally. Stubs exist in `/js` to keep the game running during the transition.
+> **Status:** The full migration from the legacy `/js` monolith to the strict `packages/` workspace is **complete**. All game code now lives in modular workspaces; the old `/js` folder has been removed.
+
+### Documentation & External Library Cache
+
+* **Docs front-matter validation**: GitHub CI runs `bun run scripts/scan-doc-frontmatter.js` to ensure every doc starts with YAML metadata.
+* **Context7 cache**: After adding a new dependency, run:
+
+  ```powershell
+  bun run docs:cache-context7
+  ```
+
+  This fetches (or stubs) docs/snippets for the library into `.context7-cache/`.

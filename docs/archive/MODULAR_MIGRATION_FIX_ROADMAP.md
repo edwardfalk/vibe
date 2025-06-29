@@ -1,3 +1,7 @@
+# ARCHIVE: Historical Reference Only
+
+> This document is for historical reference. Some information may be obsolete due to the completed modular migration. For current architecture and workflows, see README and .cursorrules.
+
 # Modular Migration & Fix Roadmap
 
 **[2025-06-27] STATUS: MIGRATION COMPLETE**

@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { INDEX_PAGE } from './playwright.setup.js';
 
 test.describe('Collision Detection Probe', () => {
   test('Bullet and entity collision handling', async ({ page }) => {
-    await page.goto('/index.html');
+    await page.goto(INDEX_PAGE);
     await page.waitForSelector('canvas');
     // Click canvas to enable audio/context
     await page.evaluate(() => {

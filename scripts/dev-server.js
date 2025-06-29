@@ -10,7 +10,9 @@ import {
   isExpectedProcess,
   freePort,
   waitForHttp,
+  waitForPortFree,
 } from './port-utils.js';
+import { reportError } from '../packages/tooling/src/ErrorReporter.js';
 
 const DEV_PORT = CONFIG.DEV_SERVER.PORT;
 const API_PORT = CONFIG.TICKET_API.PORT;
@@ -64,13 +66,13 @@ async function start() {
     if (proc) {
       console.log(`⚠️ Port ${DEV_PORT} occupied by PID ${proc.pid}, freeing...`);
       freePort(DEV_PORT);
+      await waitForPortFree(DEV_PORT);
     }
     console.log('🚀 Starting Five-Server...');
-    spawnTracked('bunx', ['five-server', '--port', DEV_PORT, '--root', 'public', '--no-browser']);
+    spawnTracked('bunx', ['five-server', '--port', DEV_PORT, '--root', '.', '--no-browser']);
     const ok = await waitForHttp(`http://localhost:${DEV_PORT}/index.html`, 30000);
     if (!ok) {
-      console.error('❌ Five-Server failed to become READY');
-      process.exit(1);
+      reportError('FIVE_SERVER_START_FAILURE', 'Five-Server failed to become READY', { port: DEV_PORT });
     }
     console.log('✅ Five-Server READY');
   }
@@ -83,13 +85,13 @@ async function start() {
     if (proc) {
       console.log(`⚠️ Port ${API_PORT} occupied by PID ${proc.pid}, freeing...`);
       freePort(API_PORT);
+      await waitForPortFree(API_PORT);
     }
     console.log('🚀 Starting Ticket-API...');
     spawnTracked('bun', ['run', 'api']);
     const okApi = await waitForHttp(`http://localhost:${API_PORT}/api/health`, 20000);
     if (!okApi) {
-      console.error('❌ Ticket-API failed to start');
-      process.exit(1);
+      reportError('TICKET_API_START_FAILURE', 'Ticket-API failed to start', { port: API_PORT });
     }
     console.log('✅ Ticket-API READY');
   }

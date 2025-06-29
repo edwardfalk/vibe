@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { INDEX_PAGE } from './playwright.setup.js';
 
 test.describe('Grunt Knock-back VFX Probe', () => {
   test('Grunt moves after bullet hit (knock-back)', async ({ page }) => {
-    await page.goto('/index.html');
+    await page.goto(INDEX_PAGE);
     await page.waitForSelector('canvas');
     // Click canvas to enable audio/context
     await page.evaluate(() => {

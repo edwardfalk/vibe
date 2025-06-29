@@ -5,10 +5,10 @@
  */
 
 import { TicketManager } from '../packages/tooling/src/ticketManager.js';
+import { reportError } from '../packages/tooling/src/ErrorReporter.js';
 
 if (!process.argv.includes('--confirm')) {
-  console.error('❌ Refusing to run batch update. Add --confirm to proceed.');
-  process.exit(1);
+  reportError('CONFIRM_FLAG_MISSING', 'Refusing to run batch update. Add --confirm to proceed.');
 }
 
 async function updateTicketStatus(ticketId, status, resolution = '') {
@@ -17,7 +17,7 @@ async function updateTicketStatus(ticketId, status, resolution = '') {
   try {
     const ticket = await ticketManager.getTicket(ticketId);
     if (!ticket) {
-      console.error(`❌ Ticket ${ticketId} not found`);
+      reportError('TICKET_NOT_FOUND', `Ticket ${ticketId} not found`, { ticketId }, null);
       return;
     }
 
@@ -31,7 +31,7 @@ async function updateTicketStatus(ticketId, status, resolution = '') {
     console.log(`✅ Updated ticket ${ticketId} to status: ${status}`);
     return updated;
   } catch (error) {
-    console.error(`❌ Failed to update ticket ${ticketId}:`, error.message);
+    reportError('TICKET_UPDATE_FAILURE', `Failed to update ticket ${ticketId}`, { ticketId, message: error.message }, null);
   }
 }
 

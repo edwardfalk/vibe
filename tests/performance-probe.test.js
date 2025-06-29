@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { INDEX_PAGE } from './playwright.setup.js';
 import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 process.on('uncaughtException', (err) =>
@@ -13,7 +14,7 @@ const wait = (ms) => new Promise((res) => setTimeout(res, ms));
 test.describe('Performance Probe', () => {
   test('Average FPS ≥ 55 under stress', async ({ page }) => {
     try {
-      await page.goto('/index.html');
+      await page.goto(INDEX_PAGE);
       await page.waitForSelector('canvas');
       // Unlock audio / interactions
       await page.evaluate(() => {

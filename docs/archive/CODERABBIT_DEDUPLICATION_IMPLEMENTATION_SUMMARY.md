@@ -1,3 +1,7 @@
+# ARCHIVE: Historical Reference Only
+
+> This document is for historical reference. The project now uses Bun (`bun`/`bunx`) exclusively. All npm references are obsolete.
+
 # CodeRabbit Deduplication System - Implementation Summary
 
 ## 🎯 Mission Accomplished

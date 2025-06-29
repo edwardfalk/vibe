@@ -13,6 +13,10 @@ const allLogs = [];
 const verbose = process.env.VERBOSE_CONSOLE_LOGS === '1';
 const resultsDir = path.resolve('test-results');
 
+// Standard entry page for all browser tests
+// Keep in sync with dev-server --root setting (`.`) and actual HTML location
+export const INDEX_PAGE = '/public/index.html';
+
 async function ensureResultsDir() {
   try {
     await fs.mkdir(resultsDir, { recursive: true });

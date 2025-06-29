@@ -6,7 +6,7 @@ export default (async function () {
   // Import ticketManager API if available (assume browser context with ES modules)
   let ticketManager = null;
   try {
-    ticketManager = await import('../packages/tooling/src/ticketManager.js');
+    ticketManager = await import(new URL('../ticketManager.js', import.meta.url).href);
   } catch (e) {
     // Not available in all contexts
   }

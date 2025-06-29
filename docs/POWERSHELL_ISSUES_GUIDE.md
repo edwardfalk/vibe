@@ -109,7 +109,7 @@ dir | findstr "pattern"          # Instead of complex filtering
 - Simple commands: `ls`, `cd`, `pwd`
 - Basic PowerShell: `Get-Date`, `Write-Host`
 - File operations: `Copy-Item`, `Move-Item`
-- Bun/npm commands: `bun run dev`, `bun install`
+- Bun commands: `bun run dev`, `bun install`
 
 ### ❌ Problematic Commands
 - Complex piped commands with `Where-Object`
@@ -167,3 +167,5 @@ All PSReadLine errors are automatically logged with:
 **Date**: 2025-01-09  
 **Status**: Active Issue - Workarounds Implemented  
 **Confidence**: 9/10 - Well documented and tested solutions provided 
+
+> **Note:** npm is deprecated in this project. Use only `bun`/`bunx` for all package and script commands. 

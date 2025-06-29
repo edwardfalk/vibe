@@ -6,7 +6,7 @@
   "workspaces": ["packages/*"],
   "main": "index.html",
   "scripts": {
-    "serve": "bun run five-server --port=5500 --root=public --ignore=playwright-report,test-results,coderabbit-reviews",
+    "serve": "bun run five-server --port=5500 --root=. --ignore=playwright-report,test-results,coderabbit-reviews",
     "watch-bugs": "bun run scripts/move-bug-reports.js",
     "predev": "bunx kill-port 5500 3001",
     "dev": "concurrently -r --kill-others-on-fail \"bun run serve\" \"bun run watch-bugs\" \"bun run api\"",
@@ -16,8 +16,8 @@
     "test:playwright": "bunx playwright test",
     "test:headed": "bunx playwright test --headed",
     "test:debug": "bunx playwright test --debug",
-    "test:mcp": "bun run scripts/run-mcp-tests.js",
-    "test:probes": "bun run scripts/run-mcp-tests.js",
+    "test:mcp": "bun run test:orchestrated",
+    "test:probes": "bun run test:orchestrated",
     "test:cli": "vitest run tests/cli/",
     "test:api": "vitest --run tests/api/ticket-api.test.js",
     "test:comprehensive": "bun run test:playwright && bun run test:mcp",
@@ -27,13 +27,13 @@
     "coderabbit:workflow": "bun coderabbit-ticket-workflow.js",
     "coderabbit:fetch-new": "bun run scripts/fetch-new-coderabbit-reviews.js",
     "setup": "cp .env.example .env && echo 'Please edit .env with your GitHub token'",
-    "validate-env": "node -e \"import('./packages/core/src/config.js').then(() => console.log('✅ Environment validation passed'))\"",
+    "validate-env": "bun --eval \"import('./packages/core/src/config.js').then(() => console.log('✅ Environment validation passed'))\"",
     "lint": "bunx eslint --cache --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"*.js\"",
     "lint:fix": "bunx eslint --cache --fix --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"*.js\"",
     "format": "bunx prettier --write \"**/*.{js,md,json}\"",
     "clean": "Remove-Item -Recurse -Force node_modules, bun.lockb -ErrorAction SilentlyContinue",
     "fresh": "bun run clean && bun install",
-    "test:enhanced": "node scripts/enhanced-testing-system.js",
+    "test:enhanced": "bun run scripts/enhanced-testing-system.js",
     "env:setup": "pwsh -ExecutionPolicy Bypass -File scripts/powershell/setup-windows-environment.ps1",
     "env:check": "pwsh -ExecutionPolicy Bypass -File scripts/powershell/setup-windows-environment.ps1 -TestOnly",
     "tickets:update": "bun run scripts/update-ticket-status.js",
@@ -46,15 +46,19 @@
     "probe:liveness": "bunx playwright test tests/startup-black-screen-probe.test.js",
     "probe:tickets": "bunx playwright test tests/ticket-creation-probe.test.js",
     "docs:check-links": "bun run scripts/check-doc-links.js",
+    "ci:check-doc-drift": "bun run scripts/check-doc-drift.js",
     "docs:serve": "bun run docs:build-index && bunx docsify-cli@latest serve docs-site",
     "docs:build-index": "bun run scripts/generate-rule-index.js",
+    "gen:changelog": "bun run scripts/generate-changelog.js",
+    "postmerge:reviews": "bun run scripts/post-merge-review-check.js",
     "scan:secrets": "bun run scripts/scan-secrets.js",
     "test:orchestrated": "bun run dev:start && bunx playwright test && bun run dev:stop",
     "mcp": "desktop-commander --port 4333 --allowedDirectories \"['D:\\\\projects','C:\\\\']\"",
     "dev:start": "bun run scripts/dev-server.js start",
     "dev:stop": "bun run scripts/dev-server.js stop",
     "dev:status": "bun run scripts/dev-server.js status",
-    "dev:restart": "bun run scripts/dev-server.js restart"
+    "dev:restart": "bun run scripts/dev-server.js restart",
+    "docs:cache-context7": "bun run scripts/cache-context7-docs.js"
   },
   "bun": {
     "dev": {
@@ -81,7 +85,8 @@
     "supertest": "^7.1.1",
     "tsx": "^4.19.4",
     "vitest": "^3.2.2",
-    "docsify-cli": "^4.4.4"
+    "docsify-cli": "^4.4.4",
+    "gray-matter": "^4.0.3"
   },
   "dependencies": {
     "@octokit/rest": "^22.0.0",

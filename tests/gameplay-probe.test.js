@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { INDEX_PAGE } from './playwright.setup.js';
 import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 // Print all browser console logs to the test runner output for every test
@@ -26,7 +27,7 @@ test.beforeAll(() => {
 test.describe('Gameplay Probes', () => {
   test('Liveness probe passes', async ({ page }) => {
     try {
-      await page.goto('/index.html');
+      await page.goto(INDEX_PAGE);
       await page.waitForSelector('canvas');
       await page.evaluate(() => {
         const canvas = document.querySelector('canvas');
@@ -61,7 +62,7 @@ test.describe('Gameplay Probes', () => {
 
   test('Game mechanics respond', async ({ page }) => {
     try {
-      await page.goto('/index.html');
+      await page.goto(INDEX_PAGE);
       await page.waitForSelector('canvas');
       await page.evaluate(() => {
         const canvas = document.querySelector('canvas');

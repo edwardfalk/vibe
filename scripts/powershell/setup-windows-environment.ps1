@@ -158,7 +158,7 @@ function Test-EnhancedTestingSystem {
         }
         Write-LogMessage "test" "Running enhanced testing system verification..."
         # Just verify the file can be imported without running full tests
-        $testResult = node -e "import('./enhanced-testing-system.js').then(() => console.log('Import successful')).catch(e => { console.error('Import failed:', e.message); process.exit(1); })" 2>$null
+        $testResult = bun --eval "import('./scripts/enhanced-testing-system.js').then(() => console.log('Import successful')).catch(e => { console.error('Import failed:', e.message); process.exit(1); })" 2>$null
         
         if ($LASTEXITCODE -eq 0) {
             Write-LogMessage "pass" "Enhanced testing system verified" "Success"
@@ -291,7 +291,7 @@ function Main {
         Write-LogMessage "success" "✅ Excellent! Your Windows development environment is properly configured."
         Write-LogMessage "success" "   You can now run tests and development commands with confidence."
         Write-LogMessage "success" "   Try: bun run dev"
-        Write-LogMessage "success" "   Try: node enhanced-testing-system.js"
+        Write-LogMessage "success" "   Try: bun run scripts/enhanced-testing-system.js"
     } else {
         Write-LogMessage "warn" "⚠️ Some issues were found. Please address the failed items above." "Warning"
         Write-LogMessage "info" "   Re-run this script after fixing issues: .\setup-windows-environment.ps1"
@@ -299,7 +299,7 @@ function Main {
     
     Write-LogMessage "success" "`n🚀 NEXT STEPS FOR TESTING:"
     Write-LogMessage "info" "1. Run: bun run dev (starts development server)"
-    Write-LogMessage "info" "2. Run: node enhanced-testing-system.js (comprehensive testing)"
+    Write-LogMessage "info" "2. Run: bun run scripts/enhanced-testing-system.js (comprehensive testing)"
     Write-LogMessage "info" "3. Open: http://localhost:5500 (test the game)"
     
     Write-LogMessage "success" "=".PadRight(60, "=")

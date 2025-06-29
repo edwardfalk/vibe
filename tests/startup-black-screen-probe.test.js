@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { INDEX_PAGE } from './playwright.setup.js';
 import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 /**
@@ -19,7 +20,7 @@ test.describe('Startup Black-Screen Probe', () => {
 
   test('Game enters playing state after launch', async ({ page }, testInfo) => {
     try {
-      await page.goto('/index.html');
+      await page.goto(INDEX_PAGE);
       await page.waitForSelector('canvas', { timeout: 5000 });
 
       // Simulate user interaction so Audio + p5 start correctly

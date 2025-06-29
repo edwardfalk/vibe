@@ -1,3 +1,7 @@
+# ARCHIVE: Historical Reference Only
+
+> This document is for historical reference. Some information may be obsolete due to the completed modular migration.
+
 # CodeRabbit Scripts Archive
 
 **Date:** 2025-01-08  

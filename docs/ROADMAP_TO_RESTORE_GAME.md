@@ -209,9 +209,9 @@ The game has been methodically restored and validated through a series of critic
    * `bun run dev:stop` – graceful stop for both servers
    * `bun run dev:status` – human-readable status table
    * `bun run dev:restart` – convenience alias (stop ➜ start)
-4. **Refactor `scripts/test-orchestrator.js`**
-   * Replace its bespoke port logic with the new utilities
-   * Respect `--no-server` flag for CI containers that already have server running
+4. **Remove legacy `scripts/run-mcp-tests.js`**  
+    * Deleted in favour of the unified `test:orchestrated` workflow  
+    * `test:mcp` and `test:probes` alias `test:orchestrated`
 5. **Background Friendly** – All start scripts must:  
    * print `READY` line when HTTP HEAD passes  
    * exit with non-zero if health-check fails within 15 s  
@@ -225,25 +225,25 @@ The game has been methodically restored and validated through a series of critic
    * FAQ for CI / GitHub Actions.
 
 ### Detailed Task Breakdown
-- [ ] **X-1** Create `scripts/port-utils.js` (see Strategy 2)
-- [ ] **X-2** Add `DEV_SERVER_PORT` & `TICKET_API_PORT` constants to `packages/core/src/config.js` (export + use everywhere)
-- [ ] **X-3** Update `package.json` scripts section:  
+- [x] **X-1** Create `scripts/port-utils.js` (see Strategy 2)
+- [x] **X-2** Add `DEV_SERVER_PORT` & `TICKET_API_PORT` constants to `packages/core/src/config.js` (export + use everywhere)
+- [x] **X-3** Update `package.json` scripts section:  
       - `"dev:start"`  
       - `"dev:stop"`  
       - `"dev:status"`  
       - `"dev:restart"`
-- [ ] **X-4** Migrate existing `serve`, `dev`, `predev` scripts to use new utilities; deprecate legacy script combo.
-- [ ] **X-5** Refactor `scripts/test-orchestrator.js` to import port-utils and remove duplicate code.
-- [ ] **X-6** Write Playwright probe `tests/startup-dev-server-probe.test.js` (quick HEAD check).
-- [ ] **X-7** Add CI step in GitHub Actions to run `bun run dev:start && bun run dev:status`.
-- [ ] **X-8** Create `docs/DEV_SERVER_WORKFLOW.md` with full instructions.
+- [x] **X-4** Migrate existing `serve`, `dev`, `predev` scripts to use new utilities; deprecate legacy script combo.
+- [x] **X-5** Delete `scripts/run-mcp-tests.js`, update `package.json` and docs to use `test:orchestrated`.
+- [x] **X-6** Write Playwright probe `tests/startup-dev-server-probe.test.js` (quick HEAD check).
+- [x] **X-7** Add CI workflow `.github/workflows/ci-dev-server.yml` that starts `dev:start`, runs Playwright probes, and stops servers.
+- [x] **X-8** Create `docs/DEV_SERVER_WORKFLOW.md` with full instructions.
 - [ ] **X-9** Manual QA:  
-      - Run `dev:start`, check READY line.  
-      - Attempt second `dev:start` (should reuse).  
-      - Kill stray process manually and run `dev:status` (should show *stopped*).  
-      - Run `dev:restart` (should succeed).  
-      - Verify Playwright suite passes using new logic.
-- [ ] **X-10** Update roadmap, README, and `.cursorrules` references to new commands.
+       - Run `dev:start`, check READY line.  
+       - Attempt second `dev:start` (should reuse).  
+       - Kill stray process manually and run `dev:status` (should show *stopped*).  
+       - Run `dev:restart` (should succeed).  
+       - Verify Playwright suite passes using new logic.
+- [x] **X-10** Update roadmap, README, and `.cursorrules` references to new commands.
 
 **Done Criteria (expanded):**
 - Running `bun run dev:start` from a clean shell consistently shows READY within 5-10 s.
@@ -256,4 +256,36 @@ The game has been methodically restored and validated through a series of critic
 - [ ] Automated: `startup-dev-server-probe` passes.  
 - [ ] Manual: Run start / stop / status sequence 5× in a row without failure.
 - [ ] CI: GitHub Action matrix (Node 20 + Bun 1.*) completes all jobs green.
+
+## Phase Y: CI & Documentation Sync
+**Goal:** Complete the Dev-Server process-management initiative by wiring it into CI and ensuring all related documentation & rules stay in lock-step with the implementation.
+
+### Subtasks
+- [x] Create **`ci-dev-server.yml`** GitHub Action (Node 20 + Bun 1.* matrix)
+  - [x] 🛠️  Step 1: `bun run dev:start` – wait for `READY` line
+  - [x] 🛠️  Step 2: `bun run dev:status` – assert status table shows *running*
+  - [x] 🛠️  Step 3: `bunx playwright test --reporter=line | cat`
+  - [x] 🛠️  Step 4: `bun run dev:stop` – always block
+- [x] Cache Playwright browsers & Bun install between jobs for faster runs
+- [x] Add badge 🔰 **CI Status** to `README.md` (shields.io)
+- [x] Auto-publish `playwright-report/` as a GitHub Action artifact
+- [x] Auto-generate & commit `CHANGELOG.md` on `unstable` → `main` merges
+- [x] Cross-link **ar-dev-server-process-management.mdc**, `DEV_SERVER_WORKFLOW.md`, and `.github/workflows/*` so docs stay discoverable
+- [x] Add lint rule to fail PR if docs or workflow steps drift out of sync (simple grep)
+
+**Done Criteria:**
+- CI passes green on the full Playwright probe suite **every PR**
+- Average CI run time ≤ 3 min (browser cache hit)
+- `README.md` badge reflects latest build status on `main`
+- `DEV_SERVER_WORKFLOW.md` and **ar-dev-server-process-management.mdc** reference the exact same commands & port constants
+- Roadmap and rules updated automatically by `generate-changelog.js` on merge
+
+**Test/Validation Checkpoint:**
+- Trigger CI via draft PR – ensure the matrix (Win + Linux) passes
+- Introduce a failing probe locally, push branch, confirm CI fails red
+- Fix the probe, push again, confirm CI is green and report artifact uploaded
+
+---
+
+*End of current roadmap extension.  Continue updating this section as tasks complete.*
 

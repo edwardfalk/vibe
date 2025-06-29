@@ -1,5 +1,7 @@
 # MCP Playwright Testing Guide for AI & Automation
 
+> Reminder: If you change any Playwright or probe workflow, update this doc AND the relevant .mdc rules to keep everything in sync.
+
 ---
 
 **[2025-06-27] Modular Migration Complete**

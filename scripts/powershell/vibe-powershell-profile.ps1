@@ -7,30 +7,11 @@
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 # ============================================================================
-# PSReadLine Configuration (Fix for Buffer Overflow Issues)
+# PSReadLine DISABLED globally for Cursor to avoid ANSI cursor exceptions during Playwright
 # ============================================================================
 
-# Import PSReadLine with error handling
-try {
-    Import-Module PSReadLine -Force -ErrorAction SilentlyContinue
-    
-    # Configure PSReadLine to prevent buffer overflow issues
-    Set-PSReadLineOption -PredictionSource None
-    Set-PSReadLineOption -HistorySearchCursorMovesToEnd:$false
-    Set-PSReadLineOption -ShowToolTips:$false
-    Set-PSReadLineOption -BellStyle None
-    Set-PSReadLineOption -EditMode Windows
-    
-    # Disable problematic features that cause cursor positioning errors
-    Set-PSReadLineKeyHandler -Key Tab -Function Complete
-    Set-PSReadLineKeyHandler -Key Ctrl+d -Function DeleteChar
-    Set-PSReadLineKeyHandler -Key Ctrl+w -Function BackwardDeleteWord
-    
-    Write-Host "✅ PSReadLine configured successfully" -ForegroundColor Green
-} catch {
-    Write-Host "⚠️  PSReadLine configuration failed: $($_.Exception.Message)" -ForegroundColor Yellow
-    Write-Host "   Continuing with basic PowerShell functionality..." -ForegroundColor Yellow
-}
+Remove-Module PSReadLine -ErrorAction SilentlyContinue
+Write-Host "🚫 PSReadLine disabled for Vibe Cursor shell (see ar-dev-server-process-management rule)" -ForegroundColor Yellow
 
 # ============================================================================
 # Environment Setup

@@ -10,11 +10,10 @@
 
 console.log('🟢 [DEBUG] GameLoop.js: Top of file');
 
-import { Player, EnemyFactory, Bullet } from '@vibe/entities';
+import { Player } from '@vibe/entities';
 console.log('🟢 [DEBUG] GameLoop.js: Imported entities');
-import { ExplosionManager, EffectsManager } from '@vibe/fx';
-console.log('🟢 [DEBUG] GameLoop.js: Imported FX');
 import VisualEffectsManager from '@vibe/fx/visualEffects.js';
+import { EffectsManager } from '@vibe/fx/effects.js';
 console.log('🟢 [DEBUG] GameLoop.js: Imported VisualEffectsManager');
 import {
   GameState,
@@ -22,16 +21,6 @@ import {
   BeatClock,
   MusicManager,
   CONFIG,
-  sqrt,
-  max,
-  min,
-  floor,
-  ceil,
-  round,
-  random,
-  atan2,
-  cos,
-  sin,
 } from '@vibe/core';
 console.log('🟢 [DEBUG] GameLoop.js: Imported core');
 import {
@@ -41,13 +30,12 @@ import {
   UIRenderer,
   CollisionSystem,
   TestMode,
-  BulletSystem,
   BombSystem,
-  InputSystem,
-  SpatialHashGrid,
 } from '@vibe/systems';
 console.log('🟢 [DEBUG] GameLoop.js: Imported systems');
 import { setupRemoteConsoleLogger } from '@vibe/tooling';
+import { updatePass } from './updatePass.js';
+import { drawPass } from './drawPass.js';
 console.log('🟢 [DEBUG] GameLoop.js: Imported tooling');
 import ProfilerOverlay from '@vibe/fx/ProfilerOverlay.js';
 console.log('🟢 [DEBUG] GameLoop.js: Imported ProfilerOverlay');
@@ -57,10 +45,6 @@ import AdaptiveLODManager, {
 console.log('🟢 [DEBUG] GameLoop.js: Imported AdaptiveLODManager');
 import VFXDispatcher from '@vibe/fx/VFXDispatcher.js';
 console.log('🟢 [DEBUG] GameLoop.js: Imported VFXDispatcher');
-import { Grunt } from '@vibe/entities/Grunt.js';
-import { Tank } from '@vibe/entities/Tank.js';
-import { ENEMY_HIT } from '@vibe/entities';
-import { EnemyEventBus } from '@vibe/entities';
 console.log('🟢 [DEBUG] GameLoop.js: Imported all remaining modules');
 import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
 
@@ -356,129 +340,44 @@ function setup(p) {
 function draw(p) {
   EffectsProfiler.startFrame();
   window.frameCount = p.frameCount;
-  const p5 = p; // p5 instance
+
   const now = p.millis();
-  const deltaTime = now - (window.lastFrameTime || now);
+  const dt = (now - (window.lastFrameTime || now)) / 1000;
   window.lastFrameTime = now;
 
-  const dt = deltaTime / 1000; // deltaTime in seconds
-
-  // Handle game over state
+  // --- High-level state handling -----------------------------------------
   if (state.isGameOver) {
     window.uiRenderer.drawGameOver(p);
-    return; // Stop the game loop
+    EffectsProfiler.endFrame();
+    return;
   }
-
-  // Handle paused state
   if (state.isPaused) {
     window.uiRenderer.drawPauseMenu(p);
-    return; // Skip game updates
-  }
-
-  // Update game state
-  window.gameState.update(p, window.player, window.enemies.length, p.deltaTime);
-  if (window.gameState.isGameOver()) {
-    handleGameOver(p);
+    EffectsProfiler.endFrame();
     return;
   }
 
-  // Update core systems
-  window.beatClock.update(p);
-  window.testMode.update(p, window.player, window.enemies, dt);
-  window.player.update(p.deltaTime);
-
-  // Profile: Enemy update/draw
-  const enemyStart = performance.now();
-  for (let i = window.enemies.length - 1; i >= 0; i--) {
-    const enemy = window.enemies[i];
-    const bullet = enemy.update(window.player.x, window.player.y, p.deltaTime);
-    if (bullet) window.enemyBullets.push(bullet);
-    if (enemy.health <= 0) {
-      window.enemies.splice(i, 1);
-    }
-  }
-  for (const enemy of window.enemies) {
-    enemy.draw(p);
-  }
-  EffectsProfiler.registerEffect('enemy-update-draw', {
-    ms: performance.now() - enemyStart,
-  });
-
-  // Profile: Bullet update/draw
-  const bulletStart = performance.now();
-  for (let i = window.playerBullets.length - 1; i >= 0; i--) {
-    const bullet = window.playerBullets[i];
-    bullet.update();
-    bullet.draw(p);
-    if (!bullet.active) window.playerBullets.splice(i, 1);
-  }
-  for (let i = window.bullets.length - 1; i >= 0; i--) {
-    const bullet = window.bullets[i];
-    bullet.update();
-    bullet.draw(p);
-    if (!bullet.active) window.bullets.splice(i, 1);
-  }
-  EffectsProfiler.registerEffect('bullet-update-draw', {
-    ms: performance.now() - bulletStart,
-  });
-
-  // Profile: Collision checks
-  const collisionStart = performance.now();
-  const { playerHit, enemyHit } = window.collisionSystem.checkCollisions(
-    window.player,
-    window.enemies,
-    window.bullets,
-    window.playerBullets
-  );
-  EffectsProfiler.registerEffect('collision-check', {
-    ms: performance.now() - collisionStart,
-  });
-
-  // Spawn new enemies
-  window.spawnSystem.update(p, window.player, window.enemies.length);
-
-  // Camera, background, and drawing
-  window.cameraSystem.update(p, window.player.x, window.player.y);
-  p.background(0);
-  window.backgroundRenderer.draw(p, window.cameraSystem);
-
-  p.push();
-  p.translate(window.cameraSystem.x, window.cameraSystem.y);
-
-  // Draw game objects
-  window.player.draw(p);
-  for (let i = window.playerBullets.length - 1; i >= 0; i--) {
-    const bullet = window.playerBullets[i];
-    bullet.update();
-    bullet.draw(p);
-    if (!bullet.active) window.playerBullets.splice(i, 1);
-  }
-  for (let i = window.bullets.length - 1; i >= 0; i--) {
-    const bullet = window.bullets[i];
-    bullet.update();
-    bullet.draw(p);
-    if (!bullet.active) window.bullets.splice(i, 1);
+  window.gameState.update(p, window.player, window.enemies.length, p.deltaTime);
+  if (window.gameState.isGameOver()) {
+    handleGameOver(p);
+    EffectsProfiler.endFrame();
+    return;
   }
 
-  // Profile: Visual effects draw
-  const vfxStart = performance.now();
-  window.visualEffectsManager.draw(p);
-  EffectsProfiler.registerEffect('vfx-draw', {
-    ms: performance.now() - vfxStart,
-  });
+  // --- Simulation --------------------------------------------------------
+  updatePass(p, dt);
 
-  p.pop();
+  // --- Rendering ---------------------------------------------------------
+  drawPass(p);
 
-  // Draw UI
+  // UI & overlays
   window.uiRenderer.draw(p, window.gameState, window.player);
   window.testMode.draw(p);
 
   EffectsProfiler.endFrame();
   if (CONFIG.GAME_SETTINGS.DEBUG_GAME_LOOP) {
     console.log(
-      `[DRAW GAME] camera=(${window.cameraSystem.x.toFixed(2)},${window.cameraSystem.y.toFixed(2)}) enemies=${
-        window.enemies.length
-      }`
+      `[DRAW] cam=(${window.cameraSystem.x.toFixed(1)},${window.cameraSystem.y.toFixed(1)}) en=${window.enemies.length}`
     );
   }
 }

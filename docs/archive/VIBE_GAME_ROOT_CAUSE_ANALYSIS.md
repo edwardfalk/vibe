@@ -1,3 +1,7 @@
+# ARCHIVE: Historical Reference Only
+
+> This document is for historical reference. Some information may be obsolete due to the completed modular migration.
+
 # 🚨 **VIBE GAME ROOT CAUSE ANALYSIS**
 
 _Why the Game is Working Worse & How to Fix It_

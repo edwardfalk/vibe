@@ -1,7 +1,8 @@
-// validate-tickets.js (CommonJS)
+// validate-tickets.js (ESM)
 // Scans all tickets for JSON validity and required fields. Logs any corrupt or invalid tickets.
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { reportError } from '../packages/tooling/src/ErrorReporter.js';
 
 const TICKETS_DIR = path.resolve(process.cwd(), 'tests/bug-reports');
 const REQUIRED_FIELDS = ['id', 'type', 'title', 'status'];
@@ -46,9 +47,5 @@ const invalids = scanTickets();
 if (invalids.length === 0) {
   console.log('✅ All tickets valid.');
 } else {
-  console.warn('⚠️ Invalid/corrupt tickets found:');
-  for (const inv of invalids) {
-    console.warn(`- ${inv.file}: ${inv.error}`);
-  }
-  process.exit(1);
+  reportError('TICKET_VALIDATION_FAILED', 'Invalid/corrupt tickets found', { issues: invalids });
 }
