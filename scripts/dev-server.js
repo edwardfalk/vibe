@@ -15,9 +15,10 @@ import {
 import { reportError } from '../packages/tooling/src/ErrorReporter.js';
 
 const DEV_PORT = CONFIG.DEV_SERVER.PORT;
-const API_PORT = CONFIG.TICKET_API.PORT;
-const FIVE_EXPECT = 'five-server';
-const API_EXPECT = 'ticket-api.js';
+// Ticket API removed
+const API_PORT = null;
+const FIVE_EXPECT = 'live-server';
+const API_EXPECT = null;
 
 // --- Child-process tracking & cleanup --------------------------------------
 const children = new Set();
@@ -58,43 +59,42 @@ function cleanExit() {
 process.on('exit', cleanExit);
 
 async function start() {
-  // Five-Server
+  // Live-Server
   let proc = getProcessOnPort(DEV_PORT);
   if (proc && isExpectedProcess(proc.cmdLine, FIVE_EXPECT)) {
-    console.log(`✅ Five-Server already running (PID ${proc.pid})`);
+    console.log(`✅ Live-Server already running (PID ${proc.pid})`);
   } else {
     if (proc) {
-      console.log(`⚠️ Port ${DEV_PORT} occupied by PID ${proc.pid}, freeing...`);
+      console.log(
+        `⚠️ Port ${DEV_PORT} occupied by PID ${proc.pid}, freeing...`
+      );
       freePort(DEV_PORT);
       await waitForPortFree(DEV_PORT);
     }
-    console.log('🚀 Starting Five-Server...');
-    spawnTracked('bunx', ['five-server', '--port', DEV_PORT, '--root', '.', '--no-browser']);
-    const ok = await waitForHttp(`http://localhost:${DEV_PORT}/index.html`, 30000);
+    console.log('🚀 Starting live-server...');
+    spawnTracked('bunx', [
+      'live-server',
+      '--port=' + DEV_PORT,
+      '--host=localhost',
+      '--no-browser',
+      '--cors',
+      '.',
+    ]);
+    const ok = await waitForHttp(
+      `http://localhost:${DEV_PORT}/`,
+      30000
+    );
     if (!ok) {
-      reportError('FIVE_SERVER_START_FAILURE', 'Five-Server failed to become READY', { port: DEV_PORT });
+      reportError(
+        'LIVE_SERVER_START_FAILURE',
+        'Live-Server failed to become READY',
+        { port: DEV_PORT }
+      );
     }
-    console.log('✅ Five-Server READY');
+    console.log('✅ Live-Server READY');
   }
 
-  // Ticket API
-  proc = getProcessOnPort(API_PORT);
-  if (proc && isExpectedProcess(proc.cmdLine, API_EXPECT)) {
-    console.log(`✅ Ticket-API already running (PID ${proc.pid})`);
-  } else {
-    if (proc) {
-      console.log(`⚠️ Port ${API_PORT} occupied by PID ${proc.pid}, freeing...`);
-      freePort(API_PORT);
-      await waitForPortFree(API_PORT);
-    }
-    console.log('🚀 Starting Ticket-API...');
-    spawnTracked('bun', ['run', 'api']);
-    const okApi = await waitForHttp(`http://localhost:${API_PORT}/api/health`, 20000);
-    if (!okApi) {
-      reportError('TICKET_API_START_FAILURE', 'Ticket-API failed to start', { port: API_PORT });
-    }
-    console.log('✅ Ticket-API READY');
-  }
+  // Ticket API removed – nothing to start
 
   console.log('🎉 Dev environment READY');
 }
@@ -108,22 +108,21 @@ function stop() {
 
   let killed = false;
   if (freePort(DEV_PORT)) killed = true;
-  if (freePort(API_PORT)) killed = true;
+  // API port removed
   if (killed) console.log('🛑 Servers stopped (port sweep)');
   else console.log('ℹ️ No servers running');
 }
 
 function status() {
   const dev = getProcessOnPort(DEV_PORT);
-  const api = getProcessOnPort(API_PORT);
+  // Ticket API row removed
   console.table([
     {
-      service: 'Five-Server',
+      service: 'Live-Server',
       port: DEV_PORT,
       running: !!dev,
       pid: dev?.pid || '-',
     },
-    { service: 'Ticket-API', port: API_PORT, running: !!api, pid: api?.pid || '-' },
   ]);
 }
 
@@ -146,4 +145,4 @@ async function main() {
   }
 }
 
-main(); 
+main();

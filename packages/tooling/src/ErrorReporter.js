@@ -28,4 +28,4 @@ export function reportError(type, message, details = {}, exitCode = 1) {
   if (exitCode !== null) {
     process.exit(exitCode);
   }
-} 
+}

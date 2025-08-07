@@ -5,6 +5,7 @@
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
 import { floor, ceil, min, random, SOUND } from '@vibe/core';
+import { AudioLabUI } from './AudioLabUI.js';
 // import {
 //   createTicket,
 //   updateTicket,
@@ -12,39 +13,40 @@ import { floor, ceil, min, random, SOUND } from '@vibe/core';
 //   listTickets,
 // } from '@vibe/tooling';
 
-// Browser-safe ticket API client
-const API_BASE_URL = 'http://localhost:3001/api/tickets';
+// Ticketing system replaced – map to GitHub Issues wrapper.
+let githubIssueManager = null;
+async function getGitHubIssueManager() {
+  if (githubIssueManager) return githubIssueManager;
+  try {
+    githubIssueManager = await import('@vibe/tooling/githubIssueManager.js');
+  } catch {
+    githubIssueManager = { createTicket: async () => null, updateTicket: async () => null };
+  }
+  return githubIssueManager;
+}
 
 async function createTicket(ticketData) {
-  const res = await fetch(API_BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(ticketData),
-  });
-  if (!res.ok) throw new Error('Failed to create ticket');
-  return await res.json();
+  const mgr = await getGitHubIssueManager();
+  return mgr.createTicket ? mgr.createTicket(ticketData) : null;
 }
 
-async function updateTicket(ticketId, updates) {
-  const res = await fetch(`${API_BASE_URL}/${ticketId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates),
-  });
-  if (!res.ok) throw new Error('Failed to update ticket');
-  return await res.json();
+async function updateTicket(id, updates) {
+  const mgr = await getGitHubIssueManager();
+  // GitHub Issues: add comment with updates
+  if (mgr.addComment) {
+    await mgr.addComment(id, `Update:\n\n
+${JSON.stringify(updates, null, 2)}`);
+  }
 }
 
-async function loadTicket(ticketId) {
-  const res = await fetch(`${API_BASE_URL}/${ticketId}`);
-  if (!res.ok) throw new Error('Failed to load ticket');
-  return await res.json();
+async function loadTicket() {
+  console.warn('loadTicket not supported – legacy ticket system removed');
+  return null;
 }
 
 async function listTickets() {
-  const res = await fetch(API_BASE_URL);
-  if (!res.ok) throw new Error('Failed to list tickets');
-  return await res.json();
+  console.warn('listTickets not supported – legacy ticket system removed');
+  return [];
 }
 
 /**
@@ -1330,21 +1332,14 @@ export class UIRenderer {
   }
 
   toggleAudioLab() {
-    if (this.uiMode === 'audioLab') {
-      this.uiMode = 'game';
-      this.audioLab.active = false;
-    } else {
-      this.uiMode = 'audioLab';
-      this.audioLab.active = true;
-      // Refresh sound list in case new SFX were added
-      this.audioLab.soundIds = Object.keys(
-        window.SOUND || (this.audio && this.audio.sounds) || {}
-      );
-      this.audioLab.selected = 0;
-    }
+    this.audioLabUI.toggle();
+    this.uiMode = this.audioLabUI.active ? 'audioLab' : 'game';
   }
 
   handleAudioLabKey(key) {
+    if (this.audioLabUI.handleKey(key)) return;
+    // fallthrough old behaviour if AudioLabUI not active
+
     const lab = this.audioLab;
     if (!lab.active) return;
     if (key === 'Escape') {
@@ -1371,63 +1366,8 @@ export class UIRenderer {
   }
 
   drawAudioLabMenu(p) {
-    const lab = this.audioLab;
-    if (!lab.active) return;
-    p.push();
-    // Overlay background
-    p.fill(0, 0, 0, 220);
-    p.rect(0, 0, p.width, p.height);
-    // Title
-    p.textAlign(p.CENTER, p.TOP);
-    p.textSize(32);
-    p.fill(255, 255, 100);
-    p.text('AUDIO LAB', p.width / 2, 40);
-    // Instructions
-    p.textSize(16);
-    p.fill(200);
-    p.text('Up/Down: Select  Enter/Space: Play  Esc: Exit', p.width / 2, 80);
-    // List SFX
-    const startY = 120;
-    const lineH = 28;
-    const visible = 16;
-    const offset = Math.max(0, lab.selected - Math.floor(visible / 2));
-    for (let i = 0; i < Math.min(visible, lab.soundIds.length); i++) {
-      const idx = i + offset;
-      if (idx >= lab.soundIds.length) break;
-      const y = startY + i * lineH;
-      if (idx === lab.selected) {
-        p.fill(100, 255, 200);
-        p.rect(p.width / 2 - 220, y - 4, 440, lineH + 4, 8);
-        p.fill(0);
-      } else {
-        p.fill(255);
-      }
-      p.textAlign(p.LEFT, p.CENTER);
-      p.textSize(20);
-      p.text(lab.soundIds[idx], p.width / 2 - 200, y + lineH / 2);
-      // Show config details for selected
-      if (idx === lab.selected && this.audio && this.audio.sounds) {
-        const cfg = this.audio.sounds[lab.soundIds[idx]];
-        p.textAlign(p.LEFT, p.TOP);
-        p.textSize(14);
-        p.fill(200, 200, 255);
-        let details = '';
-        if (cfg) {
-          if (cfg.variants) {
-            details = cfg.variants
-              .map(
-                (v, vi) =>
-                  `Variant ${vi + 1}: freq ${v.frequency}Hz, ${v.waveform}, vol ${v.volume}, dur ${v.duration}s`
-              )
-              .join(' | ');
-          } else {
-            details = `freq ${cfg.frequency}Hz, ${cfg.waveform}, vol ${cfg.volume}, dur ${cfg.duration}s`;
-          }
-        }
-        p.text(details, p.width / 2 - 200, y + lineH + 2);
-      }
-    }
-    p.pop();
+    // Delegates rendering to the new AudioLabUI component.
+    return this.audioLabUI.draw(p);
   }
 
   /**

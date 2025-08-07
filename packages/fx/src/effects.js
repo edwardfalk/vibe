@@ -19,6 +19,8 @@ import {
   TWO_PI,
 } from '@vibe/core';
 
+import { effectsConfig } from './effectsConfig.js';
+
 class EffectsManager {
   constructor() {
     // Screen shake system
@@ -154,7 +156,6 @@ class EffectsManager {
   // Particle methods
   addExplosionParticles(x, y, count = 20, type = 'normal') {
     // [FIX] Use config-driven palette for all enemy types (esp. Grunt)
-    const { effectsConfig } = require('./effectsConfig.js');
     const enemyKey = (type || 'grunt').split('-')[0];
     const cfg = effectsConfig[enemyKey] || {};
     let colors = cfg.burst?.palette;

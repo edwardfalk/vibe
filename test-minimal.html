@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Minimal Vibe Module Test</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+  <!-- Load p5 library locally to avoid CDN DNS issues -->
+  <script src="./node_modules/p5/lib/p5.min.js"></script>
   <script type="importmap">
     {
       "imports": {
@@ -36,7 +37,7 @@
         "@vibe/entities/EnemyFXUtils.js": "/packages/entities/src/EnemyFXUtils.js",
         "@vibe/entities/EnemyAIUtils.js": "/packages/entities/src/EnemyAIUtils.js",
         "@vibe/tooling": "/packages/tooling/src/index.js",
-        "@vibe/tooling/ticketManager.js": "/packages/tooling/src/ticketManager.js",
+        "@vibe/tooling/githubIssueManager.js": "/packages/tooling/src/githubIssueManager.js",
         "@vibe/tooling/DebugLogger.js": "/packages/tooling/src/DebugLogger.js",
         "@vibe/tooling/errorHandler.js": "/packages/tooling/src/errorHandler.js",
         "@vibe/tooling/RemoteConsoleLogger.js": "/packages/tooling/src/RemoteConsoleLogger.js",

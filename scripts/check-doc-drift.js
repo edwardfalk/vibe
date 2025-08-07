@@ -35,4 +35,4 @@ if (!ok) {
   console.error('Aborting due to documentation/workflow drift.');
   process.exit(1);
 }
-console.log('✅ Doc drift check passed.'); 
+console.log('✅ Doc drift check passed.');

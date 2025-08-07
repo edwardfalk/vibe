@@ -93,6 +93,12 @@ export class BeatClock {
     this.bpm = newBPM;
     this.beatInterval = (60 / newBPM) * 1000;
     console.log(`🎵 Tempo changed to ${newBPM} BPM`);
+    // Notify listeners (e.g., ToneAudioFacade) that the BPM has changed.
+    if (typeof window !== 'undefined' && window.dispatchEvent) {
+      window.dispatchEvent(
+        new CustomEvent('bpmChange', { detail: { bpm: newBPM } })
+      );
+    }
   }
   reset() {
     this.startTime = Date.now();

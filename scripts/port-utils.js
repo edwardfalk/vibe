@@ -19,9 +19,7 @@ export function getProcessOnPort(port) {
       shell: true,
       encoding: 'utf8',
     });
-    const line = netstatRaw
-      .split(/\r?\n/)
-      .find((l) => l.includes('LISTENING'));
+    const line = netstatRaw.split(/\r?\n/).find((l) => l.includes('LISTENING'));
     if (!line) return null;
     const parts = line.trim().split(/\s+/);
     const pid = parseInt(parts.at(-1));
@@ -109,4 +107,4 @@ export async function waitForPortFree(port, timeoutMs = 5000) {
     await delay(250);
   }
   return false;
-} 
+}

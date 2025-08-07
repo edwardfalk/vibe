@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vibe - Geometric Space Shooter</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
+    <!-- Load p5 library locally to avoid CDN DNS issues -->
+    <script src="./node_modules/p5/lib/p5.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -37,6 +37,7 @@
     <script type="importmap">
       {
         "imports": {
+          "tone": "https://cdn.skypack.dev/tone@^14",
           "@vibe/core": "/packages/core/src/index.js",
           "@vibe/core/": "/packages/core/src/",
           "@vibe/systems": "/packages/systems/src/index.js",
@@ -48,13 +49,7 @@
           "@vibe/tooling": "/packages/tooling/src/index.js",
           "@vibe/tooling/": "/packages/tooling/src/",
           "@vibe/game": "/packages/game/src/index.js",
-          "@vibe/game/": "/packages/game/src/",
-          "@vibe/tooling/src/probes/ai-liveness-probe.js": "/packages/tooling/src/probes/ai-liveness-probe.js",
-          "@vibe/tooling/src/probes/tank-armor-break-probe.js": "/packages/tooling/src/probes/tank-armor-break-probe.js",
-          "@vibe/tooling/src/probes/grunt-knockback-probe.js": "/packages/tooling/src/probes/grunt-knockback-probe.js",
-          "@vibe/tooling/src/probes/collision-detection-probe.js": "/packages/tooling/src/probes/collision-detection-probe.js",
-          "@vibe/tooling/src/probes/comprehensive-probe-runner.js": "/packages/tooling/src/probes/comprehensive-probe-runner.js",
-          "@vibe/tooling/src/probes/audio-system-probe.js": "/packages/tooling/src/probes/audio-system-probe.js"
+          "@vibe/game/": "/packages/game/src/"
         }
       }
     </script>

@@ -15,7 +15,7 @@ const resultsDir = path.resolve('test-results');
 
 // Standard entry page for all browser tests
 // Keep in sync with dev-server --root setting (`.`) and actual HTML location
-export const INDEX_PAGE = '/public/index.html';
+export const INDEX_PAGE = '/index.html';
 
 async function ensureResultsDir() {
   try {

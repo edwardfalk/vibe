@@ -266,7 +266,7 @@ class EnhancedTestingSystem {
 
     // Save to file system
     try {
-      const bugReportDir = 'tests/bug-reports';
+      const bugReportDir = 'test-results/bug-reports';
       await fs.mkdir(bugReportDir, { recursive: true });
       const bugReportPath = `${bugReportDir}/automated-${bugReport.id}.json`;
       await fs.writeFile(bugReportPath, JSON.stringify(bugReport, null, 2));

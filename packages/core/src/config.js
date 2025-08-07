@@ -75,13 +75,8 @@ const CONFIG = {
       RETRY_DELAY: 1000,
     },
   },
-  TICKET_API: {
-    PORT: parseInt(processEnv.TICKET_API_PORT) || 3001,
-    HOST: processEnv.TICKET_API_HOST || 'localhost',
-    get BASE_URL() {
-      return `http://${this.HOST}:${this.PORT}/api/tickets`;
-    },
-  },
+  // Ticket API removed – use GitHub Issues instead
+  TICKET_API: null,
   DEV_SERVER: {
     PORT: parseInt(processEnv.DEV_SERVER_PORT) || 5500,
   },
@@ -95,7 +90,6 @@ const CONFIG = {
     LOG_LEVEL: processEnv.LOG_LEVEL || 'info',
   },
   PATHS: {
-    BUG_REPORTS: 'tests/bug-reports',
     SCREENSHOTS: 'tests/screenshots',
     LOGS: 'logs',
   },

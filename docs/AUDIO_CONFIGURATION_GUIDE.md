@@ -1,8 +1,51 @@
 # 🎛️ Vibe Game Audio Configuration Guide
 
-> **Purpose:**  
-> This guide explains how to configure and tune all audio parameters in Vibe.  
-> For rules, see [.cursorrules](../.cursorrules).
+> **Update 2025-07** – Vibe now uses **Tone.js** as its audio engine.  All new sounds are loaded via the public sample manifest and played through the `ToneAudioFacade` singleton.  The old oscillator-based `Audio.js` remains for legacy reference only.
+
+## 🚀 Quick Start – Adding a New Sound (Tone.js pipeline)
+
+1. **Drop the audio file** (`.wav`, `.mp3`, `.ogg`) into `public/audio/`.
+2. **Register the sample** by editing `public/audio/manifest.json`:
+   ```json
+   {
+     "playerShoot": "drums/hihat_closed.wav",
+     "myNewSfx":   "sfx/my-awesome-hit.wav"
+   }
+   ```
+3. **Trigger it from game code**:
+   ```js
+   import { toneAudio } from '@vibe/core';
+   toneAudio.playSound('myNewSfx');
+   ```
+   • Optional `toneAudio.playSound('myNewSfx', { volume: 0.8 })` to scale volume.
+4. **(Optional) Add to `SOUND` enum** if you still want strong typings / consistency.
+
+That’s it—no need to touch `Audio.js` or update any config objects.
+
+## 🎹 Background Music
+* `toneAudio.startMusic()` starts the default 4-beat drum loop (kick/snare/hihat).
+* Syncs automatically to `BeatClock`; change tempo with `window.beatClock.setBPM(140)`.
+
+## 🗣️ Speech Ducking
+`SpeechCoordinator` listens to `speechSynthesis` events and automatically:
+* Ducks master volume by −12 dB.
+* Plays a soft triangle-wave pad underneath.
+
+If you don’t want the pad:
+```js
+// after toneAudio.init()
+toneAudio._speech.padVolume = 0; // mute pad but keep ducking
+```
+
+---
+
+## 🛠️ Advanced SFX Design
+Tone.js gives you full synthesis & FX—create custom `Tone.Synth`, `Tone.Sampler`, or chains in code if sample playback isn’t enough.  Hook them up through the `ToneAudioFacade` gains (`music`, `sfx`, etc.) for unified volume control.
+
+---
+
+### 📜 Legacy Oscillator Config (pre-Tone migration)
+The following sections describe the old Web-Audio–only system kept for reference.  They’ll be removed after all callers migrate.
 
 ## 📁 File Location
 

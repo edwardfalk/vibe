@@ -40,7 +40,7 @@ test.describe('Startup Black-Screen Probe', () => {
       });
 
       if (!status.playerExists || status.gameState !== 'playing') {
-        const screenshotPath = `tests/bug-reports/startup-failure-${Date.now()}.png`;
+        const screenshotPath = `test-results/startup-failure-${Date.now()}.png`;
         await page.screenshot({ path: screenshotPath, fullPage: true });
         DebugLogger.log('🚨 Startup black-screen detected', status);
         DebugLogger.log('🚨 Screenshot captured at', screenshotPath);

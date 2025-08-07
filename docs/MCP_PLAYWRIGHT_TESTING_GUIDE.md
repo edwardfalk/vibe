@@ -47,10 +47,10 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 ### Automated Bug Reporting for Probe Failures
 
 - **All probe-driven failures are now automatically reported as tickets via the API.**
-- The liveness probe and any future probe scripts should, on failure, create a bug ticket using the ticketManager API (`js/ticketManager.js`).
+- The liveness probe and any future probe scripts should, on failure, create a bug ticket using the githubIssueManager API (`packages/tooling/src/githubIssueManager.js`).
 - The ticket includes a concise ID, title, failure description, timestamp, probe state, and (if available) a screenshot as an artifact.
 - This ensures all probe/test failures are captured in the modular, metadata-rich ticketing system—no manual intervention required.
-- **Standard:** All new probe scripts must use the ticketManager API for bug reporting on failure.
+- **Standard:** All new probe scripts must use the githubIssueManager API for bug reporting on failure.
 
 ---
 
@@ -161,7 +161,7 @@ if (result.moveBlockedByEdge) {
 
 ## Bug Report Automation
 
-- The bug report watcher script (`move-bug-reports.js`) is included in the project root.
+- Bug reports are now automatically created as GitHub Issues via the githubIssueManager.
 - When running `bun run dev`, both the dev server and the watcher are started together.
 - Any bug report files (markdown, JSON, PNG) downloaded from the browser are automatically moved from your Downloads folder to `tests/bug-reports/`.
 - This ensures all manual and automated bug reports are organized and accessible for both human and AI/agent debugging.

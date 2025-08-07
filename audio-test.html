@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+        }
+        #status {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #333;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #555;
+        }
+        #logs {
+            margin-top: 20px;
+            padding: 10px;
+            background: #111;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">Click to test audio system</div>
+    <button onclick="testAudio()">Test Audio Init</button>
+    <button onclick="clearLogs()">Clear Logs</button>
+    <div id="logs"></div>
+    
+    <script type="importmap">
+      {
+        "imports": {
+          "tone": "https://cdn.skypack.dev/tone@^14",
+          "@vibe/core": "/packages/core/src/index.js",
+          "@vibe/core/": "/packages/core/src/"
+        }
+      }
+    </script>
+    
+    <script type="module">
+        let logs = [];
+        
+        function addLog(message) {
+            const timestamp = new Date().toISOString().substr(11, 8);
+            logs.push(`[${timestamp}] ${message}`);
+            document.getElementById('logs').textContent = logs.join('\n');
+        }
+        
+        // Override console.log to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = (...args) => {
+            originalLog(...args);
+            addLog('LOG: ' + args.join(' '));
+        };
+        
+        console.error = (...args) => {
+            originalError(...args);
+            addLog('ERROR: ' + args.join(' '));
+        };
+        
+        console.warn = (...args) => {
+            originalWarn(...args);
+            addLog('WARN: ' + args.join(' '));
+        };
+        
+        window.testAudio = async function() {
+            try {
+                addLog('Starting audio test...');
+                
+                // Import the audio facade
+                addLog('Importing ToneAudioFacade...');
+                const { toneAudio } = await import('@vibe/core');
+                addLog('ToneAudioFacade imported successfully');
+                
+                // Initialize the audio system
+                addLog('Initializing audio system...');
+                await toneAudio.init();
+                addLog('Audio system initialized successfully');
+                
+                // Test playing a sound
+                addLog('Testing sound playback...');
+                await toneAudio.playSound('playerShoot');
+                addLog('Sound playback test complete');
+                
+                document.getElementById('status').textContent = 'Audio test completed successfully';
+                
+            } catch (error) {
+                addLog('FATAL: Audio test failed - ' + error.message);
+                console.error('Audio test failed:', error);
+                document.getElementById('status').textContent = 'Audio test failed: ' + error.message;
+            }
+        };
+        
+        window.clearLogs = function() {
+            logs = [];
+            document.getElementById('logs').textContent = '';
+        };
+        
+        addLog('Audio test page loaded');
+    </script>
+</body>
+</html>

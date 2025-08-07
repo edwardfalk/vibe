@@ -59,6 +59,14 @@ export default [
       'no-var': 'error',
       'no-undef': 'error',
       'prettier/prettier': 'error',
+      // Disallow any new references to removed legacy audio code.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: ['**/legacy/audio/*', '**/legacy/Audio.js'],
+          message: 'Legacy audio modules are removed – use ToneAudioFacade instead.'
+        },
+      ],
     },
   },
 ];

@@ -70,6 +70,8 @@ export class Player {
   set x(val) {
     if (!Number.isFinite(val)) {
       console.error('[PLAYER FATAL] Player x mutated to NaN', val, this);
+      this._x = 400; // Fallback to center or safe value
+      return;
     }
     this._x = val;
   }
@@ -81,6 +83,8 @@ export class Player {
   set y(val) {
     if (!Number.isFinite(val)) {
       console.error('[PLAYER FATAL] Player y mutated to NaN', val, this);
+      this._y = 300; // Fallback to center or safe value
+      return;
     }
     this._y = val;
   }

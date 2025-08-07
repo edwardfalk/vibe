@@ -26,10 +26,10 @@ Lower-level rules may clarify but **must not conflict** with higher-level ones. 
 **Current Modular Architecture (Fully Migrated):**
 - **Core Systems:** `packages/systems/` - GameLoop, GameState, CameraSystem, SpawnSystem, CollisionSystem, UIRenderer, BackgroundRenderer, TestMode, etc.
 - **Entities:** `packages/entities/` - player, BaseEnemy, Grunt, Rusher, Tank, Stabber, EnemyFactory, bullet, etc.
-- **Core Support:** `packages/core/` - Audio, BeatClock, config, mathUtils, GameState, TicketCore, etc.
+- **Core Support:** `packages/core/` - Audio, BeatClock, config, mathUtils, GameState, etc.
 - **Visual Effects:** `packages/fx/` - visualEffects, effects, explosions, VFXDispatcher, etc.
-- **Tooling & Utilities:** `packages/tooling/` - ticketManager, DebugLogger, errorHandler, probes, etc.
-- **API Services:** `packages/api/` - TicketRouter, TicketService for REST API backend.
+- **Tooling & Utilities:** `packages/tooling/` - githubIssueManager, DebugLogger, errorHandler, probes, etc.
+- **API Services:** `packages/api/` - (empty after ticketing system migration)
 - (See `packages/` for the complete, up-to-date modular structure. For details, see README.md.)
 
 **Migration Complete:**
@@ -41,40 +41,13 @@ Lower-level rules may clarify but **must not conflict** with higher-level ones. 
 
 ---
 
-**2. Ticketing System: Bugs, Features, Enhancements, Tasks**
+**2. Issue Tracking System: Bugs, Features, Enhancements, Tasks**
 
-- All ticket operations must use the shared `TicketCore` library via the REST API server.
-  - The primary interface is the `ticket-api.js` server (thin wrapper around **`packages/api/src/TicketRouter.js` + `TicketService.js`**).
-  - Browser-based tools like `packages/tooling/src/ticketManager.js` act as clients to this API.
-  - The CLI tools have been removed.
-- If the API is down, manually inspect JSON files in tests/bug-reports/. See the troubleshooting/manual workflow section in TICKETING_SYSTEM_GUIDE.md for details.
+**(Migrated to GitHub Issues)**
 
-🚀 Ticketing system API Quick Reference:
+The legacy JSON ticketing subsystem was replaced with GitHub Issues. For bug/feature tracking, labels, and automation, use the `packages/tooling/src/githubIssueManager.js` module.
 
-- **List Tickets:** `GET /api/tickets`
-- **Create Ticket:** `POST /api/tickets`
-- **Get Ticket:** `GET /api/tickets/:id`
-- **Update Ticket:** `PATCH /api/tickets/:id`
-- **Delete Ticket:** `DELETE /api/tickets/:id`
-
-- The ticketing system is a core, modular subsystem.
-- All work (bugs, features, enhancements, tasks) must be tracked via the ticketing system API.
-- Full documentation, schema, API usage, and workflow best practices are now in the dedicated guide:
-  - ➡️ **See [`TICKETING_SYSTEM_GUIDE.md`](./TICKETING_SYSTEM_GUIDE.md) for all details.**
-- Tickets are structured JSON files stored in `tests/bug-reports/`.
-- Use the provided API endpoints (`ticket-api.js`) and JS modules (`packages/tooling/src/ticketManager.js`) for all ticket management (in-game, admin, automation).
-- Each ticket **must** include:
-  - `id` – unique identifier (API rejects duplicates)
-  - `type` – `bug`, `feature`, `enhancement`, or `task`
-  - `title` – concise human-readable summary (≤ 60 chars)
-  - `slug` – kebab-case URL slug (auto-derived if omitted)
-
-Recommended optional fields: `tags` (`focus`, `regression`, `needs-design`, etc.), `artifacts`, `history`.
-
-- The bug-report watcher script (`move-bug-reports.js`) auto-moves artifacts to the correct folder.
-- The AI must be able to programmatically open the bug-report modal and access the same data as a human tester.
-- All feature/enhancement work should be logged through the same metadata-rich JSON ticket workflow.
-- **Known issue:** If the bug report modal does not close after submission, this is tracked as bug ticket `BR-2024-06-01-modal-bug-001`. See the guide for troubleshooting steps.
+If you encounter leftover code or docs referencing `TicketCore`, `/api/tickets`, or `tests/bug-reports/`, delete or migrate it immediately.
 
 ---
 
@@ -110,8 +83,8 @@ Recommended optional fields: `tags` (`focus`, `regression`, `needs-design`, etc.
 **Example: Automated Bug Ticket Creation**
 1. Run probe-driven test with MCP Playwright.
 2. On failure, capture screenshot and logs.
-3. Use `packages/tooling/src/ticketManager.js` and `ticket-api.js` to create a new bug ticket with artifacts.
-4. Artifacts are auto-moved to the correct folder by `move-bug-reports.js`.
+3. Use `packages/tooling/src/githubIssueManager.js` to create a new GitHub issue with artifacts.
+4. Artifacts are embedded in the GitHub issue description.
 
 ---
 
@@ -319,7 +292,7 @@ _See the dedicated consistency specification: [AR-consistency-standards.mdc](mdc
 - **Activate audio:** Click canvas at (400,300) to enable audio context.
 - **Test mode:** Press 'T' key for scripted testing mode.
 - **Bug report automation:** On probe failure, auto-capture screenshot and logs, restart and retry, then create a detailed bug report if the issue persists.
-- **Artifacts:** All screenshots and logs must be saved in the correct bug-report folder, auto-moved by `move-bug-reports.js`.
+- **Artifacts:** Screenshots and logs are embedded in the GitHub issue description.
 - **Keyboard shortcuts:** In the bug-report modal, Enter/Ctrl+Enter = Save, Escape = Cancel.
 - **AI must be able to open the bug-report modal programmatically and access the same data as a human tester.**
 

@@ -40,20 +40,32 @@ for (const filePath of walkDir(DOC_ROOT)) {
   const { data } = matter(raw);
 
   if (!data || Object.keys(data).length === 0) {
-    reportError('DOC_MISSING_FRONTMATTER', `${filePath} has no YAML front-matter`, { file: filePath }, null);
+    reportError(
+      'DOC_MISSING_FRONTMATTER',
+      `${filePath} has no YAML front-matter`,
+      { file: filePath },
+      null
+    );
     hasErrors = true;
     continue;
   }
 
   const missing = REQUIRED_FIELDS.filter((key) => !(key in data));
   if (missing.length) {
-    reportError('DOC_INVALID_FRONTMATTER', `${filePath} missing field(s): ${missing.join(', ')}`, { file: filePath, missing }, null);
+    reportError(
+      'DOC_INVALID_FRONTMATTER',
+      `${filePath} missing field(s): ${missing.join(', ')}`,
+      { file: filePath, missing },
+      null
+    );
     hasErrors = true;
   } else {
-    console.log(`[OK] ${filePath}: ${data.title} (updated ${data.last_updated})`);
+    console.log(
+      `[OK] ${filePath}: ${data.title} (updated ${data.last_updated})`
+    );
   }
 }
 
 if (hasErrors) {
   process.exit(1);
-} 
+}

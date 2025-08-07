@@ -15,13 +15,7 @@ console.log('🟢 [DEBUG] GameLoop.js: Imported entities');
 import VisualEffectsManager from '@vibe/fx/visualEffects.js';
 import { EffectsManager } from '@vibe/fx/effects.js';
 console.log('🟢 [DEBUG] GameLoop.js: Imported VisualEffectsManager');
-import {
-  GameState,
-  Audio,
-  BeatClock,
-  MusicManager,
-  CONFIG,
-} from '@vibe/core';
+import { GameState, BeatClock, CONFIG } from '@vibe/core';
 console.log('🟢 [DEBUG] GameLoop.js: Imported core');
 import {
   CameraSystem,
@@ -38,7 +32,7 @@ import { updatePass } from './updatePass.js';
 import { drawPass } from './drawPass.js';
 console.log('🟢 [DEBUG] GameLoop.js: Imported tooling');
 import ProfilerOverlay from '@vibe/fx/ProfilerOverlay.js';
-console.log('🟢 [DEBUG] GameLoop.js: Imported ProfilerOverlay');
+import { AudioDiagnosticsOverlay } from '@vibe/fx';
 import AdaptiveLODManager, {
   shouldRender as adaptiveShouldRender,
 } from '@vibe/fx/AdaptiveLODManager.js';
@@ -47,6 +41,32 @@ import VFXDispatcher from '@vibe/fx/VFXDispatcher.js';
 console.log('🟢 [DEBUG] GameLoop.js: Imported VFXDispatcher');
 console.log('🟢 [DEBUG] GameLoop.js: Imported all remaining modules');
 import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
+
+// Lazy-loaded audio facade (Tone.js heavy). Will be set after first user gesture.
+let toneAudio = null;
+
+async function ensureAudioInitialized() {
+  if (toneAudio && toneAudio.ensureAudioContext && toneAudio.ensureAudioContext()) {
+    return;
+  }
+  if (!toneAudio) {
+    // Dynamic import after user gesture to avoid autoplay restrictions.
+    const { ToneAudioFacade } = await import('@vibe/core/audio/ToneAudioFacade.js');
+    toneAudio = new ToneAudioFacade();
+    window.audio = toneAudio;
+    console.log('🎵 ToneAudioFacade instantiated after gesture');
+  }
+  try {
+    await toneAudio.init();
+    toneAudio.startMusic();
+    if (window.beatClock) {
+      toneAudio.setBeatClock(window.beatClock);
+    }
+    console.log('🎵 ToneAudioFacade initialized after user gesture');
+  } catch (err) {
+    console.error('Audio init failed:', err);
+  }
+}
 
 // Core game objects
 let player;
@@ -81,7 +101,19 @@ window.playerBullets = playerBullets;
 window.enemyBullets = enemyBullets;
 window.bullets = bullets;
 window.activeBombs = activeBombs;
-window.audio = null;
+// Fully dynamic no-op audio stub – any property call is a harmless function.
+window.audio = new Proxy(
+  {
+    ensureAudioContext: () => false,
+  },
+  {
+    get(target, prop) {
+      if (prop in target) return target[prop];
+      // Return a no-op function for any unknown method
+      return () => {};
+    },
+  }
+);
 window.speechManager = null;
 
 // Keys system for testing
@@ -105,11 +137,13 @@ window.arrowRightPressed = false;
 
 // Attach profiler overlay for global access
 window.profilerOverlay = ProfilerOverlay;
+window.audioOverlay = AudioDiagnosticsOverlay;
 
 // Input event handler helpers
 function onKeyDown(e) {
   switch (e.code) {
     case 'Space':
+      ensureAudioInitialized();
       window.playerIsShooting = true;
       e.preventDefault();
       break;
@@ -161,6 +195,8 @@ function onKeyUp(e) {
 if (!window.inputListenersAdded) {
   window.addEventListener('mousedown', () => {
     window.playerIsShooting = true;
+    // Ensure audio is initialized after a user gesture to satisfy browser autoplay policies
+    ensureAudioInitialized();
   });
   window.addEventListener('mouseup', () => {
     window.playerIsShooting = false;
@@ -211,6 +247,11 @@ if (!window.profilerOverlayToggleAdded) {
         window.profilerOverlay.toggle();
       }
     }
+    if ((e.key === 'o' || e.key === 'O') && !e.repeat) {
+      if (window.audioOverlay) {
+        window.audioOverlay.toggle();
+      }
+    }
   });
   window.profilerOverlayToggleAdded = true;
 }
@@ -229,15 +270,16 @@ function setup(p) {
   p.createCanvas(800, 600);
   p.frameRate(60);
 
-  // Initialize core systems (dependency injection style)
-  if (!window.player) {
-    restartGame(p); // Initial game setup
-    console.log('🔄 Robust Restart: Re-initializing systems...');
+  // Initialize core systems FIRST (dependency injection style)
+  // Camera system must be initialized before player
+  if (!window.cameraSystem) {
+    window.cameraSystem = new CameraSystem(p);
+    console.log('📷 Camera system initialized');
   }
+
   if (!window.audio) {
-    window.audio = new Audio(p, window.player);
-    window.audio.setPlayer(window.player);
-    console.log('🎵 Unified audio system initialized');
+    window.audio = toneAudio;
+    console.log('🎵 ToneAudioFacade attached – will initialize on first user gesture');
   }
 
   if (!window.visualEffectsManager) {
@@ -258,9 +300,10 @@ function setup(p) {
     });
   }
 
-  if (!window.cameraSystem) {
-    window.cameraSystem = new CameraSystem(p);
-    console.log('📷 Camera system initialized');
+  // NOW it's safe to create the player (requires cameraSystem)
+  if (!window.player) {
+    restartGame(p); // Initial game setup
+    console.log('🔄 Robust Restart: Re-initializing systems...');
   }
 
   if (!window.collisionSystem) {
@@ -276,8 +319,11 @@ function setup(p) {
   if (!window.beatClock) {
     window.beatClock = new BeatClock(120, p);
     console.log('🎵 BeatClock initialized: 120 BPM (500ms per beat)');
+    if (window.audio && window.audio.setBeatClock) {
+      window.audio.setBeatClock(window.beatClock);
+    }
   }
-  console.log('✅ Audio system initialized');
+  console.log('✅ Core timing systems initialized');
 
   if (!window.gameState) {
     window.gameState = new GameState();
@@ -373,6 +419,7 @@ function draw(p) {
   // UI & overlays
   window.uiRenderer.draw(p, window.gameState, window.player);
   window.testMode.draw(p);
+  if (window.audioOverlay) window.audioOverlay.draw(p);
 
   EffectsProfiler.endFrame();
   if (CONFIG.GAME_SETTINGS.DEBUG_GAME_LOOP) {
@@ -393,6 +440,13 @@ function restartGame(p) {
   console.log('RESTARTING GAME');
   state.isGameOver = false;
   state.isPaused = false;
+
+  // Safety check: ensure cameraSystem exists before creating player
+  if (!window.cameraSystem) {
+    console.error('[GAME FATAL] CameraSystem not initialized before player creation');
+    window.cameraSystem = new CameraSystem(p);
+    console.log('📷 Emergency camera system initialization');
+  }
 
   window.player = new Player(p, p.width / 2, p.height / 2, window.cameraSystem);
   if (!Number.isFinite(window.player.x) || !Number.isFinite(window.player.y)) {

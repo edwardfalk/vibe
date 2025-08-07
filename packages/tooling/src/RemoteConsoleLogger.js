@@ -69,6 +69,46 @@ function setupRemoteConsoleLogger(apiUrl = 'http://localhost:3001/api/logs') {
     '🪵 RemoteConsoleLogger active – logs will be sent to Ticket API'
   );
 
+  // Attach global error listeners once
+  if (!window.__remoteGlobalHandlersAttached) {
+    window.__remoteGlobalHandlersAttached = true;
+    const getApiUrl = () =>
+      window.__remoteLoggerApiUrl || 'http://localhost:3001/api/logs';
+    // Uncaught errors
+    window.addEventListener('error', (event) => {
+      if (window.__remoteLoggerDisabled) return;
+      fetch(getApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'error',
+          message: event.message || 'Uncaught error',
+          stack: event.error
+            ? event.error.stack
+            : event.filename + ':' + event.lineno,
+        }),
+        keepalive: true,
+      });
+    });
+
+    // Unhandled promise rejections
+    window.addEventListener('unhandledrejection', (event) => {
+      if (window.__remoteLoggerDisabled) return;
+      fetch(getApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'error',
+          message: event.reason
+            ? event.reason.message || String(event.reason)
+            : 'Unhandled rejection',
+          stack: event.reason && event.reason.stack ? event.reason.stack : '',
+        }),
+        keepalive: true,
+      });
+    });
+  }
+
   // Helper to disable external handlers after repeated failures
   const markDisabled = () => {
     if (!window.__remoteLoggerDisabled) {
@@ -96,46 +136,4 @@ function setupRemoteConsoleLogger(apiUrl = 'http://localhost:3001/api/logs') {
 
 export { setupRemoteConsoleLogger };
 
-// -----------------------------------------------------------------------------
-// Attach global error handlers so that uncaught exceptions make it to the server
-// even if console.error is not explicitly called.
-// -----------------------------------------------------------------------------
-if (typeof window !== 'undefined') {
-  // Helper to get API URL from window or fallback
-  const getApiUrl = () =>
-    window.__remoteLoggerApiUrl || 'http://localhost:3001/api/logs';
-  // Uncaught synchronous errors
-  window.addEventListener('error', (event) => {
-    if (window.__remoteLoggerDisabled) return;
-    console.log('[REMOTE LOGGER] Global error handler triggered:', event);
-    fetch(getApiUrl(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        level: 'error',
-        message: event.message || 'Uncaught error',
-        stack: event.error
-          ? event.error.stack
-          : event.filename + ':' + event.lineno,
-      }),
-      keepalive: true,
-    });
-  });
-
-  // Unhandled promise rejections
-  window.addEventListener('unhandledrejection', (event) => {
-    if (window.__remoteLoggerDisabled) return;
-    fetch(getApiUrl(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        level: 'error',
-        message: event.reason
-          ? event.reason.message || String(event.reason)
-          : 'Unhandled rejection',
-        stack: event.reason && event.reason.stack ? event.reason.stack : '',
-      }),
-      keepalive: true,
-    });
-  });
-}
+// Old global handlers removed; now attached lazily inside setupRemoteConsoleLogger

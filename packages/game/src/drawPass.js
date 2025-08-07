@@ -31,4 +31,4 @@ export function drawPass(p) {
   // Visual effects layer
   window.visualEffectsManager.draw(p);
   p.pop();
-} 
+}

@@ -59,4 +59,4 @@ export function updatePass(p, dtSeconds = p.deltaTime / 1000) {
 
   // --- Spawning & other systems ------------------------------------------
   window.spawnSystem?.update(p, window.player, window.enemies.length);
-} 
+}

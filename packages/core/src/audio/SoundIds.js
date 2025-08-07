@@ -49,4 +49,7 @@ export const SOUND = Object.freeze({
   cosmicDrone: 'cosmicDrone',
   cosmicChimes: 'cosmicChimes',
   cosmicPulse: 'cosmicPulse',
+  musicKick: 'musicKick',
+  musicSnare: 'musicSnare',
+  musicHihat: 'musicHihat',
 });

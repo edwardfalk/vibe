@@ -14,7 +14,10 @@ import { reportError } from '../packages/tooling/src/ErrorReporter.js';
 
 const CACHE_DIR = path.resolve(process.cwd(), '.context7-cache');
 const pkgJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-const deps = Object.keys({ ...(pkgJson.dependencies || {}), ...(pkgJson.devDependencies || {}) });
+const deps = Object.keys({
+  ...(pkgJson.dependencies || {}),
+  ...(pkgJson.devDependencies || {}),
+});
 
 if (!fs.existsSync(CACHE_DIR)) {
   fs.mkdirSync(CACHE_DIR, { recursive: true });
@@ -27,7 +30,8 @@ function saveDocs(pkgName, content) {
   console.log(`📚 Cached docs for ${pkgName}`);
 }
 
-const CONTEXT7_BASE = process.env.CONTEXT7_URL || 'http://localhost:4333/context7';
+const CONTEXT7_BASE =
+  process.env.CONTEXT7_URL || 'http://localhost:4333/context7';
 
 async function httpJson(url) {
   const res = await fetch(url);
@@ -44,7 +48,9 @@ async function fetchDocs(pkgName, force = false) {
 
   try {
     // 1. Resolve ID
-    const { id } = await httpJson(`${CONTEXT7_BASE}/resolve?name=${encodeURIComponent(pkgName)}`);
+    const { id } = await httpJson(
+      `${CONTEXT7_BASE}/resolve?name=${encodeURIComponent(pkgName)}`
+    );
     if (!id) throw new Error('Missing id');
 
     // 2. Fetch docs (limit to 6000 tokens)
@@ -56,7 +62,12 @@ async function fetchDocs(pkgName, force = false) {
 
     saveDocs(pkgName, docs);
   } catch (err) {
-    reportError('CONTEXT7_CACHE_FAILURE', `Failed to cache docs for ${pkgName}`, { message: err.message }, null);
+    reportError(
+      'CONTEXT7_CACHE_FAILURE',
+      `Failed to cache docs for ${pkgName}`,
+      { message: err.message },
+      null
+    );
     const placeholder = `# ${pkgName}\n\n> TODO: Context7 fetch failed. ${err.message}`;
     saveDocs(pkgName, placeholder);
   }
@@ -67,4 +78,4 @@ async function fetchDocs(pkgName, force = false) {
   for (const dep of deps) {
     await fetchDocs(dep, force);
   }
-})(); 
+})();
