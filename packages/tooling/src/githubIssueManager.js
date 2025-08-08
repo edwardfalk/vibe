@@ -85,10 +85,13 @@ export async function createIssue({ title, body = '', labels = [] } = {}) {
 export async function updateIssue(issueNumber, { title, body, labels }) {
   const repo = await resolveRepoSlug();
   const [owner, repoName] = repo.split('/');
-  const issue = await ghRequest(`/repos/${owner}/${repoName}/issues/${issueNumber}`, {
-    method: 'PATCH',
-    body: { title, body, labels },
-  });
+  const issue = await ghRequest(
+    `/repos/${owner}/${repoName}/issues/${issueNumber}`,
+    {
+      method: 'PATCH',
+      body: { title, body, labels },
+    }
+  );
   return issue;
 }
 
@@ -98,10 +101,13 @@ export async function updateIssue(issueNumber, { title, body, labels }) {
 export async function addComment(issueNumber, comment) {
   const repo = await resolveRepoSlug();
   const [owner, repoName] = repo.split('/');
-  const result = await ghRequest(`/repos/${owner}/${repoName}/issues/${issueNumber}/comments`, {
-    method: 'POST',
-    body: { body: comment },
-  });
+  const result = await ghRequest(
+    `/repos/${owner}/${repoName}/issues/${issueNumber}/comments`,
+    {
+      method: 'POST',
+      body: { body: comment },
+    }
+  );
   return result;
 }
 
@@ -111,10 +117,13 @@ export async function addComment(issueNumber, comment) {
 export async function closeIssue(issueNumber) {
   const repo = await resolveRepoSlug();
   const [owner, repoName] = repo.split('/');
-  const issue = await ghRequest(`/repos/${owner}/${repoName}/issues/${issueNumber}`, {
-    method: 'PATCH',
-    body: { state: 'closed' },
-  });
+  const issue = await ghRequest(
+    `/repos/${owner}/${repoName}/issues/${issueNumber}`,
+    {
+      method: 'PATCH',
+      body: { state: 'closed' },
+    }
+  );
   return issue;
 }
 

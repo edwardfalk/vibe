@@ -47,6 +47,15 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps
 
+      - name: Lint
+        run: bun run lint | cat
+
+      - name: Consistency scan (instance-mode + math)
+        run: bun run scan:consistency | cat
+
+      - name: Validate sounds
+        run: bun run validate:sounds | cat
+
       - name: Start dev environment
         run: bun run dev:start
 

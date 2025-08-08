@@ -535,7 +535,7 @@ class Tank extends BaseEnemy {
           part: 'front',
           x: this.x,
           y: this.y,
-          armorRemaining: Math.max(0, this.frontArmorHP) / 120,
+          armorRemaining: max(0, this.frontArmorHP) / 120,
         });
         return false; // No overflow, armor absorbed
       }
@@ -546,7 +546,7 @@ class Tank extends BaseEnemy {
         part: 'front',
         x: this.x,
         y: this.y,
-        armorRemaining: Math.max(0, this.frontArmorHP) / 120,
+        armorRemaining: max(0, this.frontArmorHP) / 120,
       });
       return false; // Armor absorbed
     }
@@ -583,7 +583,7 @@ class Tank extends BaseEnemy {
           part: 'left',
           x: this.x,
           y: this.y,
-          armorRemaining: Math.max(0, this.leftArmorHP) / 80,
+          armorRemaining: max(0, this.leftArmorHP) / 80,
         });
         return false; // No overflow, armor absorbed
       }
@@ -594,7 +594,7 @@ class Tank extends BaseEnemy {
         part: 'left',
         x: this.x,
         y: this.y,
-        armorRemaining: Math.max(0, this.leftArmorHP) / 80,
+        armorRemaining: max(0, this.leftArmorHP) / 80,
       });
       return false; // Armor absorbed
     }
@@ -631,7 +631,7 @@ class Tank extends BaseEnemy {
           part: 'right',
           x: this.x,
           y: this.y,
-          armorRemaining: Math.max(0, this.rightArmorHP) / 80,
+          armorRemaining: max(0, this.rightArmorHP) / 80,
         });
         return false; // No overflow, armor absorbed
       }
@@ -642,7 +642,7 @@ class Tank extends BaseEnemy {
         part: 'right',
         x: this.x,
         y: this.y,
-        armorRemaining: Math.max(0, this.rightArmorHP) / 80,
+        armorRemaining: max(0, this.rightArmorHP) / 80,
       });
       return false; // Armor absorbed
     }

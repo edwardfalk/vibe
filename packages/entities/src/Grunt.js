@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, min, max, SOUND } from '@vibe/core';
+import { floor, random, sqrt, min, max, sin, cos, SOUND } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
 import { shouldAvoidFriendlyFire } from './EnemyAIUtils.js';
 
@@ -41,8 +41,8 @@ class Grunt extends BaseEnemy {
    */
   updateSpecificBehavior(playerX, playerY, deltaTimeMs = 16.6667) {
     if (
-      typeof frameCount !== 'undefined' &&
-      frameCount % 30 === 0 &&
+      this.p &&
+      this.p.frameCount % 30 === 0 &&
       CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS
     ) {
       console.log(
@@ -175,8 +175,8 @@ class Grunt extends BaseEnemy {
 
     // After movement logic
     if (
-      typeof frameCount !== 'undefined' &&
-      frameCount % 30 === 0 &&
+      this.p &&
+      this.p.frameCount % 30 === 0 &&
       CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS
     ) {
       console.log(
@@ -280,13 +280,13 @@ class Grunt extends BaseEnemy {
         s * 0.45 + this.p.noise(this.p.frameCount * 0.01 + i) * s * 0.15;
       const r2 =
         s * 0.55 + this.p.noise(this.p.frameCount * 0.02 - i) * s * 0.18;
-      const x = Math.cos(angle) * r1 * 0.5;
-      const y = Math.sin(angle) * r2 * 0.5;
+      const x = cos(angle) * r1 * 0.5;
+      const y = sin(angle) * r2 * 0.5;
       this.p.ellipse(
         x,
         y,
-        s * 0.7 + Math.sin(angle + this.p.frameCount * 0.02) * s * 0.15,
-        s * 0.9 + Math.cos(angle - this.p.frameCount * 0.015) * s * 0.12
+        s * 0.7 + sin(angle + this.p.frameCount * 0.02) * s * 0.15,
+        s * 0.9 + cos(angle - this.p.frameCount * 0.015) * s * 0.12
       );
     }
 
@@ -303,7 +303,7 @@ class Grunt extends BaseEnemy {
     this.p.pop();
 
     // Big, wobbly baby head
-    const headWobble = Math.sin(this.p.frameCount * 0.07) * s * 0.04;
+    const headWobble = sin(this.p.frameCount * 0.07) * s * 0.04;
     this.p.fill(
       this.bodyColor.levels[0] + 30,
       this.bodyColor.levels[1] + 30,

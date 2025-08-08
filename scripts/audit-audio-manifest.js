@@ -60,4 +60,4 @@ async function head(url) {
   }
 
   console.log('✅ All audio files reachable.');
-})(); 
+})();

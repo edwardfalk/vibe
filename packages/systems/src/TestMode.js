@@ -6,6 +6,7 @@
 
 import { Bullet } from '@vibe/entities/bullet.js';
 import { sin, cos, min, floor, random, atan2 } from '@vibe/core/mathUtils.js';
+import { max } from '@vibe/core';
 
 /**
  * @param {Player} player - The player object (dependency injected for modularity)
@@ -150,7 +151,7 @@ export class TestMode {
   moveCenterPattern(phase, halfSize) {
     const centerX = this.player.p.width / 2;
     const centerY = this.player.p.height / 2;
-    const radius = Math.min(this.player.p.width, this.player.p.height) * 0.2;
+    const radius = min(this.player.p.width, this.player.p.height) * 0.2;
     this.player.x = centerX + radius * cos(phase * 2);
     this.player.y = centerY + radius * cos(phase * 2);
   }
@@ -276,13 +277,13 @@ export class TestMode {
 
   // Set auto-shoot interval
   setShootInterval(frames) {
-    this.shootInterval = Math.max(1, frames);
+    this.shootInterval = max(1, frames);
     console.log(`🎯 Auto-shoot interval set to: ${this.shootInterval} frames`);
   }
 
   // Set enemy spawn interval
   setEnemySpawnInterval(frames) {
-    this.enemySpawnInterval = Math.max(60, frames);
+    this.enemySpawnInterval = max(60, frames);
     console.log(
       `🎯 Enemy spawn interval set to: ${this.enemySpawnInterval} frames`
     );

@@ -14,7 +14,7 @@ export default [
     ],
     languageOptions: {
       sourceType: 'module',
-      ecmaVersion: 2021,
+      ecmaVersion: 'latest',
       globals: {
         window: 'readonly',
         document: 'readonly',
@@ -64,7 +64,6 @@ export default [
         'error',
         {
           patterns: ['**/legacy/audio/*', '**/legacy/Audio.js'],
-          message: 'Legacy audio modules are removed – use ToneAudioFacade instead.'
         },
       ],
     },

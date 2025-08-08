@@ -1,4 +1,4 @@
-import { CONFIG } from '@vibe/core';
+import { CONFIG, min, max } from '@vibe/core';
 import {
   max,
   min,
@@ -276,7 +276,7 @@ export class Bullet {
       return dx1 * dx1 + dy1 * dy1;
     }
     const t = ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy);
-    const clamped = Math.max(0, Math.min(1, t));
+    const clamped = max(0, min(1, t));
     const lx = x1 + clamped * dx;
     const ly = y1 + clamped * dy;
     const dx2 = px - lx;

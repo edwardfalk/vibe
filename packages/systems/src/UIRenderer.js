@@ -4,7 +4,7 @@
 
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
-import { floor, ceil, min, random, SOUND } from '@vibe/core';
+import { floor, ceil, min, max, random, SOUND } from '@vibe/core';
 import { AudioLabUI } from './AudioLabUI.js';
 // import {
 //   createTicket,
@@ -20,7 +20,10 @@ async function getGitHubIssueManager() {
   try {
     githubIssueManager = await import('@vibe/tooling/githubIssueManager.js');
   } catch {
-    githubIssueManager = { createTicket: async () => null, updateTicket: async () => null };
+    githubIssueManager = {
+      createTicket: async () => null,
+      updateTicket: async () => null,
+    };
   }
   return githubIssueManager;
 }
@@ -34,8 +37,11 @@ async function updateTicket(id, updates) {
   const mgr = await getGitHubIssueManager();
   // GitHub Issues: add comment with updates
   if (mgr.addComment) {
-    await mgr.addComment(id, `Update:\n\n
-${JSON.stringify(updates, null, 2)}`);
+    await mgr.addComment(
+      id,
+      `Update:\n\n
+${JSON.stringify(updates, null, 2)}`
+    );
   }
 }
 
@@ -401,7 +407,7 @@ export class UIRenderer {
     const y = 80;
     // Pulsing effect for high streaks
     const pulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5;
-    const intensity = Math.min(streak / 10, 1);
+    const intensity = min(streak / 10, 1);
     // Background glow
     p.fill(255, 100, 100, 50 + pulse * 50 * intensity);
     p.noStroke();
@@ -654,13 +660,13 @@ export class UIRenderer {
         const p = this.player && this.player.p;
         const px = this.player ? this.player.x : 400;
         const py = this.player ? this.player.y : 300;
-        let x = Math.random() * (p ? p.width : 800);
-        let y = Math.random() * (p ? p.height : 600);
+        let x = random(p ? p.width : 800);
+        let y = random(p ? p.height : 600);
         // Ensure not too close to player
         let tries = 0;
         while ((x - px) ** 2 + (y - py) ** 2 < 200 * 200 && tries < 10) {
-          x = Math.random() * (p ? p.width : 800);
-          y = Math.random() * (p ? p.height : 600);
+          x = random(p ? p.width : 800);
+          y = random(p ? p.height : 600);
           tries++;
         }
         window.spawnSystem.forceSpawn(enemyMap[key], x, y);
@@ -1108,7 +1114,7 @@ export class UIRenderer {
 
   // Helper to generate a short unique ID
   _shortUID() {
-    return random().toString(36).substr(2, 6);
+    return random().toString(36).slice(2, 8);
   }
 
   async _saveBugReport(ticket, isAppending, relatedTo, modal, errorMsg) {

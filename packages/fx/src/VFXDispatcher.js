@@ -46,18 +46,8 @@ class VFXDispatcher {
     if (this.lod.shouldRender('hitSpark')) {
       this.visualFX?.addHitSpark?.(d.x, d.y, weight);
     }
-    // Knock-back for Grunt and others on bullet hit
-    if (
-      d.type === 'grunt' &&
-      d.damageSource === 'bullet' &&
-      typeof d.bulletAngle === 'number'
-    ) {
-      // Find the grunt instance by id
-      const enemy = (window.enemies || []).find((e) => e.id === d.id);
-      if (enemy && typeof enemy.applyImpulse === 'function') {
-        enemy.applyImpulse(d.bulletAngle, 0.8); // 0.8 = moderate knock-back
-      }
-    }
+    // NOTE: Knockback is now handled in BaseEnemy.takeDamage() to avoid double-application
+    // No additional knockback logic needed here
   }
 
   onArmorDamaged(evt) {

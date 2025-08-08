@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Pre-commit: fast sanity checks
+# Use pwsh-compatible commands via bun scripts
+
+set -euo pipefail
+
+# Use Bun scripts (cross-platform)
+echo "🔎 Lint" && bun run lint | cat
+
+# Consistency scan (instance-mode + math)
+echo "🔍 Consistency scan" && bun run scan:consistency | cat
+
+# Sound registry/manifest sanity
+echo "🎵 Validate sounds" && bun run validate:sounds | cat
+
+# Optional: docs links (non-blocking)
+# bun run docs:check-links | cat || true
+
+exit 0

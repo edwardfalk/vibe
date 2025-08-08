@@ -2,7 +2,7 @@ import { Grunt } from './Grunt.js';
 import { Rusher } from './Rusher.js';
 import { Tank } from './Tank.js';
 import { Stabber } from './Stabber.js';
-import { random, SOUND } from '@vibe/core';
+import { random, min, max, SOUND } from '@vibe/core';
 
 /**
  * EnemyFactory class - Handles enemy creation and type management
@@ -223,8 +223,8 @@ class EnemyFactory {
   getSpawnRateForLevel(level) {
     // Start with slower spawning, gradually increase
     const baseRate = 180; // 3 seconds at 60fps
-    const reduction = Math.min(level * 10, 60); // Max reduction of 60 frames
-    return Math.max(baseRate - reduction, 120); // Minimum 2 seconds between spawns
+    const reduction = min(level * 10, 60); // Max reduction of 60 frames
+    return max(baseRate - reduction, 120); // Minimum 2 seconds between spawns
   }
 
   /**

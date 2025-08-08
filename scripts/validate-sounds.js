@@ -9,7 +9,10 @@ import { fileURLToPath, pathToFileURL } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 
-const SOUND_PATH = path.join(projectRoot, 'packages/core/src/audio/SoundIds.js');
+const SOUND_PATH = path.join(
+  projectRoot,
+  'packages/core/src/audio/SoundIds.js'
+);
 const MANIFEST_PATH = path.join(projectRoot, 'public/audio/manifest.json');
 
 async function getSoundIds() {

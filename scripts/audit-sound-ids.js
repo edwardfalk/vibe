@@ -17,7 +17,10 @@ const projectRoot = path.resolve(__dirname, '..');
 
 function loadSoundIds() {
   // Dynamically import the ES module to get the SOUND object
-  const soundIdsPath = path.resolve(projectRoot, 'packages/core/src/audio/SoundIds.js');
+  const soundIdsPath = path.resolve(
+    projectRoot,
+    'packages/core/src/audio/SoundIds.js'
+  );
   return import(`file://${soundIdsPath}`).then((mod) => Object.keys(mod.SOUND));
 }
 
@@ -53,4 +56,3 @@ if (missingInSoundIds.length) {
 }
 
 process.exit(1);
-

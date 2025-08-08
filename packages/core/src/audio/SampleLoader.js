@@ -31,4 +31,4 @@ export class SampleLoader {
   }
 }
 
-export default SampleLoader; 
+export default SampleLoader;

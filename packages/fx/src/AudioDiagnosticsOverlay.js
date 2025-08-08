@@ -47,4 +47,4 @@ class AudioDiagnosticsOverlay {
 }
 
 const audioOverlay = new AudioDiagnosticsOverlay();
-export default audioOverlay; 
+export default audioOverlay;

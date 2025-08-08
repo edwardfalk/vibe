@@ -13,6 +13,8 @@
 //   // ProfilerOverlay internally calls EffectsProfiler.getStats()
 //
 
+import { min } from '@vibe/core';
+
 const MAX_FRAMES = 120; // rolling window – two seconds @60fps
 const frameTimes = new Float32Array(MAX_FRAMES);
 let framePtr = 0;
@@ -55,7 +57,7 @@ function registerEffect(category, payload = {}) {
 
 function getStats() {
   if (!enabled) return {};
-  const sampleCount = Math.min(framePtr, MAX_FRAMES);
+  const sampleCount = min(framePtr, MAX_FRAMES);
   let sum = 0,
     min = Infinity,
     max = 0;

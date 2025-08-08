@@ -1,4 +1,4 @@
-import { SOUND } from '@vibe/core';
+import { SOUND, min, max } from '@vibe/core';
 
 /**
  * AudioLabUI – standalone UI component for testing SFX in-game.
@@ -22,7 +22,9 @@ export class AudioLabUI {
     this.active = !this.active;
     if (this.active) {
       // refresh list – might have changed
-      this.soundIds = Object.keys(SOUND || (this.audio && this.audio.sounds) || {});
+      this.soundIds = Object.keys(
+        SOUND || (this.audio && this.audio.sounds) || {}
+      );
       this.selected = 0;
     }
   }
@@ -35,7 +37,8 @@ export class AudioLabUI {
       return true;
     }
     if (key === 'ArrowUp') {
-      this.selected = (this.selected - 1 + this.soundIds.length) % this.soundIds.length;
+      this.selected =
+        (this.selected - 1 + this.soundIds.length) % this.soundIds.length;
       return true;
     }
     if (key === 'ArrowDown') {
@@ -75,8 +78,8 @@ export class AudioLabUI {
     const startY = 120;
     const lineH = 28;
     const visible = 16;
-    const offset = Math.max(0, this.selected - Math.floor(visible / 2));
-    for (let i = 0; i < Math.min(visible, this.soundIds.length); i++) {
+    const offset = max(0, this.selected - Math.floor(visible / 2));
+    for (let i = 0; i < min(visible, this.soundIds.length); i++) {
       const idx = i + offset;
       if (idx >= this.soundIds.length) break;
       const y = startY + i * lineH;
@@ -110,4 +113,4 @@ export class AudioLabUI {
     }
     p.pop();
   }
-} 
+}

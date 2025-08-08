@@ -46,12 +46,18 @@ import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
 let toneAudio = null;
 
 async function ensureAudioInitialized() {
-  if (toneAudio && toneAudio.ensureAudioContext && toneAudio.ensureAudioContext()) {
+  if (
+    toneAudio &&
+    toneAudio.ensureAudioContext &&
+    toneAudio.ensureAudioContext()
+  ) {
     return;
   }
   if (!toneAudio) {
     // Dynamic import after user gesture to avoid autoplay restrictions.
-    const { ToneAudioFacade } = await import('@vibe/core/audio/ToneAudioFacade.js');
+    const { ToneAudioFacade } = await import(
+      '@vibe/core/audio/ToneAudioFacade.js'
+    );
     toneAudio = new ToneAudioFacade();
     window.audio = toneAudio;
     console.log('🎵 ToneAudioFacade instantiated after gesture');
@@ -279,7 +285,9 @@ function setup(p) {
 
   if (!window.audio) {
     window.audio = toneAudio;
-    console.log('🎵 ToneAudioFacade attached – will initialize on first user gesture');
+    console.log(
+      '🎵 ToneAudioFacade attached – will initialize on first user gesture'
+    );
   }
 
   if (!window.visualEffectsManager) {
@@ -297,6 +305,7 @@ function setup(p) {
       visualFX: window.visualEffectsManager,
       screenFX: window.effectsManager,
       audio: window.audio,
+      lodManager: { shouldRender: () => true }, // Simple stub LOD manager
     });
   }
 
@@ -443,7 +452,9 @@ function restartGame(p) {
 
   // Safety check: ensure cameraSystem exists before creating player
   if (!window.cameraSystem) {
-    console.error('[GAME FATAL] CameraSystem not initialized before player creation');
+    console.error(
+      '[GAME FATAL] CameraSystem not initialized before player creation'
+    );
     window.cameraSystem = new CameraSystem(p);
     console.log('📷 Emergency camera system initialization');
   }
@@ -470,6 +481,15 @@ function restartGame(p) {
   ) {
     window.visualEffectsManager.reset();
   }
+  // Ensure visual effects manager is initialized with p for consistent FX readiness
+  if (
+    window.visualEffectsManager &&
+    typeof window.visualEffectsManager.init === 'function'
+  ) {
+    try {
+      window.visualEffectsManager.init(p);
+    } catch {}
+  }
 
   // Let other systems know the player has changed
   if (window.audio) {
@@ -480,6 +500,29 @@ function restartGame(p) {
       new CustomEvent('playerChanged', { detail: window.player })
     );
   }
+  // Spawn at least one enemy and resync locals
+  if (
+    window.spawnSystem &&
+    typeof window.spawnSystem.spawnEnemies === 'function'
+  ) {
+    try {
+      window.spawnSystem.spawnEnemies(1);
+    } catch {}
+  }
+  if (typeof window.updateGameLoopLocals === 'function') {
+    try {
+      window.updateGameLoopLocals();
+    } catch {}
+  }
+  setTimeout(() => {
+    if (
+      window.audio &&
+      window.player &&
+      typeof window.audio.speakPlayerLine === 'function'
+    ) {
+      window.audio.speakPlayerLine(window.player, 'start');
+    }
+  }, 500);
   console.log('✅ Robust game restart complete.');
 }
 

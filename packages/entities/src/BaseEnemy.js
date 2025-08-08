@@ -33,7 +33,7 @@ export class BaseEnemy {
     this.x = x;
     this.y = y;
     this.type = type;
-    this.id = random().toString(36).substr(2, 9); // Unique ID for each enemy
+    this.id = random().toString(36).slice(2, 11); // Unique ID for each enemy
 
     // Configuration from type-specific configs
     this.size = config.size;
@@ -45,7 +45,7 @@ export class BaseEnemy {
     // Movement and animation
     this.velocity = { x: 0, y: 0 };
     this.aimAngle = 0;
-    this.animFrame = randomRange(0, p.TWO_PI);
+    this.animFrame = randomRange(0, 2 * Math.PI);
     this.knockVX = 0;
     this.knockVY = 0;
 
@@ -201,55 +201,44 @@ export class BaseEnemy {
    * Enhanced glow effects with speech indicators
    */
   drawGlow(p) {
-    if (typeof drawGlow !== 'undefined') {
-      try {
-        // Check if currently speaking (has active speech timer)
-        const isSpeaking = this.speechTimer > 0;
-        const cfg = getEnemyConfig(this.type);
-        const baseGlow = cfg.glow || {};
-
-        const intensityBase = baseGlow.alpha ? baseGlow.alpha / 255 : 0.3;
-        const speechGlowIntensity = isSpeaking
-          ? intensityBase * 1.6
-          : intensityBase;
-        const speechGlowSize = isSpeaking ? 1.3 : 1.0;
-
-        const glowColorArr = baseGlow.color || [255, 255, 255];
-        const glowColor = this.p.color(...glowColorArr);
-        const glowSize =
-          (baseGlow.sizeMult || 1.0) * this.size * speechGlowSize;
-
-        drawGlow(
-          this.p,
-          this.x,
-          this.y,
-          glowSize,
-          glowColor,
-          speechGlowIntensity
-        );
-
-        // Add extra pulsing glow for aggressive speech
-        if (isSpeaking && this.audio) {
-          const activeTexts = this.audio.activeTexts || [];
-          const myText = activeTexts.find((text) => text.entity === this);
-          if (myText && myText.isAggressive) {
-            const aggressivePulse = sin(p.frameCount * 0.8) * 0.3 + 0.5;
-            drawGlow(
-              this.p,
-              this.x,
-              this.y,
-              this.size * 2,
-              this.p.color(255, 0, 0),
-              aggressivePulse * 0.6
-            );
-          }
+    // Delegate to visual effects manager if available to avoid hidden cross-module helpers
+    const isSpeaking = this.speechTimer > 0;
+    const cfg = getEnemyConfig(this.type);
+    const baseGlow = cfg.glow || {};
+    const intensityBase = baseGlow.alpha ? baseGlow.alpha / 255 : 0.3;
+    const speechGlowIntensity = isSpeaking
+      ? intensityBase * 1.6
+      : intensityBase;
+    const speechGlowSize = isSpeaking ? 1.3 : 1.0;
+    const glowColorArr = baseGlow.color || [255, 255, 255];
+    const glowColor = this.p.color(...glowColorArr);
+    const glowSize = (baseGlow.sizeMult || 1.0) * this.size * speechGlowSize;
+    if (
+      window.visualEffectsManager &&
+      typeof window.visualEffectsManager.addGlowEffect === 'function'
+    ) {
+      window.visualEffectsManager.addGlowEffect(
+        this.x,
+        this.y,
+        glowSize,
+        glowColor,
+        speechGlowIntensity
+      );
+      if (isSpeaking && this.audio) {
+        const activeTexts = this.audio.activeTexts || [];
+        const myText = activeTexts.find((text) => text.entity === this);
+        if (myText && myText.isAggressive) {
+          const aggressivePulse = sin(p.frameCount * 0.8) * 0.3 + 0.5;
+          window.visualEffectsManager.addGlowEffect(
+            this.x,
+            this.y,
+            this.size * 2,
+            this.p.color(255, 0, 0),
+            aggressivePulse * 0.6
+          );
         }
-
-        // Profiling hook
-        EffectsProfiler.registerEffect('glow', { enemy: this.type });
-      } catch (error) {
-        console.log('⚠️ Enemy glow error:', error);
       }
+      EffectsProfiler.registerEffect('glow', { enemy: this.type });
     }
   }
 
@@ -392,8 +381,8 @@ export class BaseEnemy {
     const bulletRange = 500;
     // Offset bullet spawn to just outside the enemy's hitbox
     const offset = this.size / 2 + bulletSize / 2 + 2;
-    const spawnX = this.x + Math.cos(this.aimAngle) * offset;
-    const spawnY = this.y + Math.sin(this.aimAngle) * offset;
+    const spawnX = this.x + cos(this.aimAngle) * offset;
+    const spawnY = this.y + sin(this.aimAngle) * offset;
     const bullet = new Bullet(
       spawnX,
       spawnY,
@@ -413,7 +402,7 @@ export class BaseEnemy {
 
     // Apply knockback impulse for bullet hits
     if (damageSource === 'bullet' && bulletAngle !== null) {
-      this.applyImpulse(bulletAngle, 10); // Strength can be tuned
+      this.applyImpulse(bulletAngle, 3); // Reduced from 10 to 3 for gentler knockback
     }
 
     // Emit an event for other systems to consume (VFX, audio, etc.)

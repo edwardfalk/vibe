@@ -1,6 +1,7 @@
 // Requires p5.js for constrain(), random(), lerp(), etc. (moved to @vibe/systems)
 import { CONFIG } from '@vibe/core/config.js';
 import { randomRange } from '@vibe/core/mathUtils.js';
+import { max } from '@vibe/core';
 
 export class CameraSystem {
   constructor(p) {
@@ -15,11 +16,11 @@ export class CameraSystem {
     this.interpolationSpeed = 0.15;
   }
   addShake(intensity, duration = 20) {
-    this.screenShake.intensity = Math.max(
+    this.screenShake.intensity = max(
       this.screenShake.intensity,
       intensity
     );
-    this.screenShake.duration = Math.max(this.screenShake.duration, duration);
+    this.screenShake.duration = max(this.screenShake.duration, duration);
   }
   update() {
     if (!window.player) return;

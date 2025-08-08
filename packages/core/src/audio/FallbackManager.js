@@ -26,10 +26,12 @@ export class FallbackManager {
         envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 },
       }).connect(outputGain);
       map.set(id, synth);
-      console.warn(`⚠️  [Audio] Sample for "${id}" missing – using synth fallback`);
+      console.warn(
+        `⚠️  [Audio] Sample for "${id}" missing – using synth fallback`
+      );
     }
     return map;
   }
 }
 
-export default FallbackManager; 
+export default FallbackManager;

@@ -91,7 +91,7 @@ export class CollisionSystem {
     // Simple push-apart logic to prevent stacking
     const dx = other.x - enemy.x;
     const dy = other.y - enemy.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const distance = sqrt(dx * dx + dy * dy);
     const overlap = enemy.size / 2 + other.size / 2 - distance;
     if (overlap > 0) {
       const pushX = (dx / distance) * overlap * 0.5;

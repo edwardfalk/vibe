@@ -2,6 +2,7 @@
 // Adjusts effectsConfig.global.lodMultiplier based on recent FPS average.
 import EffectsProfiler from './EffectsProfiler.js';
 import { effectsConfig } from './effectsConfig.js';
+import { min, max } from '@vibe/core';
 
 const LOWER_THRESHOLD = 17; // ms (≈58 FPS)
 const UPPER_THRESHOLD = 12; // ms (≈83 FPS)
@@ -22,7 +23,7 @@ function update() {
     avgMs > LOWER_THRESHOLD &&
     effectsConfig.global.lodMultiplier > MIN_MULT
   ) {
-    effectsConfig.global.lodMultiplier = Math.max(
+    effectsConfig.global.lodMultiplier = max(
       MIN_MULT,
       effectsConfig.global.lodMultiplier - ADJUST_STEP
     );
@@ -30,7 +31,7 @@ function update() {
     avgMs < UPPER_THRESHOLD &&
     effectsConfig.global.lodMultiplier < MAX_MULT
   ) {
-    effectsConfig.global.lodMultiplier = Math.min(
+    effectsConfig.global.lodMultiplier = min(
       MAX_MULT,
       effectsConfig.global.lodMultiplier + ADJUST_STEP
     );

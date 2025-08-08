@@ -70,10 +70,10 @@ export class ToneAudioFacade {
 
     try {
       console.log('🔵 ToneAudioFacade init starting...');
-      
+
       await this._ensureToneStarted();
       console.log('🟢 Tone started successfully');
-      
+
       this._createMixer();
       console.log('🟢 Mixer created successfully');
 
@@ -105,13 +105,14 @@ export class ToneAudioFacade {
       this._players = new Map(Object.entries(players._players));
 
       // Dev-only fallback synths so testers hear beeps for missing samples.
-      const devMode = (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production');
+      const devMode =
+        typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
       this._fallbackSynths = FallbackManager.create(
         failedIds,
         this._gains.sfx,
         { enabled: devMode }
       );
-       
+
       // SpeechCoordinator setup (ducking)
       this._speech = new SpeechCoordinator(this);
       console.log('🟢 SpeechCoordinator initialized');
@@ -262,13 +263,13 @@ export class ToneAudioFacade {
   _remapManifestToCdn(manifest) {
     // ------------------------------------------------------------------
     // Mapping strategy (v3):
-    //  1. Most of the Berklee and CR78 samples were deleted from:       
-    //       https://tonejs.github.io/audio/…                           
-    //     and never existed on the current `gh-pages` branch either.   
-    //  2. The full set *does* exist on historical commit                
-    //       dc9de66401e175849bfd219bfe303ba2d72a4ee7  (≈ v14.7.x era).  
-    //  3. We therefore rewrite to RAW GitHub content rooted at that     
-    //     commit which is immutable and long-term cache-able:          
+    //  1. Most of the Berklee and CR78 samples were deleted from:
+    //       https://tonejs.github.io/audio/…
+    //     and never existed on the current `gh-pages` branch either.
+    //  2. The full set *does* exist on historical commit
+    //       dc9de66401e175849bfd219bfe303ba2d72a4ee7  (≈ v14.7.x era).
+    //  3. We therefore rewrite to RAW GitHub content rooted at that
+    //     commit which is immutable and long-term cache-able:
     //       https://raw.githubusercontent.com/Tonejs/Tone.js/<commit>/examples/audio/<subdir>/<file>
     // ------------------------------------------------------------------
 
@@ -313,33 +314,33 @@ export class ToneAudioFacade {
    */
   speak(entity, text, voiceType = 'player', force = false) {
     if (!this._speech) return false;
-    
+
     // Use browser speech synthesis with ducking
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
-    
+
     // Configure voice based on type
     const voiceConfig = {
       player: { rate: 0.85, pitch: 0.15, volume: 0.5 },
       grunt: { rate: 0.6, pitch: 1.6, volume: 0.5 },
       rusher: { rate: 1.4, pitch: 1.5, volume: 0.65 },
       tank: { rate: 0.5, pitch: 0.2, volume: 0.6 },
-      stabber: { rate: 0.8, pitch: 2.0, volume: 0.9 }
+      stabber: { rate: 0.8, pitch: 2.0, volume: 0.9 },
     };
-    
+
     const config = voiceConfig[voiceType] || voiceConfig.player;
     utterance.rate = config.rate;
     utterance.pitch = config.pitch;
     utterance.volume = config.volume;
-    
+
     // Check cooldown (2.5 seconds)
     const now = Date.now();
-    if (!force && this._lastSpeechTime && (now - this._lastSpeechTime) < 2500) {
+    if (!force && this._lastSpeechTime && now - this._lastSpeechTime < 2500) {
       return false;
     }
-    
+
     this._lastSpeechTime = now;
-    
+
     // Attach ducking listeners
     utterance.addEventListener('start', () => {
       this.duck(-12);
@@ -347,9 +348,11 @@ export class ToneAudioFacade {
     utterance.addEventListener('end', () => {
       this.unduck();
     });
-    
+
     window.speechSynthesis.speak(utterance);
-    console.log(`💬 ${entity.type || 'Entity'} speaking: "${text.toUpperCase()}"`);
+    console.log(
+      `💬 ${entity.type || 'Entity'} speaking: "${text.toUpperCase()}"`
+    );
     return true;
   }
 
@@ -357,19 +360,19 @@ export class ToneAudioFacade {
   speakPlayerLine(player, context) {
     return this.speak(player, this.getPlayerLine(context), 'player');
   }
-  
+
   speakGruntLine(grunt) {
     return this.speak(grunt, this.getGruntLine(), 'grunt');
   }
-  
+
   speakRusherLine(rusher) {
     return this.speak(rusher, this.getRusherLine(), 'rusher');
   }
-  
+
   speakTankLine(tank) {
     return this.speak(tank, this.getTankLine(), 'tank');
   }
-  
+
   speakStabberLine(stabber) {
     return this.speak(stabber, this.getStabberLine(), 'stabber');
   }
@@ -545,57 +548,129 @@ export class ToneAudioFacade {
   }
 
   // Legacy convenience methods - redirect to playSound with proper IDs
-  playPlayerShoot(x, y) { this.playSound('playerShoot', x, y); }
-  playAlienShoot(x, y) { this.playSound('alienShoot', x, y); }
-  playExplosion(x, y) { this.playSound('explosion', x, y); }
-  playHit(x, y) { this.playSound('hit', x, y); }
-  playPlayerHit() { this.playSound('playerHit'); }
-  playEnemyHit(x, y) { this.playSound('hit', x, y); }
-  playRusherScream(x, y) { this.playSound('rusherScream', x, y); }
-  playTankEnergyBall(x, y) { this.playSound('tankEnergy', x, y); }
-  playStabAttack(x, y) { this.playSound('stabAttack', x, y); }
-  playEnemyFrying(x, y) { this.playSound('enemyFrying', x, y); }
-  playPlasmaCloud(x, y) { this.playSound('plasmaCloud', x, y); }
-  playTankCharging(x, y) { this.playSound('tankCharging', x, y); }
-  playTankPower(x, y) { this.playSound('tankPower', x, y); }
-  playStabberChant(x, y) { this.playSound('stabberChant', x, y); }
-  playGruntAdvance(x, y) { this.playSound('gruntAdvance', x, y); }
-  playGruntRetreat(x, y) { this.playSound('gruntRetreat', x, y); }
-  playRusherCharge(x, y) { this.playSound('rusherCharge', x, y); }
-  playStabberKnife(x, y) { this.playSound('stabberKnife', x, y); }
-  playEnemyIdle(x, y) { this.playSound('enemyIdle', x, y); }
-  playTankPowerUp(x, y) { this.playSound('tankPowerUp', x, y); }
-  playStabberStalk(x, y) { this.playSound('stabberStalk', x, y); }
-  playStabberDash(x, y) { this.playSound('stabberDash', x, y); }
-  playGruntMalfunction(x, y) { this.playSound('gruntMalfunction', x, y); }
-  playGruntBeep(x, y) { this.playSound('gruntBeep', x, y); }
-  playGruntWhir(x, y) { this.playSound('gruntWhir', x, y); }
-  playGruntError(x, y) { this.playSound('gruntError', x, y); }
-  playGruntGlitch(x, y) { this.playSound('gruntGlitch', x, y); }
-  playGruntPop(x, y) { this.playSound('gruntPop', x, y); }
-  playEnemyOhNo(x, y) { this.playSound('enemyOhNo', x, y); }
-  playStabberOhNo(x, y) { this.playSound('stabberOhNo', x, y); }
-  playRusherOhNo(x, y) { this.playSound('rusherOhNo', x, y); }
-  playTankOhNo(x, y) { this.playSound('tankOhNo', x, y); }
-  playBombExplosion(x, y) { this.playSound('explosion', x, y); }
-  playRusherExplosion(x, y) { this.playSound('rusherDeathFizz', x, y); }
-  playStabberAttack(x, y) { this.playSound('stabberKnifeHit', x, y); }
-  playStabberHit(x, y) { this.playSound('stabberKnifeHit', x, y); }
-  
+  playPlayerShoot(x, y) {
+    this.playSound('playerShoot', x, y);
+  }
+  playAlienShoot(x, y) {
+    this.playSound('alienShoot', x, y);
+  }
+  playExplosion(x, y) {
+    this.playSound('explosion', x, y);
+  }
+  playHit(x, y) {
+    this.playSound('hit', x, y);
+  }
+  playPlayerHit() {
+    this.playSound('playerHit');
+  }
+  playEnemyHit(x, y) {
+    this.playSound('hit', x, y);
+  }
+  playRusherScream(x, y) {
+    this.playSound('rusherScream', x, y);
+  }
+  playTankEnergyBall(x, y) {
+    this.playSound('tankEnergy', x, y);
+  }
+  playStabAttack(x, y) {
+    this.playSound('stabAttack', x, y);
+  }
+  playEnemyFrying(x, y) {
+    this.playSound('enemyFrying', x, y);
+  }
+  playPlasmaCloud(x, y) {
+    this.playSound('plasmaCloud', x, y);
+  }
+  playTankCharging(x, y) {
+    this.playSound('tankCharging', x, y);
+  }
+  playTankPower(x, y) {
+    this.playSound('tankPower', x, y);
+  }
+  playStabberChant(x, y) {
+    this.playSound('stabberChant', x, y);
+  }
+  playGruntAdvance(x, y) {
+    this.playSound('gruntAdvance', x, y);
+  }
+  playGruntRetreat(x, y) {
+    this.playSound('gruntRetreat', x, y);
+  }
+  playRusherCharge(x, y) {
+    this.playSound('rusherCharge', x, y);
+  }
+  playStabberKnife(x, y) {
+    this.playSound('stabberKnife', x, y);
+  }
+  playEnemyIdle(x, y) {
+    this.playSound('enemyIdle', x, y);
+  }
+  playTankPowerUp(x, y) {
+    this.playSound('tankPowerUp', x, y);
+  }
+  playStabberStalk(x, y) {
+    this.playSound('stabberStalk', x, y);
+  }
+  playStabberDash(x, y) {
+    this.playSound('stabberDash', x, y);
+  }
+  playGruntMalfunction(x, y) {
+    this.playSound('gruntMalfunction', x, y);
+  }
+  playGruntBeep(x, y) {
+    this.playSound('gruntBeep', x, y);
+  }
+  playGruntWhir(x, y) {
+    this.playSound('gruntWhir', x, y);
+  }
+  playGruntError(x, y) {
+    this.playSound('gruntError', x, y);
+  }
+  playGruntGlitch(x, y) {
+    this.playSound('gruntGlitch', x, y);
+  }
+  playGruntPop(x, y) {
+    this.playSound('gruntPop', x, y);
+  }
+  playEnemyOhNo(x, y) {
+    this.playSound('enemyOhNo', x, y);
+  }
+  playStabberOhNo(x, y) {
+    this.playSound('stabberOhNo', x, y);
+  }
+  playRusherOhNo(x, y) {
+    this.playSound('rusherOhNo', x, y);
+  }
+  playTankOhNo(x, y) {
+    this.playSound('tankOhNo', x, y);
+  }
+  playBombExplosion(x, y) {
+    this.playSound('explosion', x, y);
+  }
+  playRusherExplosion(x, y) {
+    this.playSound('rusherDeathFizz', x, y);
+  }
+  playStabberAttack(x, y) {
+    this.playSound('stabberKnifeHit', x, y);
+  }
+  playStabberHit(x, y) {
+    this.playSound('stabberKnifeHit', x, y);
+  }
+
   // Legacy volume/control methods
   setVolume(volume) {
     if (this._gains.master) {
       this._gains.master.gain.value = volume;
     }
   }
-  
+
   toggle() {
     const currentVol = this._gains.master ? this._gains.master.gain.value : 1;
     const newVol = currentVol > 0 ? 0 : 1;
     this.setVolume(newVol);
     return newVol > 0;
   }
-  
+
   // Legacy player reference (compatibility)
   setPlayer(player) {
     this._player = player;
@@ -604,15 +679,15 @@ export class ToneAudioFacade {
   // Legacy test method
   testAudioSystem() {
     console.log('🎵 Testing ToneAudioFacade...');
-    
+
     if (!this._initialized) {
       console.log('❌ Audio system not initialized');
       return false;
     }
-    
+
     console.log('✅ Audio system initialized');
     console.log('🔊 Testing sample playback...');
-    
+
     // Test a few key sounds
     const testSounds = ['playerShoot', 'explosion', 'hit'];
     testSounds.forEach((sound, i) => {
@@ -621,17 +696,27 @@ export class ToneAudioFacade {
         console.log(`✅ Played ${sound}`);
       }, i * 200);
     });
-    
+
     console.log('🎵 Audio system test complete');
     return true;
   }
-  
+
   // Legacy methods that can be no-ops or minimal implementations
-  ensureAudioContext() { return this._initialized; }
-  update() { /* no-op in tone.js system */ }
-  updateTexts() { /* no-op - handled by UI */ }
-  drawTexts() { /* no-op - handled by UI */ }
-  disable() { this.setVolume(0); }
+  ensureAudioContext() {
+    return this._initialized;
+  }
+  update() {
+    /* no-op in tone.js system */
+  }
+  updateTexts() {
+    /* no-op - handled by UI */
+  }
+  drawTexts() {
+    /* no-op - handled by UI */
+  }
+  disable() {
+    this.setVolume(0);
+  }
 
   /**
    * Return lightweight diagnostics for overlays/probes.

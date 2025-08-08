@@ -128,6 +128,10 @@ For the full guide on API endpoints, parameters, and `curl` examples, see the [T
 - Use ES modules (`import`/`export`) with mandatory dependency injection patterns.
 - **p5.js Instance Mode**: All drawing functions must use `this.p.` prefix (e.g., `this.p.fill()`, `this.p.ellipse()`).
 - Import math functions from `mathUtils.js` instead of using p5.js globals.
+- **Static Guardrails**: Run `bun run scan:consistency` to enforce:
+  - Instance-mode compliance (flags unprefixed p5 calls like `fill(`, `ellipse(`, `push()`, ...)
+  - Math utilities usage (flags direct `Math.(cos|sin|atan2|sqrt)` in `packages/**`)
+  - Also available: `bun run scan:instance`, `bun run scan:math`
 - **Constructor Signatures**: All enemy classes use exact signature: `constructor(x, y, type, config, p, audio)`.
 - **Console Logging**: All logs must use emoji prefixes (🎮 Game state, 🎵 Audio, 🗡️ Combat, etc.).
 - **Timing System**: Use `deltaTimeMs` for frame-independent calculations, normalized to 60fps baseline.

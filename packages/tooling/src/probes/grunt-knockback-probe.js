@@ -1,5 +1,6 @@
 // grunt-knockback-probe.js
 // Probe: Grunt knock-back VFX
+import { sqrt } from '@vibe/core';
 
 async function waitForGrunt(timeout = 5000) {
   const start = Date.now();
@@ -40,7 +41,7 @@ export default (async function () {
 
   result.afterHitX = grunt.x;
   result.afterHitY = grunt.y;
-  result.knockbackDelta = Math.sqrt(
+  result.knockbackDelta = sqrt(
     Math.pow(result.afterHitX - result.initialX, 2) +
       Math.pow(result.afterHitY - result.initialY, 2)
   );

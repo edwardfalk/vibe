@@ -178,98 +178,78 @@ class EnemyFragmentExplosion {
   }
 
   draw(p) {
-    // Bind p5 instance methods for concise use while keeping instance-mode safety
-    const {
-      push,
-      pop,
-      translate,
-      rotate,
-      fill,
-      noStroke,
-      ellipse,
-      rect,
-      beginShape,
-      endShape,
-      vertex,
-      map,
-      red,
-      green,
-      blue,
-      cos,
-      sin,
-    } = p;
     if (!this.active) return;
 
     // Draw central explosion first (behind fragments)
     for (const particle of this.centralExplosion.particles) {
-      const alpha = map(particle.life, 0, particle.maxLife, 0, 255);
+      const alpha = p.map(particle.life, 0, particle.maxLife, 0, 255);
 
-      push();
-      translate(particle.x, particle.y);
+      p.push();
+      p.translate(particle.x, particle.y);
 
       // Glow effect
       if (particle.glow > 0) {
-        fill(
-          red(particle.color),
-          green(particle.color),
-          blue(particle.color),
+        p.fill(
+          p.red(particle.color),
+          p.green(particle.color),
+          p.blue(particle.color),
           alpha * particle.glow * 0.3
         );
-        noStroke();
-        ellipse(0, 0, particle.size * 3);
+        p.noStroke();
+        p.ellipse(0, 0, particle.size * 3);
       }
 
       // Main particle
-      fill(
-        red(particle.color),
-        green(particle.color),
-        blue(particle.color),
+      p.fill(
+        p.red(particle.color),
+        p.green(particle.color),
+        p.blue(particle.color),
         alpha
       );
-      noStroke();
-      ellipse(0, 0, particle.size);
+      p.noStroke();
+      p.ellipse(0, 0, particle.size);
 
       // Bright core
-      fill(255, 255, 255, alpha * 0.6);
-      ellipse(0, 0, particle.size * 0.4);
+      p.fill(255, 255, 255, alpha * 0.6);
+      p.ellipse(0, 0, particle.size * 0.4);
 
-      pop();
+      p.pop();
     }
 
     // Draw fragments
     for (const fragment of this.fragments) {
-      const alpha = map(fragment.life, 0, fragment.maxLife, 0, 255);
+      const alpha = p.map(fragment.life, 0, fragment.maxLife, 0, 255);
 
-      push();
-      translate(fragment.x, fragment.y);
-      rotate(fragment.rotation);
+      p.push();
+      p.translate(fragment.x, fragment.y);
+      p.rotate(fragment.rotation);
 
-      fill(
-        red(fragment.color),
-        green(fragment.color),
-        blue(fragment.color),
+      p.fill(
+        p.red(fragment.color),
+        p.green(fragment.color),
+        p.blue(fragment.color),
         alpha
       );
-      noStroke();
+      p.noStroke();
 
       // Draw different shapes based on fragment type
       if (fragment.type === 'head' || fragment.type === 'helmet') {
         // Rounded fragments for head/helmet
-        ellipse(0, 0, fragment.size);
+        p.ellipse(0, 0, fragment.size);
       } else if (fragment.type === 'body') {
         // Angular fragments for body
-        beginShape();
+        p.beginShape();
         for (let i = 0; i < 6; i++) {
           const angle = (i / 6) * TWO_PI;
           const radius = fragment.size * 0.5 * (0.8 + random(0.4));
           const x = cos(angle) * radius;
           const y = sin(angle) * radius;
-          vertex(x, y);
+          p.vertex(x, y);
         }
-        endShape(CLOSE);
+        p.endShape(p.CLOSE);
       } else if (fragment.type === 'weapon') {
         // Rectangular fragments for weapons
-        rect(
+        p.rect(
           -fragment.size * 0.3,
           -fragment.size * 0.1,
           fragment.size * 0.6,
@@ -278,10 +258,10 @@ class EnemyFragmentExplosion {
       }
 
       // Add subtle highlight
-      fill(255, 255, 255, alpha * 0.3);
-      ellipse(fragment.size * 0.2, -fragment.size * 0.2, fragment.size * 0.2);
+      p.fill(255, 255, 255, alpha * 0.3);
+      p.ellipse(fragment.size * 0.2, -fragment.size * 0.2, fragment.size * 0.2);
 
-      pop();
+      p.pop();
     }
   }
 }

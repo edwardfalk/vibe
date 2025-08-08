@@ -1,4 +1,4 @@
-import { sin, cos, random } from '../../core/src/mathUtils.js';
+import { sin, cos, random, min, max } from '@vibe/core';
 import EffectsProfiler from './EffectsProfiler.js';
 import { getEnemyConfig, effectsConfig } from './effectsConfig.js';
 
@@ -8,7 +8,7 @@ import { getEnemyConfig, effectsConfig } from './effectsConfig.js';
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
 class VisualEffectsManager {
-  constructor(backgroundLayers) {
+  constructor(p) {
     // Particle systems
     this.particles = [];
     this.cosmicDust = [];
@@ -41,7 +41,9 @@ class VisualEffectsManager {
       [255, 182, 193], // Light pink
     ];
 
-    this.backgroundLayers = backgroundLayers;
+    this.backgroundLayers = null; // Set by init() method after p5 is ready
+    // Store the p5 instance immediately if provided
+    this.pInstance = p;
 
     // --- Performance cache for space gradient -------------------------
     this._gradientBuffer = null; // p5.Graphics buffer
@@ -96,7 +98,7 @@ class VisualEffectsManager {
         size: random(0.5, 2),
         alpha: random(20, 60),
         speed: random(0.05, 0.2),
-        angle: random(p.TWO_PI),
+        angle: random(2 * Math.PI),
         color: random(this.nebulaPalette),
       });
     }
@@ -109,11 +111,11 @@ class VisualEffectsManager {
         y: random(-p.height, p.height * 2),
         width: random(150, 300),
         height: random(80, 150),
-        angle: random(p.TWO_PI),
+        angle: random(2 * Math.PI),
         speed: random(0.002, 0.008),
         intensity: random(0.1, 0.3),
         color: random(this.auroraPalette),
-        phase: random(p.TWO_PI),
+        phase: random(2 * Math.PI),
       });
     }
   }
@@ -250,34 +252,42 @@ class VisualEffectsManager {
   drawEnhancedStars(p, camera) {
     p.push();
     p.blendMode(p.ADD);
-    if (this.backgroundLayers && this.backgroundLayers[1]) {
-      this.backgroundLayers[1].forEach((star) => {
-        if (star.brightness > 0.8) {
-          const parallaxX = star.x - camera.x * 0.3;
-          const parallaxY = star.y - camera.y * 0.3;
-          const twinkle = sin(p.frameCount * 0.1 + star.x * 0.01) * 0.5 + 0.5;
-          const glowSize = star.size * (2 + twinkle);
-          p.fill(255, 255, 255, 30 * twinkle);
-          p.noStroke();
-          p.ellipse(parallaxX, parallaxY, glowSize, glowSize);
-          if (star.brightness > 0.9) {
-            p.stroke(255, 255, 255, 50 * twinkle);
-            p.strokeWeight(1);
-            p.line(
-              parallaxX - glowSize / 2,
-              parallaxY,
-              parallaxX + glowSize / 2,
-              parallaxY
-            );
-            p.line(
-              parallaxX,
-              parallaxY - glowSize / 2,
-              parallaxX,
-              parallaxY + glowSize / 2
-            );
-          }
+
+    // Generate some procedural stars since BackgroundRenderer handles parallax stars
+    // This adds extra twinkling effects for enhanced stars
+    for (let i = 0; i < 8; i++) {
+      const starX = (i * 127 + p.frameCount * 0.02) % p.width;
+      const starY = (i * 179) % p.height;
+      const brightness = 0.85 + sin(p.frameCount * 0.05 + i) * 0.15;
+
+      if (brightness > 0.8) {
+        const parallaxX = starX - camera.x * 0.3;
+        const parallaxY = starY - camera.y * 0.3;
+        const twinkle = sin(p.frameCount * 0.1 + starX * 0.01) * 0.5 + 0.5;
+        const size = 3 + sin(i) * 1;
+        const glowSize = size * (2 + twinkle);
+
+        p.fill(255, 255, 255, 30 * twinkle);
+        p.noStroke();
+        p.ellipse(parallaxX, parallaxY, glowSize, glowSize);
+
+        if (brightness > 0.9) {
+          p.stroke(255, 255, 255, 50 * twinkle);
+          p.strokeWeight(1);
+          p.line(
+            parallaxX - glowSize / 2,
+            parallaxY,
+            parallaxX + glowSize / 2,
+            parallaxY
+          );
+          p.line(
+            parallaxX,
+            parallaxY - glowSize / 2,
+            parallaxX,
+            parallaxY + glowSize / 2
+          );
         }
-      });
+      }
     }
     p.blendMode(p.BLEND);
     p.pop();
@@ -306,7 +316,7 @@ class VisualEffectsManager {
     const lod = effectsConfig.global.lodMultiplier || 1;
 
     const particleCount = cfg.burst?.count
-      ? Math.max(4, Math.round(cfg.burst.count * lod))
+      ? max(4, Math.round(cfg.burst.count * lod))
       : type === 'rusher-explosion'
         ? 25
         : 15;
@@ -439,27 +449,52 @@ class VisualEffectsManager {
   drawParticles(p) {
     p.push();
     p.blendMode(p.ADD);
-    this.particles.forEach((part) => {
-      const alpha = p.map(part.life, 0, part.maxLife, 0, 255);
-      p.fill(part.color[0], part.color[1], part.color[2], alpha);
-      p.noStroke();
+    p.noStroke();
+    let lastR = -1, lastG = -1, lastB = -1, lastA = -1;
+    for (let i = 0; i < this.particles.length; i++) {
+      const part = this.particles[i];
+      const norm = part.maxLife > 0 ? part.life / part.maxLife : 0;
+      const alpha = 255 * norm;
+      const r = part.color[0];
+      const g = part.color[1];
+      const b = part.color[2];
+
+      if (r !== lastR || g !== lastG || b !== lastB || alpha !== lastA) {
+        p.fill(r, g, b, alpha);
+        lastR = r; lastG = g; lastB = b; lastA = alpha;
+      }
+
       if (part.type === 'trail') {
-        p.ellipse(
-          part.x,
-          part.y,
-          part.size * (part.life / part.maxLife),
-          part.size * (part.life / part.maxLife)
-        );
+        const s = part.size * norm;
+        p.ellipse(part.x, part.y, s, s);
       } else {
         p.ellipse(part.x, part.y, part.size, part.size);
         if (part.type === 'explosion') {
-          p.fill(part.color[0], part.color[1], part.color[2], alpha * 0.3);
+          const fadeA = alpha * 0.3;
+          if (fadeA !== lastA) {
+            p.fill(r, g, b, fadeA);
+            lastA = fadeA;
+          }
           p.ellipse(part.x, part.y, part.size * 2, part.size * 2);
+          // restore main alpha for next particles with same color
+          if (alpha !== lastA) {
+            p.fill(r, g, b, alpha);
+            lastA = alpha;
+          }
         }
       }
-    });
+    }
     p.blendMode(p.BLEND);
     p.pop();
+  }
+
+  /**
+   * Add a generic glow effect at world position (used by entities to avoid coupling to local helpers)
+   */
+  addGlowEffect(x, y, size, color, intensity = 1) {
+    const p = this.pInstance;
+    if (!p) return;
+    drawGlow(p, x, y, size, color, intensity);
   }
 
   // Screen effects
@@ -565,8 +600,8 @@ class VisualEffectsManager {
       this.particles.push({
         x,
         y,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
+        vx: cos(angle) * speed,
+        vy: sin(angle) * speed,
         size: 4 + random(0, 3),
         life: 40 + random(-8, 8),
         maxLife: 40,

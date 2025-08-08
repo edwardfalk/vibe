@@ -48,7 +48,7 @@ export function normalizeAngle(angle) {
 export function random(minOrMax = undefined, max = undefined) {
   // No arguments → 0-1
   if (typeof minOrMax === 'undefined') {
-    return Math.random();
+    return _rng();
   }
 
   // NEW: If first argument is an array → pick a random element (p5.js compatibility)
@@ -56,16 +56,51 @@ export function random(minOrMax = undefined, max = undefined) {
     const arr = minOrMax;
     // Guard against empty array – return undefined to avoid NaN cascades
     if (arr.length === 0) return undefined;
-    return arr[floor(Math.random() * arr.length)];
+    return arr[floor(_rng() * arr.length)];
   }
 
   // Single numeric argument → range [0, arg)
   if (typeof max === 'undefined') {
-    return Math.random() * minOrMax;
+    return _rng() * minOrMax;
   }
 
   // Two numeric arguments → range [min, max)
-  return Math.random() * (max - minOrMax) + minOrMax;
+  return _rng() * (max - minOrMax) + minOrMax;
 }
 
 export const randomRange = random;
+
+// --- Seedable RNG ---------------------------------------------------------
+// Mulberry32 PRNG for deterministic runs. Good speed/quality for gameplay/testing.
+let _rng = Math.random;
+let _rngState = 0;
+
+function mulberry32(seed) {
+  return function next() {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Set deterministic RNG seed. Pass null/undefined to restore Math.random.
+ */
+export function setRandomSeed(seed) {
+  if (seed === null || typeof seed === 'undefined') {
+    _rng = Math.random;
+    _rngState = 0;
+    return;
+  }
+  const s = (seed >>> 0) || 0;
+  _rngState = s;
+  _rng = mulberry32(s);
+}
+
+/**
+ * Get current RNG seed/state (0 when using Math.random)
+ */
+export function getRandomSeed() {
+  return _rngState;
+}

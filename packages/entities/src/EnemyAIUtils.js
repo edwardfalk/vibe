@@ -1,7 +1,7 @@
 /* EnemyAIUtils.js - Shared helpers for enemy AI logic (avoid duplication)
  * All math functions are imported from @vibe/core per project standards.
  */
-import { atan2, random, PI } from '@vibe/core';
+import { atan2, random, PI, min } from '@vibe/core';
 
 // Squared distance between two points
 export function distanceSq(x1, y1, x2, y2) {
@@ -13,7 +13,7 @@ export function distanceSq(x1, y1, x2, y2) {
 // Minimal angular difference between two angles (radians)
 export function angleDiff(a, b) {
   const diff = Math.abs(a - b);
-  return Math.min(diff, PI * 2 - diff);
+  return min(diff, PI * 2 - diff);
 }
 
 /**

@@ -41,40 +41,46 @@ export class BackgroundRenderer {
 
     this.parallaxLayers = [
       {
-        name: 'distant_stars',
+        name: 'distant_galaxies',
         elements: [],
-        speed: 0.1,
-        depth: 0.9,
+        speed: 0.05,
+        depth: 0.95,
+      },
+      {
+        name: 'far_stars',
+        elements: [],
+        speed: 0.12,
+        depth: 0.85,
       },
       {
         name: 'nebula_clouds',
         elements: [],
-        speed: 0.3,
-        depth: 0.7,
+        speed: 0.25,
+        depth: 0.75,
       },
       {
-        name: 'noise_wave',
+        name: 'cosmic_dust',
         elements: [],
-        speed: 0.2,
-        depth: 0.8,
+        speed: 0.4,
+        depth: 0.6,
       },
       {
         name: 'medium_stars',
         elements: [],
-        speed: 0.5,
-        depth: 0.5,
+        speed: 0.6,
+        depth: 0.45,
       },
       {
         name: 'close_debris',
         elements: [],
-        speed: 0.8,
+        speed: 0.85,
         depth: 0.3,
       },
       {
-        name: 'foreground_sparks',
+        name: 'foreground_particles',
         elements: [],
-        speed: 1.2,
-        depth: 0.1,
+        speed: 1.1,
+        depth: 0.15,
       },
     ];
 
@@ -91,74 +97,131 @@ export class BackgroundRenderer {
 
   // Generate elements for parallax layers
   generateLayerElements(p = this.p) {
-    // Distant stars layer
-    const distantStars = this.parallaxLayers[0];
-    for (let i = 0; i < 50; i++) {
-      distantStars.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        size: randomRange(1, 3),
-        brightness: randomRange(0.3, 1),
-        twinkleSpeed: randomRange(0.01, 0.03),
+    // Distant galaxies layer (deepest, slowest)
+    const distantGalaxies = this.parallaxLayers.find(
+      (l) => l.name === 'distant_galaxies'
+    );
+    for (let i = 0; i < 6; i++) {
+      distantGalaxies.elements.push({
+        x: randomRange(-p.width * 2, p.width * 3),
+        y: randomRange(-p.height * 2, p.height * 3),
+        size: randomRange(80, 150),
+        rotation: randomRange(0, 2 * Math.PI),
+        rotationSpeed: randomRange(-0.001, 0.001),
+        arms: randomRange(2, 4),
+        color: {
+          r: randomRange(80, 120),
+          g: randomRange(60, 100),
+          b: randomRange(140, 200),
+        },
+        alpha: randomRange(0.03, 0.08),
+      });
+    }
+
+    // Far stars layer
+    const farStars = this.parallaxLayers.find((l) => l.name === 'far_stars');
+    for (let i = 0; i < 80; i++) {
+      farStars.elements.push({
+        x: randomRange(-p.width * 2, p.width * 3),
+        y: randomRange(-p.height * 2, p.height * 3),
+        size: randomRange(1, 2),
+        brightness: randomRange(0.4, 0.8),
+        twinkleSpeed: randomRange(0.008, 0.02),
+        color: ['white', 'lightblue', 'yellow'][floor(random() * 3)],
       });
     }
 
     // Nebula clouds layer
-    const nebulaClouds = this.parallaxLayers[1];
-    for (let i = 0; i < 8; i++) {
+    const nebulaClouds = this.parallaxLayers.find(
+      (l) => l.name === 'nebula_clouds'
+    );
+    for (let i = 0; i < 12; i++) {
       nebulaClouds.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        size: randomRange(100, 300),
+        x: randomRange(-p.width * 1.5, p.width * 2.5),
+        y: randomRange(-p.height * 1.5, p.height * 2.5),
+        size: randomRange(120, 400),
         color: {
-          r: randomRange(40, 80),
-          g: randomRange(20, 60),
-          b: randomRange(60, 120),
+          r: randomRange(30, 90),
+          g: randomRange(15, 70),
+          b: randomRange(80, 140),
         },
-        alpha: randomRange(0.05, 0.15),
-        driftSpeed: randomRange(0.1, 0.3),
+        alpha: randomRange(0.06, 0.18),
+        driftSpeed: randomRange(0.05, 0.2),
         noiseSeed: randomRange(0, 10000),
+        pulseSpeed: randomRange(0.01, 0.03),
       });
     }
 
-    // Noise wave layer
-    const noiseWave = this.parallaxLayers.find((l) => l.name === 'noise_wave');
-    noiseWave.elements.push({ seed: randomRange(0, 10000) });
+    // Cosmic dust layer
+    const cosmicDust = this.parallaxLayers.find(
+      (l) => l.name === 'cosmic_dust'
+    );
+    for (let i = 0; i < 100; i++) {
+      cosmicDust.elements.push({
+        x: randomRange(-p.width * 1.5, p.width * 2.5),
+        y: randomRange(-p.height * 1.5, p.height * 2.5),
+        size: randomRange(0.5, 1.5),
+        brightness: randomRange(0.3, 0.7),
+        driftSpeed: randomRange(0.02, 0.08),
+        angle: randomRange(0, 2 * Math.PI),
+        color: {
+          r: randomRange(120, 180),
+          g: randomRange(100, 160),
+          b: randomRange(140, 220),
+        },
+      });
+    }
 
     // Medium stars layer
-    const mediumStars = this.parallaxLayers[2];
-    for (let i = 0; i < 30; i++) {
+    const mediumStars = this.parallaxLayers.find(
+      (l) => l.name === 'medium_stars'
+    );
+    for (let i = 0; i < 45; i++) {
       mediumStars.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        size: randomRange(2, 5),
-        brightness: randomRange(0.5, 1),
-        color: ['white', 'blue', 'yellow', 'orange'][floor(random() * 4)],
+        x: randomRange(-p.width * 1.2, p.width * 2.2),
+        y: randomRange(-p.height * 1.2, p.height * 2.2),
+        size: randomRange(2, 4),
+        brightness: randomRange(0.6, 1),
+        twinkleSpeed: randomRange(0.015, 0.04),
+        color: ['white', 'blue', 'yellow', 'orange', 'lightcyan'][
+          floor(random() * 5)
+        ],
       });
     }
 
     // Close debris layer
-    const closeDebris = this.parallaxLayers[3];
-    for (let i = 0; i < 15; i++) {
+    const closeDebris = this.parallaxLayers.find(
+      (l) => l.name === 'close_debris'
+    );
+    for (let i = 0; i < 20; i++) {
       closeDebris.elements.push({
         x: randomRange(-p.width, p.width * 2),
         y: randomRange(-p.height, p.height * 2),
-        size: randomRange(3, 8),
-        rotation: randomRange(0, p.TWO_PI),
-        rotationSpeed: randomRange(-0.02, 0.02),
-        shape: ['triangle', 'square', 'diamond'][floor(random() * 3)],
+        size: randomRange(3, 10),
+        rotation: randomRange(0, 2 * Math.PI),
+        rotationSpeed: randomRange(-0.03, 0.03),
+        shape: ['triangle', 'square', 'diamond', 'cross'][floor(random() * 4)],
+        alpha: randomRange(0.4, 0.8),
       });
     }
 
-    // Foreground sparks layer
-    const foregroundSparks = this.parallaxLayers[4];
-    for (let i = 0; i < 60; i++) {
-      foregroundSparks.elements.push({
-        x: p.random(-p.width, p.width * 2),
-        y: p.random(-p.height, p.height * 2),
-        size: p.random(2, 4),
-        alpha: p.random(150, 255),
-        flickerSpeed: p.random(0.05, 0.15),
+    // Foreground particles layer
+    const foregroundParticles = this.parallaxLayers.find(
+      (l) => l.name === 'foreground_particles'
+    );
+    for (let i = 0; i < 85; i++) {
+      foregroundParticles.elements.push({
+        x: randomRange(-p.width, p.width * 2),
+        y: randomRange(-p.height, p.height * 2),
+        size: randomRange(1.5, 3.5),
+        alpha: randomRange(120, 200),
+        flickerSpeed: randomRange(0.08, 0.25),
+        driftSpeed: randomRange(0.1, 0.3),
+        color: {
+          r: randomRange(180, 255),
+          g: randomRange(180, 255),
+          b: randomRange(200, 255),
+        },
       });
     }
   }
@@ -189,14 +252,17 @@ export class BackgroundRenderer {
 
     // Draw layer elements based on type
     switch (layer.name) {
-      case 'distant_stars':
-        this.drawDistantStars(layer.elements, p);
+      case 'distant_galaxies':
+        this.drawDistantGalaxies(layer.elements, p);
+        break;
+      case 'far_stars':
+        this.drawFarStars(layer.elements, p);
         break;
       case 'nebula_clouds':
         this.drawNebulaClouds(layer.elements, p);
         break;
-      case 'noise_wave':
-        this.drawNoiseWave(layer.elements, p);
+      case 'cosmic_dust':
+        this.drawCosmicDust(layer.elements, p);
         break;
       case 'medium_stars':
         this.drawMediumStars(layer.elements, p);
@@ -204,37 +270,142 @@ export class BackgroundRenderer {
       case 'close_debris':
         this.drawCloseDebris(layer.elements, p);
         break;
-      case 'foreground_sparks':
-        this.drawForegroundSparks(layer.elements, p);
+      case 'foreground_particles':
+        this.drawForegroundParticles(layer.elements, p);
         break;
     }
 
     p.pop();
   }
 
-  // Draw distant stars with twinkling
-  drawDistantStars(stars, p = this.p) {
+  // Draw distant galaxies (deepest background layer)
+  drawDistantGalaxies(galaxies, p = this.p) {
     p.noStroke();
-    for (const star of stars) {
-      const twinkle = p.sin(p.frameCount * star.twinkleSpeed) * 0.5 + 0.5;
-      const alpha = star.brightness * twinkle * 255;
+    for (const galaxy of galaxies) {
+      p.push();
+      p.translate(galaxy.x, galaxy.y);
+      p.rotate(galaxy.rotation);
+      galaxy.rotation += galaxy.rotationSpeed;
 
-      p.fill(255, 255, 255, alpha);
-      p.ellipse(star.x, star.y, star.size, star.size);
+      // Draw spiral arms
+      for (let arm = 0; arm < galaxy.arms; arm++) {
+        p.push();
+        p.rotate((arm * 2 * Math.PI) / galaxy.arms);
+
+        for (let r = 5; r < galaxy.size; r += 8) {
+          const armAngle = r * 0.08;
+          const armX = cos(armAngle) * r;
+          const armY = sin(armAngle) * r * 0.3; // Flattened spiral
+          const alpha = galaxy.alpha * 255 * (1 - r / galaxy.size);
+
+          p.fill(galaxy.color.r, galaxy.color.g, galaxy.color.b, alpha);
+          p.ellipse(armX, armY, 2, 1);
+        }
+        p.pop();
+      }
+
+      // Galaxy core
+      const coreAlpha = galaxy.alpha * 255 * 1.5;
+      p.fill(
+        galaxy.color.r + 30,
+        galaxy.color.g + 20,
+        galaxy.color.b + 40,
+        coreAlpha
+      );
+      p.ellipse(0, 0, galaxy.size * 0.15, galaxy.size * 0.1);
+
+      p.pop();
     }
   }
 
-  // Draw nebula clouds
+  // Draw far stars with subtle twinkling
+  drawFarStars(stars, p = this.p) {
+    p.noStroke();
+    for (const star of stars) {
+      const twinkle = sin(p.frameCount * star.twinkleSpeed) * 0.4 + 0.6;
+      const alpha = star.brightness * twinkle * 180;
+
+      // Set color based on star type
+      switch (star.color) {
+        case 'lightblue':
+          p.fill(173, 216, 230, alpha);
+          break;
+        case 'yellow':
+          p.fill(255, 255, 224, alpha);
+          break;
+        default:
+          p.fill(255, 255, 255, alpha);
+      }
+
+      p.ellipse(star.x, star.y, star.size * twinkle, star.size * twinkle);
+    }
+  }
+
+  // Draw nebula clouds with pulsing
   drawNebulaClouds(clouds, p = this.p) {
     p.noStroke();
     for (const cloud of clouds) {
       const noiseInput =
         (cloud.x + p.frameCount * cloud.driftSpeed) * 0.002 +
         (cloud.noiseSeed || 0);
-      const drift = p.noise(noiseInput) * 40 - 20;
-      const alpha = cloud.alpha * 255;
-      p.fill(cloud.color.r, cloud.color.g, cloud.color.b, alpha);
-      p.ellipse(cloud.x + drift, cloud.y, cloud.size, cloud.size * 0.6);
+      const drift = p.noise(noiseInput) * 50 - 25;
+      const pulse = sin(p.frameCount * cloud.pulseSpeed) * 0.3 + 0.7;
+      const alpha = cloud.alpha * 255 * pulse;
+
+      // Draw multiple overlapping ellipses for more realistic nebula effect
+      p.fill(cloud.color.r, cloud.color.g, cloud.color.b, alpha * 0.6);
+      p.ellipse(
+        cloud.x + drift,
+        cloud.y,
+        cloud.size * pulse,
+        cloud.size * 0.4 * pulse
+      );
+
+      p.fill(
+        cloud.color.r + 20,
+        cloud.color.g + 10,
+        cloud.color.b + 30,
+        alpha * 0.4
+      );
+      p.ellipse(
+        cloud.x + drift * 0.7,
+        cloud.y + drift * 0.3,
+        cloud.size * 0.8 * pulse,
+        cloud.size * 0.5 * pulse
+      );
+
+      p.fill(
+        cloud.color.r + 40,
+        cloud.color.g + 30,
+        cloud.color.b + 50,
+        alpha * 0.2
+      );
+      p.ellipse(
+        cloud.x + drift * 0.4,
+        cloud.y - drift * 0.2,
+        cloud.size * 0.6 * pulse,
+        cloud.size * 0.3 * pulse
+      );
+    }
+  }
+
+  // Draw cosmic dust particles
+  drawCosmicDust(dust, p = this.p) {
+    p.noStroke();
+    for (const particle of dust) {
+      // Animate particle movement
+      particle.x += cos(particle.angle) * particle.driftSpeed;
+      particle.y += sin(particle.angle) * particle.driftSpeed;
+
+      // Wrap particles around screen
+      if (particle.x > p.width + 50) particle.x = -50;
+      if (particle.x < -50) particle.x = p.width + 50;
+      if (particle.y > p.height + 50) particle.y = -50;
+      if (particle.y < -50) particle.y = p.height + 50;
+
+      const alpha = particle.brightness * 120;
+      p.fill(particle.color.r, particle.color.g, particle.color.b, alpha);
+      p.ellipse(particle.x, particle.y, particle.size, particle.size);
     }
   }
 
@@ -274,17 +445,18 @@ export class BackgroundRenderer {
     }
   }
 
-  // Draw close debris
+  // Draw close debris with enhanced shapes and transparency
   drawCloseDebris(debris, p = this.p) {
-    p.stroke(100, 100, 100, 150);
-    p.strokeWeight(1);
-    p.noFill();
-
     for (const piece of debris) {
       p.push();
       p.translate(piece.x, piece.y);
       p.rotate(piece.rotation);
       piece.rotation += piece.rotationSpeed;
+
+      const alpha = piece.alpha * 255;
+      p.stroke(120, 120, 140, alpha);
+      p.strokeWeight(1.5);
+      p.fill(80, 90, 120, alpha * 0.3);
 
       switch (piece.shape) {
         case 'triangle':
@@ -312,18 +484,61 @@ export class BackgroundRenderer {
             0
           );
           break;
+        case 'cross':
+          const halfSize = piece.size / 2;
+          const thickness = piece.size / 6;
+          // Horizontal bar
+          p.rect(-halfSize, -thickness, piece.size, thickness * 2);
+          // Vertical bar
+          p.rect(-thickness, -halfSize, thickness * 2, piece.size);
+          break;
       }
       p.pop();
     }
   }
 
-  // Draw foreground sparks
-  drawForegroundSparks(sparks, p = this.p) {
+  // Draw foreground particles with drift and flicker
+  drawForegroundParticles(particles, p = this.p) {
     p.noStroke();
-    for (const spark of sparks) {
-      const flicker = p.sin(p.frameCount * spark.flickerSpeed) * 0.5 + 0.5;
-      p.fill(255, 255, 255, spark.alpha * flicker);
-      p.ellipse(spark.x, spark.y, spark.size, spark.size);
+    for (const particle of particles) {
+      // Animate particle movement
+      particle.x +=
+        cos(p.frameCount * 0.01 + particle.x * 0.001) * particle.driftSpeed;
+      particle.y +=
+        sin(p.frameCount * 0.008 + particle.y * 0.001) * particle.driftSpeed;
+
+      // Wrap particles around screen
+      if (particle.x > p.width + 20) particle.x = -20;
+      if (particle.x < -20) particle.x = p.width + 20;
+      if (particle.y > p.height + 20) particle.y = -20;
+      if (particle.y < -20) particle.y = p.height + 20;
+
+      const flicker = sin(p.frameCount * particle.flickerSpeed) * 0.4 + 0.6;
+      const alpha = particle.alpha * flicker;
+
+      p.fill(particle.color.r, particle.color.g, particle.color.b, alpha);
+      p.ellipse(
+        particle.x,
+        particle.y,
+        particle.size * flicker,
+        particle.size * flicker
+      );
+
+      // Add small glow effect for brighter particles
+      if (alpha > 150) {
+        p.fill(
+          particle.color.r,
+          particle.color.g,
+          particle.color.b,
+          alpha * 0.3
+        );
+        p.ellipse(
+          particle.x,
+          particle.y,
+          particle.size * flicker * 2,
+          particle.size * flicker * 2
+        );
+      }
     }
   }
 
@@ -517,7 +732,7 @@ export class BackgroundRenderer {
       // Galaxy spiral arms
       for (let arm = 0; arm < 3; arm++) {
         p.push();
-        p.rotate((arm * p.TWO_PI) / 3);
+        p.rotate((arm * 2 * Math.PI) / 3);
 
         for (let r = 0; r < galaxySize; r += 3) {
           const armAngle = r * 0.1;

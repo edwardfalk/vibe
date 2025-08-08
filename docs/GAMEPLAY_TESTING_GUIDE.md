@@ -23,7 +23,7 @@ This guide covers advanced gameplay testing for the Vibe cosmic beat space shoot
 
 ### Overview
 
-The AI Liveness Probe (`js/ai-liveness-probe.js`) is an intelligent monitoring system that continuously validates game state and automatically reports issues.
+The AI Liveness Probe (`packages/tooling/src/probes/ai-liveness-probe.js`) is an intelligent monitoring system that continuously validates game state and automatically reports issues.
 
 ### What It Tests
 
@@ -48,7 +48,7 @@ The AI Liveness Probe (`js/ai-liveness-probe.js`) is an intelligent monitoring s
 
 ```javascript
 // Manual probe execution
-const probeResult = await import('./js/ai-liveness-probe.js');
+const probeResult = await import('../packages/tooling/src/probes/ai-liveness-probe.js');
 console.log('Probe result:', probeResult);
 
 // Automated integration (runs automatically)
@@ -212,7 +212,7 @@ bun run debug:probe  // Verify improvements
 
 ### Browser-Based Testing Suite
 
-**File**: `js/comprehensive-test-suite.js`
+**File**: `packages/tooling/src/probes/comprehensive-test-suite.js`
 
 ```javascript
 // Quick health check (F10)
@@ -239,7 +239,7 @@ bun run test:headed
 
 ### Console Test Runner
 
-**File**: `js/test-runner.js`
+**File**: `packages/tooling/src/probes/test-runner.js`
 
 ```javascript
 // Available in browser console
@@ -251,7 +251,7 @@ testRunner.checkBugPatterns(); // Bug pattern detection
 
 ### Extended Gameplay Testing
 
-**File**: `js/extended-gameplay-test.js`
+**File**: `packages/tooling/src/probes/extended-gameplay-test.js`
 
 ```javascript
 // 3-minute stress test with continuous gameplay simulation
@@ -480,7 +480,7 @@ bun run test:performance   # Performance benchmarks
 ```javascript
 // Use probes to validate assumptions
 const validateGameState = async () => {
-  const probe = await import('./js/ai-liveness-probe.js');
+const probe = await import('../packages/tooling/src/probes/ai-liveness-probe.js');
   if (probe.failure) {
     console.error('Game state invalid:', probe.failure);
     return false;
@@ -494,7 +494,7 @@ const validateGameState = async () => {
 ```javascript
 // Continuous monitoring during development
 setInterval(async () => {
-  const probe = await import('./js/ai-liveness-probe.js');
+  const probe = await import('../packages/tooling/src/probes/ai-liveness-probe.js');
   if (probe.failure) {
     console.warn('⚠️ Probe detected issue:', probe.failure);
   }

@@ -58,10 +58,11 @@ describe('SampleLoader.load()', () => {
   });
 
   it('loads manifest and returns players with no failedIds', async () => {
-    const { players, failedIds } = await SampleLoader.load('fake/url/manifest.json');
+    const { players, failedIds } = await SampleLoader.load(
+      'fake/url/manifest.json'
+    );
 
     expect(Object.keys(players._players)).toEqual(Object.keys(manifest));
     expect(failedIds.length).toBe(0);
   });
 });
-

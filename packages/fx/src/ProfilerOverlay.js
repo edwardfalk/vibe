@@ -1,4 +1,5 @@
 import EffectsProfiler from './EffectsProfiler.js';
+import { min } from '@vibe/core';
 import { effectsConfig } from './effectsConfig.js';
 
 // Simple singleton overlay – toggled via ProfilerOverlay.toggle()
@@ -26,7 +27,7 @@ class ProfilerOverlay {
     let boxHeight = lineHeight * 11; // more lines for subsystem timings
     const counterKeys = Object.keys(stats.counters);
     const maxCountersToShow = 4;
-    boxHeight += Math.min(counterKeys.length, maxCountersToShow) * lineHeight;
+    boxHeight += min(counterKeys.length, maxCountersToShow) * lineHeight;
 
     const boxWidth = 220;
 
@@ -81,7 +82,7 @@ class ProfilerOverlay {
     p.text('burst counts:', pad + 4, y);
     y += lineHeight;
 
-    const entries = counterKeys.slice(0, maxCountersToShow);
+    const entries = counterKeys.slice(0, min(counterKeys.length, maxCountersToShow));
     for (const key of entries) {
       p.text(`${key}: ${stats.counters[key]}`, pad + 4, y);
       y += lineHeight;

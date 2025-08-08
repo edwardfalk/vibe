@@ -102,7 +102,7 @@ function typeFromLabels(labels) {
   let existing = '';
   if (existsSync(changelogPath)) existing = readFileSync(changelogPath, 'utf8');
   if (existing.includes(`## ${today}`)) {
-    console.log('ℹ️  CHANGELOG already contains today\'s section.');
+    console.log("ℹ️  CHANGELOG already contains today's section.");
     process.exit(0);
   }
   writeFileSync(changelogPath, section + existing, 'utf8');

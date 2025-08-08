@@ -3,6 +3,8 @@
  * (moved to @vibe/core)
  */
 
+import { min } from './mathUtils.js';
+
 export class GameState {
   constructor() {
     this.score = 0;
@@ -75,83 +77,10 @@ export class GameState {
     }
   }
 
-  /**
-   * TODO: This method is tightly coupled to window globals (cameraSystem, audio, etc.).
-   * Refactor to use dependency injection for better modularity.
-   */
+  // State-only restart; orchestration lives in GameLoop.restartGame(p)
   restart() {
-    console.log('🔄 Robust Restart: Re-initializing systems...');
     this._resetEntities();
-    if (window.player && window.player.p) {
-      const p = window.player.p;
-      window.player = new window.Player(
-        p,
-        p.width / 2,
-        p.height / 2,
-        window.cameraSystem
-      );
-      if (
-        !Number.isFinite(window.player.x) ||
-        !Number.isFinite(window.player.y)
-      ) {
-        console.error(
-          '[GAME FATAL] Player position invalid after creation',
-          window.player
-        );
-        window.player.x = 400;
-        window.player.y = 300;
-      }
-      window.dispatchEvent(
-        new CustomEvent('playerChanged', { detail: window.player })
-      );
-    }
-    if (window.cameraSystem) {
-      window.cameraSystem.x = 0;
-      window.cameraSystem.y = 0;
-      window.cameraSystem.targetX = 0;
-      window.cameraSystem.targetY = 0;
-    }
-    // [BUGFIX: see ticket "Legacy explosionManager triggers wrong VFX colors"]
-    // All legacy explosion manager logic removed. Only event-bus VFX system is re-initialized on restart.
-    window.effectsManager = new window.EffectsManager();
-    if (
-      window.visualEffectsManager &&
-      window.visualEffectsManager.backgroundLayers
-    ) {
-      window.visualEffectsManager = new window.VisualEffectsManager(
-        window.visualEffectsManager.backgroundLayers
-      );
-      // Initialize visual effects manager with current p5 instance
-      if (window.player && window.player.p) {
-        window.visualEffectsManager.init(window.player.p);
-      }
-    }
-    window.audio = window.audio || null;
-    window.speechManager = null;
-    window.spawnSystem = new window.SpawnSystem();
-    window.collisionSystem = new window.CollisionSystem();
-    window.beatClock = new window.BeatClock(120);
-
-    this.score = 0;
-    this.level = 1;
-    this.nextLevelThreshold = 150;
-    this.killStreak = 0;
-    this.totalKills = 0;
-    this.shotsFired = 0;
-    this.gameOverTimer = 0;
-    this.pauseStartTime = 0;
-    this.gameState = 'playing';
-
-    if (window.spawnSystem) window.spawnSystem.spawnEnemies(1);
-    if (typeof window.updateGameLoopLocals === 'function')
-      window.updateGameLoopLocals();
-
-    setTimeout(() => {
-      if (window.audio && window.player)
-        window.audio.speakPlayerLine(window.player, 'start');
-    }, 500);
-
-    console.log('✅ Robust game restart complete.');
+    this.reset();
   }
 
   _resetEntities() {
@@ -170,7 +99,7 @@ export class GameState {
     const currentLevelStart = this.nextLevelThreshold - this.level * 150;
     const progress = this.score - currentLevelStart;
     const required = this.nextLevelThreshold - currentLevelStart;
-    return Math.min(progress / required, 1);
+    return min(progress / required, 1);
   }
 
   updateGameOverTimer() {

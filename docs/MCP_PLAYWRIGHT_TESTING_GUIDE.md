@@ -42,7 +42,7 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
   - Log the current state of player, enemies, and gameState.
   - Record the time/frame of failure.
 - This workflow is mandatory for all MCP Playwright tests.
-- Current liveness probe implementation: [`js/ai-liveness-probe.js`](js/ai-liveness-probe.js)
+- Current liveness probe implementation: [`packages/tooling/src/probes/ai-liveness-probe.js`](../packages/tooling/src/probes/ai-liveness-probe.js)
 
 ### Automated Bug Reporting for Probe Failures
 
@@ -60,7 +60,7 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 
 - Ensures the game is truly running (not just error-free)
 - Checks: game loop, player, enemies, BeatClock, audio
-- Example probe: [`js/ai-liveness-probe.js`](js/ai-liveness-probe.js)
+- Example probe: [`packages/tooling/src/probes/ai-liveness-probe.js`](../packages/tooling/src/probes/ai-liveness-probe.js)
 - **Current probe behavior:**
   - The probe always reports the current game state (`gameState`, `isGameOver`).
   - If the game is at the 'game over' screen, it reports this, triggers a diagnostic screenshot, and skips further liveness checks.
@@ -84,7 +84,7 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 1. **Navigate to the game**
    - Use `mcp_playwright_playwright_navigate` to load http://localhost:5500
 2. **Run the liveness/heartbeat probe**
-   - Load and run `js/ai-liveness-probe.js` using `mcp_playwright_playwright_evaluate`
+   - Load and run `packages/tooling/src/probes/ai-liveness-probe.js` using `mcp_playwright_playwright_evaluate`
 3. **Interpret the results**
    - If any check fails, review the returned object and screenshots
 4. **Run scenario-specific probes or actions**
@@ -99,7 +99,7 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 ```js
 // Load the probe script as a string (Node.js example)
 const fs = require('fs');
-const probeScript = fs.readFileSync('js/ai-liveness-probe.js', 'utf8');
+const probeScript = fs.readFileSync('packages/tooling/src/probes/ai-liveness-probe.js', 'utf8');
 
 // Use MCP Playwright to evaluate
 const result = await mcp_playwright_playwright_evaluate({
@@ -140,11 +140,11 @@ if (result.moveBlockedByEdge) {
 
 | Probe File | Focus | Notes |
 |------------|-------|-------|
-| `js/ai-liveness-probe.js` | Core game liveness (loop, player, enemies) | Mandatory first probe |
-| `js/audio-system-probe.js` | Audio context & beat synchronization | – |
-| `js/collision-detection-probe.js` | Bullet & entity collision handling | – |
-| `js/grunt-knockback-probe.js` | Grunt enemy knock-back physics | – |
-| `js/tank-armor-break-probe.js` | Tank armor break VFX & debris | – |
+| `packages/tooling/src/probes/ai-liveness-probe.js` | Core game liveness (loop, player, enemies) | Mandatory first probe |
+| `packages/tooling/src/probes/audio-system-probe.js` | Audio context & beat synchronization | – |
+| `packages/tooling/src/probes/collision-detection-probe.js` | Bullet & entity collision handling | – |
+| `packages/tooling/src/probes/grunt-knockback-probe.js` | Grunt enemy knock-back physics | – |
+| `packages/tooling/src/probes/tank-armor-break-probe.js` | Tank armor break VFX & debris | – |
 | Playwright tests in `tests/` ending `*-probe.test.js` | Browser-level orchestration of above probes | e.g. `performance-probe.test.js`, `startup-black-screen-probe.test.js` |
 
 > **Naming Standard:** All automated Playwright tests **must** end with `*-probe.test.js`.  Manual `.spec.js` tests are deprecated and will be deleted during documentation cleanup.
