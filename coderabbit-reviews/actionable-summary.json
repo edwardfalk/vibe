@@ -1,0 +1,1497 @@
+[
+  {
+    "file": "js/coderabbit-review-processor.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134848709",
+        "line": 214,
+        "created_at": "2025-06-08T22:56:01Z",
+        "snippet": "_⚠️ Potential issue_ **Suggestion text may be empty for some patterns** `text: match[1] || match[0]` skips content when the first capture group is empty (e.g., ```suggestion``` blocks). Fallback t"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134848711",
+        "line": 158,
+        "created_at": "2025-06-08T22:56:01Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Network calls run sequentially – switch to `Promise.all` for 5-10× speed-up** `fetchPullRequestReviews` and `fetchReviewComments` are awaited one-by-one inside the loop. "
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129456142",
+        "line": 31,
+        "created_at": "2025-06-05T17:23:59Z",
+        "snippet": "_💡 Verification agent_ <details> <summary>🧩 Analysis chain</summary> **`fetch` may be undefined in the execution environment** Node ≤ 16 lacks a global `fetch`; relying on it breaks under LTS s"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129456154",
+        "line": 377,
+        "created_at": "2025-06-05T17:23:59Z",
+        "snippet": "_⚠️ Potential issue_ **Guard against empty `categoryTotals`** When no suggestions exist, `Object.entries(categoryTotals)[0]` is `undefined`, causing `topCategory[1]` to throw. Defensive check: ```"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129456164",
+        "line": 223,
+        "created_at": "2025-06-05T17:23:59Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Inefficient sequential flow & duplicated slice** `getLatestCodeRabbitReviews`: 1. Calls `fetchPullRequests('all')` (see above) which already returns a bounded list onc"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283535",
+        "line": 231,
+        "created_at": "2025-06-05T16:45:09Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Large `state=all` query can hit rate limits** Fetching *all* PRs then slicing locally still counts against API quotas. Use `per_page=maxPRs&sort=updated` and stop aft"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283548",
+        "line": 16,
+        "created_at": "2025-06-05T16:45:09Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Hard-coded owner/repo & missing runtime guards** Placing `\"your-username\"` / `\"vibe\"` as defaults will silently send API calls to the wrong repo in CI. Either require "
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2129238335",
+        "line": 445,
+        "created_at": "2025-06-05T16:27:25Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Update default repository configuration** The example usage still contains placeholder values that should be updated to match the PR context. Update the default values: "
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2129238342",
+        "line": 15,
+        "created_at": "2025-06-05T16:27:25Z",
+        "snippet": "_⚠️ Potential issue_ **Replace hardcoded placeholder values with proper defaults** The hardcoded placeholders on lines 9-10 need to be replaced with actual values or better defaults. Using 'your-use"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2129238348",
+        "line": 31,
+        "created_at": "2025-06-05T16:27:25Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Add rate limit handling to API requests** The GitHub API has rate limits that should be handled gracefully. The current implementation doesn't check rate limit headers or"
+      }
+    ]
+  },
+  {
+    "file": "js/edge-exploration-test.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283493",
+        "line": 398,
+        "created_at": "2025-06-05T16:45:09Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Coordinate system mismatch risk** `simulateMouseClick` assumes the `x`,`y` arguments are *canvas-relative*, then adds `rect.left/top`. `performContinuousShooting` alr"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283505",
+        "line": 338,
+        "created_at": "2025-06-05T16:45:09Z",
+        "snippet": "_⚠️ Potential issue_ **`takeEdgeScreenshot()` only logs – no screenshot is ever taken** The function records a filename but never triggers a capture (`canvas.toDataURL`, `html2canvas`, Playwright "
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283509",
+        "line": 553,
+        "created_at": "2025-06-05T16:45:09Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Multiple F6 presses will launch overlapping testers** Every key-press creates a new `EdgeExplorationTester` without checking if one is already running, leading to dupli"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283519",
+        "line": 194,
+        "created_at": "2025-06-05T16:45:09Z",
+        "snippet": "_🛠️ Refactor suggestion_ **`moveToEdgeWithShooting()` can easily stall or flood the main thread** The `while` loop mixes a very small sleep (`await this.wait(50)`) with two calls to `performConti"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2129238315",
+        "line": 338,
+        "created_at": "2025-06-05T16:27:25Z",
+        "snippet": "_⚠️ Potential issue_ **Screenshot functionality appears incomplete.** The `takeEdgeScreenshot` method logs that screenshots are taken, but there's no actual screenshot capture implementation. It onl"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2129238322",
+        "line": 256,
+        "created_at": "2025-06-05T16:27:25Z",
+        "snippet": "_💡 Verification agent_ <details> <summary>🧩 Analysis chain</summary> **Verify velocity prediction calculation.** The velocity prediction assumes 60 FPS, but the actual frame rate might vary. This"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2129238306",
+        "line": 194,
+        "created_at": "2025-06-05T16:27:24Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Consider adding game over detection during edge movement.** The movement loop doesn't check if the game is over or if the player has died, which could cause the test to c"
+      }
+    ]
+  },
+  {
+    "file": "js/coderabbit-testing-integration.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129456099",
+        "line": 349,
+        "created_at": "2025-06-05T17:23:59Z",
+        "snippet": "_⚠️ Potential issue_ **Guard against undefined metadata when filtering tickets.** The code accesses `t.metadata.category` without checking if metadata exists. Apply this diff to safely access the m"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129456113",
+        "line": 364,
+        "created_at": "2025-06-05T17:23:59Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Use consistent ES module export syntax.** Since the file should use ES modules, update the export pattern to match. Apply this diff to use ES module export: ```diff -//"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129456121",
+        "line": 412,
+        "created_at": "2025-06-05T17:23:59Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Update module detection for ES modules.** The current check uses CommonJS patterns which won't work with ES modules. Apply this diff to properly detect if the module is "
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283423",
+        "line": 84,
+        "created_at": "2025-06-05T16:45:08Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Ticket ID collision risk & status mismatch.** • `Math.random()` is not collision-safe at scale. • You later count `status === 'created'`, but the mock returns `'created"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283434",
+        "line": 288,
+        "created_at": "2025-06-05T16:45:08Z",
+        "snippet": "_⚠️ Potential issue_ **`codeRabbitReport.recommendations` may be undefined.** Spreading an undefined value throws. Guard first: ```diff -const recommendations = [...codeRabbitReport.recommendations"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283443",
+        "line": 6,
+        "created_at": "2025-06-05T16:45:08Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Mixed ES-module / CommonJS style – pick one.** The rest of the codebase (`Stabber.js`, etc.) uses `import` syntax. Requiring here forces Node’s CJS loader and complicates"
+      }
+    ]
+  },
+  {
+    "file": "js/Rusher.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283388",
+        "line": 248,
+        "created_at": "2025-06-05T16:45:08Z",
+        "snippet": "_⚠️ Potential issue_ **`ceil` is undefined – will throw at runtime** `ceil()` is used on line 246 but never imported or referenced via `Math.`. Quick fix: ```diff -import { floor, random, sqrt, s"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283400",
+        "line": 21,
+        "created_at": "2025-06-05T16:45:08Z",
+        "snippet": "_🛠️ Refactor suggestion_ **`audio` dependency injected but never used** `audio` is accepted and stored (`this.audio = audio`) yet every subsequent call still references the global `window.audio`. "
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283375",
+        "line": 177,
+        "created_at": "2025-06-05T16:45:07Z",
+        "snippet": "_⚠️ Potential issue_ **`frameCount` accessed as an implicit global – breaks p5 instance-mode rule** Both `getAnimationModifications()` and `drawExplosionWarning()` use bare `frameCount`. Under p5 "
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833544",
+        "line": 19,
+        "created_at": "2025-06-05T13:16:01Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Constructor signature drift – unused parameters & hard-coded type** `type` and `config` are accepted but ignored, while `'rusher'` is hard-coded in the `super` call. Ei"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833546",
+        "line": 247,
+        "created_at": "2025-06-05T13:16:01Z",
+        "snippet": "_⚠️ Potential issue_ **`ceil` is not imported – runtime ReferenceError** `ceil(...)` is used but not defined/imported. Either use `Math.ceil` or import `ceil` from `mathUtils.js`. ```diff -const co"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833552",
+        "line": 177,
+        "created_at": "2025-06-05T13:16:01Z",
+        "snippet": "_⚠️ Potential issue_ **Breaks p5 instance-mode: relies on global `frameCount`** `sin(frameCount * 0.8)` accesses the global `frameCount`, defeating the move to p5 instance mode. Use the injected `p`"
+      }
+    ]
+  },
+  {
+    "file": "js/Tank.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283333",
+        "line": 235,
+        "created_at": "2025-06-05T16:45:07Z",
+        "snippet": "_⚠️ Potential issue_ **Use `this.p.push()/pop()` in instance mode** Plain `push()/pop()` call the global-mode API and break when p5 is loaded in `instance` mode (which the project now uses). Switc"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283339",
+        "line": 12,
+        "created_at": "2025-06-05T16:45:07Z",
+        "snippet": "_⚠️ Potential issue_ **`type` ctor parameter is never used – drop it or forward it** `constructor(x, y, type, config, p, audio)` receives `type`, but the value is ignored (`'tank'` is hard-coded w"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833442",
+        "line": 22,
+        "created_at": "2025-06-05T13:15:59Z",
+        "snippet": "_⚠️ Potential issue_ **Constructor parameters `type` and `config` are accepted but silently ignored** `constructor(x, y, type, config, p, audio)` immediately overrides both `type` (`'tank'`) and `co"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833451",
+        "line": 58,
+        "created_at": "2025-06-05T13:15:59Z",
+        "snippet": "_⚠️ Potential issue_ **`dt` mis-scales time; internal thresholds now fire almost immediately** `dt = deltaTimeMs / 16.6667` converts ms → “frame units”, but later comparisons use literal integers (`"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833456",
+        "line": 262,
+        "created_at": "2025-06-05T13:15:59Z",
+        "snippet": "_⚠️ Potential issue_ **`push()` / `pop()` and other drawing calls break p5.js instance mode** Within `drawArmorPlates` you invoke the global `push()` / `pop()` and `rect()` helpers. In instance mode"
+      }
+    ]
+  },
+  {
+    "file": "mcp-automated-test-runner.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283358",
+        "line": 160,
+        "created_at": "2025-06-05T16:45:07Z",
+        "snippet": "_⚠️ Potential issue_ **Resolve probe file path relative to this module** `fs.readFileSync(probeFile …)` relies on the current working directory. Running the test runner from a different directory "
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283369",
+        "line": 390,
+        "created_at": "2025-06-05T16:45:07Z",
+        "snippet": "_⚠️ Potential issue_ **Ensure `test-results/` exists before writing the report** `fs.writeFileSync` fails if the directory is missing. ```diff -const reportPath = `test-results/mcp-automated-test-r"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833459",
+        "line": 390,
+        "created_at": "2025-06-05T13:15:59Z",
+        "snippet": "_⚠️ Potential issue_ **Create `test-results/` if it doesn’t exist before writing the report** `fs.writeFileSync` will throw `ENOENT` when the directory is missing. Pro-actively create the directory"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833468",
+        "line": 160,
+        "created_at": "2025-06-05T13:15:59Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Resolve probe path & validate existence to avoid silent `ENOENT`** Reading a relative path from an arbitrary CWD is brittle. Resolve against project root and fail fast "
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833477",
+        "line": 269,
+        "created_at": "2025-06-05T13:15:59Z",
+        "snippet": "_⚠️ Potential issue_ **Avoid string-interpolating unescaped coordinates into browser context** Injecting JS literals with `${movementResult.initialPos.x}` may break when the number is `undefined` "
+      }
+    ]
+  },
+  {
+    "file": "js/Audio.js",
+    "suggestions": [
+      {
+        "pr": 12,
+        "url": "https://github.com/edwardfalk/vibe/pull/12#discussion_r2131893920",
+        "line": 442,
+        "created_at": "2025-06-06T09:50:39Z",
+        "snippet": "_⚠️ Potential issue_ **Fix potential null reference error with beatClock.** The method accesses `window.beatClock.bpm` without verifying that `beatClock` exists, which could cause runtime errors if "
+      },
+      {
+        "pr": 12,
+        "url": "https://github.com/edwardfalk/vibe/pull/12#discussion_r2131893911",
+        "line": 352,
+        "created_at": "2025-06-06T09:50:38Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Optimize tremolo gain node creation for performance.** The tremolo gain node is always created and inserted into the audio chain, even for sounds that don't use tremolo. "
+      },
+      {
+        "pr": 3,
+        "url": "https://github.com/edwardfalk/vibe/pull/3#discussion_r2131830204",
+        "line": 54,
+        "created_at": "2025-06-06T09:09:05Z",
+        "snippet": "_💡 Verification agent_ <details> <summary>🧩 Analysis chain</summary> **Random-helper migration is incomplete** Great to see `random`, `randomRange`, and `floor` centralised 🎉. However several "
+      },
+      {
+        "pr": 3,
+        "url": "https://github.com/edwardfalk/vibe/pull/3#discussion_r2131830199",
+        "line": 353,
+        "created_at": "2025-06-06T09:09:04Z",
+        "snippet": "_🛠️ Refactor suggestion_ _⚠️ Potential issue_ **Tremolo gain can swing negative → audible phase-inversion; add DC-offset & clean-up LFO nodes** `applyBeatTremolo()` feeds a bipolar sine (-1…1) sca"
+      }
+    ]
+  },
+  {
+    "file": "README.md",
+    "suggestions": [
+      {
+        "pr": 4,
+        "url": "https://github.com/edwardfalk/vibe/pull/4#discussion_r2130326662",
+        "line": 75,
+        "created_at": "2025-06-05T20:51:57Z",
+        "snippet": "_⚠️ Potential issue_ **Fix markdown formatting inconsistencies.** The bullet point indentation is inconsistent with markdown standards. Static analysis tools are flagging MD005 and MD007 violations "
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129456052",
+        "line": 192,
+        "created_at": "2025-06-05T17:23:58Z",
+        "snippet": "_💡 Verification agent_ <details> <summary>🧩 Analysis chain</summary> **Verify the server start command aligns with the package.json scripts.** The comment mentions that `npm run dev` starts the g"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129456070",
+        "line": 212,
+        "created_at": "2025-06-05T17:23:58Z",
+        "snippet": "_⚠️ Potential issue_ **Fix the incorrect file path reference.** The path should include the `docs/` directory prefix to match the actual file location. Apply this diff to fix the path: ```diff -- "
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2129238298",
+        "line": 206,
+        "created_at": "2025-06-05T16:27:24Z",
+        "snippet": "_⚠️ Potential issue_ **Fix broken link to TICKETING_SYSTEM_GUIDE.md** The link on line 205 is missing the `docs/` directory prefix. ```diff For detailed testing documentation, see: - [MCP Playw"
+      }
+    ]
+  },
+  {
+    "file": "js/comprehensive-test-suite.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283566",
+        "line": 494,
+        "created_at": "2025-06-05T16:45:10Z",
+        "snippet": "_⚠️ Potential issue_ **Duplicate `testPlayerMovement` method – earlier definition is silently overwritten** `testPlayerMovement` is declared here and again at 808-979. Only the second declaration "
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283582",
+        "line": 1313,
+        "created_at": "2025-06-05T16:45:10Z",
+        "snippet": "_🛠️ Refactor suggestion_ **`frameRate` reference pushes a function instead of a numeric FPS** Inside `testFrameRate()` you do: ```js if (typeof frameRate !== 'undefined') { frameRates.push(fra"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833578",
+        "line": 494,
+        "created_at": "2025-06-05T13:16:02Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Duplicate `testPlayerMovement` method – last one wins, first is dead code** The class declares `testPlayerMovement` twice, triggering Biome’s `noDuplicateClassMembers` er"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833582",
+        "line": 1334,
+        "created_at": "2025-06-05T13:16:02Z",
+        "snippet": "_🛠️ Refactor suggestion_ **`frameRate` misuse leads to `NaN` average FPS** `frameRate` in p5.js is a **function**, not a number. Pushing the function into `frameRates` and later summing it result"
+      }
+    ]
+  },
+  {
+    "file": "js/game-debugging-probe.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283455",
+        "line": 160,
+        "created_at": "2025-06-05T16:45:08Z",
+        "snippet": "_⚠️ Potential issue_ **Division by zero when no files analysed** `healthPercentage` divides by `totalFiles`; if `totalFiles === 0`, a `NaN` sneaks into the report: ```js healthPercentage: Math.roun"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283467",
+        "line": 66,
+        "created_at": "2025-06-05T16:45:08Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Null-safety missing around `debuggingResults.results`** `extractKeyInsights()` assumes `debuggingResults.results` is an array. If `analyzeGameForBugs()` returns `null`,"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283475",
+        "line": 34,
+        "created_at": "2025-06-05T16:45:08Z",
+        "snippet": "_⚠️ Potential issue_ **`gameDebugger` is an undeclared global – will throw in Node & strict browsers** `gameDebugger.analyzeGameForBugs()` is referenced but never imported, injected, or declared. "
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958989",
+        "line": 279,
+        "created_at": "2025-06-05T14:11:20Z",
+        "snippet": "_⚠️ Potential issue_ **Potential issue with performance score comparison.** The code checks if the performance score is less than 80, but there's no validation that `gameLoopIssues?.analysis?.perfor"
+      }
+    ]
+  },
+  {
+    "file": "js/coderabbit-comment-tester.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958946",
+        "line": 327,
+        "created_at": "2025-06-05T14:11:19Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Apply same error handling pattern to getPRComments.** Consistent error handling should be applied to all fetch operations. Apply the same error handling pattern as sugg"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958953",
+        "line": 144,
+        "created_at": "2025-06-05T14:11:19Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Consolidate duplicate require statements.** Multiple require statements for the same module should be consolidated at the module level. Move all require statements to t"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958958",
+        "line": 294,
+        "created_at": "2025-06-05T14:11:19Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Add error handling for fetch API calls.** The fetch call lacks proper error handling for network failures and should validate response status. ```diff - const re"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958966",
+        "line": 15,
+        "created_at": "2025-06-05T14:11:19Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Replace hardcoded repository configuration.** Hardcoded repository owner creates maintenance burden and limits reusability. ```diff - this.repoOwner = 'your-user"
+      }
+    ]
+  },
+  {
+    "file": "scripts/powershell/setup-windows-environment.ps1",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127201",
+        "line": 188,
+        "created_at": "2025-06-20T14:33:24Z",
+        "snippet": "_⚠️ Potential issue_ **Incomplete path repair implementation** The function identifies issues but doesn't actually fix them. The `$needsUpdate` flag is set but never used to write changes back to pa"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127204",
+        "line": 50,
+        "created_at": "2025-06-20T14:33:24Z",
+        "snippet": "_⚠️ Potential issue_ **Return value doesn't match the warning severity** The function returns `false` when PowerShell version is < 7, but only logs a warning. This causes the test to be marked as fa"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127208",
+        "line": 148,
+        "created_at": "2025-06-20T14:33:24Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Ensure Node.js ES module support** The dynamic import might fail if Node.js isn't configured for ES modules. Consider checking Node.js version or adding appropriate flags"
+      }
+    ]
+  },
+  {
+    "file": "js/coderabbit-ticket-integration.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134848712",
+        "line": 130,
+        "created_at": "2025-06-08T22:56:01Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Duplicate-ticket detection too coarse** `findExistingTicket` de-duplicates only by `review.reviewUrl`. If a review contains multiple high-priority suggestions, the firs"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134848713",
+        "line": 13,
+        "created_at": "2025-06-08T22:56:01Z",
+        "snippet": "_⚠️ Potential issue_ **Unify the module system ‒ don’t mix ESM `import` with CommonJS `require`** The file is authored as an ES-module (top–level `import` statements). Later sections fallback to `"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134848714",
+        "line": 123,
+        "created_at": "2025-06-08T22:56:01Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Dynamic `import('fs')` returns a namespace object – the subsequent property access is wrong** `const fs = await import('fs');` yields `{ default: [Object] }`. `fs.exi"
+      }
+    ]
+  },
+  {
+    "file": "js/collision-detection-probe.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134843329",
+        "line": 73,
+        "created_at": "2025-06-08T22:31:33Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Collision checks mutate game state – call them in a dry-run wrapper** `checkBulletCollisions()` & `checkContactCollisions()` usually advance game logic (damage, removals)"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134843330",
+        "line": 6,
+        "created_at": "2025-06-08T22:31:33Z",
+        "snippet": "_⚠️ Potential issue_ **Guard against missing `random` export** If `mathUtils.js` ever stops exporting `{ random }`, this destructuring will throw and the entire probe aborts. Fall back to `Math.rand"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134843331",
+        "line": 174,
+        "created_at": "2025-06-08T22:31:33Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Replace deprecated `substr` and strengthen ID entropy** `String.prototype.substr` is deprecated. Also, converting a float to base-36 drastically trims entropy (e.g., “0.a"
+      }
+    ]
+  },
+  {
+    "file": "tests/gameplay-probe.test.js",
+    "suggestions": [
+      {
+        "pr": 13,
+        "url": "https://github.com/edwardfalk/vibe/pull/13#discussion_r2132057992",
+        "line": 36,
+        "created_at": "2025-06-06T11:54:58Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Consider adding bullet collision timing tests to align with PR objectives.** The PR objectives specifically mention fixing bullet collision timing, but these general game"
+      },
+      {
+        "pr": 13,
+        "url": "https://github.com/edwardfalk/vibe/pull/13#discussion_r2132039199",
+        "line": 32,
+        "created_at": "2025-06-06T11:40:24Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Add error handling and verify testRunner availability.** The test assumes `window.testRunner` exists and has the `testGameMechanics` method. Add error handling and verify"
+      },
+      {
+        "pr": 13,
+        "url": "https://github.com/edwardfalk/vibe/pull/13#discussion_r2132039193",
+        "line": 17,
+        "created_at": "2025-06-06T11:40:23Z",
+        "snippet": "_⚠️ Potential issue_ **Fix relative import path and add error handling.** The relative path `'../js/ai-liveness-probe.js'` may not resolve correctly from the Playwright test context. Consider using "
+      }
+    ]
+  },
+  {
+    "file": "js/extended-gameplay-test.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283557",
+        "line": 302,
+        "created_at": "2025-06-05T16:45:10Z",
+        "snippet": "_🛠️ Refactor suggestion_ **`combined action` never releases movement via `window.keys` path** When using keyboard events the movement key is released, but if the game relies on `window.keys` (lik"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2129238292",
+        "line": 116,
+        "created_at": "2025-06-05T16:27:24Z",
+        "snippet": "_⚠️ Potential issue_ **Potential null reference when accessing player properties.** The code checks if `window.player` exists but doesn't verify if `window.enemies` exists before using it in `isEnem"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833488",
+        "line": 82,
+        "created_at": "2025-06-05T13:16:00Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Inject game state instead of hard-coding `window.*` globals** Direct reads/writes to `window.gameState`, `window.player`, etc. tightly couples the tester to a specific ru"
+      }
+    ]
+  },
+  {
+    "file": "js/simple-bullet-collision-test.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283243",
+        "line": 214,
+        "created_at": "2025-06-05T16:45:06Z",
+        "snippet": "_🛠️ Refactor suggestion_ **`success: true` is returned even when the inner test recorded errors.** The function never inspects `testResult.errors` or unexpected game state, so callers cannot fail t"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283207",
+        "line": 32,
+        "created_at": "2025-06-05T16:45:05Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Hard-coded sleeps make the test brittle and slow.** Using fixed `setTimeout` delays (2 s + 1 s) can lead to flaky behaviour on fast/slow machines and wastes CI time. Pr"
+      },
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283220",
+        "line": 178,
+        "created_at": "2025-06-05T16:45:05Z",
+        "snippet": "_⚠️ Potential issue_ **`logs.result.logs` may throw when `result` is undefined – adopt optional chaining.** If the RPC fails or returns `{error}`, `logs.result` is falsy and `.logs` access crashes t"
+      }
+    ]
+  },
+  {
+    "file": "js/test-runner.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283294",
+        "line": 61,
+        "created_at": "2025-06-05T16:45:06Z",
+        "snippet": "_⚠️ Potential issue_ **`runLivenessProbe()` likely returns a module, not the probe result** `import()` returns a module object; you then return `probeModule.default` without invoking it. If the defa"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833428",
+        "line": 57,
+        "created_at": "2025-06-05T13:15:58Z",
+        "snippet": "_⚠️ Potential issue_ **Liveness probe never executes – missing `()`** `import()` returns a module namespace; you return the function reference instead of its result. ```diff -const probeModule = a"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833433",
+        "line": 91,
+        "created_at": "2025-06-05T13:15:58Z",
+        "snippet": "_🛠️ Refactor suggestion_ **`frameRate` comparison uses a function, not current FPS** `frameRate` is a p5 *function*. Comparing it to a number will always yield `false`. Call it instead: ```diff -"
+      }
+    ]
+  },
+  {
+    "file": "js/enhanced-playwright-test.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283314",
+        "line": 571,
+        "created_at": "2025-06-05T16:45:06Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Guard against duplicate global listeners** Every script load adds a new `keydown` handler, so repeated hot-reloads will spawn multiple testers at once. ```diff -if (type"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833410",
+        "line": 231,
+        "created_at": "2025-06-05T13:15:58Z",
+        "snippet": "_⚠️ Potential issue_ **Rate-limit test can produce false positives** `hasRateLimit` passes even when zero bullets are produced (game broken) because `0 < 5` is true. Guard for at least one bullet: "
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833419",
+        "line": 68,
+        "created_at": "2025-06-05T13:15:58Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Dispatch events to the element under test, not `document`** Some listeners (especially those attached by p5.js) are registered on `window` or the canvas element, not the "
+      }
+    ]
+  },
+  {
+    "file": "test-coderabbit-file.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958915",
+        "line": 4,
+        "created_at": "2025-06-05T14:11:18Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Use modern variable declarations.** Consider using `const` or `let` instead of `var` for better scoping and immutability where appropriate. ```diff - var x = 1; // "
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958923",
+        "line": 10,
+        "created_at": "2025-06-05T14:11:18Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Use strict equality and ensure complete return paths.** The function has two issues: loose equality comparison and missing return statement for the else case. ```diff "
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958930",
+        "line": 20,
+        "created_at": "2025-06-05T14:11:18Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Add deltaTimeMs parameter for frame-independent updates.** The update method should accept a `deltaTimeMs` parameter for frame-rate independent timing, and the movement s"
+      }
+    ]
+  },
+  {
+    "file": "js/ui-score-probe.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833508",
+        "line": 149,
+        "created_at": "2025-06-05T13:16:00Z",
+        "snippet": "_⚠️ Potential issue_ **Use `window.frameCount` to stay p5-instance-mode compliant** Direct access to the global `frameCount` caused crashes elsewhere in the game (see audit report). Stick to the e"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833517",
+        "line": 11,
+        "created_at": "2025-06-05T13:16:00Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Dynamic import returns a module namespace, not the API object** `await import('./ticketManager.js')` yields a module namespace whose exports live under `.default` (for de"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833521",
+        "line": 215,
+        "created_at": "2025-06-05T13:16:00Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Leverage optional chaining & guard against missing `toDataURL`** This cleans up deep property checks and avoids exceptions on non-canvas elements. ```diff - if (windo"
+      }
+    ]
+  },
+  {
+    "file": "scripts/final-debugging-verification.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127235",
+        "line": 63,
+        "created_at": "2025-06-20T14:33:25Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Hardcoded paths may not exist in all environments.** The script assumes specific directory structures that may vary across environments. Add path validation and make pat"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127239",
+        "line": 263,
+        "created_at": "2025-06-20T14:33:25Z",
+        "snippet": "_⚠️ Potential issue_ **Fix regex pattern for emoji detection.** The regex pattern needs the unicode flag to properly match emoji characters. Apply this fix: ```diff - /console\\.log\\(\\s*"
+      }
+    ]
+  },
+  {
+    "file": "scripts/powershell/optimized-conditional-profile.ps1",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127227",
+        "line": 176,
+        "created_at": "2025-06-20T14:33:24Z",
+        "snippet": "_🛠️ Refactor suggestion_ _⚠️ Potential issue_ **Security concern: Dynamic code execution with Invoke-Expression.** Using `Invoke-Expression` with string interpolation poses security risks if proje"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127233",
+        "line": 134,
+        "created_at": "2025-06-20T14:33:24Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Improve project detection pattern matching.** The current wildcard pattern `*$projectKey*` could match unintended directories. For example, \"vibe\" would match \"vibe-test\""
+      }
+    ]
+  },
+  {
+    "file": "scripts/enhanced-testing-system.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127153",
+        "line": 268,
+        "created_at": "2025-06-20T14:33:23Z",
+        "snippet": "_⚠️ Potential issue_ **Ensure directory exists before writing bug report** The code attempts to write to a directory that may not exist, which will cause an error. ```diff // Save to file syst"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127147",
+        "line": 111,
+        "created_at": "2025-06-20T14:33:22Z",
+        "snippet": "_⚠️ Potential issue_ **Fragile server startup detection** Relying on the string 'Local:' in stdout is fragile and could break if the server output format changes. Consider using a more robust method"
+      }
+    ]
+  },
+  {
+    "file": "scripts/run-mcp-tests.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127160",
+        "line": 187,
+        "created_at": "2025-06-20T14:33:23Z",
+        "snippet": "_⚠️ Potential issue_ **Placeholder tests provide no actual validation** All test methods (`testGameLoading`, `testAudioSystem`, `testPlayerMovement`, `testEnemySpawning`) are placeholders that alway"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127167",
+        "line": 253,
+        "created_at": "2025-06-20T14:33:23Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Clarify the dual test runner implementation** This file contains two independent test runner implementations: 1. `MCPTestRunner` class with placeholder tests 2. `runTests"
+      }
+    ]
+  },
+  {
+    "file": "packages/core/src/GameState.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127180",
+        "line": 143,
+        "created_at": "2025-06-20T14:33:23Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Refactor the restart method for better maintainability.** This method is doing too much - it's 66 lines long and handles multiple responsibilities including clearing stat"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127186",
+        "line": 49,
+        "created_at": "2025-06-20T14:33:23Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Consider decoupling from window globals for better modularity.** The direct access to `window.cameraSystem` and `window.audio` couples this core module to global state. S"
+      }
+    ]
+  },
+  {
+    "file": "scripts/batch-resolve-tickets.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127119",
+        "line": 64,
+        "created_at": "2025-06-20T14:33:22Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Add error handling for file write operations.** File write operations should also be wrapped in try-catch for robustness. ```diff // Write back to file - fs.writeFi"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127118",
+        "line": 26,
+        "created_at": "2025-06-20T14:33:21Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Add error handling for file operations.** The script lacks error handling for JSON parsing and file operations, which could cause crashes on malformed files. ```diff t"
+      }
+    ]
+  },
+  {
+    "file": "packages/fx/src/EffectsProfiler.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127107",
+        "line": 29,
+        "created_at": "2025-06-20T14:33:21Z",
+        "snippet": "_⚠️ Potential issue_ **Add environment check for performance API.** The `performance` object may not be available in all environments (Node.js, older browsers). Consider adding a fallback. ```diff"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127113",
+        "line": 71,
+        "created_at": "2025-06-20T14:33:21Z",
+        "snippet": "_⚠️ Potential issue_ **Fix critical bug in reset function.** The reset function has a bug on line 70 that will cause a runtime error. ```diff function reset() { framePtr = 0; - counters.keys "
+      }
+    ]
+  },
+  {
+    "file": "js/audio-system-probe.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134843332",
+        "line": 101,
+        "created_at": "2025-06-08T22:31:33Z",
+        "snippet": "_💡 Verification agent_ <details> <summary>🧩 Analysis chain</summary> **Timing-health calculation may report false positives** `lastBeatTime`’s unit (ms vs Date object) isn’t validated. If it’s a "
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833438",
+        "line": 140,
+        "created_at": "2025-06-05T13:15:58Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Failure aggregation omits “beat timing unhealthy” critical case** `criticalFailures` is populated for missing/inactive systems but ignores the earlier `beatTimingHealthy"
+      }
+    ]
+  },
+  {
+    "file": "js/comprehensive-probe-runner.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134843333",
+        "line": 45,
+        "created_at": "2025-06-08T22:31:33Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Run probes in parallel for a 3-4× speed-up** The probes are independent; awaiting them one-by-one stretches startup by N×probe latency. A trivial refactor with `Promise"
+      },
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134843334",
+        "line": 45,
+        "created_at": "2025-06-08T22:31:33Z",
+        "snippet": "_⚠️ Potential issue_ **Call the default export – don’t await the module object** `await probeModule.default` resolves to whatever the probe *exports*, not to the **result** of running the probe. I"
+      }
+    ]
+  },
+  {
+    "file": "CODERABBIT_INTEGRATION_GUIDE.md",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129456084",
+        "line": 252,
+        "created_at": "2025-06-05T17:23:58Z",
+        "snippet": "_💡 Verification agent_ <details> <summary>🧩 Analysis chain</summary> **Debug mode configuration is incomplete.** The example shows adding a `debug: true` option, but the actual implementation det"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2129238329",
+        "line": 43,
+        "created_at": "2025-06-05T16:27:25Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Replace placeholder values with environment-based configuration** The hardcoded placeholders 'your-actual-github-username' and repository name should be replaced with env"
+      }
+    ]
+  },
+  {
+    "file": "js/interactive-gameplay-test.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283323",
+        "line": 541,
+        "created_at": "2025-06-05T16:45:07Z",
+        "snippet": "_💡 Verification agent_ <details> <summary>🧩 Analysis chain</summary> **Verify keyboard shortcut conflicts.** The F11 and F12 keys might conflict with browser default behaviors (fullscreen and dev"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833540",
+        "line": 478,
+        "created_at": "2025-06-05T13:16:01Z",
+        "snippet": "_⚠️ Potential issue_ **Guard against divide-by-zero when no tests are executed** If every category gets skipped (e.g., `window.player` is missing) both `totalPassed` and `totalFailed` end up `0`, ma"
+      }
+    ]
+  },
+  {
+    "file": ".coderabbit.yaml",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283302",
+        "line": 17,
+        "created_at": "2025-06-05T16:45:06Z",
+        "snippet": "_⚠️ Potential issue_ **Invalid review settings keys.** The `reviews` section uses `request_changes`, `auto_approve`, and `review_full_file`, which don’t match the schema (`request_changes_workflow`,"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833497",
+        "line": 20,
+        "created_at": "2025-06-05T13:16:00Z",
+        "snippet": "_⚠️ Potential issue_ **Invalid review keys – config will fail schema validation** `request_changes`, `auto_approve`, and `review_full_file` are not recognised in the published schema. The intended f"
+      }
+    ]
+  },
+  {
+    "file": "js/visualEffects.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283178",
+        "line": 233,
+        "created_at": "2025-06-05T16:45:05Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Apply optional chaining for safer property access.** The static analysis tool correctly identifies that optional chaining would improve safety when accessing `backgroundL"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833385",
+        "line": 233,
+        "created_at": "2025-06-05T13:15:57Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Apply optional chaining for safer property access.** The static analysis hint is correct - use optional chaining to prevent potential runtime errors when backgroundLayers"
+      }
+    ]
+  },
+  {
+    "file": "js/coderabbit-game-debugger.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958981",
+        "line": 283,
+        "created_at": "2025-06-05T14:11:20Z",
+        "snippet": "_⚠️ Potential issue_ **Use optional chaining when reading performance score** `analysis.performance` may be absent if the integration module fails or skips performance metrics. Dereferencing `anal"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958984",
+        "line": 428,
+        "created_at": "2025-06-05T14:11:20Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Avoid undefined-property access in aggregate reducers** `issues` might be undefined; chain through both properties before reading `length`. ```diff - const totalIssues ="
+      }
+    ]
+  },
+  {
+    "file": "js/coderabbit-comment-probe.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958996",
+        "line": 219,
+        "created_at": "2025-06-05T14:11:20Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Mismatch between `expectedIssues` (6) and actual detections – false accuracy reporting** `expectedIssues` is hard-coded to 6, yet `analyzeTestCode()` only looks for 4 cat"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128959013",
+        "line": 411,
+        "created_at": "2025-06-05T14:11:20Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Extend static analysis to cover the remaining known issues** Add two quick rules so the probe really detects all 6 injected problems. ```diff @@ // Check fo"
+      }
+    ]
+  },
+  {
+    "file": "test-coderabbit-integration.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958969",
+        "line": 38,
+        "created_at": "2025-06-05T14:11:19Z",
+        "snippet": "_⚠️ Potential issue_ **Guard against missing arrays when printing probe stats** `probeResults.issues` / `probeResults.recommendations` might be `undefined` if the probe exits early. Accessing `.le"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958974",
+        "line": 47,
+        "created_at": "2025-06-05T14:11:19Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Add optional chaining on nested tester fields to prevent crashes** If `testerResults.results` or `testerResults.results.tests` is missing, the current code throws before "
+      }
+    ]
+  },
+  {
+    "file": "js/Grunt.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833403",
+        "line": 20,
+        "created_at": "2025-06-05T13:15:58Z",
+        "snippet": "_🛠️ Refactor suggestion_ **`audio` is injected but methods still rely on the global `window.audio`** The class stores `this.audio = audio`, yet every playback call continues to use `window.audio`"
+      },
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833396",
+        "line": 18,
+        "created_at": "2025-06-05T13:15:57Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Constructor accepts `type` / `config` but then ignores them** `constructor(x, y, type, config, p, audio)` suggests the caller can pass in a type string and custom confi"
+      }
+    ]
+  },
+  {
+    "file": "scripts/powershell/vibe-powershell-profile.ps1",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127245",
+        "line": 79,
+        "created_at": "2025-06-20T14:33:25Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Hardcoded paths reduce portability.** The hardcoded paths to D:\\projects limit the script's usability across different environments. Make paths configurable via environm"
+      }
+    ]
+  },
+  {
+    "file": "packages/core/src/TicketCore.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127195",
+        "line": 104,
+        "created_at": "2025-06-20T14:33:24Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Use optional chaining for safer property access** The condition `t.tags && t.tags.includes('focus')` can be simplified using optional chaining for better readability and "
+      }
+    ]
+  },
+  {
+    "file": "packages/core/src/Audio.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127211",
+        "line": 344,
+        "created_at": "2025-06-20T14:33:24Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Consider making validation development-only** The validation throws errors which could crash the game in production. The try-catch block just logs and rethrows, providing"
+      }
+    ]
+  },
+  {
+    "file": "packages/tooling/src/errorHandler.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127216",
+        "line": 187,
+        "created_at": "2025-06-20T14:33:24Z",
+        "snippet": "_⚠️ Potential issue_ **Add newline at end of file.** ```diff -} +} + ``` <!-- suggestion_start --> <details> <summary>📝 Committable suggestion</summary> > ‼️ **IMPORTANT** > Carefully review t"
+      }
+    ]
+  },
+  {
+    "file": "scripts/powershell/psreadline-fix.ps1",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127171",
+        "line": 91,
+        "created_at": "2025-06-20T14:33:23Z",
+        "snippet": "_⚠️ Potential issue_ **Error handler defined but not registered** The `$PSReadLineErrorHandler` scriptblock is defined but never registered with PSReadLine, so it won't actually handle any errors. "
+      }
+    ]
+  },
+  {
+    "file": "scripts/powershell/fix-psreadline.ps1",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127191",
+        "line": 88,
+        "created_at": "2025-06-20T14:33:23Z",
+        "snippet": "_⚠️ Potential issue_ **Replace hard-coded path with relative or configurable path** The hard-coded path `\"D:\\projects\\vibe\\scripts\\powershell\\vibe-powershell-profile.ps1\"` will fail on systems where"
+      }
+    ]
+  },
+  {
+    "file": "tests/ticket-workflow-probe.test.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127124",
+        "line": 59,
+        "created_at": "2025-06-20T14:33:22Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Add test cleanup to prevent test pollution.** The test creates tickets but doesn't clean them up afterward, which could lead to test pollution and flaky tests. Consider"
+      }
+    ]
+  },
+  {
+    "file": "packages/tooling/src/RemoteConsoleLogger.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127128",
+        "line": 94,
+        "created_at": "2025-06-20T14:33:22Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Consider making the API URL configurable for error handlers.** The global error handlers use a hardcoded URL `'http://localhost:3001/api/logs'` while the main function ac"
+      }
+    ]
+  },
+  {
+    "file": "packages/tooling/src/ticket-cli.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127130",
+        "line": 14,
+        "created_at": "2025-06-20T14:33:22Z",
+        "snippet": "_⚠️ Potential issue_ **Fix trailing comma in import statement.** The import statement is missing a trailing comma after the `log` import. ```diff generateId, writeTicket, readTicket, l"
+      }
+    ]
+  },
+  {
+    "file": "packages/systems/src/SpawnSystem.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127134",
+        "line": 140,
+        "created_at": "2025-06-20T14:33:22Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Fallback spawn position may place enemies outside screen bounds.** The fallback position calculation could place enemies at coordinates that are far outside the screen bo"
+      }
+    ]
+  },
+  {
+    "file": "ticket-api.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127138",
+        "line": 110,
+        "created_at": "2025-06-20T14:33:22Z",
+        "snippet": "_⚠️ Potential issue_ **Fix variable declaration.** The `ticket` variable is never reassigned after the initial read. ```diff - let ticket = await TicketCore.readTicket(req.params.id); + con"
+      }
+    ]
+  },
+  {
+    "file": ".cursor.ps1",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127141",
+        "line": 12,
+        "created_at": "2025-06-20T14:33:22Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Make project path configurable** The hardcoded path reduces portability across different developer machines. Consider using an environment variable or detecting the path "
+      }
+    ]
+  },
+  {
+    "file": "tests/ticket-creation-probe.test.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127092",
+        "line": 23,
+        "created_at": "2025-06-20T14:33:21Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Improve error handling and server startup reliability.** Several issues that could affect test reliability: 1. **Empty catch block** (line 11) hides potential network er"
+      }
+    ]
+  },
+  {
+    "file": "scripts/powershell/project-profile-loader.ps1",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127097",
+        "line": 13,
+        "created_at": "2025-06-20T14:33:21Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Address hardcoded path for better portability.** The hardcoded path `\"D:\\projects\\profiles\"` limits portability across different machines and users. Consider making this "
+      }
+    ]
+  },
+  {
+    "file": "tests/performance-probe.test.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127099",
+        "line": 41,
+        "created_at": "2025-06-20T14:33:21Z",
+        "snippet": "_⚠️ Potential issue_ **Fix undefined KeyboardEvent in Node.js context.** `KeyboardEvent` is not available in the Node.js context. The code should run in the browser context where it's defined. Mo"
+      }
+    ]
+  },
+  {
+    "file": "packages/core/src/index.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127105",
+        "line": 5,
+        "created_at": "2025-06-20T14:33:21Z",
+        "snippet": "_⚠️ Potential issue_ **Remove useless empty export** The static analysis tool correctly identifies that the empty export on line 4 is unnecessary since there are other exports following it. ```dif"
+      }
+    ]
+  },
+  {
+    "file": "scripts/cleanup-debug.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127078",
+        "line": 22,
+        "created_at": "2025-06-20T14:33:20Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Add directory existence check to prevent errors.** The script doesn't check if the `.debug` directory exists before trying to read it, which could cause errors if the dir"
+      }
+    ]
+  },
+  {
+    "file": "scripts/setup-environment.bat",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127087",
+        "line": 16,
+        "created_at": "2025-06-20T14:33:20Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Consider specifying the full path to the PowerShell script.** The script assumes `setup-windows-environment.ps1` is in the same directory. Consider using a relative path "
+      }
+    ]
+  },
+  {
+    "file": "scripts/update-ticket-status.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2159127090",
+        "line": 54,
+        "created_at": "2025-06-20T14:33:20Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Add safety guard against accidental execution.** The script immediately executes the batch update, which could be problematic if run accidentally. Consider adding a confi"
+      }
+    ]
+  },
+  {
+    "file": "js/coderabbit-pull-reviews.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134848708",
+        "line": 271,
+        "created_at": "2025-06-08T22:56:01Z",
+        "snippet": "_🛠️ Refactor suggestion_ **CLI self-execution check is brittle on different paths** `import.meta.url === \\`file://${process.argv[1]}\\`` fails when the script is invoked via a symlink or a relative "
+      }
+    ]
+  },
+  {
+    "file": "pull-coderabbit-reviews.js",
+    "suggestions": [
+      {
+        "pr": 15,
+        "url": "https://github.com/edwardfalk/vibe/pull/15#discussion_r2134848707",
+        "line": 116,
+        "created_at": "2025-06-08T22:56:00Z",
+        "snippet": "_⚠️ Potential issue_ **Captured text drops the description part of “**Title**” suggestions** For the first regex two capture-groups are defined, but later you keep only `match[1]`: ```js { regex: /"
+      }
+    ]
+  },
+  {
+    "file": "TESTING_REPORT.md",
+    "suggestions": [
+      {
+        "pr": 13,
+        "url": "https://github.com/edwardfalk/vibe/pull/13#discussion_r2132039202",
+        "line": 657,
+        "created_at": "2025-06-06T11:40:24Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Consolidate duplicate probe documentation** This “4. Playwright Gameplay Probes” section repeats details already covered under “Gameplay Probe Suite.” Consider merging th"
+      }
+    ]
+  },
+  {
+    "file": "eslint.config.js",
+    "suggestions": [
+      {
+        "pr": 4,
+        "url": "https://github.com/edwardfalk/vibe/pull/4#discussion_r2130326659",
+        "line": 22,
+        "created_at": "2025-06-05T20:51:57Z",
+        "snippet": "_💡 Verification agent_ <details> <summary>🧩 Analysis chain</summary> **Well-configured ESLint setup with Prettier integration.** The flat config format is modern and the rule set is appropriate: "
+      }
+    ]
+  },
+  {
+    "file": "js/effects.js",
+    "suggestions": [
+      {
+        "pr": 4,
+        "url": "https://github.com/edwardfalk/vibe/pull/4#discussion_r2130326653",
+        "line": 18,
+        "created_at": "2025-06-05T20:51:56Z",
+        "snippet": "_💡 Verification agent_ <details> <summary>🧩 Analysis chain</summary> **Comprehensive centralization of mathematical functions.** The extensive import of mathematical functions from `mathUtils.js`"
+      }
+    ]
+  },
+  {
+    "file": "js/CollisionSystem.js",
+    "suggestions": [
+      {
+        "pr": 5,
+        "url": "https://github.com/edwardfalk/vibe/pull/5#discussion_r2130318604",
+        "line": 9,
+        "created_at": "2025-06-05T20:49:24Z",
+        "snippet": "_⚠️ Potential issue_ **Missing export statement for the constant.** The PR objectives mention \"exporting a constant named `TIME_BOMB_FRAMES`\" but the constant is not exported. If this constant needs"
+      }
+    ]
+  },
+  {
+    "file": "js/BackgroundRenderer.js",
+    "suggestions": [
+      {
+        "pr": 3,
+        "url": "https://github.com/edwardfalk/vibe/pull/3#discussion_r2130267173",
+        "line": 110,
+        "created_at": "2025-06-05T20:37:03Z",
+        "snippet": "_⚠️ Potential issue_ **Fix hardcoded array lengths to prevent potential bugs.** The array selection logic uses hardcoded lengths (4 and 3) instead of the actual array lengths. This could break if th"
+      }
+    ]
+  },
+  {
+    "file": "js/Stabber.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283412",
+        "line": 83,
+        "created_at": "2025-06-05T16:45:08Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Motion-trail timer loses remainder → uneven cadence.** After emitting a trail, `motionTrailTimer` is reset to `0`; any excess over the interval is discarded, causing drif"
+      }
+    ]
+  },
+  {
+    "file": "js/enemy-ai-probe.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283349",
+        "line": 99,
+        "created_at": "2025-06-05T16:45:07Z",
+        "snippet": "_⚠️ Potential issue_ **Velocity fields don’t match game objects – path-finding check always fails** Enemies expose `velocity.x / velocity.y`, not `vx / vy` (see `Tank`, `BaseEnemy`). Replace with:"
+      }
+    ]
+  },
+  {
+    "file": ".github/workflows/coderabbit-review.yml",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283254",
+        "line": 79,
+        "created_at": "2025-06-05T16:45:06Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Avoid re-running tests when composing the summary** `npm run test:automated` is executed earlier; running it again inside markdown generation doubles CI time and can hide"
+      }
+    ]
+  },
+  {
+    "file": "automated-game-test.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283282",
+        "line": 63,
+        "created_at": "2025-06-05T16:45:06Z",
+        "snippet": "_🛠️ Refactor suggestion_ **`checkServer()` never aborts the HTTP request on timeout** `req.setTimeout()` rejects the promise, but the socket remains open until Node tears it down, which can pile up"
+      }
+    ]
+  },
+  {
+    "file": "js/explosions/Explosion.js",
+    "suggestions": [
+      {
+        "pr": 2,
+        "url": "https://github.com/edwardfalk/vibe/pull/2#discussion_r2129283196",
+        "line": 276,
+        "created_at": "2025-06-05T16:45:05Z",
+        "snippet": "_⚠️ Potential issue_ **Potential issue with RGB array format in draw method.** The color refactoring from p5.js color objects to raw RGB arrays is well-executed, but there's an inconsistency in the "
+      }
+    ]
+  },
+  {
+    "file": "js/enhanced-edge-exploration-test.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2129238354",
+        "line": 21,
+        "created_at": "2025-06-05T16:27:26Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Screen bounds should be configurable** The hardcoded screen boundaries assume a specific resolution (1280x720). These values should be configurable or dynamically determi"
+      }
+    ]
+  },
+  {
+    "file": "VIBE_GAME_TESTING_PROGRESS_REPORT.md",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958939",
+        "line": 13,
+        "created_at": "2025-06-05T14:11:19Z",
+        "snippet": "_⚠️ Potential issue_ **Fix inconsistent test pass rate data.** There's a discrepancy in the reported test pass rate improvement: - Line 13: Claims improvement from \"60% to 85%\" - Line 216: Shows i"
+      }
+    ]
+  },
+  {
+    "file": "js/BaseEnemy.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128958899",
+        "line": 196,
+        "created_at": "2025-06-05T14:11:18Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Consider using optional chaining for better safety.** The code could benefit from optional chaining to prevent potential null reference errors. ```diff - "
+      }
+    ]
+  },
+  {
+    "file": "docs/CODERABBIT_INTEGRATION_GUIDE.md",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833562",
+        "line": 38,
+        "created_at": "2025-06-05T13:16:01Z",
+        "snippet": "_🛠️ Refactor suggestion_ **Regex pattern is overly greedy & risks catastrophic back-tracking** The `constructor` rule uses `.*` inside a greedy `[^}]*` which can grow quadratic on large files. An"
+      }
+    ]
+  },
+  {
+    "file": "js/combat-collision-probe.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833567",
+        "line": 45,
+        "created_at": "2025-06-05T13:16:01Z",
+        "snippet": "_⚠️ Potential issue_ **Early `return` prevents screenshot & ticket creation** When the collision system or player is missing, the probe exits before the failure-handling block (lines 201-238), so no"
+      }
+    ]
+  },
+  {
+    "file": "js/coderabbit-integration.js",
+    "suggestions": [
+      {
+        "pr": 1,
+        "url": "https://github.com/edwardfalk/vibe/pull/1#discussion_r2128833529",
+        "line": 49,
+        "created_at": "2025-06-05T13:16:00Z",
+        "snippet": "_⚠️ Potential issue_ **Regex with emoji requires the `u` flag to avoid surrogate-pair mismatches** Without the Unicode flag JavaScript treats each half of an emoji as a separate code unit, making th"
+      }
+    ]
+  }
+]

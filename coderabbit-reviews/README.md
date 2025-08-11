@@ -1,96 +1,59 @@
 # CodeRabbit Reviews
 
-This directory contains CodeRabbit review data and processing scripts for the Vibe project.
+This directory contains CodeRabbit review data and simple fetch workflows for Vibe.
 
 ## Files
 
-- `actionable-coderabbit-summary.json` - Summary of all actionable CodeRabbit suggestions
-- `coderabbit-autofix-log.md` - Log of all actions taken on CodeRabbit suggestions
-- `latest-20.json` - Latest 20 CodeRabbit reviews
-- `latest-50.json` - Latest 50 CodeRabbit reviews
+- `latest.json` – Flat array of recent CodeRabbit reviews/comments (newest first)
+- `actionable-summary.json` – Grouped by file with actionable inline comments only
+- `coderabbit-autofix-log.md` – Optional log of applied/ignored suggestions
 
 ## Scripts
 
-### Fetch New Reviews
+### Fetch Latest (simple, daily default)
 
-To fetch only new CodeRabbit reviews that haven't been processed yet:
+Fetch a fresh snapshot plus an actionable summary:
 
 ```bash
-# Make sure you have GITHUB_TOKEN set in your environment
+set GITHUB_TOKEN=xxxx   # or export on *nix
+bun run coderabbit:fetch-latest
+```
+
+Outputs:
+- `coderabbit-reviews/latest.json`
+- `coderabbit-reviews/actionable-summary.json`
+
+### Fetch Only New (optional, history-aware)
+
+Only new suggestions after your last entry in `coderabbit-autofix-log.md`:
+
+```bash
 bun run coderabbit:fetch-new
 ```
 
-This script will:
-1. Read the autofix log to identify already processed suggestions
-2. Fetch recent pull request reviews from GitHub
-3. Filter out suggestions that have already been acted on
-4. Generate a summary of new actionable suggestions
-5. Save the results to a timestamped JSON file
-
 ### Requirements
 
-- `GITHUB_TOKEN` environment variable must be set
-- GitHub token needs `repo` scope to access private repository reviews
-
-### Output
-
-The script generates:
-- Console output showing progress and summary
-- `new-suggestions-{timestamp}.json` file with detailed new suggestions
-- Grouped by file for easy review
+- `GITHUB_TOKEN` with `repo` scope
 
 ### Example Output
 
 ```
-🤖 Fetching new CodeRabbit reviews...
-
-📋 Found 15 processed suggestions in autofix log
-📋 Processing PR #25: Fix collision detection
-  🔍 Review 12345 by CodeRabbit
-    ✨ New suggestion: js/GameLoop.js:45
-    ⏭️  Already processed: js/Audio.js:123
-
-🎯 Found 3 new suggestions:
-
-📊 New Suggestions Summary:
-============================
-
-📁 js/GameLoop.js (1 suggestions):
-  Line 45: Add error handling for undefined player...
-  PR #25: Fix collision detection
-  URL: https://github.com/edwardfalk/vibe/pull/25#discussion_r123456
-
-💾 New suggestions saved to: coderabbit-reviews/new-suggestions-2025-01-08T12-34-56-789Z.json
-
-🚀 Next steps:
-   1. Review the new suggestions
-   2. Apply fixes where appropriate
-   3. Update the autofix log with your actions
+✅ Saved 200 items → coderabbit-reviews/latest.json
+✅ Actionable summary (75 files) → coderabbit-reviews/actionable-summary.json
 ```
 
 ## Workflow
 
-1. **Fetch new reviews**: `bun run coderabbit:fetch-new`
-2. **Review suggestions**: Check the generated JSON file
-3. **Apply fixes**: Make code changes as needed
-4. **Update log**: Add entries to `coderabbit-autofix-log.md`
-5. **Repeat**: Run again to check for more new suggestions
+Daily: `bun run coderabbit:fetch-latest` → review `actionable-summary.json` → pick a file → fix → commit. Optionally record actions in `coderabbit-autofix-log.md`.
 
 ## Integration with Autofix Loop
 
-This script is designed to work with the existing autofix loop workflow:
-
-- It reads the autofix log to avoid re-processing suggestions
-- It generates output compatible with the existing review processing
-- It maintains the same file structure and naming conventions
+The history-aware flow (`coderabbit:fetch-new`) still works if you prefer that.
 
 ## Troubleshooting
 
 ### No GITHUB_TOKEN
-```
-❌ GITHUB_TOKEN environment variable is required
-```
-Set your GitHub token: `export GITHUB_TOKEN=your_token_here`
+Set your GitHub token: `set GITHUB_TOKEN=your_token_here` (Windows) or `export` on *nix.
 
 ### API Rate Limits
 If you hit GitHub API rate limits, the script will show appropriate error messages. Consider:
@@ -98,5 +61,4 @@ If you hit GitHub API rate limits, the script will show appropriate error messag
 - Running the script less frequently
 - Checking GitHub's rate limit status
 
-### No New Suggestions
-If no new suggestions are found, it means all recent CodeRabbit reviews have already been processed according to the autofix log. 
+// End
