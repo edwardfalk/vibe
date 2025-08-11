@@ -15,7 +15,12 @@ function walk(dir) {
   const entries = readdirSync(dir, { withFileTypes: true });
   const files = [];
   for (const entry of entries) {
-    if (entry.name === 'node_modules' || entry.name.startsWith('.git'))
+    if (
+      entry.name === 'node_modules' ||
+      entry.name.startsWith('.git') ||
+      entry.name === '.cursor' ||
+      entry.name === 'docs-site'
+    )
       continue;
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
@@ -54,11 +59,10 @@ function checkLinks() {
     const links = extractLinks(content);
     const fileDir = dirname(file);
     for (const link of links) {
-      // Handle mdc: special prefix
+      // Handle mdc: special prefix – treat it as project-root absolute
       const fixed = link.startsWith('mdc:') ? link.slice(4) : link;
-      const resolved = resolve(
-        link.startsWith('/') ? join(ROOT, fixed) : join(fileDir, fixed)
-      );
+      const base = link.startsWith('mdc:') || link.startsWith('/') ? ROOT : fileDir;
+      const resolved = resolve(join(base, fixed));
       if (!existsSync(resolved)) {
         missing.push({ file, link });
       }

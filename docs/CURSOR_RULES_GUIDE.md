@@ -1,6 +1,6 @@
 # Cursor Project Rules Guide
 
-This guide explains how Cursor project rules (.mdc in .cursor/rules) work, the different types, and best practices for using them in the Vibe project (and beyond).
+This guide explains how Cursor project rules (.mdc in .cursor/rules) work, the different types, and best practices for using them in the Vibe project (and beyond). Default shell is cmd.exe; examples use Windows paths and cmd-friendly commands.
 
 ---
 
@@ -24,7 +24,7 @@ This guide explains how Cursor project rules (.mdc in .cursor/rules) work, the d
 - **Best for:** Universal commandments, vision, and standards.
 
 ### Auto-Attached Rules
-- Use `globs:` in frontmatter to specify file patterns (e.g., `js/**/*.js`).
+- Use `globs:` in frontmatter to specify file patterns (e.g., `packages/**/*.js`).
 - Only included when you're working with files that match the pattern.
 - **Best for:** File-type or subsystem-specific standards.
 - **Don't repeat always rule content—expand or add details unique to the files.**
@@ -58,7 +58,7 @@ This guide explains how Cursor project rules (.mdc in .cursor/rules) work, the d
 - Example: `vibe-game-core-guide.mdc`
 
 **Auto-Attached Rule:**
-- JS module standards for `/js/*.js` files.
+- JS module standards for `packages/**/*.js` files.
 - Example: `js-module-standards-auto.mdc`
 
 **Agent Requested Rule:**
@@ -72,7 +72,7 @@ This guide explains how Cursor project rules (.mdc in .cursor/rules) work, the d
 ---
 
 ## References
-- See the Vibe always rule: `.cursor/rules/vibe-game-core-guide.mdc`
+- See the Vibe always rule: `.cursor/rules/always-vibe-game-core-guide.mdc`
 - For more, see: [Cursor Rules Documentation](https://docs.cursor.com/context/rules)
 
 ---

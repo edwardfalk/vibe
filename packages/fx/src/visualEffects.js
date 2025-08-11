@@ -450,7 +450,10 @@ class VisualEffectsManager {
     p.push();
     p.blendMode(p.ADD);
     p.noStroke();
-    let lastR = -1, lastG = -1, lastB = -1, lastA = -1;
+    let lastR = -1,
+      lastG = -1,
+      lastB = -1,
+      lastA = -1;
     for (let i = 0; i < this.particles.length; i++) {
       const part = this.particles[i];
       const norm = part.maxLife > 0 ? part.life / part.maxLife : 0;
@@ -461,7 +464,10 @@ class VisualEffectsManager {
 
       if (r !== lastR || g !== lastG || b !== lastB || alpha !== lastA) {
         p.fill(r, g, b, alpha);
-        lastR = r; lastG = g; lastB = b; lastA = alpha;
+        lastR = r;
+        lastG = g;
+        lastB = b;
+        lastA = alpha;
       }
 
       if (part.type === 'trail') {

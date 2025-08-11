@@ -15,6 +15,7 @@
 - [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
 - [docs/MCP_TOOLS_GUIDE.md](./docs/MCP_TOOLS_GUIDE.md): Advanced MCP tool usage and best practices
 - [docs/AUDIO_CONFIGURATION_GUIDE.md](./docs/AUDIO_CONFIGURATION_GUIDE.md): Audio setup and tuning
+- [docs/DEV_SERVER_WORKFLOW.md](./docs/DEV_SERVER_WORKFLOW.md): Dev server workflow (cmd.exe default), start/stop/restart/status
 - [docs/DESIGN.md](./docs/DESIGN.md): Game design and Cosmic Beat System
 
 ## Overview
@@ -57,7 +58,6 @@ vibe/
 │   ├── archive/                   # Archived documentation
 │   └── vision/                    # Project vision documents
 ├── 📁 scripts/                    # Utility scripts
-│   ├── powershell/                # PowerShell environment scripts
 │   ├── dev-server.js             # Dev-server orchestrator (start/stop/status)
 │   └── update-ticket-status.js    # Ticket management utilities
 ├── 📁 tests/                      # Testing infrastructure
@@ -84,36 +84,27 @@ vibe/
 
 ## Ticketing System
 
-The project uses a robust REST API for all ticket management.
+All work (bugs, features, enhancements, tasks) is tracked in GitHub Issues. Automation is handled by `packages/tooling/src/githubIssueManager.js`. Probes create issues on failures with attached artifacts (screenshots, logs).
 
-**API Quick Reference:**
-- **List Tickets:** `GET /api/tickets`
-- **Create Ticket:** `POST /api/tickets`
-- **Get Ticket:** `GET /api/tickets/:id`
-- **Update Ticket:** `PATCH /api/tickets/:id`
-- **Delete Ticket:** `DELETE /api/tickets/:id`
+Quick notes:
+- Probe failures create GitHub Issues automatically via `githubIssueManager`
+- You can also script manual issue creation via the same module
 
-For the full guide on API endpoints, parameters, and `curl` examples, see the [TICKETING_SYSTEM_GUIDE.md](docs/TICKETING_SYSTEM_GUIDE.md).
+See [TICKETING_SYSTEM_GUIDE.md](docs/TICKETING_SYSTEM_GUIDE.md) for details.
 
 ---
 
 ## Development & Testing
 
 - **Dev server**: Five Server runs on port 5500 (`http://localhost:5500`).
-- **Backend server**: Runs on port 3001 for ticket API and automation.
-- **MCP back-end**: Desktop-Commander daemon auto-launches on port **4333** with read/write access to `D:\projects` and `C:\`.
-- **Start ALL services with `bun run dev:start`** – the script now spins up (and emits structured JSON errors on failure):
-   1. `desktop-commander` (MCP server, port 4333)
-   2. Five Server (port 5500)
-   3. Bug-report watcher
-   4. Ticket API server (port 3001)
-   Any pre-existing process on ports 5500, 3001, or 4333 is killed automatically.
+- **Default shell**: cmd.exe. Prefer cmd-friendly commands and Windows paths in all examples.
+- **Start dev server with `bun run dev:start`** – idempotent; starts Five Server and waits until READY. If port 5500 is busy, it frees and retries. Hooks run via `.githooks/*.cmd` (install with `bun run hooks:install`).
 - **Testing**: Preferred workflow is the deterministic orchestrated script:
-  ```powershell
-  bun run test:orchestrated   # dev:start ➜ tests ➜ dev:stop
-  ```
-  This replaces direct `bun run test` and avoids flaky port-in-use errors.
-  Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
+```bat
+bun run test:orchestrated   # dev:start ➜ tests ➜ dev:stop
+```
+This replaces direct `bun run test` and avoids flaky port-in-use errors. It also runs prechecks: `scan:consistency` and `validate:sounds` before starting the dev server.
+Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
 - **Bun single-install requirement**: Ensure ONLY the official Windows installer (`%USERPROFILE%\.bun\bin`) is on your PATH. Remove Scoop or other shims to prevent Starship timeout warnings.
 - **Test mode**: Press 'T' in-game to enable scripted testing.
 - **Bug-report modal**: Open with 'B' + 'R' or UI button. Keyboard: Enter/Ctrl+Enter = Save, Escape = Cancel.
@@ -132,6 +123,14 @@ For the full guide on API endpoints, parameters, and `curl` examples, see the [T
   - Instance-mode compliance (flags unprefixed p5 calls like `fill(`, `ellipse(`, `push()`, ...)
   - Math utilities usage (flags direct `Math.(cos|sin|atan2|sqrt)` in `packages/**`)
   - Also available: `bun run scan:instance`, `bun run scan:math`
+
+### Deterministic Runs
+- Use `setRandomSeed(seed)` from `@vibe/core` before starting gameplay to stabilize probes and visuals. Example:
+  ```js
+  await page.evaluate(() => {
+    import('@vibe/core').then(({ setRandomSeed }) => setRandomSeed(1337));
+  });
+  ```
 - **Constructor Signatures**: All enemy classes use exact signature: `constructor(x, y, type, config, p, audio)`.
 - **Console Logging**: All logs must use emoji prefixes (🎮 Game state, 🎵 Audio, 🗡️ Combat, etc.).
 - **Timing System**: Use `deltaTimeMs` for frame-independent calculations, normalized to 60fps baseline.
@@ -316,10 +315,13 @@ packages/
 
 ### Documentation & External Library Cache
 
+- Docs link checker skips archived docs under `docs/archive/**`. Keep outdated references there to preserve history without failing CI.
+- Rules in `.cursor/rules/*.mdc` are auto-mirrored to `docs-site/rules/` by `scripts/sync-docs-site-rules.js` (run by `bun run docs:serve`).
+
 * **Docs front-matter validation**: GitHub CI runs `bun run scripts/scan-doc-frontmatter.js` to ensure every doc starts with YAML metadata.
 * **Context7 cache**: After adding a new dependency, run:
 
-  ```powershell
+   ```bat
   bun run docs:cache-context7
   ```
 

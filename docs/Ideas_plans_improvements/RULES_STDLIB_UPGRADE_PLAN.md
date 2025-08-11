@@ -8,7 +8,7 @@ This document distills the best practices from Geoffrey Huntley's "You are using
 
 ## 1  Background & Goals
 
-* **Rules as code stdlib.** Treat every repeatable instruction as a dedicated rule file (\.mdc) so Cursor can compose them like Unix pipes [[ghuntley post](https://ghuntley.com/stdlib/)].
+* **Rules as code stdlib.** Treat every repeatable instruction as a dedicated rule file (.mdc) so Cursor can compose them like Unix pipes [[ghuntley post](https://ghuntley.com/stdlib/)].
 * **Reduce the monolith.** Our current monolithic `.cursorrules` is powerful but heavyweight. Splitting it into focused single-responsibility rules improves readability, discoverability, and re-use across projects.
 * **Automate the boring bits.** Leverage event-driven actions (file_create, build_success, etc.) to enforce conventions, auto-generate scaffolding, and close the feedback loop between probes ↔︎ tickets.
 
@@ -28,16 +28,16 @@ This document distills the best practices from Geoffrey Huntley's "You are using
 2. **High Signal:** Reject rules that merely restate common sense; prefer rules that clamp unwanted suggestions or trigger automation.
 3. **Self-Documenting:** Each rule's `description` should explain *why* it exists and link back to this plan where relevant.
 4. **Fail-Loud:** Use `reject` filters with clear error messages for anti-patterns (npm, Bash paths, legacy files).
-5. **Safe Execution:** Any `execute` action must be idempotent and respect Windows/Pwsh environment.
+5. **Safe Execution:** Any `execute` action must be idempotent and respect the Windows cmd environment.
 
 ## 4  Immediate Upgrades (Sprint ≈ 1–2 h)
 
 | Rule/File | Purpose | Notes |
 |-----------|---------|-------|
 | `.cursor/rules/ALWAYS-cursor_rules_location.mdc` | Enforce that all rule files live in `.cursor/rules/` | Adapted from Huntley post. |
-| `.cursor/rules/add_license_header.mdc` | Auto-prepend MIT header on new source files (`.js`, `.md`, etc.) | Use `scripts/add-license.ps1` (to be written). |
+| `.cursor/rules/add_license_header.mdc` | Auto-prepend MIT header on new source files (`.js`, `.md`, etc.) | Use a simple JS script `scripts/add-license.js` (to be written). |
 | `.cursor/rules/conventional_commits.mdc` | Auto-commit changes after successful build/probe run using Conventional Commits | Guard via env `AUTO_COMMIT=true`; commit to `cursor-commits` branch. |
-| `.cursor/rules/probe_success_ticket_close.mdc` | On `build_success` from any `*-probe.test.js`, call Ticket API to mark related ticket resolved. | Requires new `scripts/close-ticket.js`. |
+| `.cursor/rules/probe_success_ticket_close.mdc` | On `build_success` from any `*-probe.test.js`, create/update GitHub Issue state via `githubIssueManager` | No local Ticket API. |
 | `scripts/validate-rules.js` | CI helper – parse every `.mdc`, verify YAML front-matter & path references. | Run in `bun test` workflow. |
 
 ### 4.1 Rule Skeleton Example (add_license_header)
@@ -57,7 +57,7 @@ filters:
     pattern: "file_create"
 actions:
   - type: execute
-    command: "pwsh -c \"& ./scripts/add-license.ps1 \`$FILE\""
+    command: "bun run scripts/add-license.js $FILE"
 </rule>
 ```
 

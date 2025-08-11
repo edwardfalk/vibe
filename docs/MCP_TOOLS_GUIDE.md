@@ -25,11 +25,14 @@
 The Model Context Protocol (MCP) is a universal, open standard for connecting AI models and agents to external tools, data sources, and workflows. MCP tools are the backbone of Vibe's advanced automation, memory, and testing systems. This guide explains how to use MCP tools effectively, securely, and in line with modern best practices.
 
 **Quick-start (Vibe default):**
-```powershell
-bun run dev   # launches desktop-commander on port 4333 + all dev servers
+```bat
+REM Start dev server (port 5500)
+bun run dev:start
+
+REM Start MCP Desktop Commander (port 4333)
+bun run mcp
 ```
-*The `dev` script starts `desktop-commander` with:* `--port 4333 --allowedDirectories ['D:\\projects', 'C:\\']`.
-If you need different roots or a different port, edit the `"mcp"` script in `package.json`.
+Default shell is cmd.exe. If you need different MCP roots or a different port, edit the `"mcp"` script in `package.json`.
 
 **Who is this for?**
 

@@ -90,17 +90,18 @@ If you encounter leftover code or docs referencing `TicketCore`, `/api/tickets`,
 
 **Workflow Note: Robust Server Startup**
 - The `predev` script kills any process on ports 5500 and 3001 before starting dev servers.
-- The `dev` script starts Five Server (frontend), bug watcher, and ticket API server in parallel.
+- The `dev` script starts Five Server (frontend) and waits until READY. No local Ticket API is used.
 - If port 5500 is in use, Five Server will use another port (e.g., 56555); always check the console for the actual port.
-- **Preferred Environment:** Windows 11 + PowerShell 7 + Bun for optimal performance and Windows-native tooling.
+- **Preferred Environment:** Windows 11 + cmd.exe + Bun for optimal performance and Windows-native tooling.
 
 **Shell and Path Standards (MANDATORY):**
-- **ALWAYS use PowerShell 7 (pwsh) as the default shell** - NOT bash, WSL, or cmd
-- **ALWAYS use Windows-style paths** (e.g., `D:\projects\vibe`) - NOT Unix-style paths (`/c/...`)
-- **ALWAYS use `bun` and `bunx`** instead of `npm` and `npx`
-- **Terminal commands must work in PowerShell** - avoid bash-specific syntax
-- **File paths in scripts must use Windows format** with backslashes or forward slashes that work in PowerShell
-- If terminal shows `/c/...` paths, navigate to proper Windows path: `Set-Location "D:\projects\vibe"`
+- **Default shell is cmd.exe** – NOT bash or WSL. PowerShell is optional and supported, but not the default.
+- **Git hooks are implemented in `.cmd` with thin wrappers for other shells** that simply delegate to the `.cmd` scripts.
+- **Use Windows-style paths** (e.g., `D:\projects\vibe`) – NOT Unix-style paths (`/c/...`).
+- **Use `bun` and `bunx`** instead of `npm` and `npx`.
+- **All terminal commands must run under cmd.exe**; avoid bashisms. Prefer cross-shell-friendly commands when possible.
+- **File paths in scripts must use Windows format**. If using PowerShell, ensure compatibility, but default to cmd.exe semantics.
+- If terminal shows `/c/...` paths, navigate to proper Windows path.
 - **Ensure only ONE Bun install**: use the official installer at `%USERPROFILE%\.bun\bin`; remove Scoop/npm/Homebrew copies to avoid CLI timeouts.
 
 ---
@@ -171,7 +172,7 @@ If you encounter leftover code or docs referencing `TicketCore`, `/api/tickets`,
 - If you encounter a bug or suboptimal code, add a `// TODO:` comment outlining the problem.
 - All code must pass linting (ESLint) and formatting (Prettier) checks before commit. See README for setup.
 - **ESLint Configuration:** Use `bunx eslint . --ext .js` for Windows compatibility instead of glob patterns
-- **Linting Commands:** `bun run lint` (check), `bun run lint:fix` (auto-fix), both work in PowerShell
+- **Linting Commands:** `bun run lint` (check), `bun run lint:fix` (auto-fix); both work in cmd.exe and PowerShell
 - Use ES modules (`import`/`export`) for all new code unless otherwise specified.
 - Handle errors gracefully and consistently; use early returns and clear error messages.
 - Write code that is easy to test (favor pure functions, dependency injection where possible).
@@ -272,7 +273,7 @@ If you encounter leftover code or docs referencing `TicketCore`, `/api/tickets`,
  - **Static Guardrails (RECOMMENDED CI STEP):**
    - Run `bun run scan:consistency` locally and in CI to enforce:
      - p5 instance-mode compliance (flags unprefixed calls like `fill(`, `ellipse(`, `push()`, ...)
-     - Math utilities usage (flags direct `Math.(cos|sin|atan2|sqrt)` in `packages/**`)
+     - Math utilities usage (flags direct `Math.(cos|sin|atan2|sqrt|min|max)` in `packages/**`)
    - Narrow scopes:
      - Instance-mode only: `bun run scan:instance`
      - Math-only: `bun run scan:math`
@@ -294,7 +295,7 @@ _See the dedicated consistency specification: [AR-consistency-standards.mdc](mdc
 
 - **Probe-driven testing only:** Manual Playwright `.spec.js` tests are **prohibited**.  Keep **probe** files only (suffix `*-probe.test.js`).  Delete or archive any remaining `.spec.js` tests.
 - **Use MCP Playwright for all automated tests.**
-- **Preferred automated test entry:** `bun run test:orchestrated` (starts Five-Server + Ticket-API, waits for health checks, runs Playwright + MCP probes deterministically).
+- **Preferred automated test entry:** `bun run test:orchestrated` (pre-runs `scan:consistency` and `validate:sounds`, starts Five-Server, then runs Playwright + MCP probes deterministically).  For deterministic runs, call `setRandomSeed(1337)` (from `@vibe/core`) before starting gameplay.
 - **Dev server runs on port 5500** (`http://localhost:5500`).
 - **Game must be started before gameplay checks** (restart from game-over if needed).
 - **Activate audio:** Click canvas at (400,300) to enable audio context.

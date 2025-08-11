@@ -93,7 +93,7 @@ export function setRandomSeed(seed) {
     _rngState = 0;
     return;
   }
-  const s = (seed >>> 0) || 0;
+  const s = seed >>> 0 || 0;
   _rngState = s;
   _rng = mulberry32(s);
 }

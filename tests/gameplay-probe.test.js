@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { INDEX_PAGE } from './playwright.setup.js';
+import { INDEX_PAGE, setDeterministicSeed } from './playwright.setup.js';
 import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 // Print all browser console logs to the test runner output for every test
@@ -29,6 +29,7 @@ test.describe('Gameplay Probes', () => {
     try {
       await page.goto(INDEX_PAGE);
       await page.waitForSelector('canvas');
+      await setDeterministicSeed(page, 1337);
       await page.evaluate(() => {
         const canvas = document.querySelector('canvas');
         canvas &&
@@ -64,6 +65,7 @@ test.describe('Gameplay Probes', () => {
     try {
       await page.goto(INDEX_PAGE);
       await page.waitForSelector('canvas');
+      await setDeterministicSeed(page, 1337);
       await page.evaluate(() => {
         const canvas = document.querySelector('canvas');
         canvas &&

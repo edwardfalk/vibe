@@ -627,7 +627,9 @@ export class Player {
   }
 
   shoot() {
-    // Rhythm-locked shooting: first shot instant, subsequent shots only on quarter-beats
+    // Rhythm-locked shooting (PRD):
+    // - First shot is instant (no beat lock)
+    // - If held: skip the next quarter beat, then auto-fire on quarter beats thereafter
     this.wantsToContinueShooting = true;
 
     // Initialise state when the player starts holding the trigger
@@ -636,29 +638,44 @@ export class Player {
       this.firstShotFired = false;
     }
 
-    // Enforce BeatClock timing when available
+    // Beat helpers
     const beatClockReady =
       window.beatClock &&
-      typeof window.beatClock.canPlayerShootQuarterBeat === 'function';
-    const onQuarterBeat = beatClockReady
-      ? window.beatClock.canPlayerShootQuarterBeat()
-      : true;
+      typeof window.beatClock.canPlayerShootQuarterBeat === 'function' &&
+      typeof window.beatClock.getTimeToNextQuarterBeat === 'function';
 
-    // Block shots that are off-beat when BeatClock is active
-    if (beatClockReady && !onQuarterBeat) {
-      return null;
+    // First shot: always fire immediately for snappy response, then skip next quarter beat
+    if (!this.firstShotFired) {
+      const bullet = this.fireBullet();
+      this.firstShotFired = true;
+      if (beatClockReady) {
+        const quarterBeatMs = window.beatClock.beatInterval / 4;
+        const timeToNext = window.beatClock.getTimeToNextQuarterBeat();
+        // Skip the very next quarter beat window to avoid double-fire perception
+        this.shootCooldownMs = timeToNext + quarterBeatMs;
+      } else {
+        // Fallback: ~2 quarters at 150ms baseline
+        this.shootCooldownMs = 300;
+      }
+      return bullet;
     }
 
-    // Cool-down check
+    // Subsequent shots: only on quarter-beats when cooldown expired
     if (this.shootCooldownMs > 0) {
       return null;
     }
 
-    // First shot is always allowed for snappy response
-    if (!this.firstShotFired) {
-      this.firstShotFired = true;
+    if (beatClockReady) {
+      if (window.beatClock.canPlayerShootQuarterBeat()) {
+        return this.fireBullet();
+      }
+      // Off-beat but ready: queue for next quarter-beat
+      const timeToNext = window.beatClock.getTimeToNextQuarterBeat();
+      this.queueShot(timeToNext);
+      return null;
     }
 
+    // No BeatClock: fire as normal
     return this.fireBullet();
   }
 

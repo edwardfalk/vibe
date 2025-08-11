@@ -2,7 +2,9 @@
 
 > This document is for historical reference. The project now uses Bun (`bun`/`bunx`) exclusively. All npm references are obsolete.
 
-# CodeRabbit Deduplication System - Implementation Summary
+# CodeRabbit Deduplication Implementation Summary (Archived)
+
+> This document is for historical reference. The project now uses Bun (`bun`/`bunx`) exclusively. All npm references are obsolete.
 
 ## 🎯 Mission Accomplished
 
@@ -118,7 +120,7 @@ calculateTextSimilarity(text1, text2) {
 - **Efficient Processing**: Fast hash-based lookups
 - **Persistent Memory**: Cross-session tracking working perfectly
 
-## 🚀 New NPM Scripts
+## 🚀 New Bun Scripts (historical context)
 
 ```json
 {

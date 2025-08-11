@@ -2,7 +2,9 @@
 
 > This document is for historical reference. The project now uses Bun (`bun`/`bunx`) exclusively. All npm references are obsolete. Use only bun/bunx for all package and script commands.
 
-# Bun Migration Checklist
+# BUN Migration Checklist (Archived)
+
+> Note: This document is archived. PowerShell-specific steps are historical and no longer applicable. Current standard: cmd.exe default, Bun-first.
 
 **✅ MIGRATION COMPLETED SUCCESSFULLY! ✅**
 

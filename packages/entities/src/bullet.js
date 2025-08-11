@@ -1,7 +1,7 @@
-import { CONFIG, min, max } from '@vibe/core';
 import {
-  max,
+  CONFIG,
   min,
+  max,
   floor,
   ceil,
   round,

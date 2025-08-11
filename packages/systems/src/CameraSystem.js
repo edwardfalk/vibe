@@ -16,10 +16,7 @@ export class CameraSystem {
     this.interpolationSpeed = 0.15;
   }
   addShake(intensity, duration = 20) {
-    this.screenShake.intensity = max(
-      this.screenShake.intensity,
-      intensity
-    );
+    this.screenShake.intensity = max(this.screenShake.intensity, intensity);
     this.screenShake.duration = max(this.screenShake.duration, duration);
   }
   update() {

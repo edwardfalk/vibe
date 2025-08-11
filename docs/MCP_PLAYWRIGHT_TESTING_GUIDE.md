@@ -1,4 +1,6 @@
-# MCP Playwright Testing Guide for AI & Automation
+# MCP_PLAYWRIGHT_TESTING_GUIDE.md
+
+> Default shell: cmd.exe. All examples assume Windows paths and Bun (`bun`/`bunx`).
 
 > Reminder: If you change any Playwright or probe workflow, update this doc AND the relevant .mdc rules to keep everything in sync.
 
@@ -46,8 +48,8 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 
 ### Automated Bug Reporting for Probe Failures
 
-- **All probe-driven failures are now automatically reported as tickets via the API.**
-- The liveness probe and any future probe scripts should, on failure, create a bug ticket using the githubIssueManager API (`packages/tooling/src/githubIssueManager.js`).
+- **All probe-driven failures are automatically reported as GitHub Issues via `packages/tooling/src/githubIssueManager.js`.**
+- The liveness probe and any future probe scripts should, on failure, create a GitHub Issue using `packages/tooling/src/githubIssueManager.js` (no local Ticket API).
 - The ticket includes a concise ID, title, failure description, timestamp, probe state, and (if available) a screenshot as an artifact.
 - This ensures all probe/test failures are captured in the modular, metadata-rich ticketing system—no manual intervention required.
 - **Standard:** All new probe scripts must use the githubIssueManager API for bug reporting on failure.

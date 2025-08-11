@@ -1,7 +1,7 @@
 ---
 title: Dev Server Workflow
-description: How to start, stop, and troubleshoot the Vibe dev server and Ticket-API pair used by Playwright probes.
-tags: [dev-server, workflow, troubleshooting, five-server, ticket-api]
+description: How to start, stop, and troubleshoot the Vibe dev server used by Playwright probes.
+tags: [dev-server, workflow, troubleshooting, five-server]
 last_updated: 2025-06-29
 related_files:
   - scripts/dev-server.js
@@ -14,10 +14,10 @@ author: vibe-team
 
 > Reminder: If you change any dev server or Playwright workflow, update this doc AND the relevant .mdc rules to keep everything in sync.
 
-> Canonical guide to starting / stopping the local Five-Server + Ticket-API pair that all Playwright probes depend on.
+> Canonical guide to starting / stopping the local Five-Server that all Playwright probes depend on.
 
 ## Quick-start
-```pwsh
+```bat
 # start (idempotent – reuses if already running)
 bun run dev:start
 
@@ -32,13 +32,13 @@ bun run dev:restart
 ```
 
 If you just want to run the test suite:
-```pwsh
+```bat
 bun run test:orchestrated   # dev:start ➜ tests ➜ dev:stop
 ```
 
 ## How it works
 * All logic lives in `scripts/dev-server.js`.
-* Ports are read from `packages/core/src/config.js` (`DEV_SERVER_PORT` = 5500, `TICKET_API_PORT` = 3001).
+* Port is read from `packages/core/src/config.js` (`DEV_SERVER_PORT` = 5500).
 * `port-utils.js` probes the ports, frees strays, and polls HTTP until the service is alive (accepts **any <500** status).
 * Child processes are tracked in a `children` Set so `dev:stop` and Ctrl-C kill everything – no leftovers, no port conflicts.
 
@@ -46,8 +46,8 @@ bun run test:orchestrated   # dev:start ➜ tests ➜ dev:stop
 | Symptom | Fix |
 |---------|-----|
 | `Five-Server failed to become READY` | Another process is bound to 5500; run `bunx kill-port 5500` and retry. |
-| Ticket-API health check times out | Make sure no stale Node process is holding 3001; run `bunx kill-port 3001`. |
-| Playwright PSReadLine errors | PSReadLine is now disabled in `vibe-powershell-profile.ps1`; open a new terminal. |
+
+| Playwright PSReadLine errors | PowerShell-specific; default shell is cmd.exe so this should not occur. If using PowerShell, disable PSReadLine or use cmd.exe for test runs. |
 
 ### Structured Error Output
 If the dev server or Ticket-API fails to start, the script now emits a single-line JSON error via **ErrorReporter**. Example:

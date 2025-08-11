@@ -82,7 +82,10 @@ class ProfilerOverlay {
     p.text('burst counts:', pad + 4, y);
     y += lineHeight;
 
-    const entries = counterKeys.slice(0, min(counterKeys.length, maxCountersToShow));
+    const entries = counterKeys.slice(
+      0,
+      min(counterKeys.length, maxCountersToShow)
+    );
     for (const key of entries) {
       p.text(`${key}: ${stats.counters[key]}`, pad + 4, y);
       y += lineHeight;

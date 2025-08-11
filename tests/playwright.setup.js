@@ -56,3 +56,13 @@ async function writeConsoleLogs() {
 }
 
 export { setupConsoleLogInterception, writeConsoleLogs }; 
+
+// Deterministic run helper: call before starting gameplay in a test
+export async function setDeterministicSeed(page, seed = 1337) {
+  await page.evaluate(([s]) => {
+    // dynamic import to avoid bundler assumptions
+    return import('/packages/core/src/index.js').then(({ setRandomSeed }) =>
+      setRandomSeed(s)
+    );
+  }, [seed]);
+}

@@ -216,9 +216,8 @@ The game has been methodically restored and validated through a series of critic
    * print `READY` line when HTTP HEAD passes  
    * exit with non-zero if health-check fails within 15 s  
    * trap SIGINT/SIGTERM and cleanly shut down child processes
-6. **PowerShell Helpers** – Optional PS script `tools/dev-server.ps1` providing the same commands for manual PowerShell users (calls JS scripts under the hood).
-7. **Playwright Probe** – New quick probe `startup-dev-server-probe.test.js` that asserts Five-Server HTML response != blank & status 200.
-8. **Docs & Troubleshooting** – Update README + add `docs/DEV_SERVER_WORKFLOW.md` with:
+6. **Playwright Probe** – New quick probe `startup-dev-server-probe.test.js` that asserts Five-Server HTML response != blank & status 200.
+7. **Docs & Troubleshooting** – Update README + add `docs/DEV_SERVER_WORKFLOW.md` with:
    * Quick-start (`bun run dev:start`)  
    * Status & common errors  
    * "Port already in use" decision tree  
