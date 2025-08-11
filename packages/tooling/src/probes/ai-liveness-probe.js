@@ -43,42 +43,44 @@ export default (async function () {
   if (result.failure) {
     let screenshotData = null;
     if (window.mcp?.screenshot) {
-      // If MCP API is available, capture screenshot and get base64
       screenshotData = await window.mcp.screenshot(
         'failure-' + result.failure.replace(/\s+/g, '-')
       );
     } else if (document.querySelector('canvas')) {
-      // Fallback: capture canvas as base64
       screenshotData = document.querySelector('canvas').toDataURL('image/png');
     }
-    // Log state for diagnosis
     console.error('Liveness/Entity Probe Failure:', result);
-    // Automated bug reporting via ticketManager API
-    if (ticketManager?.createTicket) {
+    // Automated bug reporting via GitHub Issues wrapper
+    if (ticketManager?.createIssue || ticketManager?.createTicket) {
       try {
-        const shortId = random().toString(36).substr(2, 6);
-        const ticketData = {
-          id: shortId,
-          title: 'probe-failure',
-          description: result.failure,
-          timestamp: new Date().toISOString(),
-          state: result,
-          artifacts: screenshotData ? [screenshotData] : [],
-          status: 'Open',
-          history: [
-            {
-              type: 'probe_failure',
-              description: result.failure,
-              at: new Date().toISOString(),
-            },
-          ],
-          verification: [],
-          relatedTickets: [],
-        };
-        await ticketManager.createTicket(ticketData);
-        console.log('🎫 Automated bug ticket created for probe failure.');
+        const shortId = random().toString(36).slice(2, 8);
+        const title = `probe-failure:${shortId}`;
+        const body = [
+          `Failure: ${result.failure}`,
+          '',
+          '```json',
+          JSON.stringify(result, null, 2),
+          '```',
+        ].join('\n');
+        if (ticketManager.createIssue) {
+          await ticketManager.createIssue({
+            title,
+            body,
+            labels: ['bug', 'probe-failure'],
+          });
+        } else {
+          await ticketManager.createTicket({
+            title,
+            description: body,
+            labels: ['bug', 'probe-failure'],
+          });
+        }
+        console.log('🎫 Automated GitHub Issue created for probe failure.');
       } catch (err) {
-        console.error('Failed to create automated bug ticket:', err);
+        console.error(
+          'Failed to create automated GitHub Issue for probe failure:',
+          err
+        );
       }
     }
   }

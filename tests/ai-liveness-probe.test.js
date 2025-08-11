@@ -12,7 +12,7 @@ test.describe('AI Liveness Probe', () => {
     });
     // Run the probe
     const result = await page.evaluate(async () => {
-      const mod = await import('@vibe/tooling/src/probes/ai-liveness-probe.js');
+      const mod = await import('@vibe/tooling/probes/ai-liveness-probe.js');
       return mod.default || mod;
     });
     expect(result.failure).toBeNull();

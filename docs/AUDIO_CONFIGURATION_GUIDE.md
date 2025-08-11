@@ -1,3 +1,9 @@
+---
+title: Vibe Game Audio Configuration Guide
+description: Tone.js-based audio workflow, sound IDs, speech ducking, ambient effects, and tuning guidance for Vibe.
+last_updated: 2025-08-11
+---
+
 # 🎛️ Vibe Game Audio Configuration Guide
 
 > **Update 2025-07** – Vibe now uses **Tone.js** as its audio engine.  All new sounds are loaded via the public sample manifest and played through the `ToneAudioFacade` singleton.  The old oscillator-based `Audio.js` remains for legacy reference only.
@@ -49,7 +55,7 @@ The following sections describe the old Web-Audio–only system kept for referen
 
 ## 📁 File Location
 
-All audio configuration lives in `packages/core/src/Audio.js` (moved from `js/Audio.js` after 2025 modularisation).
+All audio configuration lives in `packages/core/src/audio/ToneAudioFacade.js` (Tone facade). Historical reference to `js/Audio.js` has been fully retired.
 
 **Sound ID Registry** – Every legal SFX identifier is defined once in `packages/core/src/audio/SoundIds.js` (`SOUND` enum). When adding a new sound:
 

@@ -1,3 +1,9 @@
+---
+title: Cursor Project Rules Guide
+description: How .mdc rules work in Vibe, rule types, best practices, and references.
+last_updated: 2025-08-11
+---
+
 # Cursor Project Rules Guide
 
 This guide explains how Cursor project rules (.mdc in .cursor/rules) work, the different types, and best practices for using them in the Vibe project (and beyond). Default shell is cmd.exe; examples use Windows paths and cmd-friendly commands.

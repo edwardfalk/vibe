@@ -17,7 +17,7 @@ test.describe('Audio System Probe', () => {
 
     // Run the probe inside the browser context
     const result = await page.evaluate(async () => {
-      const mod = await import('@vibe/tooling/src/probes/audio-system-probe.js');
+      const mod = await import('@vibe/tooling/probes/audio-system-probe.js');
       return mod.default || mod;
     });
 

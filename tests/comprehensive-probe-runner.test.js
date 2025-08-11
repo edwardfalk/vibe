@@ -21,7 +21,7 @@ test.describe('Comprehensive Probe Runner', () => {
     // Dynamically import the probe runner and attach to window, then run
     const result = await page.evaluate(async () => {
       if (!window.probeRunner) {
-        const mod = await import('@vibe/tooling/src/probes/comprehensive-probe-runner.js');
+        const mod = await import('@vibe/tooling/probes/comprehensive-probe-runner.js');
         window.probeRunner = await mod.default;
       }
       return await window.probeRunner.runAllProbes();

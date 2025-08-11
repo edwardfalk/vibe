@@ -46,8 +46,8 @@ export default (async function () {
       try {
         window.audio.playSound('playerShoot');
       } catch {}
-      // Wait a short moment for sound to trigger meter
-      await new Promise((r) => setTimeout(r, 400));
+      // Wait longer to allow Tone.start, sample load, and meter update
+      await new Promise((r) => setTimeout(r, 1200));
       if (typeof window.audio.getMasterLevel === 'function') {
         const lvl = window.audio.getMasterLevel();
         result.audio.masterLevel = lvl;

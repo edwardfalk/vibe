@@ -22,6 +22,14 @@ const REQUIRED_FIELDS = ['title', 'description', 'last_updated'];
 
 function walkDir(dir, files = []) {
   for (const entry of readdirSync(dir)) {
+    // Skip archived docs entirely from front-matter validation
+    if (entry === 'archive' && dir === DOC_ROOT) {
+      continue;
+    }
+    // Skip PRD docs; they use a different metadata schema
+    if (entry === 'prd' && dir === DOC_ROOT) {
+      continue;
+    }
     const full = join(dir, entry);
     const info = statSync(full);
     if (info.isDirectory()) {

@@ -1,3 +1,9 @@
+---
+title: PRDs & AI-Coding Tooling
+description: Lightweight PRD workflow and curated AI-tooling practices applicable to Vibe.
+last_updated: 2025-08-11
+---
+
 # Product-Requirements Documents (PRDs) & AI-Coding Tooling  
 > Draft v0.1 – generated 2025-06-24
 

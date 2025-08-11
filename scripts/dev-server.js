@@ -36,6 +36,13 @@ function spawnTracked(cmd, args, opts = {}) {
     // If running detached, ignore stdio so parent can exit immediately.
     spawnOpts.stdio = detached ? 'ignore' : 'inherit';
   }
+  // Prevent flashing a new console window on Windows when spawning children
+  if (
+    process.platform === 'win32' &&
+    typeof spawnOpts.windowsHide === 'undefined'
+  ) {
+    spawnOpts.windowsHide = true;
+  }
   // Ensure detached flag propagates.
   spawnOpts.detached = detached;
 
@@ -90,9 +97,13 @@ async function start() {
       await waitForPortFree(DEV_PORT);
     }
     console.log('🚀 Starting five-server...');
+    // Spawn detached so this script can return (orchestrated flows continue);
+    // dev:stop will sweep the port to terminate the detached child reliably.
+    // Prefer spawning Bun directly to avoid shell indirection that can open an external terminal
     spawnTracked(
-      'bunx',
+      'bun',
       [
+        'x',
         'five-server',
         '--port=' + DEV_PORT,
         '--root=.',
@@ -100,7 +111,7 @@ async function start() {
         '--no-browser',
         '--cors',
       ],
-      { detached: true }
+      { detached: true, shell: false, stdio: 'ignore', windowsHide: true }
     );
     const ok = await waitForHttp(`http://localhost:${DEV_PORT}/`, 30000);
     if (!ok) {

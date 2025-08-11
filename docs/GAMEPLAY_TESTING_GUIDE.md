@@ -1,3 +1,9 @@
+---
+title: Comprehensive Gameplay Testing Guide
+description: Probe-driven testing, CodeRabbit debugging, workflows, and best practices for Vibe.
+last_updated: 2025-08-11
+---
+
 # Vibe Game - Comprehensive Gameplay Testing Guide
 
 _Version: 2.0 | Updated: 2025-06-05_

@@ -1,3 +1,9 @@
+---
+title: Rules Automation & Discovery Plan
+description: Plan for indexing, enforcing, and maintaining Cursor rules with automation.
+last_updated: 2025-08-11
+---
+
 # Rules Automation & Discovery Plan
 
 ## Purpose

@@ -12,7 +12,7 @@ test.describe('Collision Detection Probe', () => {
     });
     // Run the probe
     const result = await page.evaluate(async () => {
-      const mod = await import('@vibe/tooling/src/probes/collision-detection-probe.js');
+      const mod = await import('@vibe/tooling/probes/collision-detection-probe.js');
       return mod.default || mod;
     });
     expect(result.failure).toBeNull();

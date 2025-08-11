@@ -1,3 +1,9 @@
+---
+title: Vibe Cursor-Rules "Stdlib" Upgrade Plan
+description: Plan to modularize, lint, and automate Cursor rules as a reusable stdlib for Vibe.
+last_updated: 2025-08-11
+---
+
 # Vibe Cursor-Rules "Stdlib" Upgrade Plan
 
 > Draft v0.1 – generated 2025-06-24

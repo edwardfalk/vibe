@@ -75,4 +75,12 @@ import path from 'path';
       console.warn(`⚠️ Could not copy ${src}:`, err.message);
     }
   }
-})();
+})()
+  .then(() => {
+    // Force exit to avoid lingering handles in some shells/environments
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error('generate-rule-index failed:', err);
+    process.exit(1);
+  });

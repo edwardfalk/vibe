@@ -1,3 +1,9 @@
+---
+title: MCP Playwright Testing Guide
+description: Probe-driven Playwright testing using MCP tools, with liveness probes, bug automation, and standards.
+last_updated: 2025-08-11
+---
+
 # MCP_PLAYWRIGHT_TESTING_GUIDE.md
 
 > Default shell: cmd.exe. All examples assume Windows paths and Bun (`bun`/`bunx`).

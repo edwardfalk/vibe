@@ -1,3 +1,9 @@
+---
+title: "Vibe Game Design: Cosmic Beat System & Core Concepts"
+description: "Design overview for the musical gameplay system, BeatClock mapping, and event-bus VFX."
+last_updated: 2025-08-11
+---
+
 # Vibe Game Design: Cosmic Beat System & Core Concepts
 
 > **Purpose:**  

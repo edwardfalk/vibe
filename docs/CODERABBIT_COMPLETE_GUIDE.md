@@ -1,3 +1,9 @@
+---
+title: CodeRabbit Complete Guide
+description: End-to-end CodeRabbit integration including deduplication, workflows, CI examples, and maintenance.
+last_updated: 2025-08-11
+---
+
 # CodeRabbit Complete Guide
 
 ## 🎯 Overview

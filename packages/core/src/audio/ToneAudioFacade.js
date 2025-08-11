@@ -161,11 +161,18 @@ export class ToneAudioFacade {
     if (player) {
       // Velocity maps 0…1 → -60…0 dB roughly
       player.volume.value = Tone.gainToDb(vol);
-      player.start();
+      try {
+        player.start();
+        // Brief unduck to ensure audibility in case a stale duck is active
+        this.unduck(0.05);
+      } catch {}
     } else if (synth) {
       // Simple beep envelope – map vol → decibels for synth volume
       synth.volume.value = Tone.gainToDb(vol);
-      synth.triggerAttackRelease('C4', '8n');
+      try {
+        synth.triggerAttackRelease('C4', '8n');
+        this.unduck(0.05);
+      } catch {}
     }
   }
 
@@ -175,15 +182,18 @@ export class ToneAudioFacade {
    * @param {number} rampSeconds
    */
   duck(db, rampSeconds = 0.2) {
+    // Clamp ducking to a sane min (e.g., -18 dB) to avoid near-silence
+    const clampedDb = Math.max(db, -18);
     const music = this._gains.music;
     if (!music) return;
-    music.gain.rampTo(Tone.dbToGain(db), rampSeconds);
+    music.gain.rampTo(Tone.dbToGain(clampedDb), rampSeconds);
   }
 
   /** Restore master gain to 0 dB */
   unduck(rampSeconds = 0.2) {
     const music = this._gains.music;
     if (!music) return;
+    // Restore to 0 dB (unity)
     music.gain.rampTo(1, rampSeconds);
   }
 
@@ -226,7 +236,18 @@ export class ToneAudioFacade {
   async _ensureToneStarted() {
     if (this._toneStarted) return;
     // Tone.start() must be triggered by a user gesture; caller should ensure that.
-    await Tone.start();
+    try {
+      await Tone.start();
+    } catch (e) {
+      console.warn(
+        '⚠️ Tone.start() failed, retrying after 100ms:',
+        e?.message || e
+      );
+      await new Promise((r) => setTimeout(r, 100));
+      try {
+        await Tone.start();
+      } catch {}
+    }
     this._toneStarted = true;
   }
 
@@ -238,10 +259,13 @@ export class ToneAudioFacade {
     // Master → destination
     this._gains.master = new Tone.Gain(1).toDestination();
 
-    // Individual categories → master
+    // Individual categories → master with safe default gains
+    // Avoid starting at absolute zero to prevent inaudible state
+    const defaults = { master: 1, music: 0.8, sfx: 1, speechBed: 0.7 };
     for (const cat of CATEGORIES) {
       if (cat === 'master') continue;
-      this._gains[cat] = new Tone.Gain(1).connect(this._gains.master);
+      const initial = typeof defaults[cat] === 'number' ? defaults[cat] : 1;
+      this._gains[cat] = new Tone.Gain(initial).connect(this._gains.master);
     }
 
     // Level meter taps the master output so we can get accurate readings.

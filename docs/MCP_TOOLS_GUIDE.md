@@ -1,3 +1,9 @@
+---
+title: MCP Tools Guide
+description: Comprehensive guide to MCP tools used in Vibe, including filesystem, Playwright, GitHub integrations, and best practices.
+last_updated: 2025-08-11
+---
+
 # MCP_TOOLS_GUIDE.md
 
 > **Purpose:**  

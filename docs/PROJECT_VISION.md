@@ -1,3 +1,9 @@
+---
+title: Vibe Project Vision
+description: High-level vision, design pillars, and development philosophy for the Vibe game.
+last_updated: 2025-08-11
+---
+
 # Vibe Project Vision
 
 ## Purpose

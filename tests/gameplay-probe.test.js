@@ -40,7 +40,7 @@ test.describe('Gameplay Probes', () => {
       );
       const probe = await page.evaluate(async () => {
         try {
-          const mod = await import('@vibe/tooling/src/probes/ai-liveness-probe.js');
+          const mod = await import('@vibe/tooling/probes/ai-liveness-probe.js');
           return mod.default;
         } catch (err) {
           window.__playwrightImportError = err.stack || err.toString();

@@ -1,3 +1,9 @@
+---
+title: VIBE Game Restoration Roadmap
+description: Step-by-step roadmap to restore gameplay, stabilize probes, and align docs/rules.
+last_updated: 2025-08-11
+---
+
 # VIBE Game Restoration Roadmap
 
 ## Debugging & Unblocking Playwright/Probe Integration

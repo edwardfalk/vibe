@@ -1,3 +1,9 @@
+---
+title: Documentation & Rule Audit Plan
+description: Central tracker for auditing, correcting, and cleaning up all docs and rule files in Vibe.
+last_updated: 2025-08-11
+---
+
 # Documentation & Rule Audit Plan
 
 > Purpose: Central tracker for the end-to-end review, correction, and cleanup of **all** documentation and rule files in the Vibe project.  This file will be updated as each section is audited.

@@ -57,13 +57,12 @@ vibe/
 ├── 📁 docs/                       # Documentation
 │   ├── archive/                   # Archived documentation
 │   └── vision/                    # Project vision documents
-├── 📁 scripts/                    # Utility scripts
-│   ├── dev-server.js             # Dev-server orchestrator (start/stop/status)
-│   └── update-ticket-status.js    # Ticket management utilities
+├── 📁 scripts/                    # Utility scripts (dev server, probes, docs tooling)
+│   └── dev-server.js             # Dev-server orchestrator (start/stop/status)
 ├── 📁 tests/                      # Testing infrastructure
 │   └── bug-reports/               # Bug report storage
 ├── 🌐 index.html                  # Game entry point
-├── 🎫 ticket-api.js               # Ticket API server
+├── (no local Ticket API)         # Ticketing uses GitHub Issues via tooling
 └── 📦 package.json                # Dependencies and scripts
 ```
 
@@ -276,7 +275,10 @@ Test results and artifacts are saved to:
 The development server includes automated testing capabilities:
 
 ```bash
-bun run dev:start  # Starts game server, bug watcher, and API server (idempotent)
+bun run dev:start   # Start server (idempotent)
+bun run dev:status  # Check status
+bun run dev:restart # Restart
+bun run dev:stop    # Stop server
 ```
 
 Then in another terminal:
