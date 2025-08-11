@@ -7,45 +7,47 @@
 
 ---
 
+## Rule Precedence
+1. **Always-applied workspace rules** (auto-injected by infrastructure)
+2. **Repo-specific master rule** – this `.cursorrules` file
+3. **Topic rules** in `.cursor/rules/*.mdc` (architecture, testing, probes, etc.)
+4. **Mode rules** (Architect mode, Agent mode) set at runtime
+
+Lower-level rules may clarify but **must not conflict** with higher-level ones.  When in doubt, the higher entry wins.
+
+---
+
 **1. Project Architecture & File Structure**
 
 - Vibe uses a strict modular architecture.
 - Do NOT reference or use legacy/monolithic files.
 - All new code must be modular, focused, and placed in the correct file.
 
-**Current Modular Files (as of 2024):**
-- Core Systems: `GameLoop.js`, `GameState.js`, `CameraSystem.js`, `SpawnSystem.js`, `CollisionSystem.js`, `UIRenderer.js`, `BackgroundRenderer.js`, `TestMode.js`
-- Entities: `player.js`, `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js`, `EnemyFactory.js`, `bullet.js`
-- Support: `Audio.js`, `BeatClock.js`, `visualEffects.js`, `effects.js`, `config.js`, `mathUtils.js`
-- Other: `ticketManager.js`, `ai-liveness-probe.js`
-- (See `/js/` for the full, up-to-date list. For details, see README.md.)
+**Current Modular Architecture (Fully Migrated):**
+- **Core Systems:** `packages/systems/` - GameLoop, GameState, CameraSystem, SpawnSystem, CollisionSystem, UIRenderer, BackgroundRenderer, TestMode, etc.
+- **Entities:** `packages/entities/` - player, BaseEnemy, Grunt, Rusher, Tank, Stabber, EnemyFactory, bullet, etc.
+- **Core Support:** `packages/core/` - Audio, BeatClock, config, mathUtils, GameState, etc.
+- **Visual Effects:** `packages/fx/` - visualEffects, effects, explosions, VFXDispatcher, etc.
+- **Tooling & Utilities:** `packages/tooling/` - githubIssueManager, DebugLogger, errorHandler, probes, etc.
+- **API Services:** `packages/api/` - (empty after ticketing system migration)
+- (See `packages/` for the complete, up-to-date modular structure. For details, see README.md.)
 
-**Legacy Files (Do NOT use):**
-- `js/game.js` (replaced by `GameLoop.js`)
-- `js/enemy.js` (replaced by `BaseEnemy.js` + individual enemy classes)
-- `js/explosion.js` (replaced by `effects.js` + `visualEffects.js`)
-
-- Never suggest or implement monolithic or legacy patterns.
-- Update this section and the README.md if the architecture changes.
+**Migration Complete:**
+- All legacy monolithic files have been fully removed and migrated to the modular `packages/` workspace.
+- The `js/` directory has been completely removed as part of the architectural migration.
+- All core game logic, systems, entities, and effects now reside in the strict modular `packages/` structure.
+- Do not reference, suggest, or reintroduce any monolithic or legacy patterns.
+- All new code must follow the modular `packages/` architecture standards.
 
 ---
 
-**2. Ticketing System: Bugs, Features, Enhancements, Tasks**
+**2. Issue Tracking System: Bugs, Features, Enhancements, Tasks**
 
-- The ticketing system is a core, modular subsystem.
-- All work (bugs, features, enhancements, tasks) must be tracked via the ticketing system.
-- Full documentation, schema, API usage, and workflow best practices are now in the dedicated guide:
-  - ➡️ **See [`TICKETING_SYSTEM_GUIDE.md`](./TICKETING_SYSTEM_GUIDE.md) for all details.**
-- Tickets are structured JSON files stored in `tests/bug-reports/`.
-- Use the provided API endpoints (`ticket-api.js`) and JS modules (`ticketManager.js`) for all ticket management (in-game, admin, automation).
-- Each ticket must specify a `type` field: `bug`, `feature`, `enhancement`, or `task`.
-- **All tickets created via the API must include a unique `id` field. The backend will reject tickets without an `id`. See the guide for example payloads.**
-- Tickets support tags, status, history, artifacts (screenshots, logs), and related tickets.
-- The bug-report watcher script (`move-bug-reports.js`) auto-moves artifacts to the correct folder.
-- No ZIP download option is provided; all artifacts must be saved to the bug-reports folder.
-- The AI must be able to programmatically open the bug-report modal and access the same data as a human tester.
-- All feature/enhancement work should be logged through the same metadata-rich JSON ticket workflow.
-- **Known issue:** If the bug report modal does not close after submission, this is tracked as bug ticket `BR-2024-06-01-modal-bug-001`. See the guide for troubleshooting steps.
+**(Migrated to GitHub Issues)**
+
+The legacy JSON ticketing subsystem was replaced with GitHub Issues. For bug/feature tracking, labels, and automation, use the `packages/tooling/src/githubIssueManager.js` module.
+
+If you encounter leftover code or docs referencing `TicketCore`, `/api/tickets`, or `tests/bug-reports/`, delete or migrate it immediately.
 
 ---
 
@@ -70,27 +72,37 @@
 - **Filesystem Operations**
   - Use for: Batch file reads, precise line edits, directory management, and metadata.
   - Key tools: `mcp_filesystem_read_file`, `mcp_filesystem_edit_file`, `mcp_filesystem_list_directory`, etc.
-  - Path: **Absolute paths required** (e.g., `C:\CursorWorkspace\projects\vibe\...`)
+  - Path: **Absolute paths required** (e.g., `D:\projects\vibe\...`)
 
 **Best Practices:**
 - Prefer built-in tools for simple, day-to-day edits.
 - Use MCP tools for batch, advanced, or automation tasks.
-- Always check path requirements (absolute for MCP, relative for built-in).
+- Always check path requirements (absolute for MCP filesystem, relative for built-in).
 - For advanced Playwright workflows, see [MCP_PLAYWRIGHT_TESTING_GUIDE.md](./MCP_PLAYWRIGHT_TESTING_GUIDE.md).
 
 **Example: Automated Bug Ticket Creation**
 1. Run probe-driven test with MCP Playwright.
 2. On failure, capture screenshot and logs.
-3. Use `ticketManager.js` and `ticket-api.js` to create a new bug ticket with artifacts.
-4. Artifacts are auto-moved to the correct folder by `move-bug-reports.js`.
+3. Use `packages/tooling/src/githubIssueManager.js` to create a new GitHub issue with artifacts.
+4. Artifacts are embedded in the GitHub issue description.
 
 ---
 
 **Workflow Note: Robust Server Startup**
 - The `predev` script kills any process on ports 5500 and 3001 before starting dev servers.
-- The `dev` script starts Five Server (frontend), bug watcher, and ticket API server in parallel.
+- The `dev` script starts Five Server (frontend) and waits until READY. No local Ticket API is used.
 - If port 5500 is in use, Five Server will use another port (e.g., 56555); always check the console for the actual port.
-- **Preferred Environment:** Windows 11 + PowerShell 7 + Bun for optimal performance and Windows-native tooling.
+- **Preferred Environment:** Windows 11 + cmd.exe + Bun for optimal performance and Windows-native tooling.
+
+**Shell and Path Standards (MANDATORY):**
+- **Default shell is cmd.exe** – NOT bash or WSL. PowerShell is optional and supported, but not the default.
+- **Git hooks are implemented in `.cmd` with thin wrappers for other shells** that simply delegate to the `.cmd` scripts.
+- **Use Windows-style paths** (e.g., `D:\projects\vibe`) – NOT Unix-style paths (`/c/...`).
+- **Use `bun` and `bunx`** instead of `npm` and `npx`.
+- **All terminal commands must run under cmd.exe**; avoid bashisms. Prefer cross-shell-friendly commands when possible.
+- **File paths in scripts must use Windows format**. If using PowerShell, ensure compatibility, but default to cmd.exe semantics.
+- If terminal shows `/c/...` paths, navigate to proper Windows path.
+- **Ensure only ONE Bun install**: use the official installer at `%USERPROFILE%\.bun\bin`; remove Scoop/npm/Homebrew copies to avoid CLI timeouts.
 
 ---
 
@@ -159,6 +171,8 @@
 - Order functions so that those composing others appear earlier in the file.
 - If you encounter a bug or suboptimal code, add a `// TODO:` comment outlining the problem.
 - All code must pass linting (ESLint) and formatting (Prettier) checks before commit. See README for setup.
+- **ESLint Configuration:** Use `bunx eslint . --ext .js` for Windows compatibility instead of glob patterns
+- **Linting Commands:** `bun run lint` (check), `bun run lint:fix` (auto-fix); both work in cmd.exe and PowerShell
 - Use ES modules (`import`/`export`) for all new code unless otherwise specified.
 - Handle errors gracefully and consistently; use early returns and clear error messages.
 - Write code that is easy to test (favor pure functions, dependency injection where possible).
@@ -236,6 +250,14 @@
   - ❌ Incorrect: `window.someTemporaryVariable` // Not core system
   - 🎯 Rationale: Clear hierarchy prevents globals abuse while allowing necessary coordination
 
+  **Event-bus requirement:** Whenever the Player instance is created or recreated, code must execute:
+
+  ```javascript
+  window.dispatchEvent(new CustomEvent('playerChanged', { detail: window.player }));
+  ```
+
+  This keeps Audio and other listening systems synchronized with the live player. Missing the dispatch is considered a breaking violation.
+
 - **p5.js Instance Mode Standards (MANDATORY):**
   - ALL drawing functions MUST use `this.p.` or `p.` prefix in instance mode
   - ✅ Correct: `this.p.fill(255, 0, 0)`, `this.p.ellipse(x, y, w, h)`, `this.p.textAlign(this.p.CENTER)`
@@ -248,6 +270,14 @@
   - ❌ Incorrect: `sin(angle)`, `random(0, 100)`, `sqrt(x*x + y*y)` // Using p5 globals
   - 🎯 Rationale: Explicit imports make dependencies clear, enable testing, and prevent p5 version conflicts
 
+ - **Static Guardrails (RECOMMENDED CI STEP):**
+   - Run `bun run scan:consistency` locally and in CI to enforce:
+     - p5 instance-mode compliance (flags unprefixed calls like `fill(`, `ellipse(`, `push()`, ...)
+     - Math utilities usage (flags direct `Math.(cos|sin|atan2|sqrt|min|max)` in `packages/**`)
+   - Narrow scopes:
+     - Instance-mode only: `bun run scan:instance`
+     - Math-only: `bun run scan:math`
+
 - **Attack Method Return Standards (MANDATORY):**
   - ALL attack methods MUST return structured objects or null
   - ✅ Correct: `return { type: 'melee', playerHit: true, damage: 25, x: this.x, y: this.y }`
@@ -255,20 +285,29 @@
   - ❌ Incorrect: `return true`, `return false` // Ambiguous boolean returns
   - 🎯 Rationale: Structured returns enable GameLoop.js to handle all attack types consistently across AI models
 
+- **Sound Effects Safety: All SFX names MUST be defined in `packages/core/src/audio/SoundIds.js` (`SOUND` registry) and have matching configs in `Audio.sounds`. The build will throw if mismatch.**
+
+_See the dedicated consistency specification: [AR-consistency-standards.mdc](mdc:.cursor/rules/AR-consistency-standards.mdc) for constructor signatures, emoji logging map, p5 instance-mode rules, and other strict norms._
+
 ---
 
 **6. Testing & Playwright**
 
-- **Probe-driven testing only:** Remove all manual Playwright `.spec.js` tests; maintain only probe files.
+- **Probe-driven testing only:** Manual Playwright `.spec.js` tests are **prohibited**.  Keep **probe** files only (suffix `*-probe.test.js`).  Delete or archive any remaining `.spec.js` tests.
 - **Use MCP Playwright for all automated tests.**
+- **Preferred automated test entry:** `bun run test:orchestrated` (pre-runs `scan:consistency` and `validate:sounds`, starts Five-Server, then runs Playwright + MCP probes deterministically).  For deterministic runs, call `setRandomSeed(1337)` (from `@vibe/core`) before starting gameplay.
 - **Dev server runs on port 5500** (`http://localhost:5500`).
 - **Game must be started before gameplay checks** (restart from game-over if needed).
 - **Activate audio:** Click canvas at (400,300) to enable audio context.
 - **Test mode:** Press 'T' key for scripted testing mode.
 - **Bug report automation:** On probe failure, auto-capture screenshot and logs, restart and retry, then create a detailed bug report if the issue persists.
-- **Artifacts:** All screenshots and logs must be saved in the correct bug-report folder, auto-moved by `move-bug-reports.js`.
+- **Artifacts:** Screenshots and logs are embedded in the GitHub issue description.
 - **Keyboard shortcuts:** In the bug-report modal, Enter/Ctrl+Enter = Save, Escape = Cancel.
 - **AI must be able to open the bug-report modal programmatically and access the same data as a human tester.**
+
+*See linked rule file for the full probe workflow and debugging details.*
+
+_For the full automated-testing workflow (probe conventions, dev server setup, ticket automation), see [AR-testing-and-debugging.mdc](mdc:.cursor/rules/AR-testing-and-debugging.mdc)._
 
 ---
 
@@ -318,6 +357,20 @@
 - Place custom scripts and styles in dedicated files unless otherwise specified.
 - Ensure all UI is keyboard accessible and screen-reader friendly.
 - Reference the README for any framework-specific or build tool requirements.
+
+---
+
+**Event-Bus VFX System Rules**
+- All new visual effects must use the event-bus pattern (emit events via EnemyEventBus, never call visualEffectsManager directly from entities).
+- VFXDispatcher is the only module that translates gameplay events into visual/screen effects.
+- All VFX must be testable via Playwright probes.
+- Update effectsConfig.js for all balancing and tuning.
+
+---
+
+**11. Security & Secrets**
+
+_See [AR-security.mdc](mdc:.cursor/rules/AR-security.mdc) for the authoritative security & secrets policy._
 
 ---
 

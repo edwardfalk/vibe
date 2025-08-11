@@ -1,21 +1,34 @@
 # Vibe: Cosmic Beat Space Shooter
 
++[![CI Status](https://github.com/edwardfalk/vibe/actions/workflows/ci-dev-server.yml/badge.svg)](https://github.com/edwardfalk/vibe/actions/workflows/ci-dev-server.yml)
+
 > **Purpose:**  
 > This README provides a project overview, quickstart, and a map to all major documentation.  
 > For rules and standards, see [.cursorrules](./.cursorrules).
 
 ## Documentation Map
 
+- [docs/PROJECT_VISION.md](./docs/PROJECT_VISION.md): Project vision, design pillars, and development philosophy
 - [.cursorrules](./.cursorrules): Core rules and standards (architecture, coding, workflow)
+- [docs/CODERABBIT_COMPLETE_GUIDE.md](./docs/CODERABBIT_COMPLETE_GUIDE.md): Complete CodeRabbit integration with deduplication system
 - [docs/TICKETING_SYSTEM_GUIDE.md](./docs/TICKETING_SYSTEM_GUIDE.md): Ticketing system schema and workflow
 - [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
 - [docs/MCP_TOOLS_GUIDE.md](./docs/MCP_TOOLS_GUIDE.md): Advanced MCP tool usage and best practices
 - [docs/AUDIO_CONFIGURATION_GUIDE.md](./docs/AUDIO_CONFIGURATION_GUIDE.md): Audio setup and tuning
+- [docs/DEV_SERVER_WORKFLOW.md](./docs/DEV_SERVER_WORKFLOW.md): Dev server workflow (cmd.exe default), start/stop/restart/status
 - [docs/DESIGN.md](./docs/DESIGN.md): Game design and Cosmic Beat System
 
 ## Overview
 
-Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
+Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. The beat is made with the beatClock. Sound effects, ambient noise and certain enemy actions happens with the beat. This is not something that should really be noticed when playing and controlling the player other than that the sounds together build the "music" in the game. The stabber, for example, is an enemy that tries to stab you with what from the beginning was a "laser knife" but now is more of a weird beak. The stabber makes a screech when attacking, but the game is made such that the stabber moves slowly near the player until he falls into the correct beat on 3.5 in the 4/4 beat where he can make his dissonant screech (all the other sounds harmonizes) and thereby syncopating the other sounds. Enememies with dark bass sounds act on beat 1 as bass drums, lighter punchy sounds fall in as snares, etc.
+
+The main character is a bizarre mad action hero/antihero that walks around in the middle of outer space blasting aliens that are a strange mix of murderous psychopaths, whiny babies and bumbling idiots. At the same time. The grunts are the simplest enemies, they have a baby-like voice and asks for their mommy and what the password is for the wifi while attacking and trying to kill you. They shoot and try to keep their distance. The stabbers make eerie female psycho noises and make dashing attacks when near. You can dash away yourself or shoot to keep them back. The rushers .. rush. and try to blow themselves up as close to you as possible. The tanks are giants with armor that shoot giant plasma balls that goes straight through both enemies and the player killing them instantly. If you kill a tank they collapse into a plasma cloud that's not healthy at all to enter. If you manage to get close enough to one you place a nuclear time bomb on it and have 3 seconds to get the hell out of there. When the bomb explodes the tank together with the nuke forms a radioactive greenish plasma cloud with particles in it. That cloud is even worse. 
+
+The player character fires quickly and makes a quarter note hihat beat. An idea to expand the game with is to have a shotgun power-up that fires more slowly, and you would get a damage bonus if you fire exactly on beat 1. If you keep the button pressed you could fire a little bit faster, but too get the damage bonus you would have to wait a moment longer and fire manually. 
+
+ Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
+
+For the project's core vision, design pillars, and development philosophy, see [`docs/PROJECT_VISION.md`](./docs/PROJECT_VISION.md).
 
 **Technology Stack:**
 
@@ -30,15 +43,39 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 ---
 
+## 📁 Project Structure
+
+```
+vibe/
+├── 📁 packages/                   # All new and modular code (core, systems, entities, fx, tooling)
+│   ├── core/                      # Game loop, global state, timing, math utils, config
+│   ├── entities/                  # Player, enemies, bullets
+│   ├── systems/                   # Camera, spawning, collision, UI, background, test mode
+│   ├── fx/                        # Explosions, visual effects, particles
+│   └── tooling/                   # Ticket manager, debug logger, Playwright probes
+├── 📁 packages/                   # Modular architecture - all game code organized by domain
+├── 📁 docs/                       # Documentation
+│   ├── archive/                   # Archived documentation
+│   └── vision/                    # Project vision documents
+├── 📁 scripts/                    # Utility scripts (dev server, probes, docs tooling)
+│   └── dev-server.js             # Dev-server orchestrator (start/stop/status)
+├── 📁 tests/                      # Testing infrastructure
+│   └── bug-reports/               # Bug report storage
+├── 🌐 index.html                  # Game entry point
+├── (no local Ticket API)         # Ticketing uses GitHub Issues via tooling
+└── 📦 package.json                # Dependencies and scripts
+```
+
 ## Project Structure & Architecture
 
-- **Strict modular architecture**: All code is organized by system or entity (see `/js/`).
-- **No legacy/monolithic files**: Only use modular files listed in `.cursorrules` and `/js/`.
-- **Core Systems**: `GameLoop.js`, `GameState.js`, `CameraSystem.js`, `SpawnSystem.js`, `CollisionSystem.js`, `UIRenderer.js`, `BackgroundRenderer.js`, `TestMode.js`
-- **Entities**: `player.js`, `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js`, `EnemyFactory.js`, `bullet.js`
-- **Support**: `Audio.js`, `BeatClock.js`, `visualEffects.js`, `effects.js`, `config.js`, `mathUtils.js`
-- **Other**: `ticketManager.js`, `ai-liveness-probe.js`
-- **See `/js/` for the full, up-to-date list.**
+- **Strict modular architecture:** All new and modular code lives in `packages/` (`core`, `systems`, `entities`, `fx`, `tooling`).
+- **No legacy/monolithic files:** Only use modular files listed in `.cursorrules` and under `packages/`.
+- **All code is now in `packages/`** following strict modular architecture principles.
+- **Core Systems:** See `packages/systems/` for main systems (GameLoop, GameState, CameraSystem, etc.)
+- **Entities:** See `packages/entities/` for Player, BaseEnemy, Grunt, Rusher, Tank, Stabber, EnemyFactory, bullet, etc.
+- **Support:** See `packages/core/` for Audio, BeatClock, visualEffects, effects, config, mathUtils, etc.
+- **Other:** Ticketing, probes, and debug helpers are in `packages/tooling/`.
+- **See `packages/` for the full, up-to-date list.**
 
 > **Always consult the latest `.cursorrules` for the single source of truth on architecture, coding standards, and best practices.**
 
@@ -46,22 +83,28 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 ## Ticketing System
 
-- **All work (bugs, features, enhancements, tasks) is tracked via the modular ticketing system.**
-- Tickets are structured JSON files in `tests/bug-reports/`.
-- Use `ticketManager.js` and `ticket-api.js` for all ticket management (in-game, admin, automation).
-- **See [`docs/TICKETING_SYSTEM_GUIDE.md`](./docs/TICKETING_SYSTEM_GUIDE.md) for full documentation, schema, and workflow.**
-- Each ticket must have a unique `id` and specify a `type` (`bug`, `feature`, `enhancement`, `task`).
-- Artifacts (screenshots, logs) are grouped per ticket and auto-moved by `move-bug-reports.js`.
-- The AI and automated scripts have full access to the ticketing system and bug-report modal.
+All work (bugs, features, enhancements, tasks) is tracked in GitHub Issues. Automation is handled by `packages/tooling/src/githubIssueManager.js`. Probes create issues on failures with attached artifacts (screenshots, logs).
+
+Quick notes:
+- Probe failures create GitHub Issues automatically via `githubIssueManager`
+- You can also script manual issue creation via the same module
+
+See [TICKETING_SYSTEM_GUIDE.md](docs/TICKETING_SYSTEM_GUIDE.md) for details.
 
 ---
 
 ## Development & Testing
 
 - **Dev server**: Five Server runs on port 5500 (`http://localhost:5500`).
-- **Backend server**: Runs on port 3001 for ticket API and automation.
-- **Start all servers with `bun run dev`** (kills ports 5500/3001 if needed).
-- **Testing**: Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
+- **Default shell**: cmd.exe. Prefer cmd-friendly commands and Windows paths in all examples.
+- **Start dev server with `bun run dev:start`** – idempotent; starts Five Server and waits until READY. If port 5500 is busy, it frees and retries. Hooks run via `.githooks/*.cmd` (install with `bun run hooks:install`).
+- **Testing**: Preferred workflow is the deterministic orchestrated script:
+```bat
+bun run test:orchestrated   # dev:start ➜ tests ➜ dev:stop
+```
+This replaces direct `bun run test` and avoids flaky port-in-use errors. It also runs prechecks: `scan:consistency` and `validate:sounds` before starting the dev server.
+Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
+- **Bun single-install requirement**: Ensure ONLY the official Windows installer (`%USERPROFILE%\.bun\bin`) is on your PATH. Remove Scoop or other shims to prevent Starship timeout warnings.
 - **Test mode**: Press 'T' in-game to enable scripted testing.
 - **Bug-report modal**: Open with 'B' + 'R' or UI button. Keyboard: Enter/Ctrl+Enter = Save, Escape = Cancel.
 - **Artifacts**: All screenshots/logs saved in `tests/bug-reports/` and grouped by ticket ID.
@@ -75,6 +118,18 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 - Use ES modules (`import`/`export`) with mandatory dependency injection patterns.
 - **p5.js Instance Mode**: All drawing functions must use `this.p.` prefix (e.g., `this.p.fill()`, `this.p.ellipse()`).
 - Import math functions from `mathUtils.js` instead of using p5.js globals.
+- **Static Guardrails**: Run `bun run scan:consistency` to enforce:
+  - Instance-mode compliance (flags unprefixed p5 calls like `fill(`, `ellipse(`, `push()`, ...)
+  - Math utilities usage (flags direct `Math.(cos|sin|atan2|sqrt)` in `packages/**`)
+  - Also available: `bun run scan:instance`, `bun run scan:math`
+
+### Deterministic Runs
+- Use `setRandomSeed(seed)` from `@vibe/core` before starting gameplay to stabilize probes and visuals. Example:
+  ```js
+  await page.evaluate(() => {
+    import('@vibe/core').then(({ setRandomSeed }) => setRandomSeed(1337));
+  });
+  ```
 - **Constructor Signatures**: All enemy classes use exact signature: `constructor(x, y, type, config, p, audio)`.
 - **Console Logging**: All logs must use emoji prefixes (🎮 Game state, 🎵 Audio, 🗡️ Combat, etc.).
 - **Timing System**: Use `deltaTimeMs` for frame-independent calculations, normalized to 60fps baseline.
@@ -94,7 +149,8 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 ## Audio & Visuals
 
 - Audio system is modular and beat-synced.
-- Visual effects are handled by `visualEffects.js` and `effects.js`.
+- Visual effects are triggered via a global event-bus system (`EnemyEventBus` + `VFXDispatcher`), ensuring all feedback is modular, testable, and balanced.
+- See `docs/DESIGN.md` for a full diagram and explanation of the new VFX system.
 - See `docs/AUDIO_CONFIGURATION_GUIDE.md` for setup.
 
 ---
@@ -107,10 +163,49 @@ For a detailed explanation of the Cosmic Beat System and musical gameplay, see [
 
 ---
 
+## CodeRabbit Integration
+
+Vibe includes a comprehensive CodeRabbit review analysis system that captures ALL review data from GitHub:
+
+### Features
+- **Complete Review Capture**: Gets general reviews AND line-by-line comments
+- **File Context**: Includes exact file paths and line numbers for suggestions
+- **Smart Categorization**: Automatically categorizes suggestions (security, bugs, performance, etc.)
+- **Priority Analysis**: Identifies high-priority issues requiring immediate attention
+- **Structured Data**: Saves comprehensive data to JSON files for analysis
+- **Ticket Integration**: Automatically creates tickets for high-priority issues
+
+### Quick Start
+```bash
+# Get complete CodeRabbit review data (recommended)
+bun run coderabbit:cycle
+
+# Or run steps individually:
+bun run coderabbit:fetch-complete  # Fetch all review data
+bun run coderabbit:analyze         # Display analysis
+bun run coderabbit:auto-tickets    # Create tickets
+```
+
+### Generated Files
+- **`coderabbit-reviews/latest-complete.json`** - Complete review data with context
+- **`coderabbit-reviews/latest-summary.json`** - Analysis summary and metrics  
+- **`coderabbit-reviews/latest-high-priority.json`** - Critical issues for immediate action
+
+### Current Results
+- **1,402 total suggestions** extracted from 14 PRs
+- **111 high-priority issues** identified (security, bugs, critical fixes)
+- **Complete file context** for targeted fixes
+
+For detailed documentation, see [`docs/CODERABBIT_COMPLETE_GUIDE.md`](./docs/CODERABBIT_COMPLETE_GUIDE.md).
+
+---
+
 ## References
 
+- `docs/PROJECT_VISION.md`: Project vision, design pillars, and development philosophy
 - `.cursorrules`: Core standards and workflow reference
 - `docs/TICKETING_SYSTEM_GUIDE.md`: Ticketing system documentation
+- `docs/CODERABBIT_COMPLETE_GUIDE.md`: Complete CodeRabbit integration guide with deduplication system
 - `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`: Automated testing guide
 - `docs/AUDIO_CONFIGURATION_GUIDE.md`: Audio setup and troubleshooting
 - `docs/DESIGN.md`: Cosmic Beat System and musical gameplay design
@@ -127,45 +222,28 @@ Vibe uses a comprehensive automated testing system with probe-driven testing and
 
 ### Test Types
 
-1. **MCP Probe-Driven Tests** - Comprehensive game state and behavior testing
+1. **Full Orchestrated Probe Suite** – spins up dev environment and runs all Playwright probes deterministically
    ```bash
-   bun run test:mcp
+   bun run test:orchestrated   # dev:start ➜ tests ➜ dev:stop
    ```
-2. **Playwright Gameplay Probes** - Headless browser tests using probe scripts
+2. **Playwright Gameplay Probes (manual options)**
 
    ```bash
-   bun test          # Headless
-bun run test:headed   # With browser UI
-bun run test:debug    # Debug mode
+   bunx playwright test            # Headless
+   bunx playwright test --headed   # Browser UI
+   bunx playwright test --debug    # Debug inspector
    ```
-
-3. **Comprehensive Test Suite** - Runs all automated tests
-
-   ```bash
-   bun run test:comprehensive
-   ```
-
-4. **Game Debugging** - Basic health check and analysis
-   ```bash
-    bun run debug:probe   # Game health check + summary
-   ```
-5. **CodeRabbit Integration** - Automated review processing
-   ```bash
-   bun run coderabbit:analyze    # Analyze CodeRabbit reviews only
-bun run coderabbit:integrate  # Full integration (analysis + tickets + tests)
-bun run coderabbit:workflow   # Complete CodeRabbit workflow
-   ```
+3. **Legacy aliases** `test:mcp`, `test:probes` now point to `test:orchestrated`.
 
 ### Probe-Driven Testing
 
-The game uses specialized probe files for different aspects:
+The game uses specialized probe files for different aspects (now located in `packages/tooling/src/probes/`):
 
-- **`js/ai-liveness-probe.js`** - Basic game state and entity presence
-- **`js/enemy-ai-probe.js`** - Enemy AI behavior and interactions
-- **`js/audio-system-probe.js`** - Audio system and beat synchronization
-- **`js/combat-collision-probe.js`** - Combat mechanics and collision detection
-- **`js/ui-score-probe.js`** - UI elements and score system
-- **`js/game-debugging-probe.js`** - Bug detection and game health analysis
+- **`ai-liveness-probe.js`** – Basic game state & entity presence
+- **`audio-system-probe.js`** – Audio system & beat synchronization
+- **`collision-detection-probe.js`** – Collision detection & physics
+- **`grunt-knockback-probe.js`** – Grunt enemy knock-back behavior
+- **`tank-armor-break-probe.js`** – Tank armor break & explosion flow
 
 Each probe automatically:
 
@@ -197,7 +275,10 @@ Test results and artifacts are saved to:
 The development server includes automated testing capabilities:
 
 ```bash
-bun run dev  # Starts game server, bug watcher, and API server
+bun run dev:start   # Start server (idempotent)
+bun run dev:status  # Check status
+bun run dev:restart # Restart
+bun run dev:stop    # Stop server
 ```
 
 Then in another terminal:
@@ -220,3 +301,30 @@ For detailed testing documentation, see:
 
 - [MCP Playwright Testing Guide](docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md)
 - [Ticketing System Guide](docs/TICKETING_SYSTEM_GUIDE.md)
+
+## 🆕 Packages Workspace Layout (in progress)
+
+```
+packages/
+  core/       # Game loop, global state, timing, math utils, config
+  entities/   # Player, enemies, bullets
+  systems/    # Camera, spawning, collision, UI, background, test mode
+  fx/         # Explosions, visual effects, particles
+  tooling/    # Ticket manager, debug logger, Playwright probes
+```
+
+> **Status:** The full migration from the legacy `/js` monolith to the strict `packages/` workspace is **complete**. All game code now lives in modular workspaces; the old `/js` folder has been removed.
+
+### Documentation & External Library Cache
+
+- Docs link checker skips archived docs under `docs/archive/**`. Keep outdated references there to preserve history without failing CI.
+- Rules in `.cursor/rules/*.mdc` are auto-mirrored to `docs-site/rules/` by `scripts/sync-docs-site-rules.js` (run by `bun run docs:serve`).
+
+* **Docs front-matter validation**: GitHub CI runs `bun run scripts/scan-doc-frontmatter.js` to ensure every doc starts with YAML metadata.
+* **Context7 cache**: After adding a new dependency, run:
+
+   ```bat
+  bun run docs:cache-context7
+  ```
+
+  This fetches (or stubs) docs/snippets for the library into `.context7-cache/`.
