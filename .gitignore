@@ -15,6 +15,11 @@ tests/manual-sessions/
 
 # IDE and editor files
 .vscode/
+# If you must commit workspace configs, whitelist specific files:
+# !.vscode/settings.json
+# !.vscode/tasks.json
+# !.vscode/launch.json
+# !.vscode/extensions.json
 .cursor/
 *.swp
 *.swo
