@@ -4,7 +4,7 @@ description: End-to-end CodeRabbit integration including deduplication, workflow
 last_updated: 2025-08-11
 ---
 
-# CodeRabbit Complete Guide
+# CodeRabbit – Working Guide (2025-08)
 
 ## 🎯 Overview
 
@@ -19,18 +19,13 @@ This is the complete guide for CodeRabbit integration in the Vibe project. It co
 5. [Troubleshooting](#troubleshooting)
 6. [Advanced Usage](#advanced-usage)
 
-## 🚀 Quick Start
+## What triggers reviews
 
-### Basic Commands
-```bash
-# Complete workflow (recommended)
-bun run coderabbit:cycle
-
-# Individual steps
-bun run coderabbit:fetch-complete    # Fetch latest reviews
-bun run coderabbit:analyze          # Analyze and categorize
-bun run coderabbit:workflow         # Resolve outdated + create new tickets
-```
+- CodeRabbit reviews Pull Requests targeting the default branch (current default: `main`).
+- Auto-reviews are skipped for non-default target branches (e.g., `unstable`) unless enabled in CodeRabbit settings.
+- Manual triggers via PR comment:
+  - `@coderabbitai review` (incremental)
+  - `@coderabbitai full review` (full)
 
 ### First Time Setup
 ```bash
@@ -92,6 +87,21 @@ cat tests/bug-reports/processed-coderabbit-suggestions.json | jq '.suggestions |
 grep -h "coderabbitSuggestion" tests/bug-reports/CR-*.json | sort | uniq -d
 ```
 
+## Minimal daily workflow
+
+1. Open PRs to `main` (or enable auto-reviews for `unstable` in CodeRabbit settings).
+2. Fetch reviews locally:
+   ```bash
+   bun run coderabbit:fetch-latest
+   ```
+   - Outputs `coderabbit-reviews/latest.json` and `coderabbit-reviews/actionable-summary.json`.
+3. Fix from `actionable-summary.json`; commit.
+
+Optional history-aware:
+```bash
+bun run coderabbit:fetch-new
+```
+
 ## 🔄 Workflow Commands
 
 ### Core Workflow Scripts
@@ -103,20 +113,22 @@ grep -h "coderabbitSuggestion" tests/bug-reports/CR-*.json | sort | uniq -d
 | `coderabbit:resolve-outdated` | Only resolve outdated tickets | Cleanup existing tickets |
 | `coderabbit:auto-tickets` | Only create new tickets | When you want just ticket creation |
 
-### Analysis Scripts
+### Scripts we keep
 
-| Command | Description | Output |
-|---------|-------------|--------|
-| `coderabbit:fetch-complete` | Fetch all PR reviews | `coderabbit-reviews/latest-complete.json` |
-| `coderabbit:analyze` | Analyze and categorize | `coderabbit-reviews/latest-summary.json` |
-| `coderabbit:pull` | Basic review pulling | Console output only |
+| Command | Description |
+|---------|-------------|
+| `coderabbit:fetch-latest` | Snapshot + actionable summary |
+| `coderabbit:fetch-new` | History-aware (optional) |
 
 ## ⚙️ Configuration
 
 ### Environment Variables
 ```bash
-# Required
-GITHUB_TOKEN=your_github_token_here
+# Required (Windows)
+set GITHUB_TOKEN=your_github_token_here
+
+# macOS/Linux
+export GITHUB_TOKEN=your_github_token_here
 ```
 
 ### Deduplication Settings
@@ -138,7 +150,7 @@ if (category === 'performance' && daysSinceCreated > 7) {
 }
 ```
 
-## 🔧 Troubleshooting
+## Notes & Troubleshooting
 
 ### Common Issues
 

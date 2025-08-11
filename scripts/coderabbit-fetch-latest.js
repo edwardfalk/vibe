@@ -7,13 +7,17 @@
  *   - coderabbit-reviews/latest.json (flat array, newest first)
  *   - coderabbit-reviews/actionable-summary.json (grouped by file)
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { Octokit } from '@octokit/rest';
 
 const OWNER = 'edwardfalk';
 const REPO = 'vibe';
-const BOT_LOGINS = new Set(['coderabbit[bot]', 'coderabbitai[bot]', 'CodeRabbitAI']);
+const BOT_LOGINS = new Set([
+  'coderabbit[bot]',
+  'coderabbitai[bot]',
+  'CodeRabbitAI',
+]);
 const PR_LIMIT = 30;
 
 function ensureDir(dir) {
@@ -146,6 +150,13 @@ async function main() {
     if (it.type !== 'inline') continue; // actionable focus: inline comments
     if (!isActionableText(it.body)) continue;
     const key = it.path || 'NO_FILE';
+    // Filter out suggestions for files that no longer exist in the repo
+    try {
+      const abs = resolve(process.cwd(), key);
+      if (!existsSync(abs)) {
+        continue;
+      }
+    } catch {}
     if (!grouped[key]) grouped[key] = [];
     grouped[key].push({
       pr: it.pr,
@@ -162,12 +173,12 @@ async function main() {
   writeFileSync(summaryPath, JSON.stringify(summary, null, 2));
 
   console.log(`✅ Saved ${items.length} items → ${latestPath}`);
-  console.log(`✅ Actionable summary (${summary.length} files) → ${summaryPath}`);
+  console.log(
+    `✅ Actionable summary (${summary.length} files) → ${summaryPath}`
+  );
 }
 
 main().catch((err) => {
   console.error('❌ coderabbit-fetch-latest failed:', err?.message || err);
   process.exit(1);
 });
-
-

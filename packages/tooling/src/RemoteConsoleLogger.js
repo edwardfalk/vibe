@@ -1,17 +1,21 @@
-// RemoteConsoleLogger.js - Browser-side automatic console logger
-// Requires fetch API (modern browsers). Sends console logs to Ticket API server
-// so that they are persisted to .debug logs for later analysis.
+// RemoteConsoleLogger.js - Optional browser-side console logger
+// Disabled by default. If enabled and an apiUrl is provided, sends warn/error
+// logs to a remote HTTP endpoint for persistence.
 
 // IMPORTANT: This module should only execute in a browser context.
-function setupRemoteConsoleLogger(apiUrl = 'http://localhost:3001/api/logs') {
+function setupRemoteConsoleLogger(apiUrl) {
   if (typeof window === 'undefined') return; // Node/test safeguard
   if (window.__remoteConsoleLoggerSetup) return;
+  // If no endpoint is provided, do not set up
+  if (!apiUrl || typeof apiUrl !== 'string' || apiUrl.trim() === '') {
+    return;
+  }
   window.__remoteConsoleLoggerSetup = true;
   window.__remoteLoggerApiUrl = apiUrl; // Store for global error handlers
 
-  // Global flag to enable/disable remote logging
+  // Global flag to enable/disable remote logging (default: disabled)
   if (typeof window.ENABLE_REMOTE_LOGGING === 'undefined') {
-    window.ENABLE_REMOTE_LOGGING = true;
+    window.ENABLE_REMOTE_LOGGING = false;
   }
 
   const levels = ['log', 'info', 'warn', 'error'];
@@ -65,9 +69,7 @@ function setupRemoteConsoleLogger(apiUrl = 'http://localhost:3001/api/logs') {
     };
   });
 
-  console.log(
-    '🪵 RemoteConsoleLogger active – logs will be sent to Ticket API'
-  );
+  console.log('🪵 RemoteConsoleLogger available (disabled by default)');
 
   // Attach global error listeners once
   if (!window.__remoteGlobalHandlersAttached) {
