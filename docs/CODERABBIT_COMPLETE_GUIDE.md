@@ -111,10 +111,6 @@ grep -h "coderabbitSuggestion" tests/bug-reports/CR-*.json | sort | uniq -d
 ```bash
 # Required
 GITHUB_TOKEN=your_github_token_here
-
-# Optional
-CODERABBIT_AUTO_TICKETS=true
-TICKET_API_BASE_URL=http://localhost:3001/api
 ```
 
 ### Deduplication Settings
