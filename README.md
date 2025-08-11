@@ -30,6 +30,8 @@ The player character fires quickly and makes a quarter note hihat beat. An idea 
 
 For the project's core vision, design pillars, and development philosophy, see [`docs/PROJECT_VISION.md`](./docs/PROJECT_VISION.md).
 
+Note: Automated code-review via CodeRabbit runs on Pull Requests. Direct pushes to `unstable` don’t trigger reviews.
+
 **Technology Stack:**
 
 - **Engine**: p5.js 1.7.0 (migrated from Phaser for better modularity)
