@@ -14,6 +14,15 @@ export default (async function () {
   }
 
   // Wait until p5 draw loop starts to avoid race on very first frames
+  function currentFrameCount() {
+    const p5fc =
+      window.p5 && window.p5.instance && window.p5.instance.frameCount;
+    if (typeof p5fc === 'number') return p5fc;
+    const pInst = window.player && window.player.p;
+    if (pInst && typeof pInst.frameCount === 'number') return pInst.frameCount;
+    return null;
+  }
+
   async function waitForDrawStart(timeoutMs = 3000) {
     const start = (typeof performance !== 'undefined' && performance.now)
       ? performance.now()
@@ -23,11 +32,8 @@ export default (async function () {
         const now = (typeof performance !== 'undefined' && performance.now)
           ? performance.now()
           : Date.now();
-        const ok =
-          window.p5 &&
-          window.p5.instance &&
-          typeof window.p5.instance.frameCount === 'number' &&
-          window.p5.instance.frameCount > 0;
+        const fc = currentFrameCount();
+        const ok = typeof fc === 'number' && fc > 0;
         if (ok) return resolve(true);
         if (now - start >= timeoutMs) return resolve(false);
         (typeof requestAnimationFrame === 'function'
@@ -41,10 +47,7 @@ export default (async function () {
   await waitForDrawStart(3500);
 
   const result = {
-    frameCount:
-      window.p5 && window.p5.instance
-        ? window.p5.instance.frameCount
-        : null,
+    frameCount: currentFrameCount(),
     gameState: window.gameState?.gameState ?? null,
     playerAlive: !!window.player && !window.player?.markedForRemoval,
     enemyCount: Array.isArray(window.enemies)
@@ -55,14 +58,7 @@ export default (async function () {
   };
 
   // Liveness check
-  if (
-    !(
-      window.p5 &&
-      window.p5.instance &&
-      typeof window.p5.instance.frameCount === 'number' &&
-      window.p5.instance.frameCount > 0
-    )
-  ) {
+  if (!(typeof result.frameCount === 'number' && result.frameCount > 0)) {
     result.failure = 'Frame count not available (draw loop may be stopped)';
   }
 
