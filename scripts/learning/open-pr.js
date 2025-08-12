@@ -5,6 +5,10 @@
  */
 
 import { Octokit } from '@octokit/rest';
+// Load .env if available to pick up GITHUB_TOKEN locally
+try {
+  (await import('dotenv')).default?.config?.();
+} catch {}
 import { execSync } from 'child_process';
 
 function sh(cmd) {
@@ -31,26 +35,38 @@ async function main() {
     process.exit(2);
   }
 
-  const base = process.env.PR_BASE || 'unstable';
-  const head = sh('git rev-parse --abbrev-ref HEAD');
+  const requestedBase = process.env.PR_BASE;
+  const headBranch = sh('git rev-parse --abbrev-ref HEAD');
   const remoteUrl = sh('git config --get remote.origin.url');
   const { owner, repo } = parseOwnerRepo(remoteUrl);
 
-  const title = process.env.PR_TITLE || `chore: automated update from ${head}`;
+  const title = process.env.PR_TITLE || `chore: automated update from ${headBranch}`;
   const body =
     process.env.PR_BODY || 'Automated update. See checks for details.';
 
   const octokit = new Octokit({ auth: token });
 
   try {
-    const resp = await octokit.pulls.create({
-      owner,
-      repo,
-      title,
-      head,
-      base,
-      body,
-    });
+    // pick a valid base (prefer explicit env, else default_branch)
+    let base = requestedBase;
+    if (!base) {
+      const repoInfo = await octokit.repos.get({ owner, repo });
+      base = repoInfo.data.default_branch || 'main';
+    }
+    // verify base exists; fallback to main
+    try {
+      await octokit.repos.getBranch({ owner, repo, branch: base });
+    } catch {
+      if (base !== 'main') {
+        await octokit.repos.getBranch({ owner, repo, branch: 'main' });
+        base = 'main';
+      } else {
+        throw new Error(`Base branch '${base}' not found`);
+      }
+    }
+
+    const head = `${owner}:${headBranch}`;
+    const resp = await octokit.pulls.create({ owner, repo, title, head, base, body });
     console.log('✅ PR created:', resp.data.html_url);
   } catch (e) {
     const msg = e?.message || String(e);
