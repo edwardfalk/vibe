@@ -35,8 +35,9 @@ async function main() {
     process.exit(2);
   }
 
-  const requestedBase = process.env.PR_BASE;
-  const headBranch = sh('git rev-parse --abbrev-ref HEAD');
+  const requestedBaseRaw = process.env.PR_BASE;
+  const requestedBase = (requestedBaseRaw || '').trim();
+  const headBranch = sh('git rev-parse --abbrev-ref HEAD').trim();
   const remoteUrl = sh('git config --get remote.origin.url');
   const { owner, repo } = parseOwnerRepo(remoteUrl);
 
