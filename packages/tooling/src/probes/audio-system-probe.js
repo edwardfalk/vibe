@@ -2,7 +2,7 @@
 // Probe: Audio System and Beat Clock Health Monitoring
 
 export default (async function () {
-  const { random } = await import('@vibe/core/mathUtils.js');
+  const { random, min, max } = await import('@vibe/core/mathUtils.js');
   const { SOUND } = await import('@vibe/core');
 
   // Import ticketManager API if available
@@ -39,8 +39,9 @@ export default (async function () {
   try {
     const canvas = document.querySelector('canvas') || document.body;
     const rect = canvas.getBoundingClientRect();
-    const x = rect.left + Math.max(5, Math.min(rect.width - 5, rect.width / 2));
-    const y = rect.top + Math.max(5, Math.min(rect.height - 5, rect.height / 2));
+    const clamp = (v, lo, hi) => max(lo, min(hi, v));
+    const x = rect.left + clamp(rect.width / 2, 5, rect.width - 5);
+    const y = rect.top + clamp(rect.height / 2, 5, rect.height - 5);
     // Prefer a real click; some browsers require gesture on element
     await Promise.race([
       (async () => { await canvas?.click?.(); })(),
