@@ -1,0 +1,29 @@
+{
+  "id": "TASK-2025-06-18-sfx-roadmap",
+  "type": "task",
+  "title": "SFX Roadmap: Next-Gen Feedback & Musicality",
+  "status": "open",
+  "tags": ["audio", "sfx", "musicality", "roadmap"],
+  "checklist": [
+    "UI: Menu move (A5/C6 triangle blip)",
+    "UI: Menu confirm (A5–C6–E6 arpeggio)",
+    "UI: Menu cancel (E5→A4 descending blip)",
+    "UI: Pause/unpause (A3→E4 sine sweep)",
+    "Player: Perfect-on-beat arpeggio (A–C–D–E)",
+    "Player: Shield break (E4→C4→A3 triad)",
+    "Player: Low health warning (A2 pulsing tremolo)",
+    "Enemy: Spawn whoosh (filtered noise, panned)",
+    "Enemy: Grunt death after-pop echo",
+    "Enemy: Tank death sub-bass thump (A1)",
+    "Enemy: Rusher death fizz (noise burst)",
+    "Enemy: Stabber death metallic clink",
+    "Enemy: Special attack charge-up (rising saw/triangle)",
+    "Ambient: Cosmic wind (modulated by camera/player)",
+    "Ambient: Distant radio chatter (synth speech, filtered)",
+    "Hazard: Warning beep (C6, near danger)",
+    "Musical: Measure bell (A5/E6 chime every 4th bar)",
+    "Musical: Background pulse (A2 sine heartbeat on downbeat)",
+    "Implement in-game Audio Lab menu for SFX auditioning: UI to play every sound at in-game volume/effects, with optional distance/pan controls and config display."
+  ],
+  "description": "A comprehensive SFX roadmap to enhance feedback, musicality, and cosmic beat immersion. All items are designed for synth implementation unless otherwise noted. See assistant's SFX roadmap for details."
+} 

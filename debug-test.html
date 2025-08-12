@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Debug Test</title>
+    <!-- Load p5 library locally to avoid CDN DNS issues -->
+    <script src="./node_modules/p5/lib/p5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+        }
+        #status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 16px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">Loading...</div>
+    
+    <script type="module">
+        console.log('🔵 Debug test starting...');
+        
+        // Test basic p5 functionality
+        function setup() {
+            console.log('🟢 p5 setup called');
+            createCanvas(800, 600);
+            frameRate(60);
+            document.getElementById('status').textContent = 'p5 setup complete';
+        }
+        
+        function draw() {
+            background(0);
+            fill(255);
+            ellipse(400, 300, 50, 50);
+            
+            // Show frame count
+            text('Frame: ' + frameCount, 10, 20);
+            
+            if (frameCount === 60) {
+                console.log('🟢 Basic p5 rendering working');
+                document.getElementById('status').textContent = 'Basic p5 working';
+            }
+        }
+        
+        // Test import map
+        try {
+            console.log('🔵 Testing import map...');
+            import('@vibe/core').then(core => {
+                console.log('🟢 @vibe/core imported:', Object.keys(core));
+                document.getElementById('status').textContent = 'Core imported successfully';
+            }).catch(err => {
+                console.error('❌ Failed to import @vibe/core:', err);
+                document.getElementById('status').textContent = 'Core import failed: ' + err.message;
+            });
+        } catch (err) {
+            console.error('❌ Import test failed:', err);
+            document.getElementById('status').textContent = 'Import test failed: ' + err.message;
+        }
+        
+        // Attach to window for global access
+        window.setup = setup;
+        window.draw = draw;
+        
+        console.log('🔵 Debug test script complete');
+    </script>
+    
+    <!-- Import map for internal @vibe/* packages -->
+    <script type="importmap">
+      {
+        "imports": {
+          "tone": "https://cdn.skypack.dev/tone@^14",
+          "@vibe/core": "/packages/core/src/index.js",
+          "@vibe/core/": "/packages/core/src/",
+          "@vibe/systems": "/packages/systems/src/index.js",
+          "@vibe/systems/": "/packages/systems/src/",
+          "@vibe/entities": "/packages/entities/src/index.js",
+          "@vibe/entities/": "/packages/entities/src/",
+          "@vibe/fx": "/packages/fx/src/index.js",
+          "@vibe/fx/": "/packages/fx/src/",
+          "@vibe/tooling": "/packages/tooling/src/index.js",
+          "@vibe/tooling/": "/packages/tooling/src/",
+          "@vibe/game": "/packages/game/src/index.js",
+          "@vibe/game/": "/packages/game/src/"
+        }
+      }
+    </script>
+</body>
+</html>

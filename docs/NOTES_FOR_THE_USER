@@ -1,0 +1,52 @@
+# NOTES, TIPS, LIST OF AVAILABLE TOOLS FOR THE USER
+
+Put notes, tips, lists here optimized for the feeble human brain (simple and without too much technical details, focus on how to use stuff and why). This document only exists as a help for the user.
+
+## Docs Site Quick Reference 📝
+
+- **Sources of truth**: `.cursor/rules/*.mdc` (rules) and `docs/*.md` (guides).
+- **Disposable build folder**: `docs-site/` (ignored by Git). Regenerated on demand.
+- **Preview docs site**: `bun run docs:serve`
+  1. Runs `docs:build-index` (copies rules & key docs into `docs-site/`, rebuilds index).
+  2. Launches Docsify live-server at `http://localhost:3000` (prints URL).
+- **Just rebuild (no server)**: `bun run docs:build-index`
+- **No manual runs?** No problem. AI & code searches always use the originals; stale `docs-site/` never affects tooling.
+
+## AI Asset Generation: Hugging Face & Blender MCP 🚀
+
+### Summary
+- You can generate 2D and 3D game assets using either Hugging Face (AI models) or Blender MCP (AI-driven Blender automation).
+- Both can be integrated with Cursor for streamlined, chat-driven asset creation.
+
+### Hugging Face (Recommended First Steps)
+- **Best for:** 2D sprites, backgrounds, tiles, concept art, and some 3D models.
+- **Recommended models:**
+  - **Stable Diffusion XL (SDXL):** For high-quality 2D art, backgrounds, and concept art.
+  - **Pixel Art Diffusion:** For pixel art sprites and retro assets.
+  - **ControlNet:** For consistent multi-frame animations or sprite sheets.
+  - **Meshy:** For text-to-3D mesh generation (OBJ/GLB files).
+- **How to use:**
+  1. Use your Hugging Face subscription to access model endpoints or Spaces.
+  2. Write a script (Node.js or Python) to send prompts and download results.
+  3. Save generated assets directly into your project folders.
+  4. (Optional) Automate this so you can ask Cursor to generate assets on demand.
+- **Tips:**
+  - For animation, generate a sequence of frames (e.g., walk cycle) using prompt variations or ControlNet.
+  - You can combine AI-generated assets with p5.js for further animation or effects.
+
+### Blender MCP
+- **Best for:** Procedural 3D models, batch 3D-to-2D sprite sheets, and advanced Blender automation.
+- **Features:**
+  - Full AI/assistant control of Blender (create, modify, render, export assets).
+  - Download assets from Poly Haven, Sketchfab, or generate with Hyper3D.
+- **Notes:**
+  - Setup can be tricky (Python/Blender/uv versions, sockets, Windows paths).
+  - If you had issues before, try again only if you want deep Blender automation and are ready to troubleshoot.
+  - For most workflows, scripting Blender directly (without MCP) is more robust.
+
+### What to Try First
+- Start with Hugging Face for 2D assets (sprites, backgrounds, tiles) using SDXL or Pixel Art Diffusion.
+- For 3D, try Meshy on Hugging Face, or use Blender for procedural models.
+- Use p5.js to animate or process AI-generated frames if needed.
+- Only try Blender MCP if you want full AI-driven Blender control and are comfortable debugging setup issues.
+

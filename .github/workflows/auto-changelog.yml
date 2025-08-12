@@ -1,0 +1,32 @@
+name: Auto Changelog
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  generate-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 'latest'
+
+      - name: Generate CHANGELOG.md
+        run: bun run scripts/generate-changelog.js
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes to commit";
+          else
+            git add docs/CHANGELOG.md
+            git commit -m "📝 docs: update CHANGELOG [skip ci]"
+            git push
+          fi 

@@ -1,0 +1,19 @@
+{
+  "id": "BUG-2025-06-27-abcdef",
+  "type": "bug",
+  "title": "test",
+  "status": "open",
+  "history": [
+    {
+      "timestamp": "2025-06-27T16:32:45.954Z",
+      "action": "created",
+      "user": "system"
+    }
+  ],
+  "artifacts": [],
+  "relatedTickets": [],
+  "createdAt": "2025-06-27T16:32:45.954Z",
+  "updatedAt": "2025-06-27T16:32:45.955Z",
+  "slug": "test",
+  "folder": "2025-06-27T16-32-45-954Z_BUG-2025-06-27-abcdef_test"
+}

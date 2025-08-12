@@ -1,0 +1,29 @@
+name: Auto docs & changelog
+
+on:
+  push:
+    branches: [ unstable ]
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+      - name: Install deps
+        run: bun install --frozen-lockfile
+      - name: Generate CHANGELOG
+        run: bun run scripts/generate-changelog.js
+      - name: Check CodeRabbit reviews
+        run: bun run scripts/post-merge-review-check.js
+      - name: Validate docs front-matter
+        run: bun run scripts/scan-doc-frontmatter.js
+      - name: Commit & push docs if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add docs/CHANGELOG.md tests/bug-reports || true
+            git commit -m "docs: auto-update changelog & coderabbit follow-ups [skip ci]"
+            git push
+          fi 
