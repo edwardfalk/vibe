@@ -126,9 +126,7 @@ class Rusher extends BaseEnemy {
                 'LEEROY JENKINS!',
                 'KAMIKAZE PIZZA PARTY!',
               ];
-              const battleCry =
-                battleCries[floor(random() * battleCries.length)];
-              window.audio.speak(this, battleCry, 'rusher');
+              // speech disabled: formerly triggered a rusher battle-cry
 
               // Play rusher charge sound on-beat
               if (!window.beatClock || window.beatClock.canRusherCharge()) {

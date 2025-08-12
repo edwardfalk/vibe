@@ -28,30 +28,40 @@ try {
   /* process undefined in browser – ignore */
 }
 
+function isNodeLike() {
+  try {
+    return (
+      typeof process !== 'undefined' &&
+      !!process.release &&
+      process.release.name === 'node'
+    );
+  } catch (_) {
+    return false;
+  }
+}
+
 function validateEnvironment() {
   const warnings = [];
   const errors = [];
 
-  if (!processEnv.GITHUB_TOKEN) {
-    warnings.push(
-      'GITHUB_TOKEN not set - GitHub API requests will be rate limited'
-    );
-  } else if (processEnv.GITHUB_TOKEN.length < 20) {
-    errors.push('GITHUB_TOKEN appears to be invalid (too short)');
-  }
-
-  const ticketPort = parseInt(processEnv.TICKET_API_PORT);
-  if (isNaN(ticketPort) || ticketPort < 1000 || ticketPort > 65535) {
-    warnings.push(
-      `Invalid TICKET_API_PORT: ${processEnv.TICKET_API_PORT}, using default 3001`
-    );
+  // Only check tokens in Node context to avoid noisy browser warnings
+  if (isNodeLike()) {
+    if (!processEnv.GITHUB_TOKEN) {
+      warnings.push(
+        'GITHUB_TOKEN not set - GitHub API requests will be rate limited'
+      );
+    } else if (processEnv.GITHUB_TOKEN.length < 20) {
+      errors.push('GITHUB_TOKEN appears to be invalid (too short)');
+    }
   }
 
   const devPort = parseInt(processEnv.DEV_SERVER_PORT);
-  if (isNaN(devPort) || devPort < 1000 || devPort > 65535) {
-    warnings.push(
-      `Invalid DEV_SERVER_PORT: ${processEnv.DEV_SERVER_PORT}, using default 5500`
-    );
+  if (isNodeLike()) {
+    if (isNaN(devPort) || devPort < 1000 || devPort > 65535) {
+      warnings.push(
+        `Invalid DEV_SERVER_PORT: ${processEnv.DEV_SERVER_PORT}, using default 5500`
+      );
+    }
   }
 
   warnings.forEach((warning) => console.warn(`⚠️ ${warning}`));

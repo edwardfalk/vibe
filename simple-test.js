@@ -2,7 +2,7 @@
 console.log('Testing fixed components...');
 
 // Test 1: Check if audio manifest has all required sounds
-fetch('/public/audio/manifest.json')
+fetch('/audio/manifest.json')
   .then((response) => response.json())
   .then((manifest) => {
     console.log('✅ Audio manifest loaded');

@@ -8,6 +8,11 @@ last_updated: 2025-08-11
 
 This guide explains how Cursor project rules (.mdc in .cursor/rules) work, the different types, and best practices for using them in the Vibe project (and beyond). Default shell is cmd.exe; examples use Windows paths and cmd-friendly commands.
 
+PRD enforcement examples wired into ESLint (flat config):
+- `vibe-no-math-pi/no-math-pi`: forbid `Math.PI` / `2*Math.PI` in `packages/**` (use `PI`/`TWO_PI`).
+- `vibe-no-p5-globals/no-p5-globals`: forbid unprefixed p5 globals; require instance mode or `mathUtils` imports.
+- In tests: `vibe-no-raw-goto-index/no-raw-goto-index`: require `gotoIndex(page)` instead of `page.goto(INDEX_PAGE)`.
+
 ---
 
 ## Rule Types Overview

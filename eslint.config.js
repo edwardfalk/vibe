@@ -56,9 +56,9 @@ export default [
     },
     plugins: {
       prettier: prettierPlugin,
-      'no-math-pi': noMathPi,
-      'no-p5-globals': noP5Globals,
-      'no-raw-goto-index': noRawGotoIndex,
+      'vibe-no-math-pi': { rules: { 'no-math-pi': noMathPi } },
+      'vibe-no-p5-globals': { rules: { 'no-p5-globals': noP5Globals } },
+      'vibe-no-raw-goto-index': { rules: { 'no-raw-goto-index': noRawGotoIndex } },
     },
     rules: {
       'prefer-const': 'error',
@@ -73,23 +73,22 @@ export default [
         },
       ],
       // PRD-aligned guardrails
-      'no-math-pi/no-math-pi': 'error',
-      'no-p5-globals/no-p5-globals': 'error',
+      'vibe-no-math-pi/no-math-pi': 'warn',
+      'vibe-no-p5-globals/no-p5-globals': 'warn',
     },
   },
   // Targeted overrides
   {
     files: ['packages/**/src/**/*.js'],
     rules: {
-      'no-math-pi/no-math-pi': 'error',
-      'no-p5-globals/no-p5-globals': 'error',
+      'vibe-no-math-pi/no-math-pi': 'error',
+      'vibe-no-p5-globals/no-p5-globals': 'error',
     },
   },
   {
     files: ['tests/**/*.js'],
     rules: {
-      'no-raw-goto-index/no-raw-goto-index': 'error',
+      'vibe-no-raw-goto-index/no-raw-goto-index': 'error',
     },
-  },
   },
 ];

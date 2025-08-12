@@ -85,7 +85,7 @@ class Tank extends BaseEnemy {
             'FOCUS ON HUMAN AGAIN',
           ];
           const calmLine = calmLines[floor(random() * calmLines.length)];
-          window.audio.speak(this, calmLine, 'tank');
+          // speech disabled
         }
       }
     }
@@ -150,7 +150,6 @@ class Tank extends BaseEnemy {
       // Different charging sounds at different stages
       if (this.chargeTime >= 1 && this.chargeTime < 1 + dt && window.audio) {
         console.log('🔋 Tank starting to charge!');
-        window.audio.speak(this, 'CHARGING!', 'tank');
         window.audio.playSound(SOUND.tankCharging, this.x, this.y);
       } else if (
         this.chargeTime >= this.maxChargeTime / 2 &&
@@ -158,7 +157,6 @@ class Tank extends BaseEnemy {
         window.audio
       ) {
         console.log('⚡ Tank 50% charged!');
-        window.audio.speak(this, 'POWER UP!', 'tank');
         window.audio.playSound(SOUND.tankPowerUp, this.x, this.y);
       }
 
@@ -169,9 +167,6 @@ class Tank extends BaseEnemy {
         this.shootCooldown = 180; // 3 second cooldown after firing
 
         console.log('💥 Tank firing charged shot!');
-        if (window.audio) {
-          window.audio.speak(this, 'FIRE!', 'tank');
-        }
 
         return this.createBullet();
       }
@@ -670,11 +665,7 @@ class Tank extends BaseEnemy {
             'YOU MADE ME MAD!',
             'TURNING GUNS ON YOU!',
           ];
-          window.audio.speak(
-            this,
-            angerLines[floor(random() * angerLines.length)],
-            'tank'
-          );
+          // speech disabled
         }
       }
     }

@@ -1,13 +1,12 @@
 // ToneAudioFacade.js – Tone.js-based audio system (MVP)
 // Requires p5.js instance only for future spatial calculations; currently optional.
-// TODO: Expand with Mixer, SampleLoader, MusicScheduler, SpeechCoordinator.
+// TODO: Expand with Mixer, SampleLoader, MusicScheduler.
 
 import * as Tone from 'tone';
 import { SampleLoader } from './SampleLoader.js';
 import { SOUND } from './SoundIds.js';
 import { FallbackManager } from './FallbackManager.js';
 import { MusicScheduler } from './MusicScheduler.js';
-import { SpeechCoordinator } from './SpeechCoordinator.js';
 import { random, floor, max } from '../mathUtils.js';
 
 /**
@@ -46,7 +45,7 @@ export class ToneAudioFacade {
     /** @type {number|null} */
     this._lastSpeechTime = null;
 
-    /** @type {SpeechCoordinator|null} */
+    /** @type {null} */
     this._speech = null;
 
     /** @type {(e:CustomEvent)=>void|null} */
@@ -54,6 +53,9 @@ export class ToneAudioFacade {
 
     /** @type {Object|null} */
     this._player = null;
+
+    /** @type {boolean} */
+    this._muted = false;
   }
 
   /* -------------------------------------------------------------------- */
@@ -80,16 +82,15 @@ export class ToneAudioFacade {
 
       console.log('🔵 Loading samples via SampleLoader...');
       const { players, failedIds } = await SampleLoader.load(
-        '/public/audio/manifest.json',
+        '/audio/manifest.json',
         (m) => this._remapManifestToCdn(m)
       );
 
-      // Route any id starting with "music" to the music bus.
+      // Route players to proper buses
       for (const [id, player] of Object.entries(players._players)) {
-        if (id.startsWith('music')) {
-          player.disconnect();
-          player.connect(this._gains.music);
-        }
+        player.disconnect();
+        const bus = id.startsWith('music') ? this._gains.music : this._gains.sfx;
+        player.connect(bus);
       }
 
       console.log('🟢 Players loaded:', Object.keys(players._players).length);
@@ -114,9 +115,7 @@ export class ToneAudioFacade {
         { enabled: devMode }
       );
 
-      // SpeechCoordinator setup (ducking)
-      this._speech = new SpeechCoordinator(this);
-      console.log('🟢 SpeechCoordinator initialized');
+      // SpeechCoordinator removed (ducking disabled)
 
       // Pre-create music scheduler (will start on demand)
       this._musicScheduler = new MusicScheduler((id) => this.playSound(id));
@@ -206,19 +205,26 @@ export class ToneAudioFacade {
    * @param {number} rampSeconds
    */
   duck(db, rampSeconds = 0.2) {
-    // Clamp ducking to a sane min (e.g., -18 dB) to avoid near-silence
-    const clampedDb = max(db, -18);
-    const music = this._gains.music;
-    if (!music) return;
-    music.gain.rampTo(Tone.dbToGain(clampedDb), rampSeconds);
+    try {
+      if (!this._gains?.master) return;
+      const now = Tone.now();
+      const target = Math.pow(10, db / 20);
+      const param = this._gains.master.gain;
+      // Cancel any pending ramps to avoid zipper noise
+      param.cancelAndHoldAtTime(now);
+      param.linearRampToValueAtTime(target, now + rampSeconds);
+    } catch {}
   }
 
-  /** Restore master gain to 0 dB */
+  /** Restore master gain to 1.0 */
   unduck(rampSeconds = 0.2) {
-    const music = this._gains.music;
-    if (!music) return;
-    // Restore to 0 dB (unity)
-    music.gain.rampTo(1, rampSeconds);
+    try {
+      if (!this._gains?.master) return;
+      const now = Tone.now();
+      const param = this._gains.master.gain;
+      param.cancelAndHoldAtTime(now);
+      param.linearRampToValueAtTime(1, now + rampSeconds);
+    } catch {}
   }
 
   /** Start default background loop (idempotent) */
@@ -293,7 +299,8 @@ export class ToneAudioFacade {
     }
 
     // Level meter taps the master output so we can get accurate readings.
-    this._meter = new Tone.Meter().connect(this._gains.master);
+    this._meter = new Tone.Meter();
+    this._gains.master.connect(this._meter);
   }
 
   // _loadBuiltinSamples removed – now handled by SampleLoader
@@ -321,16 +328,22 @@ export class ToneAudioFacade {
     //       https://raw.githubusercontent.com/Tonejs/Tone.js/<commit>/examples/audio/<subdir>/<file>
     // ------------------------------------------------------------------
 
+    const cdnCommit = 'dc9de66401e175849bfd219bfe303ba2d72a4ee7';
     const cdnBase =
-      'https://raw.githubusercontent.com/Tonejs/Tone.js/<commit>/examples/audio/';
+      `https://raw.githubusercontent.com/Tonejs/Tone.js/${cdnCommit}/examples/audio/`;
     const remapped = {};
     for (const [id, url] of Object.entries(manifest)) {
+      if (typeof url !== 'string') continue;
       if (url.includes('tonejs.github.io/audio/')) {
-        // Capture sub path after /audio/
-        const subPath = url.split('/audio/')[1]; // e.g., 'berklee/lead_2_C.mp3'
+        const subPath = url.split('/audio/')[1];
         remapped[id] = cdnBase + subPath;
+      } else if (/^https?:\/\//i.test(url)) {
+        // Absolute URL – leave as-is
+        remapped[id] = url;
       } else {
-        remapped[id] = url; // leave untouched
+        // Relative path in our manifest → map into Tone.js examples CDN tree
+        const trimmed = url.replace(/^\.\/?/, '');
+        remapped[id] = cdnBase + trimmed;
       }
     }
     return remapped;
@@ -375,9 +388,7 @@ export class ToneAudioFacade {
    * @returns {boolean} - Whether speech was triggered
    */
   speak(entity, text, voiceType = 'player', force = false) {
-    if (!this._speech) return false;
-
-    // Use browser speech synthesis with ducking
+    // Use browser speech synthesis (ducking disabled)
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
 
@@ -403,13 +414,7 @@ export class ToneAudioFacade {
 
     this._lastSpeechTime = now;
 
-    // Attach ducking listeners
-    utterance.addEventListener('start', () => {
-      this.duck(-12);
-    });
-    utterance.addEventListener('end', () => {
-      this.unduck();
-    });
+    // Ducking removed – speak without volume changes
 
     window.speechSynthesis.speak(utterance);
     console.log(
@@ -611,112 +616,112 @@ export class ToneAudioFacade {
 
   // Legacy convenience methods - redirect to playSound with proper IDs
   playPlayerShoot(x, y) {
-    this.playSound('playerShoot', x, y);
+    this.playSound(SOUND.playerShoot, x, y);
   }
   playAlienShoot(x, y) {
-    this.playSound('alienShoot', x, y);
+    this.playSound(SOUND.alienShoot, x, y);
   }
   playExplosion(x, y) {
-    this.playSound('explosion', x, y);
+    this.playSound(SOUND.explosion, x, y);
   }
   playHit(x, y) {
-    this.playSound('hit', x, y);
+    this.playSound(SOUND.hit, x, y);
   }
   playPlayerHit() {
-    this.playSound('playerHit');
+    this.playSound(SOUND.playerHit);
   }
   playEnemyHit(x, y) {
-    this.playSound('hit', x, y);
+    this.playSound(SOUND.hit, x, y);
   }
   playRusherScream(x, y) {
-    this.playSound('rusherScream', x, y);
+    this.playSound(SOUND.rusherScream, x, y);
   }
   playTankEnergyBall(x, y) {
-    this.playSound('tankEnergy', x, y);
+    this.playSound(SOUND.tankEnergy, x, y);
   }
   playStabAttack(x, y) {
-    this.playSound('stabAttack', x, y);
+    this.playSound(SOUND.stabAttack, x, y);
   }
   playEnemyFrying(x, y) {
-    this.playSound('enemyFrying', x, y);
+    this.playSound(SOUND.enemyFrying, x, y);
   }
   playPlasmaCloud(x, y) {
-    this.playSound('plasmaCloud', x, y);
+    this.playSound(SOUND.plasmaCloud, x, y);
   }
   playTankCharging(x, y) {
-    this.playSound('tankCharging', x, y);
+    this.playSound(SOUND.tankCharging, x, y);
   }
   playTankPower(x, y) {
-    this.playSound('tankPower', x, y);
+    this.playSound(SOUND.tankPower, x, y);
   }
   playStabberChant(x, y) {
-    this.playSound('stabberChant', x, y);
+    this.playSound(SOUND.stabberChant, x, y);
   }
   playGruntAdvance(x, y) {
-    this.playSound('gruntAdvance', x, y);
+    this.playSound(SOUND.gruntAdvance, x, y);
   }
   playGruntRetreat(x, y) {
-    this.playSound('gruntRetreat', x, y);
+    this.playSound(SOUND.gruntRetreat, x, y);
   }
   playRusherCharge(x, y) {
-    this.playSound('rusherCharge', x, y);
+    this.playSound(SOUND.rusherCharge, x, y);
   }
   playStabberKnife(x, y) {
-    this.playSound('stabberKnife', x, y);
+    this.playSound(SOUND.stabberKnife, x, y);
   }
   playEnemyIdle(x, y) {
-    this.playSound('enemyIdle', x, y);
+    this.playSound(SOUND.enemyIdle, x, y);
   }
   playTankPowerUp(x, y) {
-    this.playSound('tankPowerUp', x, y);
+    this.playSound(SOUND.tankPowerUp, x, y);
   }
   playStabberStalk(x, y) {
-    this.playSound('stabberStalk', x, y);
+    this.playSound(SOUND.stabberStalk, x, y);
   }
   playStabberDash(x, y) {
-    this.playSound('stabberDash', x, y);
+    this.playSound(SOUND.stabberDash, x, y);
   }
   playGruntMalfunction(x, y) {
-    this.playSound('gruntMalfunction', x, y);
+    this.playSound(SOUND.gruntMalfunction, x, y);
   }
   playGruntBeep(x, y) {
-    this.playSound('gruntBeep', x, y);
+    this.playSound(SOUND.gruntBeep, x, y);
   }
   playGruntWhir(x, y) {
-    this.playSound('gruntWhir', x, y);
+    this.playSound(SOUND.gruntWhir, x, y);
   }
   playGruntError(x, y) {
-    this.playSound('gruntError', x, y);
+    this.playSound(SOUND.gruntError, x, y);
   }
   playGruntGlitch(x, y) {
-    this.playSound('gruntGlitch', x, y);
+    this.playSound(SOUND.gruntGlitch, x, y);
   }
   playGruntPop(x, y) {
-    this.playSound('gruntPop', x, y);
+    this.playSound(SOUND.gruntPop, x, y);
   }
   playEnemyOhNo(x, y) {
-    this.playSound('enemyOhNo', x, y);
+    this.playSound(SOUND.enemyOhNo, x, y);
   }
   playStabberOhNo(x, y) {
-    this.playSound('stabberOhNo', x, y);
+    this.playSound(SOUND.stabberOhNo, x, y);
   }
   playRusherOhNo(x, y) {
-    this.playSound('rusherOhNo', x, y);
+    this.playSound(SOUND.rusherOhNo, x, y);
   }
   playTankOhNo(x, y) {
-    this.playSound('tankOhNo', x, y);
+    this.playSound(SOUND.tankOhNo, x, y);
   }
   playBombExplosion(x, y) {
-    this.playSound('explosion', x, y);
+    this.playSound(SOUND.explosion, x, y);
   }
   playRusherExplosion(x, y) {
-    this.playSound('rusherDeathFizz', x, y);
+    this.playSound(SOUND.rusherDeathFizz, x, y);
   }
   playStabberAttack(x, y) {
-    this.playSound('stabberKnifeHit', x, y);
+    this.playSound(SOUND.stabberKnifeHit, x, y);
   }
   playStabberHit(x, y) {
-    this.playSound('stabberKnifeHit', x, y);
+    this.playSound(SOUND.stabberKnifeHit, x, y);
   }
 
   // Legacy volume/control methods
@@ -726,11 +731,17 @@ export class ToneAudioFacade {
     }
   }
 
+  isMuted() {
+    return this._muted;
+  }
+
   toggle() {
-    const currentVol = this._gains.master ? this._gains.master.gain.value : 1;
-    const newVol = currentVol > 0 ? 0 : 1;
-    this.setVolume(newVol);
-    return newVol > 0;
+    // Robust toggle that tracks explicit muted state
+    const master = this._gains.master;
+    if (!master) return !this._muted;
+    this._muted = !this._muted;
+    master.gain.value = this._muted ? 0 : 1;
+    return !this._muted;
   }
 
   // Legacy player reference (compatibility)

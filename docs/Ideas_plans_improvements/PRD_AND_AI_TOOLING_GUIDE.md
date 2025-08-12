@@ -101,7 +101,7 @@ Embed this template in a Cursor rule (`prd_template.mdc`) that offers it when a 
 
 ## 4 Helpful Tools & How We Might Use Them
 
-| Tool                          | Category                     | Potential Integration                                                          |
+| Tool                          | Categoryegory                     | Potential Integration                                                          |
 | ----------------------------- | ---------------------------- | ------------------------------------------------------------------------------ |
 | **Specstory**                 | PRD-writing assistant        | Convert user stories ↔︎ acceptance criteria automatically.                    |
 | **repomix / files-to-prompt** | Context bundling             | Generate condensed code snapshots for agent prompts (good for legacy modules). |

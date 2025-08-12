@@ -260,9 +260,10 @@ class Grunt extends BaseEnemy {
           "I'M CONFUSED!",
         ];
         const randomLine = gruntLines[floor(random() * gruntLines.length)];
-        if (window.audio.speak(this, randomLine, 'grunt')) {
-          this.speechCooldown = this.maxSpeechCooldown;
-        }
+        // speech disabled
+        // if (window.audio.speak(this, randomLine, 'grunt')) {
+        //   this.speechCooldown = this.maxSpeechCooldown;
+        // }
       }
     }
   }
@@ -405,18 +406,11 @@ class Grunt extends BaseEnemy {
     ) {
       // About to die from stabber: play 'ow', delay death
       if (window.audio) {
-        const ttsSuccess = window.audio.speak(this, 'ow', 'grunt', true); // force = true
-        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-          console.log(
-            '💬 Grunt stabbed: trying to say "ow" (TTS success:',
-            ttsSuccess,
-            ')'
-          );
-        }
-        if (!ttsSuccess && window.audio.playSound) {
+        // speech disabled: fallback to sound effect only
+        if (window.audio.playSound) {
           window.audio.playSound(SOUND.gruntOw, this.x, this.y);
           if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-            console.log('🔊 Fallback gruntOw sound played.');
+            console.log('🔊 gruntOw sound played.');
           }
         }
       }

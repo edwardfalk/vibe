@@ -103,6 +103,8 @@
       import '@vibe/fx';
       // Start game loop via new @vibe/game package (uses legacy code internally for now)
       import '@vibe/game';
+      // Attach runtime usage instrumentation (no-op outside browser)
+      import '/scripts/instrument-runtime-usage.js';
     </script>
 </body>
 </html> 

@@ -34,6 +34,7 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 ## Why MCP Playwright?
 
 - **Full browser control for AI/agents**
+- **Stable navigation helper**: always call `gotoIndex(page)` (from `tests/playwright.setup.js`) instead of raw `page.goto(INDEX_PAGE)`; it waits for `domcontentloaded` and reduces flakiness.
 - **Custom JavaScript evaluation**: Inspect any in-game variable, simulate input, and trigger screenshots
 - **Structured, actionable results**: Go beyond console logs and UI checks
 - **Screenshots on failure**: Visual context for debugging

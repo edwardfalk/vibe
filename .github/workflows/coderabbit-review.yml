@@ -33,7 +33,7 @@ jobs:
       - name: Run linting
         run: |
           # Run ESLint if available
-          if [ -f "package.json" ] && grep -q "eslint" package.json; then
+          if [ -f "package.json" ] && bunx egrep -q "eslint" package.json; then
             bun run lint || echo "Linting completed with warnings"
           fi
         continue-on-error: true

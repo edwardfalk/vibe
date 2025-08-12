@@ -29,7 +29,7 @@ This is the complete guide for CodeRabbit integration in the Vibe project. It co
 
 ### First Time Setup
 
-```bash
+```bat
 # 1. Ensure environment is configured
 bun run validate-env
 
@@ -84,19 +84,19 @@ Processed suggestions are stored in `tests/bug-reports/processed-coderabbit-sugg
 
 ### Verification
 
-```bash
-# Check processed suggestions count
-cat tests/bug-reports/processed-coderabbit-suggestions.json | jq '.suggestions | length'
+```bat
+REM Check processed suggestions count (jq optional)
+powershell -NoProfile -Command "Get-Content 'tests/bug-reports/processed-coderabbit-suggestions.json' | jq '.suggestions | length'"
 
-# Verify no duplicates in tickets
-grep -h "coderabbitSuggestion" tests/bug-reports/CR-*.json | sort | uniq -d
+REM Verify no duplicates in tickets (PowerShell Select-String)
+powershell -NoProfile -Command "Get-ChildItem 'tests/bug-reports' -Filter 'CR-*.json' | ForEach-Object { Get-Content $_.FullName } | Select-String -Pattern 'coderabbitSuggestion' | Group-Object Line | Where-Object { $_.Count -gt 1 } | ForEach-Object { $_.Name }"
 ```
 
 ## Minimal daily workflow
 
 1. Open PRs to `main` (or enable auto-reviews for `unstable` in CodeRabbit settings).
 2. Fetch reviews locally:
-   ```bash
+   ```bat
    bun run coderabbit:fetch-latest
    ```
    - Outputs `coderabbit-reviews/latest.json` and `coderabbit-reviews/actionable-summary.json`.
@@ -104,7 +104,7 @@ grep -h "coderabbitSuggestion" tests/bug-reports/CR-*.json | sort | uniq -d
 
 Optional history-aware:
 
-```bash
+```bat
 bun run coderabbit:fetch-new
 ```
 
@@ -130,7 +130,7 @@ bun run coderabbit:fetch-new
 
 ### Environment Variables
 
-```bash
+```bat
 # Required (Windows)
 set GITHUB_TOKEN=your_github_token_here
 
@@ -181,15 +181,15 @@ if (category === 'performance' && daysSinceCreated > 7) {
 
 ### Debug Commands
 
-```bash
-# Test individual components
-node -e "import('./coderabbit-auto-tickets.js').then(m => console.log('✅ Auto-tickets loaded'))"
+```bat
+REM Test individual components
+bun --eval "import('./coderabbit-auto-tickets.js').then(m => console.log('✅ Auto-tickets loaded'))"
 
-# Check file permissions
-ls -la tests/bug-reports/processed-coderabbit-suggestions.json
+REM Check file attributes (Windows)
+attrib tests\bug-reports\processed-coderabbit-suggestions.json
 
-# Validate JSON structure
-cat tests/bug-reports/processed-coderabbit-suggestions.json | jq '.'
+REM Validate JSON structure (optional jq)
+powershell -NoProfile -Command "Get-Content 'tests/bug-reports/processed-coderabbit-suggestions.json' | jq '.'"
 ```
 
 ## 🚀 Advanced Usage

@@ -88,6 +88,7 @@ class EnhancedTestingSystem {
       this.serverProcess = spawn('bun', ['run', 'serve'], {
         cwd: __dirname,
         stdio: 'pipe',
+        windowsHide: true,
       });
 
       let serverReady = false;

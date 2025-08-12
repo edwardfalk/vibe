@@ -91,10 +91,11 @@ If you encounter leftover code or docs referencing `TicketCore`, `/api/tickets`,
 **Workflow Note: Robust Server Startup**
 - The `predev` script kills any process on ports 5500 and 3001 before starting dev servers.
 - The `dev` script starts Five Server (frontend) and waits until READY. No local Ticket API is used.
-- If port 5500 is in use, Five Server will use another port (e.g., 56555); always check the console for the actual port.
+- Port 5500 is canonical. If it is occupied, the scripts will free it (or fail). Do not rely on auto-port switching; fix the conflict so tests continue to target http://localhost:5500.
 - **Preferred Environment:** Windows 11 + cmd.exe + Bun for optimal performance and Windows-native tooling.
 
 **Shell and Path Standards (MANDATORY):**
+- See also: `a-shell-policy-20250812-02.mdc` for exact Allowed/Disallowed and CI enforcement.
 - **Default shell is cmd.exe** – NOT bash or WSL. PowerShell is optional and supported, but not the default.
 - **Git hooks are implemented in `.cmd` with thin wrappers for other shells** that simply delegate to the `.cmd` scripts.
 - **Use Windows-style paths** (e.g., `D:\projects\vibe`) – NOT Unix-style paths (`/c/...`).
@@ -321,7 +322,7 @@ _For the full automated-testing workflow (probe conventions, dev server setup, t
   - *Build errors:* Run terminal commands to check dependencies.
 
 - **Fallback Strategies:**
-  - If semantic search fails → try grep search with exact terms.
+  - If semantic search fails → use our code search tools (e.g., Desktop Commander search-code) or Windows `findstr` for exact terms.
   - If Playwright fails → use test mode (T key) for automation.
   - If file edit fails → try reapply tool for better accuracy.
   - If memory search is empty → read the full graph to understand structure.

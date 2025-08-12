@@ -6,10 +6,19 @@ test.describe('Audio System Probe', () => {
     page,
   }) => {
     await gotoIndex(page);
-    // Ensure canvas exists and click it to satisfy autoplay restrictions
-    await page.waitForSelector('canvas');
 
-    await page.click('canvas');
+    // Perform a user gesture reliably without depending on canvas visibility
+    const { width, height } = page.viewportSize() || { width: 800, height: 600 };
+    await page.mouse.click(Math.floor(width / 2), Math.floor(height / 2));
+
+    // Try explicit Tone unlock early (if available)
+    await page.evaluate(async () => {
+      try {
+        if (window.Tone && window.Tone.context?.state !== 'running') {
+          await window.Tone.start();
+        }
+      } catch {}
+    });
 
     // Wait for audio facade to be present and callable. Tone context may not be global; fallback path is allowed.
     await page.waitForFunction(

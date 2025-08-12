@@ -43,7 +43,7 @@ export class BombSystem {
         window.audio?.speak &&
         tank
       ) {
-        window.audio.speak(tank, secondsLeft.toString(), 'player');
+        // speech disabled
         console.log(
           `⏰ TIME BOMB COUNTDOWN: ${secondsLeft} (Tank ID: ${tank.id})`
         );

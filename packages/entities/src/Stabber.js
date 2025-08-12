@@ -290,8 +290,7 @@ class Stabber extends BaseEnemy {
           'ACUPUNCTURE TIME!',
           'STABBY MCSTABFACE!',
         ];
-        const warning = stabWarnings[floor(random() * stabWarnings.length)];
-        window.audio.speak(this, warning, 'stabber');
+        // speech disabled: formerly warned before stab
       }
 
       if (this.stabWarningTime >= this.maxStabWarningTime) {
@@ -366,8 +365,7 @@ class Stabber extends BaseEnemy {
             'ACUPUNCTURE TIME!',
             'STABBY MCSTABFACE!',
           ];
-          const warning = stabWarnings[floor(random() * stabWarnings.length)];
-          window.audio.speak(this, warning, 'stabber');
+          // speech disabled: formerly warned before stab
         }
 
         console.log(

@@ -86,7 +86,7 @@ CodeRabbit-powered debugging system provides AI-driven analysis of game code to 
 
 ### Quick Commands
 
-```bash
+```bat
 # Quick health check (30 seconds)
 bun run debug:probe
 
@@ -236,7 +236,7 @@ window.comprehensiveTestSuite.testGameplay();
 
 **File**: `tests/gameplay-probe.test.js`
 
-```bash
+```bat
 # Run headless gameplay probes
 bun test
 
@@ -433,7 +433,7 @@ window.comprehensiveTestSuite.reportBug(
 
 ### Development Workflow
 
-```bash
+```bat
 1. Start development server: bun run dev
 2. Run gameplay probes: bun test
 3. Open browser: http://localhost:5500
@@ -445,7 +445,7 @@ window.comprehensiveTestSuite.reportBug(
 
 ### CI/CD Integration
 
-```bash
+```bat
 # Automated testing in CI pipeline
 bun test                    # Exit code 0 = pass, 1 = fail
 bun run test:gameplay      # Gameplay-specific tests
@@ -454,7 +454,7 @@ bun run test:performance   # Performance benchmarks
 
 ### Bug Investigation Workflow
 
-```bash
+```bat
 1. Reproduce the issue
 2. Check console for errors
 3. Run AI liveness probe

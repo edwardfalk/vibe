@@ -14,8 +14,8 @@ This directory contains CodeRabbit review data and simple fetch workflows for Vi
 
 Fetch a fresh snapshot plus an actionable summary:
 
-```bash
-set GITHUB_TOKEN=xxxx   # or export on *nix
+```bat
+set GITHUB_TOKEN=xxxx   REM or use: $env:GITHUB_TOKEN="xxxx" in PowerShell
 bun run coderabbit:fetch-latest
 ```
 
@@ -28,7 +28,7 @@ Outputs:
 
 Only new suggestions after your last entry in `coderabbit-autofix-log.md`:
 
-```bash
+```bat
 bun run coderabbit:fetch-new
 ```
 

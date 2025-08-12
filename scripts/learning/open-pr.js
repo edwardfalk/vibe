@@ -41,7 +41,8 @@ async function main() {
   const remoteUrl = sh('git config --get remote.origin.url');
   const { owner, repo } = parseOwnerRepo(remoteUrl);
 
-  const title = process.env.PR_TITLE || `chore: automated update from ${headBranch}`;
+  const title =
+    process.env.PR_TITLE || `chore: automated update from ${headBranch}`;
   const body =
     process.env.PR_BODY || 'Automated update. See checks for details.';
 
@@ -67,7 +68,14 @@ async function main() {
     }
 
     const head = `${owner}:${headBranch}`;
-    const resp = await octokit.pulls.create({ owner, repo, title, head, base, body });
+    const resp = await octokit.pulls.create({
+      owner,
+      repo,
+      title,
+      head,
+      base,
+      body,
+    });
     console.log('✅ PR created:', resp.data.html_url);
   } catch (e) {
     const msg = e?.message || String(e);

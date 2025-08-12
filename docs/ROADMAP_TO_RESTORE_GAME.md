@@ -301,14 +301,14 @@ _This document is kept up to date as progress is made. See commit history for de
 - [x] Create **`ci-dev-server.yml`** GitHub Action (Node 20 + Bun 1.\* matrix)
   - [x] 🛠️ Step 1: `bun run dev:start` – wait for `READY` line
   - [x] 🛠️ Step 2: `bun run dev:status` – assert status table shows _running_
-  - [x] 🛠️ Step 3: `bunx playwright test --reporter=line | cat`
+  - [x] 🛠️ Step 3: `bunx playwright test --reporter=line`
   - [x] 🛠️ Step 4: `bun run dev:stop` – always block
 - [x] Cache Playwright browsers & Bun install between jobs for faster runs
 - [x] Add badge 🔰 **CI Status** to `README.md` (shields.io)
 - [x] Auto-publish `playwright-report/` as a GitHub Action artifact
 - [x] Auto-generate & commit `CHANGELOG.md` on `unstable` → `main` merges
 - [x] Cross-link **ar-dev-server-process-management.mdc**, `DEV_SERVER_WORKFLOW.md`, and `.github/workflows/*` so docs stay discoverable
-- [x] Add lint rule to fail PR if docs or workflow steps drift out of sync (simple grep)
+- [x] Add lint rule to fail PR if docs or workflow steps drift out of sync (simple scan step – Windows-friendly)
 
 **Done Criteria:**
 

@@ -6,7 +6,7 @@
 import { readFile } from 'node:fs/promises';
 import { exit } from 'node:process';
 
-const MANIFEST_PATH = new URL('../public/audio/manifest.json', import.meta.url);
+const MANIFEST_PATH = new URL('../public/audio/manifest.json', import.meta.url); // server path is /audio/manifest.json
 
 /**
  * Reproduce the same CDN remap logic used by ToneAudioFacade so the audit checks

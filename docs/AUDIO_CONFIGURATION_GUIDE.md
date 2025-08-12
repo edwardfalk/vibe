@@ -1,12 +1,12 @@
 ---
 title: Vibe Game Audio Configuration Guide
-description: Tone.js-based audio workflow, sound IDs, speech ducking, ambient effects, and tuning guidance for Vibe.
-last_updated: 2025-08-11
+description: Tone.js-based audio workflow, bus routing, sound IDs, ambient effects, and tuning guidance for Vibe.
+last_updated: 2025-08-12
 ---
 
 # 🎛️ Vibe Game Audio Configuration Guide
 
-> **Update 2025-07** – Vibe now uses **Tone.js** as its audio engine. All new sounds are loaded via the public sample manifest and played through the `ToneAudioFacade` singleton. The old oscillator-based `Audio.js` remains for legacy reference only.
+> **Update 2025-08** – Vibe uses **Tone.js** as its audio engine. Samples load from `/audio/manifest.json` and are routed through category buses (`music`, `sfx`) inside `ToneAudioFacade`. Ducking is disabled for now; speech calls are no-ops. The old oscillator-based `Audio.js` is legacy only.
 
 ## 🚀 Quick Start – Adding a New Sound (Tone.js pipeline)
 
@@ -26,26 +26,16 @@ last_updated: 2025-08-11
    • Optional `toneAudio.playSound('myNewSfx', { volume: 0.8 })` to scale volume.
 4. **(Optional) Add to `SOUND` enum** if you still want strong typings / consistency.
 
-That’s it—no need to touch `Audio.js` or update any config objects.
+That’s it—no need to (create a file): `type NUL > somefile.txt` or use PowerShell `New-Item -ItemType File somefile.txt` `Audio.js` or update any config objects.
 
 ## 🎹 Background Music
 
 - `toneAudio.startMusic()` starts the default 4-beat drum loop (kick/snare/hihat).
 - Syncs automatically to `BeatClock`; change tempo with `window.beatClock.setBPM(140)`.
 
-## 🗣️ Speech Ducking
+## 🗣️ Speech Ducking (disabled)
 
-`SpeechCoordinator` listens to `speechSynthesis` events and automatically:
-
-- Ducks master volume by −12 dB.
-- Plays a soft triangle-wave pad underneath.
-
-If you don’t want the pad:
-
-```js
-// after toneAudio.init()
-toneAudio._speech.padVolume = 0; // mute pad but keep ducking
-```
+Ducking is currently disabled and no speech pad is routed. Calls to `window.audio.speak(...)` are no-ops by policy. Re-enable in future by wiring a pad to `speechBed` and restoring `duck/unduck` in the facade.
 
 ---
 
@@ -63,13 +53,11 @@ The following sections describe the old Web-Audio–only system kept for referen
 
 All audio configuration lives in `packages/core/src/audio/ToneAudioFacade.js` (Tone facade). Historical reference to `js/Audio.js` has been fully retired.
 
-**Sound ID Registry** – Every legal SFX identifier is defined once in `packages/core/src/audio/SoundIds.js` (`SOUND` enum). When adding a new sound:
+**Manifest** – Samples are enumerated in `/public/audio/manifest.json` and fetched at runtime from `/audio/manifest.json`.
 
-1. Add a config block in `Audio.sounds`.
-2. Add the same key to `SoundIds.js`.
-3. Use it via `SOUND.myNewId` to avoid typos.
+**Bus routing** – `SampleLoader` returns unconnected players; `ToneAudioFacade` connects `music*` IDs to the `music` bus and all others to `sfx`. Master → Meter wiring taps master into a `Tone.Meter` for diagnostics.
 
-The build will throw if the registry and config diverge.
+**Sound ID Registry** – Every legal SFX identifier is defined once in `packages/core/src/audio/SoundIds.js` (`SOUND` enum). Game code must use `SOUND.*` constants; raw strings are forbidden by `scan:sound-ids`.
 
 **Player Event Bus** – Audio spatialisation now tracks the live Player via the `playerChanged` global event. Any place that creates a new Player **must** dispatch:
 
@@ -316,7 +304,7 @@ this.volume = 0.7; // Master volume (0.0-1.0)
 
 ## Sound ID Registry
 
-All sound-effect names are centralized in `packages/core/src/audio/SoundIds.js` and re-exported via `@vibe/core` as `SOUND`. Game code must reference `SOUND.someId` instead of raw strings. The Audio class validates that every registry key has a sound config and vice-versa at runtime – missing mappings will throw during startup.
+All sound-effect names are centralized in `packages/core/src/audio/SoundIds.js` and re-exported via `@vibe/core` as `SOUND`. Game code must reference `SOUND.someId` instead of raw strings. CI runs `scan:sound-ids` to enforce this.
 
 Example:
 
@@ -324,8 +312,6 @@ Example:
 import { SOUND } from '@vibe/core';
 window.audio.playSound(SOUND.gruntPop, x, y);
 ```
-
-Old calls like `playSound('gruntPop', …)` should be migrated to the constant form (legacy helpers inside `Audio.js` are already updated). This guarantees typo-safety and keeps the codebase refactor-ready.
 
 ## 🌌 Ambient & Atmospheric SFX
 

@@ -147,7 +147,7 @@
         
         async function testAudioManifest() {
             try {
-                const response = await fetch('/public/audio/manifest.json');
+                const response = await fetch('/audio/manifest.json');
                 const manifest = await response.json();
                 
                 const soundCount = Object.keys(manifest).length;

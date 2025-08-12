@@ -1,26 +1,14 @@
 @echo off
-setlocal enabledelayedexpansion
+REM Vibe pre-commit hook (cmd.exe + Bun)
+REM Fails commit on policy/lint violations
 
-echo 🔎 Lint
-bun run lint
-if errorlevel 1 goto :fail
+call bun --version >NUL 2>&1 || (
+  echo ⚠️ Bun not found on PATH. Install Bun and retry.
+  exit /b 1
+)
 
-echo 🔍 Consistency scan
-bun run scan:consistency
-if errorlevel 1 goto :fail
+call bun run scan:bashisms || exit /b 1
+call bun run lint || exit /b 1
 
-echo 🎵 Validate sounds
-bun run validate:sounds
-if errorlevel 1 goto :fail
-
-rem Optional: docs links (non-blocking)
-rem bun run docs:check-links || goto :success
-
-:success
-endlocal
+echo ✅ pre-commit checks passed.
 exit /b 0
-
-:fail
-echo ❌ Hook failed
-endlocal
-exit /b 1

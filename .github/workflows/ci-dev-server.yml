@@ -48,13 +48,13 @@ jobs:
         run: bunx playwright install --with-deps
 
       - name: Lint
-        run: bun run lint | cat
+        run: bun run lint
 
       - name: Consistency scan (instance-mode + math)
-        run: bun run scan:consistency | cat
+        run: bun run scan:consistency
 
       - name: Validate sounds
-        run: bun run validate:sounds | cat
+        run: bun run validate:sounds
 
       - name: Start dev environment
         run: bun run dev:start
@@ -63,11 +63,14 @@ jobs:
         run: bun run dev:status
 
       - name: Run Playwright probes
-        run: bunx playwright test --reporter=line | cat
+        run: bunx playwright test --reporter=line
 
       - name: Stop dev environment
         if: always()
         run: bun run dev:stop
+
+      - name: Bashism guard
+        run: bun run scan:bashisms
 
       - name: Doc drift guard
         run: bun run ci:check-doc-drift

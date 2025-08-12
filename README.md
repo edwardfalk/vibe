@@ -14,8 +14,10 @@
 - [docs/TICKETING_SYSTEM_GUIDE.md](./docs/TICKETING_SYSTEM_GUIDE.md): Ticketing system schema and workflow
 - [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
 - [docs/MCP_TOOLS_GUIDE.md](./docs/MCP_TOOLS_GUIDE.md): Advanced MCP tool usage and best practices
+- [docs/snippets/](./docs/snippets/): Curated code and docs snippets (p5 instance mode, math utils, Playwright readiness, audio unlock)
 - [docs/AUDIO_CONFIGURATION_GUIDE.md](./docs/AUDIO_CONFIGURATION_GUIDE.md): Audio setup and tuning
 - [docs/DEV_SERVER_WORKFLOW.md](./docs/DEV_SERVER_WORKFLOW.md): Dev server workflow (cmd.exe default), start/stop/restart/status
+- [docs/CURSOR_RULES_GUIDE.md](./docs/CURSOR_RULES_GUIDE.md): Cursor rules and how we enforce PRD via ESLint + probes
 - [docs/DESIGN.md](./docs/DESIGN.md): Game design and Cosmic Beat System
 
 ## Overview
@@ -37,7 +39,7 @@ Note: Automated code-review via CodeRabbit runs on Pull Requests. Direct pushes 
 - **Engine**: p5.js 1.7.0 (migrated from Phaser for better modularity)
 - **Architecture**: ES modules with strict dependency injection
 - **Development**: MCP tools integration for advanced automation
-- **Testing**: Probe-driven Playwright with automated bug reporting
+- **Testing**: Probe-driven Playwright with automated bug reporting; `gotoIndex(page)` helper standardizes navigation
 
 The project features a robust ticketing system for all bugs, features, and enhancements, plus advanced MCP tools for memory management, automated testing, and file operations.
 
@@ -96,9 +98,9 @@ See [TICKETING_SYSTEM_GUIDE.md](docs/TICKETING_SYSTEM_GUIDE.md) for details.
 
 ---
 
-## Development & Testing
+## Development, Testing & Self-Learning
 
-- **Dev server**: Five Server runs on port 5500 (`http://localhost:5500`).
+- **Dev server**: Five Server runs on port 5500 (`http://localhost:5500`). Import map uses local Tone.js (`/node_modules/tone/build/Tone.js`).
 - **Default shell**: cmd.exe. Prefer cmd-friendly commands and Windows paths in all examples.
 - **Start dev server with `bun run dev:start`** – idempotent; starts Five Server and waits until READY. If port 5500 is busy, it frees and retries. Hooks run via `.githooks/*.cmd` (install with `bun run hooks:install`).
 - **Testing**: Preferred workflow is the deterministic orchestrated script:
@@ -125,8 +127,9 @@ Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING
 - **p5.js Instance Mode**: All drawing functions must use `this.p.` prefix (e.g., `this.p.fill()`, `this.p.ellipse()`).
 - Import math functions from `mathUtils.js` instead of using p5.js globals.
 - **Static Guardrails**: Run `bun run scan:consistency` to enforce:
-  - Instance-mode compliance (flags unprefixed p5 calls like `fill(`, `ellipse(`, `push()`, ...)
-  - Math utilities usage (flags direct `Math.(cos|sin|atan2|sqrt)` in `packages/**`)
+  - Instance-mode compliance (flags unprefixed p5 calls)
+  - Math utilities usage (flags direct `Math.PI`, `2*Math.PI`, and trig)
+  - PRD-aligned ESLint rules: forbid `page.goto(INDEX_PAGE)` in tests (use `gotoIndex(page)`)
   - Also available: `bun run scan:instance`, `bun run scan:math`
 
 ### Deterministic Runs
@@ -144,6 +147,17 @@ Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING
 - All code must pass ESLint and Prettier before commit. Run `bun run lint` to check linting and `bun run format` to apply Prettier formatting.
 - **See `.cursorrules` for complete standards and mandatory patterns.**
 
+### Self-Learning System
+
+- Commands:
+  - `bun run learn:collect` – append observations to `.ai/ledger/events-YYYYMM.jsonl`
+  - `bun run learn:propose` – draft `.mdc` rules from recurring failures
+  - `bun run learn:fix` – conservative autofix (PI/TWO_PI, `dist` import)
+  - `bun run learn:tune "packages/fx/src/effectsConfig.js:global.lodMultiplier"`
+- CI Workflows:
+  - `ci-learning-daily.yml`, `ci-learning-autofix.yml`, `ci-learning-tune.yml`
+- Policy: `.cursor/rules/a-self-learning-system-policy-20250812-01.mdc`
+
 ---
 
 ## Memory Management
@@ -156,6 +170,8 @@ Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING
 ## Audio & Visuals
 
 - Audio system is modular and beat-synced.
+- Routing: samples load from `/audio/manifest.json`, `music*` IDs go to the `music` bus, all others to `sfx`; a `Tone.Meter` taps the master for diagnostics. Use `SOUND.*` constants; CI enforces with `scan:sound-ids`.
+- Ducking: disabled for now; `window.audio.speak(...)` is a no-op by policy.
 - Visual effects are triggered via a global event-bus system (`EnemyEventBus` + `VFXDispatcher`), ensuring all feedback is modular, testable, and balanced.
 - See `docs/DESIGN.md` for a full diagram and explanation of the new VFX system.
 - See `docs/AUDIO_CONFIGURATION_GUIDE.md` for setup.
@@ -185,7 +201,7 @@ Vibe includes a comprehensive CodeRabbit review analysis system that captures AL
 
 ### Quick Start
 
-```bash
+```bat
 # Get complete CodeRabbit review data (recommended)
 bun run coderabbit:cycle
 
@@ -234,12 +250,12 @@ Vibe uses a comprehensive automated testing system with probe-driven testing and
 ### Test Types
 
 1. **Full Orchestrated Probe Suite** – spins up dev environment and runs all Playwright probes deterministically
-   ```bash
+   ```bat
    bun run test:orchestrated   # dev:start ➜ tests ➜ dev:stop
    ```
 2. **Playwright Gameplay Probes (manual options)**
 
-   ```bash
+   ```bat
    bunx playwright test            # Headless
    bunx playwright test --headed   # Browser UI
    bunx playwright test --debug    # Debug inspector
@@ -286,7 +302,7 @@ Test results and artifacts are saved to:
 
 The development server includes automated testing capabilities:
 
-```bash
+```bat
 bun run dev:start   # Start server (idempotent)
 bun run dev:status  # Check status
 bun run dev:restart # Restart
@@ -295,7 +311,7 @@ bun run dev:stop    # Stop server
 
 Then in another terminal:
 
-```bash
+```bat
 bun run test:comprehensive  # Run all automated tests
 
 bun run debug:probe         # Game health check
@@ -331,12 +347,6 @@ packages/
 
 - Docs link checker skips archived docs under `docs/archive/**`. Keep outdated references there to preserve history without failing CI.
 - Rules in `.cursor/rules/*.mdc` are auto-mirrored to `docs-site/rules/` by `scripts/sync-docs-site-rules.js` (run by `bun run docs:serve`).
+- Curated snippets live in `docs/snippets/`. They are static and updated manually to ensure deterministic references.
 
 * **Docs front-matter validation**: GitHub CI runs `bun run scripts/scan-doc-frontmatter.js` to ensure every doc starts with YAML metadata.
-* **Context7 cache**: After adding a new dependency, run:
-
-  ```bat
-  bun run docs:cache-context7
-  ```
-
-  This fetches (or stubs) docs/snippets for the library into `.context7-cache/`.

@@ -19,14 +19,14 @@ last_updated: 2025-08-11
    - Archive to `docs/archive/` if <80 % sure it is obsolete.
    - Delete outright if ≥80 % sure it is obsolete.
 4. **Cross-link & Consistency** – Ensure internal links, file names, and code references are current.
-5. **Validation** – Run link checker + grep search to confirm no dangling references.
+5. **Validation** – Run link checker + Windows `findstr` (or our scan scripts) to confirm no dangling references.
 6. **Summary** – Provide aggregated change log upon completion.
 
 ---
 
 ## 2. Document Inventory (initial)
 
-| Path                                        | Category      | Status                                  |
+| Path                                        | Categoryegory      | Status                                  |
 | ------------------------------------------- | ------------- | --------------------------------------- |
 | `.cursorrules`                              | Core Rule     | ✅ (updated)                            |
 | `README.md`                                 | Root Doc      | ✅                                      |

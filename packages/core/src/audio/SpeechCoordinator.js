@@ -58,7 +58,7 @@ export class SpeechCoordinator {
     this._padSynth = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: 'triangle' },
       envelope: { attack: 0.5, decay: 0.2, sustain: 0.4, release: 1 },
-    }).toDestination();
+    }); // routing handled by facade when enabled
     const now = Tone.now();
     this._padSynth.triggerAttack(['C4', 'E4', 'G4'], now, this.padVolume);
   }

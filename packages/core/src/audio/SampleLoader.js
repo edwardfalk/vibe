@@ -15,7 +15,7 @@ export class SampleLoader {
     if (!res.ok) throw new Error('Failed to fetch audio manifest');
     const manifest = remapFn(await res.json());
 
-    const players = new Tone.Players(manifest).toDestination();
+    const players = new Tone.Players(manifest);
     await players.loaded; // Wait for all XHRs to settle
 
     // Detect empty buffers (some CDNs may 404 yet return 200+0-byte)

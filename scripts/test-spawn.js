@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 const proc = spawn('bunx', ['--version'], {
   shell: true,
   stdio: 'inherit',
+  windowsHide: true,
 });
 
 proc.on('close', (code) => {
