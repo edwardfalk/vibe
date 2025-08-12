@@ -5,7 +5,17 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
 
 import { Bullet } from '@vibe/entities/bullet.js';
-import { sin, cos, min, floor, random, atan2, PI, TWO_PI, dist } from '@vibe/core/mathUtils.js';
+import {
+  sin,
+  cos,
+  min,
+  floor,
+  random,
+  atan2,
+  PI,
+  TWO_PI,
+  dist,
+} from '@vibe/core/mathUtils.js';
 import { max } from '@vibe/core';
 
 /**
@@ -82,7 +92,7 @@ export class TestMode {
     if (phase < PI * 2) {
       // Phase 1: Test all four corners in sequence
       this.moveToCorners(phase, halfSize);
-    } else if (phase < Math.PI * 4) {
+    } else if (phase < PI * 4) {
       // Phase 2: Test edge movement - left and right edges
       this.moveAlongVerticalEdges(phase - PI * 2, halfSize);
     } else if (phase < PI * 6) {

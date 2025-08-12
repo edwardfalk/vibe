@@ -1,11 +1,15 @@
 import { test, expect } from '@playwright/test';
-import { INDEX_PAGE, setDeterministicSeed } from './playwright.setup.js';
+import {
+  INDEX_PAGE,
+  setDeterministicSeed,
+  gotoIndex,
+} from './playwright.setup.js';
 import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 // Print all browser console logs to the test runner output for every test
 // This makes browser-side errors and logs visible in CI and local runs
 test.beforeEach(async ({ page }) => {
-  page.on('console', msg => {
+  page.on('console', (msg) => {
     // Print all browser logs to the test runner output
     console.log(`[browser][${msg.type()}] ${msg.text()}`);
   });
@@ -27,12 +31,15 @@ test.beforeAll(() => {
 test.describe('Gameplay Probes', () => {
   test('Liveness probe passes', async ({ page }) => {
     try {
-      await page.goto(INDEX_PAGE);
+      await gotoIndex(page);
       await page.waitForSelector('canvas');
       await setDeterministicSeed(page, 1337);
       await page.click('canvas');
       await page.waitForFunction(
-        () => window.gameState && window.gameState.gameState === 'playing' && window.player,
+        () =>
+          window.gameState &&
+          window.gameState.gameState === 'playing' &&
+          window.player,
         {},
         { timeout: 15000 }
       );
@@ -61,7 +68,7 @@ test.describe('Gameplay Probes', () => {
 
   test('Game mechanics respond', async ({ page }) => {
     try {
-      await page.goto(INDEX_PAGE);
+      await gotoIndex(page);
       await page.waitForSelector('canvas');
       await setDeterministicSeed(page, 1337);
       await page.click('canvas');

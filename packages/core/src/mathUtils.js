@@ -1,3 +1,5 @@
+export const PI = Math.PI;
+export const TWO_PI = Math.PI * 2;
 // mathUtils.js - Shared Math utilities for Vibe (moved to @vibe/core)
 
 export const max = Math.max;
@@ -9,8 +11,6 @@ export const sin = Math.sin;
 export const cos = Math.cos;
 export const atan2 = Math.atan2;
 export const sqrt = Math.sqrt;
-export const PI = Math.PI;
-export const TWO_PI = Math.PI * 2;
 
 /**
  * Linear interpolation between two values

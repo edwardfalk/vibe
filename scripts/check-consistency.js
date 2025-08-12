@@ -5,7 +5,8 @@
 
   Checks:
   1) p5 instance-mode: flags unprefixed p5 calls (fill, ellipse, push, etc.)
-  2) Math trig: flags direct Math.(cos|sin|atan2|sqrt) usage in packages/**.js
+  2) Math usage: flags direct Math.(cos|sin|atan2|sqrt|min|max|PI) and 2*Math.PI in packages/**.js
+  3) Missing math import: flags use of dist( without importing from @vibe/core
 
   Usage:
     bun run scripts/check-consistency.js            # run all checks
@@ -37,6 +38,8 @@ function runChecks(filter = 'all') {
   const p5Regex =
     /(^|[^\.\w])(fill|stroke|ellipse|rect|line|text(?!Width|Ascent|Descent)|image|noFill|noStroke|push|pop|translate|rotate|beginShape|endShape|vertex)\(/gm;
   const mathRegex = /Math\.(cos|sin|atan2|sqrt|min|max)\(/gm;
+  const mathPiRegex = /(2\s*\*\s*Math\.PI|Math\.PI)/gm;
+  const distCallRegex = /(^|[^\w\.])dist\s*\(/gm;
 
   for (const file of files) {
     const raw = readFileSync(file, 'utf8');
@@ -58,8 +61,10 @@ function runChecks(filter = 'all') {
       }
     }
     if (filter === 'all' || filter === 'math') {
+      const isMathUtils =
+        /packages[\\\/]core[\\\/]src[\\\/]mathUtils\.js$/.test(file);
       let m;
-      while ((m = mathRegex.exec(content))) {
+      while (!isMathUtils && (m = mathRegex.exec(content))) {
         const idx = m.index;
         const line = content.slice(0, idx).split('\n').length;
         violations.push({
@@ -68,6 +73,39 @@ function runChecks(filter = 'all') {
           rule: 'math-utils',
           msg: `Use @vibe/core '${m[1]}' instead of Math.${m[1]}()`,
         });
+      }
+
+      // Flag Math.PI and 2 * Math.PI
+      while (!isMathUtils && (m = mathPiRegex.exec(content))) {
+        const idx = m.index;
+        const line = content.slice(0, idx).split('\n').length;
+        const isTwoPi = /2\s*\*\s*Math\.PI/.test(m[0]);
+        violations.push({
+          file,
+          line,
+          rule: 'math-utils',
+          msg: isTwoPi
+            ? "Use @vibe/core 'TWO_PI' instead of 2 * Math.PI"
+            : "Use @vibe/core 'PI' instead of Math.PI",
+        });
+      }
+
+      // Flag dist( without import from @vibe/core
+      const hasDistImport =
+        /import\s+\{[^}]*\bdist\b[^}]*\}\s+from\s+['"]@vibe\/core(?:\/mathUtils\.js)?['"];?/m.test(
+          raw
+        );
+      while (!isMathUtils && (m = distCallRegex.exec(content))) {
+        const idx = m.index;
+        const line = content.slice(0, idx).split('\n').length;
+        if (!hasDistImport) {
+          violations.push({
+            file,
+            line,
+            rule: 'math-utils',
+            msg: "Import 'dist' from @vibe/core instead of using a global",
+          });
+        }
       }
     }
   }

@@ -13,6 +13,43 @@ export class CollisionSystem {
     this.friendlyFireEnabled = true;
   }
 
+  /**
+   * probeCheck – Non-mutating diagnostic entrypoint for probes/tests.
+   * When dryRun=true, executes collision checks under array snapshot+restore.
+   */
+  async probeCheck({ dryRun = true } = {}) {
+    const run = async () => {
+      try {
+        this.checkBulletCollisions();
+        this.checkContactCollisions();
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, error: e?.message || String(e) };
+      }
+    };
+
+    if (!dryRun) return run();
+
+    const snap = {
+      enemies: Array.isArray(window.enemies)
+        ? window.enemies.slice()
+        : undefined,
+      playerBullets: Array.isArray(window.playerBullets)
+        ? window.playerBullets.slice()
+        : undefined,
+      enemyBullets: Array.isArray(window.enemyBullets)
+        ? window.enemyBullets.slice()
+        : undefined,
+    };
+    try {
+      return await run();
+    } finally {
+      if (snap.enemies) window.enemies = snap.enemies;
+      if (snap.playerBullets) window.playerBullets = snap.playerBullets;
+      if (snap.enemyBullets) window.enemyBullets = snap.enemyBullets;
+    }
+  }
+
   // Main collision detection function
   checkBulletCollisions() {
     this.checkPlayerBulletsVsEnemies();

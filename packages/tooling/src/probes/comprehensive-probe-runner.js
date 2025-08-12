@@ -1,3 +1,4 @@
+/* eslint-env browser */
 // comprehensive-probe-runner.js
 // Comprehensive Probe System Runner and Reporter
 
@@ -20,14 +21,16 @@
 
       // Guard: ensure p5 draw loop started to avoid early-frame races
       await (async function waitForDrawStart(timeoutMs = 3500) {
-        const start = (typeof performance !== 'undefined' && performance.now)
-          ? performance.now()
-          : Date.now();
+        const start =
+          typeof performance !== 'undefined' && performance.now
+            ? performance.now()
+            : Date.now();
         return new Promise((resolve) => {
           function tick() {
-            const now = (typeof performance !== 'undefined' && performance.now)
-              ? performance.now()
-              : Date.now();
+            const now =
+              typeof performance !== 'undefined' && performance.now
+                ? performance.now()
+                : Date.now();
             const ok =
               window.p5 &&
               window.p5.instance &&
@@ -35,8 +38,9 @@
               window.p5.instance.frameCount > 0;
             if (ok) return resolve(true);
             if (now - start >= timeoutMs) return resolve(false);
-            (typeof requestAnimationFrame === 'function'
-              ? requestAnimationFrame
+            (typeof window !== 'undefined' &&
+              typeof window.requestAnimationFrame === 'function'
+              ? window.requestAnimationFrame
               : setTimeout)(tick, 16);
           }
           tick();
@@ -78,19 +82,32 @@
       for (const probe of probes) {
         try {
           console.log(`🔍 Running ${probe.name} probe: ${probe.description}`);
+          const t0 = performance?.now?.() ?? Date.now();
 
           const probeModule = await import(probe.module);
           const result = await probeModule.default;
+          const t1 = performance?.now?.() ?? Date.now();
+          const durationMs = Math.round(t1 - t0);
 
           results.probes[probe.name] = {
             ...result,
             description: probe.description,
+            durationMs,
             status: result.failure
               ? 'failed'
               : result.warnings?.length > 0
                 ? 'warning'
                 : 'passed',
           };
+
+          // On failure, attempt a canvas screenshot if available
+          if (result.failure && window.mcp?.screenshot) {
+            try {
+              await window.mcp.screenshot(
+                `probe-${probe.name}-failure-${Date.now()}`
+              );
+            } catch {}
+          }
 
           results.summary.total++;
 
@@ -259,13 +276,12 @@
     // Quick health check method for frequent monitoring
     async quickHealthCheck() {
       const basicChecks = {
-        gameLoop:
-          !!(
-            window.p5 &&
-            window.p5.instance &&
-            typeof window.p5.instance.frameCount === 'number' &&
-            window.p5.instance.frameCount > 0
-          ),
+        gameLoop: !!(
+          window.p5 &&
+          window.p5.instance &&
+          typeof window.p5.instance.frameCount === 'number' &&
+          window.p5.instance.frameCount > 0
+        ),
         player: !!window.player,
         gameState: !!window.gameState,
         audio: !!window.audio,

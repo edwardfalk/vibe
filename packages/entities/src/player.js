@@ -259,7 +259,8 @@ export class Player {
       this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
       if (
         CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
-        this.p && this.p.frameCount % 60 === 0
+        this.p &&
+        this.p.frameCount % 60 === 0
       ) {
         console.log(
           `[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / PI).toFixed(1)}°`
@@ -270,7 +271,8 @@ export class Player {
       this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
       if (
         CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
-        this.p && this.p.frameCount % 60 === 0
+        this.p &&
+        this.p.frameCount % 60 === 0
       ) {
         console.log(
           `[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / PI).toFixed(1)}°`

@@ -7,7 +7,10 @@ async function waitForDrawStart(timeoutMs = 3500) {
   return new Promise((resolve) => {
     function tick() {
       const now = performance?.now?.() ?? Date.now();
-      const fc = (window.p5 && window.p5.instance && window.p5.instance.frameCount) || (window.player && window.player.p && window.player.p.frameCount) || 0;
+      const fc =
+        (window.p5 && window.p5.instance && window.p5.instance.frameCount) ||
+        (window.player && window.player.p && window.player.p.frameCount) ||
+        0;
       if (fc > 0) return resolve(true);
       if (now - start >= timeoutMs) return resolve(false);
       (window.requestAnimationFrame || setTimeout)(tick, 16);
@@ -19,7 +22,9 @@ async function waitForDrawStart(timeoutMs = 3500) {
 async function waitForGrunt(timeout = 5000) {
   const start = Date.now();
   while (Date.now() - start < timeout) {
-    const grunt = (window.enemies || []).find((e) => e.type === 'grunt' && !e.markedForRemoval);
+    const grunt = (window.enemies || []).find(
+      (e) => e.type === 'grunt' && !e.markedForRemoval
+    );
     if (grunt) return grunt;
     await new Promise((r) => setTimeout(r, 25));
   }

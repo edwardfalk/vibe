@@ -28,6 +28,7 @@ This is the complete guide for CodeRabbit integration in the Vibe project. It co
   - `@coderabbitai full review` (full)
 
 ### First Time Setup
+
 ```bash
 # 1. Ensure environment is configured
 bun run validate-env
@@ -47,6 +48,7 @@ bun run coderabbit:workflow
 The enhanced deduplication system prevents creating duplicate tickets using a **multi-level approach**:
 
 #### Level 1: Hash-Based Tracking
+
 ```javascript
 // Each suggestion gets a unique hash
 generateSuggestionHash(suggestion) {
@@ -56,11 +58,13 @@ generateSuggestionHash(suggestion) {
 ```
 
 #### Level 2: Existing Ticket Analysis
+
 - Checks same PR number
 - Compares categories
 - Verifies ticket status (not closed/resolved)
 
 #### Level 3: Text Similarity
+
 - 80% similarity threshold using word overlap
 - Prevents near-duplicate tickets
 
@@ -79,6 +83,7 @@ Processed suggestions are stored in `tests/bug-reports/processed-coderabbit-sugg
 ```
 
 ### Verification
+
 ```bash
 # Check processed suggestions count
 cat tests/bug-reports/processed-coderabbit-suggestions.json | jq '.suggestions | length'
@@ -98,6 +103,7 @@ grep -h "coderabbitSuggestion" tests/bug-reports/CR-*.json | sort | uniq -d
 3. Fix from `actionable-summary.json`; commit.
 
 Optional history-aware:
+
 ```bash
 bun run coderabbit:fetch-new
 ```
@@ -106,23 +112,24 @@ bun run coderabbit:fetch-new
 
 ### Core Workflow Scripts
 
-| Command | Description | Use Case |
-|---------|-------------|----------|
-| `coderabbit:cycle` | Complete end-to-end workflow | **Recommended for regular use** |
-| `coderabbit:workflow` | Resolve outdated + create new tickets | When you have fresh analysis data |
-| `coderabbit:resolve-outdated` | Only resolve outdated tickets | Cleanup existing tickets |
-| `coderabbit:auto-tickets` | Only create new tickets | When you want just ticket creation |
+| Command                       | Description                           | Use Case                           |
+| ----------------------------- | ------------------------------------- | ---------------------------------- |
+| `coderabbit:cycle`            | Complete end-to-end workflow          | **Recommended for regular use**    |
+| `coderabbit:workflow`         | Resolve outdated + create new tickets | When you have fresh analysis data  |
+| `coderabbit:resolve-outdated` | Only resolve outdated tickets         | Cleanup existing tickets           |
+| `coderabbit:auto-tickets`     | Only create new tickets               | When you want just ticket creation |
 
 ### Scripts we keep
 
-| Command | Description |
-|---------|-------------|
+| Command                   | Description                   |
+| ------------------------- | ----------------------------- |
 | `coderabbit:fetch-latest` | Snapshot + actionable summary |
-| `coderabbit:fetch-new` | History-aware (optional) |
+| `coderabbit:fetch-new`    | History-aware (optional)      |
 
 ## ⚙️ Configuration
 
 ### Environment Variables
+
 ```bash
 # Required (Windows)
 set GITHUB_TOKEN=your_github_token_here
@@ -134,12 +141,14 @@ export GITHUB_TOKEN=your_github_token_here
 ### Deduplication Settings
 
 #### Similarity Threshold
+
 ```javascript
 // In coderabbit-auto-tickets.js
 const similarText = this.calculateTextSimilarity(text1, text2) > 0.8; // 80%
 ```
 
 #### Age Thresholds
+
 ```javascript
 // Stale ticket resolution (30 days)
 const thirtyDays = 30 * 24 * 60 * 60 * 1000;
@@ -155,18 +164,23 @@ if (category === 'performance' && daysSinceCreated > 7) {
 ### Common Issues
 
 #### Duplicate Tickets Still Created
+
 **Solutions:**
+
 1. Check if suggestion text varies significantly
 2. Verify hash generation is consistent
 3. Review similarity threshold (may need adjustment)
 
 #### Valid Tickets Resolved
+
 **Solutions:**
+
 1. Check if PR is still in latest analysis
 2. Verify suggestion text matching logic
 3. Review age-based resolution criteria
 
 ### Debug Commands
+
 ```bash
 # Test individual components
 node -e "import('./coderabbit-auto-tickets.js').then(m => console.log('✅ Auto-tickets loaded'))"
@@ -183,13 +197,14 @@ cat tests/bug-reports/processed-coderabbit-suggestions.json | jq '.'
 ### Integration with CI/CD
 
 #### GitHub Actions Example
+
 ```yaml
 name: CodeRabbit Ticket Management
 on:
   pull_request:
     types: [closed]
   schedule:
-    - cron: '0 9 * * *'  # Daily at 9 AM
+    - cron: '0 9 * * *' # Daily at 9 AM
 
 jobs:
   manage-tickets:
@@ -206,12 +221,14 @@ jobs:
 ## 📊 Best Practices
 
 ### Regular Maintenance
+
 1. **Daily**: Run `coderabbit:cycle` after PR merges
 2. **Weekly**: Review resolved tickets for accuracy
 3. **Monthly**: Archive old processed suggestions
 4. **Quarterly**: Audit deduplication effectiveness
 
 ### Quality Assurance
+
 1. **Spot Check**: Manually verify 10% of resolved tickets
 2. **Threshold Tuning**: Adjust similarity threshold based on false positives
 3. **Category Review**: Ensure proper categorization of suggestions

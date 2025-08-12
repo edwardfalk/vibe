@@ -107,7 +107,10 @@ This guide explains how to use MCP Playwright for robust, AI-driven testing of t
 ```js
 // Load the probe script as a string (Node.js example)
 const fs = require('fs');
-const probeScript = fs.readFileSync('packages/tooling/src/probes/ai-liveness-probe.js', 'utf8');
+const probeScript = fs.readFileSync(
+  'packages/tooling/src/probes/ai-liveness-probe.js',
+  'utf8'
+);
 
 // Use MCP Playwright to evaluate
 const result = await mcp_playwright_playwright_evaluate({
@@ -146,16 +149,16 @@ if (result.moveBlockedByEdge) {
 
 ## Reference: Current Probes (2025-06)
 
-| Probe File | Focus | Notes |
-|------------|-------|-------|
-| `packages/tooling/src/probes/ai-liveness-probe.js` | Core game liveness (loop, player, enemies) | Mandatory first probe |
-| `packages/tooling/src/probes/audio-system-probe.js` | Audio context & beat synchronization | – |
-| `packages/tooling/src/probes/collision-detection-probe.js` | Bullet & entity collision handling | – |
-| `packages/tooling/src/probes/grunt-knockback-probe.js` | Grunt enemy knock-back physics | – |
-| `packages/tooling/src/probes/tank-armor-break-probe.js` | Tank armor break VFX & debris | – |
-| Playwright tests in `tests/` ending `*-probe.test.js` | Browser-level orchestration of above probes | e.g. `performance-probe.test.js`, `startup-black-screen-probe.test.js` |
+| Probe File                                                 | Focus                                       | Notes                                                                  |
+| ---------------------------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------- |
+| `packages/tooling/src/probes/ai-liveness-probe.js`         | Core game liveness (loop, player, enemies)  | Mandatory first probe                                                  |
+| `packages/tooling/src/probes/audio-system-probe.js`        | Audio context & beat synchronization        | –                                                                      |
+| `packages/tooling/src/probes/collision-detection-probe.js` | Bullet & entity collision handling          | –                                                                      |
+| `packages/tooling/src/probes/grunt-knockback-probe.js`     | Grunt enemy knock-back physics              | –                                                                      |
+| `packages/tooling/src/probes/tank-armor-break-probe.js`    | Tank armor break VFX & debris               | –                                                                      |
+| Playwright tests in `tests/` ending `*-probe.test.js`      | Browser-level orchestration of above probes | e.g. `performance-probe.test.js`, `startup-black-screen-probe.test.js` |
 
-> **Naming Standard:** All automated Playwright tests **must** end with `*-probe.test.js`.  Manual `.spec.js` tests are deprecated and will be deleted during documentation cleanup.
+> **Naming Standard:** All automated Playwright tests **must** end with `*-probe.test.js`. Manual `.spec.js` tests are deprecated and will be deleted during documentation cleanup.
 
 ---
 
@@ -183,5 +186,6 @@ if (result.moveBlockedByEdge) {
   - Asserts grunt moves after a bullet hit (knock-back).
 
 **How to run:**
+
 - `bunx playwright test tests/tank-armor-break-probe.test.js`
 - `bunx playwright test tests/grunt-knockback-probe.test.js`

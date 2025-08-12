@@ -1,0 +1,39 @@
+name: Nightly Maintenance
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # Daily at 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  maintenance:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps (frozen)
+        run: bun install --frozen-lockfile
+        shell: cmd
+
+      - name: Clean debug artifacts
+        run: bun run cleanup:debug
+        shell: cmd
+
+      - name: Prune archived docs >180 days
+        run: bun run cleanup:docs-archive
+        shell: cmd
+
+      - name: Build docs index
+        run: bun run docs:build-index
+        shell: cmd
+
+      - name: Cache Context7 docs (optional)
+        run: bun run docs:cache-context7
+        shell: cmd
+        continue-on-error: true

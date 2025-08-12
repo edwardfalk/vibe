@@ -3,7 +3,9 @@
   "version": "2.0.0",
   "description": "A p5.js geometric space shooter survival game with procedural graphics",
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "main": "index.html",
   "scripts": {
     "serve": "bun run five-server --port=5500 --root=. --spa --ignore=playwright-report,test-results,coderabbit-reviews",
@@ -48,6 +50,10 @@
     "scan:consistency": "bun run scripts/check-consistency.js",
     "scan:instance": "bun run scripts/check-consistency.js instance",
     "scan:math": "bun run scripts/check-consistency.js math",
+    "learn:collect": "bun run scripts/learning/orchestrator.js",
+    "learn:propose": "bun run scripts/learning/synthesize-rule.js",
+    "learn:fix": "bun run scripts/learning/auto-fix.js",
+    "learn:tune": "bun run scripts/learning/tune.js",
     "hooks:install": "git config core.hooksPath .githooks",
     "hooks:verify": "git config --get core.hooksPath",
     "test:orchestrated": "bun run scan:consistency && bun run validate:sounds && bunx playwright install chromium && bun run dev:start && bunx playwright test --reporter=line && bun run dev:stop",
@@ -63,10 +69,16 @@
     "dev": {
       "port": 5500,
       "hot": true,
-      "watch": ["packages/**/*.js", "index.html", "*.css"]
+      "watch": [
+        "packages/**/*.js",
+        "index.html",
+        "*.css"
+      ]
     },
     "test": {
-      "preload": ["./test-setup.js"]
+      "preload": [
+        "./test-setup.js"
+      ]
     }
   },
   "devDependencies": {

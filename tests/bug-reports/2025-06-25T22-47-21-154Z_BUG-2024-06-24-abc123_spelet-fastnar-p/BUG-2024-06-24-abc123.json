@@ -4,10 +4,7 @@
   "title": "Spelet fastnar på startskärmen efter dev-start",
   "slug": "spelet-fastnar-p",
   "description": "Efter start av dev-miljön laddar spelet endast startskärmen, men går inte vidare till gameplay. Inga uppenbara fel i terminalen. Ticket API fungerar.",
-  "tags": [
-    "startup",
-    "blocker"
-  ],
+  "tags": ["startup", "blocker"],
   "status": "open",
   "history": [
     {

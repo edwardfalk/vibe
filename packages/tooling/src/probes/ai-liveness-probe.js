@@ -1,3 +1,4 @@
+/* eslint-env browser */
 // ai-liveness-probe.js
 // Probe: Liveness and Entity Presence with Automated Bug Reporting
 
@@ -24,20 +25,23 @@ export default (async function () {
   }
 
   async function waitForDrawStart(timeoutMs = 3000) {
-    const start = (typeof performance !== 'undefined' && performance.now)
-      ? performance.now()
-      : Date.now();
+    const start =
+      typeof performance !== 'undefined' && performance.now
+        ? performance.now()
+        : Date.now();
     return new Promise((resolve) => {
       function tick() {
-        const now = (typeof performance !== 'undefined' && performance.now)
-          ? performance.now()
-          : Date.now();
+        const now =
+          typeof performance !== 'undefined' && performance.now
+            ? performance.now()
+            : Date.now();
         const fc = currentFrameCount();
         const ok = typeof fc === 'number' && fc > 0;
         if (ok) return resolve(true);
         if (now - start >= timeoutMs) return resolve(false);
-        (typeof requestAnimationFrame === 'function'
-          ? requestAnimationFrame
+        (typeof window !== 'undefined' &&
+          typeof window.requestAnimationFrame === 'function'
+          ? window.requestAnimationFrame
           : setTimeout)(tick, 16);
       }
       tick();
@@ -54,6 +58,7 @@ export default (async function () {
       ? window.enemies.filter((e) => !e?.markedForRemoval).length
       : 0,
     timestamp: Date.now(),
+    warnings: [],
     failure: null,
   };
 

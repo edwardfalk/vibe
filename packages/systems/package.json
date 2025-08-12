@@ -12,4 +12,4 @@
     "@vibe/core": "workspace:*",
     "@vibe/entities": "workspace:*"
   }
-} 
+}

@@ -12,5 +12,6 @@ All bug/feature/enhancement tracking uses GitHub Issues via `packages/tooling/sr
 - Probes auto-create richly formatted issues with screenshots and logs on failure.
 
 Quick start:
+
 - Configure `GITHUB_TOKEN` in `.env`.
 - Use `githubIssueManager` from scripts or tests to file/update issues.

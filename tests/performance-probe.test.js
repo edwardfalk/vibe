@@ -16,11 +16,16 @@ test.describe('Performance Probe', () => {
     try {
       await page.goto(INDEX_PAGE);
       await page.waitForSelector('canvas');
-      // Unlock audio / interactions
       await page.click('canvas');
+      // Deterministic seed for stable FPS readings
+      await page.evaluate(() =>
+        import('/packages/core/src/index.js').then(({ setRandomSeed }) =>
+          setRandomSeed(1337)
+        )
+      );
       // Ensure core systems exist
-      await page.waitForFunction(() =>
-        window.EffectsProfiler && window.spawnSystem && window.beatClock
+      await page.waitForFunction(
+        () => window.EffectsProfiler && window.spawnSystem && window.beatClock
       );
       // Spawn 20 of each enemy type for stress
       await page.evaluate(() => {
@@ -28,7 +33,10 @@ test.describe('Performance Probe', () => {
         window.renderProfiler?.reset();
 
         const types = ['grunt', 'rusher', 'tank', 'stabber'];
-        if (window.spawnSystem && typeof window.spawnSystem.spawnEnemy === 'function') {
+        if (
+          window.spawnSystem &&
+          typeof window.spawnSystem.spawnEnemy === 'function'
+        ) {
           types.forEach((t) => {
             for (let i = 0; i < 20; i++) {
               window.spawnSystem.spawnEnemy(t);
@@ -46,7 +54,9 @@ test.describe('Performance Probe', () => {
       await wait(5000);
 
       const stats = await page.evaluate(() => {
-        return window.EffectsProfiler ? window.EffectsProfiler.getStats() : null;
+        return window.EffectsProfiler
+          ? window.EffectsProfiler.getStats()
+          : null;
       });
 
       expect(stats).not.toBeNull();
@@ -58,4 +68,4 @@ test.describe('Performance Probe', () => {
       throw err;
     }
   });
-}); 
+});

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { INDEX_PAGE } from './playwright.setup.js';
+import { INDEX_PAGE, waitForDrawStart } from './playwright.setup.js';
 import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
 
 /**
@@ -26,8 +26,8 @@ test.describe('Startup Black-Screen Probe', () => {
       // Simulate user interaction so Audio + p5 start correctly
       await page.click('canvas');
 
-      // Give the GameLoop a moment to bootstrap everything
-      await page.waitForTimeout(2000);
+      // Gate on draw loop starting for reliability
+      await waitForDrawStart(page, 4000);
 
       const status = await page.evaluate(() => {
         return {

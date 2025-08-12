@@ -54,7 +54,9 @@ The AI Liveness Probe (`packages/tooling/src/probes/ai-liveness-probe.js`) is an
 
 ```javascript
 // Manual probe execution
-const probeResult = await import('../packages/tooling/src/probes/ai-liveness-probe.js');
+const probeResult = await import(
+  '../packages/tooling/src/probes/ai-liveness-probe.js'
+);
 console.log('Probe result:', probeResult);
 
 // Automated integration (runs automatically)
@@ -485,7 +487,9 @@ bun run test:performance   # Performance benchmarks
 ```javascript
 // Use probes to validate assumptions
 const validateGameState = async () => {
-const probe = await import('../packages/tooling/src/probes/ai-liveness-probe.js');
+  const probe = await import(
+    '../packages/tooling/src/probes/ai-liveness-probe.js'
+  );
   if (probe.failure) {
     console.error('Game state invalid:', probe.failure);
     return false;
@@ -499,7 +503,9 @@ const probe = await import('../packages/tooling/src/probes/ai-liveness-probe.js'
 ```javascript
 // Continuous monitoring during development
 setInterval(async () => {
-  const probe = await import('../packages/tooling/src/probes/ai-liveness-probe.js');
+  const probe = await import(
+    '../packages/tooling/src/probes/ai-liveness-probe.js'
+  );
   if (probe.failure) {
     console.warn('⚠️ Probe detected issue:', probe.failure);
   }
@@ -600,4 +606,4 @@ _For additional testing resources, see:_
 
 - [MCP Playwright Testing Guide](./MCP_PLAYWRIGHT_TESTING_GUIDE.md)
 - [Ticketing System Guide](./TICKETING_SYSTEM_GUIDE.md)
- - Testing Report (optional)
+- Testing Report (optional)

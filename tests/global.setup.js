@@ -2,4 +2,4 @@
 // That API has been removed. Keep this stub to avoid Playwright errors if referenced.
 export default async function noopGlobalSetup() {
   // no-op
-} 
+}

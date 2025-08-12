@@ -17,11 +17,21 @@ const resultsDir = path.resolve('test-results');
 // Keep in sync with dev-server --root setting (`.`) and actual HTML location
 export const INDEX_PAGE = '/index.html';
 
+export async function gotoIndex(page) {
+  return page.goto(INDEX_PAGE, {
+    waitUntil: 'domcontentloaded',
+    timeout: 30000,
+  });
+}
+
 async function ensureResultsDir() {
   try {
     await fs.mkdir(resultsDir, { recursive: true });
   } catch (e) {
-    console.error('[Playwright setup] Failed to create test-results directory:', e);
+    console.error(
+      '[Playwright setup] Failed to create test-results directory:',
+      e
+    );
   }
 }
 
@@ -42,27 +52,52 @@ function setupConsoleLogInterception(page) {
 async function writeConsoleLogs() {
   await ensureResultsDir();
   try {
-    await fs.writeFile(path.join(resultsDir, 'playwright-browser-console-errors.log'), errorWarnLogs.join('\n'), 'utf8');
+    await fs.writeFile(
+      path.join(resultsDir, 'playwright-browser-console-errors.log'),
+      errorWarnLogs.join('\n'),
+      'utf8'
+    );
   } catch (e) {
     console.error('[Playwright setup] Failed to write errors/warnings log:', e);
   }
   if (verbose) {
     try {
-      await fs.writeFile(path.join(resultsDir, 'playwright-browser-console-full.log'), allLogs.join('\n'), 'utf8');
+      await fs.writeFile(
+        path.join(resultsDir, 'playwright-browser-console-full.log'),
+        allLogs.join('\n'),
+        'utf8'
+      );
     } catch (e) {
       console.error('[Playwright setup] Failed to write full verbose log:', e);
     }
   }
 }
 
-export { setupConsoleLogInterception, writeConsoleLogs }; 
+export { setupConsoleLogInterception, writeConsoleLogs };
+
+// Readiness gate: wait until p5 draw loop has started
+export async function waitForDrawStart(page, timeout = 4000) {
+  await page.waitForFunction(
+    () => {
+      const p5fc =
+        window.p5 && window.p5.instance && window.p5.instance.frameCount;
+      const pInst = window.player && window.player.p;
+      const fc = typeof p5fc === 'number' ? p5fc : pInst?.frameCount;
+      return typeof fc === 'number' && fc > 0;
+    },
+    { timeout }
+  );
+}
 
 // Deterministic run helper: call before starting gameplay in a test
 export async function setDeterministicSeed(page, seed = 1337) {
-  await page.evaluate(([s]) => {
-    // dynamic import to avoid bundler assumptions
-    return import('/packages/core/src/index.js').then(({ setRandomSeed }) =>
-      setRandomSeed(s)
-    );
-  }, [seed]);
+  await page.evaluate(
+    ([s]) => {
+      // dynamic import to avoid bundler assumptions
+      return import('/packages/core/src/index.js').then(({ setRandomSeed }) =>
+        setRandomSeed(s)
+      );
+    },
+    [seed]
+  );
 }

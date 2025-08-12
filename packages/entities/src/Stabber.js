@@ -502,7 +502,8 @@ class Stabber extends BaseEnemy {
         if (enemyDistance <= stabReach) {
           const enemyAngle = atan2(enemy.y - this.y, enemy.x - this.x);
           // Modular angle difference to handle wrap-around
-          let enemyDiff = ((this.stabDirection - enemyAngle + PI) % TWO_PI) - PI;
+          let enemyDiff =
+            ((this.stabDirection - enemyAngle + PI) % TWO_PI) - PI;
           if (enemyDiff < -PI) enemyDiff += TWO_PI;
           const enemyAngleDifference = Math.abs(enemyDiff);
           const enemyInStabDirection = enemyAngleDifference <= maxStabAngle;
@@ -725,8 +726,7 @@ class Stabber extends BaseEnemy {
     // Charging sparks around the stabber
     if (this.p.frameCount % 3 === 0) {
       for (let i = 0; i < 6; i++) {
-        const sparkAngle =
-          (this.p.frameCount * 0.1 + (i * PI) / 3) % TWO_PI;
+        const sparkAngle = (this.p.frameCount * 0.1 + (i * PI) / 3) % TWO_PI;
         const sparkDist = this.size * (0.8 + stabPercent * 0.4);
         const sparkX = this.x + cos(sparkAngle) * sparkDist;
         const sparkY = this.y + sin(sparkAngle) * sparkDist;

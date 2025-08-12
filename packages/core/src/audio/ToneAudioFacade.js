@@ -138,14 +138,20 @@ export class ToneAudioFacade {
    */
   async playSound(id, xOrOpts = {}, y = null) {
     // Early fallback if init previously failed (e.g., external CDN unreachable)
-    if (!this._initialized && this._players?.size === 0 && this._fallbackSynths?.size >= 0) {
+    if (
+      !this._initialized &&
+      this._players?.size === 0 &&
+      this._fallbackSynths?.size >= 0
+    ) {
       // Attempt a fast, single-sound fallback using Tone.Synth without manifest
       try {
         await this._ensureToneStarted();
         if (!this._gains.master) this._createMixer();
         if (!this._fallbackSynths) this._fallbackSynths = new Map();
         if (!this._fallbackSynths.has('beep')) {
-          const synth = new Tone.Synth().connect(this._gains.sfx || this._gains.master);
+          const synth = new Tone.Synth().connect(
+            this._gains.sfx || this._gains.master
+          );
           this._fallbackSynths.set('beep', synth);
         }
         // If requested id exists in registry, still play beep as stand-in
@@ -316,7 +322,7 @@ export class ToneAudioFacade {
     // ------------------------------------------------------------------
 
     const cdnBase =
-      'https://raw.githubusercontent.com/Tonejs/Tone.js/dc9de66401e175849bfd219bfe303ba2d72a4ee7/examples/audio/';
+      'https://raw.githubusercontent.com/Tonejs/Tone.js/<commit>/examples/audio/';
     const remapped = {};
     for (const [id, url] of Object.entries(manifest)) {
       if (url.includes('tonejs.github.io/audio/')) {
@@ -340,6 +346,20 @@ export class ToneAudioFacade {
     if (Array.isArray(db)) return 0;
     const lin = Tone.dbToGain(db); // 0..1
     return lin;
+  }
+
+  /**
+   * Get current bus gains (linear 0..1) for diagnostics.
+   */
+  getBusLevels() {
+    const toLin = (g) =>
+      g && typeof g.gain?.value === 'number' ? g.gain.value : null;
+    return {
+      master: toLin(this._gains.master),
+      music: toLin(this._gains.music),
+      sfx: toLin(this._gains.sfx),
+      speechBed: toLin(this._gains.speechBed),
+    };
   }
 
   /* -------------------------------------------------------------------- */

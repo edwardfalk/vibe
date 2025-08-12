@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { INDEX_PAGE } from './playwright.setup.js';
+import { INDEX_PAGE, gotoIndex } from './playwright.setup.js';
 
 test.describe('Audio System Probe', () => {
-  test('initialises after gesture and produces audible output', async ({ page }) => {
-    await page.goto(INDEX_PAGE);
+  test('initialises after gesture and produces audible output', async ({
+    page,
+  }) => {
+    await gotoIndex(page);
     // Ensure canvas exists and click it to satisfy autoplay restrictions
     await page.waitForSelector('canvas');
 
@@ -27,4 +29,3 @@ test.describe('Audio System Probe', () => {
     expect(result.audio.exists).toBeTruthy();
   });
 });
-

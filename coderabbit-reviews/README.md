@@ -20,6 +20,7 @@ bun run coderabbit:fetch-latest
 ```
 
 Outputs:
+
 - `coderabbit-reviews/latest.json`
 - `coderabbit-reviews/actionable-summary.json`
 
@@ -53,10 +54,13 @@ The history-aware flow (`coderabbit:fetch-new`) still works if you prefer that.
 ## Troubleshooting
 
 ### No GITHUB_TOKEN
-Set your GitHub token: `set GITHUB_TOKEN=your_token_here` (Windows) or `export` on *nix.
+
+Set your GitHub token: `set GITHUB_TOKEN=your_token_here` (Windows) or `export` on \*nix.
 
 ### API Rate Limits
+
 If you hit GitHub API rate limits, the script will show appropriate error messages. Consider:
+
 - Using a token with higher rate limits
 - Running the script less frequently
 - Checking GitHub's rate limit status

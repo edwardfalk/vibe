@@ -1,7 +1,16 @@
 /**
  * SpawnSystem - enemy spawning logic (moved to @vibe/systems)
  */
-import { floor, min, max, random, sin, cos, PI, TWO_PI } from '@vibe/core/mathUtils.js';
+import {
+  floor,
+  min,
+  max,
+  random,
+  sin,
+  cos,
+  PI,
+  TWO_PI,
+} from '@vibe/core/mathUtils.js';
 import { EnemyFactory } from '../../entities/src/EnemyFactory.js';
 
 export class SpawnSystem {

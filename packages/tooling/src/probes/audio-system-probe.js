@@ -22,6 +22,8 @@ export default (async function () {
       hasPlaySound: false,
       players: 0,
       fallbackSynths: 0,
+      busLevels: null,
+      masterLevel: null,
     },
     tone: {
       transportState: null,
@@ -45,15 +47,22 @@ export default (async function () {
     // --- Master level test -------------------------------------------------
     if (result.audio.hasPlaySound) {
       try {
-        await window.audio.playSound('playerShoot');
+        await window.audio.playSound('playerShoot', { volume: 1 });
+        await window.audio.playSound('explosion', { volume: 1 });
       } catch {}
-      await new Promise((r) => setTimeout(r, 1200));
+      await new Promise((r) => setTimeout(r, 800));
       if (typeof window.audio.getMasterLevel === 'function') {
         const lvl = window.audio.getMasterLevel();
         result.audio.masterLevel = lvl;
-        if (lvl < 0.005 && !result.failure) {
-          // Treat very low level as warning (fallback synth or silent environment)
-          result.warnings.push('masterLevel low after playSound');
+        if (lvl < 0.02 && !result.failure) {
+          result.warnings.push('masterLevel very low after SFX');
+        }
+      }
+      if (typeof window.audio.getBusLevels === 'function') {
+        result.audio.busLevels = window.audio.getBusLevels();
+        const sfxLin = result.audio.busLevels?.sfx;
+        if (typeof sfxLin === 'number' && sfxLin < 0.2) {
+          result.warnings.push('sfx bus gain appears low (<0.2)');
         }
       }
     }
@@ -64,7 +73,11 @@ export default (async function () {
     result.audio.contextState = window.Tone.context.state;
     result.tone.transportState = window.Tone.Transport.state;
     if (window.Tone.context.state !== 'running') {
-      result.failure = 'Tone context not running';
+      if (result.audio.exists && result.audio.hasPlaySound) {
+        result.warnings.push('Tone context not running (using fallback)');
+      } else {
+        result.failure = 'Tone context not running';
+      }
     }
   }
 

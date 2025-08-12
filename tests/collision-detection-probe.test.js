@@ -1,17 +1,18 @@
 import { test, expect } from '@playwright/test';
-import { INDEX_PAGE } from './playwright.setup.js';
+import { INDEX_PAGE, waitForDrawStart, gotoIndex } from './playwright.setup.js';
 
 test.describe('Collision Detection Probe', () => {
   test('Bullet and entity collision handling', async ({ page }) => {
-    await page.goto(INDEX_PAGE);
+    await gotoIndex(page);
     await page.waitForSelector('canvas');
-    // Click canvas to enable audio/context
     await page.click('canvas');
-    // Wait until enemies array exists to avoid race
+    await waitForDrawStart(page);
     await page.waitForFunction(() => Array.isArray(window.enemies));
-    // Run the probe
+    // Run the probe (after draw start)
     const result = await page.evaluate(async () => {
-      const mod = await import('@vibe/tooling/probes/collision-detection-probe.js');
+      const mod = await import(
+        '@vibe/tooling/probes/collision-detection-probe.js'
+      );
       return mod.default || mod;
     });
     expect(result.failure).toBeNull();

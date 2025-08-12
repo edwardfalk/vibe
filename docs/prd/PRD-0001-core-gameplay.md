@@ -3,15 +3,19 @@ id: PRD-0001
 status: draft
 owner: @edward
 ---
+
 # Core Gameplay – Beat-Synced Shooter (Foundational)
 
 ## Problem
+
 We need a concise, testable definition of the core gameplay loop that aligns with the Cosmic Beat vision and is enforceable by probes.
 
 ## Goal
+
 Define the minimum-viable gameplay pillars and constraints for a beat-synced space shooter without a backing music track.
 
 ## Acceptance Criteria
+
 1. Enemy actions are locked to specific beats (per DESIGN.md mapping).
 2. Player firing model:
    - First shot on button press fires immediately (no beat lock) OR may be delayed to next quarter beat if configured.
@@ -22,21 +26,26 @@ Define the minimum-viable gameplay pillars and constraints for a beat-synced spa
 6. On Restart, a `playerChanged` CustomEvent is dispatched and audio is re-bound to the current player.
 
 ## Out of Scope
+
 - Power-ups and meta-progression systems.
 - Narrative content.
 
 ## UX Notes
+
 - Audio context requires a click; show a subtle prompt until activated.
 - Visual clarity: explosions readable without overpowering; cap bloom/aberration by LOD.
 
 ## Performance / Security
+
 - Adaptive LOD must keep frame time stable; particle counts scale down under load.
 - No remote code/config loads.
 
 ## Dependencies
+
 - `BeatClock`, `VisualEffectsManager`, `VFXDispatcher`, `EnemyEventBus`.
 - Probes: ai-liveness, audio-system, collision-detection, grunt-knockback, tank-armor-break.
 
 ## Stakeholders
+
 - Code review: @maintainer
 - QA/Automation: @qa

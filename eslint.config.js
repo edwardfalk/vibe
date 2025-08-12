@@ -1,4 +1,7 @@
 import prettierPlugin from 'eslint-plugin-prettier';
+import noMathPi from './scripts/eslint-rules/no-math-pi.js';
+import noP5Globals from './scripts/eslint-rules/no-p5-globals.js';
+import noRawGotoIndex from './scripts/eslint-rules/no-raw-goto-index.js';
 
 export default [
   {
@@ -53,6 +56,9 @@ export default [
     },
     plugins: {
       prettier: prettierPlugin,
+      'no-math-pi': noMathPi,
+      'no-p5-globals': noP5Globals,
+      'no-raw-goto-index': noRawGotoIndex,
     },
     rules: {
       'prefer-const': 'error',
@@ -66,6 +72,24 @@ export default [
           patterns: ['**/legacy/audio/*', '**/legacy/Audio.js'],
         },
       ],
+      // PRD-aligned guardrails
+      'no-math-pi/no-math-pi': 'error',
+      'no-p5-globals/no-p5-globals': 'error',
     },
+  },
+  // Targeted overrides
+  {
+    files: ['packages/**/src/**/*.js'],
+    rules: {
+      'no-math-pi/no-math-pi': 'error',
+      'no-p5-globals/no-p5-globals': 'error',
+    },
+  },
+  {
+    files: ['tests/**/*.js'],
+    rules: {
+      'no-raw-goto-index/no-raw-goto-index': 'error',
+    },
+  },
   },
 ];

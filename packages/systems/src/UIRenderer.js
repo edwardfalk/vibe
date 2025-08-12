@@ -1182,9 +1182,7 @@ export class UIRenderer {
     // Gather state
     const state = {
       frameCount:
-        window.p5 && window.p5.instance
-          ? window.p5.instance.frameCount
-          : null,
+        window.p5 && window.p5.instance ? window.p5.instance.frameCount : null,
       gameState: safeGameState(this.gameState),
       player: safePlayer(this.player),
       enemies: Array.isArray(this.gameState.enemies)

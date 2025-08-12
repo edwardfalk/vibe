@@ -7,17 +7,26 @@ test.describe('Grunt Knock-back VFX Probe', () => {
     await page.waitForSelector('canvas');
     // Click canvas to enable audio/context
     await page.click('canvas');
-    // Spawn a grunt if none exists (stabilize test)
+    // Deterministic seed + ensure a grunt exists
     await page.evaluate(() => {
-      if (!(window.enemies || []).some(e => e.type === 'grunt')) {
+      return import('/packages/core/src/index.js').then(({ setRandomSeed }) =>
+        setRandomSeed(1337)
+      );
+    });
+    await page.evaluate(() => {
+      if (!(window.enemies || []).some((e) => e.type === 'grunt')) {
         if (window.spawnSystem) {
-          const px = window.player?.x || 400, py = window.player?.y || 300;
+          const px = window.player?.x || 400,
+            py = window.player?.y || 300;
           window.spawnSystem.forceSpawn?.('grunt', px + 120, py);
         }
       }
     });
-    // Wait for grunt to spawn
-    await page.waitForFunction(() => (window.enemies || []).some(e => e.type === 'grunt'));
+    await page.waitForFunction(() =>
+      (window.enemies || []).some(
+        (e) => e.type === 'grunt' && !e.markedForRemoval
+      )
+    );
     // Run the probe
     const result = await page.evaluate(async () => {
       const mod = await import('@vibe/tooling/probes/grunt-knockback-probe.js');
@@ -27,4 +36,4 @@ test.describe('Grunt Knock-back VFX Probe', () => {
     expect(result.knockbackDelta).toBeGreaterThan(0.5);
     expect(result.failure).toBeNull();
   });
-}); 
+});

@@ -22,11 +22,11 @@
 
 Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. The beat is made with the beatClock. Sound effects, ambient noise and certain enemy actions happens with the beat. This is not something that should really be noticed when playing and controlling the player other than that the sounds together build the "music" in the game. The stabber, for example, is an enemy that tries to stab you with what from the beginning was a "laser knife" but now is more of a weird beak. The stabber makes a screech when attacking, but the game is made such that the stabber moves slowly near the player until he falls into the correct beat on 3.5 in the 4/4 beat where he can make his dissonant screech (all the other sounds harmonizes) and thereby syncopating the other sounds. Enememies with dark bass sounds act on beat 1 as bass drums, lighter punchy sounds fall in as snares, etc.
 
-The main character is a bizarre mad action hero/antihero that walks around in the middle of outer space blasting aliens that are a strange mix of murderous psychopaths, whiny babies and bumbling idiots. At the same time. The grunts are the simplest enemies, they have a baby-like voice and asks for their mommy and what the password is for the wifi while attacking and trying to kill you. They shoot and try to keep their distance. The stabbers make eerie female psycho noises and make dashing attacks when near. You can dash away yourself or shoot to keep them back. The rushers .. rush. and try to blow themselves up as close to you as possible. The tanks are giants with armor that shoot giant plasma balls that goes straight through both enemies and the player killing them instantly. If you kill a tank they collapse into a plasma cloud that's not healthy at all to enter. If you manage to get close enough to one you place a nuclear time bomb on it and have 3 seconds to get the hell out of there. When the bomb explodes the tank together with the nuke forms a radioactive greenish plasma cloud with particles in it. That cloud is even worse. 
+The main character is a bizarre mad action hero/antihero that walks around in the middle of outer space blasting aliens that are a strange mix of murderous psychopaths, whiny babies and bumbling idiots. At the same time. The grunts are the simplest enemies, they have a baby-like voice and asks for their mommy and what the password is for the wifi while attacking and trying to kill you. They shoot and try to keep their distance. The stabbers make eerie female psycho noises and make dashing attacks when near. You can dash away yourself or shoot to keep them back. The rushers .. rush. and try to blow themselves up as close to you as possible. The tanks are giants with armor that shoot giant plasma balls that goes straight through both enemies and the player killing them instantly. If you kill a tank they collapse into a plasma cloud that's not healthy at all to enter. If you manage to get close enough to one you place a nuclear time bomb on it and have 3 seconds to get the hell out of there. When the bomb explodes the tank together with the nuke forms a radioactive greenish plasma cloud with particles in it. That cloud is even worse.
 
-The player character fires quickly and makes a quarter note hihat beat. An idea to expand the game with is to have a shotgun power-up that fires more slowly, and you would get a damage bonus if you fire exactly on beat 1. If you keep the button pressed you could fire a little bit faster, but too get the damage bonus you would have to wait a moment longer and fire manually. 
+The player character fires quickly and makes a quarter note hihat beat. An idea to expand the game with is to have a shotgun power-up that fires more slowly, and you would get a damage bonus if you fire exactly on beat 1. If you keep the button pressed you could fire a little bit faster, but too get the damage bonus you would have to wait a moment longer and fire manually.
 
- Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
+Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
 
 For the project's core vision, design pillars, and development philosophy, see [`docs/PROJECT_VISION.md`](./docs/PROJECT_VISION.md).
 
@@ -88,6 +88,7 @@ vibe/
 All work (bugs, features, enhancements, tasks) is tracked in GitHub Issues. Automation is handled by `packages/tooling/src/githubIssueManager.js`. Probes create issues on failures with attached artifacts (screenshots, logs).
 
 Quick notes:
+
 - Probe failures create GitHub Issues automatically via `githubIssueManager`
 - You can also script manual issue creation via the same module
 
@@ -101,11 +102,14 @@ See [TICKETING_SYSTEM_GUIDE.md](docs/TICKETING_SYSTEM_GUIDE.md) for details.
 - **Default shell**: cmd.exe. Prefer cmd-friendly commands and Windows paths in all examples.
 - **Start dev server with `bun run dev:start`** – idempotent; starts Five Server and waits until READY. If port 5500 is busy, it frees and retries. Hooks run via `.githooks/*.cmd` (install with `bun run hooks:install`).
 - **Testing**: Preferred workflow is the deterministic orchestrated script:
+
 ```bat
 bun run test:orchestrated   # dev:start ➜ tests ➜ dev:stop
 ```
+
 This replaces direct `bun run test` and avoids flaky port-in-use errors. It also runs prechecks: `scan:consistency` and `validate:sounds` before starting the dev server.
 Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`). Remove all manual `.spec.js` tests.
+
 - **Bun single-install requirement**: Ensure ONLY the official Windows installer (`%USERPROFILE%\.bun\bin`) is on your PATH. Remove Scoop or other shims to prevent Starship timeout warnings.
 - **Test mode**: Press 'T' in-game to enable scripted testing.
 - **Bug-report modal**: Open with 'B' + 'R' or UI button. Keyboard: Enter/Ctrl+Enter = Save, Escape = Cancel.
@@ -126,6 +130,7 @@ Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING
   - Also available: `bun run scan:instance`, `bun run scan:math`
 
 ### Deterministic Runs
+
 - Use `setRandomSeed(seed)` from `@vibe/core` before starting gameplay to stabilize probes and visuals. Example:
   ```js
   await page.evaluate(() => {
@@ -170,6 +175,7 @@ Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING
 Vibe includes a comprehensive CodeRabbit review analysis system that captures ALL review data from GitHub:
 
 ### Features
+
 - **Complete Review Capture**: Gets general reviews AND line-by-line comments
 - **File Context**: Includes exact file paths and line numbers for suggestions
 - **Smart Categorization**: Automatically categorizes suggestions (security, bugs, performance, etc.)
@@ -178,6 +184,7 @@ Vibe includes a comprehensive CodeRabbit review analysis system that captures AL
 - **Ticket Integration**: Automatically creates tickets for high-priority issues
 
 ### Quick Start
+
 ```bash
 # Get complete CodeRabbit review data (recommended)
 bun run coderabbit:cycle
@@ -189,11 +196,13 @@ bun run coderabbit:auto-tickets    # Create tickets
 ```
 
 ### Generated Files
+
 - **`coderabbit-reviews/latest-complete.json`** - Complete review data with context
-- **`coderabbit-reviews/latest-summary.json`** - Analysis summary and metrics  
+- **`coderabbit-reviews/latest-summary.json`** - Analysis summary and metrics
 - **`coderabbit-reviews/latest-high-priority.json`** - Critical issues for immediate action
 
 ### Current Results
+
 - **1,402 total suggestions** extracted from 14 PRs
 - **111 high-priority issues** identified (security, bugs, critical fixes)
 - **Complete file context** for targeted fixes
@@ -235,6 +244,7 @@ Vibe uses a comprehensive automated testing system with probe-driven testing and
    bunx playwright test --headed   # Browser UI
    bunx playwright test --debug    # Debug inspector
    ```
+
 3. **Legacy aliases** `test:mcp`, `test:probes` now point to `test:orchestrated`.
 
 ### Probe-Driven Testing
@@ -325,7 +335,7 @@ packages/
 * **Docs front-matter validation**: GitHub CI runs `bun run scripts/scan-doc-frontmatter.js` to ensure every doc starts with YAML metadata.
 * **Context7 cache**: After adding a new dependency, run:
 
-   ```bat
+  ```bat
   bun run docs:cache-context7
   ```
 

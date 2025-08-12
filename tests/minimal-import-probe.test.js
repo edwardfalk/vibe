@@ -22,23 +22,34 @@ async function writeLogs(logs) {
     await fs.writeFile(logFile, logs.join('\n'), 'utf8');
     console.log(`[PROBE] Wrote logs to ${logFile}`);
   } catch (e) {
-    console.error(`[PROBE] Failed to write to test-results, falling back to root:`, e);
+    console.error(
+      `[PROBE] Failed to write to test-results, falling back to root:`,
+      e
+    );
     try {
-      await fs.writeFile('playwright-browser-console-errors.log', logs.join('\n'), 'utf8');
-      console.log('[PROBE] Wrote logs to fallback playwright-browser-console-errors.log');
+      await fs.writeFile(
+        'playwright-browser-console-errors.log',
+        logs.join('\n'),
+        'utf8'
+      );
+      console.log(
+        '[PROBE] Wrote logs to fallback playwright-browser-console-errors.log'
+      );
     } catch (e2) {
       console.error('[PROBE] Failed to write logs anywhere:', e2);
     }
   }
 }
 
-test('Minimal import of @vibe/game should not throw or cause duplicate declaration', async ({ page }) => {
+test('Minimal import of @vibe/game should not throw or cause duplicate declaration', async ({
+  page,
+}) => {
   const logs = [];
-  page.on('console', msg => {
+  page.on('console', (msg) => {
     logs.push(`[${msg.type()}] ${msg.text()}`);
     console.log(`[BROWSER][${msg.type()}] ${msg.text()}`);
   });
-  page.on('pageerror', error => {
+  page.on('pageerror', (error) => {
     const errorDetails = [
       `Error: ${error && (error.message || error.toString())}`,
       error && error.stack ? `\nStack:\n${error.stack}` : '',
@@ -46,19 +57,25 @@ test('Minimal import of @vibe/game should not throw or cause duplicate declarati
       error && error.lineNumber ? `\nLine: ${error.lineNumber}` : '',
       error && error.columnNumber ? `\nColumn: ${error.columnNumber}` : '',
       '\nFull error object:',
-      JSON.stringify(error, Object.getOwnPropertyNames(error), 2)
+      JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
     ].join('\n');
     logs.push(`[PAGE ERROR DETAILS]\n${errorDetails}`);
     console.error(`[BROWSER][PAGE ERROR DETAILS]\n${errorDetails}`);
   });
-  page.on('requestfailed', req => {
+  page.on('requestfailed', (req) => {
     logs.push(`[REQUEST FAILED] ${req.url()} - ${req.failure()?.errorText}`);
-    console.error(`[BROWSER][REQUEST FAILED] ${req.url()} - ${req.failure()?.errorText}`);
+    console.error(
+      `[BROWSER][REQUEST FAILED] ${req.url()} - ${req.failure()?.errorText}`
+    );
   });
-  page.on('response', response => {
+  page.on('response', (response) => {
     if (!response.ok()) {
-      logs.push(`[RESPONSE ERROR] ${response.url()} - ${response.status()} ${response.statusText()}`);
-      console.error(`[BROWSER][RESPONSE ERROR] ${response.url()} - ${response.status()} ${response.statusText()}`);
+      logs.push(
+        `[RESPONSE ERROR] ${response.url()} - ${response.status()} ${response.statusText()}`
+      );
+      console.error(
+        `[BROWSER][RESPONSE ERROR] ${response.url()} - ${response.status()} ${response.statusText()}`
+      );
     }
   });
 
@@ -84,11 +101,18 @@ test('Minimal import of @vibe/game should not throw or cause duplicate declarati
   // Only count truly critical signals for this probe
   const errorLogs = logs.filter((l) => {
     const s = l.toLowerCase();
-    const critical = s.includes('syntaxerror') || s.includes('duplicate') || s.includes('[page error details]') || s.includes('[dom error]');
+    const critical =
+      s.includes('syntaxerror') ||
+      s.includes('duplicate') ||
+      s.includes('[page error details]') ||
+      s.includes('[dom error]');
     return critical;
   });
   if (errorLogs.length) {
-    console.log('[MINIMAL-PROBE] critical logs:', JSON.stringify(errorLogs, null, 2));
+    console.log(
+      '[MINIMAL-PROBE] critical logs:',
+      JSON.stringify(errorLogs, null, 2)
+    );
   }
   expect(errorLogs.length).toBe(0);
 });

@@ -14,6 +14,47 @@ export default (async function () {
     // Not available in all contexts
   }
 
+  // Gate on p5 draw loop start to avoid first-frame races
+  async function waitForDrawStart(timeoutMs = 3500) {
+    const start = performance?.now?.() ?? Date.now();
+    return new Promise((resolve) => {
+      function tick() {
+        const now = performance?.now?.() ?? Date.now();
+        const fc =
+          (window.p5 && window.p5.instance && window.p5.instance.frameCount) ||
+          (window.player && window.player.p && window.player.p.frameCount) ||
+          0;
+        if (fc > 0) return resolve(true);
+        if (now - start >= timeoutMs) return resolve(false);
+        (window.requestAnimationFrame || setTimeout)(tick, 16);
+      }
+      tick();
+    });
+  }
+  await waitForDrawStart();
+
+  // Non-mutating wrapper: snapshot and restore main arrays after checks
+  async function withStateSnapshot(fn) {
+    const snap = {
+      enemies: Array.isArray(window.enemies)
+        ? window.enemies.slice()
+        : undefined,
+      playerBullets: Array.isArray(window.playerBullets)
+        ? window.playerBullets.slice()
+        : undefined,
+      enemyBullets: Array.isArray(window.enemyBullets)
+        ? window.enemyBullets.slice()
+        : undefined,
+    };
+    try {
+      return await fn();
+    } finally {
+      if (snap.enemies) window.enemies = snap.enemies;
+      if (snap.playerBullets) window.playerBullets = snap.playerBullets;
+      if (snap.enemyBullets) window.enemyBullets = snap.enemyBullets;
+    }
+  }
+
   const result = {
     timestamp: Date.now(),
     collisionSystem: {
@@ -63,42 +104,57 @@ export default (async function () {
 
     // Test collision system functionality
     try {
-      // Test if collision methods can be called without errors
-      // Use dry-run wrapper to prevent game state mutation during testing
-      if (typeof window.collisionSystem.checkBulletCollisions === 'function') {
-        // Create a snapshot of game state before collision check
-        const beforeState = {
-          playerBullets: window.playerBullets?.length || 0,
-          enemyBullets: window.enemyBullets?.length || 0,
-          enemies: window.enemies?.length || 0,
-        };
-
-        // Call collision check in a try-catch to prevent state mutation from breaking the probe
-        try {
-          window.collisionSystem.checkBulletCollisions();
+      if (typeof window.collisionSystem.probeCheck === 'function') {
+        const { ok, error } = await window.collisionSystem.probeCheck({
+          dryRun: true,
+        });
+        if (!ok) {
+          result.criticalFailures.push(
+            `CollisionSystem probeCheck failed: ${error}`
+          );
+        } else {
           result.collisionSystem.functionality.bulletCollisions = true;
-        } catch (collisionError) {
-          result.criticalFailures.push(
-            `Bullet collision check failed: ${collisionError.message}`
-          );
-        }
-      }
-
-      if (typeof window.collisionSystem.checkContactCollisions === 'function') {
-        // Create a snapshot of game state before collision check
-        const beforeState = {
-          enemies: window.enemies?.length || 0,
-          player: !!window.player,
-        };
-
-        // Call collision check in a try-catch to prevent state mutation from breaking the probe
-        try {
-          window.collisionSystem.checkContactCollisions();
           result.collisionSystem.functionality.contactCollisions = true;
-        } catch (collisionError) {
-          result.criticalFailures.push(
-            `Contact collision check failed: ${collisionError.message}`
-          );
+        }
+      } else {
+        // Fallback: direct calls under snapshot restore
+        if (
+          typeof window.collisionSystem.checkBulletCollisions === 'function'
+        ) {
+          const beforeState = {
+            playerBullets: window.playerBullets?.length || 0,
+            enemyBullets: window.enemyBullets?.length || 0,
+            enemies: window.enemies?.length || 0,
+          };
+          try {
+            await withStateSnapshot(async () => {
+              window.collisionSystem.checkBulletCollisions();
+            });
+            result.collisionSystem.functionality.bulletCollisions = true;
+          } catch (collisionError) {
+            result.criticalFailures.push(
+              `Bullet collision check failed: ${collisionError.message}`
+            );
+          }
+        }
+
+        if (
+          typeof window.collisionSystem.checkContactCollisions === 'function'
+        ) {
+          const beforeState = {
+            enemies: window.enemies?.length || 0,
+            player: !!window.player,
+          };
+          try {
+            await withStateSnapshot(async () => {
+              window.collisionSystem.checkContactCollisions();
+            });
+            result.collisionSystem.functionality.contactCollisions = true;
+          } catch (collisionError) {
+            result.criticalFailures.push(
+              `Contact collision check failed: ${collisionError.message}`
+            );
+          }
         }
       }
     } catch (error) {
