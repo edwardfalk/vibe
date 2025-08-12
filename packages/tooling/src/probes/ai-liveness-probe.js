@@ -57,9 +57,14 @@ export default (async function () {
     failure: null,
   };
 
-  // Liveness check
+  // Liveness check with single retry to tolerate transient reloads
   if (!(typeof result.frameCount === 'number' && result.frameCount > 0)) {
-    result.failure = 'Frame count not available (draw loop may be stopped)';
+    // retry once after a short wait
+    await waitForDrawStart(1000);
+    result.frameCount = currentFrameCount();
+    if (!(typeof result.frameCount === 'number' && result.frameCount > 0)) {
+      result.failure = 'Frame count not available (draw loop may be stopped)';
+    }
   }
 
   // Player check

@@ -176,6 +176,22 @@ async function main() {
   console.log(
     `✅ Actionable summary (${summary.length} files) → ${summaryPath}`
   );
+
+  // PR activity snapshot for assistant triage
+  try {
+    const prCounts = items.reduce((acc, it) => {
+      acc[it.pr] = (acc[it.pr] || 0) + 1;
+      return acc;
+    }, {});
+    const snapshot = Object.entries(prCounts)
+      .map(([pr, count]) => ({ pr: Number(pr), count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    writeFileSync(
+      join(outDir, 'pr-activity-snapshot.json'),
+      JSON.stringify(snapshot, null, 2)
+    );
+  } catch {}
 }
 
 main().catch((err) => {

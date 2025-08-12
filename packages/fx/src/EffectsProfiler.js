@@ -68,8 +68,9 @@ function getStats() {
     if (v < min) min = v;
     if (v > max) max = v;
   }
-  const avg = sampleCount ? sum / sampleCount : 0;
-  const fps = avg ? 1000 / avg : 0;
+  // Guard against division by zero and NaN
+  const avg = sampleCount > 0 ? sum / sampleCount : 0;
+  const fps = avg > 0 ? 1000 / avg : 0;
   return {
     fps: fps.toFixed(1),
     avg: avg.toFixed(2),
