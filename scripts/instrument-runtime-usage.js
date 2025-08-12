@@ -17,7 +17,9 @@ function getDumpSeconds() {
 
 // Registry of counters keyed by module:function
 const counters = {};
-function inc(key) { counters[key] = (counters[key] || 0) + 1; }
+function inc(key) {
+  counters[key] = (counters[key] || 0) + 1;
+}
 
 function attach() {
   if (typeof window === 'undefined') return;
@@ -28,7 +30,10 @@ function attach() {
     const cam = window.cameraSystem;
     if (cam && typeof cam.update === 'function' && !cam.__wrapped) {
       const orig = cam.update.bind(cam);
-      cam.update = (...args) => { inc('CameraSystem.update'); return orig(...args); };
+      cam.update = (...args) => {
+        inc('CameraSystem.update');
+        return orig(...args);
+      };
       cam.__wrapped = true;
     }
   } catch {}
@@ -38,7 +43,10 @@ function attach() {
     const cs = window.collisionSystem;
     if (cs && typeof cs.checkCollisions === 'function' && !cs.__wrapped) {
       const orig = cs.checkCollisions.bind(cs);
-      cs.checkCollisions = (...args) => { inc('CollisionSystem.checkCollisions'); return orig(...args); };
+      cs.checkCollisions = (...args) => {
+        inc('CollisionSystem.checkCollisions');
+        return orig(...args);
+      };
       cs.__wrapped = true;
     }
   } catch {}
@@ -48,7 +56,10 @@ function attach() {
     const ss = window.spawnSystem;
     if (ss && typeof ss.update === 'function' && !ss.__wrapped) {
       const orig = ss.update.bind(ss);
-      ss.update = (...args) => { inc('SpawnSystem.update'); return orig(...args); };
+      ss.update = (...args) => {
+        inc('SpawnSystem.update');
+        return orig(...args);
+      };
       ss.__wrapped = true;
     }
   } catch {}
@@ -58,7 +69,10 @@ function attach() {
     const pl = window.player;
     if (pl && typeof pl.update === 'function' && !pl.__wrapped) {
       const orig = pl.update.bind(pl);
-      pl.update = (...args) => { inc('Player.update'); return orig(...args); };
+      pl.update = (...args) => {
+        inc('Player.update');
+        return orig(...args);
+      };
       pl.__wrapped = true;
     }
   } catch {}
@@ -69,7 +83,10 @@ function attach() {
       for (const e of window.enemies) {
         if (e && typeof e.update === 'function' && !e.__wrapped) {
           const orig = e.update.bind(e);
-          e.update = (...args) => { inc(`${e.type||'Enemy'}.update`); return orig(...args); };
+          e.update = (...args) => {
+            inc(`${e.type || 'Enemy'}.update`);
+            return orig(...args);
+          };
           e.__wrapped = true;
         }
       }
