@@ -93,8 +93,26 @@ function attach() {
     }
   } catch {}
 
+  // Periodically wrap any newly spawned enemies during the sampling window
+  const wrapNewEnemies = () => {
+    try {
+      if (!Array.isArray(window.enemies)) return;
+      for (const e of window.enemies) {
+        if (e && typeof e.update === 'function' && !e.__wrapped) {
+          const orig = e.update.bind(e);
+          e.update = (...args) => {
+            inc(`${e.type || 'Enemy'}.update`);
+            return orig(...args);
+          };
+          e.__wrapped = true;
+        }
+      }
+    } catch {}
+  };
+
   // Dump after timeout (console only)
   const secs = getDumpSeconds();
+  const intervalId = setInterval(wrapNewEnemies, 500);
   setTimeout(() => {
     try {
       const payload = { when: new Date().toISOString(), counters };
@@ -102,6 +120,7 @@ function attach() {
     } catch (e) {
       console.warn('RuntimeUsage dump failed:', e?.message || e);
     }
+    clearInterval(intervalId);
   }, secs * 1000);
 }
 
