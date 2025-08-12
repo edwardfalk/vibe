@@ -1,7 +1,7 @@
 /* SpatialHashGrid.js - Simple uniform grid for fast proximity queries.
  * Not a full QuadTree but good enough for hundreds of entities.
  */
-import { floor, cos, sin } from '@vibe/core/mathUtils.js';
+import { floor, cos, sin, PI } from '@vibe/core/mathUtils.js';
 
 export class SpatialHashGrid {
   constructor(cellSize = 120) {
@@ -60,7 +60,7 @@ export class SpatialHashGrid {
 
       // Also check points to the side to simulate the cone width
       const spread = distance * Math.tan(coneAngle / 2);
-      const anglePerp = angle + Math.PI / 2;
+      const anglePerp = angle + PI / 2;
       const pointLeftX = pointX - cos(anglePerp) * spread;
       const pointLeftY = pointY - sin(anglePerp) * spread;
       const pointRightX = pointX + cos(anglePerp) * spread;

@@ -6,9 +6,15 @@ test.describe('Grunt Knock-back VFX Probe', () => {
     await page.goto(INDEX_PAGE);
     await page.waitForSelector('canvas');
     // Click canvas to enable audio/context
+    await page.click('canvas');
+    // Spawn a grunt if none exists (stabilize test)
     await page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      if (!(window.enemies || []).some(e => e.type === 'grunt')) {
+        if (window.spawnSystem) {
+          const px = window.player?.x || 400, py = window.player?.y || 300;
+          window.spawnSystem.forceSpawn?.('grunt', px + 120, py);
+        }
+      }
     });
     // Wait for grunt to spawn
     await page.waitForFunction(() => (window.enemies || []).some(e => e.type === 'grunt'));

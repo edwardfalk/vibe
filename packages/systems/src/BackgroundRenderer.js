@@ -14,6 +14,8 @@ import {
   sqrt,
   random,
   randomRange,
+  PI,
+  TWO_PI,
 } from '@vibe/core';
 
 /**
@@ -106,7 +108,7 @@ export class BackgroundRenderer {
         x: randomRange(-p.width * 2, p.width * 3),
         y: randomRange(-p.height * 2, p.height * 3),
         size: randomRange(80, 150),
-        rotation: randomRange(0, 2 * Math.PI),
+        rotation: randomRange(0, TWO_PI),
         rotationSpeed: randomRange(-0.001, 0.001),
         arms: randomRange(2, 4),
         color: {
@@ -163,7 +165,7 @@ export class BackgroundRenderer {
         size: randomRange(0.5, 1.5),
         brightness: randomRange(0.3, 0.7),
         driftSpeed: randomRange(0.02, 0.08),
-        angle: randomRange(0, 2 * Math.PI),
+        angle: randomRange(0, TWO_PI),
         color: {
           r: randomRange(120, 180),
           g: randomRange(100, 160),
@@ -198,7 +200,7 @@ export class BackgroundRenderer {
         x: randomRange(-p.width, p.width * 2),
         y: randomRange(-p.height, p.height * 2),
         size: randomRange(3, 10),
-        rotation: randomRange(0, 2 * Math.PI),
+        rotation: randomRange(0, TWO_PI),
         rotationSpeed: randomRange(-0.03, 0.03),
         shape: ['triangle', 'square', 'diamond', 'cross'][floor(random() * 4)],
         alpha: randomRange(0.4, 0.8),
@@ -290,7 +292,7 @@ export class BackgroundRenderer {
       // Draw spiral arms
       for (let arm = 0; arm < galaxy.arms; arm++) {
         p.push();
-        p.rotate((arm * 2 * Math.PI) / galaxy.arms);
+        p.rotate((arm * TWO_PI) / galaxy.arms);
 
         for (let r = 5; r < galaxy.size; r += 8) {
           const armAngle = r * 0.08;
@@ -732,7 +734,7 @@ export class BackgroundRenderer {
       // Galaxy spiral arms
       for (let arm = 0; arm < 3; arm++) {
         p.push();
-        p.rotate((arm * 2 * Math.PI) / 3);
+        p.rotate((arm * TWO_PI) / 3);
 
         for (let r = 0; r < galaxySize; r += 3) {
           const armAngle = r * 0.1;

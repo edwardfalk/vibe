@@ -6,10 +6,9 @@ test.describe('Collision Detection Probe', () => {
     await page.goto(INDEX_PAGE);
     await page.waitForSelector('canvas');
     // Click canvas to enable audio/context
-    await page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
+    await page.click('canvas');
+    // Wait until enemies array exists to avoid race
+    await page.waitForFunction(() => Array.isArray(window.enemies));
     // Run the probe
     const result = await page.evaluate(async () => {
       const mod = await import('@vibe/tooling/probes/collision-detection-probe.js');

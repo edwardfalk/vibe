@@ -14,10 +14,9 @@ test.describe('Comprehensive Probe Runner', () => {
     await page.goto(INDEX_PAGE);
     await page.waitForSelector('canvas');
     // Click canvas to enable audio/context
-    await page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
+    await page.click('canvas');
+    // Seed optional readiness
+    await page.waitForFunction(() => window.gameState && window.player);
     // Dynamically import the probe runner and attach to window, then run
     const result = await page.evaluate(async () => {
       if (!window.probeRunner) {

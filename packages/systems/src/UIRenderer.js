@@ -4,7 +4,7 @@
 
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
-import { floor, ceil, min, max, random, SOUND } from '@vibe/core';
+import { floor, ceil, min, max, random, SOUND, PI } from '@vibe/core';
 import { AudioLabUI } from './AudioLabUI.js';
 // import {
 //   createTicket,
@@ -575,15 +575,15 @@ export class UIRenderer {
     // Arrow keys for aim direction
     if (this.gameState.gameState === 'playing' && this.player) {
       if (key === 'ArrowUp') {
-        this.player.aimAngle = -Math.PI / 2;
+        this.player.aimAngle = -PI / 2;
         return true;
       }
       if (key === 'ArrowDown') {
-        this.player.aimAngle = Math.PI / 2;
+        this.player.aimAngle = PI / 2;
         return true;
       }
       if (key === 'ArrowLeft') {
-        this.player.aimAngle = Math.PI;
+        this.player.aimAngle = PI;
         return true;
       }
       if (key === 'ArrowRight') {
@@ -1181,7 +1181,10 @@ export class UIRenderer {
     }
     // Gather state
     const state = {
-      frameCount: typeof frameCount !== 'undefined' ? frameCount : null,
+      frameCount:
+        window.p5 && window.p5.instance
+          ? window.p5.instance.frameCount
+          : null,
       gameState: safeGameState(this.gameState),
       player: safePlayer(this.player),
       enemies: Array.isArray(this.gameState.enemies)

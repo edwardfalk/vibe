@@ -5,7 +5,7 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
 
 import { Bullet } from '@vibe/entities/bullet.js';
-import { sin, cos, min, floor, random, atan2 } from '@vibe/core/mathUtils.js';
+import { sin, cos, min, floor, random, atan2, PI, TWO_PI, dist } from '@vibe/core/mathUtils.js';
 import { max } from '@vibe/core';
 
 /**
@@ -77,29 +77,29 @@ export class TestMode {
     const halfSize = this.player.size / 2;
 
     // Test pattern that specifically targets all four corners and edges
-    const phase = (this.timer * this.moveSpeed) % (Math.PI * 8); // Complete cycle every ~8 seconds
+    const phase = (this.timer * this.moveSpeed) % (PI * 8); // Complete cycle every ~8 seconds
 
-    if (phase < Math.PI * 2) {
+    if (phase < PI * 2) {
       // Phase 1: Test all four corners in sequence
       this.moveToCorners(phase, halfSize);
     } else if (phase < Math.PI * 4) {
       // Phase 2: Test edge movement - left and right edges
-      this.moveAlongVerticalEdges(phase - Math.PI * 2, halfSize);
-    } else if (phase < Math.PI * 6) {
+      this.moveAlongVerticalEdges(phase - PI * 2, halfSize);
+    } else if (phase < PI * 6) {
       // Phase 3: Test edge movement - top and bottom edges
-      this.moveAlongHorizontalEdges(phase - Math.PI * 4, halfSize);
+      this.moveAlongHorizontalEdges(phase - PI * 4, halfSize);
     } else {
       // Phase 4: Center movement for comparison
       this.moveCenterPattern(phase, halfSize);
     }
 
     // Apply proper player constraints (same as in player.js)
-    this.player.x = constrain(
+    this.player.x = this.player.p.constrain(
       this.player.x,
       halfSize,
       this.player.p.width - halfSize
     );
-    this.player.y = constrain(
+    this.player.y = this.player.p.constrain(
       this.player.y,
       halfSize,
       this.player.p.height - halfSize
@@ -108,7 +108,7 @@ export class TestMode {
 
   // Move player to corners in sequence
   moveToCorners(phase, halfSize) {
-    const cornerPhase = (phase / (Math.PI * 2)) * 4;
+    const cornerPhase = (phase / (PI * 2)) * 4;
     if (cornerPhase < 1) {
       // Top-left corner
       this.player.x = halfSize;
@@ -130,21 +130,21 @@ export class TestMode {
 
   // Move along vertical edges (left and right)
   moveAlongVerticalEdges(phase, halfSize) {
-    const edgePhase = phase / (Math.PI * 2);
+    const edgePhase = phase / (PI * 2);
     this.player.x = edgePhase < 0.5 ? halfSize : this.player.p.width - halfSize; // Left then right edge
     this.player.y =
       halfSize +
-      (this.player.p.height - this.player.size) * sin(edgePhase * Math.PI * 4); // Move up/down along edge
+      (this.player.p.height - this.player.size) * sin(edgePhase * PI * 4); // Move up/down along edge
   }
 
   // Move along horizontal edges (top and bottom)
   moveAlongHorizontalEdges(phase, halfSize) {
-    const edgePhase = phase / (Math.PI * 2);
+    const edgePhase = phase / (PI * 2);
     this.player.y =
       edgePhase < 0.5 ? halfSize : this.player.p.height - halfSize; // Top then bottom edge
     this.player.x =
       halfSize +
-      (this.player.p.width - this.player.size) * sin(edgePhase * Math.PI * 4); // Move left/right along edge
+      (this.player.p.width - this.player.size) * sin(edgePhase * PI * 4); // Move left/right along edge
   }
 
   // Move in center pattern

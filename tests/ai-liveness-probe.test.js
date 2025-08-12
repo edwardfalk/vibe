@@ -6,11 +6,11 @@ test.describe('AI Liveness Probe', () => {
     await page.goto(INDEX_PAGE);
     await page.waitForSelector('canvas');
     // Click canvas to enable audio/context
-    await page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
+    await page.click('canvas');
+    // Wait for core readiness
+    await page.waitForFunction(() => window.gameState && window.player);
     // Run the probe
+    await page.waitForFunction(() => Array.isArray(window.enemies) && window.enemies.length > 0, {}, { timeout: 10000 });
     const result = await page.evaluate(async () => {
       const mod = await import('@vibe/tooling/probes/ai-liveness-probe.js');
       return mod.default || mod;

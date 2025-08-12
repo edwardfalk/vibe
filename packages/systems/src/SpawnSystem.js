@@ -1,7 +1,7 @@
 /**
  * SpawnSystem - enemy spawning logic (moved to @vibe/systems)
  */
-import { floor, min, max, random, sin, cos } from '@vibe/core/mathUtils.js';
+import { floor, min, max, random, sin, cos, PI, TWO_PI } from '@vibe/core/mathUtils.js';
 import { EnemyFactory } from '../../entities/src/EnemyFactory.js';
 
 export class SpawnSystem {
@@ -82,7 +82,7 @@ export class SpawnSystem {
     let spawnX, spawnY;
 
     do {
-      const angle = random() * Math.PI * 2;
+      const angle = random() * TWO_PI;
       const radius = random(500, 800); // Slightly smaller ring
       spawnX = player.x + cos(angle) * radius;
       spawnY = player.y + sin(angle) * radius;
@@ -111,7 +111,7 @@ export class SpawnSystem {
     console.warn(
       `⚠️ Could not find random spawn position after 100 attempts. Starting spiral search.`
     );
-    let spiralAngle = random() * Math.PI * 2;
+    let spiralAngle = random() * TWO_PI;
     let spiralRadius = 500;
     for (let i = 0; i < 200; i++) {
       // Spiral for max 200 steps

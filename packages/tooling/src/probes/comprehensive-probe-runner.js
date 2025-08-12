@@ -18,6 +18,31 @@
     async runAllProbes() {
       console.log('🔍 Starting comprehensive probe system...');
 
+      // Guard: ensure p5 draw loop started to avoid early-frame races
+      await (async function waitForDrawStart(timeoutMs = 3500) {
+        const start = (typeof performance !== 'undefined' && performance.now)
+          ? performance.now()
+          : Date.now();
+        return new Promise((resolve) => {
+          function tick() {
+            const now = (typeof performance !== 'undefined' && performance.now)
+              ? performance.now()
+              : Date.now();
+            const ok =
+              window.p5 &&
+              window.p5.instance &&
+              typeof window.p5.instance.frameCount === 'number' &&
+              window.p5.instance.frameCount > 0;
+            if (ok) return resolve(true);
+            if (now - start >= timeoutMs) return resolve(false);
+            (typeof requestAnimationFrame === 'function'
+              ? requestAnimationFrame
+              : setTimeout)(tick, 16);
+          }
+          tick();
+        });
+      })();
+
       const results = {
         timestamp: Date.now(),
         probes: {},
@@ -234,7 +259,13 @@
     // Quick health check method for frequent monitoring
     async quickHealthCheck() {
       const basicChecks = {
-        gameLoop: typeof frameCount !== 'undefined' && frameCount > 0,
+        gameLoop:
+          !!(
+            window.p5 &&
+            window.p5.instance &&
+            typeof window.p5.instance.frameCount === 'number' &&
+            window.p5.instance.frameCount > 0
+          ),
         player: !!window.player,
         gameState: !!window.gameState,
         audio: !!window.audio,

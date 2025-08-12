@@ -2,7 +2,7 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { CONFIG } from '@vibe/core';
 import { Bullet } from './bullet.js';
-import { max, atan2, sin, cos, random, TWO_PI } from '@vibe/core';
+import { max, atan2, sin, cos, random, TWO_PI, PI } from '@vibe/core';
 
 const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
@@ -246,7 +246,7 @@ export class Player {
               ', dy=' +
               dy +
               ', angle=' +
-              ((this.aimAngle * 180) / Math.PI).toFixed(1)
+              ((this.aimAngle * 180) / PI).toFixed(1)
           );
         }
       }
@@ -257,17 +257,23 @@ export class Player {
         this.p.mouseY
       );
       this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && frameCount % 60 === 0) {
+      if (
+        CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
+        this.p && this.p.frameCount % 60 === 0
+      ) {
         console.log(
-          `[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
+          `[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / PI).toFixed(1)}°`
         );
       }
     } else {
       // Fallback for when camera system is not available
       this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && frameCount % 60 === 0) {
+      if (
+        CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
+        this.p && this.p.frameCount % 60 === 0
+      ) {
         console.log(
-          `[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
+          `[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / PI).toFixed(1)}°`
         );
       }
     }
@@ -693,7 +699,7 @@ export class Player {
     const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
 
     console.log(
-      `🔫 Player firing bullet: aim=${((this.aimAngle * 180) / Math.PI).toFixed(1)}° pos=(${bulletX.toFixed(1)}, ${bulletY.toFixed(1)})`
+      `🔫 Player firing bullet: aim=${((this.aimAngle * 180) / PI).toFixed(1)}° pos=(${bulletX.toFixed(1)}, ${bulletY.toFixed(1)})`
     );
 
     return new Bullet(bulletX, bulletY, this.aimAngle, 8, 'player');

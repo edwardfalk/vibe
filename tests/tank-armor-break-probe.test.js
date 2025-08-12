@@ -12,10 +12,7 @@ test.describe('Tank Armor Break VFX Probe', () => {
     }
     await page.waitForSelector('canvas');
     // Click canvas to enable audio/context
-    await page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
+    await page.click('canvas');
 
     // Manually spawn a tank for the test
     await page.evaluate(() => {

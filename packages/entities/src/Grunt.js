@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, min, max, sin, cos, SOUND } from '@vibe/core';
+import { floor, random, sqrt, min, max, sin, cos, SOUND, TWO_PI } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
 import { shouldAvoidFriendlyFire } from './EnemyAIUtils.js';
 
@@ -274,7 +274,7 @@ class Grunt extends BaseEnemy {
     this.p.noStroke();
     for (let i = 0; i < 5; i++) {
       const angle =
-        (Math.PI * 2 * i) / 5 +
+        (TWO_PI * i) / 5 +
         this.p.frameCount * 0.01 * (i % 2 === 0 ? 1 : -1);
       const r1 =
         s * 0.45 + this.p.noise(this.p.frameCount * 0.01 + i) * s * 0.15;

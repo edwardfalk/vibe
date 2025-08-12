@@ -10,6 +10,7 @@ import {
   floor,
   max,
   min,
+  TWO_PI,
 } from '@vibe/core';
 import { getEnemyConfig, effectsConfig } from '@vibe/fx/effectsConfig.js';
 import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
@@ -45,7 +46,7 @@ export class BaseEnemy {
     // Movement and animation
     this.velocity = { x: 0, y: 0 };
     this.aimAngle = 0;
-    this.animFrame = randomRange(0, 2 * Math.PI);
+    this.animFrame = randomRange(0, TWO_PI);
     this.knockVX = 0;
     this.knockVY = 0;
 

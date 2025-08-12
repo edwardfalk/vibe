@@ -13,8 +13,38 @@ export default (async function () {
     // Not available in all contexts
   }
 
+  // Wait until p5 draw loop starts to avoid race on very first frames
+  async function waitForDrawStart(timeoutMs = 3000) {
+    const start = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now()
+      : Date.now();
+    return new Promise((resolve) => {
+      function tick() {
+        const now = (typeof performance !== 'undefined' && performance.now)
+          ? performance.now()
+          : Date.now();
+        const ok =
+          window.p5 &&
+          window.p5.instance &&
+          typeof window.p5.instance.frameCount === 'number' &&
+          window.p5.instance.frameCount > 0;
+        if (ok) return resolve(true);
+        if (now - start >= timeoutMs) return resolve(false);
+        (typeof requestAnimationFrame === 'function'
+          ? requestAnimationFrame
+          : setTimeout)(tick, 16);
+      }
+      tick();
+    });
+  }
+
+  await waitForDrawStart(3500);
+
   const result = {
-    frameCount: typeof frameCount !== 'undefined' ? frameCount : null,
+    frameCount:
+      window.p5 && window.p5.instance
+        ? window.p5.instance.frameCount
+        : null,
     gameState: window.gameState?.gameState ?? null,
     playerAlive: !!window.player && !window.player?.markedForRemoval,
     enemyCount: Array.isArray(window.enemies)
@@ -25,7 +55,14 @@ export default (async function () {
   };
 
   // Liveness check
-  if (typeof frameCount === 'undefined' || frameCount === null) {
+  if (
+    !(
+      window.p5 &&
+      window.p5.instance &&
+      typeof window.p5.instance.frameCount === 'number' &&
+      window.p5.instance.frameCount > 0
+    )
+  ) {
     result.failure = 'Frame count not available (draw loop may be stopped)';
   }
 

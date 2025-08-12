@@ -4,10 +4,11 @@
 
 import * as Tone from 'tone';
 import { SampleLoader } from './SampleLoader.js';
+import { SOUND } from './SoundIds.js';
 import { FallbackManager } from './FallbackManager.js';
 import { MusicScheduler } from './MusicScheduler.js';
 import { SpeechCoordinator } from './SpeechCoordinator.js';
-import { random, floor } from '../mathUtils.js';
+import { random, floor, max } from '../mathUtils.js';
 
 /**
  * Type JSDoc: @typedef {{ bpm: number, getTotalBeats:()=>number }} BeatClockLike
@@ -136,6 +137,23 @@ export class ToneAudioFacade {
    * @param {number} [y] - y coordinate (if first param is x)
    */
   async playSound(id, xOrOpts = {}, y = null) {
+    // Early fallback if init previously failed (e.g., external CDN unreachable)
+    if (!this._initialized && this._players?.size === 0 && this._fallbackSynths?.size >= 0) {
+      // Attempt a fast, single-sound fallback using Tone.Synth without manifest
+      try {
+        await this._ensureToneStarted();
+        if (!this._gains.master) this._createMixer();
+        if (!this._fallbackSynths) this._fallbackSynths = new Map();
+        if (!this._fallbackSynths.has('beep')) {
+          const synth = new Tone.Synth().connect(this._gains.sfx || this._gains.master);
+          this._fallbackSynths.set('beep', synth);
+        }
+        // If requested id exists in registry, still play beep as stand-in
+        this._fallbackSynths.get('beep')?.triggerAttackRelease('C5', '8n');
+        return;
+      } catch {}
+    }
+
     if (!this._initialized) await this.init();
     const player = this._players?.get(id);
     const synth = this._fallbackSynths?.get(id);
@@ -183,7 +201,7 @@ export class ToneAudioFacade {
    */
   duck(db, rampSeconds = 0.2) {
     // Clamp ducking to a sane min (e.g., -18 dB) to avoid near-silence
-    const clampedDb = Math.max(db, -18);
+    const clampedDb = max(db, -18);
     const music = this._gains.music;
     if (!music) return;
     music.gain.rampTo(Tone.dbToGain(clampedDb), rampSeconds);

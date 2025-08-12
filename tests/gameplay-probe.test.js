@@ -30,13 +30,11 @@ test.describe('Gameplay Probes', () => {
       await page.goto(INDEX_PAGE);
       await page.waitForSelector('canvas');
       await setDeterministicSeed(page, 1337);
-      await page.evaluate(() => {
-        const canvas = document.querySelector('canvas');
-        canvas &&
-          canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      });
+      await page.click('canvas');
       await page.waitForFunction(
-        () => window.gameState && window.player && window.audio
+        () => window.gameState && window.gameState.gameState === 'playing' && window.player,
+        {},
+        { timeout: 15000 }
       );
       const probe = await page.evaluate(async () => {
         try {
@@ -66,11 +64,7 @@ test.describe('Gameplay Probes', () => {
       await page.goto(INDEX_PAGE);
       await page.waitForSelector('canvas');
       await setDeterministicSeed(page, 1337);
-      await page.evaluate(() => {
-        const canvas = document.querySelector('canvas');
-        canvas &&
-          canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      });
+      await page.click('canvas');
       await page.waitForFunction(() => window.testRunner && window.player);
       const result = await page.evaluate(async () => {
         try {

@@ -17,10 +17,7 @@ test.describe('Performance Probe', () => {
       await page.goto(INDEX_PAGE);
       await page.waitForSelector('canvas');
       // Unlock audio / interactions
-      await page.evaluate(() => {
-        const canvas = document.querySelector('canvas');
-        canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      });
+      await page.click('canvas');
       // Ensure core systems exist
       await page.waitForFunction(() =>
         window.EffectsProfiler && window.spawnSystem && window.beatClock

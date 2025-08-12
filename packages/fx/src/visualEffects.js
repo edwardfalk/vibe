@@ -1,4 +1,4 @@
-import { sin, cos, random, min, max } from '@vibe/core';
+import { sin, cos, random, min, max, PI, TWO_PI } from '@vibe/core';
 import EffectsProfiler from './EffectsProfiler.js';
 import { getEnemyConfig, effectsConfig } from './effectsConfig.js';
 
@@ -98,7 +98,7 @@ class VisualEffectsManager {
         size: random(0.5, 2),
         alpha: random(20, 60),
         speed: random(0.05, 0.2),
-        angle: random(2 * Math.PI),
+        angle: random(TWO_PI),
         color: random(this.nebulaPalette),
       });
     }
@@ -111,11 +111,11 @@ class VisualEffectsManager {
         y: random(-p.height, p.height * 2),
         width: random(150, 300),
         height: random(80, 150),
-        angle: random(2 * Math.PI),
+        angle: random(TWO_PI),
         speed: random(0.002, 0.008),
         intensity: random(0.1, 0.3),
         color: random(this.auroraPalette),
-        phase: random(2 * Math.PI),
+        phase: random(TWO_PI),
       });
     }
   }
@@ -601,7 +601,7 @@ class VisualEffectsManager {
    */
   addDebrisShards(x, y, count = 12) {
     for (let i = 0; i < count; i++) {
-      const angle = random(0, Math.PI * 2);
+      const angle = random(0, TWO_PI);
       const speed = random(2, 6);
       this.particles.push({
         x,

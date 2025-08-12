@@ -9,6 +9,8 @@ import {
   min,
   max,
   ceil,
+  PI,
+  TWO_PI,
 } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
 import { speakAmbient } from './EnemySpeechUtils.js';
@@ -369,7 +371,7 @@ class Stabber extends BaseEnemy {
         }
 
         console.log(
-          `⚠️ Stabber entering warning phase, direction locked at ${((this.stabDirection * 180) / Math.PI).toFixed(1)}°`
+          `⚠️ Stabber entering warning phase, direction locked at ${((this.stabDirection * 180) / PI).toFixed(1)}°`
         );
       }
 
@@ -451,11 +453,10 @@ class Stabber extends BaseEnemy {
     // Angle check as before
     const playerAngle = atan2(playerY - this.y, playerX - this.x);
     // Modular angle difference to handle wrap-around
-    let playerDiff =
-      ((this.stabDirection - playerAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
-    if (playerDiff < -Math.PI) playerDiff += 2 * Math.PI;
+    let playerDiff = ((this.stabDirection - playerAngle + PI) % TWO_PI) - PI;
+    if (playerDiff < -PI) playerDiff += TWO_PI;
     const angleDifference = Math.abs(playerDiff);
-    const maxStabAngle = Math.PI / 6;
+    const maxStabAngle = PI / 6;
     const inStabDirection = angleDifference <= maxStabAngle;
     const result = {
       type: 'stabber-miss',
@@ -501,10 +502,8 @@ class Stabber extends BaseEnemy {
         if (enemyDistance <= stabReach) {
           const enemyAngle = atan2(enemy.y - this.y, enemy.x - this.x);
           // Modular angle difference to handle wrap-around
-          let enemyDiff =
-            ((this.stabDirection - enemyAngle + Math.PI) % (2 * Math.PI)) -
-            Math.PI;
-          if (enemyDiff < -Math.PI) enemyDiff += 2 * Math.PI;
+          let enemyDiff = ((this.stabDirection - enemyAngle + PI) % TWO_PI) - PI;
+          if (enemyDiff < -PI) enemyDiff += TWO_PI;
           const enemyAngleDifference = Math.abs(enemyDiff);
           const enemyInStabDirection = enemyAngleDifference <= maxStabAngle;
           if (enemyInStabDirection) {
@@ -710,8 +709,8 @@ class Stabber extends BaseEnemy {
     const stabPercent = this.stabWarningTime / this.maxStabWarningTime;
 
     // Dramatic charging animation with building energy
-    const pulse = sin(frameCount * 3.0) * 0.5 + 0.5;
-    const chargePulse = sin(frameCount * 1.5) * 0.3 + 0.7;
+    const pulse = sin(this.p.frameCount * 3.0) * 0.5 + 0.5;
+    const chargePulse = sin(this.p.frameCount * 1.5) * 0.3 + 0.7;
     const warningRadius = this.size * (0.6 + stabPercent * 0.4); // Reduced radius
 
     // Building energy circle - intensifying over time
@@ -724,10 +723,10 @@ class Stabber extends BaseEnemy {
     this.p.ellipse(this.x, this.y, warningRadius);
 
     // Charging sparks around the stabber
-    if (frameCount % 3 === 0) {
+    if (this.p.frameCount % 3 === 0) {
       for (let i = 0; i < 6; i++) {
         const sparkAngle =
-          (frameCount * 0.1 + (i * Math.PI) / 3) % (2 * Math.PI);
+          (this.p.frameCount * 0.1 + (i * PI) / 3) % TWO_PI;
         const sparkDist = this.size * (0.8 + stabPercent * 0.4);
         const sparkX = this.x + cos(sparkAngle) * sparkDist;
         const sparkY = this.y + sin(sparkAngle) * sparkDist;
@@ -753,7 +752,7 @@ class Stabber extends BaseEnemy {
     const recoveryPercent = this.stabRecoveryTime / this.maxStabRecoveryTime;
 
     // Exhausted/stuck indicator - fading red glow
-    const pulse = sin(frameCount * 1.0) * 0.3 + 0.7;
+    const pulse = sin(this.p.frameCount * 1.0) * 0.3 + 0.7;
     const recoveryRadius = this.size * (1.5 - recoveryPercent * 0.5); // Shrinking as recovery progresses
 
     // Exhausted red glow - fading over time
