@@ -11,9 +11,28 @@ import { chromium } from '@playwright/test';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5500/index.html?usageSeconds=6';
 const OUT_DIR = resolve('.debug');
 
+async function tryLaunch() {
+  const channels = ['chrome', 'msedge', undefined];
+  let lastErr;
+  for (const ch of channels) {
+    try {
+      const browser = await chromium.launch({
+        headless: true,
+        channel: ch,
+        args: ['--disable-gpu', '--no-sandbox'],
+        timeout: 60000,
+      });
+      return browser;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('Failed to launch any Chromium channel');
+}
+
 async function main() {
   if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
-  const browser = await chromium.launch({ headless: true });
+  const browser = await tryLaunch();
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
