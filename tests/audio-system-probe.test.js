@@ -1,15 +1,18 @@
 import { test, expect } from '@playwright/test';
-import { INDEX_PAGE, gotoIndex } from './playwright.setup.js';
+import { INDEX_PAGE, gotoIndex, waitForDrawStart } from './playwright.setup.js';
 
 test.describe('Audio System Probe', () => {
-  test('initialises after gesture and produces audible output', async ({
-    page,
-  }) => {
+  test('initialises after gesture and produces measurable signal', async ({ page }) => {
     await gotoIndex(page);
 
-    // Perform a user gesture reliably without depending on canvas visibility
-    const { width, height } = page.viewportSize() || { width: 800, height: 600 };
-    await page.mouse.click(Math.floor(width / 2), Math.floor(height / 2));
+    // Prefer locator click; fallback to mouse center
+    const canvas = page.locator('canvas');
+    try {
+      await canvas.click({ timeout: 2000 });
+    } catch {
+      const { width, height } = page.viewportSize() || { width: 800, height: 600 };
+      await page.mouse.click(Math.floor(width / 2), Math.floor(height / 2));
+    }
 
     // Try explicit Tone unlock early (if available)
     await page.evaluate(async () => {
@@ -20,7 +23,8 @@ test.describe('Audio System Probe', () => {
       } catch {}
     });
 
-    // Wait for audio facade to be present and callable. Tone context may not be global; fallback path is allowed.
+    // Wait for draw start and audio facade to be present
+    await waitForDrawStart(page, 4000);
     await page.waitForFunction(
       () => !!window.audio && typeof window.audio.playSound === 'function',
       {},
@@ -33,8 +37,10 @@ test.describe('Audio System Probe', () => {
       return mod.default || mod;
     });
 
-    // Allow fallback synth path: only require no failure and audio API presence
+    // Assert on real signal detection
     expect(result.failure).toBeNull();
     expect(result.audio.exists).toBeTruthy();
+    expect(result.signalDetected).toBeTruthy();
+    expect(typeof result.dbPeak).toBe('number');
   });
 });

@@ -2,7 +2,7 @@
 // Probe: Audio System and Beat Clock Health Monitoring
 
 export default (async function () {
-  const { random, min, max } = await import('@vibe/core/mathUtils.js');
+  const { min, max } = await import('@vibe/core/mathUtils.js');
   const { SOUND } = await import('@vibe/core');
 
   // Import ticketManager API if available
@@ -11,9 +11,7 @@ export default (async function () {
     ticketManager = await import(
       new URL('../githubIssueManager.js', import.meta.url).href
     );
-  } catch (e) {
-    // Not available in all contexts
-  }
+  } catch {}
 
   const result = {
     timestamp: Date.now(),
@@ -24,13 +22,17 @@ export default (async function () {
       players: 0,
       fallbackSynths: 0,
       busLevels: null,
-      masterLevel: null,
+      masterLevelDb: null,
       muted: null,
       masterGain: null,
     },
     tone: {
       transportState: null,
     },
+    // signal metrics
+    dbBaseline: null,
+    dbPeak: null,
+    signalDetected: false,
     warnings: [],
     failure: null,
   };
@@ -38,16 +40,11 @@ export default (async function () {
   // Ensure user gesture to unlock audio
   try {
     const canvas = document.querySelector('canvas') || document.body;
-    const rect = canvas.getBoundingClientRect();
-    const clamp = (v, lo, hi) => max(lo, min(hi, v));
-    const x = rect.left + clamp(rect.width / 2, 5, rect.width - 5);
-    const y = rect.top + clamp(rect.height / 2, 5, rect.height - 5);
-    // Prefer a real click; some browsers require gesture on element
+    // Prefer real element click if available
     await Promise.race([
       (async () => { await canvas?.click?.(); })(),
       (async () => { await new Promise(r => setTimeout(r, 50)); })(),
     ]);
-    // If Tone present, attempt explicit start
     if (window.Tone && window.Tone.context?.state !== 'running') {
       try { await window.Tone.start(); } catch {}
     }
@@ -61,41 +58,103 @@ export default (async function () {
     if (!result.audio.hasPlaySound) {
       result.failure = 'playSound method missing on audio';
     }
-    if (result.audio.fallbackSynths > 0) {
-      result.warnings.push(`Missing samples: ${result.audio.fallbackSynths}`);
+
+    // Unmute if needed
+    if (typeof window.audio.isMuted === 'function') {
+      result.audio.muted = window.audio.isMuted();
+      if (result.audio.muted) window.audio.toggle?.();
     }
 
-    // --- Master level test -------------------------------------------------
-    if (result.audio.hasPlaySound) {
-      try {
-        // Unmute if needed
-        if (typeof window.audio.isMuted === 'function' && window.audio.isMuted()) {
-          window.audio.toggle();
-        }
+    // Ensure mixer exists so meter is present
+    try {
+      if (result.audio.hasPlaySound) {
         await window.audio.playSound(SOUND.playerShoot, { volume: 1 });
-        await window.audio.playSound(SOUND.explosion, { volume: 1 });
-      } catch {}
-      await new Promise((r) => setTimeout(r, 800));
-      // Snapshot mixer state
-      if (window.audio._gains?.master) {
-        result.audio.masterGain = window.audio._gains.master.gain?.value ?? null;
       }
-      if (typeof window.audio.getMasterLevel === 'function') {
-        const lvl = window.audio.getMasterLevel();
-        result.audio.masterLevel = lvl;
-        if (lvl < 0.02 && !result.failure) {
-          result.warnings.push('masterLevel very low after SFX');
+    } catch {}
+
+    // Read baseline dB
+    if (typeof window.audio.getMasterLevel === 'function') {
+      result.dbBaseline = window.audio.getMasterLevel();
+    }
+
+    // Trigger multiple SFX to create measurable energy on master
+    try {
+      await window.audio.playSound(SOUND.explosion, { volume: 1 });
+      await new Promise((r) => setTimeout(r, 150));
+      await window.audio.playSound(SOUND.playerShoot, { volume: 1 });
+    } catch {}
+
+    // Poll meter for a short window and capture peak dB
+    const t0 = performance?.now?.() ?? Date.now();
+    let peak = -Infinity;
+    while ((performance?.now?.() ?? Date.now()) - t0 < 1500) {
+      const db = typeof window.audio.getMasterLevel === 'function'
+        ? window.audio.getMasterLevel()
+        : -Infinity;
+      if (typeof db === 'number' && isFinite(db)) {
+        peak = max(peak, db);
+      }
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    result.dbPeak = peak;
+
+    // Snapshot mixer state
+    if (window.audio._gains?.master) {
+      result.audio.masterGain = window.audio._gains.master.gain?.value ?? null;
+    }
+    if (typeof window.audio.getBusLevels === 'function') {
+      result.audio.busLevels = window.audio.getBusLevels();
+    }
+    if (typeof window.audio.getMasterLevel === 'function') {
+      result.audio.masterLevelDb = window.audio.getMasterLevel();
+    }
+
+    // Heuristics for real signal detection
+    // dbPeak closer to 0 indicates audible energy; -40 dB threshold in headless.
+    const dbThreshold = -40;
+    const sfxLin = result.audio.busLevels?.sfx;
+    const hasSfxBus = typeof sfxLin === 'number' && sfxLin > 0.01; // linear gain
+
+    result.signalDetected = isFinite(result.dbPeak) && result.dbPeak > dbThreshold;
+
+    // If no signal from SFX, verify meter itself by injecting a short test tone
+    let meterFunctional = null;
+    if (!result.signalDetected && window.audio?._gains?.master) {
+      try {
+        const Tone = await import('tone');
+        const osc = new Tone.Oscillator(440, 'sine');
+        const gain = new Tone.Gain(0.5).connect(window.audio._gains.master);
+        osc.connect(gain);
+        await osc.start();
+        const t0b = performance?.now?.() ?? Date.now();
+        let peakB = -Infinity;
+        while ((performance?.now?.() ?? Date.now()) - t0b < 600) {
+          const db = typeof window.audio.getMasterLevel === 'function'
+            ? window.audio.getMasterLevel()
+            : -Infinity;
+          if (typeof db === 'number' && isFinite(db)) peakB = max(peakB, db);
+          await new Promise((r) => setTimeout(r, 25));
         }
+        await osc.stop();
+        osc.dispose?.();
+        gain.dispose?.();
+        meterFunctional = isFinite(peakB) && peakB > dbThreshold;
+      } catch {
+        meterFunctional = false;
       }
-      if (typeof window.audio.getBusLevels === 'function') {
-        result.audio.busLevels = window.audio.getBusLevels();
-        const sfxLin = result.audio.busLevels?.sfx;
-        if (typeof sfxLin === 'number' && sfxLin < 0.2) {
-          result.warnings.push('sfx bus gain appears low (<0.2)');
-        }
-      }
-      if (typeof window.audio.isMuted === 'function') {
-        result.audio.muted = window.audio.isMuted();
+    }
+
+    result.meterFunctional = meterFunctional;
+
+    if (!result.signalDetected) {
+      if (!hasSfxBus) result.warnings.push('sfx bus gain is near zero');
+      if (result.audio.masterGain === 0) result.warnings.push('master gain is 0');
+      if (meterFunctional === true) {
+        result.failure = 'Audio path produced no signal on master meter after test SFX';
+      } else if (meterFunctional === false) {
+        result.failure = 'Master meter not responding to injected test tone';
+      } else {
+        result.failure = 'No audio signal detected (meter verification inconclusive)';
       }
     }
   }
@@ -105,10 +164,11 @@ export default (async function () {
     result.audio.contextState = window.Tone.context.state;
     result.tone.transportState = window.Tone.Transport.state;
     if (window.Tone.context.state !== 'running') {
-      if (result.audio.exists && result.audio.hasPlaySound) {
-        result.warnings.push('Tone context not running (using fallback)');
+      // Only warn if fallback path succeeded and we detected signal; otherwise fail
+      if (!result.signalDetected) {
+        result.failure = result.failure || 'Tone context not running';
       } else {
-        result.failure = 'Tone context not running';
+        result.warnings.push('Tone context not running (fallback path)');
       }
     }
   }

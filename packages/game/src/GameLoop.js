@@ -271,6 +271,17 @@ const state = {
 };
 
 function setup(p) {
+  // Test-mode flag parsing from URL
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const tm = params.get('testMode');
+    const scenario = params.get('testScenario');
+    if (tm === '1' || tm === 'true') {
+      window.__BOOT_TEST_MODE__ = true;
+      window.__BOOT_TEST_SCENARIO__ = scenario || null;
+    }
+  } catch {}
+
   console.log('🟢 [DEBUG] GameLoop.js: Entered setup(p)');
   console.log('🟢 [DEBUG] GameLoop.js: p.createCanvas called');
   p.createCanvas(800, 600);
@@ -363,6 +374,12 @@ function setup(p) {
   if (!window.testMode) {
     window.testMode = new TestMode(window.player);
     console.log('🧪 Test mode manager initialized');
+    if (window.__BOOT_TEST_MODE__) {
+      window.testMode.setEnabled(true);
+      if (window.__BOOT_TEST_SCENARIO__) {
+        window.testMode.applyScenario(window.__BOOT_TEST_SCENARIO__);
+      }
+    }
   }
 
   // Ensure at least one enemy exists for automated probes

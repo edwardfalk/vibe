@@ -5,6 +5,7 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
 
 import { Bullet } from '@vibe/entities/bullet.js';
+import { SOUND } from '@vibe/core/audio/SoundIds.js';
 import {
   sin,
   cos,
@@ -27,6 +28,9 @@ export class TestMode {
     this.player = player;
     this.enabled = false;
     this.timer = 0;
+
+    // Scenario name for deterministic test harness
+    this.scenario = null; // e.g., 'audio-basic', 'enemies-basic'
 
     // Movement patterns
     this.moveSpeed = 0.008; // Slower for better observation
@@ -54,6 +58,9 @@ export class TestMode {
       console.log(
         '🤖 Starting automated testing - watch the parallax and shooting!'
       );
+    }
+    if (enabled && this.scenario) {
+      this.applyScenario(this.scenario);
     }
   }
 
@@ -277,6 +284,59 @@ export class TestMode {
         `🤖 Test running... Timer: ${this.timer}, Enemies: ${enemyCount}, Bullets: ${bulletCount}`
       );
     }
+  }
+
+  // Scenario application (deterministic harness)
+  async applyScenario(name) {
+    this.scenario = name;
+    console.log(`🧪 Applying test scenario: ${name}`);
+    if (name === 'audio-basic') {
+      this.enableDeterminism();
+      // Expose a stable audio runner for probes
+      if (!window.testAudio) window.testAudio = {};
+      window.testAudio.run = async () => {
+        try {
+          if (window.audio?.isMuted?.()) window.audio.toggle();
+          await window.audio?.playSound?.(SOUND.playerShoot, { volume: 1 });
+          await new Promise((r) => setTimeout(r, 200));
+          await window.audio?.playSound?.(SOUND.explosion, { volume: 1 });
+          const t0 = performance.now();
+          let peak = -Infinity;
+          while (performance.now() - t0 < 1200) {
+            const db = window.audio?.getMasterLevel?.() ?? -Infinity;
+            if (typeof db === 'number' && isFinite(db)) peak = Math.max(peak, db);
+            await new Promise((r) => setTimeout(r, 25));
+          }
+          return {
+            dbPeak: peak,
+            meterFunctional: isFinite(peak),
+            busLevels: window.audio?.getBusLevels?.() ?? null,
+            masterGain: window.audio?._gains?.master?.gain?.value ?? null,
+            ctxState: window.Tone?.context?.state ?? null,
+          };
+        } catch (e) {
+          return { error: String(e) };
+        }
+      };
+    }
+    if (name === 'enemies-basic') {
+      this.enableDeterminism();
+      // Fixed enemy set near the player
+      const px = this.player?.x ?? 400, py = this.player?.y ?? 300;
+      this.forceSpawnEnemy('grunt', px + 150, py);
+      this.forceSpawnEnemy('rusher', px - 150, py);
+      this.forceSpawnEnemy('tank', px, py + 180);
+      this.forceSpawnEnemy('stabber', px, py - 180);
+    }
+  }
+
+  enableDeterminism() {
+    try {
+      // Standard seed for reproducibility
+      import('/packages/core/src/index.js').then(({ setRandomSeed }) => setRandomSeed(1337));
+    } catch {}
+    // Disable periodic random spawns in test scenario
+    this.enemySpawnInterval = 1e9;
   }
 
   // Set movement pattern

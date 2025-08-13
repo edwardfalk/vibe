@@ -5,6 +5,15 @@
       "label": "Start Development Server",
       "type": "shell",
       "command": "bun run dev",
+      "options": {
+        "shell": {
+          "executable": "cmd.exe",
+          "args": [
+            "/d",
+            "/c"
+          ]
+        }
+      },
       "group": {
         "kind": "build",
         "isDefault": true
