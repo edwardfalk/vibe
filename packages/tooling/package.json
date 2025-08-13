@@ -9,6 +9,9 @@
     "./*": "./src/*"
   },
   "dependencies": {
-    "@vibe/core": "workspace:*"
+    "@vibe/core": "workspace:*",
+    "@octokit/rest": "^22.0.0",
+    "minimist": "^1.2.8",
+    "neo4j-driver": "^5.26.0"
   }
 }

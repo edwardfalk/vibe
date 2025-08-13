@@ -1,0 +1,28 @@
+name: KG CI (Knowledge Graph Reports)
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  kg:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Install dependencies
+        shell: cmd
+        run: bun install
+
+      - name: KG report (with GitHub overlay)
+        shell: cmd
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: bun run kg:ci:github
+
+

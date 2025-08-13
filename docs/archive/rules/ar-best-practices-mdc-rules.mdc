@@ -1,0 +1,148 @@
+---
+description: Best Practices for Writing .mdc Cursor Rules
+globs: 
+alwaysApply: false
+---
+# Best Practices for Writing .mdc Cursor Rules
+
+## Purpose
+This rule provides actionable best practices for authoring effective, maintainable, and AI-friendly `.mdc` rules in Cursor projects.
+
+## Rule Structure
+- **Store rules in `.cursor/rules/`** at the project root and use the `.mdc` extension.
+- **Use kebab-case** for filenames (e.g., `typescript-best-practices.mdc`).
+- **Start with YAML frontmatter**:
+  - `description`: Concise summary of the rule's purpose.
+  - `globs`: File patterns this rule applies to (comma-separated, standard glob syntax).
+  - `alwaysApply`: `true` or `false`.
+- **Main content**:
+  - Use Markdown for general rules.
+  - For advanced/AI-enforced rules, use a pseudo-XML structure (`<rule>`, `<meta>`, `<requirements>`, etc.) for clarity and machine-readability.
+  - Reference files using `[filename.ext](mdc:filename.ext)` (relative to workspace root).
+
+## Content Guidelines
+- **Be explicit and actionable**: State what must/must not happen, with clear requirements and priorities.
+- **Use examples**: Show both correct and incorrect usage.
+- **Use `<requirement>` for guidance** and `<non-negotiable>` for strict rules.
+- **Wrap multiline examples in `<![CDATA[ ... ]]>`** if using XML-like structure.
+- **Reference `.cursor/rules/rules.mdc`** as a dependency for schema alignment.
+- **Keep rules concise**: Under 25–50 lines for body text is ideal. Split large rules into focused, composable files.
+- **Document changes and cross-reference related rules.**
+- **Use versioning or timestamps** in meta sections for traceability.
+
+## AI/LLM Prompt Engineering
+- Write rules as if they are prompts for the AI—be direct, actionable, and unambiguous.
+- Use frontmatter and structure to maximize rule relevance and context loading.
+- For meta-rules (rules about rules), include a "rule-generating-agent" or similar meta-rule to enforce consistency.
+
+## Maintenance & Organization
+- Test rule effectiveness by starting a new chat/session and confirming the rule is loaded and followed.
+- Update rules as project standards evolve.
+- Reference the canonical schema in `.cursor/rules/rules.mdc` for all new rules.
+- Follow community conventions for structure, naming, and referencing.
+
+## alwaysApply vs globs: Precedence and Behavior
+
+### How They Work
+- **alwaysApply: true**
+  - The rule is injected into the AI's context for every request and every chat, regardless of file, glob, or user action.
+  - If both alwaysApply: true and globs are set, the rule is still applied globally—**the glob is ignored**.
+- **alwaysApply: false + globs set**
+  - The rule is auto-attached only when a file matching the glob is referenced in the chat or command.
+  - The rule is NOT loaded for every request—only when the glob matches a file that is actively being discussed or edited.
+- **alwaysApply: false + no globs + description**
+  - The rule is available for the agent to select based on the description and context. The AI decides if the rule is relevant to the current query and may fetch it if so.
+- **Manual rules (no alwaysApply, no globs, no description)**
+  - Only loaded if explicitly referenced (e.g., with @ruleName in chat).
+
+### Precedence Table
+| alwaysApply | globs      | When is rule loaded?                                 |
+|-------------|------------|-----------------------------------------------------|
+| true        | any/none   | Always, for every request (glob is ignored)         |
+| false       | set        | Only when a file matching the glob is referenced    |
+| false       | not set    | Only if agent deems it relevant or is referenced    |
+
+### Best Practice
+- Use `alwaysApply: true` for global, project-wide rules.
+- Use `globs` for file- or directory-specific rules, with `alwaysApply: false`.
+- Do not combine `alwaysApply: true` with a glob—glob will be ignored.
+
+#### References
+- [Cursor Forum: Q: rules - what is implication of alwaysApply?](mdc:https:/forum.cursor.com/t/q-rules-what-is-implication-of-alwaysapply/57826)
+- [A Deep Dive into Cursor Rules](mdc:https:/forum.cursor.com/t/a-deep-dive-into-cursor-rules-0-45/60721)
+- [Cursor Docs: Rules](mdc:https:/docs.cursor.com/context/rules)
+
+## Example Rule (Refined)
+```
+---
+description: Enforces camelCase naming
+globs: "*.ts"
+alwaysApply: false
+---
+
+<rule>
+  <meta>
+    <title>CamelCase Naming</title>
+    <description>All variables must use camelCase</description>
+    <created-at utc-timestamp="1744157700">2025-04-09T10:15:00Z</created-at>
+    <last-updated-at utc-timestamp="1744240920">2025-04-10T09:22:00Z</last-updated-at>
+    <applies-to>
+      <file-matcher glob="*.ts">TypeScript files</file-matcher>
+    </applies-to>
+  </meta>
+  <requirements>
+    <non-negotiable priority="critical">
+      <description>Variables must use camelCase</description>
+      <examples>
+        <example title="Variable Naming">
+          <correct-example title="camelCase" conditions="naming a variable" expected-result="Valid name" correctness-criteria="camelCase format"><![CDATA[
+const userName = 'John';
+          ]]></correct-example>
+          <incorrect-example title="snake_case" conditions="naming a variable" expected-result="Valid name" incorrectness-criteria="snake_case"><![CDATA[
+const user_name = 'John';
+          ]]></incorrect-example>
+        </example>
+      </examples>
+    </non-negotiable>
+  </requirements>
+  <references>
+    <reference as="dependency" href=".cursor/rules/rules.mdc" reason="Follows standard rule format">rules.mdc</reference>
+  </references>
+</rule>
+```
+
+## References
+- [Cursor Rules Framework (SoloSalon)](mdc:https:/solosalon.clinamenic.com/cursor-rules-framework)
+- [A Rule That Writes the Rules: Exploring rules.mdc (Denis, Medium)](mdc:https:/medium.com/@devlato/a-rule-that-writes-the-rules-exploring-rules-mdc-288dc6cf4092)
+- [How to Force your Cursor AI Agent to Always Follow your Rules (Cursor Forum)](mdc:https:/forum.cursor.com/t/how-to-force-your-cursor-ai-agent-to-always-follow-your-rules-using-auto-rule-generation-techniques/80199)
+- [Playbooks: Create Rules](mdc:https:/playbooks.com/rules/create-rules)
+- [Gist: MDC file to help generate MDC files](mdc:https:/gist.github.com/patelnav/125ad1ac0c1b53243fefaf3ed53c1195)
+- [Cursor Project Rules Guide (Jehlani Luciano)](mdc:https:/www.jehlaniluciano.com/blog/using-project-rules-in-cursor)
+
+## AI-Assisted Rule Generation Workflow
+
+- **Preferred workflow:**
+  When using the AI assistant to generate new rules, have the AI output the `description:`, `globs:`, and `alwaysApply:` fields at the top of the file (even if the `---` YAML delimiters are missing).
+- **Manual step:**
+  After the AI generates the rule, manually add `---` above and below the metadata to create valid YAML frontmatter.
+- **Rationale:**
+  This ensures you never lose the key metadata, and makes it much faster to finalize rules for Cursor's GUI and rule loader.
+
+**Example:**
+```md
+description: This rule auto-attaches for .js files.
+globs: "*.js"
+alwaysApply: false
+
+Auto-attach test rule for .js files.
+```
+*After AI generation, add:*
+```md
+---
+description: This rule auto-attaches for .js files.
+globs: "*.js"
+alwaysApply: false
+---
+Auto-attach test rule for .js files.
+```
+

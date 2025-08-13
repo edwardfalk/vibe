@@ -18,10 +18,18 @@ const resultsDir = path.resolve('test-results');
 export const INDEX_PAGE = '/index.html';
 
 export async function gotoIndex(page) {
+  // Use 'commit' to avoid races; subsequent waits handle readiness
   return page.goto(INDEX_PAGE, {
-    waitUntil: 'domcontentloaded',
+    waitUntil: 'commit',
     timeout: 30000,
   });
+}
+
+// Navigate to index with query parameters (e.g., testMode/scenario)
+export async function gotoIndexWithParams(page, query = '') {
+  const q = typeof query === 'string' ? query : new URLSearchParams(query).toString();
+  const url = q ? `${INDEX_PAGE}?${q}` : INDEX_PAGE;
+  return page.goto(url, { waitUntil: 'commit', timeout: 30000 });
 }
 
 async function ensureResultsDir() {
@@ -79,8 +87,12 @@ export { setupConsoleLogInterception, writeConsoleLogs };
 export async function waitForDrawStart(page, timeout = 4000) {
   await page.waitForFunction(
     () => {
-      const p5fc =
-        window.p5 && window.p5.instance && window.p5.instance.frameCount;
+      const canvas = document.querySelector('canvas');
+      if (canvas) {
+        canvas.removeAttribute('data-hidden');
+        canvas.style.visibility = 'visible';
+      }
+      const p5fc = window.p5 && window.p5.instance && window.p5.instance.frameCount;
       const pInst = window.player && window.player.p;
       const fc = typeof p5fc === 'number' ? p5fc : pInst?.frameCount;
       return typeof fc === 'number' && fc > 0;

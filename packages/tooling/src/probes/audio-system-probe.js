@@ -42,11 +42,17 @@ export default (async function () {
     const canvas = document.querySelector('canvas') || document.body;
     // Prefer real element click if available
     await Promise.race([
-      (async () => { await canvas?.click?.(); })(),
-      (async () => { await new Promise(r => setTimeout(r, 50)); })(),
+      (async () => {
+        await canvas?.click?.();
+      })(),
+      (async () => {
+        await new Promise((r) => setTimeout(r, 50));
+      })(),
     ]);
     if (window.Tone && window.Tone.context?.state !== 'running') {
-      try { await window.Tone.start(); } catch {}
+      try {
+        await window.Tone.start();
+      } catch {}
     }
   } catch {}
 
@@ -88,9 +94,10 @@ export default (async function () {
     const t0 = performance?.now?.() ?? Date.now();
     let peak = -Infinity;
     while ((performance?.now?.() ?? Date.now()) - t0 < 1500) {
-      const db = typeof window.audio.getMasterLevel === 'function'
-        ? window.audio.getMasterLevel()
-        : -Infinity;
+      const db =
+        typeof window.audio.getMasterLevel === 'function'
+          ? window.audio.getMasterLevel()
+          : -Infinity;
       if (typeof db === 'number' && isFinite(db)) {
         peak = max(peak, db);
       }
@@ -115,7 +122,8 @@ export default (async function () {
     const sfxLin = result.audio.busLevels?.sfx;
     const hasSfxBus = typeof sfxLin === 'number' && sfxLin > 0.01; // linear gain
 
-    result.signalDetected = isFinite(result.dbPeak) && result.dbPeak > dbThreshold;
+    result.signalDetected =
+      isFinite(result.dbPeak) && result.dbPeak > dbThreshold;
 
     // If no signal from SFX, verify meter itself by injecting a short test tone
     let meterFunctional = null;
@@ -129,9 +137,10 @@ export default (async function () {
         const t0b = performance?.now?.() ?? Date.now();
         let peakB = -Infinity;
         while ((performance?.now?.() ?? Date.now()) - t0b < 600) {
-          const db = typeof window.audio.getMasterLevel === 'function'
-            ? window.audio.getMasterLevel()
-            : -Infinity;
+          const db =
+            typeof window.audio.getMasterLevel === 'function'
+              ? window.audio.getMasterLevel()
+              : -Infinity;
           if (typeof db === 'number' && isFinite(db)) peakB = max(peakB, db);
           await new Promise((r) => setTimeout(r, 25));
         }
@@ -148,13 +157,16 @@ export default (async function () {
 
     if (!result.signalDetected) {
       if (!hasSfxBus) result.warnings.push('sfx bus gain is near zero');
-      if (result.audio.masterGain === 0) result.warnings.push('master gain is 0');
+      if (result.audio.masterGain === 0)
+        result.warnings.push('master gain is 0');
       if (meterFunctional === true) {
-        result.failure = 'Audio path produced no signal on master meter after test SFX';
+        result.failure =
+          'Audio path produced no signal on master meter after test SFX';
       } else if (meterFunctional === false) {
         result.failure = 'Master meter not responding to injected test tone';
       } else {
-        result.failure = 'No audio signal detected (meter verification inconclusive)';
+        result.failure =
+          'No audio signal detected (meter verification inconclusive)';
       }
     }
   }

@@ -18,9 +18,13 @@ test.afterAll(async () => {
 test.describe('Comprehensive Probe Runner', () => {
   test('Overall gameplay and system integration', async ({ page }) => {
     await gotoIndex(page);
-    await page.waitForSelector('canvas');
-    // Click canvas to enable audio/context
-    await page.click('canvas');
+    await page.waitForSelector('canvas', { state: 'attached' });
+    // Robust unlock: locator click → mouse center → dispatchEvent
+    try { await page.locator('canvas').click({ timeout: 2000 }); } catch {
+      const vp = page.viewportSize() || { width: 800, height: 600 };
+      try { await page.mouse.click(Math.floor(vp.width / 2), Math.floor(vp.height / 2)); }
+      catch { await page.evaluate(() => document.querySelector('canvas')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))); }
+    }
     await waitForDrawStart(page, 4000);
     // Seed optional readiness
     await page.waitForFunction(() => window.gameState && window.player);

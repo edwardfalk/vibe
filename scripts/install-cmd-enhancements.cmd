@@ -95,7 +95,16 @@ if %errorlevel% neq 0 (
 )
 
 echo Clink AutoRun configured for current user.
-echo Open a NEW terminal (Cursor/Windows Terminal) to activate.
+
+REM Set default console code page to UTF-8 (65001) for new sessions
+echo Setting default console code page to UTF-8 (65001) for new terminals...
+reg add "HKCU\Console" /v CodePage /t REG_DWORD /d 65001 /f >NUL 2>&1
+if %errorlevel% neq 0 (
+  echo Failed to set HKCU\Console\CodePage. You can run:
+  echo   reg add "HKCU\Console" /v CodePage /t REG_DWORD /d 65001 /f
+)
+
+echo Open a NEW terminal (Cursor/Windows Terminal) to activate UTF-8.
 echo Done.
 exit /b 0
 

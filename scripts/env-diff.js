@@ -37,7 +37,10 @@ const extraInEnv = [...envKeys].filter((k) => !exampleKeys.has(k));
 
 console.log('🔧 .env keys check');
 console.log(' - example file:', examplePath);
-console.log(' - env file     :', fs.existsSync(envPath) ? envPath : '(missing)');
+console.log(
+  ' - env file     :',
+  fs.existsSync(envPath) ? envPath : '(missing)'
+);
 console.log('');
 
 if (missingInEnv.length === 0) {

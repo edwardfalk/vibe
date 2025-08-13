@@ -2,9 +2,9 @@
 // comprehensive-probe-runner.js
 // Comprehensive Probe System Runner and Reporter
 
-(async function () {
-  const { random } = await import('@vibe/core/mathUtils.js');
+import { random } from '@vibe/core';
 
+(async function () {
   // Import ticketManager API if available
   let ticketManager = null;
   try {
@@ -18,6 +18,27 @@
   const probeRunner = {
     async runAllProbes() {
       console.log('🔍 Starting comprehensive probe system...');
+
+      // Early console hook: capture errors/warnings from the entire probe run (including boot)
+      try {
+        if (!window.__probeLogs) {
+          window.__probeLogs = { errors: [] };
+          const _origErr = console.error;
+          const _origWarn = console.warn;
+          console.error = function (...args) {
+            try {
+              window.__probeLogs.errors.push(args.join(' '));
+            } catch {}
+            return _origErr.apply(this, args);
+          };
+          console.warn = function (...args) {
+            try {
+              window.__probeLogs.errors.push(args.join(' '));
+            } catch {}
+            return _origWarn.apply(this, args);
+          };
+        }
+      } catch {}
 
       // Guard: ensure p5 draw loop started to avoid early-frame races
       await (async function waitForDrawStart(timeoutMs = 3500) {
@@ -75,6 +96,12 @@
           name: 'audio',
           module: './audio-system-probe.js',
           description: 'Audio system and beat clock',
+        },
+        {
+          name: 'vfx',
+          module: './vfx-liveness-probe.js',
+          description:
+            'Visual FX liveness (canvas change) and console/audio sanity',
         },
       ];
 

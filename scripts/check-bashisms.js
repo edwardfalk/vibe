@@ -4,43 +4,81 @@ import { join, extname, posix } from 'path';
 
 const ROOT = process.cwd();
 const EXCLUDES = new Set([
-  '.git', 'node_modules', 'playwright-report', 'test-results', 'coderabbit-reviews',
-  '.debug', '.vite', '.next', '.dist'
+  '.git',
+  'node_modules',
+  'playwright-report',
+  'test-results',
+  'coderabbit-reviews',
+  '.debug',
+  '.vite',
+  '.next',
+  '.dist',
 ]);
 const SKIP_FILES = [/\.eslintcache$/i, /(^|\/)\.env$/i];
 const TEXT_EXT = new Set([
-  '.md', '.mdx', '.yml', '.yaml', '.json', '.js', '.mjs', '.cjs', '.cmd', '.bat', '.ps1', '.ts'
+  '.md',
+  '.mdx',
+  '.yml',
+  '.yaml',
+  '.json',
+  '.js',
+  '.mjs',
+  '.cjs',
+  '.cmd',
+  '.bat',
+  '.ps1',
+  '.ts',
 ]);
 
 // Hard errors everywhere (never allowed in repo content)
 const HARD_PATTERNS = [
-  { re: /\|\s*cat\b/, msg: "bash pipe to 'cat' is disallowed (cmd.exe default)" },
-  { re: /\bgrep\b/, msg: 'use findstr (Windows) or our scan scripts instead of grep' },
+  {
+    re: /\|\s*cat\b/,
+    msg: "bash pipe to 'cat' is disallowed (cmd.exe default)",
+  },
+  {
+    re: /\bgrep\b/,
+    msg: 'use findstr (Windows) or our scan scripts instead of grep',
+  },
   { re: /\brm\s+-rf\b/, msg: 'use rmdir /s /q (Windows) or our scripts' },
   { re: /(^|\s)ls(\s|$)/, msg: 'use dir (Windows) or explicit listing' },
   { re: /\btouch\b/, msg: 'use type nul > file or PowerShell New-Item' },
   { re: /(^|[\s"'])\/c\//, msg: 'WSL paths are disallowed; use Windows paths' },
   // Disallow bash/posix code fences in docs (use bat/cmd/powershell)
-  { re: /```(?:bash|sh|zsh)\b/, msg: 'Use ```bat, ```cmd or ```powershell code fences in docs' },
+  {
+    re: /```(?:bash|sh|zsh)\b/,
+    msg: 'Use ```bat, ```cmd or ```powershell code fences in docs',
+  },
 ];
 
 // Node toolchain (prefer Bun)
 const NODE_PATTERNS = [
   { re: /(^|\s)npm\s+/, msg: 'npm usage disallowed; use bun/bunx instead' },
   { re: /(^|\s)npx\s+/, msg: 'npx usage disallowed; use bunx instead' },
-  { re: /(^|\s)node\s+[^\s]/, msg: 'direct node CLI disallowed; use bun to run JS' }
+  {
+    re: /(^|\s)node\s+[^\s]/,
+    msg: 'direct node CLI disallowed; use bun to run JS',
+  },
 ];
 
 // Cmd-only hazards – check only in command contexts (not source code/prose)
 const CMD_ONLY_PATTERNS = [
-  { re: /(^|\s)start\s+\S+/i, msg: 'Do not use cmd `start` (spawns new console window)' },
-  { re: /(\S)\s*;\s*(\S)/, msg: 'Semicolon command chaining is disallowed in cmd.exe' },
+  {
+    re: /(^|\s)start\s+\S+/i,
+    msg: 'Do not use cmd `start` (spawns new console window)',
+  },
+  {
+    re: /(\S)\s*;\s*(\S)/,
+    msg: 'Semicolon command chaining is disallowed in cmd.exe',
+  },
 ];
 
 const ERROR_PATH_HINTS = [
   /^\.github\/workflows\//,
   /^scripts\//,
-  /\.cmd$/i, /\.bat$/i, /\.ps1$/i,
+  /\.cmd$/i,
+  /\.bat$/i,
+  /\.ps1$/i,
   /package\.json$/i,
 ];
 
@@ -115,7 +153,10 @@ function extractYamlRuns(text) {
   for (const ln of lines) {
     const trimmed = ln.trimEnd();
     if (/^\s*-\s*name:\s*/.test(trimmed)) {
-      if (buf.length) { runs.push(buf.join('\n')); buf = []; }
+      if (buf.length) {
+        runs.push(buf.join('\n'));
+        buf = [];
+      }
       collecting = false;
       continue;
     }
@@ -131,8 +172,8 @@ function extractYamlRuns(text) {
   return runs;
 }
 
-let errors = [];
-let warnings = [];
+const errors = [];
+const warnings = [];
 
 for (const file of walk(ROOT)) {
   const text = readFileSync(file.abs, 'utf8');
@@ -153,7 +194,11 @@ for (const file of walk(ROOT)) {
 
   // Node toolchain checks
   if (isMd) {
-    const hits = scanMarkdownFences(text, new Set(['bash','sh','zsh','bat','cmd','powershell','ps1']), NODE_PATTERNS);
+    const hits = scanMarkdownFences(
+      text,
+      new Set(['bash', 'sh', 'zsh', 'bat', 'cmd', 'powershell', 'ps1']),
+      NODE_PATTERNS
+    );
     for (const h of hits) errors.push({ file: `${rel}:${h.line}`, msg: h.msg });
   } else if (execContext || isCmdScript) {
     for (const { re, msg } of NODE_PATTERNS) {
@@ -167,7 +212,11 @@ for (const file of walk(ROOT)) {
 
   // Cmd-only hazards
   if (isMd) {
-    const hits = scanMarkdownFences(text, new Set(['bat','cmd','powershell','ps1']), CMD_ONLY_PATTERNS);
+    const hits = scanMarkdownFences(
+      text,
+      new Set(['bat', 'cmd', 'powershell', 'ps1']),
+      CMD_ONLY_PATTERNS
+    );
     for (const h of hits) errors.push({ file: `${rel}:${h.line}`, msg: h.msg });
   }
   if (isYaml) {
@@ -189,7 +238,8 @@ for (const file of walk(ROOT)) {
       const scripts = pkg.scripts || {};
       for (const [name, cmd] of Object.entries(scripts)) {
         for (const { re, msg } of CMD_ONLY_PATTERNS) {
-          if (re.test(String(cmd))) errors.push({ file: `${rel}#scripts.${name}`, msg });
+          if (re.test(String(cmd)))
+            errors.push({ file: `${rel}#scripts.${name}`, msg });
         }
       }
     } catch {}

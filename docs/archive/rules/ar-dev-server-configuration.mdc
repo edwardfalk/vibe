@@ -1,0 +1,100 @@
+---
+title: AR Dev Server Configuration
+---
+
+# Dev Server Configuration & Troubleshooting
+
+## Current Configuration
+
+**Server Type**: Five-Server (via `bunx five-server`)  
+**Entry Script**: [scripts/dev-server.js](mdc:scripts/dev-server.js)  
+**Port**: 5500 (configured in [packages/core/src/config.js](mdc:packages/core/src/config.js))  
+**Document Root**: Project root (`.`)  
+**Entry Page**: `/public/index.html` (served from [public/index.html](mdc:public/index.html))
+
+## Quick Start Commands
+
+```bat
+# Start dev environment
+bun run dev:start
+
+# Check server status
+bun run dev:status
+
+# Stop servers
+bun run dev:stop
+
+# Restart servers
+bun run dev:restart
+```
+```
+
+## Critical Configuration Requirements
+
+### 1. Import Map Configuration
+The [public/index.html](mdc:public/index.html) contains an import map that **must** use absolute paths from project root:
+
+```html
+"@vibe/core": "/packages/core/src/index.js",
+"@vibe/systems": "/packages/systems/src/index.js",
+"@vibe/entities": "/packages/entities/src/index.js",
+"@vibe/fx": "/packages/fx/src/index.js",
+"@vibe/tooling": "/packages/tooling/src/index.js",
+"@vibe/game": "/packages/game/src/index.js"
+```
+
+### 2. Audio Manifest Path
+The [ToneAudioFacade.js](mdc:packages/core/src/audio/ToneAudioFacade.js) fetches audio samples from:
+```javascript
+const manifestResponse = await fetch('/audio/manifest.json');
+```
+
+### 3. Test Configuration
+Playwright tests use the path defined in [tests/playwright.setup.js](mdc:tests/playwright.setup.js):
+```javascript
+export const INDEX_PAGE = '/public/index.html';
+```
+
+## Common Issues & Solutions
+
+### Issue: 403 Forbidden "Can't access files outside of root"
+**Symptoms**: Server returns 403 for any file access  
+**Cause**: Five-Server security restrictions  
+**Solution**: 
+1. Ensure correct server restart: `bun run dev:stop && bun run dev:start`
+2. Copy game HTML to project root if needed
+3. Use absolute paths in import maps
+
+### Issue: Game Won't Load - Module Import Errors
+**Symptoms**: Browser console shows module import failures  
+**Root Causes & Fixes**:
+- **Missing exports**: Check that all imported modules are properly exported from barrel files
+- **Wrong import map paths**: Verify paths match the server document root configuration
+- **Missing dependencies**: Ensure external libraries (e.g., Tone.js) are mapped in import map
+
+### Issue: Audio System Failures
+**Symptoms**: No audio, manifest loading errors  
+**Solution**: Verify audio manifest path matches server configuration and files exist in [public/audio/](mdc:public/audio/)
+
+## Architecture Notes
+
+- **Five-Server**: Provides hot-reload and CORS support, but has security restrictions
+- **Process Management**: [scripts/dev-server.js](mdc:scripts/dev-server.js) tracks child processes for clean shutdown
+- **Port Management**: Uses [scripts/port-utils.js](mdc:scripts/port-utils.js) for robust port handling
+- **Health Checks**: Server startup includes HTTP health check before marking ready
+
+## Testing Integration
+
+**Probe Tests**: All Playwright tests expect the server to be running on port 5500  
+**Entry Point**: Tests navigate to `INDEX_PAGE` path from [tests/playwright.setup.js](mdc:tests/playwright.setup.js)  
+**Auto-Start**: Use `bun run test:orchestrated` for automated server + test workflow
+
+## Maintenance
+
+- **Config Changes**: Update both server config and import maps when changing document root
+- **New Packages**: Add new `@vibe/*` packages to the import map in [public/index.html](mdc:public/index.html)
+- **Port Changes**: Update [packages/core/src/config.js](mdc:packages/core/src/config.js) and restart all services
+
+---
+
+**Last Updated**: Based on resolution of startup 403 errors and import/export issues during Tone.js migration.

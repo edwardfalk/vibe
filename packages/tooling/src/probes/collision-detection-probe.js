@@ -1,9 +1,9 @@
 // collision-detection-probe.js
 // Probe: Collision Detection System Health and Functionality
 
-export default (async function () {
-  const { random } = await import('@vibe/core/mathUtils.js');
+import { random } from '@vibe/core';
 
+export default (async function () {
   // Import ticketManager API if available
   let ticketManager = null;
   try {

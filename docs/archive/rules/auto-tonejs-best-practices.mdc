@@ -1,0 +1,112 @@
+---
+globs: packages/core/src/audio/*.*
+alwaysApply: false
+---
+# Tone.js Best Practices for Vibe Audio Layer
+
+## Overview
+These guidelines standardise how the Vibe project uses Tone.js. Follow them when editing any file under `packages/core/src/audio/`.
+
+### 1. Transport & BPM
+* `Tone.Transport.bpm` is the **single source of truth**. External clocks (e.g. `BeatClock`) observe, never drive.
+* For tempo changes use `Tone.Transport.bpm.rampTo(newBpm, rampSeconds)`.
+
+### 2. Bootstrapping
+* Always gate `await Tone.start()` behind a **user gesture** (e.g. `pointerdown`).
+* Ensure this is done once; guard with a flag.
+
+### 3. Mixer Graph
+* Create one `Tone.Channel` per category:
+  ```js
+  const buses = {
+    master: new Tone.Channel().toDestination(),
+    music: new Tone.Channel({ volume: -6 }).connect(master),
+    sfx:   new Tone.Channel().connect(master),
+    speech: new Tone.Channel().connect(master),
+  };
+  ```
+* Use `solo()`/`mute()` for debugging and speech ducking; avoid manual master gain ramps unless unavoidable.
+* Attach a `Tone.Meter` to `master` for on-screen VU if needed.
+
+### 4. Sample Loading
+* Prefer `Tone.Players(manifest, onload)` to custom loaders.
+* Manifest object shape: `{ kick: "/audio/kick.wav", snare: "snare.wav" }`.
+* Players auto-connect to the appropriate bus.
+
+### 5. Music Scheduling
+* Use declarative sequences with `Tone.Part` or `Tone.Sequence`:
+  ```js
+  const groove = new Tone.Part((time, { sample }) => {
+    players.player(sample).start(time);
+  }, [
+    ["0:0:0", { sample: "kick" }],
+    ["0:1:0", { sample: "snare" }],
+    ["0:2:0", { sample: "kick" }],
+    ["0:3:0", { sample: "snare" }],
+  ]).start(0);
+  ```
+* Avoid parsing `Tone.Transport.position` strings each tick.
+
+### 6. Ducking (Speech over Music)
+* Prefer `buses.music.volume.rampTo()` or `Channel.mute()` over altering `master` gain.
+
+### 7. Testing & Debugging
+* Provide an `AudioLab` overlay that solo/mutes channels & shows meter values.
+* Unit tests should verify that BPM changes propagate to `Tone.Transport.bpm` only.
+
+---
+**When editing audio files, ensure compliance with this rule.**
+# Tone.js Best Practices for Vibe Audio Layer
+
+## Overview
+These guidelines standardise how the Vibe project uses Tone.js. Follow them when editing any file under `packages/core/src/audio/`.
+
+### 1. Transport & BPM
+* `Tone.Transport.bpm` is the **single source of truth**. External clocks (e.g. `BeatClock`) observe, never drive.
+* For tempo changes use `Tone.Transport.bpm.rampTo(newBpm, rampSeconds)`.
+
+### 2. Bootstrapping
+* Always gate `await Tone.start()` behind a **user gesture** (e.g. `pointerdown`).
+* Ensure this is done once; guard with a flag.
+
+### 3. Mixer Graph
+* Create one `Tone.Channel` per category:
+  ```js
+  const buses = {
+    master: new Tone.Channel().toDestination(),
+    music: new Tone.Channel({ volume: -6 }).connect(master),
+    sfx:   new Tone.Channel().connect(master),
+    speech: new Tone.Channel().connect(master),
+  };
+  ```
+* Use `solo()`/`mute()` for debugging and speech ducking; avoid manual master gain ramps unless unavoidable.
+* Attach a `Tone.Meter` to `master` for on-screen VU if needed.
+
+### 4. Sample Loading
+* Prefer `Tone.Players(manifest, onload)` to custom loaders.
+* Manifest object shape: `{ kick: "/audio/kick.wav", snare: "snare.wav" }`.
+* Players auto-connect to the appropriate bus.
+
+### 5. Music Scheduling
+* Use declarative sequences with `Tone.Part` or `Tone.Sequence`:
+  ```js
+  const groove = new Tone.Part((time, { sample }) => {
+    players.player(sample).start(time);
+  }, [
+    ["0:0:0", { sample: "kick" }],
+    ["0:1:0", { sample: "snare" }],
+    ["0:2:0", { sample: "kick" }],
+    ["0:3:0", { sample: "snare" }],
+  ]).start(0);
+  ```
+* Avoid parsing `Tone.Transport.position` strings each tick.
+
+### 6. Ducking (Speech over Music)
+* Prefer `buses.music.volume.rampTo()` or `Channel.mute()` over altering `master` gain.
+
+### 7. Testing & Debugging
+* Provide an `AudioLab` overlay that solo/mutes channels & shows meter values.
+* Unit tests should verify that BPM changes propagate to `Tone.Transport.bpm` only.
+
+---
+**When editing audio files, ensure compliance with this rule.**

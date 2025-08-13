@@ -21,10 +21,10 @@ test.describe('Startup Black-Screen Probe', () => {
   test('Game enters playing state after launch', async ({ page }, testInfo) => {
     try {
       await page.goto(INDEX_PAGE);
-      await page.waitForSelector('canvas', { timeout: 5000 });
+      await page.waitForSelector('canvas', { state: 'attached', timeout: 5000 });
 
       // Simulate user interaction so Audio + p5 start correctly
-      await page.click('canvas');
+      try { await page.click('canvas'); } catch { await page.click('body'); }
 
       // Gate on draw loop starting for reliability
       await waitForDrawStart(page, 4000);

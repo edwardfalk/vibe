@@ -10,10 +10,10 @@
 
 - [docs/PROJECT_VISION.md](./docs/PROJECT_VISION.md): Project vision, design pillars, and development philosophy
 - [.cursorrules](./.cursorrules): Core rules and standards (architecture, coding, workflow)
-- [docs/CODERABBIT_COMPLETE_GUIDE.md](./docs/CODERABBIT_COMPLETE_GUIDE.md): Complete CodeRabbit integration with deduplication system
+ - [docs/CODERABBIT_QUICKSTART.md](./docs/CODERABBIT_QUICKSTART.md): Quickstart for CodeRabbit reviews (updated)
 - [docs/TICKETING_SYSTEM_GUIDE.md](./docs/TICKETING_SYSTEM_GUIDE.md): Ticketing system schema and workflow
-- [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
-- [docs/MCP_TOOLS_GUIDE.md](./docs/MCP_TOOLS_GUIDE.md): Advanced MCP tool usage and best practices
+ - [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
+ - [docs/GITHUB_MCP_WORKFLOW.md](./docs/GITHUB_MCP_WORKFLOW.md): Using MCP GitHub tools for PRs, reviews, CI
 - [docs/snippets/](./docs/snippets/): Curated code and docs snippets (p5 instance mode, math utils, Playwright readiness, audio unlock)
 - [docs/AUDIO_CONFIGURATION_GUIDE.md](./docs/AUDIO_CONFIGURATION_GUIDE.md): Audio setup and tuning
 - [docs/DEV_SERVER_WORKFLOW.md](./docs/DEV_SERVER_WORKFLOW.md): Dev server workflow (cmd.exe default), start/stop/restart/status
@@ -32,7 +32,7 @@ Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean archit
 
 For the project's core vision, design pillars, and development philosophy, see [`docs/PROJECT_VISION.md`](./docs/PROJECT_VISION.md).
 
-Note: Automated code-review via CodeRabbit runs on Pull Requests. Direct pushes to `unstable` don’t trigger reviews.
+Note: Automated code-review via CodeRabbit runs on Pull Requests. Use MCP GitHub tools to fetch PR data and act on reviews.
 
 **Technology Stack:**
 
@@ -186,44 +186,12 @@ Only probe-driven Playwright tests are allowed (see `docs/MCP_PLAYWRIGHT_TESTING
 
 ---
 
-## CodeRabbit Integration
+## CodeRabbit + GitHub MCP
 
-Vibe includes a comprehensive CodeRabbit review analysis system that captures ALL review data from GitHub:
+Use CodeRabbit on Pull Requests and access reviews via MCP GitHub tools.
 
-### Features
-
-- **Complete Review Capture**: Gets general reviews AND line-by-line comments
-- **File Context**: Includes exact file paths and line numbers for suggestions
-- **Smart Categorization**: Automatically categorizes suggestions (security, bugs, performance, etc.)
-- **Priority Analysis**: Identifies high-priority issues requiring immediate attention
-- **Structured Data**: Saves comprehensive data to JSON files for analysis
-- **Ticket Integration**: Automatically creates tickets for high-priority issues
-
-### Quick Start
-
-```bat
-# Get complete CodeRabbit review data (recommended)
-bun run coderabbit:cycle
-
-# Or run steps individually:
-bun run coderabbit:fetch-complete  # Fetch all review data
-bun run coderabbit:analyze         # Display analysis
-bun run coderabbit:auto-tickets    # Create tickets
-```
-
-### Generated Files
-
-- **`coderabbit-reviews/latest-complete.json`** - Complete review data with context
-- **`coderabbit-reviews/latest-summary.json`** - Analysis summary and metrics
-- **`coderabbit-reviews/latest-high-priority.json`** - Critical issues for immediate action
-
-### Current Results
-
-- **1,402 total suggestions** extracted from 14 PRs
-- **111 high-priority issues** identified (security, bugs, critical fixes)
-- **Complete file context** for targeted fixes
-
-For detailed documentation, see [`docs/CODERABBIT_COMPLETE_GUIDE.md`](./docs/CODERABBIT_COMPLETE_GUIDE.md).
+- See `docs/CODERABBIT_QUICKSTART.md` for enabling and using CodeRabbit.
+- See `docs/GITHUB_MCP_WORKFLOW.md` for fetching PR files/diffs/status and acting on reviews via MCP.
 
 ---
 
@@ -232,7 +200,8 @@ For detailed documentation, see [`docs/CODERABBIT_COMPLETE_GUIDE.md`](./docs/COD
 - `docs/PROJECT_VISION.md`: Project vision, design pillars, and development philosophy
 - `.cursorrules`: Core standards and workflow reference
 - `docs/TICKETING_SYSTEM_GUIDE.md`: Ticketing system documentation
-- `docs/CODERABBIT_COMPLETE_GUIDE.md`: Complete CodeRabbit integration guide with deduplication system
+- `docs/CODERABBIT_QUICKSTART.md`: CodeRabbit quickstart
+- `docs/GITHUB_MCP_WORKFLOW.md`: Working with PRs, reviews, CI via MCP
 - `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`: Automated testing guide
 - `docs/AUDIO_CONFIGURATION_GUIDE.md`: Audio setup and troubleshooting
 - `docs/DESIGN.md`: Cosmic Beat System and musical gameplay design

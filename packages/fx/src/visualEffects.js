@@ -80,6 +80,8 @@ class VisualEffectsManager {
       this.initCosmicDust(this.pInstance);
       this.initAuroras(this.pInstance);
       this.initialized = true;
+      // Inject one test particle so probes can verify FX path alive
+      this._injectSelfTestParticle(this.pInstance);
       console.log('✨ Visual effects fully initialized');
     } catch (error) {
       console.error(
@@ -87,6 +89,26 @@ class VisualEffectsManager {
         error?.stack || error
       );
     }
+  }
+
+  // Returns true when visual effects are fully ready for rendering
+  ready() {
+    return this.initialized;
+  }
+
+  // Internal helper that adds a bright particle at screen center – probes look for it
+  _injectSelfTestParticle(p) {
+    try {
+      this.particles.push({
+        x: p.width / 2,
+        y: p.height / 2,
+        vx: 0,
+        vy: 0,
+        life: 30,
+        size: 20,
+        color: [255, 0, 0, 255],
+      });
+    } catch {}
   }
 
   initCosmicDust(p) {

@@ -34,14 +34,28 @@ async function tryLaunch() {
   let lastErr;
   if (exe) {
     try {
-      return await chromium.launch({ headless: true, executablePath: exe, args: ['--disable-gpu'], timeout: 90000 });
-    } catch (e) { lastErr = e; }
+      return await chromium.launch({
+        headless: true,
+        executablePath: exe,
+        args: ['--disable-gpu'],
+        timeout: 90000,
+      });
+    } catch (e) {
+      lastErr = e;
+    }
   }
   const channels = ['msedge', 'chrome', undefined];
   for (const ch of channels) {
     try {
-      return await chromium.launch({ headless: true, channel: ch, args: ['--disable-gpu'], timeout: 90000 });
-    } catch (e) { lastErr = e; }
+      return await chromium.launch({
+        headless: true,
+        channel: ch,
+        args: ['--disable-gpu'],
+        timeout: 90000,
+      });
+    } catch (e) {
+      lastErr = e;
+    }
   }
   throw lastErr || new Error('Failed to launch any Chromium/Edge');
 }

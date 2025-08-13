@@ -1,3 +1,8 @@
+language: en-US
+
+# CodeRabbit Configuration for Vibe Game Project
+# AI-powered code reviews with context-aware feedback
+
 reviews:
   auto_review:
     enabled: true
@@ -10,14 +15,6 @@ reviews:
     # ignore_title_keywords: []
     # labels: []
 
-# CodeRabbit Configuration for Vibe Game Project
-# AI-powered code reviews with context-aware feedback
-
-# Language settings
-language: en-US
-
-# Review settings
-reviews:
   # Enable comprehensive code analysis
   profile: chill
   

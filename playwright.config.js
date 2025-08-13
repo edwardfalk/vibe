@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // Playwright configuration for Vibe
-// - Launches Five Server via `bun run serve` on port 5500 (reuse if already running)
+// - Orchestrated: Five Server is started via `bun run dev:start` and stopped via `bun run dev:stop`
 // - Sets baseURL so page.goto('/') works in tests
 // - Stores HTML report in /playwright-report (default)
 // - Keeps timeouts modest for local runs; adjust for CI if needed

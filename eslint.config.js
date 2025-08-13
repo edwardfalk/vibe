@@ -58,7 +58,9 @@ export default [
       prettier: prettierPlugin,
       'vibe-no-math-pi': { rules: { 'no-math-pi': noMathPi } },
       'vibe-no-p5-globals': { rules: { 'no-p5-globals': noP5Globals } },
-      'vibe-no-raw-goto-index': { rules: { 'no-raw-goto-index': noRawGotoIndex } },
+      'vibe-no-raw-goto-index': {
+        rules: { 'no-raw-goto-index': noRawGotoIndex },
+      },
     },
     rules: {
       'prefer-const': 'error',

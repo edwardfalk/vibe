@@ -6,6 +6,8 @@ last_updated: 2025-08-11
 
 # CodeRabbit – Working Guide (2025-08)
 
+> Note: This guide contains historical references to local fetch/aggregation scripts. The canonical workflow now uses GitHub MCP tools for PR reviews/comments and CI operations. See `docs/GITHUB_MCP_WORKFLOW.md`.
+
 ## 🎯 Overview
 
 This is the complete guide for CodeRabbit integration in the Vibe project. It covers everything from setup to advanced workflows, including the enhanced deduplication system that prevents duplicate tickets.
@@ -95,12 +97,9 @@ powershell -NoProfile -Command "Get-ChildItem 'tests/bug-reports' -Filter 'CR-*.
 ## Minimal daily workflow
 
 1. Open PRs to `main` (or enable auto-reviews for `unstable` in CodeRabbit settings).
-2. Fetch reviews locally:
-   ```bat
-   bun run coderabbit:fetch-latest
-   ```
-   - Outputs `coderabbit-reviews/latest.json` and `coderabbit-reviews/actionable-summary.json`.
-3. Fix from `actionable-summary.json`; commit.
+2. Review feedback via MCP:
+   - Use GitHub MCP tools to get PR reviews/comments and filter author `coderabbitai[bot]`.
+3. Fix actionable items; commit.
 
 Optional history-aware:
 
@@ -123,8 +122,7 @@ bun run coderabbit:fetch-new
 
 | Command                   | Description                   |
 | ------------------------- | ----------------------------- |
-| `coderabbit:fetch-latest` | Snapshot + actionable summary |
-| `coderabbit:fetch-new`    | History-aware (optional)      |
+| Use GitHub MCP tools      | Live PR reviews/comments      |
 
 ## ⚙️ Configuration
 

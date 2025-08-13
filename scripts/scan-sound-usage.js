@@ -43,7 +43,7 @@ function walk(dir) {
 walk(START_DIR);
 
 if (hits.length) {
-  console.error('❌ Found raw playSound(\'...\') usages. Use SOUND.* instead:');
+  console.error("❌ Found raw playSound('...') usages. Use SOUND.* instead:");
   for (const h of hits) {
     console.error(`  ${h.file}:${h.line}: ${h.text}`);
   }

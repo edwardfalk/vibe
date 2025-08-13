@@ -47,7 +47,9 @@ async function main() {
     '- Probe failures produce actionable logs and (if configured) a GitHub issue with summary.',
   ].join('\n');
 
-  const body = findings + `\n\n---\n\nRule added: a-probe-reliability-standards-20250812-01.mdc`;
+  const body =
+    findings +
+    `\n\n---\n\nRule added: a-probe-reliability-standards-20250812-01.mdc`;
   try {
     const issueNumber = await createIssue({
       title: 'Probe reliability audit: tighten readiness/gestures/determinism',
@@ -58,7 +60,7 @@ async function main() {
   } catch (e) {
     console.error('Failed to create issue:', e);
     // Fallback: write a local artifact under tests/bug-reports
-    const dir = `tests/bug-reports/${new Date().toISOString().replace(/[:.]/g,'-')}_PROBE-RELIABILITY/`;
+    const dir = `tests/bug-reports/${new Date().toISOString().replace(/[:.]/g, '-')}_PROBE-RELIABILITY/`;
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(`${dir}PROBE-RELIABILITY.md`, body, 'utf8');
     console.log('Wrote fallback report to', `${dir}PROBE-RELIABILITY.md`);

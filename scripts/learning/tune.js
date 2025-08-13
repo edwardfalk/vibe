@@ -20,7 +20,11 @@ const WHITELIST = new Set([
 
 async function runCmd(command, args = []) {
   return new Promise((resolve) => {
-    const proc = spawn(command, args, { shell: true, windowsHide: true, stdio: 'pipe' });
+    const proc = spawn(command, args, {
+      shell: true,
+      windowsHide: true,
+      stdio: 'pipe',
+    });
     let out = '';
     let err = '';
     proc.stdout.on('data', (d) => (out += d.toString()));

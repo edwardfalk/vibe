@@ -5,7 +5,7 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
 
 import { Bullet } from '@vibe/entities/bullet.js';
-import { SOUND } from '@vibe/core/audio/SoundIds.js';
+import { SOUND } from '@vibe/core';
 import {
   sin,
   cos,
@@ -304,7 +304,7 @@ export class TestMode {
           let peak = -Infinity;
           while (performance.now() - t0 < 1200) {
             const db = window.audio?.getMasterLevel?.() ?? -Infinity;
-            if (typeof db === 'number' && isFinite(db)) peak = Math.max(peak, db);
+            if (typeof db === 'number' && isFinite(db)) peak = max(peak, db);
             await new Promise((r) => setTimeout(r, 25));
           }
           return {
@@ -322,7 +322,8 @@ export class TestMode {
     if (name === 'enemies-basic') {
       this.enableDeterminism();
       // Fixed enemy set near the player
-      const px = this.player?.x ?? 400, py = this.player?.y ?? 300;
+      const px = this.player?.x ?? 400,
+        py = this.player?.y ?? 300;
       this.forceSpawnEnemy('grunt', px + 150, py);
       this.forceSpawnEnemy('rusher', px - 150, py);
       this.forceSpawnEnemy('tank', px, py + 180);
@@ -333,7 +334,9 @@ export class TestMode {
   enableDeterminism() {
     try {
       // Standard seed for reproducibility
-      import('/packages/core/src/index.js').then(({ setRandomSeed }) => setRandomSeed(1337));
+      import('/packages/core/src/index.js').then(({ setRandomSeed }) =>
+        setRandomSeed(1337)
+      );
     } catch {}
     // Disable periodic random spawns in test scenario
     this.enemySpawnInterval = 1e9;

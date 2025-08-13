@@ -89,7 +89,9 @@ export class ToneAudioFacade {
       // Route players to proper buses
       for (const [id, player] of Object.entries(players._players)) {
         player.disconnect();
-        const bus = id.startsWith('music') ? this._gains.music : this._gains.sfx;
+        const bus = id.startsWith('music')
+          ? this._gains.music
+          : this._gains.sfx;
         player.connect(bus);
       }
 
@@ -125,7 +127,21 @@ export class ToneAudioFacade {
       console.log('🎵 ToneAudioFacade initialised successfully');
     } catch (error) {
       console.error('❌ ToneAudioFacade init failed:', error);
-      throw error;
+      try {
+        // In development mode, emit a short beep so devs notice silent audio failures
+        const isDev =
+          (typeof process !== 'undefined' &&
+            process.env?.NODE_ENV !== 'production') ||
+          (typeof window !== 'undefined' &&
+            window.location?.hostname === 'localhost');
+        if (isDev) {
+          await this._ensureToneStarted();
+          console.warn('🔈 Playing fallback beep to signal audio-init failure');
+          const synth = new Tone.Synth().toDestination();
+          synth.triggerAttackRelease('C5', '8n');
+        }
+      } catch {}
+      throw error; // Fail fast – propagate to GameLoop
     }
   }
 
@@ -329,8 +345,7 @@ export class ToneAudioFacade {
     // ------------------------------------------------------------------
 
     const cdnCommit = 'dc9de66401e175849bfd219bfe303ba2d72a4ee7';
-    const cdnBase =
-      `https://raw.githubusercontent.com/Tonejs/Tone.js/${cdnCommit}/examples/audio/`;
+    const cdnBase = `https://raw.githubusercontent.com/Tonejs/Tone.js/${cdnCommit}/examples/audio/`;
     const remapped = {};
     for (const [id, url] of Object.entries(manifest)) {
       if (typeof url !== 'string') continue;

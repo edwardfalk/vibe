@@ -71,6 +71,7 @@ async function ensureAudioInitialized() {
     console.log('🎵 ToneAudioFacade initialized after user gesture');
   } catch (err) {
     console.error('Audio init failed:', err);
+    throw err; // Fail fast on audio initialization errors
   }
 }
 
@@ -286,6 +287,15 @@ function setup(p) {
   console.log('🟢 [DEBUG] GameLoop.js: p.createCanvas called');
   p.createCanvas(800, 600);
   p.frameRate(60);
+  // Force canvas visible immediately to avoid hidden state races in headless
+  try {
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      canvas.removeAttribute('data-hidden');
+      canvas.style.visibility = 'visible';
+      canvas.style.pointerEvents = 'auto';
+    }
+  } catch {}
 
   // Initialize core systems FIRST (dependency injection style)
   // Camera system must be initialized before player
@@ -303,8 +313,10 @@ function setup(p) {
 
   if (!window.visualEffectsManager) {
     window.visualEffectsManager = new VisualEffectsManager(p);
-    console.log('✨ Visual effects fully initialized');
   }
+  // Ensure VFX is initialized with p before proceeding
+  try { window.visualEffectsManager.init(p); } catch {}
+
   if (!window.effectsManager) {
     window.effectsManager = new EffectsManager(p, window.visualEffectsManager);
     console.log('✨ Visual effects enabled - full rendering active');
@@ -318,6 +330,15 @@ function setup(p) {
       audio: window.audio,
       lodManager: { shouldRender: () => true }, // Simple stub LOD manager
     });
+  }
+
+  // Attempt one more init before assessing readiness
+  if (!window.visualEffectsManager.ready()) {
+    window.visualEffectsManager.init(p);
+    // Do not hard-fail here; allow game to continue while VFX warms up
+    if (!window.visualEffectsManager.ready()) {
+      console.warn('⚠️ VisualEffectsManager not ready yet; continuing without fatal abort');
+    }
   }
 
   // NOW it's safe to create the player (requires cameraSystem)
@@ -503,9 +524,7 @@ function restartGame(p) {
     window.visualEffectsManager &&
     typeof window.visualEffectsManager.init === 'function'
   ) {
-    try {
-      window.visualEffectsManager.init(p);
-    } catch {}
+    window.visualEffectsManager.init(p); // Fail fast if VFX init throws
   }
 
   // Let other systems know the player has changed
