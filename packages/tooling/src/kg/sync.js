@@ -55,20 +55,26 @@ const maxUncovered =
   argv['max-uncovered'] != null
     ? Number(argv['max-uncovered'])
     : process.env.KG_FAIL_UNCOVERED != null
-    ? Number(process.env.KG_FAIL_UNCOVERED)
-    : null;
+      ? Number(process.env.KG_FAIL_UNCOVERED)
+      : null;
 const maxMissingAssets =
   argv['max-missing-assets'] != null
     ? Number(argv['max-missing-assets'])
     : process.env.KG_FAIL_MISSING_ASSETS != null
-    ? Number(process.env.KG_FAIL_MISSING_ASSETS)
-    : null;
-const maxUncovered = argv['max-uncovered'] != null
-  ? Number(argv['max-uncovered'])
-  : (process.env.KG_FAIL_UNCOVERED != null ? Number(process.env.KG_FAIL_UNCOVERED) : null);
-const maxMissingAssets = argv['max-missing-assets'] != null
-  ? Number(argv['max-missing-assets'])
-  : (process.env.KG_FAIL_MISSING_ASSETS != null ? Number(process.env.KG_FAIL_MISSING_ASSETS) : null);
+      ? Number(process.env.KG_FAIL_MISSING_ASSETS)
+      : null;
+const maxUncovered =
+  argv['max-uncovered'] != null
+    ? Number(argv['max-uncovered'])
+    : process.env.KG_FAIL_UNCOVERED != null
+      ? Number(process.env.KG_FAIL_UNCOVERED)
+      : null;
+const maxMissingAssets =
+  argv['max-missing-assets'] != null
+    ? Number(argv['max-missing-assets'])
+    : process.env.KG_FAIL_MISSING_ASSETS != null
+      ? Number(process.env.KG_FAIL_MISSING_ASSETS)
+      : null;
 const projectName = 'Vibe';
 const projectKey = `project:${projectName}`;
 

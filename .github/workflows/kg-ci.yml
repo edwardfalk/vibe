@@ -25,4 +25,29 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
           KG_FAIL_UNCOVERED: 0
           KG_FAIL_MISSING_ASSETS: 0
-        run: bun run kg:ci:github
+        id: kg_report
+        continue-on-error: true
+        run: |
+          bun run packages/tooling/src/kg/sync.js --dry --github --report --max-uncovered 0 --max-missing-assets 0 > kg_report.txt
+          type kg_report.txt
+
+      - name: Comment KG report on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('kg_report.txt', 'utf8');
+            const number = context.payload.pull_request.number;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              body: 'KG Report (dry run)\n\n```\n' + body + '\n```'
+            });
+
+      - name: Enforce thresholds
+        if: always() && steps.kg_report.outcome == 'failure'
+        shell: cmd
+        run: exit 1
