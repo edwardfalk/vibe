@@ -50,6 +50,25 @@ const argv = minimist(process.argv.slice(2));
 const isWrite = Boolean(argv.write) && !argv.dry;
 const includeGithub = Boolean(argv.github);
 const wantReport = Boolean(argv.report);
+// Optional CI thresholds (CLI flags override env)
+const maxUncovered =
+  argv['max-uncovered'] != null
+    ? Number(argv['max-uncovered'])
+    : process.env.KG_FAIL_UNCOVERED != null
+    ? Number(process.env.KG_FAIL_UNCOVERED)
+    : null;
+const maxMissingAssets =
+  argv['max-missing-assets'] != null
+    ? Number(argv['max-missing-assets'])
+    : process.env.KG_FAIL_MISSING_ASSETS != null
+    ? Number(process.env.KG_FAIL_MISSING_ASSETS)
+    : null;
+const maxUncovered = argv['max-uncovered'] != null
+  ? Number(argv['max-uncovered'])
+  : (process.env.KG_FAIL_UNCOVERED != null ? Number(process.env.KG_FAIL_UNCOVERED) : null);
+const maxMissingAssets = argv['max-missing-assets'] != null
+  ? Number(argv['max-missing-assets'])
+  : (process.env.KG_FAIL_MISSING_ASSETS != null ? Number(process.env.KG_FAIL_MISSING_ASSETS) : null);
 const projectName = 'Vibe';
 const projectKey = `project:${projectName}`;
 
@@ -447,6 +466,39 @@ function printReport(plan) {
   }
 }
 
+function computeMetrics(plan) {
+  const fileNodes = plan.nodes.filter((n) => n.label === 'File');
+  const soundNodes = plan.nodes.filter((n) => n.label === 'Sound');
+  const coversTo = new Set(
+    plan.edges.filter((e) => e.type === 'COVERS').map((e) => e.toKey)
+  );
+  const usesToSound = new Set(
+    plan.edges.filter((e) => e.type === 'USES').map((e) => e.toKey)
+  );
+  const soundHasAsset = new Set(
+    plan.edges.filter((e) => e.type === 'HAS_ASSET').map((e) => e.fromKey)
+  );
+
+  const targetKinds = new Set(['system', 'entity', 'game']);
+  const uncoveredList = fileNodes
+    .filter((f) => targetKinds.has(f.props.kind))
+    .filter((f) => !coversTo.has(f.key))
+    .map((f) => f.props.path)
+    .sort();
+
+  const soundKeys = soundNodes.map((s) => s.key);
+  const unusedList = soundKeys
+    .filter((k) => !usesToSound.has(k))
+    .map((k) => k.slice('sound:'.length))
+    .sort();
+  const missingAssetList = soundKeys
+    .filter((k) => !soundHasAsset.has(k))
+    .map((k) => k.slice('sound:'.length))
+    .sort();
+
+  return { uncoveredList, unusedList, missingAssetList };
+}
+
 async function main() {
   try {
     const plan = upsertPlan();
@@ -508,6 +560,23 @@ async function main() {
     printPlan(plan);
     if (wantReport) {
       printReport(plan);
+    }
+    // Threshold enforcement for CI (only when dry mode)
+    if (!isWrite && (maxUncovered !== null || maxMissingAssets !== null)) {
+      const { uncoveredList, missingAssetList } = computeMetrics(plan);
+      if (maxUncovered !== null && uncoveredList.length > maxUncovered) {
+        throw new Error(
+          `Uncovered targets ${uncoveredList.length} exceed threshold ${maxUncovered}`
+        );
+      }
+      if (
+        maxMissingAssets !== null &&
+        missingAssetList.length > maxMissingAssets
+      ) {
+        throw new Error(
+          `Sounds missing assets ${missingAssetList.length} exceed threshold ${maxMissingAssets}`
+        );
+      }
     }
     if (!isWrite) return;
     const driver = await getDriver();

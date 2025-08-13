@@ -18,11 +18,11 @@ jobs:
         shell: cmd
         run: bun install
 
-      - name: KG report (with GitHub overlay)
+      - name: KG report (with GitHub overlay, thresholds)
         shell: cmd
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
+          KG_FAIL_UNCOVERED: 0
+          KG_FAIL_MISSING_ASSETS: 0
         run: bun run kg:ci:github
-
-
