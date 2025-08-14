@@ -1,16 +1,77 @@
+---
+title: Vibe Game Audio Configuration Guide
+description: Tone.js-based audio workflow, bus routing, sound IDs, ambient effects, and tuning guidance for Vibe.
+last_updated: 2025-08-12
+---
+
 # 🎛️ Vibe Game Audio Configuration Guide
 
-> **Purpose:**  
-> This guide explains how to configure and tune all audio parameters in Vibe.  
-> For rules, see [.cursorrules](../.cursorrules).
+> **Update 2025-08** – Vibe uses **Tone.js** as its audio engine. Samples load from `/audio/manifest.json` and are routed through category buses (`music`, `sfx`) inside `ToneAudioFacade`. Ducking is disabled for now; speech calls are no-ops. The old oscillator-based `Audio.js` is legacy only.
+
+## 🚀 Quick Start – Adding a New Sound (Tone.js pipeline)
+
+1. **Drop the audio file** (`.wav`, `.mp3`, `.ogg`) into `public/audio/`.
+2. **Register the sample** by editing `public/audio/manifest.json`:
+   ```json
+   {
+     "playerShoot": "drums/hihat_closed.wav",
+     "myNewSfx": "sfx/my-awesome-hit.wav"
+   }
+   ```
+3. **Trigger it from game code**:
+   ```js
+   import { toneAudio } from '@vibe/core';
+   toneAudio.playSound('myNewSfx');
+   ```
+   • Optional `toneAudio.playSound('myNewSfx', { volume: 0.8 })` to scale volume.
+4. **(Optional) Add to `SOUND` enum** if you still want strong typings / consistency.
+
+That’s it—no need to (create a file): `type NUL > somefile.txt` or use PowerShell `New-Item -ItemType File somefile.txt` `Audio.js` or update any config objects.
+
+## 🎹 Background Music
+
+- `toneAudio.startMusic()` starts the default 4-beat drum loop (kick/snare/hihat).
+- Syncs automatically to `BeatClock`; change tempo with `window.beatClock.setBPM(140)`.
+
+## 🗣️ Speech Ducking (disabled)
+
+Ducking is currently disabled and no speech pad is routed. Calls to `window.audio.speak(...)` are no-ops by policy. Re-enable in future by wiring a pad to `speechBed` and restoring `duck/unduck` in the facade.
+
+---
+
+## 🛠️ Advanced SFX Design
+
+Tone.js gives you full synthesis & FX—create custom `Tone.Synth`, `Tone.Sampler`, or chains in code if sample playback isn’t enough. Hook them up through the `ToneAudioFacade` gains (`music`, `sfx`, etc.) for unified volume control.
+
+---
+
+### 📜 Legacy Oscillator Config (pre-Tone migration)
+
+The following sections describe the old Web-Audio–only system kept for reference. They’ll be removed after all callers migrate.
 
 ## 📁 File Location
 
-All audio configuration is in: `js/Audio.js`
+All audio configuration lives in `packages/core/src/audio/ToneAudioFacade.js` (Tone facade). Historical reference to `js/Audio.js` has been fully retired.
+
+**Manifest** – Samples are enumerated in `/public/audio/manifest.json` and fetched at runtime from `/audio/manifest.json`.
+
+**Bus routing** – `SampleLoader` returns unconnected players; `ToneAudioFacade` connects `music*` IDs to the `music` bus and all others to `sfx`. Master → Meter wiring taps master into a `Tone.Meter` for diagnostics.
+
+**Sound ID Registry** – Every legal SFX identifier is defined once in `packages/core/src/audio/SoundIds.js` (`SOUND` enum). Game code must use `SOUND.*` constants; raw strings are forbidden by `scan:sound-ids`.
+
+**Player Event Bus** – Audio spatialisation now tracks the live Player via the `playerChanged` global event. Any place that creates a new Player **must** dispatch:
+
+```javascript
+window.dispatchEvent(
+  new CustomEvent('playerChanged', { detail: window.player })
+);
+```
+
+Failure to emit the event will break distance-based volume/panning.
 
 ## 🔊 Sound Effects Configuration
 
-### Location: Lines ~70-100 in Audio.js
+### Location: Lines ~70-100 in `packages/core/src/Audio.js`
 
 Each sound effect has these properties:
 
@@ -48,9 +109,53 @@ plasmaCloud: {
 - **square**: Hollow, robotic (good for mechanical sounds)
 - **triangle**: Soft, flute-like (good for ethereal sounds)
 
+### Variant-Array Pattern (2025+)
+
+Some SFX (e.g., hit sounds) now use a `variants` array in their config:
+
+```js
+stabberKnifeHit: {
+  variants: [
+    { frequency: 3200, waveform: 'sawtooth', volume: 0.55, duration: 0.07 },
+    { frequency: 2800, waveform: 'triangle', volume: 0.5, duration: 0.09 },
+    { frequency: 3500, waveform: 'square', volume: 0.6, duration: 0.06 },
+  ];
+}
+```
+
+Only one registry entry is needed in `SoundIds.js` (e.g., `stabberKnifeHit`). The SFXManager will pick a random variant at runtime.
+
+### New SFX Stubs (2025)
+
+- `uiConfirm`: UI confirm/accept sound
+- `uiCancel`: UI cancel/back sound
+- `bulletMetalHit`: Bullet hitting metal (impact feedback)
+- `onBeatBonus`: On-beat bonus/feedback
+- `cosmicWind`: Ambient cosmic wind layer
+
+### Enemy/Combat SFX (2025 Roadmap)
+
+The following SFX are now implemented and documented in `Audio.js` and `SoundIds.js`:
+
+- `gruntPop`: Main grunt death pop (volume: 0.6)
+- `gruntPopEcho`: Grunt death echo (volume: 0.3)
+- `tankDeathThump`: Tank death sub-bass thump (volume: 0.7)
+- `rusherDeathFizz`: Rusher death fizz (volume: 0.22)
+- `stabberDeathClink`: Stabber death metallic clink (volume: 0.32)
+- `enemyChargeUp`: Enemy/tank special attack charge-up (volume: 0.28)
+
+#### SFX Volume Tuning
+
+- Main death SFX (e.g., `gruntPop`, `tankDeathThump`) are set in the 0.6–0.7 range for strong feedback.
+- Echo/fizz/secondary effects (e.g., `gruntPopEcho`, `rusherDeathFizz`) are set lower (0.2–0.3) for subtlety, but can be raised for more presence.
+- All SFX volumes are relative to the master and category gain (see Audio.js for details).
+- As of June 2025, `gruntPop` and `gruntPopEcho` have been increased for better audibility.
+
+All SFX are now documented in `Audio.js` and `SoundIds.js`. This guide is current as of June 2025.
+
 ## 🎤 Speech Configuration
 
-### Location: Lines ~105-111 in Audio.js
+### Location: Lines ~105-111 in `packages/core/src/Audio.js`
 
 Each character voice has these properties:
 
@@ -80,7 +185,7 @@ stabber: { rate: 0.9, pitch: 1.9, volume: 0.3 }   // Sharp, precise
 
 ## 🌊 Distance-Based Atmospheric Effects
 
-### Location: Lines ~285-350 in Audio.js
+### Location: Lines ~285-350 in `packages/core/src/Audio.js`
 
 Ambient enemy sounds get enhanced effects based on distance:
 
@@ -170,7 +275,7 @@ const distortionAmount = 20 + normalizedDistance * 40;
 
 ## 🎵 Master Volume Control
 
-### Location: Line ~25 in Audio.js
+### Location: Line ~25 in `packages/core/src/Audio.js`
 
 ```javascript
 this.volume = 0.7; // Master volume (0.0-1.0)
@@ -183,7 +288,7 @@ this.volume = 0.7; // Master volume (0.0-1.0)
 
 ## 🔄 Testing Changes
 
-1. Save the `js/Audio.js` file
+1. Save the `packages/core/src/Audio.js` file
 2. Refresh the game in your browser
 3. Listen to the changes during gameplay
 4. Adjust parameters as needed
@@ -196,3 +301,41 @@ this.volume = 0.7; // Master volume (0.0-1.0)
 - Speech volumes are now reduced to be background to sound effects
 - Distant enemies get more reverb, distortion, and mystical delays
 - Player sounds always play at full volume regardless of position
+
+## Sound ID Registry
+
+All sound-effect names are centralized in `packages/core/src/audio/SoundIds.js` and re-exported via `@vibe/core` as `SOUND`. Game code must reference `SOUND.someId` instead of raw strings. CI runs `scan:sound-ids` to enforce this.
+
+Example:
+
+```js
+import { SOUND } from '@vibe/core';
+window.audio.playSound(SOUND.gruntPop, x, y);
+```
+
+## 🌌 Ambient & Atmospheric SFX
+
+The following ambient/atmospheric SFX are implemented in `Audio.js` and are processed with distance-based effects (reverb, lowpass, distortion) for spatial immersion:
+
+| Sound ID         | Frequency | Waveform | Volume | Duration | Intended Effect              |
+| ---------------- | --------- | -------- | ------ | -------- | ---------------------------- |
+| enemyIdle        | 200       | sine     | 0.1    | 0.8      | Subtle enemy hum, background |
+| stabberChant     | 1800      | triangle | 0.3    | 0.5      | Eerie, ritualistic chant     |
+| gruntMalfunction | 180       | sawtooth | 0.12   | 0.4      | Glitchy, robotic error       |
+| gruntBeep        | 800       | triangle | 0.08   | 0.15     | Short, robotic beep          |
+| gruntWhir        | 300       | sine     | 0.1    | 0.6      | Mechanical whirring          |
+| gruntError       | 220       | square   | 0.1    | 0.2      | Error/failure tone           |
+| gruntGlitch      | 150       | sawtooth | 0.09   | 0.25     | Glitchy, digital noise       |
+| stabberStalk     | 1600      | triangle | 0.25   | 0.4      | Tense stalking, suspense     |
+| cosmicWind       | 60        | noise    | 0.08   | 3.0      | Cosmic wind, deep ambience   |
+
+- **Subtle SFX**: `enemyIdle`, `gruntBeep`, `gruntWhir`, `gruntError`, `gruntGlitch`, `cosmicWind` (low volume, background texture)
+- **Prominent SFX**: `stabberChant`, `stabberStalk`, `gruntMalfunction` (higher volume, foreground atmosphere)
+
+### Distance-Based Effects
+
+- All ambient SFX above are processed with reverb, lowpass filtering, and mild distortion based on distance from the player (see Audio.js, playTone method).
+- Distant enemies sound more echoey, filtered, and mystical; close enemies are clearer and drier.
+- These effects are tuned for subtlety (see code comments for reverbIntensity, lowpassFreq, distortionAmount).
+
+**Reference:** See `Audio.js` for all config details and effect processing. This guide is current as of June 2025.

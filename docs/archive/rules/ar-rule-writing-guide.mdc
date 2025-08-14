@@ -1,0 +1,97 @@
+---
+description: Authoritative guide for all agents and contributors on writing, maintaining, and understanding Cursor Rules (types, metadata, best practices)
+globs: 
+alwaysApply: false
+---
+# Cursor Rule-Writing Guide
+
+## Purpose
+This guide defines how to write, update, and maintain rules for the Vibe project using Cursor Rules. It explains rule types, metadata, naming, and best practices for robust, self-documenting workflows.
+
+---
+
+## Rule Types & Their Meanings
+
+- **Agent-requestable**: Rules that the agent can fetch and apply as needed, but are not always enforced. Used for context-specific or optional standards. These rules are prefixed AR- for clarity.
+- **Always-applied**: Rules that are always in effect for every agent and every session (e.g., core architecture, coding standards, meta-rules). Marked with `alwaysApply: true` in the metadata.These rules are prefixed ALWAYS- for clarity.
+- **Auto-attached**: Rules that are automatically included based on context (e.g., file type, directory, workflow). Typically managed by Cursor or scripts. These rules are prefixed AUTO- for clarity.
+- **Manual**: Rules that are only applied when explicitly referenced or requested. Useful for experimental or deprecated standards. Prefix: MAN-
+
+---
+
+## Rule Metadata & Structure
+
+Each rule file should start with a YAML frontmatter block:
+
+```
+---
+description: Short summary of the rule's purpose
+[alwaysApply: true]   # Only for always-on rules
+[agentRequestable: true] # For agent-requestable rules
+---
+```
+
+- **description**: Required. Concise summary of what the rule covers.
+- **alwaysApply**: Optional. If true, rule is always enforced.
+- **agentRequestable**: Optional. If true, rule is available for agent queries and can be fetched/applied as needed.
+- Other metadata (e.g., `autoAttach`, `deprecated`) may be added as needed.
+
+---
+
+## Naming & Location
+- Place all rules in `.cursor/rules/`.
+- Use kebab-case for filenames (e.g., `ticketing-system.mdc`).
+- Prefix probe/test rules with `probe_` (e.g., `probe_ticket_workflow_probe.mdc`).
+- Use clear, descriptive names for all rules.
+
+---
+
+## How/When to Use Each Type
+- **Agent-requestable**: For standards or workflows that may not always apply, but are useful for the agent to know on demand. **Must include `agentRequestable: true` in the metadata.**
+- **Always-applied**: For core project rules, meta-rules, and anything that must never be bypassed. **Must include `alwaysApply: true` in the metadata.**
+- **Auto-attached**: For rules that should be contextually enforced (e.g., only for certain files or directories). **Typically managed by Cursor's configuration, not manual metadata.**
+- **Manual**: For rules under review, legacy, or for special cases. **This is the default state if no other type-defining metadata (`alwaysApply`, `agentRequestable`) is present.**
+
+---
+
+## Updating, Deprecating, and Archiving Rules
+- Update rules immediately when workflows, standards, or architecture change.
+- Archive obsolete rules by moving them to `docs/archive/` and referencing their replacement.
+- The AI is responsible for keeping rules current (see `rule-maintenance-policy.mdc`).
+
+---
+
+## Auto-Generated Rules
+- Use scripts (e.g., `scripts/generate-playwright-rules.js`) to generate rules for repetitive or probe-driven standards.
+- Clearly mark auto-generated rules and do not edit them by hand unless necessary.
+
+---
+
+## Examples
+
+**Always-applied rule:**
+```
+---
+description: Core Vibe commandments—modular, bizarre, rhythm-driven game design, strict code standards, and automation.
+alwaysApply: true
+---
+# Vibe Project: Always Rule
+...
+```
+
+**Agent-requestable rule:**
+```
+---
+description: Debug logging system logs to .debug
+agentRequestable: true
+---
+# Debug Logging
+...
+```
+
+---
+
+## References
+- See `.cursor/rules/rule-maintenance-policy.mdc` for meta-rule on rule upkeep.
+- See `README.md` for documentation map and rule discovery.
+- For advanced rule automation, see `scripts/generate-playwright-rules.js`.

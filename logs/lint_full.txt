@@ -1,0 +1,7 @@
+[0m[0m
+[0m[4mD:\projects\vibe\packages\core\__tests__\mathUtils.test.js[24m[0m
+[0m  [2m11:21[22m  [33mwarning[39m  Instance mode: do not use global p5 function "random"; use p.random or import from mathUtils.js  [2mvibe-no-p5-globals/no-p5-globals[22m[0m
+[0m  [2m18:12[22m  [33mwarning[39m  Instance mode: do not use global p5 function "random"; use p.random or import from mathUtils.js  [2mvibe-no-p5-globals/no-p5-globals[22m[0m
+[0m[0m
+[0m[33m[1m✖ 2 problems (0 errors, 2 warnings)[22m[39m[0m
+[0m[33m[1m[22m[39m[0m

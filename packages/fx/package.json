@@ -1,0 +1,14 @@
+{
+  "name": "@vibe/fx",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "description": "Visual and audio effects including explosions and post-processing.",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@vibe/core": "workspace:*"
+  }
+}

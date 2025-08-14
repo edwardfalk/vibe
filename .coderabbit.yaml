@@ -1,11 +1,20 @@
+language: en-US
+
 # CodeRabbit Configuration for Vibe Game Project
 # AI-powered code reviews with context-aware feedback
 
-# Language settings
-language: en-US
-
-# Review settings
 reviews:
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    # Allow auto-reviews on additional base branches besides the default (main)
+    base_branches:
+      - unstable
+    # Optional toggles (keep defaults unless needed)
+    # drafts: false
+    # ignore_title_keywords: []
+    # labels: []
+
   # Enable comprehensive code analysis
   profile: chill
   
@@ -17,6 +26,9 @@ reviews:
   
   # Review entire files for context
   review_full_file: true
+  
+  # Enable auto-reviews on all branches
+  branches: "*"
 
 # Path-based review rules
 path_instructions:

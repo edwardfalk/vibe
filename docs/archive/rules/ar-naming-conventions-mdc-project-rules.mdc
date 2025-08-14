@@ -1,0 +1,16 @@
+---
+description: Naming conventions .mdc project rules
+globs: 
+alwaysApply: false
+---
+# Naming conventions for clear overview of which type each mdc rule is
+
+mdc rules can be:
+- agent requested (AI views them on request). Prefix these with AR-
+- Auto attached (attached to a pattern, eg *.js). Prefix these with AUTO-
+- Always (always attached as context in every chat message). Prefix these with ALWAYS-
+- Manual (rare, the user must manually reference these). Prefix with MAN-
+
+[always-cursor_rules_location.mdc](mdc:.cursor/rules/always-cursor_rules_location.mdc)
+
+[always-vibe-game-core-guide.mdc](mdc:.cursor/rules/always-vibe-game-core-guide.mdc)

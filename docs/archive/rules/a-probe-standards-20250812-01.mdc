@@ -1,0 +1,17 @@
+ID: RULE-20250812-03
+Title: Deterministic, gated, and self-reporting probes
+Context: Some probes race the first frames, assume entities exist, or rely on VFX internals. We need stable, deterministic, self-reporting probes that gate on readiness and use public events/APIs only.
+Policy:
+  - Gate on readiness: wait for `frameCount > 0`, `window.player`, and `Array.isArray(window.enemies)` before probing.
+  - Determinism: call `setRandomSeed(1337)` before starting gameplay in tests; avoid random-dependent assertions.
+  - Minimal assumptions: interrogate via public state or events (e.g., `EnemyEventBus` effects), never internal arrays unless explicitly exposed (e.g., `visualEffectsManager.particles`).
+  - Failure semantics: every probe must return `{ failure: null|String, warnings?: string[] }` and capture a canvas screenshot on failure when possible.
+  - Bug automation: on failure, attempt `createIssue` via `@vibe/tooling/githubIssueManager.js` (fallback `createTicket`). Labels: `bug`, `probe-failure`, plus subsystem label (e.g., `audio`, `collision`).
+  - Timing: prefer event-based waits (`playerChanged`, `armorBroken`) over fixed sleeps; when sleeping, keep ≤50ms ticks with overall timeouts.
+  - Math imports: use `@vibe/core` mathUtils; forbid raw `Math.PI`/`Math.sqrt`.
+Enforcement: Scan probes under `packages/tooling/src/probes/**` for readiness gates and failure shape; Playwright tests must set seed with `setDeterministicSeed(page, 1337)` before interaction.
+Scope: packages/tooling/src/probes/**, tests/**/*-probe.test.js
+Rationale: Removes flakiness, improves CI signal, and automates bug capture.
+Links: [mdc:docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md]
+Status: Active
+Added: 2025-08-12

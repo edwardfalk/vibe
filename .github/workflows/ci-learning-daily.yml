@@ -1,0 +1,40 @@
+name: Learning Daily
+
+on:
+  schedule:
+    - cron: '15 3 * * *' # Daily at 03:15 UTC
+  workflow_dispatch:
+
+jobs:
+  learn-daily:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+        shell: cmd
+
+      - name: Collect observations
+        run: bun run learn:collect || ver > NUL
+        shell: cmd
+
+      - name: Propose rules (draft)
+        run: bun run learn:propose
+        shell: cmd
+
+      - name: Upload ledger
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-ledger
+          path: .ai/ledger

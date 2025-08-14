@@ -1,0 +1,17 @@
+{
+  "name": "@vibe/tooling",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "description": "Development and debug utilities: ticket manager, probes, logger.",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "@vibe/core": "workspace:*",
+    "@octokit/rest": "^22.0.0",
+    "minimist": "^1.2.8",
+    "neo4j-driver": "^5.26.0"
+  }
+}

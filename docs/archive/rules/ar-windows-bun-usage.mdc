@@ -1,0 +1,106 @@
+---
+description: windows native bun conventions (cmd.exe default, PowerShell optional)
+globs: 
+alwaysApply: false
+---
+# Windows-Native Bun Conventions (cmd.exe default)
+
+This rule guarantees that shell commands, scripts, and documentation remain compatible with Windows 11 + cmd.exe – the project's default terminal. PowerShell remains supported for optional helpers.
+
+---
+
+## Shell Standards
+
+- Default: cmd.exe
+- PowerShell: optional; ensure commands are cross-shell where practical
+
+If a script must be invoked from Node, prefer cross-shell-safe commands. Only require PowerShell when specifically needed.
+
+---
+
+## Bun over npm
+
+| Task | Command |
+|------|---------|
+| Install deps | `bun install` |
+| Run dev server | `bun run dev` |
+| Execute ESLint | `bunx eslint …` |
+| Run Playwright | `bunx playwright test` |
+
+**Never** commit commands starting with `npm` / `npx`.
+
+---
+
+## Path Guidelines
+
+• Use **Windows-style paths** (`D:\projects\vibe` or `D:/projects/vibe`).  
+• Avoid Unix `/c/…` prefixes—they break when spawned from Windows shells and in CI.  
+• In scripts, build paths with `path.join` for cross-separator safety.
+
+---
+
+## Common Utilities (optional)
+
+| Task | Preferred (Windows-native) | Optional (3rd-party) |
+|------|----------------------------|-----------------------|
+| Kill occupied port | `bunx kill-port 5500 3001` | — |
+| Find text | `findstr /i /n "pattern" packages\*.js` | `rg "pattern" -g "packages/**/*.js"` |
+| List files | `dir` | `eza -l --git` |
+
+External tools like ripgrep/eza/jq are optional helpers (often installed via scoop). Prefer Windows-native commands first to match `.cursorrules` and CI environments.
+
+---
+
+## Dev Scripts Cheatsheet
+
+```bat
+# Clean install
+bun run fresh
+
+# Lint + tests in parallel
+bun run lint && bun run test
+
+# Serve & watch
+bun run dev:fresh
+```
+
+These scripts already respect the Windows rules—copy them for new tasks.
+
+---
+
+## CI & Child Processes
+
+When spawning from Node/Bun, use `shell: true` and cross-shell-safe commands.
+Avoid `bash -c` or Linux-specific flags.
+
+---
+
+## CI Integration Example
+Add this to `.github/workflows/ci.yml` to ensure the same Windows+Bun environment in CI:
+
+```yaml
+name: vibe-ci
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - name: Install deps
+        run: bun install
+      - name: Lint & tests
+        shell: cmd
+        run: |
+          bunx eslint . --ext .js
+          bun run test:orchestrated
+```
+
+This ensures CI fails early if someone sneaks in `npm`/`npx` commands or Linux-only paths.
+
+Adhering to these conventions ensures every contributor and automation agent shares the same smooth Windows + Bun experience.
+

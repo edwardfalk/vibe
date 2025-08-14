@@ -1,0 +1,36 @@
+---
+alwaysApply: true
+description: Practical guide to maximize Ref and Context7 for docs/snippets with low tokens and high signal
+---
+
+ID: RULE-20250812-02
+Title: Maximize Ref and Context7 for external docs and snippets
+Context: We frequently need authoritative p5.js (and other lib) guidance while coding. Ref is highly token-efficient for pinpoint docs; Context7 excels at topic-focused snippets and curated examples. Combining them yields faster, cheaper, and better-informed changes.
+Policy:
+  - Tool choice heuristics:
+    - Prefer Ref when you need a specific page/section or low-token reads (e.g., constants `PI`, `TWO_PI`, instance-mode rules).
+    - Prefer Context7 when you need topic-curated examples/snippets, cross-file patterns, or best practices (e.g., “instance mode patterns”, “Playwright canvas clicks”).
+  - Standard workflow:
+    1) Localize need via codebase search, then branch:
+       - If exact doc section is known: use Ref → `ref_search_documentation` → `ref_read_url`.
+       - If you need examples/best practices: Context7 → `resolve-library-id` → `get-library-docs(topic)`.
+    2) Parallelize when ambiguous: run Ref and Context7 together; adopt the higher-signal result.
+  - Token guidance:
+    - Ref: default; fast, small. Use for definitions and API pages.
+    - Context7: set `topic` and keep tokens 2000–3000 for focused pulls (5000–8000 only when necessary).
+  - p5.js defaults:
+    - Library ID for Context7: `/processing/p5.js` (or `/context7/p5js-reference`), topics like “instance mode”, “constants (PI, TWO_PI)”.
+    - Ref search terms: “p5.js math readme”, “p5.js instance mode”, then open with `ref_read_url`.
+  - Probes & Playwright:
+    - Use Ref to confirm lifecycle and timing guarantees (e.g., `setup/draw`, `frameCount`) and gate probes on `frameCount > 0`.
+    - Use Context7 (topic: “Playwright canvas clicks”, “headless audio activation”) to align probe interactions (canvas click to unlock audio, waits for readiness).
+  - Integration into edits:
+    - Prefer imported math (`PI`, `TWO_PI`, `dist`, `sin`, `cos`) from `@vibe/core/mathUtils.js` instead of p5 globals; avoid raw `Math.PI`.
+    - Cite doc-driven decisions in commit messages or PR description briefly (no URLs in code).
+Enforcement: Before implementing non-trivial library behavior, fetch at least one external reference (Ref or Context7). When results conflict, favor official docs via Ref; use Context7 snippets for patterns.
+Scope: General development, testing, and refactors involving third-party libraries.
+Rationale: Ref minimizes tokens for targeted facts; Context7 accelerates solution design with vetted examples. Parallel use avoids guesswork and reduces churn.
+Links: [mdc:.cursorrules], [mdc:.cursor/rules/ar-context7-best-practices.mdc]
+Status: Active
+Added: 2025-08-12
+

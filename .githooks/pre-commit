@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# Wrapper: delegate to Windows cmd hook for consistency in Cursor
+exec cmd.exe /C ".\\.githooks\\pre-commit.cmd"

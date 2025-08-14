@@ -1,0 +1,30 @@
+[33m6f3ef27[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mchore/self-learning-system-20250812-01[m[33m)[m 🐛 fix: collector uses system Chrome/Edge if available; increased timeouts
+[33m38cae38[m 🐛 fix: robustify runtime usage collector (try chrome/msedge channels, longer timeouts)
+[33m99817b6[m 🔎 chore: add headless collector for runtime usage counters (writes .debug/runtime-usage-*.json)
+[33mffe2da9[m 🔁 chore: periodically wrap newly spawned enemies for runtime usage sampling
+[33m9804f51[m ✅ fix: replace residual Math.min/max in probe; refine runtime usage script (browser-safe)
+[33mb356ecf[m ✅ fix: replace residual Math.min/max usage in audio-system-probe with mathUtils min/max
+[33me546a56[m �� chore: browser-safe runtime usage instrumentation (console dump)
+[33mdac9eb4[m 🧹 chore: add runtime usage instrumentation and enable gentle audio ducking; updated GitHub Issues rules
+[33ma91bcf2[m[33m ([m[1;31morigin/chore/self-learning-system-20250812-01[m[33m)[m fix: trim PR_BASE and head branch; auto-detect default base
+[33mfc87a7a[m fix: PR script resolves default base branch and uses owner:head to avoid 422
+[33me5be0e3[m chore: expose .env.example to Cursor by overriding .cursorignore
+[33m73345ff[m chore: add .env.example (GitHub token, dev port; remove ticket api)
+[33m7841887[m 🧠 feat: self-learning loop (ledger, rules, autofix, tuner) + CI PR automation
+[33me018fb3[m[33m ([m[1;32mchore/coderabbit-ping-20250811[m[33m)[m ci(coderabbit): switch to coderabbitai/ai-pr-reviewer@v1 (fix invalid action ref)
+[33m5fdbe6f[m[33m ([m[1;31morigin/chore/coderabbit-ping-20250811[m[33m)[m fix(EffectsProfiler): guard avg/fps division-by-zero; chore(coderabbit): write PR activity snapshot for assistant triage
+[33m09fd0f8[m docs: minor README normalization (sync trigger)
+[33m2e04cee[m 🛠️ chore(coderabbit): add .coderabbit.yaml with base_branches and CI fetch on PR sync + nightly
+[33mc58b3e4[m chore: trigger CodeRabbit review (empty change)
+[33mffdcd6e[m 📝 docs(coderabbit): document default-branch review behavior; keep only fetch-latest/new; remove stale guidance
+[33m652d1a6[m 🧪 docs: ping CodeRabbit via PR (note about PR-triggered reviews)
+[33m378a057[m[33m ([m[1;31morigin/unstable[m[33m, [m[1;32munstable[m[33m)[m 🔧 chore(coderabbit): add simple fetch-latest workflow and actionable summary; update docs
+[33me36131c[m 🧹 docs: remove docs/archive and add frontmatter; update README dev commands; codify archive exclusion rule
+[33m6b61284[m 🧹 docs: remove obsolete Ticket API env var from CodeRabbit guide (GitHub Issues only)
+[33mc7e62ec[m 🧹 chore: ignore VS Code session presets; archive stray .vscode/sessions.json
+[33m2cc0d76[m 🧹 chore: cmd.exe-first sweep — remove PowerShell scripts, standardize hooks to .cmd wrappers, update rules/docs, and align tests with INDEX_PAGE
+[33m82c9454[m 🧹 chore: add seedable RNG (setRandomSeed), pre-commit hooks, and FX draw micro-optimizations; enforce instance/math consistency
+[33mc2e2512[m chore: update modular architecture and remove legacy components - Removed references to legacy audio and ticketing systems in `.cursorrules` and updated related documentation. - Enhanced ESLint configuration to disallow imports from removed legacy audio modules. - Updated `index.html` to load p5.js locally, improving reliability. - Refactored various scripts to align with the new modular structure, including changes to bug report handling and test result paths. - Deleted obsolete ticketing scripts and documentation, streamlining the project structure.
+[33m16aa470[m chore: remove obsolete files and update scripts for improved modularity - Deleted `.eslintcache`, `node_cpu_check.txt`, and `node_path_check.txt` as part of project cleanup. - Updated `package.json` to streamline dev server management and testing scripts. - Refactored import paths in various scripts to align with the modular architecture. - Enhanced error handling in ticket management scripts for better reporting. - Updated Playwright test setup to use a standard entry page for consistency.
+[33m36286d5[m chore: improve dev server management and streamline test orchestration - Updated `package.json` to modify the `test:orchestrated` script for better server management during testing. - Enhanced `dev-server.js` with child process tracking and cleanup to ensure proper termination of spawned processes. - Refactored `waitForHttp` in `port-utils.js` to improve server health check logic. - Removed obsolete `test-orchestrator.js` as its functionality is now integrated into the updated scripts.
+[33mb9e99bc[m chore: enhance dev server management and update scripts - Updated `package.json` to include new dev server management scripts: `dev:start`, `dev:stop`, `dev:status`, and `dev:restart`. - Improved port management logic in `test-orchestrator.js` to ensure reliable server startup and reuse. - Refactored `scripts/port-utils.js` for better port handling and health checks. - Enhanced documentation in `ROADMAP_TO_RESTORE_GAME.md` to reflect new server management strategies and troubleshooting steps. - Updated `generate-rule-index.js` to include descriptions in the rule index for better clarity.

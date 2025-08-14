@@ -1,0 +1,3 @@
+# Project-level Cursor ignore overrides
+# Force-include the env template for AI features and visibility
+!.env.example

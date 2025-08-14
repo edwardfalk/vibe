@@ -1,0 +1,14 @@
+{
+  "name": "@vibe/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "description": "Core game loop, state management, timing utilities for Vibe.",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "dependencies": {
+    "dotenv": "^16.5.0"
+  }
+}

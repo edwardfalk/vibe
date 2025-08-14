@@ -1,0 +1,19 @@
+ID: RULE-20250812-07
+Title: Probe reliability standards (Playwright + in-page probes)
+Context: Some probes gave false signals due to weak readiness gates, flaky gestures, and over/under-asserting. We standardize conditions to ensure probes indicate real health.
+Policy:
+  - Gate all gameplay probes on draw-loop start: wait until p5 frameCount > 0 (instance or player.p).
+  - Always perform a canvas click (locator-based) to unlock audio before audio checks; fallback to page.mouse if canvas not reliably visible.
+  - Use deterministic seed before spawning or assertions that assume enemies exist.
+  - Prefer locator-based actions (`page.locator('canvas').click()`) where available; avoid networkidle waits.
+  - Keep assertions minimal and diagnostic-rich: `expect(result.failure).toBeNull()` + targeted booleans.
+  - In-page probes must not mutate world state (wrap system calls with snapshot-restore or use `probeCheck({dryRun:true})`).
+  - On failure: capture canvas screenshot, log key `window.*` states (player/enemies/bullets/gameState), and (optionally) create a GitHub Issue via `githubIssueManager.createIssue` with labels: bug, probe.
+  - Comprehensive runner: retry once on execution-context-destroyed errors; compute an overallHealth per summary.
+Enforcement:
+  - CI runs `bun run test:orchestrated` which relies on these standards; PRs introducing probes must follow this template.
+Scope: tests/**, packages/tooling/src/probes/**
+Rationale: Eliminates race conditions, ensures audio unlock, minimizes flaky asserts, and makes failures actionable.
+Links: [mdc:tests/playwright.setup.js], [mdc:packages/tooling/src/probes/*], [mdc:playwright.config.js]
+Status: Active
+Added: 2025-08-12
