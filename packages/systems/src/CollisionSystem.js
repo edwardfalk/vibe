@@ -246,6 +246,14 @@ export class CollisionSystem {
       // Fallback generic explosion
       window.explosionManager?.addExplosion(x, y, 'enemy');
     }
+    // Dispatch VFX event for decoupled particles/flash
+    try {
+      window.dispatchEvent(
+        new CustomEvent('vfx:enemy-killed', {
+          detail: { x, y, type, killMethod },
+        })
+      );
+    } catch (_) {}
 
     // Special enemy-type audio or default explosion
     switch (type) {
@@ -282,8 +290,12 @@ export class CollisionSystem {
     const { x, y, radius, damage } = explosionEvent;
     const radiusSq = radius * radius;
 
-    // Visual FX – forward to explosion manager
-    window.explosionManager?.addExplosion(x, y, 'rusher-explosion');
+    // Decoupled VFX – dispatch instead of direct manager call
+    try {
+      window.dispatchEvent(
+        new CustomEvent('vfx:rusher-explosion', { detail: { x, y } })
+      );
+    } catch (_) {}
 
     // Damage player if inside blast radius
     if (window.player) {

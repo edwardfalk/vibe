@@ -1,4 +1,5 @@
-import { sin, cos, random } from '../../core/src/mathUtils.js';
+import { sin, cos, random } from '@vibe/core/mathUtils.js';
+import { explosionPalette } from '@vibe/core';
 import EffectsProfiler from './EffectsProfiler.js';
 import { getEnemyConfig, effectsConfig } from './effectsConfig.js';
 
@@ -300,22 +301,37 @@ class VisualEffectsManager {
     const particleCount = cfg.burst?.count
       ? Math.max(4, Math.round(cfg.burst.count * lod))
       : type === 'rusher-explosion'
-      ? 25
-      : 15;
+        ? 25
+        : 15;
 
-    const colors = cfg.burst?.palette
-      ? cfg.burst.palette
-      : type === 'tank'
-      ? [
-          [100, 50, 200],
-          [150, 100, 255],
-          [200, 150, 255],
-        ]
-      : [
-          [255, 100, 50],
-          [255, 150, 100],
-          [255, 200, 150],
-        ];
+    // Prefer core explosionPalette to match Explosion.js visuals exactly
+    const paletteKey =
+      enemyKey === 'grunt'
+        ? 'grunt-death'
+        : enemyKey === 'rusher'
+          ? 'rusher-explosion'
+          : enemyKey === 'tank'
+            ? 'tank-death'
+            : enemyKey === 'stabber'
+              ? 'stabber-death'
+              : null;
+
+    const colors =
+      paletteKey && explosionPalette[paletteKey]
+        ? explosionPalette[paletteKey]
+        : cfg.burst?.palette
+          ? cfg.burst.palette
+          : enemyKey === 'tank'
+            ? [
+                [100, 50, 200],
+                [150, 100, 255],
+                [200, 150, 255],
+              ]
+            : [
+                [255, 100, 50],
+                [255, 150, 100],
+                [255, 200, 150],
+              ];
 
     // Profiling hook
     EffectsProfiler.registerEffect('explosion', {
