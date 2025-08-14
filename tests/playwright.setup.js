@@ -27,8 +27,11 @@ export async function gotoIndex(page) {
 
 // Navigate to index with query parameters (e.g., testMode/scenario)
 export async function gotoIndexWithParams(page, query = '') {
-  const q = typeof query === 'string' ? query : new URLSearchParams(query).toString();
-  const url = q ? `${INDEX_PAGE}?${q}` : INDEX_PAGE;
+  const Q = typeof query === 'string' ? query : '';
+  const uspCtor =
+    (globalThis && globalThis.URLSearchParams) || window.URLSearchParams;
+  const qs = Q || new uspCtor(query).toString();
+  const url = qs ? `${INDEX_PAGE}?${qs}` : INDEX_PAGE;
   return page.goto(url, { waitUntil: 'commit', timeout: 30000 });
 }
 
@@ -92,7 +95,8 @@ export async function waitForDrawStart(page, timeout = 4000) {
         canvas.removeAttribute('data-hidden');
         canvas.style.visibility = 'visible';
       }
-      const p5fc = window.p5 && window.p5.instance && window.p5.instance.frameCount;
+      const p5fc =
+        window.p5 && window.p5.instance && window.p5.instance.frameCount;
       const pInst = window.player && window.player.p;
       const fc = typeof p5fc === 'number' ? p5fc : pInst?.frameCount;
       return typeof fc === 'number' && fc > 0;

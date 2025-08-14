@@ -13,16 +13,31 @@ import { setTimeout as delay } from 'timers/promises';
  */
 export function getProcessOnPort(port) {
   try {
-    // Windows: netstat -ano | findstr :<port>
-    const netstatRaw = execSync(`netstat -ano -p tcp | findstr :${port}`, {
+    // Windows: netstat -ano -n -p tcp | findstr :<port>
+    // Use -n to avoid DNS/service name resolution; avoid locale-dependent state strings.
+    const netstatRaw = execSync(`netstat -ano -n -p tcp | findstr :${port}`, {
       stdio: ['ignore', 'pipe', 'ignore'],
       shell: true,
       encoding: 'utf8',
     });
-    const line = netstatRaw.split(/\r?\n/).find((l) => l.includes('LISTENING'));
-    if (!line) return null;
-    const parts = line.trim().split(/\s+/);
-    const pid = parseInt(parts.at(-1));
+    const lines = netstatRaw.split(/\r?\n/).filter(Boolean);
+    // Parse columns: Proto LocalAddress ForeignAddress State PID
+    // Choose a line whose ForeignAddress ends with :0 (typical for LISTENING) or where State column is absent (some OS variants)
+    let pid = NaN;
+    for (const l of lines) {
+      const parts = l.trim().split(/\s+/);
+      if (parts.length < 4) continue;
+      const localAddr = parts[1] || '';
+      const foreignAddr = parts[2] || '';
+      // Must match the port in local address exactly at the end (e.g., 127.0.0.1:5500 or [::]:5500)
+      const portMatch = /:(\d+)]?$/.exec(localAddr);
+      if (!portMatch || parseInt(portMatch[1]) !== port) continue;
+      // Listener heuristic: foreign address ends with :0 (IPv4) or :0] (IPv6)
+      const isListener = /:(0)]?$/.test(foreignAddr);
+      if (!isListener) continue;
+      pid = parseInt(parts.at(-1));
+      if (!isNaN(pid)) break;
+    }
     if (isNaN(pid)) return null;
 
     let cmdLine = '';

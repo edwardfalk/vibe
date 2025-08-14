@@ -274,7 +274,9 @@ const state = {
 function setup(p) {
   // Test-mode flag parsing from URL
   try {
-    const params = new URLSearchParams(window.location.search);
+    const uspCtor =
+      (window && window.URLSearchParams) || globalThis.URLSearchParams;
+    const params = new uspCtor(window.location.search);
     const tm = params.get('testMode');
     const scenario = params.get('testScenario');
     if (tm === '1' || tm === 'true') {
@@ -315,7 +317,9 @@ function setup(p) {
     window.visualEffectsManager = new VisualEffectsManager(p);
   }
   // Ensure VFX is initialized with p before proceeding
-  try { window.visualEffectsManager.init(p); } catch {}
+  try {
+    window.visualEffectsManager.init(p);
+  } catch {}
 
   if (!window.effectsManager) {
     window.effectsManager = new EffectsManager(p, window.visualEffectsManager);
@@ -337,7 +341,9 @@ function setup(p) {
     window.visualEffectsManager.init(p);
     // Do not hard-fail here; allow game to continue while VFX warms up
     if (!window.visualEffectsManager.ready()) {
-      console.warn('⚠️ VisualEffectsManager not ready yet; continuing without fatal abort');
+      console.warn(
+        '⚠️ VisualEffectsManager not ready yet; continuing without fatal abort'
+      );
     }
   }
 

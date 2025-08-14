@@ -12,6 +12,12 @@ export default {
     },
   },
   create(ctx) {
+    const filename = String(ctx.getFilename && ctx.getFilename());
+    const isSetup = /tests[\\\/]playwright\.setup\.js$/i.test(filename);
+    if (isSetup) {
+      // Allow raw goto in the helper definition file
+      return {};
+    }
     return {
       CallExpression(node) {
         try {
@@ -25,6 +31,12 @@ export default {
           if (
             firstArg.type === 'Identifier' &&
             firstArg.name === 'INDEX_PAGE'
+          ) {
+            ctx.report({ node, messageId: 'noRawGoto' });
+          }
+          if (
+            firstArg.type === 'Literal' &&
+            String(firstArg.value || '') === '/index.html'
           ) {
             ctx.report({ node, messageId: 'noRawGoto' });
           }

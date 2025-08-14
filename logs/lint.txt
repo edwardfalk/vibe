@@ -1,0 +1,79 @@
+
+D:\projects\vibe\packages\core\__tests__\mathUtils.test.js
+  11:21  warning  Instance mode: do not use global p5 function "random"; use p.random or import from mathUtils.js  vibe-no-p5-globals/no-p5-globals
+  18:12  warning  Instance mode: do not use global p5 function "random"; use p.random or import from mathUtils.js  vibe-no-p5-globals/no-p5-globals
+
+D:\projects\vibe\packages\core\src\audio\ToneAudioFacade.js
+  507:31  error  Instance mode: do not use global p5 function "random"; use p.random or import from mathUtils.js  vibe-no-p5-globals/no-p5-globals
+  538:24  error  Instance mode: do not use global p5 function "random"; use p.random or import from mathUtils.js  vibe-no-p5-globals/no-p5-globals
+  569:24  error  Instance mode: do not use global p5 function "random"; use p.random or import from mathUtils.js  vibe-no-p5-globals/no-p5-globals
+  599:24  error  Instance mode: do not use global p5 function "random"; use p.random or import from mathUtils.js  vibe-no-p5-globals/no-p5-globals
+  629:24  error  Instance mode: do not use global p5 function "random"; use p.random or import from mathUtils.js  vibe-no-p5-globals/no-p5-globals
+
+D:\projects\vibe\packages\core\src\mathUtils.js
+  32:10  error  Instance mode: do not use global p5 function "sqrt"; use p.sqrt or import from mathUtils.js  vibe-no-p5-globals/no-p5-globals
+
+D:\projects\vibe\packages\game\src\GameLoop.js
+  277:51  error  'URLSearchParams' is not defined  no-undef
+
+D:\projects\vibe\scripts\eslint-rules\no-p5-globals.js
+  77:76  error  Insert `⏎·········`  prettier/prettier
+
+D:\projects\vibe\scripts\run-lint-redirect.js
+  12:8   error  Replace `·mkdirSync(p,·{·recursive:·true·});` with `␍⏎····mkdirSync(p,·{·recursive:·true·});␍⏎·`                                                     prettier/prettier
+  27:11  error  Insert `␍⏎·`                                                                                                                                         prettier/prettier
+  34:34  error  Replace `·cwd,·stdio:·['ignore',·'pipe',·'pipe'],·windowsHide:·true·` with `␍⏎··cwd,␍⏎··stdio:·['ignore',·'pipe',·'pipe'],␍⏎··windowsHide:·true,␍⏎`  prettier/prettier
+  40:8   error  Replace `·writeFileSync(exitPath,·String(code·??·0));` with `␍⏎····writeFileSync(exitPath,·String(code·??·0));␍⏎·`                                   prettier/prettier
+  48:1   error  Delete `␍⏎␍⏎`                                                                                                                                        prettier/prettier
+
+D:\projects\vibe\tests\ai-liveness-probe.test.js
+  10:10  error  Replace `·await·page.locator('canvas').click({·timeout:·2000·});` with `⏎······await·page.locator('canvas').click({·timeout:·2000·});⏎···`                                                                                                                                                                                                     prettier/prettier
+  12:12  error  Replace `·await·page.mouse.click(Math.floor(vp.width·/·2),·Math.floor(vp.height·/·2));·}` with `⏎········await·page.mouse.click(⏎··········Math.floor(vp.width·/·2),⏎··········Math.floor(vp.height·/·2)⏎········);`                                                                                                                           prettier/prettier
+  13:7   error  Replace `catch·{·await·page.evaluate(()·=>·document.querySelector('canvas')?.dispatchEvent(new·MouseEvent('click',·{·bubbles:·true·})));` with `}·catch·{⏎········await·page.evaluate(()·=>⏎··········document⏎············.querySelector('canvas')⏎············?.dispatchEvent(new·MouseEvent('click',·{·bubbles:·true·}))⏎········);⏎·····`  prettier/prettier
+
+D:\projects\vibe\tests\audio-system-probe.test.js
+   2:9   error  Replace `·INDEX_PAGE,·gotoIndexWithParams,·waitForDrawStart·` with `⏎··INDEX_PAGE,⏎··gotoIndexWithParams,⏎··waitForDrawStart,⏎`                                                                 prettier/prettier
+   5:76  error  Replace `·page` with `⏎····page,⏎·`                                                                                                                                                             prettier/prettier
+   7:32  error  Replace `·console.log(`[browser][${msg.type()}]·${msg.text()}`)` with `⏎······console.log(`[browser][${msg.type()}]·${msg.text()}`)⏎····`                                                       prettier/prettier
+   9:38  error  Replace `·testMode:·'1',·testScenario:·'audio-basic'` with `⏎······testMode:·'1',⏎······testScenario:·'audio-basic',⏎···`                                                                       prettier/prettier
+  22:34  error  Replace `Math.floor(vp.width·/·2),·Math.floor(vp.height·/·2)` with `⏎············Math.floor(vp.width·/·2),⏎············Math.floor(vp.height·/·2)⏎··········`                                    prettier/prettier
+  27:15  error  Replace `attempt·===·0·&&·(msg.includes('context')·||·msg.includes('closed'))` with `⏎············attempt·===·0·&&⏎············(msg.includes('context')·||·msg.includes('closed'))⏎··········`  prettier/prettier
+  28:46  error  Replace `·testMode:·'1',·testScenario:·'audio-basic'` with `⏎··············testMode:·'1',⏎··············testScenario:·'audio-basic',⏎···········`                                               prettier/prettier
+  62:40  error  Replace `'@vibe/tooling/probes/audio-system-probe.js'` with `⏎················'@vibe/tooling/probes/audio-system-probe.js'⏎··············`                                                      prettier/prettier
+
+D:\projects\vibe\tests\collision-detection-probe.test.js
+   9:10  error  Replace `·await·page.locator('canvas').click({·timeout:·2000·});` with `⏎······await·page.locator('canvas').click({·timeout:·2000·});⏎···`                                                                                                                                                                                                     prettier/prettier
+  11:12  error  Replace `·await·page.mouse.click(Math.floor(vp.width·/·2),·Math.floor(vp.height·/·2));·}` with `⏎········await·page.mouse.click(⏎··········Math.floor(vp.width·/·2),⏎··········Math.floor(vp.height·/·2)⏎········);`                                                                                                                           prettier/prettier
+  12:7   error  Replace `catch·{·await·page.evaluate(()·=>·document.querySelector('canvas')?.dispatchEvent(new·MouseEvent('click',·{·bubbles:·true·})));` with `}·catch·{⏎········await·page.evaluate(()·=>⏎··········document⏎············.querySelector('canvas')⏎············?.dispatchEvent(new·MouseEvent('click',·{·bubbles:·true·}))⏎········);⏎·····`  prettier/prettier
+
+D:\projects\vibe\tests\comprehensive-probe-runner.test.js
+  23:10  error  Replace `·await·page.locator('canvas').click({·timeout:·2000·});` with `⏎······await·page.locator('canvas').click({·timeout:·2000·});⏎···`                                                                                                                                                                                                     prettier/prettier
+  25:12  error  Replace `·await·page.mouse.click(Math.floor(vp.width·/·2),·Math.floor(vp.height·/·2));·}` with `⏎········await·page.mouse.click(⏎··········Math.floor(vp.width·/·2),⏎··········Math.floor(vp.height·/·2)⏎········);`                                                                                                                           prettier/prettier
+  26:7   error  Replace `catch·{·await·page.evaluate(()·=>·document.querySelector('canvas')?.dispatchEvent(new·MouseEvent('click',·{·bubbles:·true·})));` with `}·catch·{⏎········await·page.evaluate(()·=>⏎··········document⏎············.querySelector('canvas')⏎············?.dispatchEvent(new·MouseEvent('click',·{·bubbles:·true·}))⏎········);⏎·····`  prettier/prettier
+
+D:\projects\vibe\tests\grunt-knockback-probe.test.js
+  6:11  error  Use gotoIndex(page) instead of page.goto(INDEX_PAGE)  vibe-no-raw-goto-index/no-raw-goto-index
+
+D:\projects\vibe\tests\performance-probe.test.js
+  17:13  error  Use gotoIndex(page) instead of page.goto(INDEX_PAGE)  vibe-no-raw-goto-index/no-raw-goto-index
+  50:34  error  'KeyboardEvent' is not defined                        no-undef
+
+D:\projects\vibe\tests\playwright.setup.js
+  22:10  error  Use gotoIndex(page) instead of page.goto(INDEX_PAGE)  vibe-no-raw-goto-index/no-raw-goto-index
+  30:12  error  Insert `⏎···`                                         prettier/prettier
+  30:53  error  'URLSearchParams' is not defined                      no-undef
+  95:19  error  Insert `⏎·······`                                     prettier/prettier
+
+D:\projects\vibe\tests\runtime-usage-probe.test.js
+  10:8   error  Replace `·await·page.click('canvas');` with `⏎····await·page.click('canvas');⏎·`                                                                                        prettier/prettier
+  13:21  error  Insert `⏎·····`                                                                                                                                                         prettier/prettier
+  17:8   error  Replace `·if·(!fs.existsSync(outDir))·fs.mkdirSync(outDir,·{·recursive:·true·});` with `⏎····if·(!fs.existsSync(outDir))·fs.mkdirSync(outDir,·{·recursive:·true·});⏎·`  prettier/prettier
+
+D:\projects\vibe\tests\startup-black-screen-probe.test.js
+  23:13  error  Use gotoIndex(page) instead of page.goto(INDEX_PAGE)                                                                                                                            vibe-no-raw-goto-index/no-raw-goto-index
+  24:45  error  Replace `·state:·'attached',·timeout:·5000` with `⏎········state:·'attached',⏎········timeout:·5000,⏎·····`                                                                     prettier/prettier
+  27:12  error  Replace `·await·page.click('canvas');·}·catch·{·await·page.click('body');` with `⏎········await·page.click('canvas');⏎······}·catch·{⏎········await·page.click('body');⏎·····`  prettier/prettier
+
+✖ 45 problems (43 errors, 2 warnings)
+  30 errors and 0 warnings potentially fixable with the `--fix` option.
+

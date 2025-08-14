@@ -14,7 +14,8 @@ const wait = (ms) => new Promise((res) => setTimeout(res, ms));
 test.describe('Performance Probe', () => {
   test('Average FPS ≥ 55 under stress', async ({ page }) => {
     try {
-      await page.goto(INDEX_PAGE);
+      const { gotoIndex } = await import('./playwright.setup.js');
+      await gotoIndex(page);
       await page.waitForSelector('canvas');
       await page.click('canvas');
       // Deterministic seed for stable FPS readings
@@ -47,7 +48,7 @@ test.describe('Performance Probe', () => {
           window.spawnSystem.spawnEnemies(80);
         }
         // Show profiler overlay (press P via key event)
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'P' }));
+        window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'P' }));
       });
 
       // Wait 5 seconds of gameplay

@@ -71,6 +71,15 @@ const CMD_ONLY_PATTERNS = [
     re: /(\S)\s*;\s*(\S)/,
     msg: 'Semicolon command chaining is disallowed in cmd.exe',
   },
+  // New: forbid interactive shells that never exit
+  {
+    re: /(^|\s)cmd(?:\.exe)?\s+\/k\b/i,
+    msg: 'Avoid `cmd /K` (keeps shell open). Use `cmd /C` to run and exit.',
+  },
+  {
+    re: /(^|\s)cmd(?:\.exe)?(\s*$|\s+(?!\/(?:c|C)\b))/i,
+    msg: 'Avoid launching bare `cmd.exe` in scripts. Invoke the program directly or wrap with `cmd /C`.',
+  },
 ];
 
 const ERROR_PATH_HINTS = [

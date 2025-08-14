@@ -7,7 +7,7 @@ import { SampleLoader } from './SampleLoader.js';
 import { SOUND } from './SoundIds.js';
 import { FallbackManager } from './FallbackManager.js';
 import { MusicScheduler } from './MusicScheduler.js';
-import { random, floor, max } from '../mathUtils.js';
+import { random, floor, max } from '@vibe/core';
 
 /**
  * Type JSDoc: @typedef {{ bpm: number, getTotalBeats:()=>number }} BeatClockLike

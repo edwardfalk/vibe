@@ -7,10 +7,22 @@ test.describe('AI Liveness Probe', () => {
     await page.waitForLoadState('domcontentloaded');
     await page.waitForSelector('canvas', { state: 'attached' });
     // Prefer locator click; fallback to mouse center; dispatchEvent last
-    try { await page.locator('canvas').click({ timeout: 2000 }); } catch {
+    try {
+      await page.locator('canvas').click({ timeout: 2000 });
+    } catch {
       const vp = page.viewportSize() || { width: 800, height: 600 };
-      try { await page.mouse.click(Math.floor(vp.width / 2), Math.floor(vp.height / 2)); }
-      catch { await page.evaluate(() => document.querySelector('canvas')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))); }
+      try {
+        await page.mouse.click(
+          Math.floor(vp.width / 2),
+          Math.floor(vp.height / 2)
+        );
+      } catch {
+        await page.evaluate(() =>
+          document
+            .querySelector('canvas')
+            ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        );
+      }
     }
     await waitForDrawStart(page);
     await page.waitForFunction(() => window.gameState && window.player);

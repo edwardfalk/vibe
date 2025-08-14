@@ -24,10 +24,7 @@ export default [
         console: 'readonly',
         navigator: 'readonly',
         frameCount: 'readonly',
-        sin: 'readonly',
-        cos: 'readonly',
-        random: 'readonly',
-        sqrt: 'readonly',
+        // Do not whitelist p5 globals – enforce imports from @vibe/core
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         setInterval: 'readonly',

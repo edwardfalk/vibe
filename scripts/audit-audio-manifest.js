@@ -10,14 +10,19 @@ const MANIFEST_PATH = new URL('../public/audio/manifest.json', import.meta.url);
 
 /**
  * Reproduce the same CDN remap logic used by ToneAudioFacade so the audit checks
- * the *actual* URL that will be fetched at runtime.
+ * the actual URL fetched at runtime.
  */
 function remap(url) {
-  if (url.includes('tonejs.github.io/audio/berklee')) {
-    const file = url.split('/').pop();
-    return `https://cdn.jsdelivr.net/gh/Tonejs/Tone.js@gh-pages/examples/audio/berklee/${file}`;
+  const cdnCommit = 'dc9de66401e175849bfd219bfe303ba2d72a4ee7';
+  const cdnBase = `https://raw.githubusercontent.com/Tonejs/Tone.js/${cdnCommit}/examples/audio/`;
+  if (typeof url !== 'string') return url;
+  if (url.includes('tonejs.github.io/audio/')) {
+    const subPath = url.split('/audio/')[1];
+    return cdnBase + subPath;
   }
-  return url;
+  if (/^https?:\/\//i.test(url)) return url;
+  const trimmed = url.replace(/^\.\/?/, '');
+  return cdnBase + trimmed;
 }
 
 async function head(url) {

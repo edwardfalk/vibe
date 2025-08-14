@@ -1,12 +1,23 @@
 import { test, expect } from '@playwright/test';
-import { INDEX_PAGE, gotoIndexWithParams, waitForDrawStart } from './playwright.setup.js';
+import {
+  INDEX_PAGE,
+  gotoIndexWithParams,
+  waitForDrawStart,
+} from './playwright.setup.js';
 
 test.describe('Audio System Probe', () => {
-  test('initialises after gesture and produces measurable signal', async ({ page }) => {
+  test('initialises after gesture and produces measurable signal', async ({
+    page,
+  }) => {
     // echo browser logs to runner
-    page.on('console', (msg) => console.log(`[browser][${msg.type()}] ${msg.text()}`));
+    page.on('console', (msg) =>
+      console.log(`[browser][${msg.type()}] ${msg.text()}`)
+    );
 
-    await gotoIndexWithParams(page, { testMode: '1', testScenario: 'audio-basic' });
+    await gotoIndexWithParams(page, {
+      testMode: '1',
+      testScenario: 'audio-basic',
+    });
     await page.waitForLoadState('domcontentloaded');
     await page.waitForSelector('canvas', { state: 'attached' });
     await waitForDrawStart(page, 8000);
@@ -19,13 +30,22 @@ test.describe('Audio System Probe', () => {
       } catch (e) {
         try {
           const vp = page.viewportSize() || { width: 800, height: 600 };
-          await page.mouse.click(Math.floor(vp.width / 2), Math.floor(vp.height / 2));
+          await page.mouse.click(
+            Math.floor(vp.width / 2),
+            Math.floor(vp.height / 2)
+          );
           break;
         } catch (e2) {
           // If page closed or context destroyed, re-open once
           const msg = String(e2 || e);
-          if (attempt === 0 && (msg.includes('context') || msg.includes('closed'))) {
-            await gotoIndexWithParams(page, { testMode: '1', testScenario: 'audio-basic' });
+          if (
+            attempt === 0 &&
+            (msg.includes('context') || msg.includes('closed'))
+          ) {
+            await gotoIndexWithParams(page, {
+              testMode: '1',
+              testScenario: 'audio-basic',
+            });
             await page.waitForSelector('canvas', { state: 'attached' });
             await waitForDrawStart(page, 4000);
             continue;
@@ -59,7 +79,9 @@ test.describe('Audio System Probe', () => {
         result = hasRunner
           ? await page.evaluate(() => window.testAudio.run())
           : await page.evaluate(async () => {
-              const mod = await import('@vibe/tooling/probes/audio-system-probe.js');
+              const mod = await import(
+                '@vibe/tooling/probes/audio-system-probe.js'
+              );
               return mod.default || mod;
             });
         break;

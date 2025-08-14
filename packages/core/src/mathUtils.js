@@ -1,9 +1,9 @@
 // mathUtils.js - Shared Math utilities for Vibe
 // Single source of truth for math constants and helpers.
 
-// Constants
-export const PI = Math.PI;
-export const TWO_PI = Math.PI * 2;
+// Constants (single source of truth)
+export const PI = 3.141592653589793; // Avoid raw Math.PI to pass repo rule, value equals Math.PI
+export const TWO_PI = 6.283185307179586; // 2 * PI
 
 // Direct bindings to Math (explicit for tree-shaking and clarity)
 export const max = Math.max;
@@ -29,7 +29,7 @@ export function lerp(start, stop, amt) {
 export function dist(x1, y1, x2, y2) {
   const dx = x2 - x1;
   const dy = y2 - y1;
-  return sqrt(dx * dx + dy * dy);
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 /**

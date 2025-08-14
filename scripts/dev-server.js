@@ -97,22 +97,43 @@ async function start() {
       await waitForPortFree(DEV_PORT);
     }
     console.log('🚀 Starting five-server...');
-    // Spawn detached so this script can return (orchestrated flows continue);
-    // dev:stop will sweep the port to terminate the detached child reliably.
-    // Prefer spawning Bun directly to avoid shell indirection that can open an external terminal
-    spawnTracked(
-      'bun',
-      [
-        'x',
-        'five-server',
-        '--port=' + DEV_PORT,
-        '--root=.',
-        '--host=localhost',
-        '--no-browser',
-        '--cors',
-      ],
-      { detached: true, shell: false, stdio: 'ignore', windowsHide: true }
-    );
+    // Windows Terminal sometimes opens a new tab for detached console processes.
+    // Use `cmd /c start "" /B` so it runs in the current console without creating a new window/tab.
+    if (process.platform === 'win32') {
+      spawnTracked(
+        'cmd',
+        [
+          '/c',
+          'start',
+          '',
+          '/B',
+          'bun',
+          'x',
+          'five-server',
+          '--port=' + DEV_PORT,
+          '--root=.',
+          '--host=localhost',
+          '--no-browser',
+          '--cors',
+        ],
+        { detached: true, shell: false, stdio: 'ignore', windowsHide: true }
+      );
+    } else {
+      // POSIX: use a detached child without opening a console window
+      spawnTracked(
+        'bun',
+        [
+          'x',
+          'five-server',
+          '--port=' + DEV_PORT,
+          '--root=.',
+          '--host=localhost',
+          '--no-browser',
+          '--cors',
+        ],
+        { detached: true, shell: false, stdio: 'ignore', windowsHide: true }
+      );
+    }
     const ok = await waitForHttp(`http://localhost:${DEV_PORT}/`, 30000);
     if (!ok) {
       reportError(
@@ -143,14 +164,16 @@ function stop() {
   else console.log('ℹ️ No servers running');
 }
 
-function status() {
+async function status() {
   const dev = getProcessOnPort(DEV_PORT);
-  // Ticket API row removed
+  const httpAlive = await waitForHttp(`http://localhost:${DEV_PORT}/`, 1500);
+  // Report both transport and process views; consider running if either is true
   console.table([
     {
       service: 'Five-Server',
       port: DEV_PORT,
-      running: !!dev,
+      running: httpAlive || !!dev,
+      http: httpAlive,
       pid: dev?.pid || '-',
     },
   ]);
@@ -171,7 +194,7 @@ async function main() {
       break;
     case 'status':
     default:
-      status();
+      await status();
   }
 }
 
