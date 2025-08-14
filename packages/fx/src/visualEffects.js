@@ -481,10 +481,12 @@ class VisualEffectsManager {
   }
 
   drawChromaticAberration(p) {
+    // Subtle reddish global shift; slower and gentle
     p.push();
     p.blendMode(p.MULTIPLY);
-    p.tint(255, 0, 0, 100);
-    p.fill(255, 0, 0, this.chromaticAberration * 10);
+    const alpha = Math.max(0, Math.min(100, this.chromaticAberration * 12));
+    p.noStroke();
+    p.fill(255, 40, 60, alpha);
     p.rect(0, 0, p.width, p.height);
     p.pop();
   }
