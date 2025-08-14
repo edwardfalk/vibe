@@ -1,89 +1,107 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vibe - Geometric Space Shooter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Courier New', monospace;
-        }
-        
-        #gameContainer {
-            border: 2px solid #333;
-        }
-        
-        #ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #fff;
-            font-size: 16px;
-            z-index: 100;
-            pointer-events: none;
-        }
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: 'Courier New', monospace;
+      }
 
+      #gameContainer {
+        border: 2px solid #333;
+      }
+
+      #ui {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: #fff;
+        font-size: 16px;
+        z-index: 100;
+        pointer-events: none;
+      }
     </style>
     <!-- Import map for internal @vibe/* packages -->
     <script type="importmap">
       {
         "imports": {
-          "@vibe/core": "./packages/core/src/index.js",
-          "@vibe/core/": "./packages/core/src/",
-          "@vibe/systems": "./packages/systems/src/index.js",
-          "@vibe/systems/": "./packages/systems/src/",
-          "@vibe/entities": "./packages/entities/src/index.js",
-          "@vibe/entities/": "./packages/entities/src/",
-          "@vibe/fx": "./packages/fx/src/index.js",
-          "@vibe/fx/": "./packages/fx/src/",
-          "@vibe/tooling": "./packages/tooling/src/index.js",
-          "@vibe/tooling/": "./packages/tooling/src/",
-          "@vibe/game": "./packages/game/src/index.js",
-          "@vibe/game/": "./packages/game/src/"
+          "@vibe/core": "packages/core/src/index.js",
+          "@vibe/core/": "packages/core/src/",
+          "@vibe/systems": "packages/systems/src/index.js",
+          "@vibe/systems/": "packages/systems/src/",
+          "@vibe/entities": "packages/entities/src/index.js",
+          "@vibe/entities/": "packages/entities/src/",
+          "@vibe/fx": "packages/fx/src/index.js",
+          "@vibe/fx/": "packages/fx/src/",
+          "@vibe/tooling": "packages/tooling/src/index.js",
+          "@vibe/tooling/": "packages/tooling/src/",
+          "@vibe/game": "packages/game/src/index.js",
+          "@vibe/game/": "packages/game/src/",
+          "js/": "js/"
         }
       }
     </script>
     <!-- Remote console logger (captures early errors before game boots) -->
     <script type="module">
-      import { setupRemoteConsoleLogger } from '@vibe/tooling';
-      setupRemoteConsoleLogger();
+      if (
+        location.hostname === 'localhost' ||
+        location.hostname === '127.0.0.1'
+      ) {
+        const { setupRemoteConsoleLogger } = await import('@vibe/tooling');
+        setupRemoteConsoleLogger();
+      }
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="ui">
-        <div id="score">Score: 0</div>
-        <div id="health">Health: 100</div>
-        <div id="level">Level: 1</div>
-        <div style="margin-top: 10px; font-size: 12px;">
-            <div id="soundStatus">🔇 Click or press M to enable sound</div>
-            <div>💥 WASD to move, Mouse to aim & shoot</div>
-            <div>💨 Press E to dash</div>
-            <div>⏸️ Press P to pause/resume</div>
-            <div>🧪 Press T to toggle test mode (auto-movement & shooting)</div>
-            <div>📍 Press F6 for edge exploration test</div>
-            <div>🚀 Press F7 for 3-minute comprehensive test</div>
-            <div>🛡️ Press F8 for survival edge test</div>
-            <div>🎚️ Press F10 to toggle audio debug logs</div>
-        </div>
+      <div id="score">Score: 0</div>
+      <div id="health">Health: 100</div>
+      <div id="level">Level: 1</div>
+      <div style="margin-top: 10px; font-size: 12px">
+        <div id="soundStatus">🔇 Click or press M to enable sound</div>
+        <div>💥 WASD to move, Mouse to aim & shoot</div>
+        <div>💨 Press E to dash</div>
+        <div>⏸️ Press P to pause/resume</div>
+        <div>🧪 Press T to toggle test mode (auto-movement & shooting)</div>
+        <div>📍 Press F6 for edge exploration test</div>
+        <div>🚀 Press F7 for 3-minute comprehensive test</div>
+        <div>🛡️ Press F8 for survival edge test</div>
+        <div>🎚️ Press F10 to toggle audio debug logs</div>
+      </div>
     </div>
-    
-    <div id="spawnInstructions" style="position: absolute; top: 20px; right: 20px; color: #aaa; font-size: 11px; text-align: left; z-index: 101; pointer-events: none; line-height: 1.5;">
+
+    <div
+      id="spawnInstructions"
+      style="
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: #aaa;
+        font-size: 11px;
+        text-align: left;
+        z-index: 101;
+        pointer-events: none;
+        line-height: 1.5;
+      "
+    >
       <div><b>Enemy Spawn Keys</b></div>
       <div>1: Grunt</div>
       <div>2: Rusher</div>
       <div>3: Tank</div>
       <div>4: Stabber</div>
     </div>
-    
+
     <!-- Vibe bootstrap -->
     <script type="module">
       // Load side-effect barrels (systems register stubs & globals)
@@ -94,5 +112,5 @@
       // Start game loop via new @vibe/game package (uses legacy code internally for now)
       import '@vibe/game';
     </script>
-</body>
-</html> 
+  </body>
+</html>
