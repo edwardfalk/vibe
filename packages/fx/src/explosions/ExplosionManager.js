@@ -332,6 +332,17 @@ export class ExplosionManager {
 
   // Add kill effects for different enemy types and kill methods
   addKillEffect(x, y, enemyType, killMethod = 'bullet') {
+    // Derive a primary color for flashes based on enemy type
+    const primaryFlashColor =
+      enemyType === 'grunt'
+        ? [50, 205, 50]
+        : enemyType === 'rusher'
+        ? [255, 20, 147]
+        : enemyType === 'tank'
+        ? [138, 43, 226]
+        : enemyType === 'stabber'
+        ? [255, 215, 0]
+        : [255, 255, 255];
     if (enemyType === 'grunt') {
       if (killMethod === 'bullet') {
         // Electrical malfunction - green sparks with white electrical discharge
@@ -390,6 +401,20 @@ export class ExplosionManager {
     console.log(
       `💥 ${enemyType} killed by ${killMethod} - created ${effectName} effect`
     );
+
+    // Spawn additional particles in the enemy's palette for cohesion
+    if (window.visualEffectsManager?.addExplosionParticles) {
+      try {
+        window.visualEffectsManager.addExplosionParticles(x, y, enemyType);
+      } catch (_) {}
+    }
+
+    // Apply a subtle screen flash in the enemy's primary hue
+    if (window.effectsManager?.addScreenFlash) {
+      try {
+        window.effectsManager.addScreenFlash(primaryFlashColor, 8);
+      } catch (_) {}
+    }
   }
 
   // Add beautiful fragment explosion that cuts enemy into pieces
