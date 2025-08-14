@@ -337,12 +337,12 @@ export class ExplosionManager {
       enemyType === 'grunt'
         ? [50, 205, 50]
         : enemyType === 'rusher'
-        ? [255, 20, 147]
-        : enemyType === 'tank'
-        ? [138, 43, 226]
-        : enemyType === 'stabber'
-        ? [255, 215, 0]
-        : [255, 255, 255];
+          ? [255, 20, 147]
+          : enemyType === 'tank'
+            ? [138, 43, 226]
+            : enemyType === 'stabber'
+              ? [255, 215, 0]
+              : [255, 255, 255];
     if (enemyType === 'grunt') {
       if (killMethod === 'bullet') {
         // Electrical malfunction - green sparks with white electrical discharge
@@ -412,7 +412,8 @@ export class ExplosionManager {
     // Apply a subtle screen flash in the enemy's primary hue
     if (window.effectsManager?.addScreenFlash) {
       try {
-        window.effectsManager.addScreenFlash(primaryFlashColor, 8);
+        // More subtle and shorter flash to avoid overpowering the scene
+        window.effectsManager.addScreenFlash(primaryFlashColor, 4);
       } catch (_) {}
     }
   }
