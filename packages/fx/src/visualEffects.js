@@ -291,6 +291,9 @@ class VisualEffectsManager {
       if (!this.initialized) return;
     }
 
+    // Nudge global chromatic shift subtly on any explosion
+    this.triggerChromaticAberration(0.25, 50);
+
     // Derive enemy key (strip suffix like '-explosion') for config lookup
     const enemyKey = (type || 'grunt').split('-')[0];
     const cfg = getEnemyConfig(enemyKey);

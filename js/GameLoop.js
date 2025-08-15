@@ -185,7 +185,10 @@ if (!window.uiKeyListenersAdded) {
         'F7',
         'F8',
         'F10',
-        '1','2','3','4',
+        '1',
+        '2',
+        '3',
+        '4',
         ' ',
       ];
       if (singleActionKeys.includes(event.key) && window.uiRenderer) {
@@ -856,21 +859,25 @@ function handleAreaDamageEvents(damageEvents) {
           }
         } else if (damageResult === 'exploding') {
           // Rusher started exploding from area damage
-          if (window.explosionManager) {
-            window.explosionManager.addExplosion(enemy.x, enemy.y, 'hit');
-          }
-          if (window.audio) {
-            window.audio.playHit(enemy.x, enemy.y);
-          }
+          try {
+            window.dispatchEvent(
+              new CustomEvent('vfx:enemy-hit', {
+                detail: { x: enemy.x, y: enemy.y, type: enemy.type },
+              })
+            );
+          } catch (_) {}
+          window.audio?.playHit(enemy.x, enemy.y);
           console.log(`💥 Area damage caused ${enemy.type} to explode!`);
         } else {
           // Enemy damaged but not dead
-          if (window.explosionManager) {
-            window.explosionManager.addExplosion(enemy.x, enemy.y, 'hit');
-          }
-          if (window.audio) {
-            window.audio.playHit(enemy.x, enemy.y);
-          }
+          try {
+            window.dispatchEvent(
+              new CustomEvent('vfx:enemy-hit', {
+                detail: { x: enemy.x, y: enemy.y, type: enemy.type },
+              })
+            );
+          } catch (_) {}
+          window.audio?.playHit(enemy.x, enemy.y);
         }
       }
     }

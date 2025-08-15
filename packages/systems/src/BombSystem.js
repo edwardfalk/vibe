@@ -127,7 +127,11 @@ export class BombSystem {
           window.gameState?.addKill();
           window.gameState?.addScore(20);
         } else if (result === 'exploding') {
-          window.explosionManager?.addExplosion(enemy.x, enemy.y, 'hit');
+          try {
+            window.dispatchEvent(
+              new CustomEvent('vfx:enemy-hit', { detail: { x: enemy.x, y: enemy.y, type: enemy.type } })
+            );
+          } catch (_) {}
           console.log(`💥 Friendly bomb triggered ${enemy.type} explosion`);
         }
       }
