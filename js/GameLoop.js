@@ -481,7 +481,11 @@ function updateGame(p) {
           window.collisionSystem.handleRusherExplosion(result, i);
         }
         try {
-          window.dispatchEvent(new CustomEvent('vfx:rusher-explosion', { detail: { x: result.x, y: result.y } }));
+          window.dispatchEvent(
+            new CustomEvent('vfx:rusher-explosion', {
+              detail: { x: result.x, y: result.y },
+            })
+          );
         } catch (_) {}
         if (window.audio) {
           window.audio.playExplosion(result.x, result.y);
@@ -545,7 +549,15 @@ function updateGame(p) {
 
             // Create impact effect via event bus
             try {
-              window.dispatchEvent(new CustomEvent('vfx:enemy-hit', { detail: { x: window.player.x, y: window.player.y, type: 'stabber' } }));
+              window.dispatchEvent(
+                new CustomEvent('vfx:enemy-hit', {
+                  detail: {
+                    x: window.player.x,
+                    y: window.player.y,
+                    type: 'stabber',
+                  },
+                })
+              );
             } catch (_) {}
           }
         }
@@ -594,7 +606,15 @@ function updateGame(p) {
             } else if (damageResult === 'exploding') {
               // Rusher started exploding from friendly fire
               try {
-                window.dispatchEvent(new CustomEvent('vfx:enemy-hit', { detail: { x: targetEnemy.x, y: targetEnemy.y, type: targetEnemy.type } }));
+                window.dispatchEvent(
+                  new CustomEvent('vfx:enemy-hit', {
+                    detail: {
+                      x: targetEnemy.x,
+                      y: targetEnemy.y,
+                      type: targetEnemy.type,
+                    },
+                  })
+                );
               } catch (_) {}
 
               if (window.audio) {
@@ -606,7 +626,15 @@ function updateGame(p) {
             } else {
               // Enemy damaged but not killed
               try {
-                window.dispatchEvent(new CustomEvent('vfx:enemy-hit', { detail: { x: targetEnemy.x, y: targetEnemy.y, type: targetEnemy.type } }));
+                window.dispatchEvent(
+                  new CustomEvent('vfx:enemy-hit', {
+                    detail: {
+                      x: targetEnemy.x,
+                      y: targetEnemy.y,
+                      type: targetEnemy.type,
+                    },
+                  })
+                );
               } catch (_) {}
 
               if (window.audio) {
