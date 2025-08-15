@@ -125,8 +125,12 @@ export class CollisionSystem {
           window.gameState?.addKill();
           window.gameState?.addScore(10);
         } else if (killResult === 'exploding') {
-          // Special behaviour – already handled inside enemy class but we still add VFX/audio
-          window.explosionManager?.addExplosion(enemy.x, enemy.y, 'hit');
+          // Special behaviour – delegate VFX to event bus only
+          try {
+            window.dispatchEvent(
+              new CustomEvent('vfx:enemy-hit', { detail: { x: enemy.x, y: enemy.y, type: enemy.type } })
+            );
+          } catch (_) {}
           window.audio?.playHit(enemy.x, enemy.y);
         }
 
@@ -226,7 +230,11 @@ export class CollisionSystem {
           window.gameState?.addKill();
           window.gameState?.addScore(5); // smaller reward
         } else if (killResult === 'exploding') {
-          window.explosionManager?.addExplosion(enemy.x, enemy.y, 'hit');
+          try {
+            window.dispatchEvent(
+              new CustomEvent('vfx:enemy-hit', { detail: { x: enemy.x, y: enemy.y, type: enemy.type } })
+            );
+          } catch (_) {}
           window.audio?.playHit(enemy.x, enemy.y);
         }
 
