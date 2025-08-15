@@ -333,6 +333,12 @@ class VisualEffectsManager {
                 [255, 200, 150],
               ];
 
+    try {
+      console.log(
+        `💥 VFX palette for ${enemyKey}: ${paletteKey || 'fallback'} (count=${colors.length})`
+      );
+    } catch (_) {}
+
     // Profiling hook
     EffectsProfiler.registerEffect('explosion', {
       enemy: enemyKey,
