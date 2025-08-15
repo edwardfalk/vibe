@@ -456,28 +456,12 @@ class Stabber extends BaseEnemy {
       result.reach = stabReach;
       result.stabAngle = this.stabDirection;
       result.hitType = 'player';
-      // Spark effect at tip
-      if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
-        visualEffectsManager.addExplosion(
-          tipX,
-          tipY,
-          10,
-          [255, 255, 180],
-          0.7,
-          3,
-          8
+      // Spark effect at tip (via VFX bus)
+      try {
+        window.dispatchEvent(
+          new CustomEvent('vfx:enemy-hit', { detail: { x: tipX, y: tipY, type: 'stabber' } })
         );
-        // Red splash effect
-        visualEffectsManager.addExplosion(
-          tipX,
-          tipY,
-          14,
-          [255, 40, 40],
-          0.5,
-          2,
-          10
-        );
-      }
+      } catch (_) {}
       // Play hit sound
       if (window.audio) {
         window.audio.playSound(SOUND.stabberKnifeHit, tipX, tipY);

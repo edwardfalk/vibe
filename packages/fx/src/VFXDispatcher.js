@@ -41,9 +41,6 @@ function installVFXDispatcher() {
   window.addEventListener(VFX_EVENTS.RUSHER_EXPLODED, (ev) => {
     try {
       const { x, y } = ev.detail || {};
-      if (window.explosionManager?.addExplosion) {
-        window.explosionManager.addExplosion(x, y, 'rusher-explosion');
-      }
       if (window.visualEffectsManager?.addExplosionParticles) {
         window.visualEffectsManager.addExplosionParticles(x, y, 'rusher');
       }
