@@ -9,6 +9,7 @@ import {
   min,
   max,
   ceil,
+  PI,
 } from '@vibe/core';
 import { CONFIG } from '@vibe/core';
 import { speakAmbient } from './EnemySpeechUtils.js';
