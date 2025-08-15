@@ -541,15 +541,15 @@ export class UIRenderer {
     // Arrow keys for aim direction
     if (this.gameState.gameState === 'playing' && this.player) {
       if (key === 'ArrowUp') {
-        this.player.aimAngle = -Math.PI / 2;
+        this.player.aimAngle = -PI / 2;
         return true;
       }
       if (key === 'ArrowDown') {
-        this.player.aimAngle = Math.PI / 2;
+        this.player.aimAngle = PI / 2;
         return true;
       }
       if (key === 'ArrowLeft') {
-        this.player.aimAngle = Math.PI;
+        this.player.aimAngle = PI;
         return true;
       }
       if (key === 'ArrowRight') {

@@ -353,7 +353,7 @@ class Stabber extends BaseEnemy {
         this.stabDirection = this.aimAngle;
 
         console.log(
-          `⚠️ Stabber entering warning phase, direction locked at ${((this.stabDirection * 180) / Math.PI).toFixed(1)}°`
+          `⚠️ Stabber entering warning phase, direction locked at ${((this.stabDirection * 180) / PI).toFixed(1)}°`
         );
       }
 
@@ -436,10 +436,10 @@ class Stabber extends BaseEnemy {
     const playerAngle = atan2(playerY - this.y, playerX - this.x);
     // Modular angle difference to handle wrap-around
     let playerDiff =
-      ((this.stabDirection - playerAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
-    if (playerDiff < -Math.PI) playerDiff += 2 * Math.PI;
+      ((this.stabDirection - playerAngle + PI) % (2 * PI)) - PI;
+    if (playerDiff < -PI) playerDiff += 2 * PI;
     const angleDifference = Math.abs(playerDiff);
-    const maxStabAngle = Math.PI / 6;
+    const maxStabAngle = PI / 6;
     const inStabDirection = angleDifference <= maxStabAngle;
     const result = {
       type: 'stabber-miss',
@@ -479,9 +479,9 @@ class Stabber extends BaseEnemy {
           const enemyAngle = atan2(enemy.y - this.y, enemy.x - this.x);
           // Modular angle difference to handle wrap-around
           let enemyDiff =
-            ((this.stabDirection - enemyAngle + Math.PI) % (2 * Math.PI)) -
-            Math.PI;
-          if (enemyDiff < -Math.PI) enemyDiff += 2 * Math.PI;
+            ((this.stabDirection - enemyAngle + PI) % (2 * PI)) -
+            PI;
+          if (enemyDiff < -PI) enemyDiff += 2 * PI;
           const enemyAngleDifference = Math.abs(enemyDiff);
           const enemyInStabDirection = enemyAngleDifference <= maxStabAngle;
           if (enemyInStabDirection) {
@@ -683,7 +683,7 @@ class Stabber extends BaseEnemy {
     if (frameCount % 3 === 0) {
       for (let i = 0; i < 6; i++) {
         const sparkAngle =
-          (frameCount * 0.1 + (i * Math.PI) / 3) % (2 * Math.PI);
+          (frameCount * 0.1 + (i * PI) / 3) % (2 * PI);
         const sparkDist = this.size * (0.8 + stabPercent * 0.4);
         const sparkX = this.x + cos(sparkAngle) * sparkDist;
         const sparkY = this.y + sin(sparkAngle) * sparkDist;

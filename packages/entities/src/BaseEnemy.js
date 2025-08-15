@@ -505,7 +505,7 @@ export class BaseEnemy {
     // DEBUG: Log bullet creation only if collision debug is enabled
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
-        `🔫 ${this.type} created bullet at (${Math.round(bulletX)}, ${Math.round(bulletY)}) angle=${Math.round((this.aimAngle * 180) / Math.PI)}° owner="${bullet.owner}" ownerId="${bullet.ownerId}"`
+        `🔫 ${this.type} created bullet at (${Math.round(bulletX)}, ${Math.round(bulletY)}) angle=${Math.round((this.aimAngle * 180) / PI)}° owner="${bullet.owner}" ownerId="${bullet.ownerId}"`
       );
     }
 

@@ -164,7 +164,7 @@ export class Player {
               ', dy=' +
               dy +
               ', angle=' +
-              ((this.aimAngle * 180) / Math.PI).toFixed(1)
+              ((this.aimAngle * 180) / PI).toFixed(1)
           );
         }
       }
@@ -177,7 +177,7 @@ export class Player {
       this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && frameCount % 60 === 0) {
         console.log(
-          `[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
+          `[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / PI).toFixed(1)}°`
         );
       }
     } else {
@@ -185,7 +185,7 @@ export class Player {
       this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && frameCount % 60 === 0) {
         console.log(
-          `[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
+          `[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / PI).toFixed(1)}°`
         );
       }
     }
@@ -578,7 +578,7 @@ export class Player {
     const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
 
     console.log(
-      `🔫 Player firing bullet: aim=${((this.aimAngle * 180) / Math.PI).toFixed(1)}° pos=(${bulletX.toFixed(1)}, ${bulletY.toFixed(1)})`
+      `🔫 Player firing bullet: aim=${((this.aimAngle * 180) / PI).toFixed(1)}° pos=(${bulletX.toFixed(1)}, ${bulletY.toFixed(1)})`
     );
 
     return new Bullet(bulletX, bulletY, this.aimAngle, 8, 'player');
