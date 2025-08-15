@@ -2,7 +2,7 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { CONFIG } from '@vibe/core';
 import { Bullet } from './bullet.js';
-import { max, atan2, sin, cos, random, TWO_PI } from '@vibe/core';
+import { max, atan2, sin, cos, random, TWO_PI, PI } from '@vibe/core';
 
 const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;

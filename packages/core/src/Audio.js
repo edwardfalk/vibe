@@ -50,7 +50,7 @@
  */
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
-import { random, randomRange, floor } from './mathUtils.js';
+import { random, randomRange, floor, PI } from './mathUtils.js';
 import { SFXManager } from './audio/SFXManager.js';
 import { SOUND } from './audio/SoundIds.js';
 
