@@ -50,17 +50,27 @@ class EnemyFragmentExplosion {
       let fragmentColor, fragmentType;
       if (this.enemy.type === 'grunt') {
         // Force grunt-death palette for all fragments
-        const greens = [[50,205,50],[60,220,60],[40,180,40],[30,150,30],[80,240,80]];
-        fragmentColor = greens[Math.floor(Math.random()*greens.length)];
+        const greens = [
+          [50, 205, 50],
+          [60, 220, 60],
+          [40, 180, 40],
+          [30, 150, 30],
+          [80, 240, 80],
+        ];
+        fragmentColor = greens[Math.floor(Math.random() * greens.length)];
         fragmentType = 'body';
       } else if (i < 3) {
-        fragmentColor = skinColor; fragmentType = 'head';
+        fragmentColor = skinColor;
+        fragmentType = 'head';
       } else if (i < 6) {
-        fragmentColor = helmetColor; fragmentType = 'helmet';
+        fragmentColor = helmetColor;
+        fragmentType = 'helmet';
       } else if (i < 9) {
-        fragmentColor = bodyColor; fragmentType = 'body';
+        fragmentColor = bodyColor;
+        fragmentType = 'body';
       } else {
-        fragmentColor = weaponColor; fragmentType = 'weapon';
+        fragmentColor = weaponColor;
+        fragmentType = 'weapon';
       }
 
       this.fragments.push({

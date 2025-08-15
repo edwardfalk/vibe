@@ -5,7 +5,7 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
 
 import { Bullet } from '@vibe/entities';
-import { sin, cos, min, floor, random, atan2 } from '@vibe/core';
+import { sin, cos, min, floor, random, atan2, PI } from '@vibe/core';
 
 /**
  * @param {Player} player - The player object (dependency injected for modularity)

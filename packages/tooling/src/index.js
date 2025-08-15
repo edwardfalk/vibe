@@ -1,5 +1,5 @@
 // Tooling package barrel file
-// TODO: export ticketManager, probes, debug logger after migration.
+// TODO: probes after migration.
 
 export {};
 
