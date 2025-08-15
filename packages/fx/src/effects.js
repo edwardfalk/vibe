@@ -310,20 +310,9 @@ class EnhancedExplosionManager {
     this.explosions.push(new EnhancedExplosion(x, y, type, size));
 
     // Add screen effects based on explosion type
-    if (window.effectsManager) {
-      if (type === 'enemy') {
-        window.effectsManager.addShake(8, 15);
-        window.effectsManager.addScreenFlash([255, 200, 100], 5);
-        window.effectsManager.addExplosionParticles(x, y, 25, 'enemy');
-      } else if (type === 'rusher-explosion') {
-        window.effectsManager.addShake(15, 25);
-        window.effectsManager.addScreenFlash([255, 100, 100], 8);
-        window.effectsManager.addExplosionParticles(x, y, 40, 'enemy');
-        window.effectsManager.setSlowMotion(0.4, 30);
-      } else {
-        window.effectsManager.addShake(4, 10);
-        window.effectsManager.addExplosionParticles(x, y, 15);
-      }
+    // Delegate particles/flash to VFXDispatcher via events only
+    if (window.cameraSystem && type === 'rusher-explosion') {
+      window.cameraSystem.addShake(15, 25);
     }
   }
 
