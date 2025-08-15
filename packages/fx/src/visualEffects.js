@@ -319,22 +319,19 @@ class VisualEffectsManager {
               ? 'stabber-death'
               : null;
 
-    const colors =
-      paletteKey && explosionPalette[paletteKey]
-        ? explosionPalette[paletteKey]
-        : cfg.burst?.palette
-          ? cfg.burst.palette
-          : enemyKey === 'tank'
-            ? [
-                [100, 50, 200],
-                [150, 100, 255],
-                [200, 150, 255],
-              ]
-            : [
-                [255, 100, 50],
-                [255, 150, 100],
-                [255, 200, 150],
-              ];
+    const colors = (() => {
+      if (paletteKey && explosionPalette[paletteKey]) return explosionPalette[paletteKey];
+      if (enemyKey === 'grunt') return explosionPalette['grunt-death'];
+      if (cfg.burst?.palette) return cfg.burst.palette;
+      if (enemyKey === 'tank') {
+        return [
+          [100, 50, 200],
+          [150, 100, 255],
+          [200, 150, 255],
+        ];
+      }
+      return explosionPalette.default; // neutral fallback
+    })();
 
     try {
       console.log(
