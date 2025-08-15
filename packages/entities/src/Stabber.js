@@ -211,16 +211,12 @@ class Stabber extends BaseEnemy {
               this.x + cos(this.stabDirection) * (this.meleeReach * 0.9); // Slightly back from full reach
             const impactY =
               this.y + sin(this.stabDirection) * (this.meleeReach * 0.9);
-            // Using a small, sharp explosion effect
-            visualEffectsManager.addExplosion(
-              impactX,
-              impactY,
-              20,
-              [255, 255, 100],
-              0.5,
-              5,
-              8
-            );
+            // Route to VFX bus for consistent hit effect
+            try {
+              window.dispatchEvent(
+                new CustomEvent('vfx:enemy-hit', { detail: { x: impactX, y: impactY, type: 'stabber' } })
+              );
+            } catch (_) {}
           }
 
           // Apply damage to player if hit
@@ -518,30 +514,11 @@ class Stabber extends BaseEnemy {
       // After collecting all enemy hits, trigger effects and sound only once if any were hit
       if (result.enemiesHit.length > 0) {
         // Spark effect at tip
-        if (
-          typeof visualEffectsManager !== 'undefined' &&
-          visualEffectsManager
-        ) {
-          visualEffectsManager.addExplosion(
-            tipX,
-            tipY,
-            10,
-            [255, 255, 180],
-            0.7,
-            3,
-            8
+        try {
+          window.dispatchEvent(
+            new CustomEvent('vfx:enemy-hit', { detail: { x: tipX, y: tipY, type: 'stabber' } })
           );
-          // Red splash effect
-          visualEffectsManager.addExplosion(
-            tipX,
-            tipY,
-            14,
-            [255, 40, 40],
-            0.5,
-            2,
-            10
-          );
-        }
+        } catch (_) {}
         // Play hit sound
         if (window.audio) {
           window.audio.playSound(SOUND.stabberKnifeHit, tipX, tipY);
@@ -550,19 +527,11 @@ class Stabber extends BaseEnemy {
     }
     // Miss case as before
     if (result.type === 'stabber-miss') {
-      if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
-        try {
-          visualEffectsManager.addExplosion(
-            this.x,
-            this.y,
-            15,
-            [255, 215, 0],
-            0.8
-          );
-        } catch (error) {
-          console.log('⚠️ Stabber miss explosion error:', error);
-        }
-      }
+      try {
+        window.dispatchEvent(
+          new CustomEvent('vfx:enemy-hit', { detail: { x: this.x, y: this.y, type: 'stabber' } })
+        );
+      } catch (_) {}
       result.reason =
         playerDistance > stabReach ? 'out_of_reach' : 'wrong_direction';
       result.distance = playerDistance;
