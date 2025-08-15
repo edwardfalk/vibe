@@ -17,19 +17,20 @@ function installVFXDispatcher() {
   // Enemy killed → color-cohesive particles + subtle flash
   window.addEventListener(VFX_EVENTS.ENEMY_KILLED, (ev) => {
     try {
-      const { x, y, type } = ev.detail || {};
+      const { x, y, type, enemyType } = ev.detail || {};
+      const resolvedType = type || enemyType;
       if (window.visualEffectsManager?.addExplosionParticles) {
-        window.visualEffectsManager.addExplosionParticles(x, y, type);
+        window.visualEffectsManager.addExplosionParticles(x, y, resolvedType);
       }
       if (window.effectsManager?.addScreenFlash) {
         const primary =
-          type === 'grunt'
+          resolvedType === 'grunt'
             ? [50, 205, 50]
-            : type === 'rusher'
+            : resolvedType === 'rusher'
               ? [255, 20, 147]
-              : type === 'tank'
+              : resolvedType === 'tank'
                 ? [138, 43, 226]
-                : type === 'stabber'
+                : resolvedType === 'stabber'
                   ? [255, 215, 0]
                   : [255, 255, 255];
         window.effectsManager.addScreenFlash(primary, 4);
@@ -51,9 +52,10 @@ function installVFXDispatcher() {
   // Generic enemy hit (non-lethal) – tiny sparks in enemy color
   window.addEventListener(VFX_EVENTS.ENEMY_HIT, (ev) => {
     try {
-      const { x, y, type } = ev.detail || {};
+      const { x, y, type, enemyType } = ev.detail || {};
+      const resolvedType = type || enemyType;
       if (window.visualEffectsManager?.addExplosionParticles) {
-        window.visualEffectsManager.addExplosionParticles(x, y, type);
+        window.visualEffectsManager.addExplosionParticles(x, y, resolvedType);
       }
     } catch (_) {}
   });
