@@ -1,0 +1,28 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Legacy Clamp Rule
+
+<!-- desc: Rejects npm usage, Unix paths, and re-introduction of removed monolithic files. -->
+
+<rule>
+name: legacy_clamp
+description: Rejects use of npm, Bash-style Unix paths, or any attempt to reintroduce legacy monolithic files like js/game.js (now fully removed).
+filters:
+  # Block creation or modification of files with disallowed content or path usage
+  - type: content
+    pattern: "npm install"
+  - type: content
+    pattern: "\\/c\\/|\\/home\\/"   # Unix-style/WSL paths
+  - type: file_path
+    pattern: "js/game\\.js"
+  - type: event
+    pattern: "file_create|file_update"
+actions:
+  - type: reject
+    message: |
+      Legacy/deprecated pattern detected. Use bun/bunx, Windows-native paths, and avoid reintroducing legacy monoliths (e.g., js/game.js, which is now fully removed). See .cursorrules for architecture standards.
+</rule>
+

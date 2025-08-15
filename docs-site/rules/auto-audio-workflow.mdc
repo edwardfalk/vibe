@@ -1,0 +1,49 @@
+
+---
+globs: public/audio/**,packages/core/src/audio/**
+alwaysApply: false
+---
+# Audio Workflow (Tone.js)
+
+**Updated July 2025 – Tone.js migration**
+
+Adding new audio assets (SFX or music) is now a manifest-based process.  The `SOUND` enum + `Audio.sounds` remain canonical for IDs; the manifest simply backs file paths and preloads.
+
+## 🚀 New Workflow (ToneAudioFacade)
+
+1. **Copy the file** to `public/audio/`.  Prefer short lowercase paths, e.g. `laser/shot1.wav`.
+2. **Edit** `public/audio/manifest.json` – map a unique ID to the relative path:
+   ```json
+   {
+     "tankEnergy": "drums/kick.wav",
+     "laserShot":  "laser/shot1.wav"
+   }
+   ```
+3. **Use it in code** via the singleton:
+   ```javascript
+   import { toneAudio } from '@vibe/core';
+   toneAudio.playSound('laserShot');
+   ```
+4. **(Optional) Add to `SOUND` enum** if you want the extra safety/auto-complete, but it’s no longer mandatory.
+
+## Music Loops
+* Call `toneAudio.startMusic()` to launch the default loop.
+* Custom loops live in code (`MusicScheduler`) and will eventually move to JSON patterns.
+
+## Speech Ducking
+* `SpeechCoordinator` automatically ducks music & plays a soft pad during any `speechSynthesis.speak()` call.
+* Adjust pad volume: `toneAudio._speech.padVolume = 0`.
+
+---
+
+### 🗂 Legacy Workflow (still valid but deprecated)
+1. Add ID to `SOUND` enum.
+2. Add config block to `Audio.sounds`.
+3. Call `window.audio.playSound(SOUND.ID)`.  
+This path will be removed once all callers migrate.
+
+
+
+- **SFX (Sound Effects):** Managed by `SFXManager.js`. These are for short, event-driven sounds (e.g., explosions, clicks, hits). Use `window.audio.playSound()` to trigger them.
+- **Music:** Managed by `MusicManager.js`. This handles background tracks, looping, and beat-synchronized transitions. Interact with it via `window.audio.music.*` methods.
+

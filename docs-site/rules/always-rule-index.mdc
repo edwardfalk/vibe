@@ -1,0 +1,42 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Master Rule Index
+
+> Quick table of every rule in `.cursor/rules/` with a one-liner and link.  
+> **Always applied** so agents can orient themselves fast.
+
+| Rule | Purpose |
+|------|---------|
+| **always-vibe-game-core-guide** | Snapshot of project vision, modular layout, essential coding & testing norms |
+| **always-context7-mcp-tools-integration** | How/when to use Context7 docs tools |
+| **always-legacy_clamp** | Blocks npm, Unix paths, legacy monoliths |
+| **always-cursor_rules_location** | Enforces `.cursor/rules/` placement for rule files |
+| **always-rule-maintenance-policy** | AI duty to keep rules up-to-date |
+| **always-the-users-own-preferences** | Captures user's stylistic & workflow preferences |
+| **a-architecture-and-standards** | Detailed folder map, coding standards, dependency rules |
+| **ar-dev-server-process-management** | Child process tracking, cleanup, and orphan prevention in dev-server.js |
+| **ar-github-issues-workflow** | GitHub Issues workflow and API wrapper |
+| **ar-testing-and-debugging** | Probe-driven Playwright workflow, troubleshooting |
+| **a-probe-standards-and-reliability** | Unified probe contract and flake controls |
+| **ar-consistency-standards** | Emoji logging map, constructor signatures, globals hierarchy |
+| **ar-event-bus-vfx** | Contract for visual-effects event bus |
+| **a-cmd-exe-usage** | Windows cmd.exe standards (Bun-first) |
+| **ar-debug-logging** | How `.debug/` logs are generated & cleaned |
+| **ar-port-allocation** | Reserved port list for local services |
+| **auto-* rules** | Generated best-practice guides per subsystem |
+
+_For rarely used or experimental rules (e.g., probe auto-generated), open the file for details._
+
+# Rule Index Shortcut
+
+The full, auto-generated list of every rule (with descriptions) lives in the Docsify site:
+
+➡️  **Open [docs-site/RULES_INDEX.md](mdc:docs-site/RULES_INDEX.md)**
+
+Run `bun run docs:serve` to preview it locally.
+
+
+

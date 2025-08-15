@@ -1,0 +1,24 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Cursor Rules Location Enforcement
+
+<!-- desc: Ensures every .mdc rule file stays inside .cursor/rules/. -->
+
+<rule>
+name: cursor_rules_location
+description: Reject rule files not placed in .cursor/rules/
+filters:
+  - type: file_extension
+    pattern: "\\.mdc$"
+  - type: event
+    pattern: "file_create"
+actions:
+  - type: reject
+    conditions:
+      - pattern: "^(?!\\.cursor\\/rules\\/).*"
+        message: "Cursor rule files (.mdc) must reside in .cursor/rules/. Move the file accordingly."
+</rule>
+

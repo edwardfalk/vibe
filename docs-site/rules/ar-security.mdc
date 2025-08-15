@@ -1,0 +1,53 @@
+---
+description: Security & Secrets
+globs: 
+alwaysApply: false
+---
+# Security & Secrets Rule
+
+_Last modified: 2025-06-24_
+
+> Canonical source for authentication-related safeguards, secret-handling, and CI security gates.
+
+## 🔐 Core Principles
+• **No hard-coded secrets** – GitHub tokens, API keys, passwords must live in `.env` and be loaded via `process.env`.
+• `.env.example` documents required keys (`GITHUB_TOKEN`, etc.).  Never commit the real `.env`.
+• CI and commit hooks scan for 40-char hexes / `token=` patterns and fail the build if found.
+
+## 🛡️ Secret-Leak Prevention
+1. Run `bun run scan:secrets` before every push – script exits non-zero on suspect strings.
+2. Git pre-commit hook (optional) can execute the same scan automatically.
+3. GitHub Actions workflow step:
+   ```yaml
+   - name: Scan for secrets
+     run: bun run scan:secrets
+   ```
+
+## 🩹 If a Secret Leaks
+1. **Rotate** the key immediately.
+2. Purge from git history (`git filter-repo`) or GitHub UI.
+3. Add post-mortem entry in `docs/debugging`.
+
+## 🚧 Useful Scripts
+| Script | Purpose |
+|--------|---------|
+| `scripts/scan-secrets.js` | Detects common secret patterns. |
+| `scripts/cleanup-debug.js` | Trims heavy `.debug` logs to keep sensitive info out of repo. |
+
+## 🚨 Common Secret Patterns Detected
+
+The `scripts/scan-secrets.js` utility currently flags these high-probability leak signatures (extend as needed):
+
+| Pattern | Regex (simplified) | Example Hit |
+|---------|-------------------|--------------|
+| GitHub Personal Access Token | `ghp_[A-Za-z0-9]{36}` | `ghp_ab12CD34ef56GH78ij90KL12mn34OP56qr78` |
+| AWS Access Key ID | `AKIA[0-9A-Z]{16}` | `AKIAIOSFODNN7EXAMPLE` |
+| AWS Secret Access Key | `(?i)aws_secret(?:_access)?_key\s*[:=]\s*[A-Za-z0-9\/+=]{40}` | `aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` |
+| Generic 40-char Hex | `[A-Fa-f0-9]{40}` | `e5c0d97a6d918b7ad3fb4de64045b9edc74e13da` |
+| JWT Token | `eyJ[A-Za-z0-9_-]+?\.[A-Za-z0-9._-]+?\.[A-Za-z0-9._-]+` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| Slack Webhook URL | `https:\/\/hooks\.slack\.com\/[A-Za-z0-9\/]+` | `https://hooks.slack.com/services/T000/B000/abc123` |
+
+**Add new patterns** by editing `scan-secrets.js` → updating the `PATTERNS` array.
+
+---
+*This file supersedes the Security section previously embedded in `.cursorrules`.  Update here first, then link elsewhere.*

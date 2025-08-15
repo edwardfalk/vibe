@@ -1,0 +1,20 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Vibe Project: What is it
+
+<!-- desc: High-level snapshot of project purpose, modular layout, and core coding/testing norms. -->
+
+- **Game First:** Vibe is a bizarre, half-mad, rhythm-driven space shooter. The cosmic beat rules all. See [PROJECT_VISION.md](mdc:docs/PROJECT_VISION.md) for the vision.
+- **Strict Modularity:** All new and modular code lives in `packages/` (`core`, `systems`, `entities`, `fx`, `tooling`). The legacy `js/` folder is now removed and any references to it should be changed if found.
+- **Ticketing is Core:** All work (bugs, features, enhancements, tasks) is tracked in GitHub Issues via `packages/tooling/src/githubIssueManager.js`. Legacy JSON tickets are retired. See [TICKETING_SYSTEM_GUIDE.md](mdc:docs/TICKETING_SYSTEM_GUIDE.md).
+- **Windows-Native, Bun-First:** Use cmd.exe by default (PowerShell optional), Windows paths, and `bun`/`bunx` for scripts and package management.
+
+# Code standards
+- ES modules, explicit imports (esp. math), emoji-prefixed logs, robust error handling, structured returns. All code in `packages/` must pass linting/formatting. See [.cursorrules](mdc:.cursorrules) and [Vibe Architecture & Coding Standards](mdc:.cursor/rules/ar-architecture-and-standards.mdc) for the comprehensive standards.
+- **p5.js Instance Mode:** Always use `p.`/`this.p.` for p5 functions/constants; import math from `mathUtils.js`.
+- **Testing:** Only probe-driven Playwright tests; dev server on port 5500. See [Five Server Dev Workflow](mdc:.cursor/rules/ar-five-server-workflow.mdc) and [MCP_PLAYWRIGHT_TESTING_GUIDE.md](mdc:docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md).
+- **Rules & Docs:** Keep project rules and docs clean, current, and focused. Reference [README.md](mdc:README.md) for the documentation map. Make sure to update all relevant documentation immediately when changing the code.
+- **GitHub repo:** https://github.com/edwardfalk/vibe, GITHUB_TOKEN in .env

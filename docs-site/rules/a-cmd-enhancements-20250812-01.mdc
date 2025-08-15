@@ -1,0 +1,23 @@
+---
+alwaysApply: true
+---
+
+ID: RULE-20250812-02
+Title: Enforce Clink-enhanced cmd.exe for all terminals (Cursor-first)
+Context: Cursor PowerShell caused instability (psreadline issues). The project standardizes on cmd.exe. We adopt Clink for readline, UTF-8, and Git prompt across Cursor, Windows Terminal, and plain console.
+Policy:
+  - Default shell is cmd.exe in Cursor and Windows Terminal.
+  - Use Clink portable with user profile at %USERPROFILE%\.clink and AutoRun injection.
+  - UTF-8 required: terminal code page 65001 on launch.
+  - Provide standard aliases for bun/bunx tasks (dev, test, lint, play, serve).
+  - Strictly forbid bashisms and PowerShell-only scripts in Cursor terminals.
+Enforcement:
+  - `.vscode/settings.json` sets Command Prompt as default in Cursor.
+  - `scripts/install-cmd-enhancements.cmd` installs/activates Clink profile.
+  - Reviewers reject PRs that add bashisms (see scan:bashisms) or reintroduce PS scripts for Cursor.
+Scope: Developer terminals (Cursor-integrated, Windows Terminal, conhost).
+Rationale: Stable, fast, Windows-native shell with modern ergonomics (history search, prompt, UTF-8) without PSReadLine issues.
+Links: [mdc:.cursorrules], [mdc:.cursor/rules/a-cmd-exe-usage-20250812-01.mdc]
+Status: Active
+Added: 2025-08-12
+

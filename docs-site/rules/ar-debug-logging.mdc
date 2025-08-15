@@ -1,0 +1,95 @@
+---
+description: Debug logging system logs to .debug
+globs: packages/tooling/src/**,tests/**,scripts/**
+alwaysApply: false
+---
+# Debug Logging System Rule
+
+Note: Remote ticket API logging is optional in v1. Local `.debug/` logs are the primary source.
+
+## Overview
+This project uses a robust, minimal-overhead debug logging system to capture critical errors and high-value file operations. All logs are written to the `.debug/` folder at the project root.
+
+## What is Logged
+- **Uncaught exceptions and unhandled promise rejections** are logged automatically if the global error handler is loaded.
+- **Playwright test failures and suite startup** are logged in [tests/gameplay-probe.test.js](mdc:tests/gameplay-probe.test.js) and any other test files instrumented with `DebugLogger`.
+- **High-value file operations** (artifact handling) are logged in `packages/tooling/src/ErrorReporter.js` and related helpers.
+
+## Log File Location
+- Logs are written to `.debug/YYYY-MM-DD.log`.
+- The `.debug/` folder is non-essential and is ignored by git.
+- Old logs are automatically cleaned up (see [scripts/cleanup-debug.js](mdc:scripts/cleanup-debug.js)).
+
+## Usage and Best Practices
+- Use `DebugLogger.log(message, error)` for manual logging in try/catch blocks or for high-value actions.
+- Ensure global error handlers are loaded early in all main entry points and test setups for maximum coverage.
+- Do not attempt to log every file operation—focus on errors, test failures, and critical artifact/file moves.
+
+## Why This Matters
+- This system provides a reliable audit trail for debugging, test failures, and artifact handling.
+- It is designed for minimal performance overhead and maximum value.
+
+## See Also
+- [packages/tooling/src/DebugLogger.js](mdc:packages/tooling/src/DebugLogger.js) for the logger implementation.
+- [README.md](mdc:README.md) for a summary of the debug logging workflow.
+
+# Debug Logging & RemoteConsoleLogger
+
+This rule explains how to use the project-wide logging helpers so every module and Playwright probe produces structured, greppable logs.
+
+---
+
+## Components
+
+| Helper | File |
+|--------|------|
+| `DebugLogger` – writes timestamped lines to `.debug/YYYY-MM-DD.log` | [packages/tooling/src/DebugLogger.js](mdc:packages/tooling/src/DebugLogger.js) |
+| `RemoteConsoleLogger` – optional forwarder of browser `console.*` calls to a remote endpoint (disabled by default) | [packages/tooling/src/RemoteConsoleLogger.js](mdc:packages/tooling/src/RemoteConsoleLogger.js) |
+
+---
+
+## In-Code Usage
+
+```js
+import { DebugLogger } from '/packages/tooling/src/DebugLogger.js';
+
+DebugLogger.log('🎮 Game state changed', newState);
+DebugLogger.warn('⚠️ Something odd');
+DebugLogger.error('💥 Explosion failed', err);
+```
+
+Each call prefixes the message with ISO datetime and writes both to the log file and `console` (coloured for dev).
+
+---
+
+## Remote Browser Logging
+
+1. **Enable in `index.html` (optional)** – Provide your own HTTP endpoint if needed:
+   ```html
+   <script type="module">
+     import RemoteConsoleLogger from '/packages/tooling/src/RemoteConsoleLogger.js';
+     RemoteConsoleLogger.install({ api: 'http://YOUR_ENDPOINT/logs' });
+   </script>
+   ```
+2. Every `console.log/warn/error` inside the browser will be POSTed to your endpoint. Handy for Playwright and manual QA sessions.
+
+---
+
+## Environment Toggle
+
+Set `window.VIBE_DEBUG_LOGGING = false` _before_ loading scripts to silence all DebugLogger output (RemoteConsoleLogger still captures errors unless you disable it explicitly).
+
+Example dev-only toggle in `index.html`:
+```html
+<script>window.VIBE_DEBUG_LOGGING = !location.search.includes('prod');</script>
+```
+
+---
+
+## Best Practices
+
+1. **Use emoji prefixes** (🎮, 🎵, 🗡️ …) so grep searches stay useful.
+2. Avoid massive data dumps; log high-value summaries, not entire objects when possible.
+3. For repeated errors, add a counter or throttle to keep log size reasonable.
+4. Never commit `.debug/*.log` – they are git-ignored by default.
+

@@ -1,0 +1,242 @@
+---
+description: GitHub Issues Workflow (reference)
+alwaysApply: false
+---
+# GitHub Issues Workflow
+
+<!-- desc: Complete GitHub Issues integration for automated bug tracking, issue management, and probe integration -->
+
+**GitHub Issues** is the primary issue tracking system for Vibe, replacing the legacy JSON ticketing system. All automated bug reports, feature requests, and probe failures are managed through GitHub Issues.
+
+## Core Module: `githubIssueManager.js`
+
+**Location:** `packages/tooling/src/githubIssueManager.js`
+
+**Purpose:** Dependency-free wrapper around GitHub Issues API for automated bug/feature tracking
+
+### Key Features:
+- **Dependency-free:** Uses Bun's native fetch (no external dependencies)
+- **Auto-repository detection:** Parses git remote URL to determine repo slug
+- **Environment variables:** Requires `GITHUB_TOKEN` with repo permissions
+- **Fallback configuration:** Uses `GITHUB_REPO` env var if auto-detection fails
+- **Full CRUD operations:** Create, update, comment, and close issues
+
+### API Methods:
+
+#### `createIssue(params)`
+Creates a new GitHub Issue with title, body, and labels.
+```javascript
+import { createIssue } from '@vibe/tooling';
+const issueNumber = await createIssue({
+  title: 'Bug: player collision detection failed',
+  body: 'Detailed reproduction steps and diagnostic data...',
+  labels: ['bug', 'automated', 'collision']
+});
+```
+
+#### `updateIssue(issueNumber, params)`
+Updates an existing GitHub Issue.
+```javascript
+await updateIssue(issueNumber, {
+  title: 'Updated: Bug fixed in collision detection',
+  body: 'Updated description with fix details...',
+  labels: ['bug', 'fixed', 'collision']
+});
+```
+
+#### `addComment(issueNumber, comment)`
+Adds a comment to an existing issue.
+```javascript
+await addComment(issueNumber, '🤖 Automated test passed after fix');
+```
+
+#### `closeIssue(issueNumber)`
+Closes an existing issue.
+```javascript
+await closeIssue(issueNumber);
+```
+
+#### `createTicket(ticketData)` 
+Legacy compatibility method for existing probes.
+```javascript
+await createTicket({
+  title: 'probe-failure',
+  description: 'Collision detection failed',
+  labels: ['bug', 'automated', 'probe']
+});
+```
+
+## Environment Setup
+
+### Required Environment Variables:
+- **`GITHUB_TOKEN`:** Personal access token with `repo` scope
+- **`GITHUB_REPO`:** (Optional) Repository slug in format `owner/repo`
+
+### Token Setup:
+1. Go to GitHub Settings → Developer settings → Personal access tokens
+2. Generate new token with `repo` scope
+3. Add to environment or `.env` file: `GITHUB_TOKEN=your_token_here`
+
+### Repository Detection:
+- **Automatic:** Parses `git remote origin` URL (https://github.com/owner/repo.git)
+- **Manual override:** Set `GITHUB_REPO=owner/repo` environment variable (preferred on CI)
+- **Fallback:** If auto-detection fails, uses `GITHUB_REPO` env var
+
+## Integration with Probes
+
+All probe files (`packages/tooling/src/probes/*.js`) are configured to use GitHub Issues:
+
+### Standard Probe Integration Pattern:
+```javascript
+// Import GitHub issue manager
+let ticketManager = null;
+try {
+  ticketManager = await import(
+    new URL('../githubIssueManager.js', import.meta.url).href
+  );
+} catch (e) {
+  // Not available in all contexts
+}
+
+// On failure, create GitHub issue
+if (result.failure && ticketManager?.createTicket) {
+  await ticketManager.createTicket({
+    title: 'probe-failure',
+    description: result.failure,
+    labels: ['bug', 'automated', 'probe']
+  });
+}
+```
+
+### Automated Issue Creation:
+- **Trigger:** Probe failures automatically create GitHub issues
+- **Labels:** Issues are tagged with `bug`, `automated`, and specific probe type
+- **Content:** Includes failure description, timestamp, and diagnostic data
+- **Screenshots:** Canvas/screen artifacts embedded when available
+- **Artifacts:** Diagnostic logs and state information included
+
+## Labels and Organization
+
+### Standard Labels:
+- `bug` - Bug reports and failures
+- `automated` - Issues created by automated systems
+- `probe` - Probe-related failures
+- `enhancement` - Feature requests
+- `documentation` - Documentation updates
+- `test` - Test-related issues
+- `migration` - Migration-related issues
+
+### Probe-Specific Labels:
+- `liveness` - AI liveness probe failures
+- `collision` - Collision detection probe failures
+- `audio` - Audio system probe failures
+- `performance` - Performance-related issues
+
+### Issue Structure:
+- **Title:** Concise description (≤100 chars recommended)
+- **Body:** Detailed description with reproduction steps
+- **Labels:** Appropriate categorization tags
+- **Artifacts:** Screenshots and logs embedded in issue body
+
+## Testing and Validation
+
+### Unit Tests:
+- **Location:** `packages/tooling/__tests__/githubIssueManager.test.js`
+- **Coverage:** API calls, error handling, token validation
+- **Run:** `bun test packages/tooling/__tests__/githubIssueManager.test.js`
+
+### Integration Tests:
+- **Probe-driven tests:** Automatically create GitHub issues on failure
+- **Test command:** `bun run test:orchestrated`
+- **Verification:** Check that issues are created in GitHub repository
+
+### Manual Testing:
+Full CRUD workflow can be tested with a script that:
+1. Creates a test issue
+2. Updates the issue title and body
+3. Adds a comment
+4. Closes the issue
+
+## Best Practices
+
+### Issue Creation:
+- Use descriptive titles that clearly identify the problem
+- Include relevant context and diagnostic information
+- Add appropriate labels for organization and filtering
+- Avoid creating duplicate issues for the same problem
+- Include screenshots and logs when available
+
+### Error Handling:
+- Always wrap GitHub API calls in try-catch blocks
+- Provide fallback behavior when GitHub API is unavailable
+- Log errors for debugging without crashing the application
+- Gracefully handle rate limiting and authentication failures
+
+### Security:
+- Never commit GitHub tokens to version control
+- Use environment variables for sensitive configuration
+- Validate token permissions before API calls
+- Use minimal required permissions (repo scope)
+
+## Migration from Legacy System
+
+### Completed Changes:
+- ✅ Created `githubIssueManager.js` module with full CRUD operations
+- ✅ Updated all probe files to use GitHub Issues
+- ✅ Updated documentation and rule references
+- ✅ Removed legacy ticketing system files
+- ✅ Updated .cursorrules and workflow documentation
+- ✅ Tested complete CRUD workflow
+
+### Legacy System Removal:
+- ❌ `packages/core/src/TicketCore.js` - REMOVED
+- ❌ `packages/tooling/src/ticketManager.js` - REMOVED
+- ❌ `packages/api/src/TicketRouter.js` - REMOVED
+- ❌ `packages/api/src/TicketService.js` - REMOVED
+- ❌ `ticket-api.js` - REMOVED
+- ❌ `tickets.json` - REMOVED
+
+## Troubleshooting
+
+### Common Issues:
+1. **"GITHUB_TOKEN missing"** - Add token to environment variables
+2. **"Unable to determine GitHub repo"** - Set GITHUB_REPO env var to `owner/repo`
+3. **"API rate limit exceeded"** - Wait for rate limit reset (typically 1 hour)
+4. **"403 Forbidden"** - Check token permissions and repository access
+5. **"404 Not Found"** - Verify repository slug is correct format `owner/repo`
+
+### Debug Tips:
+- Check environment variables: `echo $GITHUB_TOKEN` / `$env:GITHUB_TOKEN`
+- Test token permissions: `curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/user`
+- Verify repository access: `curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/repos/owner/repo`
+- Check git remote: `git remote -v` to verify repository URL
+
+### Error Messages:
+- **"repos/vibe/undefined/issues"** - Repository detection failed, set GITHUB_REPO env var
+- **"Bad credentials"** - Invalid or expired GitHub token
+- **"Not Found"** - Repository doesn't exist or token lacks access
+
+## Usage Examples
+
+### Creating an Issue from Probe Failure:
+```javascript
+if (result.failure) {
+  await ticketManager.createTicket({
+    title: `Probe Failure: ${probeName}`,
+    description: `${result.failure}\n\nTimestamp: ${result.timestamp}`,
+    labels: ['bug', 'automated', 'probe', probeName.toLowerCase()]
+  });
+}
+```
+
+### Creating an Issue with Screenshots:
+```javascript
+const screenshotData = canvas.toDataURL('image/png');
+await createIssue({
+  title: 'Visual Bug: Rendering Issue',
+  body: `## Bug Description\n${description}\n\n## Screenshot\n![screenshot](${screenshotData})`,
+  labels: ['bug', 'visual', 'automated']
+});
+```
+
+**This rule defines the complete GitHub Issues workflow that replaced the legacy JSON ticketing system. All new development should use GitHub Issues via the githubIssueManager module.**

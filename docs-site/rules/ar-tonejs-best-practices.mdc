@@ -1,0 +1,41 @@
+---
+title: Tone.js Best Practices for Vibe
+globs: packages/core/src/audio/**
+alwaysApply: false
+---
+
+## Scope
+Applies to all files inside `packages/core/src/audio/` using Tone.js.
+
+### 1 – Transport & BPM
+* `Tone.Transport.bpm` is the single tempo authority.
+* Use `Tone.Transport.bpm.rampTo(newBpm, rampSeconds)` for tempo changes.
+
+### 2 – Bootstrapping
+* Gate `await Tone.start()` behind an explicit user interaction (e.g. `pointerdown`).
+
+### 3 – Mixer Graph
+```js
+const buses = {
+  master: new Tone.Channel().toDestination(),
+  music:  new Tone.Channel({ volume: -6 }).connect(master),
+  sfx:    new Tone.Channel().connect(master),
+  speech: new Tone.Channel().connect(master),
+};
+```
+* Use `Channel.solo()` / `mute()` for debugging and speech ducking.
+
+### 4 – Sample Loading
+* Prefer `new Tone.Players(manifest, onload)` over custom loaders.
+
+### 5 – Scheduling
+* Compose patterns with `Tone.Part` or `Tone.Sequence`; avoid parsing `Tone.Transport.position` strings.
+
+### 6 – Testing Hooks
+* Attach a `Tone.Meter` to `buses.master` and surface levels in the AudioLab UI.
+
+---
+Follow these guidelines when adding or modifying audio code. 
+
+---
+Follow these guidelines when adding or modifying audio code. 

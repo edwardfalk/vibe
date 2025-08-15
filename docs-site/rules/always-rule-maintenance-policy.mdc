@@ -1,0 +1,25 @@
+---
+description: A meta-rule establishing the AI's responsibility to maintain all other Cursor Rules.
+globs: 
+alwaysApply: true
+---
+# AI Rule Maintenance Policy
+
+## Purpose
+This rule establishes the AI's responsibility to maintain the accuracy, relevance, and currency of all other .mdc Cursor Rules located in the `.cursor/rules/` directory. **The integrity of these rules is critical for effective collaboration and project navigation.**
+
+## Core Directive
+**You, the AI assistant, must proactively update any rule that becomes outdated or incorrect as a direct result of your work.**
+
+## Triggers for Rule Updates
+You **must** review and update rules when:
+1.  **Code Refactoring:** A file or module referenced in a rule is moved, renamed, deleted, or significantly refactored.
+2.  **Workflow Changes:** A development, testing, or deployment workflow you've modified is documented in a rule.
+3.  **New Standards:** You introduce a new coding standard, architectural pattern, or best practice that should be documented for future work.
+4.  **Automation Changes:** A script that automates a process (like rule generation) is changed, and the corresponding rule needs to be updated.
+5.  **Discovering Errors:** You find a rule that is factually incorrect, misleading, or no longer relevant to the current state of the project.
+
+## Actions
+- **Update:** Edit the relevant `.mdc` file to reflect the new information. Ensure all file links and descriptions are accurate.
+- **Archive/Delete:** If a rule or workflow is entirely obsolete, propose its deletion.
+- **Automate:** For rules that can be generated from code or project structure (like the Playwright probes), prefer updating the generator script (e.g., `scripts/generate-playwright-rules.js`) and re-running it.

@@ -1,0 +1,88 @@
+---
+alwaysApply: true
+description: Require auto-creation of new project rules when the assistant discovers root causes, stable fixes, or non-obvious constraints, to prevent recurrence.
+---
+# Auto-Create and Enforce Learnings
+
+When the assistant:
+- identifies a root cause,
+- lands a stable fix or workaround,
+- confirms a non-obvious constraint/invariant,
+- sees a repeated issue, or
+- finds documentation/API drift or a policy gap,
+
+it MUST immediately codify that learning as a new rule in `.cursor\rules` to prevent recurrence.
+
+## Naming convention (prefix + slug + date + sequence)
+- Prefixes: `a-` Always apply, `i-` Apply intelligently, `s-` Apply to specific files, `m-` Apply manually
+- Filename: `<prefix><kebab-slug>-YYYYMMDD-NN.mdc`
+  - Example: `a-auto-create-learnings-20250809-01.mdc`
+  - `NN` is a zero-padded sequence per date+slug (start at `01`)
+
+Front-matter mapping:
+- `a-`: set `alwaysApply: true`
+- `s-`: set `globs: ["<patterns>"]` (no `alwaysApply`)
+- `i-`: omit `alwaysApply` and `globs` (Cursor can attach by relevance)
+- `m-`: omit `alwaysApply` and `globs`; intended to be `@`-mentioned manually
+
+## How to choose rule type (with exact authoring steps)
+
+- a- Always apply
+  - Use when guidance is universally safe and should always be enforced by Cursor.
+  - Front matter: `alwaysApply: true`
+  - Filename: `a-<slug>-YYYYMMDD-NN.mdc`
+  - Example use: terminal defaults, deterministic gameplay guarantees.
+  - Tests/Checks: add pretest scripts or unit tests to enforce.
+  - This rule is an example of "always apply"
+
+- i- Apply intelligently
+  - Use when guidance is often helpful but context-dependent.
+  - No `alwaysApply` and no `globs`.
+  - Filename: `i-<slug>-YYYYMMDD-NN.mdc`
+  - Example use: platform-specific TTY mitigations, optional perf tips.
+  - Tests/Checks: best-effort references; avoid hard failures.
+  - Example: i-about-rules.mdc
+  - Top lines 1, 2, 3 in .mdc rule file should look like this:
+  ---
+  alwaysApply: false
+  ---
+
+- s- Apply to specific files
+  - Use when the rule targets a code area by path patterns.
+  - Front matter: `globs: ["<patterns>"]`
+  - Filename: `s-<slug>-YYYYMMDD-NN.mdc`
+  - Example use: forbid `Math.random` in `src/game/**`, enforce dynamic import in `src/**`.
+  - Tests/Checks: add linters or pretest scripts to scan only the targeted globs.
+  - Example: s-mediapipe-dynamic-import-only-20250811-01.mdc
+
+- m- Apply manually
+  - Use for runbooks, one-off migrations, or guidance that should not auto-apply.
+  - No `alwaysApply`, no `globs`. These are intended to be referenced explicitly (e.g., via `@m-...`).
+  - Filename: `m-<slug>-YYYYMMDD-NN.mdc`
+  - Example use: release checklists, manual operational procedures, migration steps.
+  - Tests/Checks: not enforced automatically; may include verification steps.
+
+## Mandatory actions
+1. Create/update a rule file named `<prefix><kebab-slug>-YYYYMMDD-NN.mdc` under `.cursor\rules` using the template below.
+2. Add/extend tests that enforce the policy where feasible (red → green → refactor).
+3. In the session summary, note: `New Rule Added: <ID> – <Title>`.
+4. Search for overlap with existing rules and merge/deprecate duplicates.
+
+## Scope of learnings
+- Debugging outcomes, architectural decisions, invariants, privacy/perf constraints, flaky test fixes, operational runbooks.
+
+## Rule Template
+```md
+ID: RULE-YYYYMMDD-NN
+Title: <short imperative>
+Context: <what we learned / problem>
+Policy:
+  - <bullet 1>
+  - <bullet 2>
+Enforcement: <tests, CI checks, or manual verification>
+Scope: <files / systems>
+Rationale: <why this prevents recurrence>
+Links: [mdc:<file>] …
+Status: Active
+Added: YYYY-MM-DD
+```

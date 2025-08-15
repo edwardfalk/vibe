@@ -1,0 +1,30 @@
+---
+alwaysApply: true
+description: Canonical shell policy for Windows cmd.exe + Bun. Defines allowed vs disallowed patterns and CI enforcement.
+---
+
+# Windows Shell Policy (cmd.exe + Bun)
+
+## Allowed (canonical)
+- Default shell: cmd.exe
+- Package tooling: `bun`, `bunx`
+- Path style: Windows paths (e.g., `D:\projects\vibe`)
+- Common commands: `where`, `findstr`, `type`, `copy`, `move`, `del`, `rmdir /s /q`, `tasklist`, `taskkill`, `curl -s -o NUL -w "%{http_code}" ...`
+- Long-running: orchestrated scripts; background via tool, not shell tricks
+
+## Disallowed (CI hard fail)
+- Bashisms: `| cat`, `grep`, `rm -rf`, `ls`, `touch`, WSL paths (`/c/...`, `/mnt/c/...`)
+- Node toolchain in docs/scripts: `npm ...`, `npx ...`, `node ...` (use Bun)
+- `start` / `Start-Process` (spawns new console window)
+- Markdown command blocks using `bash`/`sh`/`zsh`
+- In `bat`/`cmd` code fences: semicolon chaining (`;`) and bash line-continuations (`\` at end-of-line)
+
+## Notes
+- Tools may spawn `node.exe` internally (OK). Policy only restricts documented/checked-in usage.
+- PowerShell is optional; invoke explicitly (e.g., `powershell -NoProfile -Command "..."`).
+
+## Enforcement
+- CI step `bun run scan:bashisms` (see `scripts/check-bashisms.js`) scans repo content:
+  - Hard errors for Disallowed list
+  - Warnings for `npm/npx/node` mentions in plain prose (non-executable contexts)
+- Exceptions: add `bashism-allow` marker in file to skip scan (rare, justify in PR)

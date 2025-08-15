@@ -1,0 +1,73 @@
+---
+description: p5.js instance-mode standards
+globs: 
+alwaysApply: false
+---
+# p5.js Instance-Mode Standards
+
+This rule distills the universal requirements for any module that touches p5.js so that multiple AI agents produce compatible drawing code.
+
+---
+
+## Prefix Everything
+
+| ✅ Correct | ❌ Wrong |
+|-----------|---------|
+| `this.p.fill(255)` | `fill(255)` |
+| `p.ellipse(x, y, r)` | `ellipse(x, y, r)` |
+| `this.p.CENTER` | `CENTER` |
+
+Use `this.p.` inside classes and `p.` in free functions that receive the p5 instance as a parameter.
+
+---
+
+## Import Math from `mathUtils.js`
+
+Never call p5 globals (`sin`, `random`, etc.). Instead:
+
+```js
+import { sin, cos, random } from './mathUtils.js';
+```
+
+These utilities are pure and testable.
+
+---
+
+## Required Header Comment
+
+If a file **does** rely on p5 globals (e.g., `constrain`, `lerp`) add this at the very top so the linter and humans are warned:
+
+```js
+// Requires p5.js for constrain(), lerp(), …
+```
+
+But strive to avoid globals by passing `p` when possible.
+
+---
+
+## Single Responsibility & Size Limit
+
+• One visual concern per module (e.g., `BackgroundRenderer`, `UIRenderer`).  
+• If a file exceeds **500 lines**, split it.
+
+---
+
+## Dependency Injection
+
+Accept `p` and other systems (audio, camera) via the constructor, not through `window`.
+
+```js
+constructor(p, cameraSystem) {
+  this.p = p;
+  this.camera = cameraSystem;
+}
+```
+
+---
+
+## Error Handling & Performance
+
+• Guard against missing `p` or disposed resources with early returns.  
+• Cache colours/fonts if reused every frame.  
+• Avoid creating new p5 vectors in tight loops; reuse or compute raw numbers.
+
