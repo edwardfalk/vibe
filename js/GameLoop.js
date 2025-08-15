@@ -578,14 +578,10 @@ function updateGame(p) {
               window.cameraSystem.addShake(10, 20);
             }
 
-            // Create impact effect
-            if (window.explosionManager) {
-              window.explosionManager.addExplosion(
-                window.player.x,
-                window.player.y,
-                'hit'
-              );
-            }
+            // Create impact effect via event bus
+            try {
+              window.dispatchEvent(new CustomEvent('vfx:enemy-hit', { detail: { x: window.player.x, y: window.player.y, type: 'stabber' } }));
+            } catch (_) {}
           }
         }
 
@@ -632,13 +628,10 @@ function updateGame(p) {
               }
             } else if (damageResult === 'exploding') {
               // Rusher started exploding from friendly fire
-              if (window.explosionManager) {
-                window.explosionManager.addExplosion(
-                  targetEnemy.x,
-                  targetEnemy.y,
-                  'hit'
-                );
-              }
+              try {
+                window.dispatchEvent(new CustomEvent('vfx:enemy-hit', { detail: { x: targetEnemy.x, y: targetEnemy.y, type: targetEnemy.type } }));
+              } catch (_) {}
+
               if (window.audio) {
                 window.audio.playHit(targetEnemy.x, targetEnemy.y);
               }
@@ -647,13 +640,10 @@ function updateGame(p) {
               );
             } else {
               // Enemy damaged but not killed
-              if (window.explosionManager) {
-                window.explosionManager.addExplosion(
-                  targetEnemy.x,
-                  targetEnemy.y,
-                  'hit'
-                );
-              }
+              try {
+                window.dispatchEvent(new CustomEvent('vfx:enemy-hit', { detail: { x: targetEnemy.x, y: targetEnemy.y, type: targetEnemy.type } }));
+              } catch (_) {}
+
               if (window.audio) {
                 window.audio.playHit(targetEnemy.x, targetEnemy.y);
               }

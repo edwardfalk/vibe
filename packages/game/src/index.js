@@ -3,7 +3,7 @@
  * Side-effect: boots the game loop.
  * Currently re-uses legacy /js/GameLoop.js while migration is in progress.
  */
-import 'js/GameLoop.js';
+import './GameLoop.js';
 // Install VFX dispatcher to decouple game logic from effect managers
 import { installVFXDispatcher } from '@vibe/fx/VFXDispatcher.js';
 installVFXDispatcher();
