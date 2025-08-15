@@ -19,20 +19,26 @@ function installVFXDispatcher() {
     try {
       const { x, y, type, enemyType } = ev.detail || {};
       const resolvedType = type || enemyType;
+      const enemyKey = resolvedType;
+      const paletteKey =
+        enemyKey === 'rusher' ? 'rusher-explosion' : `${enemyKey}-death`;
       if (window.visualEffectsManager?.addExplosionParticles) {
-        window.visualEffectsManager.addExplosionParticles(x, y, resolvedType);
+        window.visualEffectsManager.addExplosionParticles(x, y, {
+          enemyKey,
+          paletteKey,
+        });
         // Subtle ambient shift to restore slow reddish movement
         window.visualEffectsManager.triggerChromaticAberration?.(0.3, 60);
       }
       if (window.effectsManager?.addScreenFlash) {
         const primary =
-          resolvedType === 'grunt'
+          enemyKey === 'grunt'
             ? [50, 205, 50]
-            : resolvedType === 'rusher'
+            : enemyKey === 'rusher'
               ? [255, 20, 147]
-              : resolvedType === 'tank'
+              : enemyKey === 'tank'
                 ? [138, 43, 226]
-                : resolvedType === 'stabber'
+                : enemyKey === 'stabber'
                   ? [255, 215, 0]
                   : [255, 255, 255];
         window.effectsManager.addScreenFlash(primary, 4);
@@ -45,7 +51,10 @@ function installVFXDispatcher() {
     try {
       const { x, y } = ev.detail || {};
       if (window.visualEffectsManager?.addExplosionParticles) {
-        window.visualEffectsManager.addExplosionParticles(x, y, 'rusher');
+        window.visualEffectsManager.addExplosionParticles(x, y, {
+          enemyKey: 'rusher',
+          paletteKey: 'rusher-explosion',
+        });
         window.visualEffectsManager.triggerChromaticAberration?.(0.6, 75);
       }
       window.cameraSystem?.addShake?.(18, 30);
@@ -57,8 +66,14 @@ function installVFXDispatcher() {
     try {
       const { x, y, type, enemyType } = ev.detail || {};
       const resolvedType = type || enemyType;
+      const enemyKey = resolvedType;
+      const paletteKey =
+        enemyKey === 'rusher' ? 'rusher-explosion' : `${enemyKey}-death`;
       if (window.visualEffectsManager?.addExplosionParticles) {
-        window.visualEffectsManager.addExplosionParticles(x, y, resolvedType);
+        window.visualEffectsManager.addExplosionParticles(x, y, {
+          enemyKey,
+          paletteKey,
+        });
       }
     } catch (_) {}
   });

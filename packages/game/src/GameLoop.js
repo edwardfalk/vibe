@@ -39,7 +39,8 @@ import {
   BombSystem,
   InputSystem,
 } from '@vibe/systems';
-import { setupRemoteConsoleLogger } from '@vibe/tooling';
+// Remote console logging is dev-only; guard import for localhost
+// Remote console logging removed – no ticket server in this codebase
 import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
 import ProfilerOverlay from '@vibe/fx/ProfilerOverlay.js';
 import AdaptiveLODManager from '@vibe/fx/AdaptiveLODManager.js';
@@ -910,7 +911,9 @@ window.addEventListener('keydown', unlockAudioAndShowCanvas);
 // console output (log/info/warn/error) and POSTs it to the Ticket API running
 // on port 3001 where it is persisted to `.debug/` for later troubleshooting.
 // -----------------------------------------------------------------------------
-setupRemoteConsoleLogger();
+if (typeof setupRemoteConsoleLogger === 'function') {
+  setupRemoteConsoleLogger();
+}
 
 // Expose Player class as global for robust restart logic
 window.Player = Player;
