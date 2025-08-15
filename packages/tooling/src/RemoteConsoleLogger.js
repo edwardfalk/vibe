@@ -3,7 +3,9 @@
 // so that they are persisted to .debug logs for later analysis.
 
 // IMPORTANT: This module should only execute in a browser context.
-function setupRemoteConsoleLogger(apiUrl = 'http://localhost:3001/api/logs') {
+function setupRemoteConsoleLogger(apiUrl = null) {
+  // Disable remote logging entirely unless explicitly provided a URL
+  if (!apiUrl) return () => {};
   if (typeof window === 'undefined') return; // Node/test safeguard
   if (window.__remoteConsoleLoggerSetup) return;
   window.__remoteConsoleLoggerSetup = true;

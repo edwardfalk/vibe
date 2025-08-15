@@ -12,10 +12,16 @@ import { floor, ceil, min, random } from '@vibe/core';
 //   listTickets,
 // } from '@vibe/tooling';
 
-// Browser-safe ticket API client
-const API_BASE_URL = 'http://localhost:3001/api/tickets';
+// Browser-safe ticket API client (disable when not localhost)
+const API_BASE_URL =
+  typeof location !== 'undefined' &&
+  (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? 'http://localhost:3001/api/tickets'
+    : null;
 
 async function createTicket(ticketData) {
+  if (!API_BASE_URL)
+    return { id: 'local-disabled', name: ticketData?.name || 'untitled' };
   const res = await fetch(API_BASE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -26,6 +32,7 @@ async function createTicket(ticketData) {
 }
 
 async function updateTicket(ticketId, updates) {
+  if (!API_BASE_URL) return { id: ticketId, ...updates };
   const res = await fetch(`${API_BASE_URL}/${ticketId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
@@ -36,6 +43,7 @@ async function updateTicket(ticketId, updates) {
 }
 
 async function loadTicket(ticketId) {
+  if (!API_BASE_URL) return { id: ticketId, status: 'local-disabled' };
   const res = await fetch(`${API_BASE_URL}/${ticketId}`);
   if (!res.ok) throw new Error('Failed to load ticket');
   return await res.json();

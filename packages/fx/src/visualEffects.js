@@ -285,7 +285,7 @@ class VisualEffectsManager {
   }
 
   // Particle system for explosions and effects
-  addExplosionParticles(x, y, type = 'normal') {
+  addExplosionParticles(x, y, infoOrType = 'normal') {
     if (!this.initialized) {
       this.init(this.pInstance || (window.player && window.player.p));
       if (!this.initialized) return;
@@ -294,8 +294,18 @@ class VisualEffectsManager {
     // Nudge global chromatic shift subtly on any explosion
     this.triggerChromaticAberration(0.25, 50);
 
-    // Derive enemy key (strip suffix like '-explosion') for config lookup
-    const enemyKey = (type || 'grunt').split('-')[0];
+    // Accept new structured payload: { enemyKey, paletteKey }. Fallback: legacy string type
+    let enemyKey;
+    let paletteKey;
+    if (typeof infoOrType === 'object' && infoOrType) {
+      enemyKey = infoOrType.enemyKey;
+      paletteKey = infoOrType.paletteKey;
+    } else {
+      const type = infoOrType;
+      enemyKey = (type || 'grunt').split('-')[0];
+      paletteKey =
+        enemyKey === 'rusher' ? 'rusher-explosion' : `${enemyKey}-death`;
+    }
     const cfg = getEnemyConfig(enemyKey);
 
     // Lod multiplier reduces particle count when Adaptive LOD is active
@@ -303,24 +313,27 @@ class VisualEffectsManager {
 
     const particleCount = cfg.burst?.count
       ? Math.max(4, Math.round(cfg.burst.count * lod))
-      : type === 'rusher-explosion'
+      : paletteKey === 'rusher-explosion'
         ? 25
         : 15;
 
     // Prefer core explosionPalette to match Explosion.js visuals exactly
-    const paletteKey =
-      enemyKey === 'grunt'
-        ? 'grunt-death'
-        : enemyKey === 'rusher'
-          ? 'rusher-explosion'
-          : enemyKey === 'tank'
-            ? 'tank-death'
-            : enemyKey === 'stabber'
-              ? 'stabber-death'
-              : null;
+    // paletteKey already computed; ensure known
+    if (
+      paletteKey !== 'grunt-death' &&
+      paletteKey !== 'rusher-explosion' &&
+      paletteKey !== 'tank-death' &&
+      paletteKey !== 'stabber-death'
+    ) {
+      console.warn(
+        `⚠️ Unknown paletteKey '${paletteKey}' for enemy '${enemyKey}', using default`
+      );
+      paletteKey = null;
+    }
 
     const colors = (() => {
-      if (paletteKey && explosionPalette[paletteKey]) return explosionPalette[paletteKey];
+      if (paletteKey && explosionPalette[paletteKey])
+        return explosionPalette[paletteKey];
       if (enemyKey === 'grunt') return explosionPalette['grunt-death'];
       if (cfg.burst?.palette) return cfg.burst.palette;
       if (enemyKey === 'tank') {

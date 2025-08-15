@@ -40,12 +40,12 @@ export const explosionPalette = {
     [100, 50, 200],
     [170, 130, 255],
   ],
+  // Neutral fallback only – avoids warm/pink hues contaminating enemy-specific colors
   default: [
-    [255, 69, 0],
-    [255, 140, 0],
-    [255, 215, 0],
     [255, 255, 255],
-    [255, 20, 147],
-    [138, 43, 226],
+    [220, 220, 220],
+    [200, 200, 200],
+    [180, 180, 180],
+    [160, 160, 160],
   ],
 };
