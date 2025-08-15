@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vibe - Geometric Space Shooter</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "@vibe/core": "../packages/core/src/index.js",
+          "@vibe/core/": "../packages/core/src/",
+          "@vibe/systems": "../packages/systems/src/index.js",
+          "@vibe/systems/": "../packages/systems/src/",
+          "@vibe/entities": "../packages/entities/src/index.js",
+          "@vibe/entities/": "../packages/entities/src/",
+          "@vibe/fx": "../packages/fx/src/index.js",
+          "@vibe/fx/": "../packages/fx/src/",
+          "@vibe/tooling": "../packages/tooling/src/index.js",
+          "@vibe/tooling/": "../packages/tooling/src/",
+          "@vibe/game": "../packages/game/src/index.js",
+          "@vibe/game/": "../packages/game/src/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <script type="module">
+      const loadScript = (src) =>
+        new Promise((res, rej) => {
+          const s = document.createElement('script');
+          s.src = src;
+          s.onload = res;
+          s.onerror = rej;
+          document.head.appendChild(s);
+        });
+      await loadScript('/public/p5.min.js').catch(() =>
+        loadScript(
+          'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
+        )
+      );
+      await import('@vibe/core');
+      await import('@vibe/systems');
+      await import('@vibe/entities');
+      await import('@vibe/fx');
+      await import('@vibe/game');
+    </script>
+  </body>
+</html>

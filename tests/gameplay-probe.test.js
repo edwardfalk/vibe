@@ -17,7 +17,7 @@ test.beforeAll(() => {
 test.describe('Gameplay Probes', () => {
   test('Liveness probe passes', async ({ page }) => {
     try {
-      await page.goto('/');
+      await page.goto('/index.html');
       await page.waitForSelector('canvas');
       await page.evaluate(() => {
         const canvas = document.querySelector('canvas');
@@ -29,7 +29,9 @@ test.describe('Gameplay Probes', () => {
       );
       const probe = await page.evaluate(async () => {
         try {
-          const mod = await import('/js/ai-liveness-probe.js');
+          const mod = await import(
+            '/packages/tooling/src/probes/livenessProbe.js'
+          );
           return mod.default;
         } catch (err) {
           window.__playwrightImportError = err.stack || err.toString();
@@ -52,7 +54,7 @@ test.describe('Gameplay Probes', () => {
 
   test('Game mechanics respond', async ({ page }) => {
     try {
-      await page.goto('/');
+      await page.goto('/index.html');
       await page.waitForSelector('canvas');
       await page.evaluate(() => {
         const canvas = document.querySelector('canvas');

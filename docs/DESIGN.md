@@ -2,7 +2,7 @@
 
 > **Purpose:**  
 > This document explains the musical gameplay system and core design concepts.  
-> For rules, see [.cursorrules](../.cursorrules).
+> For current standards and rules, see `.cursor/rules/`.
 
 ## Cosmic Beat System Overview
 
@@ -28,7 +28,7 @@ This mapping ensures that gameplay actions naturally form a musical pattern, whi
 
 ## BeatClock: Technical Details
 
-The `BeatClock` class (see `js/BeatClock.js`) provides the following features:
+The `BeatClock` class (see `packages/core/src/BeatClock.js`) provides the following features:
 
 - Tracks elapsed time and calculates the current beat within each measure.
 - Provides methods for checking if the game is "on beat" (with a configurable tolerance window).
@@ -57,10 +57,10 @@ if (beatClock.isOnBeat([2, 4])) {
 
 ## References
 
-- `js/BeatClock.js`: Full implementation and in-code documentation
-- `js/GameLoop.js`: Integration of BeatClock with the main game loop
+- `packages/core/src/BeatClock.js`: Full implementation and in-code documentation
+- `packages/game/src/GameLoop.js`: Integration of BeatClock with the main game loop
 - ../README.md: Project overview and modular architecture
 
 ---
 
-_For further details on the ticketing system, coding standards, and architecture, see the README and .cursorrules._
+_For further details on coding standards and architecture, see the README and `.cursor/rules/`._

@@ -13,10 +13,18 @@ import { floor, ceil, min, PI } from '@vibe/core';
 // } from '@vibe/tooling';
 
 // Ticketing removed – no-op helpers
-async function createTicket() { return { id: 'disabled' }; }
-async function updateTicket() { return { ok: true }; }
-async function loadTicket() { return { status: 'disabled' }; }
-async function listTickets() { return []; }
+async function createTicket() {
+  return { id: 'disabled' };
+}
+async function updateTicket() {
+  return { ok: true };
+}
+async function loadTicket() {
+  return { status: 'disabled' };
+}
+async function listTickets() {
+  return [];
+}
 
 /**
  * @param {GameState} gameState - The game state object (dependency injected for modularity)
@@ -680,9 +688,7 @@ export class UIRenderer {
       const isTextarea =
         document.activeElement && document.activeElement.id === 'bugDesc';
       // Save on Enter or Ctrl+Enter (except when Shift is held for newline in textarea)
-      if (
-        false
-      ) {
+      if (false) {
         e.preventDefault();
         // no-op
         return;
