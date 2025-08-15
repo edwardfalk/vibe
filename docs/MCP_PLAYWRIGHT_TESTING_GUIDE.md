@@ -1,5 +1,7 @@
 # MCP Playwright Testing Guide for AI & Automation
 
+> Note (2025-08-15): MCP Playwright tools are not currently enabled in this workspace. Tests run via native Playwright CLI (`bunx playwright`). MCP integration will be added once a compatible MCP server is introduced. Use the workflows below conceptually, but execute with the CLI for now.
+
 > **Purpose:**  
 > This guide explains probe-driven Playwright testing, liveness probes, and bug report automation.  
 > For rules, see [.cursorrules](../.cursorrules).

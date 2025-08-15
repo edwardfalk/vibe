@@ -1,0 +1,27 @@
+---
+alwaysApply: true
+---
+
+# CodeRabbit Review Routine (Daily/Weekly)
+
+<!-- desc: Make CodeRabbit reviews part of the natural workflow via CI + assistant habits. -->
+
+ID: CR-ROUTINE-20250812-01
+Title: Enforce daily/weekly CodeRabbit review routines
+Context: Reviews are most useful when fetched and acted on continuously. We codify daily and weekly habits so the assistant always uses them.
+Policy:
+  - Daily (lightweight):
+    - Use GitHub MCP tools to read open PRs, reviews, and comments; filter author `coderabbitai[bot]`.
+    - Apply 1–2 safe fixes or open a tiny maintenance PR.
+  - Weekly (lightweight):
+    - Use MCP to scan for outstanding CodeRabbit items and batch non-urgent fixes into one PR.
+  - Scope:
+    - Only files that exist and live under `packages/**`, `scripts/**`, or `tests/**`.
+    - Skip legacy or deleted paths.
+Enforcement: Use GitHub MCP tools; do not add fetch/aggregation workflows. Auto-review workflow stays: `.github/workflows/coderabbit-review.yml`.
+Scope: repo-wide
+Rationale: Small, continuous fixes keep the codebase healthy and avoid backlog.
+Links: [mdc:docs/GITHUB_MCP_WORKFLOW.md]
+Status: Active
+Added: 2025-08-12
+

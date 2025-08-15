@@ -129,7 +129,9 @@ export class BombSystem {
         } else if (result === 'exploding') {
           try {
             window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', { detail: { x: enemy.x, y: enemy.y, type: enemy.type } })
+              new CustomEvent('vfx:enemy-hit', {
+                detail: { x: enemy.x, y: enemy.y, type: enemy.type },
+              })
             );
           } catch (_) {}
           console.log(`💥 Friendly bomb triggered ${enemy.type} explosion`);

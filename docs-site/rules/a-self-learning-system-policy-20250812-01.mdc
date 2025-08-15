@@ -1,0 +1,33 @@
+---
+alwaysApply: true
+description: Deterministic auto-improvement loop with probes as oracle, plus safe gameplay/balance tuning via whitelisted parameters.
+---
+
+ID: RULE-20250812-03
+Title: Self-Learning System Policy (Rules + Autofix + Tuners)
+Context: We want assistants to improve autonomously and prevent repeated mistakes. Probes and consistency scans already exist; we codify a loop that 1) captures observations, 2) synthesizes rules, 3) proposes safe autofixes, and 4) optionally tunes gameplay/balance parameters behind guardrails.
+Policy:
+  - Observations ledger
+    - Log all learning-relevant outcomes to `.ai/ledger/events-YYYYMM.jsonl` (tests, scans, CodeRabbit diffs, reverts).
+    - Each entry must include: timestamp, source, affected files, tests summary, outcome, linked rule IDs.
+  - Rule synthesis
+    - When the same issue recurs ≥3 times in 14 days, draft a new `.mdc` rule using the standard naming convention and add enforcement to scanners.
+    - Prefer `a-` rules for universally safe guidance; use `s-` for scoped patterns and `i-` when context-dependent.
+  - Safe autofix
+    - Map rules to conservative transforms (dry-run first) and open PRs with diffs, evidence, and green CI required.
+    - Forbidden: direct pushes; destructive rewrites; edits outside `packages/**`, `scripts/**`, `tests/**` without approval.
+  - Gameplay/balance tuning (opt-in whitelist)
+    - Only tune whitelisted numeric keys (e.g., `effectsConfig.global.lodMultiplier`, burst counts, glow ranges) via small grid/bandit search.
+    - Experiments run on branches; select variants only if probes are stable or improved; produce PR with metrics and rollback plan.
+  - Guardrails
+    - CI gates: `scan:consistency`, `validate:sounds`, and Playwright probes must pass.
+    - Secrets scan must pass; logs redact sensitive info.
+  - Documentation
+    - After merges, regenerate rule index and update changelog.
+Enforcement: `bun run learn:collect` populates the ledger; `bun run learn:propose` drafts rules; `bun run learn:fix` opens autofix PRs; `bun run learn:tune` runs whitelisted tuners. CI runs daily/weekly workflows to sustain the loop.
+Scope: repo-wide; edits confined to `packages/**`, `scripts/**`, `tests/**`, `.cursor/rules/**`, `.ai/**`.
+Rationale: Deterministic rules prevent regressions; tuners improve subjective quality safely; PR + probes ensure reliability.
+Links: [mdc:.cursorrules], [mdc:scripts/learning/orchestrator.js], [mdc:scripts/learning/synthesize-rule.js], [mdc:scripts/learning/auto-fix.js], [mdc:scripts/learning/tune.js]
+Status: Active
+Added: 2025-08-12
+

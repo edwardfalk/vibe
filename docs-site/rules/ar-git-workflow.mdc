@@ -1,0 +1,40 @@
+---
+description: Git Workflow & Commit Standards
+globs: 
+alwaysApply: false
+---
+# Git Workflow & Commit Standards
+
+<!-- desc: Emoji-conventional commit format, branch naming, PR process, release tagging. -->
+
+> Consistent commit messages, branch names, and PR flow keep the multi-AI team sane.
+
+## Commit Messages
+* Follow **Conventional Commits** with an emoji prefix:
+  * 🎨 **feat:** new player ability
+  * 🐛 **fix:** collision bug on Tank
+  * 📝 **docs:** update README
+  * ♻️ **refactor:** optimize SpawnSystem
+  * 🚀 **perf:** speed up BulletSystem
+  * ✅ **test:** add Rusher probe
+  * 🔧 **chore:** lint, tooling bumps
+* Limit subject to ≤ 72 chars.  Body (optional) wrapped at 100 chars.
+
+## Branch Naming
+* `feat/<slug>` – new features
+* `fix/<ticket-id>-<slug>` – bug fixes (include ticket)
+* `docs/<slug>` – docs-only
+* `chore/<slug>` – tooling & housekeeping
+
+## Pull Requests
+1. Reference ticket ID(s) in description.
+2. Must pass `bun run lint` **and** `bun run test`.
+3. Add **CodeRabbit** review label; address all comments before merge.
+4. Squash-merge to `unstable`; `main` receives periodic, passing snapshots.
+
+## Release Tags
+* Semantic versioning: `vMAJOR.MINOR.PATCH` (e.g., `v2.1.0`).
+* Tag only from `main` after CI green.
+
+_See also: [Vibe Architecture & Coding Standards](mdc:.cursor/rules/ar-architecture-and-standards.mdc)._
+

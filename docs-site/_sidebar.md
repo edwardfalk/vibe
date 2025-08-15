@@ -1,0 +1,5 @@
+* [Home](README.md)
+* [Rule Index](RULES_INDEX.md)
+* [Project Vision](project/PROJECT_VISION.md)
+* [Architecture & Standards](rules/AR-architecture-and-standards.mdc)
+* [How the Docs Site Works](project/HOW_DOCS_SITE_WORKS.md) 

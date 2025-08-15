@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# When adding a new server, changing a port or troubleshooting servers
+
+
+Consult and/or update this list of allocated ports: [ar-port-allocation.mdc](mdc:.cursor/rules/ar-port-allocation.mdc)

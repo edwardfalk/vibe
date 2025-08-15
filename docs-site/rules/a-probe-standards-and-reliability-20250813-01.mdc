@@ -1,0 +1,38 @@
+---
+alwaysApply: true
+---
+
+# Probe Standards & Reliability (Playwright + In‑Page Probes)
+
+ID: RULE-20250813-PRB
+Title: Deterministic, gated, and self-reporting probes
+Context: Consolidates prior probe standards and reliability rules into one canonical policy to eliminate flakiness and ensure actionable failures.
+
+Policy:
+  - Readiness gates:
+    - Wait for `frameCount > 0` (p5 instance), `window.player`, and arrays like `window.enemies` to exist before probing.
+  - Determinism:
+    - Call `setRandomSeed(1337)` before actions that depend on randomness.
+  - Audio unlock:
+    - Perform a canvas click (locator-based) to unlock audio before any audio checks; fallback to `page.mouse` if needed.
+  - Minimal assumptions:
+    - Interrogate via public state/events (e.g., EnemyEventBus) rather than internal arrays, unless explicitly exposed.
+  - Failure shape:
+    - Every probe returns `{ failure: null|string, warnings?: string[] }` and captures a canvas screenshot on failure.
+  - Diagnostics & tickets:
+    - On failure, log key window state (player/enemies/bullets/gameState) and create a GitHub Issue via `packages/tooling/src/githubIssueManager.js` when available (labels: bug, probe-failure, subsystem).
+  - Timing:
+    - Prefer event waits (`playerChanged`, `armorBroken`) over sleeps; if sleeping, use ≤50ms intervals with overall timeouts.
+  - Math imports:
+    - Use `@vibe/core/mathUtils` (forbid raw `Math.PI`/p5 math globals).
+  - Runner behavior:
+    - Retry once on transient context-destroyed errors; compute an overall health summary.
+
+Enforcement:
+  - CI runs `bun run test:orchestrated` using these standards; PRs adding probes must follow this contract.
+
+Scope: tests/**, packages/tooling/src/probes/**
+Rationale: Removes race conditions, stabilizes audio, and makes failures actionable.
+Links: [mdc:.cursor/rules/ar-testing-and-debugging.mdc]
+Status: Active
+Added: 2025-08-13

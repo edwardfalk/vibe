@@ -1,0 +1,19 @@
+---
+alwaysApply: true
+---
+
+ID: RULE-20250812-01
+Title: Use mathUtils for angles/dist; forbid raw Math.PI in gameplay
+Context: A bug surfaced where `dist()` was used without import, and multiple files mixed `Math.PI` with our `mathUtils` exports. This causes inconsistency and breaks deterministic math and seeding patterns.
+Policy:
+  - Always import `PI`, `TWO_PI`, `dist`, and trig helpers from `@vibe/core/mathUtils.js` (or `@vibe/core`).
+  - Forbid raw `Math.PI` and `2 * Math.PI` in `packages/**`. Use `PI`/`TWO_PI` instead.
+  - Never use p5 global `dist`, `sin`, `cos` in instance mode; use imported utilities.
+  - Angle wrap/compare must use `PI`/`TWO_PI` consistently.
+Enforcement: Extend `scripts/check-consistency.js` (or `scan:math`) to flag `Math.PI`, `2\s*\*\s*Math\.PI`, and `\bdist\(` without import in `packages/**`.
+Scope: packages/**
+Rationale: Centralized math utilities ensure determinism, clear dependencies, and testability; avoids silent runtime errors from missing globals.
+Links: [mdc:.cursorrules], [mdc:.cursor/rules/ar-architecture-and-standards.mdc]
+Status: Active
+Added: 2025-08-12
+

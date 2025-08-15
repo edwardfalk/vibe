@@ -1,0 +1,32 @@
+---
+description: Docs & Docsify Workflow
+globs: 
+alwaysApply: false
+---
+# Docs & Docsify Workflow
+<!-- desc: How to generate & preview Docsify site with rule index. -->
+
+> How to preview rule documentation and project guides in the embedded Docsify site.
+
+## Directory Layout
+* `docs-site/` – Static site consumed by **Docsify**.
+  * `RULES_INDEX.md` – auto-generated table of every rule.
+  * `rules/` – one-to-one copies of `.cursor/rules/*.mdc` so Docsify can render them.
+  * `project/` – hand-picked project docs (e.g., `PROJECT_VISION.md`).
+
+## Key Scripts
+* `bun run docs:build-index` – runs `scripts/generate-rule-index.js`.
+  * Copies all rule files into `docs-site/rules/`.
+  * Generates/updates `RULES_INDEX.md` table (Rule ➜ Description ➜ Last Modified).
+  * Copies selected project docs.
+* `bun run docs:serve` – builds the index **then** launches Docsify local server (default <http://localhost:3000>).
+  * Auto-reloads when you edit files under `docs-site/`.
+
+## Editing Flow
+1. Write or update `.mdc` rules in `.cursor/rules/`.
+2. Run `bun run docs:build-index` to sync copies and refresh the index.
+3. Optionally run `bun run docs:serve` to preview the docs site.
+4. Commit both rule changes **and** any updated files under `docs-site/`.
+
+_Note: Docsify itself doesn't require a build step; it renders markdown on the fly. The `docs:build-index` script is purely for generating the Rule Index and keeping rule copies in sync._
+

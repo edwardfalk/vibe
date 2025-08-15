@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+ID: RULE-20250813-01
+Title: Prefer GitHub MCP over local CodeRabbit fetch scripts
+Context: We replaced legacy CodeRabbit fetch/aggregation scripts and schedules with direct GitHub MCP usage for PR reviews, comments, issues, and CI control.
+Policy:
+  - Use GitHub MCP tools to read PR files/diffs/status, reviews/comments, and to manage CI (rerun, cancel, dispatch).
+  - Fetch CodeRabbit feedback via PR issue comments (author: coderabbitai[bot]) instead of local collectors.
+  - Keep auto-review workflow `.github/workflows/coderabbit-review.yml`; remove/avoid fetch/aggregation jobs.
+Enforcement:
+  - Legacy scripts removed from `scripts/` and package.json; do not reintroduce fetchers or aggregators.
+  - PRs that add new CodeRabbit fetch scripts/workflows are rejected; use MCP tools.
+Scope: repo-wide; PR/CI operations
+Rationale: MCP tools provide live, reliable access without scheduled artifacts, reducing noise and maintenance.
+Links: [mdc:docs/GITHUB_MCP_WORKFLOW.md]
+Status: Active
+Added: 2025-08-13

@@ -1,0 +1,20 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# The user's own preferences and comments regarding the project.
+
+## Language
+
+- When the user mentions "project rules" he generally means the rules in [.cursor/rules](mdc:.cursor/rules)
+
+## Correct documentation and rules
+
+- If the AI assistant finds documentation that's contradicting, obsolete, or incorrect, the AI assistant **MUST** correct it or inform the user so that it can be fixed. The user can be informed in chat or in the document [NOTES_FOR_THE_USER](mdc:docs/NOTES_FOR_THE_USER)
+
+- If the AI assistant finds a rule that doesn't seem correct or is contradicting another rule, the AI assistant **MUST** inform the user so it can be corrected.
+
+## Finding the root of the problem
+
+- If the AI assistent suspects that something is not fully functioning in the environment (project-wide, Cursor-wide or OS-wide), for example problems with bun, mcp servers, paths, drivers etc. the assistent **must** fix this or inform the user so that it can be corrected.

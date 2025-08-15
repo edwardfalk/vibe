@@ -1,0 +1,20 @@
+---
+alwaysApply: true
+---
+
+ID: RULE-20250812-06
+Title: Always use GitHub Issues for bugs, features, and probes
+Context: GitHub Issues is our canonical ticketing system. We want deterministic, frequent issue creation from code, probes, and maintenance tasks without bikeshedding process each time.
+Policy:
+
+- All bugs, feature requests, refactors, and probe failures MUST be tracked in GitHub Issues via `packages/tooling/src/githubIssueManager.js`.
+- Required env: `GITHUB_TOKEN` (repo scope). Repo auto-detected from `git remote`; otherwise set `GITHUB_REPO` to `owner/repo` (e.g., `edwardfalk/vibe`).
+- Use labels: at minimum one of `bug`, `enhancement`, `refactor`, or `probe`.
+- Include a concise summary, bullet plan, and references (e.g., `docs/snippets/*`).
+- Probes on failure should auto-create issues using `createTicket()`.
+  Enforcement: PR reviews should reject untracked work. Probes/tests call Issue API on failure. Scripts should use `createIssue()` with proper labels.
+  Scope: packages/tooling/**, tests/**, scripts/\*\*
+  Rationale: Ensures work visibility, progress tracking, and reproducibility across AIs and humans.
+  Links: [mdc:.cursor/rules/ar-github-issues-workflow.mdc], [mdc:packages/tooling/src/githubIssueManager.js]
+  Status: Active
+  Added: 2025-08-12
