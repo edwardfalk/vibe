@@ -128,7 +128,9 @@ export class CollisionSystem {
           // Special behaviour – delegate VFX to event bus only
           try {
             window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', { detail: { x: enemy.x, y: enemy.y, type: enemy.type } })
+              new CustomEvent('vfx:enemy-hit', {
+                detail: { x: enemy.x, y: enemy.y, type: enemy.type },
+              })
             );
           } catch (_) {}
           window.audio?.playHit(enemy.x, enemy.y);
@@ -232,7 +234,9 @@ export class CollisionSystem {
         } else if (killResult === 'exploding') {
           try {
             window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', { detail: { x: enemy.x, y: enemy.y, type: enemy.type } })
+              new CustomEvent('vfx:enemy-hit', {
+                detail: { x: enemy.x, y: enemy.y, type: enemy.type },
+              })
             );
           } catch (_) {}
           window.audio?.playHit(enemy.x, enemy.y);
@@ -248,12 +252,8 @@ export class CollisionSystem {
   handleEnemyDeath(enemy, type, x, y) {
     // Explosion & gore!
     const killMethod = enemy.lastDamageSource || 'bullet';
-    if (window.explosionManager?.addKillEffect) {
-      window.explosionManager.addKillEffect(x, y, type, killMethod);
-    } else {
-      // Fallback generic explosion
-      window.explosionManager?.addExplosion(x, y, 'enemy');
-    }
+    // Let VFXDispatcher handle particles/flash; ExplosionManager remains for its own internal visuals via other callers
+    window.explosionManager?.addKillEffect?.(x, y, type, killMethod);
     // Dispatch VFX event for decoupled particles/flash
     try {
       window.dispatchEvent(

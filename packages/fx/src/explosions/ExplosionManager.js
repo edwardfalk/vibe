@@ -402,20 +402,7 @@ export class ExplosionManager {
       `💥 ${enemyType} killed by ${killMethod} - created ${effectName} effect`
     );
 
-    // Spawn additional particles in the enemy's palette for cohesion
-    if (window.visualEffectsManager?.addExplosionParticles) {
-      try {
-        window.visualEffectsManager.addExplosionParticles(x, y, enemyType);
-      } catch (_) {}
-    }
-
-    // Apply a subtle screen flash in the enemy's primary hue
-    if (window.effectsManager?.addScreenFlash) {
-      try {
-        // More subtle and shorter flash to avoid overpowering the scene
-        window.effectsManager.addScreenFlash(primaryFlashColor, 4);
-      } catch (_) {}
-    }
+    // Particle burst + screen flash are now handled exclusively by VFXDispatcher
   }
 
   // Add beautiful fragment explosion that cuts enemy into pieces
