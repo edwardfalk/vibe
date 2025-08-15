@@ -26,12 +26,12 @@ function installVFXDispatcher() {
           type === 'grunt'
             ? [50, 205, 50]
             : type === 'rusher'
-            ? [255, 20, 147]
-            : type === 'tank'
-            ? [138, 43, 226]
-            : type === 'stabber'
-            ? [255, 215, 0]
-            : [255, 255, 255];
+              ? [255, 20, 147]
+              : type === 'tank'
+                ? [138, 43, 226]
+                : type === 'stabber'
+                  ? [255, 215, 0]
+                  : [255, 255, 255];
         window.effectsManager.addScreenFlash(primary, 4);
       }
     } catch (_) {}
@@ -50,8 +50,16 @@ function installVFXDispatcher() {
       window.cameraSystem?.addShake?.(18, 30);
     } catch (_) {}
   });
+
+  // Generic enemy hit (non-lethal) – tiny sparks in enemy color
+  window.addEventListener(VFX_EVENTS.ENEMY_HIT, (ev) => {
+    try {
+      const { x, y, type } = ev.detail || {};
+      if (window.visualEffectsManager?.addExplosionParticles) {
+        window.visualEffectsManager.addExplosionParticles(x, y, type);
+      }
+    } catch (_) {}
+  });
 }
 
 export { VFX_EVENTS, installVFXDispatcher };
-
-
