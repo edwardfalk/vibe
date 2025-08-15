@@ -442,8 +442,7 @@ export class Audio {
     const deg = PI / 180;
     for (let i = 0; i < samples; i++) {
       const x = (i * 2) / samples - 1;
-      curve[i] =
-        ((3 + amount) * x * 20 * deg) / (PI + amount * Math.abs(x));
+      curve[i] = ((3 + amount) * x * 20 * deg) / (PI + amount * Math.abs(x));
     }
     return curve;
   }
@@ -480,6 +479,12 @@ export class Audio {
 
     if (this.speechSynthesis.getVoices().length === 0) {
       this.speechSynthesis.onvoiceschanged = loadVoices;
+      // Fallback: some browsers never fire onvoiceschanged reliably – poll once after a short delay
+      setTimeout(() => {
+        try {
+          loadVoices();
+        } catch (_) {}
+      }, 300);
     } else {
       loadVoices();
     }
@@ -763,7 +768,10 @@ export class Audio {
     );
     utterance.volume = Math.min(
       1,
-      config.volume * distanceAtt * this.volume * (this.categoryGain?.speech || 1)
+      config.volume *
+        distanceAtt *
+        this.volume *
+        (this.categoryGain?.speech || 1)
     );
 
     // Enhanced voice selection with effects
@@ -782,6 +790,14 @@ export class Audio {
       utterance.rate
     );
     this.showText(entity, displayText, voiceType, estimatedDuration);
+
+    // Attempt to ensure speech engine is in a clean state (Chrome can get stuck)
+    try {
+      this.speechSynthesis.cancel();
+      if (typeof this.speechSynthesis.resume === 'function') {
+        this.speechSynthesis.resume();
+      }
+    } catch (_) {}
 
     // Speak with better error handling
     try {

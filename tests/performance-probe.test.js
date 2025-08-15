@@ -13,21 +13,25 @@ const wait = (ms) => new Promise((res) => setTimeout(res, ms));
 test.describe('Performance Probe', () => {
   test('Average FPS ≥ 55 under stress', async ({ page }) => {
     try {
-      await page.goto('/');
+      await page.goto('/index.html');
       await page.waitForSelector('canvas');
       // Unlock audio / interactions
       await page.evaluate(() => {
         const canvas = document.querySelector('canvas');
-        canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        canvas &&
+          canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       });
       // Ensure core systems exist
-      await page.waitForFunction(() =>
-        window.EffectsProfiler && window.spawnSystem && window.beatClock
+      await page.waitForFunction(
+        () => window.EffectsProfiler && window.spawnSystem && window.beatClock
       );
       // Spawn 20 of each enemy type for stress
       await page.evaluate(() => {
         const types = ['grunt', 'rusher', 'tank', 'stabber'];
-        if (window.spawnSystem && typeof window.spawnSystem.spawnEnemy === 'function') {
+        if (
+          window.spawnSystem &&
+          typeof window.spawnSystem.spawnEnemy === 'function'
+        ) {
           types.forEach((t) => {
             for (let i = 0; i < 20; i++) {
               window.spawnSystem.spawnEnemy(t);
@@ -45,7 +49,9 @@ test.describe('Performance Probe', () => {
       await wait(5000);
 
       const stats = await page.evaluate(() => {
-        return window.EffectsProfiler ? window.EffectsProfiler.getStats() : null;
+        return window.EffectsProfiler
+          ? window.EffectsProfiler.getStats()
+          : null;
       });
 
       expect(stats).not.toBeNull();
@@ -57,4 +63,4 @@ test.describe('Performance Probe', () => {
       throw err;
     }
   });
-}); 
+});

@@ -27,6 +27,7 @@ import {
   atan2,
   cos,
   sin,
+  setRandomSeed,
 } from '@vibe/core';
 import {
   CameraSystem,
@@ -79,7 +80,7 @@ window.enemyBullets = enemyBullets;
 window.activeBombs = activeBombs;
 window.explosionManager = null;
 window.audio = null;
-window.speechManager = null;
+// Removed unused speechManager global (was legacy TTS helper)
 
 // Keys system for testing
 window.keys = {
@@ -154,69 +155,31 @@ function onKeyUp(e) {
   }
 }
 
-// Only add listeners once
-if (!window.inputListenersAdded) {
-  window.addEventListener('mousedown', () => {
-    window.playerIsShooting = true;
-  });
-  window.addEventListener('mouseup', () => {
-    window.playerIsShooting = false;
-  });
-  window.addEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup', onKeyUp);
-  window.inputListenersAdded = true;
-}
+// Input listeners moved to InputSystem.initialize() via InputBootstrap.js
 
-if (!window.uiKeyListenersAdded) {
-  // Prevent rapid-fire for single-action UI keys (R, P, M, T, E, Space)
-  window.addEventListener('keydown', (event) => {
-    // Only handle on initial keydown, not auto-repeat
-    if (!event.repeat) {
-      const singleActionKeys = [
-        'r',
-        'R',
-        'Escape',
-        'm',
-        'M',
-        't',
-        'T',
-        'e',
-        'E',
-        'F6',
-        'F7',
-        'F8',
-        'F10',
-        '1',
-        '2',
-        '3',
-        '4',
-        ' ',
-      ];
-      if (singleActionKeys.includes(event.key) && window.uiRenderer) {
-        window.uiRenderer.handleKeyPress(event.key);
-      }
-    }
-  });
-  window.uiKeyListenersAdded = true;
-}
+// UI single-action key routing moved to DevShortcuts.js
 
-// Add key toggle for profiler overlay (P key) once
-if (!window.profilerOverlayToggleAdded) {
-  window.addEventListener('keydown', (e) => {
-    if ((e.key === 'p' || e.key === 'P') && !e.repeat) {
-      if (window.profilerOverlay) {
-        window.profilerOverlay.toggle();
-      }
-    }
-  });
-  window.profilerOverlayToggleAdded = true;
-}
+// Profiler overlay toggle moved to DevShortcuts.js
 
-function setup(p) {
+export function setup(p) {
+  p = p || this;
   p.createCanvas(800, 600);
+  // Ensure browser TTS is initialized ASAP; Chrome sometimes requires an early call
+  try {
+    if (window.audio && typeof window.audio.loadVoices === 'function') {
+      window.audio.loadVoices();
+    } else if (window.speechSynthesis) {
+      // Trigger voice enumeration
+      window.speechSynthesis.getVoices();
+    }
+  } catch (_) {}
+  // Apply deterministic seed to p5 random as well
+  if (typeof p.randomSeed === 'function') {
+    p.randomSeed(window.gameSeed);
+  }
 
-  // Initialize player at center
-  player = new Player(p, p.width / 2, p.height / 2, window.cameraSystem);
+  // Initialize player at world origin (0,0) – camera centers world to screen
+  player = new Player(p, 0, 0, window.cameraSystem);
   window.player = player;
   // Inform all systems that player reference changed (event-bus pattern)
   window.dispatchEvent(
@@ -249,6 +212,8 @@ function setup(p) {
   // Initialize unified audio system
   if (!window.audio) {
     window.audio = new Audio(p, window.player);
+  } else {
+    window.audio.player = window.player;
   }
   console.log('🎵 Unified audio system initialized');
 
@@ -326,7 +291,9 @@ function setup(p) {
   console.log('🎮 Game setup complete - all systems initialized');
 }
 
-function draw(p) {
+export function draw(p) {
+  p = p || this;
+  window.draw = draw;
   // Begin profiler frame timing
   EffectsProfiler.startFrame();
 
@@ -396,9 +363,13 @@ function draw(p) {
   AdaptiveLODManager.update();
 }
 
-function updateGame(p) {
-  // Resync local references to dynamic global arrays (enemies may be reassigned)
+export function updateGame(p) {
+  // Resync local references to globals at the start of the frame
+  // so update/draw use the current live objects/arrays even if reassigned.
+  player = window.player;
   enemies = window.enemies;
+  playerBullets = window.playerBullets;
+  enemyBullets = window.enemyBullets;
 
   // Update BeatClock every frame for accurate rhythm timing
   if (window.beatClock && typeof window.beatClock.update === 'function') {
@@ -667,15 +638,7 @@ function updateGame(p) {
     window.spawnSystem.update();
   }
 
-  // Update explosion manager and handle damage events
-  if (explosionManager) {
-    const damageEvents = explosionManager.update(p.deltaTime);
-
-    // Process area damage events from plasma clouds and radioactive debris
-    if (damageEvents && damageEvents.length > 0) {
-      handleAreaDamageEvents(damageEvents);
-    }
-  }
+  // Explosion updates moved to core/UpdateLoop.js
 
   // Update effects manager
   if (effectsManager) {
@@ -691,9 +654,15 @@ function updateGame(p) {
   if (window.audio) {
     window.audio.update();
   }
+
+  // Keep legacy local references (player/enemies/bullets/managers) in sync
+  // with globals even if arrays/objects were reassigned during updates.
+  if (typeof window.updateGameLoopLocals === 'function') {
+    window.updateGameLoopLocals();
+  }
 }
 
-function drawGame(p) {
+export function drawGame(p) {
   // Debug: Log camera position and enemy count every 30 frames
   if (typeof p.frameCount !== 'undefined' && p.frameCount % 30 === 0) {
     const cam = window.cameraSystem
@@ -762,158 +731,28 @@ function drawGame(p) {
   }
 }
 
-function handleAreaDamageEvents(damageEvents) {
-  for (const event of damageEvents) {
-    // Check player damage
-    if (window.player) {
-      const dx = event.x - window.player.x;
-      const dy = event.y - window.player.y;
-      const playerDistSq = dx * dx + dy * dy;
-      const radiusSq = event.radius * event.radius;
-      if (playerDistSq < radiusSq) {
-        console.log(
-          `☢️ Player took ${event.damage} damage from area effect at (${event.x}, ${event.y})`
-        );
+// Area damage handling moved to core/EnemyOps.js
 
-        if (window.audio) {
-          window.audio.playPlayerHit();
-        }
-
-        if (window.gameState) {
-          window.gameState.resetKillStreak(); // Reset kill streak on taking damage
-        }
-
-        // Apply damage
-        if (window.player.takeDamage(event.damage, 'area-effect')) {
-          if (window.gameState) {
-            window.gameState.setGameState('gameOver');
-          }
-          console.log('💀 PLAYER KILLED BY AREA DAMAGE!');
-          continue;
-        }
-
-        // Apply knockback
-        const knockbackAngle = atan2(
-          window.player.y - event.y,
-          window.player.x - event.x
-        );
-        const knockbackForce = 6;
-        window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
-        window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
-
-        // Screen shake
-        if (window.cameraSystem) {
-          window.cameraSystem.addShake(8, 15);
-        }
-      }
-    }
-
-    // Check enemy damage
-    for (let i = enemies.length - 1; i >= 0; i--) {
-      const enemy = enemies[i];
-      const dx = event.x - enemy.x;
-      const dy = event.y - enemy.y;
-      const enemyDistSq = dx * dx + dy * dy;
-      const radiusSq = event.radius * event.radius;
-      if (enemyDistSq < radiusSq) {
-        console.log(
-          `☢️ ${enemy.type} took ${event.damage} damage from area effect`
-        );
-
-        const damageResult = enemy.takeDamage(event.damage, null, 'area');
-
-        if (damageResult === true) {
-          // Enemy died from area damage
-          console.log(`💀 ${enemy.type} killed by area damage!`);
-
-          if (window.collisionSystem) {
-            window.collisionSystem.handleEnemyDeath(
-              enemy,
-              enemy.type,
-              enemy.x,
-              enemy.y
-            );
-          }
-
-          enemy.markedForRemoval = true;
-
-          if (window.gameState) {
-            window.gameState.addKill();
-            window.gameState.addScore(10); // Area effect kills
-          }
-        } else if (damageResult === 'exploding') {
-          // Rusher started exploding from area damage
-          try {
-            window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', {
-                detail: { x: enemy.x, y: enemy.y, type: enemy.type },
-              })
-            );
-          } catch (_) {}
-          window.audio?.playHit(enemy.x, enemy.y);
-          console.log(`💥 Area damage caused ${enemy.type} to explode!`);
-        } else {
-          // Enemy damaged but not dead
-          try {
-            window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', {
-                detail: { x: enemy.x, y: enemy.y, type: enemy.type },
-              })
-            );
-          } catch (_) {}
-          window.audio?.playHit(enemy.x, enemy.y);
-        }
-      }
-    }
-  }
-}
-
-function updateBullets() {
-  BulletSystem.update();
-}
-
-function updateBombs() {
-  BombSystem.update();
-}
+// Combat ops moved to core/CombatOps.js
 
 // --- p5.js instance mode initialization for ES module compatibility ---
 // This ensures setup() and draw() are registered and the canvas is created.
-new window.p5((p) => {
-  p.setup = () => setup(p);
-  p.draw = () => draw(p);
-});
-
-// --- Audio/Canvas Unlock Handler for Modern Browsers ---
-function unlockAudioAndShowCanvas() {
-  // Resume p5.js audio context if present
-  if (typeof getAudioContext === 'function') {
-    getAudioContext().resume();
-  }
-  // Resume your own audio context
-  if (window.audio && typeof window.audio.ensureAudioContext === 'function') {
-    window.audio.ensureAudioContext();
-  }
-  // Try to show the canvas if hidden
-  const canvas = document.querySelector('canvas');
-  if (canvas && canvas.style.visibility === 'hidden') {
-    canvas.style.visibility = 'visible';
-    canvas.removeAttribute('data-hidden');
-  }
-  // Remove this handler after first use
-  window.removeEventListener('pointerdown', unlockAudioAndShowCanvas);
-  window.removeEventListener('keydown', unlockAudioAndShowCanvas);
+// --- Deterministic RNG Seed -----------------------------------------------
+// Already set by GameLoopCore; guard to avoid double-initialization
+if (typeof window.gameSeed === 'undefined') {
+  const searchParams = new URLSearchParams(window.location.search);
+  const _urlSeed = Number(searchParams.get('seed'));
+  window.gameSeed = Number.isFinite(_urlSeed) ? _urlSeed : 1337;
+  setRandomSeed(window.gameSeed);
 }
-window.addEventListener('pointerdown', unlockAudioAndShowCanvas);
-window.addEventListener('keydown', unlockAudioAndShowCanvas);
+
+// Audio/canvas unlock moved to bootstrap/AudioCanvasUnlock.js
 
 // -----------------------------------------------------------------------------
 // Activate browser-side remote logging as early as possible. This captures all
 // console output (log/info/warn/error) and POSTs it to the Ticket API running
 // on port 3001 where it is persisted to `.debug/` for later troubleshooting.
 // -----------------------------------------------------------------------------
-if (typeof setupRemoteConsoleLogger === 'function') {
-  setupRemoteConsoleLogger();
-}
 
 // Expose Player class as global for robust restart logic
 window.Player = Player;
@@ -931,4 +770,10 @@ if (typeof window !== 'undefined') {
   window.SpawnSystem = SpawnSystem;
   window.CollisionSystem = CollisionSystem;
   window.BeatClock = BeatClock;
+}
+
+// Expose setup/draw globally only if not provided via p5 wrapper (migration guard)
+if (typeof window !== 'undefined' && !window.setup && !window.draw) {
+  window.setup = setup;
+  window.draw = draw;
 }

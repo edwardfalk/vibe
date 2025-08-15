@@ -3,34 +3,37 @@
   "version": "2.0.0",
   "description": "A p5.js geometric space shooter survival game with procedural graphics",
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "main": "index.html",
   "scripts": {
-    "serve": "bun run five-server --port=5500",
-    "watch-bugs": "bun run scripts/move-bug-reports.js",
+    "serve": "bun run serve:express",
+    "serve:express": "bun --bun scripts/dev-server.js",
+    "prepare:assets": "node scripts/prepare-assets.js",
     "predev": "bunx kill-port 5500 3001",
-    "dev": "concurrently -r --kill-others-on-fail \"bun run serve\" \"bun run watch-bugs\" \"bun run api\"",
-    "dev:parallel": "bun run --parallel serve watch-bugs api",
+    "dev": "bun run serve",
+    "dev:parallel": "bun run serve",
     "dev:fresh": "bun run predev && bun run dev",
     "test": "bun run test:comprehensive",
     "test:playwright": "bunx playwright test",
     "test:headed": "bunx playwright test --headed",
     "test:debug": "bunx playwright test --debug",
-    "test:mcp": "bun run scripts/run-mcp-tests.js",
-    "test:probes": "bun run scripts/run-mcp-tests.js",
-    "test:comprehensive": "bun run test:playwright && bun run test:mcp",
-    "api": "bun run ticket-api.js",
-    "coderabbit:pull": "bun pull-coderabbit-reviews.js",
-    "coderabbit:fetch-complete": "bun fetch-complete-coderabbit-reviews.js",
-    "coderabbit:analyze": "bun analyze-coderabbit-data.js",
-    "coderabbit:auto-tickets": "bun coderabbit-auto-tickets.js",
-    "coderabbit:resolve-outdated": "bun resolve-outdated-coderabbit-tickets.js",
-    "coderabbit:workflow": "bun coderabbit-ticket-workflow.js",
-    "coderabbit:cycle": "bun run coderabbit:fetch-complete && bun run coderabbit:analyze && bun run coderabbit:workflow",
+    "test:mcp": "echo deprecated mcp runner; use Playwright directly",
+    "test:probes": "echo deprecated mcp runner; use Playwright directly",
+    "test:comprehensive": "bun run test:playwright",
+    "api": "echo deprecated ticket API",
+    "coderabbit:pull": "echo deprecated",
+    "coderabbit:fetch-complete": "echo deprecated",
+    "coderabbit:analyze": "echo deprecated",
+    "coderabbit:auto-tickets": "echo deprecated",
+    "coderabbit:resolve-outdated": "echo deprecated",
+    "coderabbit:workflow": "echo deprecated",
+    "coderabbit:cycle": "echo deprecated",
     "setup": "cp .env.example .env && echo 'Please edit .env with your GitHub token'",
-    "validate-env": "node -e \"import('./js/config.js').then(() => console.log('✅ Environment validation passed'))\"",
-    "lint": "bunx eslint --cache --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"js/**/*.js\" \"*.js\"",
-    "lint:fix": "bunx eslint --cache --fix --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"js/**/*.js\" \"*.js\"",
+    "validate-env": "echo Skipped legacy env validation; use packages/tooling/src/githubIssueManager.js",
+    "lint": "bunx eslint --cache --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"*.js\"",
+    "lint:fix": "bunx eslint --cache --fix --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"*.js\"",
     "format": "bunx prettier --write \"**/*.{js,md,json}\"",
     "clean": "Remove-Item -Recurse -Force node_modules, bun.lockb -ErrorAction SilentlyContinue",
     "fresh": "bun run clean && bun install",
@@ -40,21 +43,27 @@
     "tickets:update": "bun run scripts/update-ticket-status.js",
     "tickets:batch-resolve": "bun run scripts/batch-resolve-tickets.js",
     "cleanup:debug": "bun run scripts/cleanup-debug.js",
-    "ticket:create": "bun run js/ticketManager.js create",
-    "ticket:update": "bun run js/ticketManager.js update",
-    "ticket:get": "bun run js/ticketManager.js get",
-    "ticket:list": "bun run js/ticketManager.js list",
-    "ticket:latest": "bun run js/ticketManager.js latest",
-    "ticket:check": "bun run js/ticketManager.js check"
+    "ticket:create": "echo deprecated; use packages/tooling/src/githubIssueManager.js",
+    "ticket:update": "echo deprecated; use packages/tooling/src/githubIssueManager.js",
+    "ticket:get": "echo deprecated; use packages/tooling/src/githubIssueManager.js",
+    "ticket:list": "echo deprecated; use packages/tooling/src/githubIssueManager.js",
+    "ticket:latest": "echo deprecated; use packages/tooling/src/githubIssueManager.js",
+    "ticket:check": "echo deprecated; use packages/tooling/src/githubIssueManager.js"
   },
   "bun": {
     "dev": {
       "port": 5500,
       "hot": true,
-      "watch": ["js/**/*.js", "index.html", "*.css"]
+      "watch": [
+        "packages/**/*.js",
+        "index.html",
+        "*.css"
+      ]
     },
     "test": {
-      "preload": ["./test-setup.js"]
+      "preload": [
+        "./test-setup.js"
+      ]
     }
   },
   "devDependencies": {

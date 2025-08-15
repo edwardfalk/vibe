@@ -12,6 +12,34 @@ export const sqrt = Math.sqrt;
 export const PI = Math.PI;
 export const TWO_PI = Math.PI * 2;
 
+// --- Seeded PRNG -------------------------------------------------------------
+let _rng = null;
+
+function mulberry32(a) {
+  return function () {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Set deterministic random seed used by mathUtils.random().
+ * @param {number} seed - 32-bit integer seed.
+ */
+export function setRandomSeed(seed) {
+  _rng = mulberry32(seed >>> 0);
+}
+
+/**
+ * Clear seeded RNG so mathUtils.random() falls back to Math.random.
+ */
+export function clearRandomSeed() {
+  _rng = null;
+}
+
 /**
  * Linear interpolation between two values
  * @param {number} start
@@ -46,18 +74,19 @@ export function normalizeAngle(angle) {
  * Mirrors p5.random behavior if single arg provided.
  */
 export function random(minOrMax = undefined, max = undefined) {
+  const randFn = _rng ?? Math.random;
   // No arguments → 0-1
   if (typeof minOrMax === 'undefined') {
-    return Math.random();
+    return randFn();
   }
 
   // Single argument → range [0, arg)
   if (typeof max === 'undefined') {
-    return Math.random() * minOrMax;
+    return randFn() * minOrMax;
   }
 
   // Two arguments → range [min, max)
-  return Math.random() * (max - minOrMax) + minOrMax;
+  return randFn() * (max - minOrMax) + minOrMax;
 }
 
 export const randomRange = random;

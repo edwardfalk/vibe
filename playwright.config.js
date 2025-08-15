@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 // Playwright configuration for Vibe
 // - Launches Five Server via `bun run serve` on port 5500 (reuse if already running)
-// - Sets baseURL so page.goto('/') works in tests
+// - Sets baseURL so page.goto('/') works in tests (must be origin, not an HTML file)
 // - Stores HTML report in /playwright-report (default)
 // - Keeps timeouts modest for local runs; adjust for CI if needed
 
@@ -23,8 +23,8 @@ export default defineConfig({
     },
   },
   webServer: {
-    // Explicitly launch Five Server on port 5500 from repo root (no auto port-swap)
-    command: 'bunx five-server --port 5500 --root . --no-browser',
+    // Launch our Express static server on port 5500 from repo root
+    command: 'bun run serve',
     port: 5500,
     reuseExistingServer: true,
     timeout: 120_000,

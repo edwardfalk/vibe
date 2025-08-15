@@ -23,7 +23,7 @@ This guide covers advanced gameplay testing for the Vibe cosmic beat space shoot
 
 ### Overview
 
-The AI Liveness Probe (`js/ai-liveness-probe.js`) is an intelligent monitoring system that continuously validates game state and automatically reports issues.
+The AI Liveness Probe (`/packages/tooling/src/probes/livenessProbe.js`) is an intelligent monitoring system that continuously validates game state and automatically reports issues.
 
 ### What It Tests
 
@@ -48,7 +48,9 @@ The AI Liveness Probe (`js/ai-liveness-probe.js`) is an intelligent monitoring s
 
 ```javascript
 // Manual probe execution
-const probeResult = await import('./js/ai-liveness-probe.js');
+const probeResult = await import(
+  '/packages/tooling/src/probes/livenessProbe.js'
+);
 console.log('Probe result:', probeResult);
 
 // Automated integration (runs automatically)
@@ -74,16 +76,14 @@ console.log('Probe result:', probeResult);
 
 ### Overview
 
-CodeRabbit-powered debugging system provides AI-driven analysis of game code to identify bugs, performance issues, and stability problems that could affect gameplay.
+Automated gameplay probes validate core behavior and stability using Playwright. Use the Playwright scripts defined in `package.json`.
 
 ### Quick Commands
 
-```bash
-# Quick health check (30 seconds)
-bun run debug:probe
-
-# Full analysis with detailed report (2 minutes)
-bun run debug:game
+```cmd
+bun run test              # Headless probes
+bun run test:headed       # Visible browser
+bun run test:debug        # Inspector/debug mode
 ```
 
 ### What It Analyzes
@@ -212,18 +212,7 @@ bun run debug:probe  // Verify improvements
 
 ### Browser-Based Testing Suite
 
-**File**: `js/comprehensive-test-suite.js`
-
-```javascript
-// Quick health check (F10)
-window.comprehensiveTestSuite.quickHealthCheck();
-
-// Full test suite (F9)
-window.comprehensiveTestSuite.runAllTests();
-
-// Specific gameplay tests
-window.comprehensiveTestSuite.testGameplay();
-```
+Legacy in-page test harnesses under `js/` were removed in this branch. Use Playwright tests instead.
 
 ### Playwright Gameplay Probes
 
@@ -239,35 +228,11 @@ bun run test:headed
 
 ### Console Test Runner
 
-**File**: `js/test-runner.js`
-
-```javascript
-// Available in browser console
-testRunner.quickCheck(); // Quick health check
-testRunner.runFullTests(); // Complete test suite
-testRunner.testGameMechanics(); // Gameplay-specific tests
-testRunner.checkBugPatterns(); // Bug pattern detection
-```
+No longer provided. Prefer Playwright probes (`tests/*.test.js`).
 
 ### Extended Gameplay Testing
 
-**File**: `js/extended-gameplay-test.js`
-
-```javascript
-// 3-minute stress test with continuous gameplay simulation
-// Press F7 key or run manually:
-const tester = new ExtendedGameplayTester();
-await tester.runExtendedTest();
-
-// Features:
-✅ Continuous player movement (WASD)
-✅ Regular shooting (Space/Mouse)
-✅ Combined actions (move + shoot)
-✅ Game state monitoring
-✅ Performance tracking
-✅ Error recovery
-✅ Comprehensive statistics
-```
+Use Playwright to author longer stress scenarios alongside `tests/gameplay-probe.test.js`.
 
 ### Testing Interface Summary
 
@@ -480,7 +445,7 @@ bun run test:performance   # Performance benchmarks
 ```javascript
 // Use probes to validate assumptions
 const validateGameState = async () => {
-  const probe = await import('./js/ai-liveness-probe.js');
+  const probe = await import('/packages/tooling/src/probes/livenessProbe.js');
   if (probe.failure) {
     console.error('Game state invalid:', probe.failure);
     return false;
@@ -494,7 +459,7 @@ const validateGameState = async () => {
 ```javascript
 // Continuous monitoring during development
 setInterval(async () => {
-  const probe = await import('./js/ai-liveness-probe.js');
+  const probe = await import('/packages/tooling/src/probes/livenessProbe.js');
   if (probe.failure) {
     console.warn('⚠️ Probe detected issue:', probe.failure);
   }

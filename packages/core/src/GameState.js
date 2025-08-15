@@ -3,6 +3,8 @@
  * (moved to @vibe/core)
  */
 
+import { max, setRandomSeed } from './mathUtils.js';
+
 export class GameState {
   constructor() {
     this.score = 0;
@@ -76,6 +78,8 @@ export class GameState {
 
   restart() {
     console.log('🔄 Robust Restart: Re-initializing systems...');
+    // Ensure deterministic RNG across restarts
+    setRandomSeed(window.gameSeed || 1337);
     window.enemies = [];
     window.playerBullets = [];
     window.enemyBullets = [];
@@ -115,7 +119,7 @@ export class GameState {
       }
     }
     window.audio = window.audio || null;
-    window.speechManager = null;
+    // speechManager legacy removed
     window.spawnSystem = new window.SpawnSystem();
     window.collisionSystem = new window.CollisionSystem();
     window.beatClock = new window.BeatClock(120);
@@ -131,6 +135,10 @@ export class GameState {
     this.gameState = 'playing';
 
     if (window.spawnSystem) window.spawnSystem.spawnEnemies(1);
+    // Ensure local references reflect newly assigned globals
+    if (typeof window.updateGameLoopLocals === 'function') {
+      window.updateGameLoopLocals();
+    }
     if (typeof window.updateGameLoopLocals === 'function')
       window.updateGameLoopLocals();
 

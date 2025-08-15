@@ -2,7 +2,7 @@
 
 > **Purpose:**  
 > This guide explains how to configure and tune all audio parameters in Vibe.  
-> For rules, see [.cursorrules](../.cursorrules).
+> For standards, see in-repo rules under `.cursor/rules/`.
 
 ## 📁 File Location
 
@@ -19,7 +19,9 @@ The build will throw if the registry and config diverge.
 **Player Event Bus** – Audio spatialisation now tracks the live Player via the `playerChanged` global event. Any place that creates a new Player **must** dispatch:
 
 ```javascript
-window.dispatchEvent(new CustomEvent('playerChanged', { detail: window.player }));
+window.dispatchEvent(
+  new CustomEvent('playerChanged', { detail: window.player })
+);
 ```
 
 Failure to emit the event will break distance-based volume/panning.
@@ -215,12 +217,13 @@ this.volume = 0.7; // Master volume (0.0-1.0)
 
 ## Sound ID Registry
 
-All sound-effect names are centralized in `packages/core/src/audio/SoundIds.js` and re-exported via `@vibe/core` as `SOUND`.  Game code must reference `SOUND.someId` instead of raw strings.  The Audio class validates that every registry key has a sound config and vice-versa at runtime – missing mappings will throw during startup.
+All sound-effect names are centralized in `packages/core/src/audio/SoundIds.js` and re-exported via `@vibe/core` as `SOUND`. Game code must reference `SOUND.someId` instead of raw strings. The Audio class validates that every registry key has a sound config and vice-versa at runtime – missing mappings will throw during startup.
 
 Example:
+
 ```js
 import { SOUND } from '@vibe/core';
 window.audio.playSound(SOUND.gruntPop, x, y);
 ```
 
-Old calls like `playSound('gruntPop', …)` should be migrated to the constant form (legacy helpers inside `Audio.js` are already updated).  This guarantees typo-safety and keeps the codebase refactor-ready.
+Old calls like `playSound('gruntPop', …)` should be migrated to the constant form (legacy helpers inside `Audio.js` are already updated). This guarantees typo-safety and keeps the codebase refactor-ready.
