@@ -477,51 +477,16 @@ function updateGame(p) {
     // Handle enemy update results
     if (result) {
       if (result.type === 'rusher-explosion') {
-        // Rusher exploding - handle explosion and effects
         if (window.collisionSystem) {
           window.collisionSystem.handleRusherExplosion(result, i);
         }
-
-        // Add explosion effects
-        if (window.explosionManager) {
-          window.explosionManager.addExplosion(
-            result.x,
-            result.y,
-            'rusher-explosion'
-          );
-        }
-
-        // Add enhanced particle explosion
-        if (
-          typeof visualEffectsManager !== 'undefined' &&
-          visualEffectsManager
-        ) {
-          try {
-            visualEffectsManager.addExplosionParticles(
-              result.x,
-              result.y,
-              'rusher-explosion'
-            );
-            visualEffectsManager.triggerChromaticAberration(0.8, 45);
-            visualEffectsManager.triggerBloom(0.5, 30);
-          } catch (error) {
-            console.log('⚠️ Explosion effects error:', error);
-          }
-        }
-
-        // Play explosion audio
+        try {
+          window.dispatchEvent(new CustomEvent('vfx:rusher-explosion', { detail: { x: result.x, y: result.y } }));
+        } catch (_) {}
         if (window.audio) {
           window.audio.playExplosion(result.x, result.y);
         }
-
-        // Screen shake
-        if (window.cameraSystem) {
-          window.cameraSystem.addShake(18, 30);
-        }
-
         console.log(`💥 RUSHER EXPLOSION at (${result.x}, ${result.y})!`);
-
-        // CRITICAL FIX: Remove the rusher from enemies array after explosion
         enemies.splice(i, 1);
         continue;
       } else if (typeof result.checkCollision === 'function') {
