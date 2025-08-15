@@ -134,7 +134,7 @@ export class SpawnSystem {
 
     if (attempts >= 50) {
       console.warn('⚠️ Could not find good spawn position, using fallback');
-      const angle = random(0, Math.PI * 2);
+      const angle = random(0, PI * 2);
       spawnX = player.x + cos(angle) * 600;
       spawnY = player.y + sin(angle) * 600;
     }
