@@ -21,6 +21,8 @@ function installVFXDispatcher() {
       const resolvedType = type || enemyType;
       if (window.visualEffectsManager?.addExplosionParticles) {
         window.visualEffectsManager.addExplosionParticles(x, y, resolvedType);
+        // Subtle ambient shift to restore slow reddish movement
+        window.visualEffectsManager.triggerChromaticAberration?.(0.3, 60);
       }
       if (window.effectsManager?.addScreenFlash) {
         const primary =
@@ -44,6 +46,7 @@ function installVFXDispatcher() {
       const { x, y } = ev.detail || {};
       if (window.visualEffectsManager?.addExplosionParticles) {
         window.visualEffectsManager.addExplosionParticles(x, y, 'rusher');
+        window.visualEffectsManager.triggerChromaticAberration?.(0.6, 75);
       }
       window.cameraSystem?.addShake?.(18, 30);
     } catch (_) {}
