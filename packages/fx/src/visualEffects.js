@@ -540,7 +540,9 @@ class VisualEffectsManager {
 
   // Deprecated legacy API – do not use
   addExplosion(x, y /*, ...rest */) {
-    console.warn('Deprecated: use addExplosionParticles(x, y, { enemyKey, paletteKey })');
+    console.warn(
+      'Deprecated: use addExplosionParticles(x, y, { enemyKey, paletteKey })'
+    );
   }
 }
 

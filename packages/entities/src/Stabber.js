@@ -215,7 +215,9 @@ class Stabber extends BaseEnemy {
             // Route to VFX bus for consistent hit effect
             try {
               window.dispatchEvent(
-                new CustomEvent('vfx:enemy-hit', { detail: { x: impactX, y: impactY, type: 'stabber' } })
+                new CustomEvent('vfx:enemy-hit', {
+                  detail: { x: impactX, y: impactY, type: 'stabber' },
+                })
               );
             } catch (_) {}
           }
@@ -436,8 +438,7 @@ class Stabber extends BaseEnemy {
     // Angle check as before
     const playerAngle = atan2(playerY - this.y, playerX - this.x);
     // Modular angle difference to handle wrap-around
-    let playerDiff =
-      ((this.stabDirection - playerAngle + PI) % (2 * PI)) - PI;
+    let playerDiff = ((this.stabDirection - playerAngle + PI) % (2 * PI)) - PI;
     if (playerDiff < -PI) playerDiff += 2 * PI;
     const angleDifference = Math.abs(playerDiff);
     const maxStabAngle = PI / 6;
@@ -460,7 +461,9 @@ class Stabber extends BaseEnemy {
       // Spark effect at tip (via VFX bus)
       try {
         window.dispatchEvent(
-          new CustomEvent('vfx:enemy-hit', { detail: { x: tipX, y: tipY, type: 'stabber' } })
+          new CustomEvent('vfx:enemy-hit', {
+            detail: { x: tipX, y: tipY, type: 'stabber' },
+          })
         );
       } catch (_) {}
       // Play hit sound
@@ -480,8 +483,7 @@ class Stabber extends BaseEnemy {
           const enemyAngle = atan2(enemy.y - this.y, enemy.x - this.x);
           // Modular angle difference to handle wrap-around
           let enemyDiff =
-            ((this.stabDirection - enemyAngle + PI) % (2 * PI)) -
-            PI;
+            ((this.stabDirection - enemyAngle + PI) % (2 * PI)) - PI;
           if (enemyDiff < -PI) enemyDiff += 2 * PI;
           const enemyAngleDifference = Math.abs(enemyDiff);
           const enemyInStabDirection = enemyAngleDifference <= maxStabAngle;
@@ -501,7 +503,9 @@ class Stabber extends BaseEnemy {
         // Spark effect at tip
         try {
           window.dispatchEvent(
-            new CustomEvent('vfx:enemy-hit', { detail: { x: tipX, y: tipY, type: 'stabber' } })
+            new CustomEvent('vfx:enemy-hit', {
+              detail: { x: tipX, y: tipY, type: 'stabber' },
+            })
           );
         } catch (_) {}
         // Play hit sound
@@ -514,7 +518,9 @@ class Stabber extends BaseEnemy {
     if (result.type === 'stabber-miss') {
       try {
         window.dispatchEvent(
-          new CustomEvent('vfx:enemy-hit', { detail: { x: this.x, y: this.y, type: 'stabber' } })
+          new CustomEvent('vfx:enemy-hit', {
+            detail: { x: this.x, y: this.y, type: 'stabber' },
+          })
         );
       } catch (_) {}
       result.reason =
@@ -683,8 +689,7 @@ class Stabber extends BaseEnemy {
     // Charging sparks around the stabber
     if (frameCount % 3 === 0) {
       for (let i = 0; i < 6; i++) {
-        const sparkAngle =
-          (frameCount * 0.1 + (i * PI) / 3) % (2 * PI);
+        const sparkAngle = (frameCount * 0.1 + (i * PI) / 3) % (2 * PI);
         const sparkDist = this.size * (0.8 + stabPercent * 0.4);
         const sparkX = this.x + cos(sparkAngle) * sparkDist;
         const sparkY = this.y + sin(sparkAngle) * sparkDist;
