@@ -4,7 +4,7 @@
 
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
-import { floor, ceil, min, random } from '@vibe/core';
+import { floor, ceil, min, PI } from '@vibe/core';
 // import {
 //   createTicket,
 //   updateTicket,
@@ -12,48 +12,11 @@ import { floor, ceil, min, random } from '@vibe/core';
 //   listTickets,
 // } from '@vibe/tooling';
 
-// Browser-safe ticket API client (disable when not localhost)
-const API_BASE_URL =
-  typeof location !== 'undefined' &&
-  (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-    ? 'http://localhost:3001/api/tickets'
-    : null;
-
-async function createTicket(ticketData) {
-  if (!API_BASE_URL)
-    return { id: 'local-disabled', name: ticketData?.name || 'untitled' };
-  const res = await fetch(API_BASE_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(ticketData),
-  });
-  if (!res.ok) throw new Error('Failed to create ticket');
-  return await res.json();
-}
-
-async function updateTicket(ticketId, updates) {
-  if (!API_BASE_URL) return { id: ticketId, ...updates };
-  const res = await fetch(`${API_BASE_URL}/${ticketId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(updates),
-  });
-  if (!res.ok) throw new Error('Failed to update ticket');
-  return await res.json();
-}
-
-async function loadTicket(ticketId) {
-  if (!API_BASE_URL) return { id: ticketId, status: 'local-disabled' };
-  const res = await fetch(`${API_BASE_URL}/${ticketId}`);
-  if (!res.ok) throw new Error('Failed to load ticket');
-  return await res.json();
-}
-
-async function listTickets() {
-  const res = await fetch(API_BASE_URL);
-  if (!res.ok) throw new Error('Failed to list tickets');
-  return await res.json();
-}
+// Ticketing removed – no-op helpers
+async function createTicket() { return { id: 'disabled' }; }
+async function updateTicket() { return { ok: true }; }
+async function loadTicket() { return { status: 'disabled' }; }
+async function listTickets() { return []; }
 
 /**
  * @param {GameState} gameState - The game state object (dependency injected for modularity)
@@ -93,33 +56,9 @@ export class UIRenderer {
     this.bugReportKeys = { b: false, r: false };
     this.latestBugReportFolder = null;
     this.screenshotCount = 1;
-    this._addBugReportButton();
-    this._addBugReportKeyListener();
-    this._startBugReportButtonWatcher();
+    // Bug report UI removed
 
-    // Setup bug report log/error capture
-    if (!window._bugReportLogs) {
-      window._bugReportLogs = [];
-      const origLog = console.log;
-      const origErr = console.error;
-      console.log = function (...args) {
-        window._bugReportLogs.push({
-          type: 'log',
-          msg: args,
-          time: Date.now(),
-        });
-        origLog.apply(console, args);
-      };
-      console.error = function (...args) {
-        window._bugReportLogs.push({
-          type: 'error',
-          msg: args,
-          time: Date.now(),
-        });
-        window._bugReportLastError = args;
-        origErr.apply(console, args);
-      };
-    }
+    // Bug report capture removed
     this._inputHistory = [];
     this._trackInputHistory();
     this._createToast(); // Add toast/banner for confirmations
@@ -628,56 +567,12 @@ export class UIRenderer {
     }
   }
 
-  _addBugReportButton() {
-    if (document.getElementById('bugReportBtn')) return;
-    // Robustness: log when button is added
-    console.log('🖥️ [UIRenderer] Adding bug report button');
-    const btn = document.createElement('button');
-    btn.id = 'bugReportBtn';
-    btn.innerText = '🐞 Report Bug';
-    btn.style.position = 'absolute';
-    btn.style.top = '20px';
-    btn.style.right = '20px';
-    btn.style.zIndex = 10000;
-    btn.style.background = '#222';
-    btn.style.color = '#fff';
-    btn.style.border = '1px solid #888';
-    btn.style.padding = '8px 16px';
-    btn.style.borderRadius = '6px';
-    btn.style.cursor = 'pointer';
-    btn.onclick = () => this._showBugReportModal();
-    document.body.appendChild(btn);
-    this.bugReportButton = btn;
-  }
+  _addBugReportButton() {}
 
   // Robustness: Periodically check and re-add the bug report button if missing
-  _startBugReportButtonWatcher() {
-    setInterval(() => {
-      if (!document.getElementById('bugReportBtn')) {
-        console.warn('[UIRenderer] Bug report button missing, re-adding.');
-        this._addBugReportButton();
-      }
-    }, 5000);
-  }
+  _startBugReportButtonWatcher() {}
 
-  _addBugReportKeyListener() {
-    window.addEventListener('keydown', (e) => {
-      if (e.repeat) return;
-      if (e.key === 'b' || e.key === 'B') this.bugReportKeys.b = true;
-      if (e.key === 'r' || e.key === 'R') this.bugReportKeys.r = true;
-      if (
-        this.bugReportKeys.b &&
-        this.bugReportKeys.r &&
-        !this.bugReportActive
-      ) {
-        this._showBugReportModal();
-      }
-    });
-    window.addEventListener('keyup', (e) => {
-      if (e.key === 'b' || e.key === 'B') this.bugReportKeys.b = false;
-      if (e.key === 'r' || e.key === 'R') this.bugReportKeys.r = false;
-    });
-  }
+  _addBugReportKeyListener() {}
 
   // Toast/banner for confirmations
   _createToast() {
@@ -743,96 +638,11 @@ export class UIRenderer {
     screenshotPreview.style.marginBottom = '8px';
     screenshotPreview.style.flexWrap = 'wrap';
     box.appendChild(screenshotPreview);
-    // Ticketing UI
-    let ticketNameInput = null;
-    let ticketSelect = null;
-    let relatedToSelect = null;
-    let typeSelect = null;
-    let isAppending = false;
-    // Fetch existing tickets from API
-    let tickets = [];
-    try {
-      tickets = await listTickets();
-    } catch (e) {
-      console.warn('Could not fetch tickets from API:', e);
-    }
-    // Ticket type dropdown (always shown for new tickets)
-    if (!existingTicket) {
-      const typeLabel = document.createElement('label');
-      typeLabel.htmlFor = 'ticketTypeSelect';
-      typeLabel.innerText = 'Ticket type:';
-      typeLabel.style.display = 'block';
-      typeLabel.style.marginTop = '8px';
-      box.appendChild(typeLabel);
-      typeSelect = document.createElement('select');
-      typeSelect.id = 'ticketTypeSelect';
-      typeSelect.style.width = '100%';
-      typeSelect.style.margin = '8px 0';
-      ['bug', 'enhancement', 'feature', 'task'].forEach((val) => {
-        const opt = document.createElement('option');
-        opt.value = val;
-        opt.innerText = val.charAt(0).toUpperCase() + val.slice(1);
-        typeSelect.appendChild(opt);
-      });
-      box.appendChild(typeSelect);
-    }
-    // If not appending, show new ticket name input
-    if (!existingTicket) {
-      box.innerHTML += `<h2>📝 New Ticket</h2>
-            <label for='bugTicketName'>Short ticket name (required):</label><br>
-            <input id='bugTicketName' type='text' maxlength='32' style='width:100%;margin:8px 0;' placeholder='e.g. player-stuck-dash'><br>`;
-      ticketNameInput = document.createElement('input');
-      ticketNameInput.id = 'bugTicketName';
-      ticketNameInput.type = 'text';
-      ticketNameInput.maxLength = 32;
-      ticketNameInput.style.width = '100%';
-      ticketNameInput.style.margin = '8px 0';
-      ticketNameInput.placeholder = 'e.g. player-stuck-dash';
-      box.appendChild(ticketNameInput);
-    } else {
-      isAppending = true;
-      box.innerHTML += `<h2>📝 Add to Ticket: <span style='color:#ff0'>${existingTicket.name}_${existingTicket.uid}</span></h2>`;
-    }
-    // Option to append to existing ticket
-    if (tickets.length > 0 && !existingTicket) {
-      box.innerHTML += `<label for='bugTicketSelect'>Or add to existing ticket:</label><br>`;
-      ticketSelect = document.createElement('select');
-      ticketSelect.id = 'bugTicketSelect';
-      ticketSelect.style.width = '100%';
-      ticketSelect.style.margin = '8px 0';
-      ticketSelect.innerHTML =
-        `<option value=''>-- Select existing ticket --</option>` +
-        tickets
-          .map(
-            (t) =>
-              `<option value='${t.uid || t.id}'>${t.name || t.title}_${t.uid || t.id}</option>`
-          )
-          .join('');
-      box.appendChild(ticketSelect);
-    }
-    // Option to link to another ticket (relatedTo)
-    if (tickets.length > 0) {
-      box.innerHTML += `<label for='relatedToSelect'>Link to related ticket (optional):</label><br>`;
-      relatedToSelect = document.createElement('select');
-      relatedToSelect.id = 'relatedToSelect';
-      relatedToSelect.style.width = '100%';
-      relatedToSelect.style.margin = '8px 0';
-      relatedToSelect.innerHTML =
-        `<option value=''>-- None --</option>` +
-        tickets
-          .map(
-            (t) =>
-              `<option value='${t.uid || t.id}'>${t.name || t.title}_${t.uid || t.id}</option>`
-          )
-          .join('');
-      box.appendChild(relatedToSelect);
-    }
+    // Ticketing UI removed
     // Description and controls
     box.innerHTML += `<label for='bugDesc'>Describe what happened:</label><br>
         <textarea id='bugDesc' rows='5' style='width:100%;margin:8px 0;'></textarea><br>
-        <button id='bugSaveBtn' style='margin-right:12px;'>Save Report</button>
-        <button id='bugScreenshotBtn' style='margin-right:12px;'>Add Screenshot to Ticket</button>
-        <button id='bugCancelBtn'>Cancel</button>`;
+        <button id='bugCancelBtn'>Close</button>`;
     // Add error message area
     const errorMsg = document.createElement('div');
     errorMsg.id = 'bugModalErrorMsg';
@@ -855,69 +665,7 @@ export class UIRenderer {
     this._pendingInitialScreenshot = initialScreenshot;
     if (initialScreenshot) this._addScreenshotThumbnail(initialScreenshot);
     // Button handlers
-    document.getElementById('bugSaveBtn').onclick = async () => {
-      errorMsg.style.display = 'none';
-      errorMsg.textContent = '';
-      modal.setAttribute('data-status', 'saving');
-      window.bugReportModalStatus = 'saving';
-      // Determine ticket
-      let ticket = existingTicket;
-      if (!ticket) {
-        // New or selected
-        const name = ticketNameInput
-          ? ticketNameInput.value.trim().replace(/\s+/g, '-').toLowerCase()
-          : '';
-        const selectedUid = ticketSelect ? ticketSelect.value : '';
-        const type = typeSelect ? typeSelect.value : 'bug';
-        if (selectedUid) {
-          ticket = tickets.find((t) => (t.uid || t.id) === selectedUid);
-          isAppending = true;
-        } else if (name) {
-          const uid = this._shortUID();
-          ticket = { name, uid, type };
-        } else {
-          this._showToast(
-            'Please enter a short ticket name or select a ticket.'
-          );
-          modal.setAttribute('data-status', 'idle');
-          window.bugReportModalStatus = 'idle';
-          return;
-        }
-      }
-      // Always ensure type is present
-      if (!ticket.type) ticket.type = typeSelect ? typeSelect.value : 'bug';
-      // Related to
-      const relatedTo = relatedToSelect ? relatedToSelect.value : '';
-      try {
-        await this._saveBugReport(
-          ticket,
-          isAppending,
-          relatedTo,
-          modal,
-          errorMsg
-        );
-        // --- Playwright workflow note ---
-        // After clicking Save Report, take a Playwright screenshot to verify the modal closes and the ticket is created.
-      } catch (e) {
-        // Show backend error message
-        errorMsg.textContent =
-          e && e.message ? e.message : 'Failed to save bug report!';
-        errorMsg.style.display = 'block';
-        errorMsg.style.color = '#ff6666';
-        modal.setAttribute('data-status', 'error');
-        window.bugReportModalStatus = 'error';
-
-        // Auto-close modal after showing error for 3 seconds
-        setTimeout(() => {
-          console.log('🎫 Auto-closing modal after error');
-          this._closeBugReportModal();
-          if (modal) modal.setAttribute('data-status', 'closed');
-          window.bugReportModalStatus = 'closed';
-        }, 3000);
-      }
-    };
-    document.getElementById('bugScreenshotBtn').onclick = () =>
-      this._saveAdditionalScreenshot(existingTicket);
+    // Save removed
     document.getElementById('bugCancelBtn').onclick = () =>
       this._closeBugReportModal();
     // Fix: allow spacebar in textarea
@@ -933,11 +681,10 @@ export class UIRenderer {
         document.activeElement && document.activeElement.id === 'bugDesc';
       // Save on Enter or Ctrl+Enter (except when Shift is held for newline in textarea)
       if (
-        (e.key === 'Enter' && (e.ctrlKey || !isTextarea)) ||
-        (e.key === 's' && e.ctrlKey)
+        false
       ) {
         e.preventDefault();
-        document.getElementById('bugSaveBtn').click();
+        // no-op
         return;
       }
       // Cancel on Escape or Ctrl+Backspace
@@ -1059,15 +806,14 @@ export class UIRenderer {
     return random().toString(36).substr(2, 6);
   }
 
-  async _saveBugReport(ticket, isAppending, relatedTo, modal, errorMsg) {
+  async _saveBugReport() {
     const desc = document.getElementById('bugDesc').value;
     const timestamp = new Date()
       .toISOString()
       .replace(/[:.]/g, '-')
       .slice(0, 19);
-    const folder = `tests/bug-reports/${ticket.name || ticket.title}_${ticket.uid || ticket.id}`;
-    this.latestBugReportFolder = folder;
-    this.screenshotCount = 1;
+    this.latestBugReportFolder = null;
+    this.screenshotCount = 0;
     // Helper: safely extract serializable state
     function safeGameState(gs) {
       if (!gs) return null;
@@ -1147,78 +893,29 @@ export class UIRenderer {
       lastError: window._bugReportLastError || null,
       fps: this._getFPS(),
       systemInfo: this._getSystemInfo(),
-      ticketName: ticket.name || ticket.title,
-      ticketUID: ticket.uid || ticket.id,
-      relatedTo,
+      ticketName: null,
+      ticketUID: null,
+      relatedTo: null,
     };
     // Screenshot (canvas only)
     const screenshotData =
       this._pendingInitialScreenshot || this._captureCanvasScreenshot();
     // Save meta.json (append or create)
     const meta = {
-      ticketName: ticket.name || ticket.title,
-      ticketUID: ticket.uid || ticket.id,
+      ticketName: null,
+      ticketUID: null,
       description: desc,
       timestamp,
-      relatedTo,
-      appended: isAppending,
+      relatedTo: null,
+      appended: false,
       inputHistory: this._inputHistory.slice(),
       fps: state.fps,
       systemInfo: state.systemInfo,
       url: window.location.href,
     };
-    // Save files via ticketManager API
-    try {
-      if (!isAppending) {
-        // Create new ticket
-        const ticketData = {
-          id: ticket.uid || ticket.id,
-          title: ticket.name || ticket.title,
-          type: ticket.type || 'bug', // Ensure type is always present
-          description: desc,
-          timestamp,
-          relatedTo,
-          state,
-          meta,
-          artifacts: [screenshotData], // For now, store screenshot as base64; backend can split if needed
-          status: 'Open',
-          history: [],
-          verification: [],
-          relatedTickets: relatedTo ? [relatedTo] : [],
-        };
-        await createTicket(ticketData);
-      } else {
-        // Update existing ticket (append info/artifacts)
-        const updates = {
-          description: desc,
-          meta,
-          artifacts: [screenshotData],
-          appended: true,
-          relatedTo,
-        };
-        await updateTicket(ticket.uid || ticket.id, updates);
-      }
-      // Show success message and close modal after short delay
-      if (modal && errorMsg) {
-        errorMsg.textContent = 'Ticket created!';
-        errorMsg.style.display = 'block';
-        errorMsg.style.color = '#66ff66';
-        modal.setAttribute('data-status', 'success');
-        window.bugReportModalStatus = 'success';
-        setTimeout(() => {
-          this._closeBugReportModal();
-          if (modal) modal.setAttribute('data-status', 'closed');
-          window.bugReportModalStatus = 'closed';
-        }, 1000);
-      } else {
-        this._closeBugReportModal();
-        if (modal) modal.setAttribute('data-status', 'closed');
-        window.bugReportModalStatus = 'closed';
-      }
-    } catch (e) {
-      // Rethrow so the modal can show the error
-      throw e;
-    }
+    // No server – just close
+    this._closeBugReportModal();
+    window.bugReportModalStatus = 'closed';
   }
 
   _captureCanvasScreenshot() {
@@ -1243,39 +940,5 @@ export class UIRenderer {
     link.click();
   }
 
-  _saveAdditionalScreenshot(existingTicket) {
-    let ticket = existingTicket;
-    if (!ticket && this.latestBugReportFolder) {
-      // Try to parse from folder name
-      const parts = this.latestBugReportFolder.split('/').pop().split('_');
-      ticket = {
-        name: parts.slice(0, -1).join('_'),
-        uid: parts[parts.length - 1],
-      };
-    }
-    if (!ticket) {
-      this._showToast('Please save a bug report first!');
-      return;
-    }
-    this.screenshotCount++;
-    const screenshotData = this._captureCanvasScreenshot();
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[:.]/g, '-')
-      .slice(0, 19);
-    if (window.mcp && window.mcp.saveBugReportScreenshot) {
-      window.mcp.saveBugReportScreenshot(
-        `tests/bug-reports/${ticket.name}_${ticket.uid}/additional-info`,
-        screenshotData,
-        this.screenshotCount
-      );
-    } else {
-      this._downloadScreenshot(
-        screenshotData,
-        `tests/bug-reports/${ticket.name}_${ticket.uid}/additional-info/screenshot-${this.screenshotCount}_${timestamp}_${ticket.uid}.png`
-      );
-    }
-    this._addScreenshotThumbnail(screenshotData);
-    this._showToast(`Screenshot ${this.screenshotCount} saved!`);
-  }
+  _saveAdditionalScreenshot() {}
 }
