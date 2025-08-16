@@ -27,7 +27,7 @@ Keeping a snapshot also makes it easy to introduce alternate enemy-specific vari
 ---
 *Last updated: 2025-08-16*
 
-### New file: grunt-shoot-and-death-probe.test.js
+### Hybrid file: grunt-shoot-and-death-probe.test.js
 
 This variant runs natural ranged combat before finishing deterministically.
 
@@ -37,3 +37,8 @@ This variant runs natural ranged combat before finishing deterministically.
 4. Asserts the same `gameOver` state transition.
 
 Approximate runtime 12–20 s (under the 60 s allowance).
+
+### Bug-demo file: player-death-bug-demo.test.js
+
+Illustrates the current defect – invoking `player.takeDamage()` to 0 HP **does not** set `gameState` to `gameOver`.
+The test is flagged with `test.fail()` so CI passes while the bug is known.  Remove the flag once the fix lands: the same test will then turn green, demonstrating the repair.
