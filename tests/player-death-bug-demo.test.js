@@ -14,7 +14,7 @@ import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
  */
 
 test('Player health 0 should trigger gameOver (bug demo)', async ({ page }) => {
-  test.fail(true, 'Known bug: gameOver not triggered when player.takeDamage() used');
+
 
   await page.goto('/index.html');
   await page.waitForSelector('canvas');

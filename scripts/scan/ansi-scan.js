@@ -33,7 +33,7 @@ const BINARY_EXTENSIONS = new Set([
   '.docx',
   '.xlsx',
   '.bin',
-  '.lockb'
+  '.lockb',
 ]);
 
 const IGNORE_DIR_PREFIXES = [
@@ -42,7 +42,7 @@ const IGNORE_DIR_PREFIXES = [
   '.debug' + path.sep,
   'playwright-report' + path.sep,
   path.join('tests', 'bug-reports') + path.sep,
-  path.join('docs', 'archive') + path.sep
+  path.join('docs', 'archive') + path.sep,
 ];
 
 // Rough ANSI CSI sequence detector: ESC [ ... final
@@ -66,32 +66,44 @@ function getCandidateFiles() {
   let files = [];
   try {
     if (args.includes('--all')) {
-      const out = execSync('git ls-files -z', { stdio: ['ignore', 'pipe', 'ignore'] });
+      const out = execSync('git ls-files -z', {
+        stdio: ['ignore', 'pipe', 'ignore'],
+      });
       files = out.toString('utf8').split('\u0000').filter(Boolean);
     } else {
       // Prefer staged files; fallback to cached+worktree changes, else all tracked
-      let out = execSync('git diff --cached --name-only -z', { stdio: ['ignore', 'pipe', 'ignore'] }).toString('utf8');
+      let out = execSync('git diff --cached --name-only -z', {
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).toString('utf8');
       files = out.split('\u0000').filter(Boolean);
       if (files.length === 0) {
-        out = execSync('git diff --name-only -z', { stdio: ['ignore', 'pipe', 'ignore'] }).toString('utf8');
+        out = execSync('git diff --name-only -z', {
+          stdio: ['ignore', 'pipe', 'ignore'],
+        }).toString('utf8');
         files = out.split('\u0000').filter(Boolean);
       }
       if (files.length === 0) {
-        out = execSync('git ls-files -z', { stdio: ['ignore', 'pipe', 'ignore'] }).toString('utf8');
+        out = execSync('git ls-files -z', {
+          stdio: ['ignore', 'pipe', 'ignore'],
+        }).toString('utf8');
         files = out.split('\u0000').filter(Boolean);
       }
     }
   } catch (_) {
     // As a last resort, scan tracked files
     try {
-      const out = execSync('git ls-files -z', { stdio: ['ignore', 'pipe', 'ignore'] });
+      const out = execSync('git ls-files -z', {
+        stdio: ['ignore', 'pipe', 'ignore'],
+      });
       files = out.toString('utf8').split('\u0000').filter(Boolean);
     } catch {
       files = [];
     }
   }
   // Filter existing, non-ignored files only
-  return files.filter((f) => existsSync(path.join(repoRoot, f)) && !isIgnored(f));
+  return files.filter(
+    (f) => existsSync(path.join(repoRoot, f)) && !isIgnored(f)
+  );
 }
 
 function containsAnsiSequences(filePath) {
@@ -101,7 +113,8 @@ function containsAnsiSequences(filePath) {
     const st = statSync(abs);
     if (st.size === 0) return false;
     // Size guard: skip very large files (>5MB) unless explicitly asked with --all
-    if (st.size > 5 * 1024 * 1024 && !process.argv.includes('--all')) return false;
+    if (st.size > 5 * 1024 * 1024 && !process.argv.includes('--all'))
+      return false;
     const buf = readFileSync(abs);
     // Quick binary sniff
     for (let i = 0; i < Math.min(buf.length, 1024); i++) {
@@ -121,7 +134,10 @@ function showMatches(filePath) {
     const hits = [];
     for (let i = 0; i < lines.length; i++) {
       if (ANSI_REGEX.test(lines[i])) {
-        hits.push({ line: i + 1, preview: lines[i].replace(/\x1B\[[0-?]*[ -\/]*[@-~]/g, '[ANSI]') });
+        hits.push({
+          line: i + 1,
+          preview: lines[i].replace(/\x1B\[[0-?]*[ -\/]*[@-~]/g, '[ANSI]'),
+        });
         if (hits.length >= 3) break;
       }
     }
@@ -153,5 +169,3 @@ if (offenders.length > 0) {
 } else {
   console.log('No ANSI escape sequences detected.');
 }
-
-

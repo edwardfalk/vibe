@@ -24,19 +24,19 @@ window.testRunner = window.testRunner || {
 
       // Shooting
       if (window.player) {
-        const startBullets = window.playerBullets?.length ?? 0;
+        const startBullets = window.gameState?.playerBullets?.length ?? 0;
         window.playerIsShooting = true;
         // Allow enough frames so BeatClock quarter-beat gating can trigger
         await new Promise((r) => setTimeout(r, 400));
         window.playerIsShooting = false;
-        const endBullets = window.playerBullets?.length ?? 0;
+        const endBullets = window.gameState?.playerBullets?.length ?? 0;
         result.shooting = endBullets > startBullets;
       }
 
       // Enemies present
       result.enemies =
-        Array.isArray(window.enemies) && window.enemies.length >= 0;
-
+        Array.isArray(window.gameState?.enemies) &&
+        window.gameState.enemies.length > 0;
       return result;
     } catch (err) {
       return { error: err?.toString?.() || 'Unknown error' };

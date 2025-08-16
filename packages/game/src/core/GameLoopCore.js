@@ -21,9 +21,16 @@ export function startGame() {
   new window.p5((p) => {
     // Deterministic seed for mathUtils & p5
     const searchParams = new URLSearchParams(window.location.search);
-    const _urlSeed = Number(searchParams.get('seed'));
-    window.gameSeed = Number.isFinite(_urlSeed) ? _urlSeed : 1337;
+    const seedParam = searchParams.get('seed');
+    const parsedSeed =
+      seedParam === null || seedParam.trim() === ''
+        ? NaN
+        : parseInt(seedParam, 10);
+    window.gameSeed = Number.isFinite(parsedSeed) ? parsedSeed : 1337;
+    // Seed both our math utils and p5 for deterministic behavior
     setRandomSeed(window.gameSeed);
+    p.randomSeed(window.gameSeed);
+    p.noiseSeed(window.gameSeed);
     p.setup = () => {
       legacySetup.call(p, p);
       // Phase-extracted init after legacy setup creates player

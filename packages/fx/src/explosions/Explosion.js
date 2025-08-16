@@ -85,6 +85,8 @@ export class Explosion {
 
     // Apply global tuning
     particleCount = Math.round(particleCount * FX_TUNING.particleMultiplier);
+    // Ensure particle count is within reasonable bounds
+    particleCount = Math.max(0, Math.min(particleCount, 100));
 
     // REMOVED: Screen shake application - game.js handles this better
 
@@ -270,17 +272,31 @@ export class Explosion {
     }
   }
 
-  getParticleColor(type) {
+  getParticleColor(type, depth = 0, visited) {
+    // Recursion guard to avoid infinite loops if palette mappings change
+    const MAX_DEPTH = 3;
+    const nextVisited = visited ? new Set(visited) : new Set();
+    if (depth >= MAX_DEPTH || nextVisited.has(type)) {
+      return random(explosionPalette.default);
+    }
+    nextVisited.add(type);
+
     const palette = explosionPalette[type];
     if (palette) return random(palette);
 
     if (type.includes('bullet-kill') || type.includes('plasma-kill')) {
-      if (type.includes('grunt')) return this.getParticleColor('grunt-death');
+      if (type.includes('grunt'))
+        return this.getParticleColor('grunt-death', depth + 1, nextVisited);
       if (type.includes('stabber'))
-        return this.getParticleColor('stabber-death');
-      if (type.includes('tank')) return this.getParticleColor('tank-death');
+        return this.getParticleColor('stabber-death', depth + 1, nextVisited);
+      if (type.includes('tank'))
+        return this.getParticleColor('tank-death', depth + 1, nextVisited);
       if (type.includes('rusher'))
-        return this.getParticleColor('rusher-explosion');
+        return this.getParticleColor(
+          'rusher-explosion',
+          depth + 1,
+          nextVisited
+        );
     }
 
     // Fallback default palette

@@ -6,9 +6,10 @@
   "main": "src/index.js",
   "description": "Core game loop, state management, timing utilities for Vibe.",
   "exports": {
+    ".": "./src/index.js",
     "./*": "./src/*"
   },
   "dependencies": {
     "dotenv": "^16.5.0"
   }
-} 
+}

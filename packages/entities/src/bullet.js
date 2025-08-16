@@ -1,4 +1,5 @@
 import { CONFIG } from '@vibe/core';
+import { drawGlow } from '@vibe/fx/visualEffects.js';
 import {
   max,
   min,
@@ -95,40 +96,42 @@ export class Bullet {
     if (!this.active) return;
 
     // Draw enhanced glow effect
-    if (typeof drawGlow !== 'undefined') {
-      try {
-        if (this.owner === 'player') {
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 2,
-            p.color(255, 255, 100),
-            0.8
-          );
-        } else if (this.owner === 'enemy-tank') {
-          const energyPercent = this.energy ? this.energy / 100 : 1;
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 3 * energyPercent,
-            p.color(150, 100, 255),
-            1.2
-          );
-        } else {
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 1.5,
-            p.color(255, 100, 255),
-            0.5
-          );
-        }
-      } catch (error) {
-        console.log('⚠️ Bullet glow error:', error);
+    try {
+      if (this.owner === 'player') {
+        drawGlow(
+          p,
+          this.x,
+          this.y,
+          this.size * 2,
+          p.color(255, 255, 100),
+          0.8,
+          p.SCREEN
+        );
+      } else if (this.owner === 'enemy-tank') {
+        const energyPercent =
+          this.energy == null ? 1 : max(0, min(1, this.energy / 100));
+        drawGlow(
+          p,
+          this.x,
+          this.y,
+          this.size * 3 * energyPercent,
+          p.color(150, 100, 255),
+          1.2,
+          p.SCREEN
+        );
+      } else {
+        drawGlow(
+          p,
+          this.x,
+          this.y,
+          this.size * 1.5,
+          p.color(255, 100, 255),
+          0.5,
+          p.SCREEN
+        );
       }
+    } catch (error) {
+      console.log('⚠️ Bullet glow error:', error);
     }
 
     // Draw trail
@@ -163,7 +166,8 @@ export class Bullet {
       p.ellipse(0, 0, this.size * 1.3);
     } else if (this.owner === 'enemy-tank') {
       // Tank bullet - massive, devastating energy ball with vibrating pulse
-      const energyPercent = this.energy ? this.energy / 100 : 1;
+      const energyPercent =
+        this.energy == null ? 1 : max(0, min(1, this.energy / 100));
       const vibration = sin(p.frameCount * 0.8) * 2; // Fast vibration
       const pulse = sin(p.frameCount * 0.5) * 0.4 + 0.6; // Slower pulse
 
@@ -205,6 +209,10 @@ export class Bullet {
   drawTrail(p) {
     if (this.trail.length < 2) return;
 
+    // Ensure normal blend mode for trail particles to prevent additive accumulation
+    p.push();
+    p.blendMode(p.BLEND);
+
     for (let i = 0; i < this.trail.length - 1; i++) {
       const alpha = (i / this.trail.length) * 150;
       const size = (i / this.trail.length) * this.size * 0.5;
@@ -222,6 +230,8 @@ export class Bullet {
       p.noStroke();
       p.ellipse(this.trail[i].x, this.trail[i].y, size);
     }
+
+    p.pop(); // Restore previous blend mode and drawing state
   }
 
   checkCollision(target) {

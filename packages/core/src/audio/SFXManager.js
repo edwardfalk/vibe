@@ -65,6 +65,13 @@ export class SFXManager {
 
     // Optional frequency sweep
     if (config.sweep) {
+      if (config.sweep.curve === 'exponential' && config.sweep.to <= 0) {
+        console.warn(
+          `Invalid exponential sweep target: ${config.sweep.to}. Using linear ramp instead.`
+        );
+        config.sweep.curve = 'linear';
+      }
+
       const endFreq = config.sweep.to * frequencyVariation;
       const sweepDuration = config.duration * durationVariation;
       if (config.sweep.curve === 'exponential') {
@@ -109,12 +116,14 @@ export class SFXManager {
     // -------------------------------------------------------------------
     // 📊 DEBUG INFO SETUP (captures values before envelope scheduling)
     // -------------------------------------------------------------------
-    const soundName = Object.keys(audio.sounds).find(
-      (k) => audio.sounds[k] === config
-    ) || 'unknown';
+    const soundName =
+      Object.keys(audio.sounds).find((k) => audio.sounds[k] === config) ||
+      'unknown';
 
     const debugEnabled =
-      window.DEBUG_AUDIO || window.debug_audio || localStorage.getItem('debugAudio') === '1';
+      window.DEBUG_AUDIO ||
+      window.debug_audio ||
+      localStorage.getItem('debugAudio') === '1';
     const dx = x !== null && x !== undefined ? x - playerX : 0;
     const dy = y !== null && y !== undefined ? y - playerY : 0;
     const distance = Math.sqrt(dx * dx + dy * dy);
@@ -123,6 +132,7 @@ export class SFXManager {
     let debugReverb = 0;
     let debugDry = 0;
 
+    // Envelope: quick attack, then decay to near-silence by the end
     gainNode.gain.setValueAtTime(0, ctx.currentTime);
     gainNode.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01);
     gainNode.gain.exponentialRampToValueAtTime(
@@ -132,6 +142,8 @@ export class SFXManager {
 
     panNode.pan.setValueAtTime(panValue, ctx.currentTime);
 
+    // Node graph connections happen below; start/stop scheduled after graph is wired
+
     // Optional debug output for quick balancing tweaks with spatial info
     if (debugEnabled) {
       console.log('🎵', {
@@ -140,8 +152,8 @@ export class SFXManager {
         dist: distance.toFixed(1),
         pan: panValue.toFixed(2),
         onscreen: isOnScreen,
-        reverb: debugReverb,
-        dry: debugDry,
+        reverb: debugReverb ?? 0,
+        dry: debugDry ?? 0,
         pos: `(${Math.round(x ?? playerX)},${Math.round(y ?? playerY)})`,
       });
     }

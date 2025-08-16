@@ -94,11 +94,11 @@ class Tank extends BaseEnemy {
     let targetY = playerY;
 
     // Tank anger targeting - find nearest enemy of angry target type
-    if (this.isAngry && this.angerTarget && window.enemies) {
+    if (this.isAngry && this.angerTarget && window.gameState?.enemies) {
       let nearestAngryTarget = null;
       let nearestDistance = Infinity;
 
-      for (const enemy of window.enemies) {
+      for (const enemy of window.gameState.enemies) {
         if (enemy.type === this.angerTarget && enemy !== this) {
           const dist = sqrt((enemy.x - this.x) ** 2 + (enemy.y - this.y) ** 2);
           if (dist < nearestDistance) {
@@ -352,8 +352,8 @@ class Tank extends BaseEnemy {
       this.drawChargingIndicator();
     }
     if (
-      window.activeBombs &&
-      window.activeBombs.some((bomb) => bomb.tankId === this.id)
+      window.gameState?.activeBombs &&
+      window.gameState.activeBombs.some((bomb) => bomb.tankId === this.id)
     ) {
       this.p.push();
       this.p.fill(255, 0, 0);

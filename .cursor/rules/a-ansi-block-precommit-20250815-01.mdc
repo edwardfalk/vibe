@@ -1,17 +1,18 @@
 ---
 alwaysApply: true
 ---
+
 ID: RULE-20250815-ANSI
 Title: Block ANSI escape sequences in committed text files
 Context: An accidental terminal output file with ANSI escapes (`e --abbrev-ref HEAD`) was committed. This rule prevents future commits of files containing ANSI control sequences.
 Policy:
-  - Pre-commit hook scans staged files for ANSI escape sequences and blocks the commit if found.
-  - Provide a Bun script `scan:ansi` to scan staged files or the full repo (`--all`).
-  - Offer a generator to create sanitized branch status snapshots in `docs/BRANCH_STATUS.md`.
-Enforcement: `scripts/git-hooks/pre-commit.cmd` + `scripts/scan/ansi-scan.js`; install via `bun run hooks:install`.
-Scope: Repo-wide (text assets; binaries ignored).
-Rationale: Prevents noisy diffs, broken Markdown, and accidental console dumps in the repository.
-Links: [mdc:scripts/scan/ansi-scan.js], [mdc:scripts/git-hooks/pre-commit.cmd], [mdc:package.json]
-Status: Active
-Added: 2025-08-15
 
+- Pre-commit hook scans staged files for ANSI escape sequences and blocks the commit if found.
+- Provide a Bun script `scan:ansi` to scan staged files or the full repo (`--all`).
+- Offer a generator to create sanitized branch status snapshots in `docs/BRANCH_STATUS.md`.
+  Enforcement: `scripts/git-hooks/pre-commit.cmd` + `scripts/scan/ansi-scan.js`; install via `bun run hooks:install`.
+  Scope: Repo-wide (text assets; binaries ignored).
+  Rationale: Prevents noisy diffs, broken Markdown, and accidental console dumps in the repository.
+  Links: [mdc:scripts/scan/ansi-scan.js], [mdc:scripts/git-hooks/pre-commit.cmd], [mdc:package.json]
+  Status: Active
+  Added: 2025-08-15

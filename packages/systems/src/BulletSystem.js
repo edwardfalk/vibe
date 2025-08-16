@@ -4,28 +4,32 @@
 
 export class BulletSystem {
   static update() {
-    if (!window.playerBullets || !window.enemyBullets) return;
+    const gs = window.gameState;
+    if (!gs) return;
+
+    const playerBullets = gs.playerBullets;
+    const enemyBullets = gs.enemyBullets;
 
     // --- Player bullets ----------------------------------------------------
-    for (let i = window.playerBullets.length - 1; i >= 0; i--) {
-      const bullet = window.playerBullets[i];
+    for (let i = playerBullets.length - 1; i >= 0; i--) {
+      const bullet = playerBullets[i];
       bullet.update();
       if (bullet.isOffScreen()) {
-        window.playerBullets.splice(i, 1);
+        playerBullets.splice(i, 1);
       }
     }
 
     // --- Enemy bullets -----------------------------------------------------
-    for (let i = window.enemyBullets.length - 1; i >= 0; i--) {
-      const bullet = window.enemyBullets[i];
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+      const bullet = enemyBullets[i];
       bullet.update();
       if (bullet.isOffScreen()) {
         console.log(
           `➖ Removing enemy bullet (off-screen): ${bullet.owner} at (${Math.round(
             bullet.x
-          )}, ${Math.round(bullet.y)}) - Remaining: ${window.enemyBullets.length - 1}`
+          )}, ${Math.round(bullet.y)}) - Remaining: ${enemyBullets.length - 1}`
         );
-        window.enemyBullets.splice(i, 1);
+        enemyBullets.splice(i, 1);
       }
     }
   }

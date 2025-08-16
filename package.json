@@ -32,10 +32,14 @@
     "coderabbit:cycle": "echo deprecated",
     "setup": "cp .env.example .env && echo 'Please edit .env with your GitHub token'",
     "validate-env": "echo Skipped legacy env validation; use packages/tooling/src/githubIssueManager.js",
-    "lint": "bunx eslint --cache --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"*.js\"",
-    "lint:fix": "bunx eslint --cache --fix --ext .js \"packages/**/*.js\" \"scripts/**/*.js\" \"*.js\"",
+    "lint": "bunx eslint --cache packages scripts",
+    "lint:fix": "bunx eslint --cache --fix packages scripts",
     "format": "bunx prettier --write \"**/*.{js,md,json}\"",
+    "format:check": "bunx prettier --check \"**/*.{js,md,json}\"",
     "scan:ansi": "bun --bun scripts/scan/ansi-scan.js",
+    "scan:math": "bun --bun scripts/scan/scan-math.js",
+    "scan:no-tier3-globals": "bun scripts/scan/scan-no-tier3-globals.js",
+    "scan:no-tier3-globals:strict": "set NO_TIER3_GLOBALS_STRICT=1&& bun scripts/scan/scan-no-tier3-globals.js",
     "hooks:install": "scripts\\install-hooks.cmd",
     "docs:branch-status": "scripts\\generate-branch-status.cmd",
     "clean": "Remove-Item -Recurse -Force node_modules, bun.lockb -ErrorAction SilentlyContinue",
@@ -43,7 +47,10 @@
     "test:enhanced": "node scripts/enhanced-testing-system.js",
     "env:setup": "pwsh -ExecutionPolicy Bypass -File scripts/powershell/setup-windows-environment.ps1",
     "env:check": "pwsh -ExecutionPolicy Bypass -File scripts/powershell/setup-windows-environment.ps1 -TestOnly",
-    "tickets:update": "bun run scripts/update-ticket-status.js",
+    "tickets:new": "bun run scripts/tickets/new-ticket.js",
+    "tickets:list": "bun run scripts/tickets/list-tickets.js",
+    "tickets:validate": "bun run scripts/tickets/validate-tickets.js",
+    "tickets:index": "bun run scripts/tickets/index-tickets.js",
     "tickets:batch-resolve": "bun run scripts/batch-resolve-tickets.js",
     "cleanup:debug": "bun run scripts/cleanup-debug.js",
     "ticket:create": "echo deprecated; use packages/tooling/src/githubIssueManager.js",
@@ -51,7 +58,9 @@
     "ticket:get": "echo deprecated; use packages/tooling/src/githubIssueManager.js",
     "ticket:list": "echo deprecated; use packages/tooling/src/githubIssueManager.js",
     "ticket:latest": "echo deprecated; use packages/tooling/src/githubIssueManager.js",
-    "ticket:check": "echo deprecated; use packages/tooling/src/githubIssueManager.js"
+    "ticket:check": "echo deprecated; use packages/tooling/src/githubIssueManager.js",
+    "monitor:dc": "bun --bun scripts/monitor/desktopCommanderHealth.js --port=4333",
+    "restart:dc": "bun --bun scripts/monitor/restart-desktopCommander.js"
   },
   "bun": {
     "dev": {
@@ -75,22 +84,19 @@
     "dotenv-cli": "^8.0.0",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-prettier": "^5.0.1",
     "five-server": "^0.4.4",
     "kill-port": "^2.0.1",
     "live-server": "^1.2.2",
     "prettier": "^3.5.3",
     "tsx": "^4.19.4",
-    "vitest": "^3.2.2"
+    "vitest": "^3.2.2",
+    "compression": "^1.8.0"
   },
   "dependencies": {
-    "compression": "^1.8.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "jszip": "^3.10.1",
-    "p5": "^1.7.0",
-    "test": "^3.3.0",
-    "zod": "^3.25.56"
+    "p5": "^1.7.0"
   },
   "keywords": [
     "game",

@@ -26,12 +26,23 @@ let enabled = true;
 
 function startFrame() {
   if (!enabled) return;
-  frameStart = performance.now();
+  frameStart =
+    typeof globalThis !== 'undefined' &&
+    globalThis.performance &&
+    typeof globalThis.performance.now === 'function'
+      ? globalThis.performance.now()
+      : Date.now();
 }
 
 function endFrame() {
   if (!enabled) return;
-  const dt = performance.now() - frameStart;
+  const now =
+    typeof globalThis !== 'undefined' &&
+    globalThis.performance &&
+    typeof globalThis.performance.now === 'function'
+      ? globalThis.performance.now()
+      : Date.now();
+  const dt = now - frameStart;
   frameTimes[framePtr % MAX_FRAMES] = dt;
   framePtr++;
 }
@@ -45,6 +56,15 @@ function registerEffect(category, payload = {}) {
 function getStats() {
   if (!enabled) return {};
   const sampleCount = Math.min(framePtr, MAX_FRAMES);
+  if (sampleCount === 0) {
+    return {
+      fps: '0.0',
+      avg: '0.00',
+      min: '0.00',
+      max: '0.00',
+      counters: { ...counters },
+    };
+  }
   let sum = 0,
     min = Infinity,
     max = 0;
@@ -66,8 +86,16 @@ function getStats() {
 }
 
 function reset() {
+  // Reset timing state
   framePtr = 0;
-  counters.keys = Object.create(null);
+  frameStart = 0;
+  for (let i = 0; i < MAX_FRAMES; i++) {
+    frameTimes[i] = 0;
+  }
+  // Clear counters in-place
+  for (const key of Object.keys(counters)) {
+    delete counters[key];
+  }
 }
 
 function setEnabled(v) {
@@ -81,4 +109,4 @@ export default {
   getStats,
   reset,
   setEnabled,
-}; 
+};

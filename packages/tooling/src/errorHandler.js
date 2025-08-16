@@ -6,12 +6,23 @@ import fs from 'fs/promises';
 import path from 'path';
 import { DebugLogger } from './DebugLogger.js';
 
-process.on('uncaughtException', (err) =>
-  DebugLogger.log('Uncaught Exception', err)
-);
-process.on('unhandledRejection', (err) =>
-  DebugLogger.log('Unhandled Rejection', err)
-);
+process.on('uncaughtException', (err) => {
+  DebugLogger.log('Uncaught Exception', err);
+  // In production, you may want to gracefully shutdown
+  if (CONFIG.ENVIRONMENT === 'production') {
+    // Perform cleanup and exit
+    process.exit(1);
+  }
+});
+
+process.on('unhandledRejection', (err) => {
+  DebugLogger.log('Unhandled Rejection', err);
+  // In production, you may want to gracefully shutdown
+  if (CONFIG.ENVIRONMENT === 'production') {
+    // Perform cleanup and exit
+    process.exit(1);
+  }
+});
 
 /**
  * Enhanced error class with context
@@ -147,18 +158,10 @@ export function logError(error, context = {}) {
     context,
   };
   if (error instanceof VibeError) {
-    errorInfo.vibeContext = error.context;
-  }
-  if (CONFIG.SECURITY.LOG_LEVEL === 'debug') {
-    errorInfo.stack = error.stack;
-  }
-  console.error('🚨 Error logged:', JSON.stringify(errorInfo, null, 2));
-}
-
-/**
- * Validate API response
- */
 export function validateApiResponse(response, context = {}) {
+  if (!response) {
+    throw new VibeError('API response is null or undefined', context);
+  }
   if (!response.ok) {
     throw new VibeError(
       `API request failed: ${response.status} ${response.statusText}`,
@@ -172,8 +175,28 @@ export function validateApiResponse(response, context = {}) {
   }
   return response;
 }
-
-/**
+      `API request failed: ${response.status} ${response.statusText}`,
+      {
+        status: response.status,
+        statusText: response.statusText,
+export function safeJsonParse(jsonString, defaultValue = null) {
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.warn('⚠️ Failed to parse JSON, returning default value');
+    // Only log a truncated version to avoid exposing sensitive data
+    const truncatedInput =
+      jsonString && jsonString.length > 100
+        ? jsonString.substring(0, 100) + '...'
+        : jsonString;
+    logError(error, {
+      operation: 'jsonParse',
+      inputLength: jsonString?.length,
+      inputPreview: truncatedInput,
+    });
+    return defaultValue;
+  }
+}
  * Safe JSON parse with error handling
  */
 export function safeJsonParse(jsonString, defaultValue = null) {
@@ -184,4 +207,4 @@ export function safeJsonParse(jsonString, defaultValue = null) {
     logError(error, { operation: 'jsonParse', input: jsonString });
     return defaultValue;
   }
-} 
+}

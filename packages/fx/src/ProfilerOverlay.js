@@ -27,8 +27,10 @@ class ProfilerOverlay {
     const counterKeys = Object.keys(stats.counters);
     const maxCountersToShow = 4;
     boxHeight += Math.min(counterKeys.length, maxCountersToShow) * lineHeight;
+    // extra lines for dot debug
+    boxHeight += lineHeight * 2;
 
-    const boxWidth = 180;
+    const boxWidth = 200;
 
     // Background rect
     p.noStroke();
@@ -57,6 +59,21 @@ class ProfilerOverlay {
     for (const key of entries) {
       p.text(`${key}: ${stats.counters[key]}`, pad + 4, y);
       y += lineHeight;
+    }
+
+    // Dot debug counts
+    if (window.explosionManager) {
+      const central = window.explosionManager.fragmentExplosions.reduce(
+        (sum, fe) => sum + fe.centralExplosion.particles.length,
+        0
+      );
+      const fragments = window.explosionManager.fragmentExplosions.reduce(
+        (sum, fe) => sum + fe.fragments.length,
+        0
+      );
+      p.text(`central: ${central}`, pad + 4, y);
+      y += lineHeight;
+      p.text(`fragments: ${fragments}`, pad + 4, y);
     }
 
     p.pop();

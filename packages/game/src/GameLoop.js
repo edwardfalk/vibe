@@ -45,6 +45,8 @@ import {
 import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
 import ProfilerOverlay from '@vibe/fx/ProfilerOverlay.js';
 import AdaptiveLODManager from '@vibe/fx/AdaptiveLODManager.js';
+import { updateBullets, updateBombs } from './core/CombatOps.js';
+import { buildRestartContext } from './core/RestartContext.js';
 
 // Core game objects
 let player;
@@ -62,10 +64,13 @@ let audio;
 // Sync local variables to window globals after restart
 window.updateGameLoopLocals = function () {
   player = window.player;
-  enemies = window.enemies;
-  playerBullets = window.playerBullets;
-  enemyBullets = window.enemyBullets;
-  activeBombs = window.activeBombs;
+  const gsLoc = window.gameState;
+  if (gsLoc) {
+    enemies = gsLoc.enemies;
+    playerBullets = gsLoc.playerBullets;
+    enemyBullets = gsLoc.enemyBullets;
+    activeBombs = gsLoc.activeBombs;
+  }
   explosionManager = window.explosionManager;
   effectsManager = window.effectsManager;
   visualEffectsManager = window.visualEffectsManager;
@@ -74,10 +79,7 @@ window.updateGameLoopLocals = function () {
 
 // Global system references for easy access
 window.player = null;
-window.enemies = [];
-window.playerBullets = playerBullets;
-window.enemyBullets = enemyBullets;
-window.activeBombs = activeBombs;
+// Tier-3 globals (enemies, bullets, bombs) deprecated – use window.gameState.* instead
 window.explosionManager = null;
 window.audio = null;
 // Removed unused speechManager global (was legacy TTS helper)
@@ -95,6 +97,7 @@ window.keys = {
 };
 
 // Add at the top, after global system references
+window.DEBUG_DOTS = false; // toggle in console to trace lingering explosion dots
 window.playerIsShooting = false;
 window.arrowUpPressed = false;
 window.arrowDownPressed = false;
@@ -103,6 +106,8 @@ window.arrowRightPressed = false;
 
 // Attach profiler overlay for global access
 window.profilerOverlay = ProfilerOverlay;
+// Expose EffectsProfiler for probes
+window.EffectsProfiler = EffectsProfiler;
 
 // Input event handler helpers
 function onKeyDown(e) {
@@ -186,11 +191,7 @@ export function setup(p) {
     new CustomEvent('playerChanged', { detail: window.player })
   );
 
-  // Initialize global arrays
-  window.enemies = enemies;
-  window.playerBullets = playerBullets;
-  window.enemyBullets = enemyBullets;
-  window.activeBombs = activeBombs;
+  // Arrays live in gameState; no separate window globals.
 
   // Initialize systems
   explosionManager = new ExplosionManager();
@@ -236,6 +237,12 @@ export function setup(p) {
   console.log('👾 Spawn system initialized');
 
   // Now restart the game state (this calls spawnEnemies which needs camera)
+  if (
+    window.gameState &&
+    typeof window.gameState.setRestartContext === 'function'
+  ) {
+    window.gameState.setRestartContext(buildRestartContext());
+  }
   window.gameState.restart();
   console.log('🎮 GameState system initialized');
 
@@ -297,6 +304,11 @@ export function draw(p) {
   // Begin profiler frame timing
   EffectsProfiler.startFrame();
 
+  // Hard clear frame to prevent paint accumulation/trails
+  if (!window.__skipLegacyClear) {
+    p.background(0);
+  }
+
   // Ensure global frameCount is updated for all modules and probes (p5 instance mode)
   window.frameCount = p.frameCount;
 
@@ -308,7 +320,8 @@ export function draw(p) {
   // Draw background using BackgroundRenderer
   if (window.backgroundRenderer) {
     window.backgroundRenderer.drawCosmicAuroraBackground(p);
-    window.backgroundRenderer.drawEnhancedSpaceElements(p);
+    // Use a calmer baseline background to avoid excessive overlays
+    window.backgroundRenderer.drawSubtleSpaceElements(p);
   }
 
   // Draw parallax background
@@ -340,6 +353,9 @@ export function draw(p) {
         if (window.testModeManager && window.testModeManager.enabled) {
           window.gameState.gameOverTimer++;
           if (window.gameState.gameOverTimer >= 60) {
+            if (typeof window.gameState.setRestartContext === 'function') {
+              window.gameState.setRestartContext(buildRestartContext());
+            }
             window.gameState.restart();
             console.log('🔄 Auto-restarting game in test mode');
           }
@@ -363,372 +379,34 @@ export function draw(p) {
   AdaptiveLODManager.update();
 }
 
+// -----------------------------------------------------------------------------
+// Legacy compatibility wrappers – full logic now lives in core/CoreUpdate.js &
+// core/CoreDraw.js.  These wrappers exist only so external tools/tests that
+// still import { updateGame, drawGame } do not crash during the transition.
+// They will be removed in a subsequent cleanup once all references are gone.
+// -----------------------------------------------------------------------------
+
+import { coreUpdateGame } from './core/CoreUpdate.js';
+import { coreDrawGame } from './core/CoreDraw.js';
+
 export function updateGame(p) {
-  // Resync local references to globals at the start of the frame
-  // so update/draw use the current live objects/arrays even if reassigned.
-  player = window.player;
-  enemies = window.enemies;
-  playerBullets = window.playerBullets;
-  enemyBullets = window.enemyBullets;
-
-  // Update BeatClock every frame for accurate rhythm timing
-  if (window.beatClock && typeof window.beatClock.update === 'function') {
-    window.beatClock.update();
-  }
-
-  // Music update (beat-sync)
-  if (window.musicManager) {
-    window.musicManager.update();
-  }
-
-  // Test mode - automated movement and shooting
-  if (window.testModeManager && window.testModeManager.enabled) {
-    window.testModeManager.update();
-  }
-
-  // Update player
-  if (player) {
-    player.update(p.deltaTime);
-  }
-
-  // Update camera for parallax effect
-  if (window.cameraSystem) {
-    if (typeof window.cameraSystem.update === 'function') {
-      window.cameraSystem.update();
-    } else {
-      console.warn('⚠️ Camera update method not found');
-    }
-  }
-
-  // Unified shooting logic
-  if (window.playerIsShooting && player) {
-    const bullet = player.shoot();
-    if (bullet) {
-      playerBullets.push(bullet);
-      if (window.gameState) {
-        window.gameState.addShotFired();
-      }
-      if (window.audio) {
-        window.audio.playPlayerShoot(player.x, player.y);
-      }
-    }
-  }
-
-  // Update bullets via modular system
-  updateBullets();
-
-  // Immediately process bullet collisions to catch hits before enemies move
-  if (window.collisionSystem) {
-    window.collisionSystem.checkBulletCollisions();
-  }
-
-  // Update bombs via modular system
-  updateBombs();
-
-  // Update enemies
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    const enemy = enemies[i];
-
-    // CRITICAL FIX: Remove dead enemies before updating
-    if (enemy.health <= 0 || enemy.markedForRemoval) {
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-        console.log(
-          `🗑️ Removing dead enemy: ${enemy.type} at (${enemy.x.toFixed(1)}, ${enemy.y.toFixed(1)}) health=${enemy.health} marked=${enemy.markedForRemoval}`
-        );
-      }
-      enemies.splice(i, 1);
-      continue;
-    }
-
-    const result = enemy.update(
-      player ? player.x : 400,
-      player ? player.y : 300,
-      p.deltaTime
+  if (!GameLoop.__warnedUpdate) {
+    console.warn(
+      '⚠️  legacy GameLoop.updateGame deprecated – redirected to coreUpdateGame'
     );
-
-    // Handle enemy update results
-    if (result) {
-      if (result.type === 'rusher-explosion') {
-        if (window.collisionSystem) {
-          window.collisionSystem.handleRusherExplosion(result, i);
-        }
-        try {
-          window.dispatchEvent(
-            new CustomEvent('vfx:rusher-explosion', {
-              detail: { x: result.x, y: result.y },
-            })
-          );
-        } catch (_) {}
-        if (window.audio) {
-          window.audio.playExplosion(result.x, result.y);
-        }
-        console.log(`💥 RUSHER EXPLOSION at (${result.x}, ${result.y})!`);
-        enemies.splice(i, 1);
-        continue;
-      } else if (typeof result.checkCollision === 'function') {
-        // Handle enemy bullets
-        enemyBullets.push(result);
-        console.log(
-          `➕ Added enemy bullet to array: ${result.owner} at (${Math.round(result.x)}, ${Math.round(result.y)}) - Total: ${enemyBullets.length}`
-        );
-      } else if (
-        result.type === 'stabber-melee' ||
-        result.type === 'stabber-miss'
-      ) {
-        // Handle stabber attack objects - process damage immediately
-        console.log(
-          `🗡️ Stabber attack result: ${result.type} at (${Math.round(result.x)}, ${Math.round(result.y)})`
-        );
-
-        // Process stabber damage to player
-        if (
-          result.type === 'stabber-melee' &&
-          result.playerHit &&
-          window.player
-        ) {
-          console.log(
-            `⚔️ STABBER HIT! Player took ${result.damage} damage from stab attack`
-          );
-
-          if (window.audio) {
-            window.audio.playPlayerHit();
-          }
-
-          if (window.gameState) {
-            window.gameState.resetKillStreak(); // Reset kill streak on taking damage
-          }
-
-          // Apply damage
-          if (window.player.takeDamage(result.damage, 'stabber-melee')) {
-            if (window.gameState) {
-              window.gameState.setGameState('gameOver');
-            }
-            console.log('💀 PLAYER KILLED BY STABBER ATTACK!');
-          } else {
-            // Apply knockback to player
-            const knockbackAngle = atan2(
-              window.player.y - result.y,
-              window.player.x - result.x
-            );
-            const knockbackForce = 8;
-            window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
-            window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
-
-            // Screen shake for dramatic effect
-            if (window.cameraSystem) {
-              window.cameraSystem.addShake(10, 20);
-            }
-
-            // Create impact effect via event bus
-            try {
-              window.dispatchEvent(
-                new CustomEvent('vfx:enemy-hit', {
-                  detail: {
-                    x: window.player.x,
-                    y: window.player.y,
-                    type: 'stabber',
-                  },
-                })
-              );
-            } catch (_) {}
-          }
-        }
-
-        // Process friendly fire damage to other enemies
-        if (result.enemiesHit && result.enemiesHit.length > 0) {
-          // Process hits in reverse order to avoid index issues when removing enemies
-          for (let k = result.enemiesHit.length - 1; k >= 0; k--) {
-            const hit = result.enemiesHit[k];
-            const targetEnemy = hit.enemy;
-
-            // Apply damage to enemy
-            const damageResult = targetEnemy.takeDamage(
-              hit.damage,
-              hit.angle,
-              'stabber'
-            );
-
-            if (damageResult === true) {
-              // Enemy killed by friendly fire
-              console.log(
-                `💀 ${targetEnemy.type} killed by stabber friendly fire!`
-              );
-
-              // Handle death effects
-              if (window.collisionSystem) {
-                window.collisionSystem.handleEnemyDeath(
-                  targetEnemy,
-                  targetEnemy.type,
-                  targetEnemy.x,
-                  targetEnemy.y
-                );
-              }
-
-              // Remove from enemies array (find current index)
-              const enemyIndex = enemies.indexOf(targetEnemy);
-              if (enemyIndex !== -1) {
-                enemies[enemyIndex].markedForRemoval = true;
-              }
-
-              // Award points and kills
-              if (window.gameState) {
-                window.gameState.addKill();
-                window.gameState.addScore(15); // Bonus points for friendly fire
-              }
-            } else if (damageResult === 'exploding') {
-              // Rusher started exploding from friendly fire
-              try {
-                window.dispatchEvent(
-                  new CustomEvent('vfx:enemy-hit', {
-                    detail: {
-                      x: targetEnemy.x,
-                      y: targetEnemy.y,
-                      type: targetEnemy.type,
-                    },
-                  })
-                );
-              } catch (_) {}
-
-              if (window.audio) {
-                window.audio.playHit(targetEnemy.x, targetEnemy.y);
-              }
-              console.log(
-                `💥 Stabber friendly fire caused ${targetEnemy.type} to explode!`
-              );
-            } else {
-              // Enemy damaged but not killed
-              try {
-                window.dispatchEvent(
-                  new CustomEvent('vfx:enemy-hit', {
-                    detail: {
-                      x: targetEnemy.x,
-                      y: targetEnemy.y,
-                      type: targetEnemy.type,
-                    },
-                  })
-                );
-              } catch (_) {}
-
-              if (window.audio) {
-                window.audio.playHit(targetEnemy.x, targetEnemy.y);
-              }
-              console.log(
-                `🗡️ ${targetEnemy.type} damaged by stabber friendly fire, health: ${targetEnemy.health}`
-              );
-            }
-          }
-        }
-      } else {
-        console.warn(`⚠️ Unknown object returned from enemy update:`, result);
-      }
-    }
+    GameLoop.__warnedUpdate = true;
   }
-
-  // Remove enemies marked for removal after all updates
-  window.enemies = window.enemies.filter((enemy) => !enemy.markedForRemoval);
-
-  // Check collisions using CollisionSystem
-  if (window.collisionSystem) {
-    window.collisionSystem.checkBulletCollisions();
-    window.collisionSystem.checkContactCollisions();
-  }
-
-  // Update spawn system
-  if (window.spawnSystem) {
-    window.spawnSystem.update();
-  }
-
-  // Explosion updates moved to core/UpdateLoop.js
-
-  // Update effects manager
-  if (effectsManager) {
-    effectsManager.update();
-  }
-
-  // Update visual effects manager
-  if (window.visualEffectsManager) {
-    window.visualEffectsManager.updateParticles();
-  }
-
-  // Update audio system
-  if (window.audio) {
-    window.audio.update();
-  }
-
-  // Keep legacy local references (player/enemies/bullets/managers) in sync
-  // with globals even if arrays/objects were reassigned during updates.
-  if (typeof window.updateGameLoopLocals === 'function') {
-    window.updateGameLoopLocals();
-  }
+  coreUpdateGame(p);
 }
 
 export function drawGame(p) {
-  // Debug: Log camera position and enemy count every 30 frames
-  if (typeof p.frameCount !== 'undefined' && p.frameCount % 30 === 0) {
-    const cam = window.cameraSystem
-      ? { x: window.cameraSystem.x, y: window.cameraSystem.y }
-      : { x: 0, y: 0 };
-    console.log(
-      `🎮 [DRAW GAME] camera=(${cam.x},${cam.y}) enemies=${enemies.length}`
+  if (!GameLoop.__warnedDraw) {
+    console.warn(
+      '⚠️  legacy GameLoop.drawGame deprecated – redirected to coreDrawGame'
     );
+    GameLoop.__warnedDraw = true;
   }
-  // Apply camera transform for world objects
-  if (window.cameraSystem) {
-    window.cameraSystem.applyTransform();
-  }
-
-  // Draw enemies
-  for (const enemy of enemies) {
-    enemy.draw(p);
-  }
-
-  // Draw player
-  if (player) {
-    player.draw(p);
-  }
-
-  // Draw bullets
-  for (const bullet of playerBullets) {
-    bullet.draw(p);
-  }
-
-  for (const bullet of enemyBullets) {
-    bullet.draw(p);
-  }
-
-  // Draw explosions
-  if (explosionManager) {
-    explosionManager.draw(p);
-  }
-
-  // Draw effects particles (world space - with camera transform)
-  if (effectsManager) {
-    effectsManager.drawParticles(p);
-  }
-
-  // Draw visual effects particles (world space - with camera transform)
-  if (window.visualEffectsManager) {
-    window.visualEffectsManager.drawParticles(p);
-  }
-
-  // Draw speech bubbles/text (world space - with camera transform)
-  if (window.audio) {
-    window.audio.drawTexts(p);
-  }
-
-  // Remove camera transform
-  if (window.cameraSystem) {
-    window.cameraSystem.removeTransform();
-  }
-
-  // Draw screen effects (after camera transform removed)
-  if (effectsManager) {
-    effectsManager.drawScreenEffects(p);
-  }
-
-  if (window.visualEffectsManager) {
-    window.visualEffectsManager.applyScreenEffects(p);
-  }
+  coreDrawGame(p);
 }
 
 // Area damage handling moved to core/EnemyOps.js

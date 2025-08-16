@@ -6,10 +6,11 @@
   "main": "src/index.js",
   "description": "Game systems: camera, spawning, collision, UI, background, testing mode.",
   "exports": {
+    ".": "./src/index.js",
     "./*": "./src/*"
   },
   "dependencies": {
     "@vibe/core": "workspace:*",
     "@vibe/entities": "workspace:*"
   }
-} 
+}

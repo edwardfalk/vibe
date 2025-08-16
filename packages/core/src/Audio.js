@@ -53,6 +53,7 @@
 import { random, randomRange, floor, PI } from './mathUtils.js';
 import { SFXManager } from './audio/SFXManager.js';
 import { SOUND } from './audio/SoundIds.js';
+import { withBlendMode } from './render/blendUtils.js';
 
 export class Audio {
   /**
@@ -1195,9 +1196,24 @@ export class Audio {
     }
 
     if (this.showBeatIndicator) {
-      drawGlow(p, this.beatX, this.beatY, 40, p.color(255, 255, 100), 0.5);
+      this.drawGlow(p, this.beatX, this.beatY, 40, p.color(255, 255, 100), 0.5);
     }
 
+    p.pop();
+  }
+
+  // Lightweight glow helper for beat indicator and small accents
+  drawGlow(p, x, y, size, color, intensity = 1) {
+    p.push();
+    withBlendMode(p, p.ADD, () => {
+      p.noStroke();
+      for (let i = 0; i < 5; i++) {
+        const alpha = p.map(i, 0, 4, intensity * 100, 0);
+        const glowSize = size * (1 + i * 0.3);
+        p.fill(p.red(color), p.green(color), p.blue(color), alpha);
+        p.ellipse(x, y, glowSize, glowSize);
+      }
+    });
     p.pop();
   }
 
@@ -1516,6 +1532,41 @@ export class Audio {
     this.speechEnabled = this.enabled;
     console.log(`🔊 Audio ${this.enabled ? 'enabled' : 'disabled'}`);
     return this.enabled;
+  }
+
+  /**
+   * Apply or remove a simple low-pass + volume reduction to create a muffled effect.
+   * @param {number} intensity 0–1 (1 = normal volume, <1 = muffled)
+   */
+  applyMuffle(intensity = 1) {
+    if (!this.ensureAudioContext() || !this.masterGain) return;
+
+    // Clamp intensity
+    intensity = Math.max(0, Math.min(1, intensity));
+
+    // Lazy-create a low-pass node once
+    if (!this._muffleFilter) {
+      this._muffleFilter = this.audioContext.createBiquadFilter();
+      this._muffleFilter.type = 'lowpass';
+      this.masterGain.disconnect();
+      this.masterGain.connect(this._muffleFilter);
+      this._muffleFilter.connect(this.audioContext.destination);
+    }
+
+    // Frequency sweeps between 800 Hz (fully muffled) and 18000 Hz (normal)
+    const freq = 800 + intensity * 17200;
+    this._muffleFilter.frequency.setTargetAtTime(
+      freq,
+      this.audioContext.currentTime,
+      0.05
+    );
+
+    // Also reduce master gain slightly for stronger effect
+    this.masterGain.gain.setTargetAtTime(
+      intensity,
+      this.audioContext.currentTime,
+      0.05
+    );
   }
 
   // Compatibility methods

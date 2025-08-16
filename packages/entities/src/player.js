@@ -3,6 +3,7 @@
 import { CONFIG } from '@vibe/core';
 import { Bullet } from './bullet.js';
 import { max, atan2, sin, cos, random, TWO_PI, PI } from '@vibe/core';
+import { drawGlow } from '@vibe/fx/visualEffects.js';
 
 const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
@@ -175,7 +176,11 @@ export class Player {
         this.p.mouseY
       );
       this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && frameCount % 60 === 0) {
+      if (
+        CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
+        typeof this.p.frameCount !== 'undefined' &&
+        this.p.frameCount % 60 === 0
+      ) {
         console.log(
           `[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / PI).toFixed(1)}°`
         );
@@ -183,7 +188,11 @@ export class Player {
     } else {
       // Fallback for when camera system is not available
       this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && frameCount % 60 === 0) {
+      if (
+        CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
+        typeof this.p.frameCount !== 'undefined' &&
+        this.p.frameCount % 60 === 0
+      ) {
         console.log(
           `[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / PI).toFixed(1)}°`
         );
@@ -215,12 +224,10 @@ export class Player {
       if (this.queuedShot.timerMs <= 0) {
         // Time to fire the queued shot
         const bullet = this.fireBullet();
-        if (bullet && window.playerBullets) {
-          window.playerBullets.push(bullet);
+        if (bullet && window.gameState?.playerBullets) {
+          window.gameState.playerBullets.push(bullet);
 
-          if (window.gameState) {
-            window.gameState.addShotFired();
-          }
+          window.gameState?.addShotFired();
 
           // Play shooting sound with spatial audio
           if (window.audio) {
@@ -267,33 +274,24 @@ export class Player {
     // Motion trail disabled for stability
 
     // Draw enhanced glow effect
-    if (typeof drawGlow !== 'undefined') {
-      try {
-        const healthPercent = this.health / this.maxHealth;
-        if (healthPercent > 0.7) {
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 2,
-            p.color(100, 200, 255),
-            0.6
-          );
-        } else if (healthPercent < 0.3) {
-          // Pulsing red glow when low health
-          const pulse = sin(p.frameCount * 0.3) * 0.5 + 0.5;
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 2.5,
-            p.color(255, 100, 100),
-            pulse * 0.8
-          );
-        }
-      } catch (error) {
-        console.log('⚠️ Player glow error:', error);
+    try {
+      const healthPercent = this.health / this.maxHealth;
+      if (healthPercent > 0.7) {
+        drawGlow(p, this.x, this.y, this.size * 2, p.color(100, 200, 255), 0.6);
+      } else if (healthPercent < 0.3) {
+        // Pulsing red glow when low health
+        const pulse = sin(p.frameCount * 0.3) * 0.5 + 0.5;
+        drawGlow(
+          p,
+          this.x,
+          this.y,
+          this.size * 2.5,
+          p.color(255, 100, 100),
+          pulse * 0.8
+        );
       }
+    } catch (error) {
+      console.log('⚠️ Player glow error:', error);
     }
 
     p.push();
@@ -397,16 +395,21 @@ export class Player {
     const lensW = eyeSize * 1.92; // 20% larger than before
     const lensH = eyeSize * 1.32; // 20% larger than before
     p.ellipse(-eyeOffset, -s * 0.25, lensW, lensH); // Left lens
-    p.ellipse(eyeOffset, -s * 0.25, lensW, lensH);  // Right lens
+    p.ellipse(eyeOffset, -s * 0.25, lensW, lensH); // Right lens
 
     // Bridge
     p.stroke(20);
     p.strokeWeight(2);
-    p.line(-eyeOffset + lensW/2.5, -s * 0.25, eyeOffset - lensW/2.5, -s * 0.25);
+    p.line(
+      -eyeOffset + lensW / 2.5,
+      -s * 0.25,
+      eyeOffset - lensW / 2.5,
+      -s * 0.25
+    );
 
     // Arms
-    p.line(-eyeOffset - lensW/2, -s * 0.25, -eyeOffset - lensW, -s * 0.28);
-    p.line(eyeOffset + lensW/2, -s * 0.25, eyeOffset + lensW, -s * 0.28);
+    p.line(-eyeOffset - lensW / 2, -s * 0.25, -eyeOffset - lensW, -s * 0.28);
+    p.line(eyeOffset + lensW / 2, -s * 0.25, eyeOffset + lensW, -s * 0.28);
     p.noStroke();
 
     // Small cosmic horns for flair
@@ -538,16 +541,18 @@ export class Player {
       this.firstShotFired = false;
     }
 
-    // Enforce BeatClock timing when available
+    // Enforce BeatClock timing only when test mode is disabled
     const beatClockReady =
       window.beatClock &&
       typeof window.beatClock.canPlayerShootQuarterBeat === 'function';
-    const onQuarterBeat = beatClockReady
-      ? window.beatClock.canPlayerShootQuarterBeat()
-      : true;
-
-    // Block shots that are off-beat when BeatClock is active
-    if (beatClockReady && !onQuarterBeat) {
+    const testModeActive = !!(
+      window.testModeManager && window.testModeManager.enabled
+    );
+    if (
+      beatClockReady &&
+      !testModeActive &&
+      !window.beatClock.canPlayerShootQuarterBeat()
+    ) {
       return null;
     }
 
@@ -559,8 +564,15 @@ export class Player {
     // First shot is always allowed for snappy response
     if (!this.firstShotFired) {
       this.firstShotFired = true;
+      const quarterBeatMs =
+        window.beatClock && window.beatClock.beatInterval
+          ? window.beatClock.beatInterval / 4
+          : 150;
+      this.shootCooldownMs = quarterBeatMs;
+      return this.fireBullet();
     }
 
+    // Subsequent shots
     return this.fireBullet();
   }
 
@@ -643,18 +655,17 @@ export class Player {
   }
 
   takeDamage(amount, damageSource = 'unknown') {
+    if (window.gameState && window.gameState.gameState !== 'playing') {
+      return false; // Ignore damage when not in active play state
+    }
     console.log(
       `🩸 PLAYER DAMAGE: ${amount} HP from ${damageSource} (Health: ${this.health} → ${this.health - amount})`
     );
 
     this.health -= amount;
 
-    // Only trigger speech if game is still playing and audio system is available
-    if (
-      window.gameState &&
-      window.gameState.gameState === 'playing' &&
-      window.audio
-    ) {
+    // Trigger speech only during active play
+    if (window.audio) {
       const context =
         this.health <= 0
           ? 'death'
