@@ -4,6 +4,8 @@ This Playwright test file (`tests/gameplay-probe.test.js`) is the first-line hea
 
 ## What it covers
 
+### Existing file: gameplay-probe.test.js
+
 1. **Liveness probe** – verifies that the game boots, the `<canvas>` element appears, and critical globals (`gameState`, `player`, `audio`) are present.
 2. **Game-mechanics probe** – exercises basic movement / shooting behaviour by delegating to `window.testRunner` inside the page.
 3. **Player-death probe** *(new)* – applies deterministic lethal damage to the player and asserts that:
@@ -24,3 +26,14 @@ Keeping a snapshot also makes it easy to introduce alternate enemy-specific vari
 
 ---
 *Last updated: 2025-08-16*
+
+### New file: grunt-shoot-and-death-probe.test.js
+
+This variant runs natural ranged combat before finishing deterministically.
+
+1. Spawns one grunt at a fixed offset (150 px to the right).
+2. Waits up to 15 s for the first bullet impact – verified by `enemyBullets.length` growth and player-health drop.
+3. Applies lethal damage to guarantee a quick finish.
+4. Asserts the same `gameOver` state transition.
+
+Approximate runtime 12–20 s (under the 60 s allowance).
