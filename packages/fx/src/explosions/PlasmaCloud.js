@@ -35,6 +35,8 @@ export class PlasmaCloud {
   }
 
   update() {
+    if (!this.active) return null;
+
     this.timer++;
     this.damageTimer++;
 
@@ -48,9 +50,10 @@ export class PlasmaCloud {
     // Check if cloud is finished
     if (this.timer >= this.maxTimer) {
       this.active = false;
+      return null;
     }
 
-    // Return damage info if it's time to damage
+    // Return damage info if it's time to damage (only while active)
     if (this.damageTimer >= this.damageInterval) {
       this.damageTimer = 0;
       return {
@@ -63,7 +66,6 @@ export class PlasmaCloud {
 
     return null;
   }
-
   draw(p) {
     if (!this.active) return;
 
@@ -78,15 +80,15 @@ export class PlasmaCloud {
     // Outer warning circle - deep pink aurora
     p.fill(255, 20, 147, alpha * 0.3);
     p.noStroke();
-    p.ellipse(0, 0, this.maxRadius * 2 * pulse);
+    p.ellipse(0, 0, this.maxRadius * 2 * pulse, this.maxRadius * 2 * pulse);
 
     // Middle aurora ring - blue violet
     p.fill(138, 43, 226, alpha * 0.4);
-    p.ellipse(0, 0, this.maxRadius * 1.5 * pulse);
+    p.ellipse(0, 0, this.maxRadius * 1.5 * pulse, this.maxRadius * 1.5 * pulse);
 
     // Inner damage zone - turquoise energy
     p.fill(64, 224, 208, alpha * 0.5);
-    p.ellipse(0, 0, this.radius * 2 * pulse);
+    p.ellipse(0, 0, this.radius * 2 * pulse, this.radius * 2 * pulse);
 
     // Cosmic aurora plasma particles
     for (const particle of this.particles) {
@@ -113,7 +115,7 @@ export class PlasmaCloud {
         particle.brightness * (alpha / 150)
       );
       p.noStroke();
-      p.ellipse(x, y, particle.size);
+      p.ellipse(x, y, particle.size, particle.size);
 
       // Enhanced particle glow with aurora colors
       p.fill(
@@ -122,12 +124,12 @@ export class PlasmaCloud {
         p.blue(particleColor) + 50,
         particle.brightness * 0.3 * (alpha / 150)
       );
-      p.ellipse(x, y, particle.size * 2);
+      p.ellipse(x, y, particle.size * 2, particle.size * 2);
 
       // Add sparkle effect for bright particles
       if (particle.brightness > 200) {
         p.fill(255, 255, 255, particle.brightness * 0.4 * (alpha / 150));
-        p.ellipse(x, y, particle.size * 0.5);
+        p.ellipse(x, y, particle.size * 0.5, particle.size * 0.5);
       }
     }
 

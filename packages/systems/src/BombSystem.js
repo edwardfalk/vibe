@@ -7,8 +7,8 @@ import { sqrt, max, floor, atan2, cos, sin } from '@vibe/core/mathUtils.js';
 /**
  * BombSystem – static utility for updating active tank bombs every frame.
  * All state is read from the window.* globals that GameLoop sets up:
- *   window.activeBombs – array of bomb objects {x,y,timer,tankId}
- *   window.enemies – live enemy array (to track the owning tank)
+ *   gameState.activeBombs – array of bomb objects {x,y,timer,tankId}
+ *   gameState.enemies – live enemy array (to track the owning tank)
  *   window.player – player instance
  *   window.explosionManager – visual FX manager
  *   window.audio – Audio system
@@ -20,7 +20,9 @@ export class BombSystem {
    * Tick all bombs once per frame. Removes bombs that have exploded.
    */
   static update() {
-    const bombs = window.activeBombs;
+    const gs = window.gameState;
+    if (!gs) return;
+    const bombs = gs.activeBombs;
     if (!bombs || bombs.length === 0) return;
 
     for (let i = bombs.length - 1; i >= 0; i--) {
@@ -28,7 +30,7 @@ export class BombSystem {
       bomb.timer--;
 
       // Keep bomb tethered to its tank so we explode at current position.
-      const tank = window.enemies?.find((e) => e.id === bomb.tankId);
+      const tank = gs.enemies?.find((e) => e.id === bomb.tankId);
       if (tank) {
         bomb.x = tank.x;
         bomb.y = tank.y;
@@ -94,14 +96,17 @@ export class BombSystem {
               window.player.x - bomb.x
             );
             const force = 15;
-            window.player.velocity.x += cos(angle) * force;
-            window.player.velocity.y += sin(angle) * force;
+            const v =
+              window.player.velocity ||
+              (window.player.velocity = { x: 0, y: 0 });
+            v.x += cos(angle) * force;
+            v.y += sin(angle) * force;
           }
         }
       }
 
       // --- Damage enemies (incl. owning tank) ----------------------------
-      const enemies = window.enemies || [];
+      const enemies = gs.enemies || [];
       for (let j = enemies.length - 1; j >= 0; j--) {
         const enemy = enemies[j];
         const dx = bomb.x - enemy.x;

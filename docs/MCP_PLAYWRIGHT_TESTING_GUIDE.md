@@ -29,7 +29,7 @@ This guide explains how to use Playwright for robust, AI-driven testing of the V
   - Take a screenshot of the canvas and UI.
   - Log the current state of player, enemies, and gameState.
   - Record the time/frame of failure.
-- See `/packages/tooling/src/probes/livenessProbe.js` for the canonical probe.
+    See [packages/tooling/src/probes/livenessProbe.js](../packages/tooling/src/probes/livenessProbe.js) for the canonical probe.
 
 ### Bug Reporting for Probe Failures
 
@@ -43,7 +43,7 @@ This guide explains how to use Playwright for robust, AI-driven testing of the V
 
 - Ensures the game is truly running (not just error-free)
 - Checks: game loop, player, enemies, BeatClock, audio
-- Example probe: [`/packages/tooling/src/probes/livenessProbe.js`](/packages/tooling/src/probes/livenessProbe.js)
+- Example probe: [`packages/tooling/src/probes/livenessProbe.js`](../packages/tooling/src/probes/livenessProbe.js)
 
 ---
 
@@ -76,7 +76,7 @@ This guide explains how to use Playwright for robust, AI-driven testing of the V
 
 ## Reference: Example Probes
 
-- **Liveness/heartbeat:** [`/packages/tooling/src/probes/livenessProbe.js`](/packages/tooling/src/probes/livenessProbe.js)
+- **Liveness/heartbeat:** [`packages/tooling/src/probes/livenessProbe.js`](../packages/tooling/src/probes/livenessProbe.js)
 - **Enemy AI probe:** Check enemy count, types, and behaviors
 - **Audio system probe:** Check audio context, sound playback, TTS
 - **UI/score probe:** Check score, health, and UI elements
@@ -90,3 +90,42 @@ This guide explains how to use Playwright for robust, AI-driven testing of the V
 
 - The standard dev server is Five Server, running on http://localhost:5500
 - All Playwright tests should target port 5500
+
+## Monitoring Desktop Commander MCP
+
+Desktop Commander powers critical workspace tools (file operations, process management). A lightweight health-check script is provided so you can keep an eye on its status during long hacking sessions or CI runs.
+
+```cmd
+bun run monitor:dc
+```
+
+This starts `scripts/monitor/desktopCommanderHealth.js`, which every 60 s:
+
+1. Searches the Windows task list for a process whose command-line contains `desktop-commander`.
+2. Sends an HTTP GET to `http://127.0.0.1:4333/get_config` to ensure the JSON API responds within 3 s.
+3. Appends the result as a JSON line to `.debug/desktop-commander-health.log` (auto-rotates at 5 MB).
+
+Example log entry:
+
+```json
+{
+  "ts": "2025-08-16T12:34:56.789Z",
+  "procFound": true,
+  "ok": true,
+  "latency": 42
+}
+```
+
+Flags:
+
+- `--interval <sec>` (default 60)
+- `--port <number>` (default 4333 – matches `c:\Users\edwar\.cursor\mcp.json`)
+- `--iterations <n>` (stop after _n_ runs, useful in CI)
+
+Tail the log in a separate terminal:
+
+```cmd
+type .debug\desktop-commander-health.log
+```
+
+For 24/7 monitoring, import the script into Windows Task Scheduler (trigger: “At startup”, action: `bun run monitor:dc`).

@@ -143,11 +143,11 @@ export class BackgroundRenderer {
     const foregroundSparks = this.parallaxLayers[4];
     for (let i = 0; i < 60; i++) {
       foregroundSparks.elements.push({
-        x: p.random(-p.width, p.width * 2),
-        y: p.random(-p.height, p.height * 2),
-        size: p.random(2, 4),
-        alpha: p.random(150, 255),
-        flickerSpeed: p.random(0.05, 0.15),
+        x: randomRange(-p.width, p.width * 2),
+        y: randomRange(-p.height, p.height * 2),
+        size: randomRange(2, 4),
+        alpha: randomRange(150, 255),
+        flickerSpeed: randomRange(0.05, 0.15),
       });
     }
   }
@@ -253,7 +253,6 @@ export class BackgroundRenderer {
       p.push();
       p.translate(piece.x, piece.y);
       p.rotate(piece.rotation);
-      piece.rotation += piece.rotationSpeed;
 
       switch (piece.shape) {
         case 'triangle':
@@ -283,6 +282,26 @@ export class BackgroundRenderer {
           break;
       }
       p.pop();
+    }
+  }
+
+  // Update parallax elements' state (separate from draw)
+  updateParallaxElements(deltaTime = 1) {
+    if (!this.parallaxInitialized || !Array.isArray(this.parallaxLayers))
+      return;
+    // Find close debris layer robustly; fallback to index 3 if naming changed
+    let closeDebrisLayer = this.parallaxLayers.find(
+      (layer) => layer && layer.name === 'close_debris'
+    );
+    if (!closeDebrisLayer && this.parallaxLayers[3]) {
+      closeDebrisLayer = this.parallaxLayers[3];
+    }
+    if (!closeDebrisLayer || !Array.isArray(closeDebrisLayer.elements)) return;
+    const elements = closeDebrisLayer.elements;
+    for (let i = 0; i < elements.length; i++) {
+      const piece = elements[i];
+      // Advance rotation using delta time scaling
+      piece.rotation += (piece.rotationSpeed || 0) * deltaTime;
     }
   }
 

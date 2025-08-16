@@ -448,10 +448,11 @@ export class UIRenderer {
       }
     }
 
-    if (key === 't' || key === 'T') {
-      // Toggle test mode using the new modular system
+    const dev = window.DEV_MODE === true;
+
+    if ((key === 't' || key === 'T') && dev) {
       if (this.testModeManager) {
-        const enabled = this.testModeManager.toggle();
+        this.testModeManager.toggle();
         return true;
       }
     }
@@ -525,7 +526,7 @@ export class UIRenderer {
     }
 
     // Edge exploration / test suites via function keys
-    if (key === 'F6') {
+    if (key === 'F6' && dev) {
       if (this.testModeManager) {
         this.testModeManager.setEnabled(true);
         this.testModeManager.setMovementPattern('edges');
@@ -535,7 +536,7 @@ export class UIRenderer {
       return true;
     }
 
-    if (key === 'F7') {
+    if (key === 'F7' && dev) {
       if (this.testModeManager) {
         this.testModeManager.setEnabled(true);
         this.testModeManager.runTestSuite();
@@ -552,7 +553,7 @@ export class UIRenderer {
       return true;
     }
 
-    if (key === 'F8') {
+    if (key === 'F8' && dev) {
       if (this.testModeManager) {
         this.testModeManager.setEnabled(true);
         this.testModeManager.setMovementPattern('edges');
@@ -688,11 +689,7 @@ export class UIRenderer {
       const isTextarea =
         document.activeElement && document.activeElement.id === 'bugDesc';
       // Save on Enter or Ctrl+Enter (except when Shift is held for newline in textarea)
-      if (false) {
-        e.preventDefault();
-        // no-op
-        return;
-      }
+      // Save functionality has been removed
       // Cancel on Escape or Ctrl+Backspace
       if (e.key === 'Escape' || (e.key === 'Backspace' && e.ctrlKey)) {
         e.preventDefault();
@@ -809,119 +806,7 @@ export class UIRenderer {
 
   // Helper to generate a short unique ID
   _shortUID() {
-    return random().toString(36).substr(2, 6);
-  }
-
-  async _saveBugReport() {
-    const desc = document.getElementById('bugDesc').value;
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[:.]/g, '-')
-      .slice(0, 19);
-    this.latestBugReportFolder = null;
-    this.screenshotCount = 0;
-    // Helper: safely extract serializable state
-    function safeGameState(gs) {
-      if (!gs) return null;
-      return {
-        gameState: gs.gameState,
-        score: gs.score,
-        highScore: gs.highScore,
-        level: gs.level,
-        killStreak: gs.killStreak,
-        totalKills: gs.totalKills,
-        accuracy:
-          typeof gs.getAccuracy === 'function' ? gs.getAccuracy() : null,
-      };
-    }
-    function safePlayer(p) {
-      if (!p) return null;
-      return {
-        x: p.x,
-        y: p.y,
-        vx: p.vx,
-        vy: p.vy,
-        health: p.health,
-        maxHealth: p.maxHealth,
-        dashCooldownMs: p.dashCooldownMs,
-        aimAngle: p.aimAngle,
-        isDashing: p.isDashing,
-      };
-    }
-    function safeEnemy(e) {
-      return {
-        type: e.type,
-        x: e.x,
-        y: e.y,
-        health: e.health,
-        state: e.state,
-        markedForRemoval: e.markedForRemoval,
-      };
-    }
-    function safeBullet(b) {
-      return {
-        x: b.x,
-        y: b.y,
-        vx: b.vx,
-        vy: b.vy,
-        damage: b.damage,
-        owner: b.owner,
-        markedForRemoval: b.markedForRemoval,
-      };
-    }
-    function safeAudio(a) {
-      if (!a || typeof a.getDebugState !== 'function') return null;
-      return a.getDebugState();
-    }
-    // Gather state
-    const state = {
-      frameCount: typeof frameCount !== 'undefined' ? frameCount : null,
-      gameState: safeGameState(this.gameState),
-      player: safePlayer(this.player),
-      enemies: Array.isArray(this.gameState.enemies)
-        ? this.gameState.enemies.map(safeEnemy)
-        : [],
-      playerBullets: Array.isArray(this.gameState.playerBullets)
-        ? this.gameState.playerBullets.map(safeBullet)
-        : [],
-      enemyBullets: Array.isArray(this.gameState.enemyBullets)
-        ? this.gameState.enemyBullets.map(safeBullet)
-        : [],
-      activeBombs: Array.isArray(this.gameState.activeBombs)
-        ? this.gameState.activeBombs
-        : [],
-      audio: safeAudio(this.audio),
-      timestamp: Date.now(),
-      description: desc,
-      url: window.location.href,
-      userAgent: navigator.userAgent,
-      logs: this._inputHistory.slice(),
-      lastError: window._bugReportLastError || null,
-      fps: this._getFPS(),
-      systemInfo: this._getSystemInfo(),
-      ticketName: null,
-      ticketUID: null,
-      relatedTo: null,
-    };
-    // Screenshot (canvas only)
-    const screenshotData =
-      this._pendingInitialScreenshot || this._captureCanvasScreenshot();
-    // Save meta.json (append or create)
-    const meta = {
-      ticketName: null,
-      ticketUID: null,
-      description: desc,
-      timestamp,
-      relatedTo: null,
-      appended: false,
-      inputHistory: this._inputHistory.slice(),
-      fps: state.fps,
-      systemInfo: state.systemInfo,
-      url: window.location.href,
-    };
-    // No server – just close
-    this._closeBugReportModal();
-    window.bugReportModalStatus = 'closed';
+    return Math.random().toString(36).substr(2, 6);
   }
 
   _captureCanvasScreenshot() {

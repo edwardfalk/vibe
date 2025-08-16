@@ -5,7 +5,7 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
 
 import { Bullet } from '@vibe/entities';
-import { sin, cos, min, floor, random, atan2, PI } from '@vibe/core';
+import { sin, cos, min, floor, random, atan2, PI, dist } from '@vibe/core';
 
 /**
  * @param {Player} player - The player object (dependency injected for modularity)
@@ -93,6 +93,8 @@ export class TestMode {
     }
 
     // Apply proper player constraints (same as in player.js)
+    const constrain = (v, a, b) => Math.min(Math.max(v, a), b);
+
     this.player.x = constrain(
       this.player.x,
       halfSize,
@@ -152,7 +154,7 @@ export class TestMode {
     const centerY = this.player.p.height / 2;
     const radius = Math.min(this.player.p.width, this.player.p.height) * 0.2;
     this.player.x = centerX + radius * cos(phase * 2);
-    this.player.y = centerY + radius * cos(phase * 2);
+    this.player.y = centerY + radius * sin(phase * 2);
   }
 
   // Update auto-shooting
@@ -170,12 +172,12 @@ export class TestMode {
 
   // Find nearest enemy to player
   findNearestEnemy() {
-    if (!window.enemies || window.enemies.length === 0) return null;
+    if (!window.gameState?.enemies?.length) return null;
 
     let nearestEnemy = null;
     let nearestDistance = Infinity;
 
-    for (const enemy of window.enemies) {
+    for (const enemy of window.gameState.enemies) {
       const distance = dist(this.player.x, this.player.y, enemy.x, enemy.y);
       if (distance < nearestDistance) {
         nearestDistance = distance;
@@ -195,8 +197,8 @@ export class TestMode {
     const bulletY = this.player.y + sin(angle) * bulletDistance;
 
     const bullet = new Bullet(bulletX, bulletY, angle, 6, 'player');
-    if (window.playerBullets) {
-      window.playerBullets.push(bullet);
+    if (window.gameState?.playerBullets) {
+      window.gameState.playerBullets.push(bullet);
     }
 
     console.log(`🎯 Auto-shot at ${enemy.type} enemy!`);
@@ -225,7 +227,7 @@ export class TestMode {
     const randomType = enemyTypes[floor(random() * enemyTypes.length)];
 
     if (
-      window.enemies &&
+      window.gameState?.enemies &&
       window.spawnSystem &&
       window.spawnSystem.enemyFactory
     ) {
@@ -234,7 +236,7 @@ export class TestMode {
         testY,
         randomType
       );
-      window.enemies.push(enemy);
+      window.gameState.enemies.push(enemy);
     }
 
     console.log(`🧪 Spawned test ${randomType} for shooting practice`);
@@ -258,9 +260,11 @@ export class TestMode {
 
     // Log test progress periodically
     if (this.timer % 120 === 0) {
-      const enemyCount = window.enemies ? window.enemies.length : 0;
-      const bulletCount = window.playerBullets
-        ? window.playerBullets.length
+      const enemyCount = window.gameState?.enemies
+        ? window.gameState.enemies.length
+        : 0;
+      const bulletCount = window.gameState?.playerBullets
+        ? window.gameState.playerBullets.length
         : 0;
       console.log(
         `🤖 Test running... Timer: ${this.timer}, Enemies: ${enemyCount}, Bullets: ${bulletCount}`
@@ -290,7 +294,7 @@ export class TestMode {
 
   // Force spawn specific enemy type
   forceSpawnEnemy(type, x = null, y = null) {
-    if (!window.enemies) return;
+    if (!window.gameState?.enemies) return;
 
     const spawnX = x !== null ? x : random(50, this.player.p.width - 50);
     const spawnY = y !== null ? y : random(50, this.player.p.height - 50);
@@ -301,7 +305,7 @@ export class TestMode {
         spawnY,
         type
       );
-      window.enemies.push(enemy);
+      window.gameState.enemies.push(enemy);
     }
     console.log(
       `🎯 Force spawned ${type} at (${spawnX.toFixed(1)}, ${spawnY.toFixed(1)})`
@@ -316,8 +320,12 @@ export class TestMode {
       pattern: this.currentPattern,
       shootInterval: this.shootInterval,
       enemySpawnInterval: this.enemySpawnInterval,
-      enemyCount: window.enemies ? window.enemies.length : 0,
-      bulletCount: window.playerBullets ? window.playerBullets.length : 0,
+      enemyCount: window.gameState?.enemies
+        ? window.gameState.enemies.length
+        : 0,
+      bulletCount: window.gameState?.playerBullets
+        ? window.gameState.playerBullets.length
+        : 0,
     };
   }
 

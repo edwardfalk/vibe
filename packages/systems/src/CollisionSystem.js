@@ -8,7 +8,9 @@ const TIME_BOMB_FRAMES = 180; // 3 seconds at 60fps
 
 export class CollisionSystem {
   constructor() {
-    this.friendlyFireEnabled = true;
+    // Flags
+    this.optimiseGrid = true;
+    this.friendlyFireEnabled = false;
   }
 
   // Main collision detection function
@@ -20,19 +22,24 @@ export class CollisionSystem {
 
   // Contact player ↔ enemy collisions
   checkContactCollisions() {
-    if (!window.player || !window.enemies) return;
-    for (let i = window.enemies.length - 1; i >= 0; i--) {
-      const enemy = window.enemies[i];
+    const gs = window.gameState;
+    if (!window.player || !gs?.enemies) return;
+    for (let i = gs.enemies.length - 1; i >= 0; i--) {
+      const enemy = gs.enemies[i];
       if (enemy.checkCollision(window.player)) {
         let damage = 0;
         let shouldPlaceBomb = false;
         switch (enemy.type) {
-          case 'grunt':
+          case 'stabber':
+            // Light brush damage when not in an attack animation; main damage handled elsewhere
             damage = 1;
             break;
           case 'tank':
+            // Contact plants a time bomb on the tank
             shouldPlaceBomb = true;
             break;
+          // rusher: explosion-only damage handled elsewhere
+          // grunt: no contact damage (shooters only)
         }
         if (damage > 0) {
           window.audio?.playPlayerHit();
@@ -42,10 +49,10 @@ export class CollisionSystem {
           window.gameState?.setGameState('gameOver');
           return;
         } else if (shouldPlaceBomb) {
-          window.activeBombs = window.activeBombs || [];
-          if (window.activeBombs.length < 3) {
+          const bombs = gs.activeBombs;
+          if (bombs.length < 3) {
             const timer = TIME_BOMB_FRAMES;
-            window.activeBombs.push({
+            bombs.push({
               x: enemy.x,
               y: enemy.y,
               timer,
@@ -65,10 +72,11 @@ export class CollisionSystem {
 
   // Player bullets can only damage enemies
   checkPlayerBulletsVsEnemies() {
-    if (!window.playerBullets?.length || !window.enemies?.length) return;
+    const gs = window.gameState;
+    if (!gs?.playerBullets?.length || !gs?.enemies?.length) return;
 
-    const bullets = window.playerBullets;
-    const enemies = window.enemies;
+    const bullets = gs.playerBullets;
+    const enemies = gs.enemies;
 
     // Build spatial grid if many enemies for faster look-ups
     const useGrid = enemies.length > 80;
@@ -143,8 +151,8 @@ export class CollisionSystem {
 
   // Enemy bullets can damage the player
   checkEnemyBulletsVsPlayer() {
-    if (!window.enemyBullets?.length || !window.player) return;
-    const bullets = window.enemyBullets;
+    if (!window.gameState?.enemyBullets?.length || !window.player) return;
+    const bullets = window.gameState.enemyBullets;
     const player = window.player;
 
     for (let i = bullets.length - 1; i >= 0; i--) {
@@ -179,11 +187,12 @@ export class CollisionSystem {
 
   // Optional: enemy friendly-fire (enemy bullets vs other enemies)
   checkEnemyBulletsVsEnemies() {
-    if (!this.friendlyFireEnabled) return;
-    if (!window.enemyBullets?.length || !window.enemies?.length) return;
+    if (!this.friendlyFireEnabled) return; // Enabled during death-transition limbo
+    const gs2 = window.gameState;
+    if (!gs2?.enemyBullets?.length || !gs2?.enemies?.length) return;
 
-    const bullets = window.enemyBullets;
-    const enemies = window.enemies;
+    const bullets = gs2.enemyBullets;
+    const enemies = gs2.enemies;
 
     // Build spatial grid if many enemies for faster look-ups
     const useGrid = enemies.length > 80;
@@ -320,10 +329,11 @@ export class CollisionSystem {
     }
 
     // Damage other enemies (friendly fire)
-    if (window.enemies?.length) {
-      for (let i = window.enemies.length - 1; i >= 0; i--) {
+    const gs = window.gameState;
+    if (gs.enemies?.length) {
+      for (let i = gs.enemies.length - 1; i >= 0; i--) {
         if (i === enemyIndex) continue; // Skip the exploding rusher itself
-        const enemy = window.enemies[i];
+        const enemy = gs.enemies[i];
         if (!enemy || enemy.markedForRemoval) continue;
         const dx = x - enemy.x;
         const dy = y - enemy.y;
@@ -345,10 +355,10 @@ export class CollisionSystem {
     // Finally remove the Rusher itself
     if (
       typeof enemyIndex === 'number' &&
-      window.enemies &&
-      window.enemies[enemyIndex]
+      gs.enemies &&
+      gs.enemies[enemyIndex]
     ) {
-      window.enemies[enemyIndex].markedForRemoval = true;
+      gs.enemies[enemyIndex].markedForRemoval = true;
     }
   }
 }

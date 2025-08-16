@@ -4,6 +4,8 @@ export class BeatClock {
   constructor(bpm = 120) {
     this.bpm = bpm;
     this.beatInterval = (60 / bpm) * 1000; // ms per beat
+    // Time-scale factor (1 = normal, <1 slow-motion, >1 fast). Used by DeathTransitionSystem.
+    this.timeScale = 1;
     this.startTime = Date.now();
     this.tolerance = 100; // ms tolerance for on-beat
     this.beatsPerMeasure = 4;
@@ -12,16 +14,16 @@ export class BeatClock {
     );
   }
   getCurrentBeat() {
-    const elapsed = Date.now() - this.startTime;
+    const elapsed = (Date.now() - this.startTime) * this.timeScale;
     const totalBeats = Math.floor(elapsed / this.beatInterval);
     return totalBeats % this.beatsPerMeasure;
   }
   getTotalBeats() {
-    const elapsed = Date.now() - this.startTime;
+    const elapsed = (Date.now() - this.startTime) * this.timeScale;
     return Math.floor(elapsed / this.beatInterval);
   }
   getTimeToNextBeat() {
-    const elapsed = Date.now() - this.startTime;
+    const elapsed = (Date.now() - this.startTime) * this.timeScale;
     const timeSinceLastBeat = elapsed % this.beatInterval;
     return this.beatInterval - timeSinceLastBeat;
   }
@@ -39,7 +41,7 @@ export class BeatClock {
     return this.isOnBeat();
   }
   canPlayerShootQuarterBeat() {
-    const elapsed = Date.now() - this.startTime;
+    const elapsed = (Date.now() - this.startTime) * this.timeScale;
     const quarterBeatInterval = this.beatInterval / 4;
     const timeSinceLastQuarterBeat = elapsed % quarterBeatInterval;
     const exactTolerance = 16;
@@ -49,7 +51,7 @@ export class BeatClock {
     );
   }
   getTimeToNextQuarterBeat() {
-    const elapsed = Date.now() - this.startTime;
+    const elapsed = (Date.now() - this.startTime) * this.timeScale;
     const quarterBeatInterval = this.beatInterval / 4;
     const timeSinceLastQuarterBeat = elapsed % quarterBeatInterval;
     return quarterBeatInterval - timeSinceLastQuarterBeat;
@@ -97,6 +99,14 @@ export class BeatClock {
   reset() {
     this.startTime = Date.now();
     console.log('🎵 BeatClock reset');
+  }
+
+  /**
+   * Adjust global time-scale. Recommended range 0.1–2.0.
+   * @param {number} scale
+   */
+  setTimeScale(scale = 1) {
+    this.timeScale = Math.max(0.05, scale);
   }
   update() {}
   get currentBeat() {

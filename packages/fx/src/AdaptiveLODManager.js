@@ -15,15 +15,25 @@ function update() {
   if (frameCounter % 60 !== 0) return; // adjust once per second
 
   const stats = EffectsProfiler.getStats();
-  if (!stats || !stats.avg) return;
-  const avgMs = parseFloat(stats.avg);
-
-  if (avgMs > LOWER_THRESHOLD && effectsConfig.global.lodMultiplier > MIN_MULT) {
+  if (!stats) return;
+  // Support common field names and both number/string inputs
+  const avgRaw = stats.avg ?? stats.avgMs ?? stats.frameTimeMs;
+  if (avgRaw == null) return;
+  const avgMs =
+    typeof avgRaw === 'number' ? avgRaw : parseFloat(String(avgRaw));
+  if (!Number.isFinite(avgMs)) return;
+  if (
+    avgMs > LOWER_THRESHOLD &&
+    effectsConfig.global.lodMultiplier > MIN_MULT
+  ) {
     effectsConfig.global.lodMultiplier = Math.max(
       MIN_MULT,
       effectsConfig.global.lodMultiplier - ADJUST_STEP
     );
-  } else if (avgMs < UPPER_THRESHOLD && effectsConfig.global.lodMultiplier < MAX_MULT) {
+  } else if (
+    avgMs < UPPER_THRESHOLD &&
+    effectsConfig.global.lodMultiplier < MAX_MULT
+  ) {
     effectsConfig.global.lodMultiplier = Math.min(
       MAX_MULT,
       effectsConfig.global.lodMultiplier + ADJUST_STEP
@@ -31,4 +41,4 @@ function update() {
   }
 }
 
-export default { update }; 
+export default { update };

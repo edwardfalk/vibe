@@ -6,9 +6,10 @@
   "main": "src/index.js",
   "description": "Visual and audio effects including explosions and post-processing.",
   "exports": {
+    ".": "./src/index.js",
     "./*": "./src/*"
   },
   "dependencies": {
     "@vibe/core": "workspace:*"
   }
-} 
+}

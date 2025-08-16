@@ -179,8 +179,8 @@ class Rusher extends BaseEnemy {
     // Intense vibration for exploding rushers
     if (this.exploding) {
       const intensity = (this.explosionTimer / this.maxExplosionTime) * 8;
-      bobble += sin(frameCount * 0.8) * intensity; // frameCount OK for visual effects
-      waddle += cos(frameCount * 1.2) * intensity; // frameCount OK for visual effects
+      bobble += sin(this.p.frameCount * 0.8) * intensity; // frameCount OK for visual effects
+      waddle += cos(this.p.frameCount * 1.2) * intensity; // frameCount OK for visual effects
     }
 
     return { bobble, waddle };
@@ -228,7 +228,7 @@ class Rusher extends BaseEnemy {
       ? this.maxExplosionTime * 0.5
       : this.maxExplosionTime;
     const explosionPercent = this.explosionTimer / explosionTime;
-    const pulse = sin(frameCount * 1.5) * 0.5 + 0.5;
+    const pulse = sin(this.p.frameCount * 1.5) * 0.5 + 0.5;
     const warningRadius = this.explosionRadius * (0.3 + explosionPercent * 0.7);
 
     // Outer warning circle - more intense if shot

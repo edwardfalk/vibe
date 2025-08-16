@@ -1,56 +1,60 @@
 // Configuration for Vibe game (moved to @vibe/core)
 
-// Conditionally load dotenv only in Node.js environment
-let processEnv = {};
+// Conditionally load dotenv only in a real Node.js environment (avoid bundler shims)
+const isRealNode =
+  typeof process !== 'undefined' &&
+  !!(process && process.env) &&
+  !!(process.versions && process.versions.node);
+
 try {
-  if (typeof process !== 'undefined' && process.env) {
-    processEnv = process.env;
+  if (isRealNode) {
     // Load .env in Node context for local dev – ignored in browser
-    try {
-      // Dynamically import dotenv without top-level await to preserve browser compatibility
-      import('dotenv')
-        .then((dotenv) => {
-          // Some bundlers put the exports on `.default`
-          const dot = dotenv.default || dotenv;
-          if (typeof dot.config === 'function') {
-            dot.config();
-          }
-        })
-        .catch(() => {
-          /* Ignore if dotenv fails to load (e.g., browser context) */
-        });
-      processEnv = process.env;
-    } catch (_) {
-      /* dotenv not available or cannot be loaded in this context */
-    }
+    // Note: dynamic import remains async; CONFIG readers use getters to observe updated values
+    import('dotenv')
+      .then((dotenv) => {
+        const dot = dotenv.default || dotenv;
+        if (typeof dot.config === 'function') {
+          dot.config();
+        }
+      })
+      .catch(() => {
+        /* Ignore if dotenv fails to load */
+      });
   }
 } catch (_) {
-  /* process undefined in browser – ignore */
+  /* Ignore if environment probing fails (e.g., strict CSP) */
+}
+
+function getEnv(name, fallback) {
+  try {
+    if (typeof process !== 'undefined' && process.env && name in process.env) {
+      const value = process.env[name];
+      return value == null ? fallback : value;
+    }
+  } catch (_) {
+    /* ignore */
+  }
+  return fallback;
 }
 
 function validateEnvironment() {
   const warnings = [];
   const errors = [];
 
-  if (!processEnv.GITHUB_TOKEN) {
+  if (!getEnv('GITHUB_TOKEN', '')) {
     warnings.push(
       'GITHUB_TOKEN not set - GitHub API requests will be rate limited'
     );
-  } else if (processEnv.GITHUB_TOKEN.length < 20) {
+  } else if (getEnv('GITHUB_TOKEN', '').length < 20) {
     errors.push('GITHUB_TOKEN appears to be invalid (too short)');
   }
 
-  const ticketPort = parseInt(processEnv.TICKET_API_PORT);
-  if (isNaN(ticketPort) || ticketPort < 1000 || ticketPort > 65535) {
-    warnings.push(
-      `Invalid TICKET_API_PORT: ${processEnv.TICKET_API_PORT}, using default 3001`
-    );
-  }
+  // Ticket API removed – no port validation required.
 
-  const devPort = parseInt(processEnv.DEV_SERVER_PORT);
+  const devPort = parseInt(getEnv('DEV_SERVER_PORT', ''));
   if (isNaN(devPort) || devPort < 1000 || devPort > 65535) {
     warnings.push(
-      `Invalid DEV_SERVER_PORT: ${processEnv.DEV_SERVER_PORT}, using default 5500`
+      `Invalid DEV_SERVER_PORT: ${getEnv('DEV_SERVER_PORT', '')}, using default 5500`
     );
   }
 
@@ -66,7 +70,9 @@ function validateEnvironment() {
 
 const CONFIG = {
   GITHUB: {
-    TOKEN: processEnv.GITHUB_TOKEN || null,
+    get TOKEN() {
+      return getEnv('GITHUB_TOKEN', null);
+    },
     API_URL: 'https://api.github.com',
     OWNER: 'edwardfalk',
     REPO: 'vibe',
@@ -75,31 +81,39 @@ const CONFIG = {
       RETRY_DELAY: 1000,
     },
   },
-  TICKET_API: {
-    PORT: parseInt(processEnv.TICKET_API_PORT) || 3001,
-    HOST: processEnv.TICKET_API_HOST || 'localhost',
-    get BASE_URL() {
-      return `http://${this.HOST}:${this.PORT}/api/tickets`;
+  // Ticket API removed – see docs/tickets/ for Markdown-based tasks.
+  DEV_SERVER: {
+    get PORT() {
+      const raw = getEnv('DEV_SERVER_PORT', '');
+      const v = Number(raw);
+      return Number.isInteger(v) && v >= 1000 && v <= 65535 ? v : 5500;
     },
   },
-  DEV_SERVER: {
-    PORT: parseInt(processEnv.DEV_SERVER_PORT) || 5500,
-  },
   CODERABBIT: {
-    AUTO_TICKETS: processEnv.CODERABBIT_AUTO_TICKETS === 'true',
-    REVIEW_THRESHOLD: processEnv.CODERABBIT_REVIEW_THRESHOLD || 'high',
+    get AUTO_TICKETS() {
+      return getEnv('CODERABBIT_AUTO_TICKETS', '') === 'true';
+    },
+    get REVIEW_THRESHOLD() {
+      return getEnv('CODERABBIT_REVIEW_THRESHOLD', 'high');
+    },
     MAX_SUGGESTIONS: 50,
   },
   SECURITY: {
-    NODE_ENV: processEnv.NODE_ENV || 'development',
-    LOG_LEVEL: processEnv.LOG_LEVEL || 'info',
+    get NODE_ENV() {
+      return getEnv('NODE_ENV', 'development');
+    },
+    get LOG_LEVEL() {
+      return getEnv('LOG_LEVEL', 'info');
+    },
   },
   PATHS: {
     BUG_REPORTS: 'tests/bug-reports',
     SCREENSHOTS: 'tests/screenshots',
     LOGS: 'logs',
   },
-  GOOGLE_CLOUD_TTS_API_KEY: processEnv.GOOGLE_CLOUD_TTS_API_KEY || '',
+  get GOOGLE_CLOUD_TTS_API_KEY() {
+    return getEnv('GOOGLE_CLOUD_TTS_API_KEY', '');
+  },
   TTS_SETTINGS: {
     USE_CLOUD_TTS: false,
     TTS_VOLUME: 0.6,
@@ -107,6 +121,11 @@ const CONFIG = {
     ENABLE_AUDIO_CACHE: true,
   },
   GAME_SETTINGS: {
+    get BPM() {
+      const raw = getEnv('GAME_BPM', '');
+      const v = Number(raw);
+      return Number.isFinite(v) && v > 40 && v < 300 ? v : 120; // default 120 BPM
+    },
     DEBUG_MODE: false,
     DEBUG_COLLISIONS: false,
     WORLD_WIDTH: 1150,
@@ -137,7 +156,8 @@ const CONFIG = {
   },
 };
 
-const validation = { warnings:0, errors:0 };
+const validation = { warnings: 0, errors: 0 };
+// Ticket API removed; validation for ticket port deprecated.
 // const validation = validateEnvironment();
 console.log(
   `🔧 Configuration loaded (${validation.warnings} warnings, ${validation.errors} errors)`

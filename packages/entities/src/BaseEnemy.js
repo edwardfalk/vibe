@@ -1,7 +1,19 @@
 import { Bullet } from './bullet.js';
 import { CONFIG } from '@vibe/core';
-import { sin, cos, atan2, randomRange, random, sqrt, floor, max, min } from '@vibe/core';
+import {
+  sin,
+  cos,
+  atan2,
+  randomRange,
+  random,
+  sqrt,
+  floor,
+  max,
+  min,
+  PI,
+} from '@vibe/core';
 import { getEnemyConfig, effectsConfig } from '@vibe/fx/effectsConfig.js';
+import { drawGlow } from '@vibe/fx/visualEffects.js';
 import EffectsProfiler from '@vibe/fx/EffectsProfiler.js';
 
 /**
@@ -184,7 +196,7 @@ export class BaseEnemy {
    * Enhanced glow effects with speech indicators
    */
   drawGlow(p) {
-    if (typeof drawGlow !== 'undefined') {
+    if (typeof drawGlow === 'function') {
       try {
         // Check if currently speaking (has active speech timer)
         const isSpeaking = this.speechTimer > 0;
@@ -199,9 +211,10 @@ export class BaseEnemy {
 
         const glowColorArr = baseGlow.color || [255, 255, 255];
         const glowColor = this.p.color(...glowColorArr);
-        const glowSize = (baseGlow.sizeMult || 1.0) * this.size * speechGlowSize;
+        const glowSize =
+          (baseGlow.sizeMult || 1.0) * this.size * speechGlowSize;
 
-        drawGlow(this.x, this.y, glowSize, glowColor, speechGlowIntensity);
+        drawGlow(p, this.x, this.y, glowSize, glowColor, speechGlowIntensity);
 
         // Add extra pulsing glow for aggressive speech
         if (isSpeaking && this.audio) {
@@ -210,6 +223,7 @@ export class BaseEnemy {
           if (myText && myText.isAggressive) {
             const aggressivePulse = sin(p.frameCount * 0.8) * 0.3 + 0.5;
             drawGlow(
+              p,
               this.x,
               this.y,
               this.size * 2,
@@ -505,7 +519,9 @@ export class BaseEnemy {
     // DEBUG: Log bullet creation only if collision debug is enabled
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
-        `🔫 ${this.type} created bullet at (${Math.round(bulletX)}, ${Math.round(bulletY)}) angle=${Math.round((this.aimAngle * 180) / PI)}° owner="${bullet.owner}" ownerId="${bullet.ownerId}"`
+        `🔫 ${this.type} created bullet at (${Math.round(bulletX)}, ${Math.round(
+          bulletY
+        )}) angle=${Math.round((this.aimAngle * 180) / PI)}° owner="${bullet.owner}" ownerId="${bullet.ownerId}"`
       );
     }
 
@@ -518,7 +534,7 @@ export class BaseEnemy {
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
-        `[DEBUG] Grunt takeDamage called: health=${this.health} markedForRemoval=${this.markedForRemoval}`
+        `[DEBUG] ${this.type} takeDamage called: health=${this.health} markedForRemoval=${this.markedForRemoval}`
       );
     }
     this.health -= amount;

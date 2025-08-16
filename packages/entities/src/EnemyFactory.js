@@ -156,7 +156,7 @@ class EnemyFactory {
   /**
    * Get enemy type information for debugging/UI
    */
-  getTypeInfo(type) {
+  getTypeInfo(type, p) {
     const config = this.configs[type];
     if (!config) return null;
 
@@ -165,7 +165,7 @@ class EnemyFactory {
       size: config.size,
       health: config.health,
       speed: config.speed,
-      color: this.getColor(type),
+      color: this.getColor(type, p),
       description: config.description,
     };
   }
@@ -173,8 +173,8 @@ class EnemyFactory {
   /**
    * Get all enemy type information
    */
-  getAllTypeInfo() {
-    return this.availableTypes.map((type) => this.getTypeInfo(type));
+  getAllTypeInfo(p) {
+    return this.availableTypes.map((type) => this.getTypeInfo(type, p));
   }
 
   /**

@@ -18,6 +18,7 @@ import {
   lerp,
   TWO_PI,
 } from '@vibe/core';
+import { drawGlow } from './visualEffects.js';
 
 class EffectsManager {
   constructor() {
@@ -43,9 +44,11 @@ class EffectsManager {
     // Time scaling for slow motion
     this.timeScale = 1.0;
     this.targetTimeScale = 1.0;
+    // Frame-based slow motion counter (in frames); 0 means inactive
+    this.slowMotionRemaining = 0;
   }
 
-  update() {
+  update(dt) {
     // Update screen shake
     if (this.shake.duration > 0) {
       this.shake.duration--;
@@ -63,6 +66,18 @@ class EffectsManager {
     if (this.screenFlash.duration > 0) {
       this.screenFlash.duration--;
       this.screenFlash.intensity = this.screenFlash.duration / 10; // 10 frame max
+    }
+
+    // Update slow motion duration in frames
+    if (this.slowMotionRemaining > 0) {
+      const framesElapsed = typeof dt === 'number' && dt > 0 ? dt / 16.6667 : 1;
+      this.slowMotionRemaining = max(
+        0,
+        this.slowMotionRemaining - framesElapsed
+      );
+      if (this.slowMotionRemaining === 0) {
+        this.targetTimeScale = 1.0;
+      }
     }
 
     // Update time scale smoothly
@@ -98,19 +113,6 @@ class EffectsManager {
     for (const trail of this.trails) {
       trail.draw(p);
     }
-
-    // Draw screen flash
-    if (this.screenFlash.duration > 0) {
-      p.fill(
-        this.screenFlash.color[0],
-        this.screenFlash.color[1],
-        this.screenFlash.color[2],
-        this.screenFlash.intensity * 100
-      );
-      p.noStroke();
-      p.rect(-this.shake.x, -this.shake.y, p.width, p.height);
-    }
-
     p.pop(); // End screen shake translation
   }
 
@@ -184,9 +186,7 @@ class EffectsManager {
   // Time effects
   setSlowMotion(scale = 0.3, duration = 60) {
     this.targetTimeScale = scale;
-    setTimeout(() => {
-      this.targetTimeScale = 1.0;
-    }, duration * 16.67); // Convert frames to milliseconds
+    this.slowMotionRemaining = Math.max(0, duration);
   }
 
   getTimeScale() {

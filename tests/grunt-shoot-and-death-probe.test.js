@@ -21,7 +21,9 @@ import { DebugLogger } from '../packages/tooling/src/DebugLogger.js';
  */
 
 test.describe('Grunt ranged combat', () => {
-  test('Grunt fires and player eventually dies -> gameOver', async ({ page }) => {
+  test('Grunt fires and player eventually dies -> gameOver', async ({
+    page,
+  }) => {
     try {
       await page.goto('/index.html');
 
@@ -29,7 +31,8 @@ test.describe('Grunt ranged combat', () => {
       await page.waitForSelector('canvas');
       await page.evaluate(() => {
         const canvas = document.querySelector('canvas');
-        canvas && canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        canvas &&
+          canvas.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       });
 
       // Wait for needed globals
@@ -37,7 +40,7 @@ test.describe('Grunt ranged combat', () => {
         () =>
           window.player &&
           window.spawnSystem &&
-          Array.isArray(window.enemyBullets),
+          Array.isArray(window.gameState?.enemyBullets),
         { timeout: 10000 }
       );
 
@@ -51,20 +54,25 @@ test.describe('Grunt ranged combat', () => {
         }
         const x = p.x + 150;
         const y = p.y;
-        const enemy = window.spawnSystem.enemyFactory.createEnemy(x, y, 'grunt', p);
-        window.enemies.push(enemy);
+        const enemy = window.spawnSystem.enemyFactory.createEnemy(
+          x,
+          y,
+          'grunt',
+          p
+        );
+        window.gameState.enemies.push(enemy);
       });
 
       // Baseline counts before combat
       const baseline = await page.evaluate(() => ({
-        bullets: window.enemyBullets.length,
+        bullets: window.gameState.enemyBullets.length,
         health: window.player.health,
       }));
 
       // Wait for first bullet impact or timeout (15 s)
       await page.waitForFunction(
         (baseBullets, baseHealth) =>
-          window.enemyBullets.length > baseBullets &&
+          window.gameState.enemyBullets.length > baseBullets &&
           window.player.health < baseHealth,
         { timeout: 15000 },
         baseline.bullets,
@@ -73,7 +81,7 @@ test.describe('Grunt ranged combat', () => {
 
       // Capture state after first hit
       const afterHit = await page.evaluate(() => ({
-        bullets: window.enemyBullets.length,
+        bullets: window.gameState.enemyBullets.length,
         health: window.player.health,
       }));
 

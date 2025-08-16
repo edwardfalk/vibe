@@ -1,5 +1,3 @@
-import prettierPlugin from 'eslint-plugin-prettier';
-
 export default [
   {
     files: ['**/*.js'],
@@ -11,6 +9,10 @@ export default [
       'test-results/**',
       '.cursor/**',
       '.vscode/**',
+      '*.min.js',
+      'public/**',
+      'test-static/**',
+      'p5.min.js',
     ],
     languageOptions: {
       sourceType: 'module',
@@ -34,7 +36,7 @@ export default [
         module: 'readonly',
         __dirname: 'readonly',
         process: 'readonly',
-        drawGlow: 'readonly',
+
         visualEffectsManager: 'readonly',
         SpeechSynthesisUtterance: 'readonly',
         localStorage: 'readonly',
@@ -47,14 +49,10 @@ export default [
         MouseEvent: 'readonly',
       },
     },
-    plugins: {
-      prettier: prettierPlugin,
-    },
     rules: {
       'prefer-const': 'error',
       'no-var': 'error',
       'no-undef': 'error',
-      'prettier/prettier': 'error',
     },
   },
 ];

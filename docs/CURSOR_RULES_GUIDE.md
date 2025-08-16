@@ -80,10 +80,40 @@ This guide explains how Cursor project rules work, the different types, and best
 
 ---
 
+## Math Consistency Scan (scan:math)
+
+To audit for raw `Math.PI` and unprefixed p5 math calls, use the built-in scanner.
+
+- Standard (advisory; never fails):
+
+```
+bun run scan:math
+```
+
+- Strict (CI/blocking; fails on violations):
+
+```
+set MATH_SCAN_STRICT=1 && bun run scan:math
+```
+
+- Windows cmd.exe with log capture (avoids chat/console floods):
+
+```
+cmd /C "(if not exist .debug mkdir .debug) & bun run scan:math > .debug\scan-math.txt 2>&1"
+```
+
+Notes:
+
+- The scanner ignores `packages/core/src/mathUtils.js` (canonical definitions).
+- It also ignores files that explicitly import `random`/`dist` from `@vibe/core/mathUtils.js`.
+- In strict mode, fix or explicitly import from mathUtils to pass.
+
+---
+
 ## References
 
 - See the Vibe always rule: `.cursor/rules/vibe-game-core-guide.mdc`
-- For more, see: [Cursor Rules Documentation](https://docs.cursor.com/context/rules)
+- For more, see: [Cursor Rules Documentation](https://cursor101.com/cursor/rules)
 
 ---
 

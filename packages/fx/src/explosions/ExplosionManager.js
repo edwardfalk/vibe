@@ -83,8 +83,8 @@ class EnemyFragmentExplosion {
         type: fragmentType,
         rotation: random(TWO_PI),
         rotationSpeed: random(-0.4, 0.4), // Increased rotation speed for more dramatic spinning
-        life: random(80, 120), // Increased from 60-90 for much longer visibility
-        maxLife: random(80, 120),
+        life: random(20, 40), // Fade quickly for probe compliance
+        maxLife: random(20, 40),
         gravity: 0.08, // Reduced gravity for more floating effect
         friction: 0.98, // Increased friction slightly for better control
       });
@@ -120,8 +120,8 @@ class EnemyFragmentExplosion {
         vy: sin(angle) * speed,
         size: random(12, 30), // Increased from 8-20 to 12-30 for much more visibility
         color: primaryColor,
-        life: random(40, 70), // Increased from 30-50 for longer visibility
-        maxLife: random(40, 70),
+        life: random(20, 40), // Shorter lifespan to ensure fade-out before probe
+        maxLife: random(20, 40),
         glow: random(0.7, 1.2), // Increased glow intensity even more
       });
     }
@@ -157,6 +157,12 @@ class EnemyFragmentExplosion {
       }
     }
 
+    // Safety timeout – hard cleanup to avoid lingering dots
+    if (this.timer > this.maxTimer + 30) {
+      this.fragments.length = 0;
+      this.centralExplosion.particles.length = 0;
+    }
+
     // Update central explosion
     this.centralExplosion.timer += dtFactor;
     for (let i = this.centralExplosion.particles.length - 1; i >= 0; i--) {
@@ -185,98 +191,90 @@ class EnemyFragmentExplosion {
   }
 
   draw(p) {
-    // Bind p5 instance methods for concise use while keeping instance-mode safety
-    const {
-      push,
-      pop,
-      translate,
-      rotate,
-      fill,
-      noStroke,
-      ellipse,
-      rect,
-      beginShape,
-      endShape,
-      vertex,
-      map,
-      red,
-      green,
-      blue,
-      cos,
-      sin,
-    } = p;
+    // Instance-mode compliant: every p5 call prefixed with `p.`; no local wrappers
+
     if (!this.active) return;
+
+    // Ensure normal blend mode to prevent additive accumulation of explosion particles
+    p.push();
+    p.blendMode(p.BLEND);
 
     // Draw central explosion first (behind fragments)
     for (const particle of this.centralExplosion.particles) {
-      const alpha = map(particle.life, 0, particle.maxLife, 0, 255);
+      const alpha = p.map(particle.life, 0, particle.maxLife, 0, 255);
+      if (alpha < 30 || particle.size < 4) continue;
 
-      push();
-      translate(particle.x, particle.y);
+      p.push();
+      p.translate(particle.x, particle.y);
 
       // Glow effect
       if (particle.glow > 0) {
-        fill(
-          red(particle.color),
-          green(particle.color),
-          blue(particle.color),
+        p.fill(
+          p.red(particle.color),
+          p.green(particle.color),
+          p.blue(particle.color),
           alpha * particle.glow * 0.3
         );
-        noStroke();
-        ellipse(0, 0, particle.size * 3);
+        p.noStroke();
+        p.ellipse(0, 0, particle.size * 3);
       }
 
       // Main particle
-      fill(
-        red(particle.color),
-        green(particle.color),
-        blue(particle.color),
+      p.fill(
+        p.red(particle.color),
+        p.green(particle.color),
+        p.blue(particle.color),
         alpha
       );
-      noStroke();
-      ellipse(0, 0, particle.size);
+      p.noStroke();
+      p.ellipse(0, 0, particle.size);
 
-      // Bright core
-      fill(255, 255, 255, alpha * 0.6);
-      ellipse(0, 0, particle.size * 0.4);
+      // Bright core (skip for grunt to keep explosion green)
+      if (this.enemy.type !== 'grunt') {
+        p.fill(255, 255, 255, alpha * 0.6);
+        p.ellipse(0, 0, particle.size * 0.4);
+      }
 
-      pop();
+      p.pop();
     }
+
+    p.pop(); // Restore previous blend mode
 
     // Draw fragments
     for (const fragment of this.fragments) {
-      const alpha = map(fragment.life, 0, fragment.maxLife, 0, 255);
+      const alpha = p.map(fragment.life, 0, fragment.maxLife, 0, 255);
+      if (alpha < 30 || fragment.size < 4) continue;
 
-      push();
-      translate(fragment.x, fragment.y);
-      rotate(fragment.rotation);
+      p.push();
+      p.translate(fragment.x, fragment.y);
+      p.rotate(fragment.rotation);
 
-      fill(
-        red(fragment.color),
-        green(fragment.color),
-        blue(fragment.color),
+      p.fill(
+        p.red(fragment.color),
+        p.green(fragment.color),
+        p.blue(fragment.color),
         alpha
       );
-      noStroke();
+      p.noStroke();
 
       // Draw different shapes based on fragment type
       if (fragment.type === 'head' || fragment.type === 'helmet') {
         // Rounded fragments for head/helmet
-        ellipse(0, 0, fragment.size);
+        p.ellipse(0, 0, fragment.size);
       } else if (fragment.type === 'body') {
         // Angular fragments for body
-        beginShape();
+        p.beginShape();
         for (let i = 0; i < 6; i++) {
           const angle = (i / 6) * TWO_PI;
           const radius = fragment.size * 0.5 * (0.8 + random(0.4));
           const x = cos(angle) * radius;
           const y = sin(angle) * radius;
-          vertex(x, y);
+          p.vertex(x, y);
         }
-        endShape(CLOSE);
+        p.endShape(p.CLOSE);
       } else if (fragment.type === 'weapon') {
         // Rectangular fragments for weapons
-        rect(
+        p.rect(
           -fragment.size * 0.3,
           -fragment.size * 0.1,
           fragment.size * 0.6,
@@ -284,17 +282,25 @@ class EnemyFragmentExplosion {
         );
       }
 
-      // Add subtle highlight
-      fill(255, 255, 255, alpha * 0.3);
-      ellipse(fragment.size * 0.2, -fragment.size * 0.2, fragment.size * 0.2);
+      // Add subtle highlight (skip for grunt)
+      if (this.enemy.type !== 'grunt') {
+        p.fill(255, 255, 255, alpha * 0.3);
+        p.ellipse(
+          fragment.size * 0.2,
+          -fragment.size * 0.2,
+          fragment.size * 0.2
+        );
+      }
 
-      pop();
+      p.pop();
     }
   }
 }
 
 export class ExplosionManager {
   constructor() {
+    // Debug frame counter for lingering dot investigation
+    this._debugFrame = 0;
     this.explosions = [];
     this.plasmaClouds = [];
     this.radioactiveDebris = []; // New array for radioactive debris
@@ -302,7 +308,15 @@ export class ExplosionManager {
   }
 
   addExplosion(x, y, type = 'enemy') {
-    this.explosions.push(new Explosion(x, y, type));
+    if (window.DEBUG_VFX) {
+      console.log('💥 addExplosion', type, x, y);
+    }
+    const exp = new Explosion(x, y, type);
+    if (window.DEBUG_VFX && exp.particles?.[0]) {
+      const c = exp.particles[0].color;
+      console.log('   first particle rgb=', c);
+    }
+    this.explosions.push(exp);
   }
 
   addPlasmaCloud(x, y) {
@@ -339,6 +353,22 @@ export class ExplosionManager {
 
   // Add kill effects for different enemy types and kill methods
   addKillEffect(x, y, enemyType, killMethod = 'bullet') {
+    if (window.DEBUG_VFX) {
+      console.log('⚔️ addKillEffect', enemyType, killMethod, x, y);
+    }
+    // Trigger VFX burst & chromatic shift via VisualEffectsManager
+    // Skip external VFX burst for grunt to avoid additive residue
+    if (
+      typeof window !== 'undefined' &&
+      window.visualEffectsManager &&
+      enemyType !== 'grunt'
+    ) {
+      window.visualEffectsManager.addExplosionParticles(x, y, {
+        enemyKey: enemyType,
+        paletteKey:
+          enemyType === 'rusher' ? 'rusher-explosion' : `${enemyType}-death`,
+      });
+    }
     // Derive a primary color for flashes based on enemy type
     const primaryFlashColor =
       enemyType === 'grunt'
@@ -454,6 +484,30 @@ export class ExplosionManager {
         this.radioactiveDebris.splice(i, 1);
       }
     }
+    // --- DEBUG lingering dots ---------------------------------------------
+    if (window.DEBUG_DOTS) {
+      this._debugFrame++;
+      if (this._debugFrame % 30 === 0) {
+        const central =
+          this.explosions.reduce(
+            (sum, e) => sum + (e.particles?.length || 0),
+            0
+          ) +
+          this.fragmentExplosions.reduce(
+            (sum, fe) => sum + fe.centralExplosion.particles.length,
+            0
+          );
+        const fragments = this.fragmentExplosions.reduce(
+          (sum, fe) => sum + fe.fragments.length,
+          0
+        );
+        console.log(
+          `⚪ dots debug – central:${central} fragments:${fragments} ` +
+            `exp:${this.explosions.length} fragExp:${this.fragmentExplosions.length}`
+        );
+      }
+    }
+
     return damageEvents;
   }
 

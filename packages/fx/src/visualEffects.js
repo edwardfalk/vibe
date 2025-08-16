@@ -2,6 +2,7 @@ import { sin, cos, random } from '@vibe/core/mathUtils.js';
 import { explosionPalette } from '@vibe/core';
 import EffectsProfiler from './EffectsProfiler.js';
 import { getEnemyConfig, effectsConfig } from './effectsConfig.js';
+import { withBlendMode } from '@vibe/core/render/blendUtils.js';
 
 // Advanced Visual Effects System for Vibe
 // Leverages p5.js power for stunning graphics
@@ -17,7 +18,9 @@ class VisualEffectsManager {
 
     // Visual state
     this.bloomIntensity = 0;
+    this.bloomFrames = 0;
     this.chromaticAberration = 0;
+    this.chromaticAberrationFrames = 0;
     this.timeOffset = 0;
     this.initialized = false;
     // Store a reference to the p5 instance once available
@@ -179,28 +182,28 @@ class VisualEffectsManager {
 
   drawAuroras(p, camera) {
     p.push();
-    p.blendMode(p.SCREEN);
-    this.auroras.forEach((aurora) => {
-      p.push();
-      const parallaxX = aurora.x - camera.x * 0.1;
-      const parallaxY = aurora.y - camera.y * 0.1;
-      p.translate(parallaxX, parallaxY);
-      p.rotate(aurora.angle);
-      aurora.angle += aurora.speed;
-      aurora.phase += 0.02;
-      p.noStroke();
-      for (let i = 0; i < aurora.width; i += 20) {
-        for (let j = 0; j < aurora.height; j += 20) {
-          const wave =
-            sin(i * 0.01 + aurora.phase) * sin(j * 0.01 + aurora.phase);
-          const alpha = p.map(wave, -1, 1, 2, aurora.intensity * 15);
-          p.fill(aurora.color[0], aurora.color[1], aurora.color[2], alpha);
-          p.ellipse(i - aurora.width / 2, j - aurora.height / 2, 8, 8);
+    withBlendMode(p, p.BLEND, () => {
+      this.auroras.forEach((aurora) => {
+        p.push();
+        const parallaxX = aurora.x - camera.x * 0.1;
+        const parallaxY = aurora.y - camera.y * 0.1;
+        p.translate(parallaxX, parallaxY);
+        p.rotate(aurora.angle);
+        aurora.angle += aurora.speed;
+        aurora.phase += 0.02;
+        p.noStroke();
+        for (let i = 0; i < aurora.width; i += 20) {
+          for (let j = 0; j < aurora.height; j += 20) {
+            const wave =
+              sin(i * 0.01 + aurora.phase) * sin(j * 0.01 + aurora.phase);
+            const alpha = p.map(wave, -1, 1, 2, aurora.intensity * 15);
+            p.fill(aurora.color[0], aurora.color[1], aurora.color[2], alpha);
+            p.ellipse(i - aurora.width / 2, j - aurora.height / 2, 8, 8);
+          }
         }
-      }
-      p.pop();
+        p.pop();
+      });
     });
-    p.blendMode(p.BLEND);
     p.pop();
   }
 
@@ -225,62 +228,62 @@ class VisualEffectsManager {
 
   drawCosmicDust(p, camera) {
     p.push();
-    p.blendMode(p.SCREEN);
-    this.cosmicDust.forEach((dust) => {
-      dust.x += cos(dust.angle) * dust.speed;
-      dust.y += sin(dust.angle) * dust.speed;
-      if (dust.x > p.width + 50) dust.x = -50;
-      if (dust.x < -50) dust.x = p.width + 50;
-      if (dust.y > p.height + 50) dust.y = -50;
-      if (dust.y < -50) dust.y = p.height + 50;
-      const parallaxX = dust.x - camera.x * dust.z * 0.3;
-      const parallaxY = dust.y - camera.y * dust.z * 0.3;
-      p.fill(
-        dust.color[0],
-        dust.color[1],
-        dust.color[2],
-        dust.alpha * dust.z * 0.3
-      );
-      p.noStroke();
-      p.ellipse(parallaxX, parallaxY, dust.size * dust.z, dust.size * dust.z);
+    withBlendMode(p, p.BLEND, () => {
+      this.cosmicDust.forEach((dust) => {
+        dust.x += cos(dust.angle) * dust.speed;
+        dust.y += sin(dust.angle) * dust.speed;
+        if (dust.x > p.width + 50) dust.x = -50;
+        if (dust.x < -50) dust.x = p.width + 50;
+        if (dust.y > p.height + 50) dust.y = -50;
+        if (dust.y < -50) dust.y = p.height + 50;
+        const parallaxX = dust.x - camera.x * dust.z * 0.3;
+        const parallaxY = dust.y - camera.y * dust.z * 0.3;
+        p.fill(
+          dust.color[0],
+          dust.color[1],
+          dust.color[2],
+          dust.alpha * dust.z * 0.3
+        );
+        p.noStroke();
+        p.ellipse(parallaxX, parallaxY, dust.size * dust.z, dust.size * dust.z);
+      });
     });
-    p.blendMode(p.BLEND);
     p.pop();
   }
 
   drawEnhancedStars(p, camera) {
     p.push();
-    p.blendMode(p.ADD);
-    if (this.backgroundLayers && this.backgroundLayers[1]) {
-      this.backgroundLayers[1].forEach((star) => {
-        if (star.brightness > 0.8) {
-          const parallaxX = star.x - camera.x * 0.3;
-          const parallaxY = star.y - camera.y * 0.3;
-          const twinkle = sin(p.frameCount * 0.1 + star.x * 0.01) * 0.5 + 0.5;
-          const glowSize = star.size * (2 + twinkle);
-          p.fill(255, 255, 255, 30 * twinkle);
-          p.noStroke();
-          p.ellipse(parallaxX, parallaxY, glowSize, glowSize);
-          if (star.brightness > 0.9) {
-            p.stroke(255, 255, 255, 50 * twinkle);
-            p.strokeWeight(1);
-            p.line(
-              parallaxX - glowSize / 2,
-              parallaxY,
-              parallaxX + glowSize / 2,
-              parallaxY
-            );
-            p.line(
-              parallaxX,
-              parallaxY - glowSize / 2,
-              parallaxX,
-              parallaxY + glowSize / 2
-            );
+    withBlendMode(p, p.BLEND, () => {
+      if (this.backgroundLayers && this.backgroundLayers[1]) {
+        this.backgroundLayers[1].forEach((star) => {
+          if (star.brightness > 0.8) {
+            const parallaxX = star.x - camera.x * 0.3;
+            const parallaxY = star.y - camera.y * 0.3;
+            const twinkle = sin(p.frameCount * 0.1 + star.x * 0.01) * 0.5 + 0.5;
+            const glowSize = star.size * (2 + twinkle);
+            p.fill(255, 255, 255, 30 * twinkle);
+            p.noStroke();
+            p.ellipse(parallaxX, parallaxY, glowSize, glowSize);
+            if (star.brightness > 0.9) {
+              p.stroke(255, 255, 255, 50 * twinkle);
+              p.strokeWeight(1);
+              p.line(
+                parallaxX - glowSize / 2,
+                parallaxY,
+                parallaxX + glowSize / 2,
+                parallaxY
+              );
+              p.line(
+                parallaxX,
+                parallaxY - glowSize / 2,
+                parallaxX,
+                parallaxY + glowSize / 2
+              );
+            }
           }
-        }
-      });
-    }
-    p.blendMode(p.BLEND);
+        });
+      }
+    });
     p.pop();
   }
 
@@ -365,12 +368,12 @@ class VisualEffectsManager {
         vx: random(-8, 8),
         vy: random(-8, 8),
         size: random(3, 8),
-        life: 60,
-        maxLife: 60,
+        life: 20,
+        maxLife: 20,
         color: random(colors),
         type: 'explosion',
         gravity: 0.1,
-        fade: random(0.02, 0.05),
+        fade: random(0.12, 0.16),
       });
     }
   }
@@ -437,6 +440,23 @@ class VisualEffectsManager {
   updateParticles() {
     if (!this.initialized) return;
 
+    // Update frame-based transient screen effects
+    if (this.chromaticAberrationFrames > 0) {
+      this.chromaticAberrationFrames -= 1;
+      if (this.chromaticAberrationFrames <= 0) {
+        this.chromaticAberrationFrames = 0;
+        this.chromaticAberration = 0;
+      }
+    }
+
+    if (this.bloomFrames > 0) {
+      this.bloomFrames -= 1;
+      if (this.bloomFrames <= 0) {
+        this.bloomFrames = 0;
+        this.bloomIntensity = 0;
+      }
+    }
+
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
 
@@ -464,27 +484,29 @@ class VisualEffectsManager {
 
   drawParticles(p) {
     p.push();
-    p.blendMode(p.ADD);
-    this.particles.forEach((part) => {
-      const alpha = p.map(part.life, 0, part.maxLife, 0, 255);
-      p.fill(part.color[0], part.color[1], part.color[2], alpha);
-      p.noStroke();
-      if (part.type === 'trail') {
-        p.ellipse(
-          part.x,
-          part.y,
-          part.size * (part.life / part.maxLife),
-          part.size * (part.life / part.maxLife)
-        );
-      } else {
-        p.ellipse(part.x, part.y, part.size, part.size);
-        if (part.type === 'explosion') {
-          p.fill(part.color[0], part.color[1], part.color[2], alpha * 0.3);
-          p.ellipse(part.x, part.y, part.size * 2, part.size * 2);
+    withBlendMode(p, p.BLEND, () => {
+      this.particles.forEach((part) => {
+        const alpha = p.map(part.life, 0, part.maxLife, 0, 255);
+        // Skip nearly invisible particles to avoid residual tint and save fill ops
+        if (alpha < 120 || part.size < 4) return;
+        p.fill(part.color[0], part.color[1], part.color[2], alpha);
+        p.noStroke();
+        if (part.type === 'trail') {
+          p.ellipse(
+            part.x,
+            part.y,
+            part.size * (part.life / part.maxLife),
+            part.size * (part.life / part.maxLife)
+          );
+        } else {
+          p.ellipse(part.x, part.y, part.size, part.size);
+          if (part.type === 'explosion') {
+            p.fill(part.color[0], part.color[1], part.color[2], alpha * 0.3);
+            p.ellipse(part.x, part.y, part.size * 2, part.size * 2);
+          }
         }
-      }
+      });
     });
-    p.blendMode(p.BLEND);
     p.pop();
   }
 
@@ -525,17 +547,15 @@ class VisualEffectsManager {
 
   // Trigger effects
   triggerChromaticAberration(intensity = 0.5, duration = 30) {
+    // duration is in frames; set immediately and count down per frame
     this.chromaticAberration = intensity;
-    setTimeout(() => {
-      this.chromaticAberration = 0;
-    }, duration * 16.67); // Convert frames to milliseconds
+    this.chromaticAberrationFrames = Math.max(0, Math.floor(duration));
   }
 
   triggerBloom(intensity = 0.3, duration = 20) {
+    // duration is in frames; set immediately and count down per frame
     this.bloomIntensity = intensity;
-    setTimeout(() => {
-      this.bloomIntensity = 0;
-    }, duration * 16.67);
+    this.bloomFrames = Math.max(0, Math.floor(duration));
   }
 
   // Deprecated legacy API – do not use
@@ -547,17 +567,17 @@ class VisualEffectsManager {
 }
 
 // Enhanced glow effect function
-function drawGlow(p, x, y, size, color, intensity = 1) {
+export function drawGlow(p, x, y, size, color, intensity = 1, mode = null) {
   p.push();
-  p.blendMode(p.ADD);
-  p.noStroke();
-  for (let i = 0; i < 5; i++) {
-    const alpha = p.map(i, 0, 4, intensity * 100, 0);
-    const glowSize = size * (1 + i * 0.3);
-    p.fill(p.red(color), p.green(color), p.blue(color), alpha);
-    p.ellipse(x, y, glowSize, glowSize);
-  }
-  p.blendMode(p.BLEND);
+  withBlendMode(p, mode ?? p.ADD, () => {
+    p.noStroke();
+    for (let i = 0; i < 5; i++) {
+      const alpha = p.map(i, 0, 4, intensity * 100, 0);
+      const glowSize = size * (1 + i * 0.3);
+      p.fill(p.red(color), p.green(color), p.blue(color), alpha);
+      p.ellipse(x, y, glowSize, glowSize);
+    }
+  });
   p.pop();
 }
 

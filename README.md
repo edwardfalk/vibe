@@ -6,18 +6,23 @@
 
 ## Documentation Map
 
+- [docs/prd/VIBE_CORE_GAME_PRD.md](./docs/prd/VIBE_CORE_GAME_PRD.md): Core game PRD
+- [docs/LORE.md](./docs/LORE.md): Narrative flavour & tone
 - [docs/PROJECT_VISION.md](./docs/PROJECT_VISION.md): Project vision, design pillars, and development philosophy
 - [docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md](./docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md): Automated testing and probe-driven Playwright
 - [docs/AUDIO_CONFIGURATION_GUIDE.md](./docs/AUDIO_CONFIGURATION_GUIDE.md): Audio setup and tuning
 - [docs/DESIGN.md](./docs/DESIGN.md): Game design and Cosmic Beat System
 
+## Game Definition
+Vibe is a fast-paced, top-down space shooter where every entity obeys the “Cosmic Beat”, a global 4/4 rhythm. Players can act at any time, yet enemies perform only on their assigned beats, turning firefights into dynamic, procedurally generated music.
+
+---
+
 ## Overview
 
-Vibe is a rhythm-driven, modular space shooter where every action is synced to the cosmic beat. The beat is made with the beatClock. Sound effects, ambient noise and certain enemy actions happens with the beat. This is not something that should really be noticed when playing and controlling the player other than that the sounds together build the "music" in the game. The stabber, for example, is an enemy that tries to stab you with what from the beginning was a "laser knife" but now is more of a weird beak. The stabber makes a screech when attacking, but the game is made such that the stabber moves slowly near the player until he falls into the correct beat on 3.5 in the 4/4 beat where he can make his dissonant screech (all the other sounds harmonizes) and thereby syncopating the other sounds. Enememies with dark bass sounds act on beat 1 as bass drums, lighter punchy sounds fall in as snares, etc.
+Vibe’s gameplay, audio, and visuals are all driven by the BeatClock. Enemy behaviour is beat-locked; player actions are free-time. Refer to `docs/prd/VIBE_CORE_GAME_PRD.md` for mechanics and to `docs/LORE.md` for narrative context.
 
-The main character is a bizarre mad action hero/antihero that walks around in the middle of outer space blasting aliens that are a strange mix of murderous psychopaths, whiny babies and bumbling idiots. At the same time. The grunts are the simplest enemies, they have a baby-like voice and asks for their mommy and what the password is for the wifi while attacking and trying to kill you. They shoot and try to keep their distance. The stabbers make eerie female psycho noises and make dashing attacks when near. You can dash away yourself or shoot to keep them back. The rushers .. rush. and try to blow themselves up as close to you as possible. The tanks are giants with armor that shoot giant plasma balls that goes straight through both enemies and the player killing them instantly. If you kill a tank they collapse into a plasma cloud that's not healthy at all to enter. If you manage to get close enough to one you place a nuclear time bomb on it and have 3 seconds to get the hell out of there. When the bomb explodes the tank together with the nuke forms a radioactive greenish plasma cloud with particles in it. That cloud is even worse.
-
-The player character fires quickly and makes a quarter note hihat beat. An idea to expand the game with is to have a shotgun power-up that fires more slowly, and you would get a damage bonus if you fire exactly on beat 1. If you keep the button pressed you could fire a little bit faster, but too get the damage bonus you would have to wait a moment longer and fire manually.
+> Future ideas (post-v1.0): timing-bonus weapons, per-level BPM shifts, mobile port.
 
 Built with **p5.js 1.7.0** in instance mode, the project emphasizes clean architecture, maintainability, and multi-AI model compatibility through strict consistency standards.
 
@@ -85,7 +90,7 @@ Use GitHub Issues via the GitHub UI for bugs/features in this branch.
 - **Console Logging**: All logs must use emoji prefixes (🎮 Game state, 🎵 Audio, 🗡️ Combat, etc.).
 - **Timing System**: Use `deltaTimeMs` for frame-independent calculations, normalized to 60fps baseline.
 - Use early returns, descriptive names, and clear error handling.
-- All code must pass ESLint and Prettier before commit. Run `bun run lint` to check linting and `bun run format` to apply Prettier formatting.
+- All code must pass ESLint and Prettier before commit. Run `bun run lint` to check linting and `bun run format:check` to verify Prettier formatting (use `bun run format` to auto-apply fixes).
 
 ---
 

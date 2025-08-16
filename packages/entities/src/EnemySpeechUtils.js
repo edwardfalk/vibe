@@ -74,19 +74,33 @@ export function speakAmbient(
     probability = 0.3, // base chance per frame
     beatList = [2, 4], // beats that boost chance
     beatMultiplier = 3, // boost factor when on beat
-    audio = window.audio,
-    beatClock = window.beatClock,
+    audio,
+    beatClock,
   } = {}
 ) {
-  if (!audio || enemy.speechCooldown > 0) return false;
+  // Resolve deps late to avoid ReferenceError in non-browser envs
+  const resolvedAudio =
+    audio ?? (typeof window !== 'undefined' ? window.audio : undefined);
+  const resolvedBeatClock =
+    beatClock ?? (typeof window !== 'undefined' ? window.beatClock : undefined);
+  const currentCooldown =
+    typeof enemy.speechCooldown === 'number' ? enemy.speechCooldown : 0;
+  if (!resolvedAudio || currentCooldown > 0) return false;
 
   let chance = probability;
-  if (beatClock && beatClock.isOnBeat(beatList)) chance *= beatMultiplier;
+  if (resolvedBeatClock && resolvedBeatClock.isOnBeat(beatList)) {
+    chance *= beatMultiplier;
+  }
+  // Clamp to [0, 1]
+  chance = Math.max(0, Math.min(1, chance));
   if (random() >= chance) return false;
 
   const line = randomLine(type);
-  if (audio.speak(enemy, line, type)) {
-    enemy.speechCooldown = enemy.maxSpeechCooldown;
+  if (resolvedAudio.speak(enemy, line, type)) {
+    const maxCd = Number.isFinite(enemy.maxSpeechCooldown)
+      ? enemy.maxSpeechCooldown
+      : 60;
+    enemy.speechCooldown = maxCd;
     return true;
   }
   return false;

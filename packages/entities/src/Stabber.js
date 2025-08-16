@@ -472,9 +472,10 @@ class Stabber extends BaseEnemy {
       }
     }
     // Check enemy hits (friendly fire)
-    if (window.enemies) {
-      for (let i = 0; i < window.enemies.length; i++) {
-        const enemy = window.enemies[i];
+    if (window.gameState?.enemies) {
+      const enemiesArr = window.gameState.enemies;
+      for (let i = 0; i < enemiesArr.length; i++) {
+        const enemy = enemiesArr[i];
         if (enemy === this) continue;
         const enemyDistance = sqrt(
           (enemy.x - tipX) ** 2 + (enemy.y - tipY) ** 2
@@ -672,9 +673,9 @@ class Stabber extends BaseEnemy {
   drawStabWarning() {
     const stabPercent = this.stabWarningTime / this.maxStabWarningTime;
 
-    // Dramatic charging animation with building energy
-    const pulse = sin(frameCount * 3.0) * 0.5 + 0.5;
-    const chargePulse = sin(frameCount * 1.5) * 0.3 + 0.7;
+    // Dramatic charging animation with building energy (time-based)
+    const pulse = sin(this.stabWarningTime * 3.0) * 0.5 + 0.5;
+    const chargePulse = sin(this.stabWarningTime * 1.5) * 0.3 + 0.7;
     const warningRadius = this.size * (0.6 + stabPercent * 0.4); // Reduced radius
 
     // Building energy circle - intensifying over time
@@ -687,9 +688,10 @@ class Stabber extends BaseEnemy {
     this.p.ellipse(this.x, this.y, warningRadius);
 
     // Charging sparks around the stabber
-    if (frameCount % 3 === 0) {
+    if (Math.floor(this.stabWarningTime) % 3 === 0) {
       for (let i = 0; i < 6; i++) {
-        const sparkAngle = (frameCount * 0.1 + (i * PI) / 3) % (2 * PI);
+        const sparkAngle =
+          (this.stabWarningTime * 0.1 + (i * PI) / 3) % (2 * PI);
         const sparkDist = this.size * (0.8 + stabPercent * 0.4);
         const sparkX = this.x + cos(sparkAngle) * sparkDist;
         const sparkY = this.y + sin(sparkAngle) * sparkDist;
@@ -714,8 +716,8 @@ class Stabber extends BaseEnemy {
   drawStabRecovery() {
     const recoveryPercent = this.stabRecoveryTime / this.maxStabRecoveryTime;
 
-    // Exhausted/stuck indicator - fading red glow
-    const pulse = sin(frameCount * 1.0) * 0.3 + 0.7;
+    // Exhausted/stuck indicator - fading red glow (time-based)
+    const pulse = sin(this.stabRecoveryTime * 1.0) * 0.3 + 0.7;
     const recoveryRadius = this.size * (1.5 - recoveryPercent * 0.5); // Shrinking as recovery progresses
 
     // Exhausted red glow - fading over time

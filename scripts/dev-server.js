@@ -14,6 +14,11 @@ const port = Number(process.env.PORT || 5500);
 app.disable('x-powered-by');
 app.use(compression());
 
+// Quiet the default browser favicon request to avoid console noise
+app.get('/favicon.ico', (_req, res) => {
+  res.status(204).end();
+});
+
 // Serve static files from repo root
 app.use(
   express.static(rootDir, {

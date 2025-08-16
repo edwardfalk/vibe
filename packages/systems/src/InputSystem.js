@@ -37,12 +37,15 @@ export class InputSystem {
 
   // --- Internal static handlers -----------------------------------------
   static _onMouseDown() {
+    if (window.controlsDisabled) return;
     window.playerIsShooting = true;
   }
   static _onMouseUp() {
+    if (window.controlsDisabled) return;
     window.playerIsShooting = false;
   }
   static _onKeyDown(e) {
+    if (window.controlsDisabled) return;
     switch (e.code) {
       case 'Space':
         window.playerIsShooting = true;
@@ -73,6 +76,7 @@ export class InputSystem {
     }
   }
   static _onKeyUp(e) {
+    if (window.controlsDisabled) return;
     switch (e.code) {
       case 'Space':
         window.playerIsShooting = false;
