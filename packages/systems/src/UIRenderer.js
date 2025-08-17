@@ -32,16 +32,14 @@ async function listTickets() {
  * @param {Player} player - The player object (dependency injected for modularity)
  * @param {Audio} audio - The audio system (dependency injected for modularity)
  * @param {CameraSystem} cameraSystem - The camera system (dependency injected for modularity)
- * @param {TestMode} testModeManager - The test mode manager (dependency injected for modularity)
  */
 export class UIRenderer {
-  constructor(gameState, player, audio, cameraSystem, testModeManager) {
+  constructor(gameState, player, audio, cameraSystem) {
     // UI state
     this.gameState = gameState;
     this.player = player;
     this.audio = audio;
     this.cameraSystem = cameraSystem;
-    this.testModeManager = testModeManager;
     this.settingsMenu = null; // Will be initialized with effectsConfig later
     this.dashElement = null;
     this.gameOverMessages = [
@@ -84,11 +82,22 @@ export class UIRenderer {
         ? `Score: ${this.gameState.score.toLocaleString()} (${this.gameState.killStreak}x STREAK!)`
         : `Score: ${this.gameState.score.toLocaleString()}`;
 
-    document.getElementById('score').textContent = scoreText;
-    document.getElementById('health').textContent =
-      `Health: ${this.player.health}`;
-    document.getElementById('level').textContent =
-      `Level: ${this.gameState.level}`;
+    const scoreEl = document.getElementById('score');
+    if (scoreEl) scoreEl.textContent = scoreText;
+
+    const healthEl = document.getElementById('health');
+    if (healthEl) healthEl.textContent = `Health: ${this.player.health}`;
+
+    let levelEl = document.getElementById('level');
+    if (!levelEl) {
+      const uiContainer = document.getElementById('ui');
+      if (uiContainer) {
+        levelEl = document.createElement('div');
+        levelEl.id = 'level';
+        uiContainer.insertBefore(levelEl, uiContainer.children[2] || null);
+      }
+    }
+    if (levelEl) levelEl.textContent = `Level: ${this.gameState.level}`;
 
     // Add dash cooldown indicator
     this.updateDashIndicator();
@@ -219,7 +228,7 @@ export class UIRenderer {
     // Instructions
     p.fill(200, 200, 200);
     p.textSize(20);
-    p.text('Press P to resume', p.width / 2, p.height / 2 + 20);
+    p.text('Press Esc to resume', p.width / 2, p.height / 2 + 20);
 
     // Current stats
     p.fill(255, 255, 100);
@@ -483,15 +492,6 @@ export class UIRenderer {
       }
     }
 
-    const dev = window.DEV_MODE === true;
-
-    if ((key === 't' || key === 'T') && dev) {
-      if (this.testModeManager) {
-        this.testModeManager.toggle();
-        return true;
-      }
-    }
-
     if (key === 'e' || key === 'E') {
       // Dash with E
       if (
@@ -560,54 +560,7 @@ export class UIRenderer {
       return true;
     }
 
-    // Edge exploration / test suites via function keys
-    if (key === 'F6' && dev) {
-      if (this.testModeManager) {
-        this.testModeManager.setEnabled(true);
-        this.testModeManager.setMovementPattern('edges');
-        this._showToast('Edge exploration test (F6)');
-        console.log('🧪 Edge exploration test activated (F6)');
-      }
-      return true;
-    }
-
-    if (key === 'F7' && dev) {
-      if (this.testModeManager) {
-        this.testModeManager.setEnabled(true);
-        this.testModeManager.runTestSuite();
-        // Auto-disable after 3 min (3*60*60 frames ~ 10800) counted inside test mode? Use timeout.
-        setTimeout(() => {
-          if (this.testModeManager.enabled) {
-            this.testModeManager.setEnabled(false);
-            this._showToast('F7 test completed');
-          }
-        }, 180000); // 3 minutes
-        this._showToast('Comprehensive 3-minute test (F7)');
-        console.log('🧪 Comprehensive test suite (F7) started');
-      }
-      return true;
-    }
-
-    if (key === 'F8' && dev) {
-      if (this.testModeManager) {
-        this.testModeManager.setEnabled(true);
-        this.testModeManager.setMovementPattern('edges');
-        this.testModeManager.setEnemySpawnInterval(120);
-        this.testModeManager.setShootInterval(5);
-        this._showToast('Survival edge test (F8)');
-        console.log('🛡️ Survival edge test (F8) activated');
-      }
-      return true;
-    }
-
     return false;
-  }
-
-  // Initialize settings menu with effects config
-  initializeSettingsMenu(effectsConfig, p) {
-    if (!this.settingsMenu) {
-      this.settingsMenu = new SettingsMenu(this.audio, effectsConfig, p);
-    }
   }
 
   // Reset UI renderer

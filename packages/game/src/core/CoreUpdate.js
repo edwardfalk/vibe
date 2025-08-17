@@ -20,10 +20,9 @@ export function coreUpdateGame(p) {
 
   const gs = window.gameState;
 
-  // Beat / music / automated test harness
+  // Beat and music updates
   window.beatClock?.update();
   window.musicManager?.update();
-  window.testModeManager?.update();
 
   // Player & camera
   window.player?.update(dtMs);

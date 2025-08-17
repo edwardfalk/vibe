@@ -570,18 +570,11 @@ export class Player {
       this.firstShotFired = false;
     }
 
-    // Enforce BeatClock timing only when test mode is disabled
+    // Enforce BeatClock timing when available
     const beatClockReady =
       window.beatClock &&
       typeof window.beatClock.canPlayerShootQuarterBeat === 'function';
-    const testModeActive = !!(
-      window.testModeManager && window.testModeManager.enabled
-    );
-    if (
-      beatClockReady &&
-      !testModeActive &&
-      !window.beatClock.canPlayerShootQuarterBeat()
-    ) {
+    if (beatClockReady && !window.beatClock.canPlayerShootQuarterBeat()) {
       return null;
     }
 

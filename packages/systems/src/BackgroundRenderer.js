@@ -34,9 +34,11 @@ export class BackgroundRenderer {
     // Parallax background layers
     this.parallaxLayers = [];
     this.parallaxInitialized = false;
-    
+
     // Psychedelic effects system
     this.psychedelicEffects = new PsychedelicEffects();
+    // Smooth wormhole appearance based on enemy count
+    this.wormholeIntensity = 0;
   }
 
   // Initialize parallax background layers
@@ -540,9 +542,20 @@ export class BackgroundRenderer {
     
     // Cosmic wormhole effect in center during intense action (slower, more subtle)
     const enemyCount = this.gameState?.enemies?.length || 0;
-    if (enemyCount > 3) {
-      const intensity = Math.min(enemyCount / 15, 0.8); // Slower buildup, lower max
-      this.psychedelicEffects.drawCosmicWormhole(p, p.width / 2, p.height / 2, intensity * 0.15); // Even more subtle
+    const targetIntensity = enemyCount > 3 ? Math.min(enemyCount / 15, 0.8) : 0;
+    // Gradually interpolate towards target for smooth fade in/out
+    this.wormholeIntensity = p.lerp(
+      this.wormholeIntensity,
+      targetIntensity,
+      0.05
+    );
+    if (this.wormholeIntensity > 0.01) {
+      this.psychedelicEffects.drawCosmicWormhole(
+        p,
+        p.width / 2,
+        p.height / 2,
+        this.wormholeIntensity * 0.15
+      ); // Even more subtle
     }
     
     // Kaleidoscope patterns around player when moving
