@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vibe - Geometric Space Shooter</title>
+    <link rel="icon" href="./public/favicon.ico" />
     <style>
       body {
         margin: 0;
@@ -88,35 +89,20 @@
 
     <!-- Vibe bootstrap -->
     <script type="module">
-      // Ensure p5 is loaded exactly once, then dynamically import game modules
-      async function ensureP5Once() {
-        if (window.p5) return;
-        const loadScript = (src) =>
-          new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = src;
-            s.onload = resolve;
-            s.onerror = reject;
-            document.head.appendChild(s);
-          });
-        // Try local first; if forbidden (403) or missing (404), fallback to CDN
-        const tryLocal = () =>
-          new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            // Serve from /public (prepared by scripts/prepare-assets.js)
-            s.src = '/public/p5.min.js';
-            s.onload = () => resolve();
-            s.onerror = () => reject(new Error('local p5 failed'));
-            document.head.appendChild(s);
-          });
-        await tryLocal().catch(() =>
-          loadScript(
-            'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
-          )
+      // Load p5 from CDN once, then dynamically import game modules
+      const loadScript = (src) =>
+        new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = src;
+          s.onload = resolve;
+          s.onerror = reject;
+          document.head.appendChild(s);
+        });
+      if (!window.p5) {
+        await loadScript(
+          'https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js'
         );
       }
-      await ensureP5Once();
-
       await import('@vibe/core');
       await import('@vibe/systems');
       await import('@vibe/entities');
