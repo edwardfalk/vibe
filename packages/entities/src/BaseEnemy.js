@@ -550,6 +550,7 @@ export class BaseEnemy {
    */
   checkCollision(other) {
     const distance = this.p.dist(this.x, this.y, other.x, other.y);
-    return distance < (this.size + other.size) * 0.85;
+    const threshold = (this.size + other.size) * 0.5; // Use radii for consistency
+    return distance < threshold;
   }
 }

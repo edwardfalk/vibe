@@ -529,6 +529,28 @@ export class UIRenderer {
       }
     }
 
+    // Developer enemy spawn shortcuts (keys 1-4)
+    if (['1', '2', '3', '4'].includes(key)) {
+      const typeMap = { 1: 'grunt', 2: 'rusher', 3: 'tank', 4: 'stabber' };
+      const spawnType = typeMap[key];
+      if (window.spawnSystem && spawnType) {
+        // Use spawn system's spawn logic to find a good position
+        let pos = { x: 0, y: 0 };
+        if (typeof window.spawnSystem.findSpawnPosition === 'function') {
+          pos = window.spawnSystem.findSpawnPosition();
+        } else if (this.player) {
+          // Fallback: spawn near player if no finder available
+          pos = { x: this.player.x + 60, y: this.player.y };
+        }
+        if (typeof window.spawnSystem.forceSpawn === 'function') {
+          window.spawnSystem.forceSpawn(spawnType, pos.x, pos.y);
+          console.log(`👾 Manual spawn: ${spawnType}`);
+          this._showToast(`Spawned ${spawnType}`);
+          return true;
+        }
+      }
+    }
+
     // Arrow keys for aim direction
     if (this.gameState.gameState === 'playing' && this.player) {
       if (key === 'ArrowUp') {

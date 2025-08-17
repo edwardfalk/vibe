@@ -49,7 +49,8 @@ class EnemyFragmentExplosion {
         this.enemy.type === 'grunt'
           ? random(4, 12) // Slower but bigger for grunts
           : random(3, 10); // Slower fragments for better visibility
-      const fragmentSize = random(size * 1.0, size * 2.5); // MASSIVE fragments for maximum visual impact
+      // Keep fragments roughly tied to enemy size so explosions match source
+      const fragmentSize = random(size * 0.4, size * 1.2);
 
       // Determine fragment type and color; for grunt use green palette exclusively
       let fragmentColor, fragmentType;
@@ -109,6 +110,7 @@ class EnemyFragmentExplosion {
   }
 
   createCentralExplosion() {
+    const size = this.enemy.size;
     // Create a much more dramatic explosion in the center using enemy colors
     // Extra particles for grunts to make them really satisfying to kill
     const particleCount = this.enemy.type === 'grunt' ? 40 : 25; // More particles for fuller central explosions
@@ -136,7 +138,7 @@ class EnemyFragmentExplosion {
         y: this.y,
         vx: cos(angle) * speed,
         vy: sin(angle) * speed,
-        size: random(25, 60), // HUGE particles for incredible visual impact
+        size: random(size * 0.3, size * 0.8), // Scale with enemy size for better proportion
         color: primaryColor,
         life: random(20, 40), // Shorter lifespan to ensure fade-out before probe
         maxLife: random(20, 40),

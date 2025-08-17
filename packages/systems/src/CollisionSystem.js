@@ -263,6 +263,8 @@ export class CollisionSystem {
     const killMethod = enemy.lastDamageSource || 'bullet';
     // Let VFXDispatcher handle particles/flash; ExplosionManager remains for its own internal visuals via other callers
     window.explosionManager?.addKillEffect?.(x, y, type, killMethod);
+    // Also spawn physical fragments (limbs, metal, etc.) based on enemy configuration
+    window.explosionManager?.addFragmentExplosion?.(x, y, enemy);
     // Dispatch VFX event for decoupled particles/flash
     try {
       window.dispatchEvent(

@@ -198,10 +198,26 @@ class Tank extends BaseEnemy {
    * Draw tank-specific body shape
    */
   drawBody(s) {
-    // Massive, blocky body
+    // Massive, blocky body with outline
     this.p.fill(this.bodyColor);
-    this.p.noStroke();
+    this.p.stroke(20, 20, 40, 100);
+    this.p.strokeWeight(2);
     this.p.rect(-s * 0.5, -s * 0.6, s, s * 1.2); // Main chassis (center part)
+    this.p.noStroke();
+
+    // Simple turret and barrel for a clearer silhouette
+    this.p.fill(
+      this.bodyColor.levels[0] + 30,
+      this.bodyColor.levels[1] + 30,
+      this.bodyColor.levels[2] + 30
+    );
+    this.p.rect(-s * 0.15, -s * 0.3, s * 0.3, s * 0.6); // Turret block
+    this.p.fill(
+      this.bodyColor.levels[0] - 20,
+      this.bodyColor.levels[1] - 20,
+      this.bodyColor.levels[2] - 20
+    );
+    this.p.rect(s * 0.15, -s * 0.05, s * 0.6, s * 0.1); // Cannon barrel
 
     // Decorative plating on main chassis (these are not the destructible armor)
     this.p.fill(

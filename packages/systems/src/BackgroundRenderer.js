@@ -34,7 +34,7 @@ export class BackgroundRenderer {
     // Parallax background layers
     this.parallaxLayers = [];
     this.parallaxInitialized = false;
-    
+
     // Psychedelic effects system
     this.psychedelicEffects = new PsychedelicEffects();
   }
@@ -492,7 +492,7 @@ export class BackgroundRenderer {
   drawSubtleSpaceElements(p = this.p) {
     // Update psychedelic effects
     this.psychedelicEffects.update();
-    
+
     p.push();
     p.noStroke();
 
@@ -510,7 +510,7 @@ export class BackgroundRenderer {
       60 + sin(time * 1.5) * 35,
       90 + cos(time * 0.9) * 50
     ];
-    
+
     p.fill(nebula1Color[0], nebula1Color[1], nebula1Color[2], 20);
     p.ellipse(p.width * 0.2, p.height * 0.3, 200, 150);
 
@@ -525,7 +525,7 @@ export class BackgroundRenderer {
       const x = (i * p.width) / 4 + p.width / 8;
       const y = p.height * 0.15 + (i % 2) * p.height * 0.2;
       const twinkle = sin(p.frameCount * 0.003 + i * 2) * 0.5 + 0.5; // Much slower twinkling
-      
+
       // Subtle white/blue stars instead of psychedelic colors
       p.fill(200 + twinkle * 55, 200 + twinkle * 55, 255, 20 + twinkle * 30);
       p.ellipse(x, y, 1 + twinkle * 0.5, 1 + twinkle * 0.5); // Smaller size variation
@@ -537,33 +537,45 @@ export class BackgroundRenderer {
   // Draw interactive background effects that respond to gameplay
   drawInteractiveBackgroundEffects(p = this.p) {
     p.push();
-    
+
     // Cosmic wormhole effect in center during intense action (slower, more subtle)
     const enemyCount = this.gameState?.enemies?.length || 0;
-    if (enemyCount > 3) {
-      const intensity = Math.min(enemyCount / 15, 0.8); // Slower buildup, lower max
-      this.psychedelicEffects.drawCosmicWormhole(p, p.width / 2, p.height / 2, intensity * 0.15); // Even more subtle
+    // Scale intensity gradually with enemy count to avoid hard threshold
+    const targetIntensity = p.constrain(enemyCount / 15, 0, 0.8);
+    // More gradual interpolation for smoother fade in/out
+    this.wormholeIntensity = p.lerp(
+      this.wormholeIntensity,
+      targetIntensity,
+      0.02
+    );
+    if (this.wormholeIntensity > 0.01) {
+      this.psychedelicEffects.drawCosmicWormhole(
+        p,
+        p.width / 2,
+        p.height / 2,
+        this.wormholeIntensity * 0.1
+      ); // Muted appearance
     }
-    
+
     // Kaleidoscope patterns around player when moving
     if (this.player && this.player.isMoving) {
       const rippleIntensity = p.map(this.player.speed, 0, 5, 0, 1);
-      
+
       // Psychedelic ripples with color cycling
       for (let i = 0; i < 5; i++) {
         const rippleRadius = (p.frameCount * 3 + i * 30) % 150;
         const rippleAlpha = p.map(rippleRadius, 0, 150, 40 * rippleIntensity, 0);
-        
+
         const colorPhase = p.frameCount * 0.02 + i * 0.5;
         const colorIndex = Math.floor((colorPhase * 3) % this.psychedelicEffects.tripPalette.length);
         const color = this.psychedelicEffects.tripPalette[colorIndex];
-        
+
         p.stroke(color[0], color[1], color[2], rippleAlpha);
         p.strokeWeight(3);
         p.noFill();
         p.ellipse(this.player.x, this.player.y, rippleRadius, rippleRadius);
       }
-      
+
       // Removed kaleidoscope effect - didn't look good
     }
     // Health-based background tint
