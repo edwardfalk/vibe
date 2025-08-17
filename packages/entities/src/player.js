@@ -23,6 +23,7 @@ export class Player {
     this.size = 32;
     this.health = 100;
     this.maxHealth = 100;
+    this.invincible = false;
     this.speed = 3;
 
     // Movement
@@ -55,7 +56,7 @@ export class Player {
     this.pantsColor = this.p.color(25, 25, 112); // Midnight blue pants
     this.skinColor = this.p.color(255, 219, 172); // Peach skin
     this.gunColor = this.p.color(169, 169, 169); // Dark gray gun
-    this.bandanaColor = this.p.color(139, 69, 19); // Brown bandana
+
 
     // Speech is now handled by unified Audio system
   }
@@ -371,12 +372,15 @@ export class Player {
       p.pop();
     }
 
-    // Draw head
+    // Draw head with subtle outline for definition
     p.fill(this.skinColor);
+    p.stroke(20);
+    p.strokeWeight(1);
     p.ellipse(0, -s * 0.25, s * 0.3);
+    p.noStroke();
 
     // Draw simple hair instead of bandana
-    p.fill(60, 40, 20); // Dark brown hair
+    p.fill(80, 50, 20); // Visible brown hair
     p.rect(-s * 0.18, -s * 0.38, s * 0.36, s * 0.12); // Hair on top
     p.rect(-s * 0.15, -s * 0.32, s * 0.08, s * 0.15); // Left sideburn
     p.rect(s * 0.07, -s * 0.32, s * 0.08, s * 0.15); // Right sideburn
@@ -392,16 +396,20 @@ export class Player {
     const lensW = eyeSize * 2.2; // Bigger for more character
     const lensH = eyeSize * 1.5; // Taller lenses
     
-    // Sunglasses frame
+    // Sunglasses frame with stronger outline
     p.fill(40, 40, 40); // Dark frame
+    p.stroke(10);
+    p.strokeWeight(2);
     p.rect(-lensW * 0.6, -s * 0.25 - lensH * 0.6, lensW * 1.2, lensH * 1.2); // Left frame
     p.rect(lensW * 0.6 - lensW * 1.2, -s * 0.25 - lensH * 0.6, lensW * 1.2, lensH * 1.2); // Right frame
-    
+    p.noStroke();
+
     // Bridge
+    p.fill(40, 40, 40);
     p.rect(-s * 0.03, -s * 0.25 - lensH * 0.2, s * 0.06, lensH * 0.4);
-    
+
     // Dark lenses
-    p.fill(5, 5, 15); // Very dark with slight blue tint
+    p.fill(15, 15, 25); // Very dark with slight blue tint
     p.ellipse(-eyeOffset, -s * 0.25, lensW, lensH); // Left lens
     p.ellipse(eyeOffset, -s * 0.25, lensW, lensH); // Right lens
     
@@ -679,6 +687,12 @@ export class Player {
   takeDamage(amount, damageSource = 'unknown') {
     if (window.gameState && window.gameState.gameState !== 'playing') {
       return false; // Ignore damage when not in active play state
+    }
+    if (this.invincible) {
+      console.log(
+        `🛡️ Player is invincible; ignored ${amount} damage from ${damageSource}`
+      );
+      return false;
     }
     console.log(
       `🩸 PLAYER DAMAGE: ${amount} HP from ${damageSource} (Health: ${this.health} → ${this.health - amount})`

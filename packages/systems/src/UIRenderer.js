@@ -4,7 +4,7 @@
 
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
-import { floor, ceil, min, PI } from '@vibe/core';
+import { floor, ceil, min, max, PI } from '@vibe/core';
 // import { SettingsMenu } from './SettingsMenu.js'; // Temporarily disabled
 // import {
 //   createTicket,
@@ -67,6 +67,9 @@ export class UIRenderer {
     // Bug report UI removed
 
     // Bug report capture removed
+    // Developer options (toggled via secret combo)
+    this.devMode = false;
+
     this._inputHistory = [];
     this._trackInputHistory();
     this._createToast(); // Add toast/banner for confirmations
@@ -138,6 +141,17 @@ export class UIRenderer {
     p.fill(0, 0, 0, 150);
     p.rect(0, 0, p.width, p.height);
 
+    // Center panel
+    const panelW = 420;
+    const panelH = 260;
+    const panelX = p.width / 2 - panelW / 2;
+    const panelY = p.height / 2 - panelH / 2 - 40;
+    p.fill(20, 20, 40, 220);
+    p.stroke(255, 255, 255, 80);
+    p.strokeWeight(2);
+    p.rect(panelX, panelY, panelW, panelH, 20);
+    p.noStroke();
+
     // Check for new high score
     let isNewHighScore = false;
     if (this.gameState.score > this.gameState.highScore) {
@@ -149,9 +163,12 @@ export class UIRenderer {
     p.fill(255, 100, 100);
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(48 + p.sin(p.frameCount * 0.1) * 4);
+    p.stroke(0);
+    p.strokeWeight(4);
     const messageIndex =
       floor(this.gameState.score / 50) % this.gameOverMessages.length;
     p.text(this.gameOverMessages[messageIndex], p.width / 2, p.height / 2 - 80);
+    p.noStroke();
 
     // New high score celebration
     if (isNewHighScore) {
@@ -424,13 +441,6 @@ export class UIRenderer {
       }
     }
 
-    // Draw settings menu overlay (always on top) - temporarily disabled
-    // TODO: Re-enable when effectsConfig is properly passed to UIRenderer
-    /*
-    if (this.settingsMenu) {
-      this.settingsMenu.draw(p);
-    }
-    */
   }
 
   // Handle key presses for UI
@@ -443,31 +453,6 @@ export class UIRenderer {
         return true;
       }
     }
-
-    // Settings menu handling (highest priority) - temporarily disabled until properly initialized
-    // TODO: Re-enable when effectsConfig is properly passed to UIRenderer
-    /*
-    if (this.settingsMenu) {
-      if (key === 's' || key === 'S') {
-        if (!this.settingsMenu.visible) {
-          this.settingsMenu.toggle();
-          return true;
-        }
-      }
-      
-      if (this.settingsMenu.visible) {
-        if (key === 's' || key === 'S' || key === 'Escape') {
-          this.settingsMenu.toggle();
-          return true;
-        }
-        
-        // Pass other keys to settings menu
-        if (this.settingsMenu.handleKey(key)) {
-          return true;
-        }
-      }
-    }
-    */
 
     if (key === 'Escape') {
       if (this.gameState.gameState === 'playing') {
@@ -529,6 +514,59 @@ export class UIRenderer {
       }
     }
 
+    // Developer enemy spawn shortcuts (keys 1-4)
+    if (this.devMode && ['1', '2', '3', '4'].includes(key)) {
+      const typeMap = { 1: 'grunt', 2: 'rusher', 3: 'tank', 4: 'stabber' };
+      const spawnType = typeMap[key];
+      if (window.spawnSystem && spawnType) {
+        // Use spawn system's spawn logic to find a good position
+        let pos = { x: 0, y: 0 };
+        if (typeof window.spawnSystem.findSpawnPosition === 'function') {
+          pos = window.spawnSystem.findSpawnPosition();
+        } else if (this.player) {
+          // Fallback: spawn near player if no finder available
+          pos = { x: this.player.x + 60, y: this.player.y };
+        }
+        if (typeof window.spawnSystem.forceSpawn === 'function') {
+          window.spawnSystem.forceSpawn(spawnType, pos.x, pos.y);
+          console.log(`👾 Manual spawn: ${spawnType}`);
+          this._showToast(`Spawned ${spawnType}`);
+          return true;
+        }
+      }
+    }
+
+    // Developer toggles and tweaks
+    if (this.devMode) {
+      if (key === 'i' || key === 'I') {
+        if (this.player) {
+          this.player.invincible = !this.player.invincible;
+          this._showToast(
+            `Infinite life ${this.player.invincible ? 'ON' : 'OFF'}`
+          );
+          return true;
+        }
+      }
+      if (key === '=' || key === '-') {
+        const current = window.beatClock?.bpm || 120;
+        const delta = key === '=' ? 5 : -5;
+        const newBpm = min(max(current + delta, 40), 300);
+        window.beatClock?.setBPM(newBpm);
+        this._showToast(`BPM ${newBpm}`);
+        return true;
+      }
+      if (key === '[' || key === ']') {
+        if (this.player) {
+          const delta = key === ']' ? 0.5 : -0.5;
+          this.player.speed = Math.max(0.5, this.player.speed + delta);
+          this._showToast(
+            `Speed ${this.player.speed.toFixed(1)}`
+          );
+          return true;
+        }
+      }
+    }
+
     // Arrow keys for aim direction
     if (this.gameState.gameState === 'playing' && this.player) {
       if (key === 'ArrowUp') {
@@ -549,8 +587,8 @@ export class UIRenderer {
       }
     }
 
-    // Toggle AUDIO DEBUG overlay/logs with F10 key
-    if (key === 'F10') {
+    // Toggle AUDIO DEBUG overlay/logs with F10 key (dev mode only)
+    if (this.devMode && key === 'F10') {
       const enabled = !(window.DEBUG_AUDIO || window.debug_audio);
       window.DEBUG_AUDIO = enabled;
       window.debug_audio = enabled; // alias
@@ -561,6 +599,12 @@ export class UIRenderer {
     }
 
     return false;
+  }
+
+  toggleDevMode() {
+    this.devMode = !this.devMode;
+    console.log(`🛠️ Dev mode ${this.devMode ? 'ENABLED' : 'DISABLED'}`);
+    this._showToast(`Dev mode ${this.devMode ? 'ON' : 'OFF'}`);
   }
 
   // Reset UI renderer

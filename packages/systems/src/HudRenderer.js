@@ -32,6 +32,27 @@ export class HudRenderer {
     p.text(healthTxt, 10, 28);
     p.text(levelTxt, 10, 46);
 
+    // Level progress bar
+    const progress = this.gameState.getProgressToNextLevel?.() ?? 0;
+    const barWidth = 120;
+    const barHeight = 8;
+    const barX = 10;
+    const barY = 64;
+
+    // Background bar
+    p.fill(50, 50, 50, 150);
+    p.rect(barX, barY, barWidth, barHeight);
+
+    // Progress fill
+    p.fill(100, 255, 100, 200);
+    p.rect(barX, barY, barWidth * progress, barHeight);
+
+    // Border
+    p.stroke(255, 255, 255, 100);
+    p.strokeWeight(1);
+    p.noFill();
+    p.rect(barX, barY, barWidth, barHeight);
+
     p.pop();
   }
 }

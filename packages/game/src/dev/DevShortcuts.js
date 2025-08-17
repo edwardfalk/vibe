@@ -1,10 +1,26 @@
 // DevShortcuts.js - Houses keyboard shortcuts and dev-only helpers
 
-// Toggle profiler overlay with P key (moved from GameLoop.js)
+// Secret combo to toggle developer mode (Ctrl+Alt+Shift+D)
+if (!window.devModeToggleAdded) {
+  window.addEventListener('keydown', (e) => {
+    if (
+      (e.key === 'd' || e.key === 'D') &&
+      e.ctrlKey &&
+      e.altKey &&
+      e.shiftKey &&
+      !e.repeat
+    ) {
+      window.uiRenderer?.toggleDevMode();
+    }
+  });
+  window.devModeToggleAdded = true;
+}
+
+// Toggle profiler overlay with P key (dev mode only)
 if (!window.profilerOverlayToggleAdded) {
   window.addEventListener('keydown', (e) => {
     if ((e.key === 'p' || e.key === 'P') && !e.repeat) {
-      if (window.profilerOverlay) {
+      if (window.uiRenderer?.devMode && window.profilerOverlay) {
         window.profilerOverlay.toggle();
       }
     }
@@ -41,6 +57,12 @@ if (!window.uiKeyListenersAdded) {
         '3',
         '4',
         ' ',
+        'i',
+        'I',
+        '-',
+        '=',
+        '[',
+        ']',
       ];
       if (singleActionKeys.includes(event.key) && window.uiRenderer) {
         window.uiRenderer.handleKeyPress(event.key);

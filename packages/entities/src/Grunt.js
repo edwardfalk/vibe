@@ -19,6 +19,9 @@ class Grunt extends BaseEnemy {
     this.p = p;
     this.audio = audio;
 
+    // Visual variant for silly shapes
+    this.variant = random() < 0.4 ? 'doubleHead' : 'default';
+
     // --- Deferred-death state ---------------------------------
     this.pendingStabDeath = false; // true while "ow" delay active
     this.pendingStabDeathTimer = 0; // frames remaining
@@ -256,9 +259,14 @@ class Grunt extends BaseEnemy {
    */
   drawBody(s) {
     // Main round body (baby-like proportions)
+    this.p.push();
+    // Slight shift so collision circle matches visuals
+    this.p.translate(-s * 0.05, 0);
     this.p.fill(this.bodyColor);
-    this.p.noStroke();
+    this.p.stroke(0, 0, 0, 80);
+    this.p.strokeWeight(2);
     this.p.ellipse(0, 0, s, s * 0.9); // Rounder baby-like body
+    this.p.noStroke();
 
     // Round baby-like head (larger and rounder)
     this.p.fill(
@@ -266,7 +274,10 @@ class Grunt extends BaseEnemy {
       this.bodyColor.levels[1] + 20,
       this.bodyColor.levels[2] + 20
     );
+    this.p.stroke(0, 0, 0, 80);
+    this.p.strokeWeight(2);
     this.p.ellipse(0, -s * 0.4, s * 0.8, s * 0.8); // Big round baby head
+    this.p.noStroke();
 
     // Simple round helmet (baby helmet style)
     this.p.fill(120, 120, 150); // Gray helmet color
@@ -294,6 +305,23 @@ class Grunt extends BaseEnemy {
     this.p.fill(255);
     this.p.ellipse(-s * 0.12, -s * 0.32, s * 0.06); // Left highlight (bigger)
     this.p.ellipse(s * 0.15, -s * 0.36, s * 0.04); // Right highlight (smaller)
+
+    // Optional goofy second head variant
+    if (this.variant === 'doubleHead') {
+      this.p.fill(
+        this.bodyColor.levels[0] + 20,
+        this.bodyColor.levels[1] + 20,
+        this.bodyColor.levels[2] + 20
+      );
+      this.p.stroke(0, 0, 0, 80);
+      this.p.strokeWeight(2);
+      this.p.ellipse(s * 0.45, -s * 0.2, s * 0.5, s * 0.5);
+      this.p.noStroke();
+      this.p.fill(100, 255, 100);
+      this.p.ellipse(s * 0.45, -s * 0.2, s * 0.18);
+      this.p.fill(255);
+      this.p.ellipse(s * 0.48, -s * 0.18, s * 0.06);
+    }
 
     // SHORT STUMPY ANTENNAE (baby-like proportions)
     this.p.stroke(this.bodyColor);
@@ -328,6 +356,8 @@ class Grunt extends BaseEnemy {
       this.bodyColor.levels[2] + 30
     );
     this.p.rect(-s * 0.3, s * 0.1, s * 0.6, s * 0.08); // Simple belt
+
+    this.p.pop();
   }
 
   /**

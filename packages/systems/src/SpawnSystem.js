@@ -151,7 +151,6 @@ export class SpawnSystem {
         attempts++;
         continue;
       }
-      const angle = random(0, Math.PI * 2);
       break;
     } while (attempts < 50);
 
@@ -176,13 +175,35 @@ export class SpawnSystem {
   }
 
   forceSpawn(enemyType, x, y) {
-    if (!window.gameState) return;
+    if (!window.gameState) return null;
     const gs = window.gameState;
     if (!gs.enemies) gs.enemies = [];
-    const enemy = this.enemyFactory.createEnemy(x, y, enemyType);
+
+    // If coordinates aren't provided, fall back to regular spawn placement
+    if (typeof x !== 'number' || typeof y !== 'number') {
+      if (typeof this.findSpawnPosition === 'function') {
+        const pos = this.findSpawnPosition();
+        x = pos.x;
+        y = pos.y;
+      } else {
+        x = 0;
+        y = 0;
+      }
+    }
+
+    // Ensure enemies get the current p5 instance and audio context
+    const p = window.player ? window.player.p : undefined;
+    const enemy = this.enemyFactory.createEnemy(
+      x,
+      y,
+      enemyType,
+      p,
+      window.audio
+    );
     gs.enemies.push(enemy);
     console.log(
       `👾 Force-spawned ${enemyType} at (${x.toFixed(1)}, ${y.toFixed(1)})`
     );
+    return enemy;
   }
 }
