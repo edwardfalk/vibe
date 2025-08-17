@@ -2,6 +2,7 @@
 import { round, sqrt, atan2, cos, sin, dist } from '@vibe/core/mathUtils.js';
 import { CONFIG } from '@vibe/core/config.js';
 import { SpatialHashGrid } from './SpatialHashGrid.js';
+import { VFX_EVENTS } from '@vibe/fx/VFXDispatcher.js';
 
 // Default countdown for tank time bombs (in frames)
 const TIME_BOMB_FRAMES = 180; // 3 seconds at 60fps
@@ -136,7 +137,7 @@ export class CollisionSystem {
           // Special behaviour – delegate VFX to event bus only
           try {
             window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', {
+              new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
                 detail: { x: enemy.x, y: enemy.y, type: enemy.type },
               })
             );
@@ -243,7 +244,7 @@ export class CollisionSystem {
         } else if (killResult === 'exploding') {
           try {
             window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', {
+              new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
                 detail: { x: enemy.x, y: enemy.y, type: enemy.type },
               })
             );
@@ -268,7 +269,7 @@ export class CollisionSystem {
     // Dispatch VFX event for decoupled particles/flash
     try {
       window.dispatchEvent(
-        new CustomEvent('vfx:enemy-killed', {
+        new CustomEvent(VFX_EVENTS.ENEMY_KILLED, {
           detail: { x, y, type, killMethod },
         })
       );
@@ -312,7 +313,7 @@ export class CollisionSystem {
     // Decoupled VFX – dispatch instead of direct manager call
     try {
       window.dispatchEvent(
-        new CustomEvent('vfx:rusher-explosion', { detail: { x, y } })
+        new CustomEvent(VFX_EVENTS.RUSHER_EXPLODED, { detail: { x, y } })
       );
     } catch (_) {}
 

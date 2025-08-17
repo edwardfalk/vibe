@@ -70,11 +70,17 @@ export class Explosion {
       this.flashIntensity = 0.5;
       this.createEnergyRings(); // Keep special effects for tanks
     } else if (type === 'stabber-bullet-kill') {
-      particleCount = 4; // Reduced from 8
-      this.flashIntensity = 0; // No flash
+      // Give stabbers a proper pop when destroyed by bullets
+      particleCount = 12;
+      this.flashIntensity = 0.15;
     } else if (type === 'stabber-plasma-kill') {
-      particleCount = 6; // Reduced from 10
-      this.flashIntensity = 0; // No flash
+      // Plasma kills should feel a bit more intense
+      particleCount = 16;
+      this.flashIntensity = 0.2;
+    } else if (type === 'stabber-death') {
+      // Fallback generic stabber death
+      particleCount = 10;
+      this.flashIntensity = 0.1;
     } else if (type === 'enemy') {
       particleCount = 4; // Reduced from 8
       this.flashIntensity = 0; // No flash for basic explosions
@@ -164,25 +170,25 @@ export class Explosion {
         sizeRange = [5, 12];
         lifeRange = [45, 70]; // Reduced
       } else if (type === 'stabber-bullet-kill') {
-        vxRange = [-3, 3];
-        vyRange = [-3, 3]; // Reduced from [-6, 6], [-4, 4]
-        sizeRange = [2, 6];
-        lifeRange = [25, 40]; // Reduced
+        vxRange = [-4, 4];
+        vyRange = [-4, 4];
+        sizeRange = [3, 8];
+        lifeRange = [30, 50];
       } else if (type === 'stabber-plasma-kill') {
-        vxRange = [-3, 3];
-        vyRange = [-3, 3]; // Reduced from [-5, 5]
-        sizeRange = [3, 7];
-        lifeRange = [30, 45]; // Reduced
+        vxRange = [-4, 4];
+        vyRange = [-4, 4];
+        sizeRange = [4, 9];
+        lifeRange = [35, 55];
       } else if (type === 'grunt-death') {
         vxRange = [-3, 3];
         vyRange = [-3, 3]; // Reduced from [-4, 4]
         sizeRange = [3, 6];
         lifeRange = [20, 35]; // Reduced
       } else if (type === 'stabber-death') {
-        vxRange = [-3, 3];
-        vyRange = [-3, 3]; // Reduced from [-5, 5]
-        sizeRange = [2, 6];
-        lifeRange = [25, 40]; // Reduced
+        vxRange = [-4, 4];
+        vyRange = [-4, 4];
+        sizeRange = [3, 8];
+        lifeRange = [30, 50];
       } else if (type === 'tank-death') {
         vxRange = [-3, 3];
         vyRange = [-3, 3]; // Reduced from [-4, 4]

@@ -3,6 +3,7 @@
 // Math utilities from core package.
 
 import { sqrt, max, floor, atan2, cos, sin } from '@vibe/core/mathUtils.js';
+import { VFX_EVENTS } from '@vibe/fx/VFXDispatcher.js';
 
 /**
  * BombSystem – static utility for updating active tank bombs every frame.
@@ -134,7 +135,7 @@ export class BombSystem {
         } else if (result === 'exploding') {
           try {
             window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', {
+              new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
                 detail: { x: enemy.x, y: enemy.y, type: enemy.type },
               })
             );

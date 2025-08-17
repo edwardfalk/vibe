@@ -25,15 +25,16 @@ export const effectsConfig = {
       sizeMult: 1.0, // No size multiplication for stabber
     },
     burst: {
-      // Reduced intensity for better performance during attacks
-      count: 12, // Reduced from 18
+      // Increased slightly so stabber attacks have a noticeable burst
+      count: 20, // Restored closer to original intensity
       palette: [
         [255, 140, 0],
         [255, 200, 50],
         [255, 255, 180],
       ],
       gravity: 0.14, // Increased to make particles fall faster
-      fade: 0.06, // Increased fade rate for shorter particle life
+      // Slow the fade a touch so particles linger during the dash
+      fade: 0.045,
     },
   },
 
