@@ -115,6 +115,12 @@ class Stabber extends BaseEnemy {
         const sound = ambientSounds[floor(random() * ambientSounds.length)];
         window.audio.playSound(sound, this.x, this.y);
         console.log(`🗡️ Stabber ambient sound: ${sound} on off-beat 3.5`);
+        
+        // Also trigger speech with lower probability
+        if (random() < 0.4) { // 40% chance to also speak
+          window.audio.speakStabberLine(this);
+          console.log(`🗡️ Stabber speech triggered along with sound`);
+        }
       }
     }
 

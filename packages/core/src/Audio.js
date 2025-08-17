@@ -272,31 +272,31 @@ export class Audio {
       gruntMalfunction: {
         frequency: 180,
         waveform: 'sawtooth',
-        volume: 0.12,
+        volume: 0.08, // Reduced from 0.12
         duration: 0.4,
       },
       gruntBeep: {
         frequency: 800,
         waveform: 'triangle',
-        volume: 0.08,
+        volume: 0.05, // Reduced from 0.08
         duration: 0.15,
       },
       gruntWhir: {
         frequency: 300,
         waveform: 'sine',
-        volume: 0.1,
+        volume: 0.07, // Reduced from 0.1
         duration: 0.6,
       },
       gruntError: {
         frequency: 220,
         waveform: 'square',
-        volume: 0.1,
+        volume: 0.07, // Reduced from 0.1
         duration: 0.2,
       },
       gruntGlitch: {
         frequency: 150,
         waveform: 'sawtooth',
-        volume: 0.09,
+        volume: 0.06, // Reduced from 0.09
         duration: 0.25,
       },
       gruntOw: {
@@ -625,14 +625,21 @@ export class Audio {
       const lowPassFilter = this.audioContext.createBiquadFilter();
 
       // REDUCED: Reverb intensity lowered further for less intrusive ambient effects
-      const reverbIntensity = 0.1 + normalizedDistance * 0.1; // Reduced from 0.15 + 0.15 to 0.1 + 0.1 (range: 10-20% instead of 15-30%)
+      const reverbIntensity = 0.06 + normalizedDistance * 0.08; // Further reduced for less annoying grunt ambient (range: 6-14% instead of 10-20%)
       reverbGain.gain.setValueAtTime(
         reverbIntensity,
         this.audioContext.currentTime
       );
 
-      // Simplified lowpass filtering
-      const lowpassFreq = 1400 - normalizedDistance * 600; // Less dramatic range
+      // Simplified lowpass filtering with special grunt muffling
+      let lowpassFreq = 1400 - normalizedDistance * 600; // Less dramatic range
+      
+      // Extra muffling for grunt ambient sounds
+      const isGruntAmbient = ['gruntMalfunction', 'gruntBeep', 'gruntWhir', 'gruntError', 'gruntGlitch'].includes(soundName);
+      if (isGruntAmbient) {
+        lowpassFreq = Math.min(lowpassFreq, 800); // Cap at 800Hz for muffle effect
+      }
+      
       lowPassFilter.type = 'lowpass';
       lowPassFilter.frequency.setValueAtTime(
         lowpassFreq,
