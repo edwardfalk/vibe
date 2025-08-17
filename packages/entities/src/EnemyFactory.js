@@ -13,7 +13,7 @@ class EnemyFactory {
     // Enemy type configurations
     this.configs = {
       grunt: {
-        size: 26,
+        size: 32, // Increased hitbox for better bullet collision
         health: 2,
         speed: 1.2,
         colorValues: [50, 205, 50], // Store as array, convert to color when needed

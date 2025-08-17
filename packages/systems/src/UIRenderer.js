@@ -5,6 +5,7 @@
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
 import { floor, ceil, min, PI } from '@vibe/core';
+// import { SettingsMenu } from './SettingsMenu.js'; // Temporarily disabled
 // import {
 //   createTicket,
 //   updateTicket,
@@ -41,6 +42,7 @@ export class UIRenderer {
     this.audio = audio;
     this.cameraSystem = cameraSystem;
     this.testModeManager = testModeManager;
+    this.settingsMenu = null; // Will be initialized with effectsConfig later
     this.dashElement = null;
     this.gameOverMessages = [
       'GAME OVER',
@@ -412,6 +414,14 @@ export class UIRenderer {
           break;
       }
     }
+
+    // Draw settings menu overlay (always on top) - temporarily disabled
+    // TODO: Re-enable when effectsConfig is properly passed to UIRenderer
+    /*
+    if (this.settingsMenu) {
+      this.settingsMenu.draw(p);
+    }
+    */
   }
 
   // Handle key presses for UI
@@ -424,6 +434,31 @@ export class UIRenderer {
         return true;
       }
     }
+
+    // Settings menu handling (highest priority) - temporarily disabled until properly initialized
+    // TODO: Re-enable when effectsConfig is properly passed to UIRenderer
+    /*
+    if (this.settingsMenu) {
+      if (key === 's' || key === 'S') {
+        if (!this.settingsMenu.visible) {
+          this.settingsMenu.toggle();
+          return true;
+        }
+      }
+      
+      if (this.settingsMenu.visible) {
+        if (key === 's' || key === 'S' || key === 'Escape') {
+          this.settingsMenu.toggle();
+          return true;
+        }
+        
+        // Pass other keys to settings menu
+        if (this.settingsMenu.handleKey(key)) {
+          return true;
+        }
+      }
+    }
+    */
 
     if (key === 'Escape') {
       if (this.gameState.gameState === 'playing') {
@@ -566,6 +601,13 @@ export class UIRenderer {
     }
 
     return false;
+  }
+
+  // Initialize settings menu with effects config
+  initializeSettingsMenu(effectsConfig, p) {
+    if (!this.settingsMenu) {
+      this.settingsMenu = new SettingsMenu(this.audio, effectsConfig, p);
+    }
   }
 
   // Reset UI renderer

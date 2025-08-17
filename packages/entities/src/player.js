@@ -375,13 +375,11 @@ export class Player {
     p.fill(this.skinColor);
     p.ellipse(0, -s * 0.25, s * 0.3);
 
-    // Draw bandana
-    p.fill(this.bandanaColor);
-    p.rect(-s * 0.15, -s * 0.35, s * 0.3, s * 0.08);
-
-    // Bandana tails
-    p.rect(-s * 0.12, -s * 0.27, s * 0.04, s * 0.15);
-    p.rect(s * 0.08, -s * 0.25, s * 0.04, s * 0.12);
+    // Draw simple hair instead of bandana
+    p.fill(60, 40, 20); // Dark brown hair
+    p.rect(-s * 0.18, -s * 0.38, s * 0.36, s * 0.12); // Hair on top
+    p.rect(-s * 0.15, -s * 0.32, s * 0.08, s * 0.15); // Left sideburn
+    p.rect(s * 0.07, -s * 0.32, s * 0.08, s * 0.15); // Right sideburn
 
     // Mysterious eyes
     p.fill(0);
@@ -390,12 +388,43 @@ export class Player {
     p.ellipse(-eyeOffset, -s * 0.25, eyeSize);
     p.ellipse(eyeOffset, -s * 0.25, eyeSize);
 
-    // Sunglasses (slightly larger)
-    p.fill(20); // Very dark gray/black
-    const lensW = eyeSize * 1.92; // 20% larger than before
-    const lensH = eyeSize * 1.32; // 20% larger than before
+    // Enhanced iconic sunglasses
+    const lensW = eyeSize * 2.2; // Bigger for more character
+    const lensH = eyeSize * 1.5; // Taller lenses
+    
+    // Sunglasses frame
+    p.fill(40, 40, 40); // Dark frame
+    p.rect(-lensW * 0.6, -s * 0.25 - lensH * 0.6, lensW * 1.2, lensH * 1.2); // Left frame
+    p.rect(lensW * 0.6 - lensW * 1.2, -s * 0.25 - lensH * 0.6, lensW * 1.2, lensH * 1.2); // Right frame
+    
+    // Bridge
+    p.rect(-s * 0.03, -s * 0.25 - lensH * 0.2, s * 0.06, lensH * 0.4);
+    
+    // Dark lenses
+    p.fill(5, 5, 15); // Very dark with slight blue tint
     p.ellipse(-eyeOffset, -s * 0.25, lensW, lensH); // Left lens
     p.ellipse(eyeOffset, -s * 0.25, lensW, lensH); // Right lens
+    
+    // Subtle reflections and effects on sunglasses
+    if (this.isCurrentlyShooting || this.isMoving) {
+      const glowPhase = p.frameCount * 0.05; // Slower effect
+      const glowIntensity = sin(glowPhase) * 0.3 + 0.4; // Subtler
+      
+      // Subtle lens reflections
+      p.fill(100, 150, 255, 40 * glowIntensity); // Light blue reflection
+      p.ellipse(-eyeOffset + lensW * 0.2, -s * 0.25 - lensH * 0.2, lensW * 0.3, lensH * 0.2);
+      
+      p.fill(255, 255, 255, 30 * glowIntensity); // White highlight
+      p.ellipse(eyeOffset + lensW * 0.15, -s * 0.25 - lensH * 0.15, lensW * 0.2, lensH * 0.15);
+      
+      // Subtle laser sight when shooting
+      if (this.isCurrentlyShooting) {
+        p.stroke(255, 50, 50, 80 * glowIntensity);
+        p.strokeWeight(1);
+        p.line(eyeOffset, -s * 0.25, s * 0.6, -s * 0.05); // More realistic aim line
+        p.noStroke();
+      }
+    }
 
     // Bridge
     p.stroke(20);

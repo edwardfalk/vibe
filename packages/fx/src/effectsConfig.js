@@ -21,8 +21,8 @@ export const effectsConfig = {
     glow: {
       // Matches knife core orange-white
       color: [255, 140, 0],
-      alpha: 120, // Reduced from 180 for better performance and less visual noise
-      sizeMult: 1.1, // Reduced from 1.2
+      alpha: 60, // Even more reduced stabber glow
+      sizeMult: 1.0, // No size multiplication for stabber
     },
     burst: {
       // Reduced intensity for better performance during attacks
@@ -41,8 +41,8 @@ export const effectsConfig = {
     glow: {
       // Soft green that matches eye colour
       color: [50, 200, 50],
-      alpha: 90,
-      sizeMult: 1.05,
+      alpha: 65, // Further reduced grunt glow
+      sizeMult: 1.0, // No size multiplier for grunt
     },
     burst: {
       count: 12,
@@ -60,8 +60,8 @@ export const effectsConfig = {
     glow: {
       // Pinkish red charger
       color: [255, 100, 150],
-      alpha: 110,
-      sizeMult: 1.15,
+      alpha: 55, // Even more reduced rusher glow
+      sizeMult: 1.0, // No size multiplication for rusher
     },
     burst: {
       count: 25,
@@ -78,8 +78,8 @@ export const effectsConfig = {
   tank: {
     glow: {
       color: [100, 50, 200],
-      alpha: 100, // Reduced from 130 for better performance
-      sizeMult: 1.2, // Reduced from 1.4 to be less overwhelming
+      alpha: 70, // Further reduced for subtler tank glow
+      sizeMult: 1.1, // Smaller glow size
     },
     burst: {
       count: 20,
