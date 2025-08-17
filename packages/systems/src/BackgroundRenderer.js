@@ -16,6 +16,9 @@ import {
   randomRange,
 } from '@vibe/core';
 
+import { PsychedelicEffects } from '@vibe/fx/PsychedelicEffects.js';
+import { BACKGROUND_CONFIG } from './backgroundConfig.js';
+
 /**
  * @param {p5} p - The p5 instance
  * @param {CameraSystem} cameraSystem - The camera system controlling parallax (dependency injected for modularity)
@@ -31,6 +34,9 @@ export class BackgroundRenderer {
     // Parallax background layers
     this.parallaxLayers = [];
     this.parallaxInitialized = false;
+    
+    // Psychedelic effects system
+    this.psychedelicEffects = new PsychedelicEffects();
   }
 
   // Initialize parallax background layers
@@ -93,7 +99,7 @@ export class BackgroundRenderer {
         y: randomRange(-p.height, p.height * 2),
         size: randomRange(1, 3),
         brightness: randomRange(0.3, 1),
-        twinkleSpeed: randomRange(0.01, 0.03),
+        twinkleSpeed: randomRange(0.01, 0.03), // Restored original twinkling speed
       });
     }
 
@@ -110,7 +116,7 @@ export class BackgroundRenderer {
           b: randomRange(60, 120),
         },
         alpha: randomRange(0.05, 0.15),
-        driftSpeed: randomRange(0.1, 0.3),
+        driftSpeed: randomRange(0.1, 0.3), // Restored original drift speed
       });
     }
 
@@ -147,7 +153,7 @@ export class BackgroundRenderer {
         y: randomRange(-p.height, p.height * 2),
         size: randomRange(2, 4),
         alpha: randomRange(150, 255),
-        flickerSpeed: randomRange(0.05, 0.15),
+        flickerSpeed: randomRange(0.05, 0.15), // Restored original flicker speed
       });
     }
   }
@@ -349,7 +355,7 @@ export class BackgroundRenderer {
       }
 
       // Very subtle time-based variation for darker, more mysterious feel
-      const timeShift = p.sin(p.frameCount * 0.003 + inter) * 2; // Reduced intensity
+      const timeShift = p.sin(p.frameCount * 0.003 + inter) * 2; // Restored original speed
       r += timeShift * 0.2;
       g += timeShift * 0.1;
       b += timeShift * 0.3;
@@ -442,54 +448,7 @@ export class BackgroundRenderer {
       }
     }
 
-    // Enhanced distant sparkles
-    for (let i = 0; i < 20; i++) {
-      const sparkleX = (i * 67) % p.width;
-      const sparkleY = (i * 103) % p.height;
-      const twinkle = p.sin(p.frameCount * 0.02 + i * 2) * 0.5 + 0.5;
-      const colorPhase = p.frameCount * 0.008 + i;
-
-      const sparkleColors = [
-        [255, 215, 0], // Gold
-        [255, 182, 193], // Light pink
-        [173, 216, 230], // Light blue
-        [221, 160, 221], // Plum
-        [255, 255, 224], // Light yellow
-      ];
-
-      const colorIndex = p.floor(colorPhase) % sparkleColors.length;
-      const currentColor = sparkleColors[colorIndex];
-      const alpha = 30 + twinkle * 40;
-
-      p.fill(currentColor[0], currentColor[1], currentColor[2], alpha);
-      p.noStroke();
-      p.ellipse(sparkleX, sparkleY, 2 + twinkle, 2 + twinkle);
-
-      // Add cross sparkle for brighter ones
-      if (twinkle > 0.7) {
-        p.stroke(
-          currentColor[0],
-          currentColor[1],
-          currentColor[2],
-          alpha * 0.8
-        );
-        p.strokeWeight(1);
-        const sparkleSize = 4 + twinkle * 2;
-        p.line(
-          sparkleX - sparkleSize,
-          sparkleY,
-          sparkleX + sparkleSize,
-          sparkleY
-        );
-        p.line(
-          sparkleX,
-          sparkleY - sparkleSize,
-          sparkleX,
-          sparkleY + sparkleSize
-        );
-        p.noStroke();
-      }
-    }
+    // Removed annoying fast-flickering sparkles as requested
 
     // Distant galaxies
     for (let i = 0; i < 4; i++) {
@@ -529,24 +488,47 @@ export class BackgroundRenderer {
     p.pop();
   }
 
-  // Draw subtle space elements
+  // Draw subtle space elements with psychedelic enhancements
   drawSubtleSpaceElements(p = this.p) {
+    // Update psychedelic effects
+    this.psychedelicEffects.update();
+    
     p.push();
     p.noStroke();
 
-    // Subtle nebula hints
-    p.fill(60, 40, 80, 15);
+    // Removed annoying flickering psychedelic dust
+
+    // Subtle nebula hints with trippy colors
+    const time = p.frameCount * 0.01;
+    const nebula1Color = [
+      60 + sin(time) * 20,
+      40 + cos(time * 1.3) * 30,
+      80 + sin(time * 0.7) * 40
+    ];
+    const nebula2Color = [
+      50 + cos(time * 1.1) * 25,
+      60 + sin(time * 1.5) * 35,
+      90 + cos(time * 0.9) * 50
+    ];
+    
+    p.fill(nebula1Color[0], nebula1Color[1], nebula1Color[2], 20);
     p.ellipse(p.width * 0.2, p.height * 0.3, 200, 150);
 
-    p.fill(50, 60, 90, 12);
+    p.fill(nebula2Color[0], nebula2Color[1], nebula2Color[2], 15);
     p.ellipse(p.width * 0.8, p.height * 0.7, 180, 120);
 
-    // Static distant stars
-    p.fill(200, 200, 255, 40);
-    for (let i = 0; i < 6; i++) {
-      const x = (i * p.width) / 6 + p.width / 12;
-      const y = p.height * 0.15 + (i % 2) * p.height * 0.1;
-      p.ellipse(x, y, 1, 1);
+    // Subtle background waves that blend into space
+    this.psychedelicEffects.drawBackgroundWaves(p);
+
+    // Gentle twinkling stars (much reduced)
+    for (let i = 0; i < 3; i++) { // Only 3 stars instead of 12
+      const x = (i * p.width) / 4 + p.width / 8;
+      const y = p.height * 0.15 + (i % 2) * p.height * 0.2;
+      const twinkle = sin(p.frameCount * 0.003 + i * 2) * 0.5 + 0.5; // Much slower twinkling
+      
+      // Subtle white/blue stars instead of psychedelic colors
+      p.fill(200 + twinkle * 55, 200 + twinkle * 55, 255, 20 + twinkle * 30);
+      p.ellipse(x, y, 1 + twinkle * 0.5, 1 + twinkle * 0.5); // Smaller size variation
     }
 
     p.pop();
@@ -555,30 +537,41 @@ export class BackgroundRenderer {
   // Draw interactive background effects that respond to gameplay
   drawInteractiveBackgroundEffects(p = this.p) {
     p.push();
-    // Use injected player and gameState for robust, modular background effects (do not use global or p.*)
+    
+    // Cosmic wormhole effect in center during intense action (slower, more subtle)
+    const enemyCount = this.gameState?.enemies?.length || 0;
+    if (enemyCount > 3) {
+      const intensity = Math.min(enemyCount / 15, 0.8); // Slower buildup, lower max
+      this.psychedelicEffects.drawCosmicWormhole(p, p.width / 2, p.height / 2, intensity * 0.15); // Even more subtle
+    }
+    
+    // Kaleidoscope patterns around player when moving
     if (this.player && this.player.isMoving) {
       const rippleIntensity = p.map(this.player.speed, 0, 5, 0, 1);
-      for (let i = 0; i < 3; i++) {
-        const rippleRadius = (p.frameCount * 2 + i * 20) % 100;
-        const rippleAlpha = p.map(
-          rippleRadius,
-          0,
-          100,
-          30 * rippleIntensity,
-          0
-        );
-        p.stroke(64, 224, 208, rippleAlpha);
-        p.strokeWeight(2);
+      
+      // Psychedelic ripples with color cycling
+      for (let i = 0; i < 5; i++) {
+        const rippleRadius = (p.frameCount * 3 + i * 30) % 150;
+        const rippleAlpha = p.map(rippleRadius, 0, 150, 40 * rippleIntensity, 0);
+        
+        const colorPhase = p.frameCount * 0.02 + i * 0.5;
+        const colorIndex = Math.floor((colorPhase * 3) % this.psychedelicEffects.tripPalette.length);
+        const color = this.psychedelicEffects.tripPalette[colorIndex];
+        
+        p.stroke(color[0], color[1], color[2], rippleAlpha);
+        p.strokeWeight(3);
         p.noFill();
         p.ellipse(this.player.x, this.player.y, rippleRadius, rippleRadius);
       }
+      
+      // Removed kaleidoscope effect - didn't look good
     }
     // Health-based background tint
     if (this.player) {
       const healthPercent = this.player.health / this.player.maxHealth;
       if (healthPercent < 0.3) {
         // Red danger tint when low health
-        const dangerPulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5;
+        const dangerPulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5; // Restored original danger pulse
         p.fill(255, 0, 0, dangerPulse * 15 * (1 - healthPercent));
         p.noStroke();
         p.rect(0, 0, p.width, p.height);
@@ -606,7 +599,7 @@ export class BackgroundRenderer {
     if (this.gameState && this.gameState.killStreak >= 5) {
       const streakIntensity = p.min(this.gameState.killStreak / 10, 1);
       // Pulsing border effect
-      const borderPulse = p.sin(p.frameCount * 0.3) * 0.5 + 0.5;
+      const borderPulse = p.sin(p.frameCount * 0.3) * 0.5 + 0.5; // Restored original kill streak pulse
       p.stroke(255, 100, 255, borderPulse * 100 * streakIntensity);
       p.strokeWeight(4);
       p.noFill();

@@ -326,7 +326,7 @@ export class Audio {
       grunt: { rate: 0.6, pitch: 1.6, volume: 0.45 }, // Increased from 0.3 to 0.45 for better audibility
       rusher: { rate: 1.4, pitch: 1.5, volume: 0.35 }, // Reduced from 0.9 to 0.35
       tank: { rate: 0.5, pitch: 0.2, volume: 0.4 }, // Reduced from 1.0 to 0.4
-      stabber: { rate: 0.8, pitch: 2.0, volume: 0.4 }, // Fixed: was 0.4, comment said 0.3
+      stabber: { rate: 0.8, pitch: 2.0, volume: 0.55 }, // Raised volume for better audibility
     };
 
     // Initialise dedicated SFX Manager (first extraction step)
@@ -624,8 +624,8 @@ export class Audio {
       const reverbGain = this.audioContext.createGain();
       const lowPassFilter = this.audioContext.createBiquadFilter();
 
-      // REDUCED: Reverb intensity lowered further for less intrusive ambient effects
-      const reverbIntensity = 0.06 + normalizedDistance * 0.08; // Further reduced for less annoying grunt ambient (range: 6-14% instead of 10-20%)
+      // BALANCED: Reverb intensity balanced for atmospheric grunt ambient (range: 8-18%)
+      const reverbIntensity = 0.08 + normalizedDistance * 0.1; // Raised back up slightly for better atmosphere
       reverbGain.gain.setValueAtTime(
         reverbIntensity,
         this.audioContext.currentTime

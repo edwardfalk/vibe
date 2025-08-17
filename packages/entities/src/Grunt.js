@@ -10,7 +10,7 @@ import { shouldAvoidFriendlyFire } from './EnemyAIUtils.js';
 class Grunt extends BaseEnemy {
   constructor(x, y, type, config, p, audio) {
     const gruntConfig = {
-      size: 26,
+      size: 32, // Increased hitbox for better bullet collision
       health: 2,
       speed: 1.2,
       color: p.color(50, 205, 50), // Lime green
@@ -258,7 +258,7 @@ class Grunt extends BaseEnemy {
     // Main round body (baby-like proportions)
     this.p.fill(this.bodyColor);
     this.p.noStroke();
-    this.p.ellipse(0, 0, s, s * 0.9); // Rounder main body
+    this.p.ellipse(0, 0, s, s * 0.9); // Rounder baby-like body
 
     // Round baby-like head (larger and rounder)
     this.p.fill(
@@ -266,7 +266,7 @@ class Grunt extends BaseEnemy {
       this.bodyColor.levels[1] + 20,
       this.bodyColor.levels[2] + 20
     );
-    this.p.ellipse(0, -s * 0.4, s * 0.8, s * 0.8); // Big round head
+    this.p.ellipse(0, -s * 0.4, s * 0.8, s * 0.8); // Big round baby head
 
     // Simple round helmet (baby helmet style)
     this.p.fill(120, 120, 150); // Gray helmet color

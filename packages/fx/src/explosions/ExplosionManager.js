@@ -47,9 +47,9 @@ class EnemyFragmentExplosion {
       // Extra dramatic speed for grunts to make them really explode
       const speed =
         this.enemy.type === 'grunt'
-          ? random(8, 20) // More dramatic for grunts
-          : random(6, 15);
-      const fragmentSize = random(size * 0.6, size * 1.5); // Increased from 0.4-1.2 to 0.6-1.5 for bigger fragments
+          ? random(4, 12) // Slower but bigger for grunts
+          : random(3, 10); // Slower fragments for better visibility
+      const fragmentSize = random(size * 1.0, size * 2.5); // MASSIVE fragments for maximum visual impact
 
       // Determine fragment type and color; for grunt use green palette exclusively
       let fragmentColor, fragmentType;
@@ -129,14 +129,14 @@ class EnemyFragmentExplosion {
 
     for (let i = 0; i < particleCount; i++) {
       const angle = (i / particleCount) * TWO_PI + random(-0.3, 0.3);
-      const speed = random(3, 10); // Increased from 2-8 for more dramatic spread
+      const speed = random(2, 7); // Slower particles for more dramatic, visible explosion
 
       this.centralExplosion.particles.push({
         x: this.x,
         y: this.y,
         vx: cos(angle) * speed,
         vy: sin(angle) * speed,
-        size: random(16, 40), // Increased from 12-30 to 16-40 for even fuller explosions
+        size: random(25, 60), // HUGE particles for incredible visual impact
         color: primaryColor,
         life: random(20, 40), // Shorter lifespan to ensure fade-out before probe
         maxLife: random(20, 40),
@@ -381,6 +381,12 @@ export class ExplosionManager {
   addKillEffect(x, y, enemyType, killMethod = 'bullet') {
     if (window.DEBUG_VFX) {
       console.log('⚔️ addKillEffect', enemyType, killMethod, x, y);
+    }
+    
+    // Trigger psychedelic cosmic blast effect
+    if (window.backgroundRenderer?.psychedelicEffects) {
+      const intensity = enemyType === 'tank' ? 1.5 : enemyType === 'stabber' ? 1.2 : 0.8;
+      window.backgroundRenderer.psychedelicEffects.triggerCosmicBlast(x, y, intensity);
     }
     // Trigger VFX burst & chromatic shift via VisualEffectsManager
     // Skip external VFX burst for grunt to avoid additive residue
