@@ -63,6 +63,12 @@ if (!window.uiKeyListenersAdded) {
         '=',
         '[',
         ']',
+        's',
+        'S',
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight',
       ];
       if (singleActionKeys.includes(event.key) && window.uiRenderer) {
         window.uiRenderer.handleKeyPress(event.key);

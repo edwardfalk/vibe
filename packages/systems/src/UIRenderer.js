@@ -5,7 +5,8 @@
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
 import { floor, ceil, min, max, PI } from '@vibe/core';
-// import { SettingsMenu } from './SettingsMenu.js'; // Temporarily disabled
+import { SettingsMenu } from './SettingsMenu.js';
+import { effectsConfig } from '@vibe/fx';
 // import {
 //   createTicket,
 //   updateTicket,
@@ -441,11 +442,25 @@ export class UIRenderer {
       }
     }
 
+    if (this.devMode && this.settingsMenu) {
+      this.settingsMenu.draw(p);
+    }
+
   }
 
   // Handle key presses for UI
   handleKeyPress(key) {
     if (!this.gameState) return false;
+
+    if (this.devMode && this.settingsMenu) {
+      if (key === 's' || key === 'S') {
+        this.settingsMenu.toggle();
+        return true;
+      }
+      if (this.settingsMenu.visible && this.settingsMenu.handleKey(key)) {
+        return true;
+      }
+    }
 
     if (key === 'r' || key === 'R') {
       if (this.gameState.gameState === 'gameOver') {
@@ -605,6 +620,19 @@ export class UIRenderer {
     this.devMode = !this.devMode;
     console.log(`🛠️ Dev mode ${this.devMode ? 'ENABLED' : 'DISABLED'}`);
     this._showToast(`Dev mode ${this.devMode ? 'ON' : 'OFF'}`);
+    if (this.devMode) {
+      if (!this.settingsMenu) {
+        const p = window.p5?.instance;
+        if (p) {
+          this.settingsMenu = new SettingsMenu(this.audio, effectsConfig, p);
+        }
+      }
+      if (this.settingsMenu && !this.settingsMenu.visible) {
+        this.settingsMenu.toggle();
+      }
+    } else if (this.settingsMenu?.visible) {
+      this.settingsMenu.toggle();
+    }
   }
 
   // Reset UI renderer
