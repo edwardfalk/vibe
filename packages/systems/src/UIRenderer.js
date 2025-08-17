@@ -7,6 +7,7 @@
 import { floor, ceil, min, max, PI } from '@vibe/core';
 import { SettingsMenu } from './SettingsMenu.js';
 import { effectsConfig } from '@vibe/fx';
+import { drawGlow } from '@vibe/fx/visualEffects.js';
 // import {
 //   createTicket,
 //   updateTicket,
@@ -138,6 +139,9 @@ export class UIRenderer {
 
     p.push();
 
+    // Use retro pixel font for game over screen
+    p.textFont('Press Start 2P');
+
     // Semi-transparent overlay
     p.fill(0, 0, 0, 150);
     p.rect(0, 0, p.width, p.height);
@@ -160,16 +164,18 @@ export class UIRenderer {
       isNewHighScore = true;
     }
 
-    // Game over text with animation
-    p.fill(255, 100, 100);
+    // Game over text with animation and neon glow
+    const hue = (p.frameCount * 2) % 360;
+    p.colorMode(p.HSB, 360, 100, 100, 100);
+    const titleColor = p.color(hue, 80, 100);
+    drawGlow(p, p.width / 2, p.height / 2 - 80, 120, titleColor, 0.5);
+    p.fill(titleColor);
     p.textAlign(p.CENTER, p.CENTER);
-    p.textSize(48 + p.sin(p.frameCount * 0.1) * 4);
-    p.stroke(0);
-    p.strokeWeight(4);
+    p.textSize(36 + p.sin(p.frameCount * 0.05) * 4);
     const messageIndex =
       floor(this.gameState.score / 50) % this.gameOverMessages.length;
     p.text(this.gameOverMessages[messageIndex], p.width / 2, p.height / 2 - 80);
-    p.noStroke();
+    p.colorMode(p.RGB);
 
     // New high score celebration
     if (isNewHighScore) {
