@@ -1,6 +1,7 @@
 // EnemyOps.js – Extract enemy update and area-damage handling
 import { CONFIG } from '@vibe/core';
 import { atan2, cos, sin } from '@vibe/core';
+import { VFX_EVENTS } from '@vibe/fx/VFXDispatcher.js';
 
 export function updateEnemies(p, enemies, player, playerBullets, enemyBullets) {
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -30,7 +31,7 @@ export function updateEnemies(p, enemies, player, playerBullets, enemyBullets) {
       }
       try {
         window.dispatchEvent(
-          new CustomEvent('vfx:rusher-explosion', {
+          new CustomEvent(VFX_EVENTS.RUSHER_EXPLODED, {
             detail: { x: result.x, y: result.y },
           })
         );
@@ -71,7 +72,7 @@ export function updateEnemies(p, enemies, player, playerBullets, enemyBullets) {
           window.cameraSystem?.addShake(10, 20);
           try {
             window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', {
+              new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
                 detail: {
                   x: window.player.x,
                   y: window.player.y,
@@ -105,7 +106,7 @@ export function updateEnemies(p, enemies, player, playerBullets, enemyBullets) {
           } else if (damageResult === 'exploding') {
             try {
               window.dispatchEvent(
-                new CustomEvent('vfx:enemy-hit', {
+                new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
                   detail: {
                     x: targetEnemy.x,
                     y: targetEnemy.y,
@@ -121,7 +122,7 @@ export function updateEnemies(p, enemies, player, playerBullets, enemyBullets) {
           } else {
             try {
               window.dispatchEvent(
-                new CustomEvent('vfx:enemy-hit', {
+                new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
                   detail: {
                     x: targetEnemy.x,
                     y: targetEnemy.y,
@@ -183,7 +184,7 @@ export function handleAreaDamageEvents(damageEvents, enemies) {
         } else if (damageResult === 'exploding') {
           try {
             window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', {
+              new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
                 detail: { x: enemy.x, y: enemy.y, type: enemy.type },
               })
             );
@@ -192,7 +193,7 @@ export function handleAreaDamageEvents(damageEvents, enemies) {
         } else {
           try {
             window.dispatchEvent(
-              new CustomEvent('vfx:enemy-hit', {
+              new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
                 detail: { x: enemy.x, y: enemy.y, type: enemy.type },
               })
             );

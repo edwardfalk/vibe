@@ -15,6 +15,7 @@ import { CONFIG } from '@vibe/core';
 import { speakAmbient } from './EnemySpeechUtils.js';
 import { addMotionTrail, maybeAddMotionTrail } from './EnemyFXUtils.js';
 import { SOUND } from '@vibe/core';
+import { VFX_EVENTS } from '@vibe/fx/VFXDispatcher.js';
 
 /**
  * Stabber class - Melee assassin with armor system
@@ -221,7 +222,7 @@ class Stabber extends BaseEnemy {
             // Route to VFX bus for consistent hit effect
             try {
               window.dispatchEvent(
-                new CustomEvent('vfx:enemy-hit', {
+                new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
                   detail: { x: impactX, y: impactY, type: 'stabber' },
                 })
               );
@@ -303,6 +304,15 @@ class Stabber extends BaseEnemy {
         this.stabWarningTime = 0;
         this.isStabbing = true;
         this.stabAnimationTime = 0;
+
+        // Kick off a burst of particles so the attack feels impactful
+        try {
+          window.dispatchEvent(
+            new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
+              detail: { x: this.x, y: this.y, type: 'stabber' },
+            })
+          );
+        } catch (_) {}
 
         // Play explosive dash sound
         if (window.audio) {
@@ -467,7 +477,7 @@ class Stabber extends BaseEnemy {
       // Spark effect at tip (via VFX bus)
       try {
         window.dispatchEvent(
-          new CustomEvent('vfx:enemy-hit', {
+          new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
             detail: { x: tipX, y: tipY, type: 'stabber' },
           })
         );
@@ -510,7 +520,7 @@ class Stabber extends BaseEnemy {
         // Spark effect at tip
         try {
           window.dispatchEvent(
-            new CustomEvent('vfx:enemy-hit', {
+            new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
               detail: { x: tipX, y: tipY, type: 'stabber' },
             })
           );
@@ -525,7 +535,7 @@ class Stabber extends BaseEnemy {
     if (result.type === 'stabber-miss') {
       try {
         window.dispatchEvent(
-          new CustomEvent('vfx:enemy-hit', {
+          new CustomEvent(VFX_EVENTS.ENEMY_HIT, {
             detail: { x: this.x, y: this.y, type: 'stabber' },
           })
         );
