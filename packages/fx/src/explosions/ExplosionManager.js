@@ -32,7 +32,8 @@ class EnemyFragmentExplosion {
 
   createEnemyFragments() {
     const size = this.enemy.size;
-    const fragmentCount = 12; // Increased from 8 for more dramatic effect
+    // More fragments for grunts to make them really explode into pieces
+    const fragmentCount = this.enemy.type === 'grunt' ? 18 : 12;
 
     // Get enemy colors
     const bodyColor = this.enemy.bodyColor || [100, 150, 100];
@@ -43,8 +44,12 @@ class EnemyFragmentExplosion {
     // Create different fragment types based on enemy parts
     for (let i = 0; i < fragmentCount; i++) {
       const angle = (i / fragmentCount) * TWO_PI + random(-0.5, 0.5);
-      const speed = random(6, 15); // Increased from 4-12 for even more dramatic flying
-      const fragmentSize = random(size * 0.4, size * 1.2); // Increased from 0.3-0.8 to 0.4-1.2 for much bigger fragments
+      // Extra dramatic speed for grunts to make them really explode
+      const speed =
+        this.enemy.type === 'grunt'
+          ? random(8, 20) // More dramatic for grunts
+          : random(6, 15);
+      const fragmentSize = random(size * 0.4, size * 1.2);
 
       // Determine fragment type and color; for grunt use green palette exclusively
       let fragmentColor, fragmentType;
@@ -58,7 +63,19 @@ class EnemyFragmentExplosion {
           [80, 240, 80],
         ];
         fragmentColor = greens[Math.floor(Math.random() * greens.length)];
-        fragmentType = 'body';
+
+        // More varied fragment types for grunts to look like real body parts
+        if (i < 2) {
+          fragmentType = 'head';
+        } else if (i < 4) {
+          fragmentType = 'helmet';
+        } else if (i < 8) {
+          fragmentType = 'body';
+        } else if (i < 12) {
+          fragmentType = 'limb';
+        } else {
+          fragmentType = 'weapon';
+        }
       } else if (i < 3) {
         fragmentColor = skinColor;
         fragmentType = 'head';
@@ -93,7 +110,8 @@ class EnemyFragmentExplosion {
 
   createCentralExplosion() {
     // Create a much more dramatic explosion in the center using enemy colors
-    const particleCount = 20; // Increased from 15 for even more impact
+    // Extra particles for grunts to make them really satisfying to kill
+    const particleCount = this.enemy.type === 'grunt' ? 30 : 20;
 
     // Get primary enemy color for explosion
     let primaryColor;
@@ -272,6 +290,14 @@ class EnemyFragmentExplosion {
           p.vertex(x, y);
         }
         p.endShape(p.CLOSE);
+      } else if (fragment.type === 'limb') {
+        // Elongated fragments for limbs (arms/legs)
+        p.rect(
+          -fragment.size * 0.15,
+          -fragment.size * 0.4,
+          fragment.size * 0.3,
+          fragment.size * 0.8
+        );
       } else if (fragment.type === 'weapon') {
         // Rectangular fragments for weapons
         p.rect(

@@ -326,33 +326,33 @@ export class BackgroundRenderer {
     for (let i = 0; i < gradientSteps; i++) {
       const inter = i / (gradientSteps - 1);
 
-      // Cosmic aurora gradient colors
+      // Darker cosmic gradient colors (inspired by user preference for black background)
       let r, g, b;
-      if (inter < 0.3) {
-        // Deep space black to purple
-        const t = p.map(inter, 0, 0.3, 0, 1);
-        r = p.lerp(8, 25, t);
-        g = p.lerp(5, 15, t);
-        b = p.lerp(20, 45, t);
-      } else if (inter < 0.7) {
-        // Purple to cosmic blue
-        const t = p.map(inter, 0.3, 0.7, 0, 1);
-        r = p.lerp(25, 20, t);
-        g = p.lerp(15, 30, t);
-        b = p.lerp(45, 65, t);
+      if (inter < 0.4) {
+        // Very deep space black to dark purple
+        const t = p.map(inter, 0, 0.4, 0, 1);
+        r = p.lerp(2, 12, t); // Much darker starting point
+        g = p.lerp(0, 8, t); // Very dark
+        b = p.lerp(8, 25, t); // Subtle deep blue-purple
+      } else if (inter < 0.8) {
+        // Dark purple to subtle cosmic blue
+        const t = p.map(inter, 0.4, 0.8, 0, 1);
+        r = p.lerp(12, 8, t); // Darker throughout
+        g = p.lerp(8, 15, t); // Less bright
+        b = p.lerp(25, 35, t); // Darker blue
       } else {
-        // Cosmic blue to deep purple
-        const t = p.map(inter, 0.7, 1, 0, 1);
-        r = p.lerp(20, 30, t);
-        g = p.lerp(30, 20, t);
-        b = p.lerp(65, 50, t);
+        // Subtle cosmic blue to very dark purple
+        const t = p.map(inter, 0.8, 1, 0, 1);
+        r = p.lerp(8, 15, t); // Keep dark
+        g = p.lerp(15, 5, t); // Fade to darkness
+        b = p.lerp(35, 20, t); // Dark finish
       }
 
-      // Subtle time-based variation
-      const timeShift = p.sin(p.frameCount * 0.005 + inter) * 8;
-      r += timeShift * 0.5;
-      g += timeShift * 0.3;
-      b += timeShift * 0.8;
+      // Very subtle time-based variation for darker, more mysterious feel
+      const timeShift = p.sin(p.frameCount * 0.003 + inter) * 4;
+      r += timeShift * 0.3;
+      g += timeShift * 0.2;
+      b += timeShift * 0.5;
 
       p.fill(r, g, b);
       p.noStroke();

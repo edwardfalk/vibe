@@ -934,6 +934,18 @@ export class Audio {
       });
       if (roboticVoices.length > 0)
         return roboticVoices[Math.floor(random() * roboticVoices.length)];
+
+      // Fallback: prefer male voices for grunts (more robotic sounding)
+      const maleVoices = availableVoices.filter((v) => {
+        const name = v.name.toLowerCase();
+        return (
+          name.includes('male') ||
+          name.includes('david') ||
+          name.includes('alex')
+        );
+      });
+      if (maleVoices.length > 0)
+        return maleVoices[Math.floor(random() * maleVoices.length)];
     }
 
     if (voiceType === 'rusher') {
@@ -982,11 +994,22 @@ export class Audio {
         );
       });
       if (preciseVoices.length > 0)
-        return preciseVoices[floor(random() * preciseVoices.length)];
+        return preciseVoices[Math.floor(random() * preciseVoices.length)];
     }
 
-    // Fallback to random voice
-    return availableVoices[floor(random() * availableVoices.length)];
+    // Fallback: use consistent voice for each enemy type
+    // This ensures enemies sound consistent rather than randomly different
+    const fallbackIndex =
+      voiceType === 'grunt'
+        ? 0
+        : voiceType === 'rusher'
+          ? 1 % availableVoices.length
+          : voiceType === 'tank'
+            ? 2 % availableVoices.length
+            : voiceType === 'stabber'
+              ? 3 % availableVoices.length
+              : 0;
+    return availableVoices[fallbackIndex];
   }
 
   // DYNAMIC voice effects based on content and character
