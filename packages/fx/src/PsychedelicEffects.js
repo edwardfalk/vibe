@@ -70,21 +70,26 @@ export class PsychedelicEffects {
    * Draw psychedelic space wormhole effect
    */
   drawCosmicWormhole(p, centerX, centerY, intensity = 1.0) {
+    if (intensity <= 0.01) return; // Skip heavy drawing when nearly invisible
+
     p.push();
     p.translate(centerX, centerY);
-    
+
+    // Dynamic detail based on intensity for performance scaling
+    const ringStep = 15 + (1 - intensity) * 10;
+    const segments = Math.floor(12 + intensity * 8);
+
     // Draw wormhole tunnel
-    for (let r = 300; r > 10; r -= 15) {
+    for (let r = 300; r > 10; r -= ringStep) {
       const colorPhase = this.cosmicTime + r * 0.01;
       const colorIndex = Math.floor((colorPhase * 2) % this.tripPalette.length);
       const color = this.tripPalette[colorIndex];
-      
-      const alpha = (300 - r) / 300 * 60 * intensity;
+
+      const alpha = ((300 - r) / 300) * 60 * intensity * 0.7; // More muted
       p.fill(color[0], color[1], color[2], alpha);
       p.noStroke();
-      
+
       // Warped circle
-      const segments = 20;
       p.beginShape();
       for (let i = 0; i <= segments; i++) {
         const angle = (i / segments) * TWO_PI;
@@ -96,23 +101,27 @@ export class PsychedelicEffects {
       }
       p.endShape(p.CLOSE);
     }
-    
+
     // Draw wormhole particles
-    this.wormholeParticles.forEach(particle => {
+    this.wormholeParticles.forEach((particle, idx) => {
+      // Skip some particles when intensity is low for performance
+      const skipFactor = Math.max(1, Math.floor(1 / intensity));
+      if (idx % skipFactor !== 0) return;
+
       const x = cos(particle.angle) * particle.radius;
       const y = sin(particle.angle) * particle.radius;
       const color = this.tripPalette[particle.colorIndex];
-      const alpha = (particle.life / particle.maxLife) * 150;
-      
+      const alpha = (particle.life / particle.maxLife) * 150 * intensity;
+
       p.fill(color[0], color[1], color[2], alpha);
       p.noStroke();
       p.ellipse(x, y, particle.size, particle.size);
-      
+
       // Trailing glow
       p.fill(color[0], color[1], color[2], alpha * 0.3);
       p.ellipse(x, y, particle.size * 2, particle.size * 2);
     });
-    
+
     p.pop();
   }
   

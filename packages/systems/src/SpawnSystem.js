@@ -176,13 +176,27 @@ export class SpawnSystem {
   }
 
   forceSpawn(enemyType, x, y) {
-    if (!window.gameState) return;
+    if (!window.gameState) return null;
     const gs = window.gameState;
     if (!gs.enemies) gs.enemies = [];
+
+    // If coordinates aren't provided, fall back to regular spawn placement
+    if (typeof x !== 'number' || typeof y !== 'number') {
+      if (typeof this.findSpawnPosition === 'function') {
+        const pos = this.findSpawnPosition();
+        x = pos.x;
+        y = pos.y;
+      } else {
+        x = 0;
+        y = 0;
+      }
+    }
+
     const enemy = this.enemyFactory.createEnemy(x, y, enemyType);
     gs.enemies.push(enemy);
     console.log(
       `👾 Force-spawned ${enemyType} at (${x.toFixed(1)}, ${y.toFixed(1)})`
     );
+    return enemy;
   }
 }
