@@ -100,12 +100,12 @@ export class CollisionSystem {
         const enemy = enemyList[j];
         if (!enemy || enemy.markedForRemoval) continue;
 
-        // Fast circle-radius check (squared distance)
+        // Fast circle-radius check with extra margin for bullet travel distance
         const threshold = (bullet.size + enemy.size) * 0.5;
-        const threshSq = threshold * threshold;
         const dx = bullet.x - enemy.x;
         const dy = bullet.y - enemy.y;
-        if (dx * dx + dy * dy > threshSq) continue; // Early reject
+        const extended = threshold + (bullet.speed || 0);
+        if (dx * dx + dy * dy > extended * extended) continue; // Early reject
 
         // Use precise segment distance to avoid tunnelling at high speeds
         if (!bullet.checkCollision(enemy)) continue;

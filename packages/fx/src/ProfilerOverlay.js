@@ -23,7 +23,7 @@ class ProfilerOverlay {
 
     const pad = 6;
     const lineHeight = 14;
-    let boxHeight = lineHeight * 7; // base lines (fps + LOD)
+    let boxHeight = lineHeight * 8; // title + fps/LOD lines
     const counterKeys = Object.keys(stats.counters);
     const maxCountersToShow = 4;
     boxHeight += Math.min(counterKeys.length, maxCountersToShow) * lineHeight;
@@ -40,6 +40,8 @@ class ProfilerOverlay {
     // Text
     p.fill(0, 255, 0);
     let y = pad + 2;
+    p.text('PROFILER', pad + 4, y);
+    y += lineHeight;
     p.text(`FPS   : ${stats.fps}`, pad + 4, y);
     y += lineHeight;
     p.text(`avg ms: ${stats.avg}`, pad + 4, y);

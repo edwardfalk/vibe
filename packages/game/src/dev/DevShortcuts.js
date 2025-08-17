@@ -12,15 +12,15 @@ if (!window.profilerOverlayToggleAdded) {
   window.profilerOverlayToggleAdded = true;
 }
 
-// TODO: migrate F6/F7/F8 test mode triggers in a follow-up chunk
-
 // Ensure minimal on-demand profiler toggle helper exists
 if (!window.profilerOverlay) {
-  try {
-    const mod = await import('@vibe/fx/ProfilerOverlay.js');
-    window.profilerOverlay =
-      mod.default || mod.ProfilerOverlay || window.profilerOverlay;
-  } catch (_) {}
+  (async () => {
+    try {
+      const mod = await import('@vibe/fx/ProfilerOverlay.js');
+      window.profilerOverlay =
+        mod.default || mod.ProfilerOverlay || window.profilerOverlay;
+    } catch (_) {}
+  })();
 }
 
 // Single-action UI keys routed to UIRenderer (migrated from GameLoop.js)
@@ -33,13 +33,8 @@ if (!window.uiKeyListenersAdded) {
         'Escape',
         'm',
         'M',
-        't',
-        'T',
         'e',
         'E',
-        'F6',
-        'F7',
-        'F8',
         'F10',
         '1',
         '2',

@@ -264,10 +264,6 @@ export class GameState {
   updateGameOverTimer() {
     if (this.gameState === 'gameOver') {
       this.gameOverTimer++;
-      if (window.testMode && this.gameOverTimer >= 60) {
-        console.log('🔄 Auto-restarting in test mode');
-        this.restart();
-      }
     }
   }
 

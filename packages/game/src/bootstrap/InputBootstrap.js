@@ -8,7 +8,7 @@ window.arrowDownPressed = false;
 window.arrowLeftPressed = false;
 window.arrowRightPressed = false;
 
-// Extended WASD tracking for TestMode and AI scripts
+// Extended WASD tracking for AI scripts
 window.keys = window.keys ?? {
   W: false,
   w: false,

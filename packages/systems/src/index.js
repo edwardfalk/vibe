@@ -6,7 +6,6 @@ export { SpawnSystem } from './SpawnSystem.js';
 export { CollisionSystem } from './CollisionSystem.js';
 export { BackgroundRenderer } from './BackgroundRenderer.js';
 export { UIRenderer } from './UIRenderer.js';
-export { TestMode } from './TestMode.js';
 export { BulletSystem } from './BulletSystem.js';
 export { BombSystem } from './BombSystem.js';
 export { InputSystem } from './InputSystem.js';

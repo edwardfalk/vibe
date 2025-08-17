@@ -6,7 +6,6 @@ import {
   BackgroundRenderer,
   UIRenderer,
   CollisionSystem,
-  TestMode,
   RenderPipeline,
   LAYERS,
   StarFieldRenderer,
@@ -126,23 +125,14 @@ export function initializeSystems(p) {
     window.renderPipeline.addRenderer(window.hudRenderer);
   }
 
-  // Test mode
-  if (!window.testModeManager) {
-    window.testModeManager = new TestMode(window.player);
-  }
-
-  // UI Renderer (after TestModeManager is ready)
+  // UI Renderer
   if (!window.uiRenderer) {
     window.uiRenderer = new UIRenderer(
       window.gameState,
       window.player,
       window.audio,
-      window.cameraSystem,
-      window.testModeManager
+      window.cameraSystem
     );
-  } else if (!window.uiRenderer.testModeManager) {
-    // Patch existing instance to ensure wiring is correct
-    window.uiRenderer.testModeManager = window.testModeManager;
   }
 
   // VisualEffectsManager (singleton for screen-wide effects)

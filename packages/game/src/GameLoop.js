@@ -35,7 +35,6 @@ import {
   BackgroundRenderer,
   UIRenderer,
   CollisionSystem,
-  TestMode,
   BulletSystem,
   BombSystem,
   InputSystem,
@@ -267,16 +266,10 @@ export function setup(p) {
       window.gameState,
       window.player,
       window.audio,
-      window.cameraSystem,
-      window.testModeManager
+      window.cameraSystem
     );
   }
   console.log('🖥️ UI renderer initialized');
-
-  if (!window.testModeManager) {
-    window.testModeManager = new TestMode(window.player);
-  }
-  console.log('🧪 Test mode manager initialized');
 
   // Initialize BeatClock for rhythm-locked gameplay
   if (!window.beatClock) {
@@ -349,17 +342,6 @@ export function draw(p) {
         break;
 
       case 'gameOver':
-        // Auto-restart in test mode
-        if (window.testModeManager && window.testModeManager.enabled) {
-          window.gameState.gameOverTimer++;
-          if (window.gameState.gameOverTimer >= 60) {
-            if (typeof window.gameState.setRestartContext === 'function') {
-              window.gameState.setRestartContext(buildRestartContext());
-            }
-            window.gameState.restart();
-            console.log('🔄 Auto-restarting game in test mode');
-          }
-        }
         break;
     }
   }
@@ -390,21 +372,21 @@ import { coreUpdateGame } from './core/CoreUpdate.js';
 import { coreDrawGame } from './core/CoreDraw.js';
 
 export function updateGame(p) {
-  if (!GameLoop.__warnedUpdate) {
+  if (!updateGame.__warned) {
     console.warn(
       '⚠️  legacy GameLoop.updateGame deprecated – redirected to coreUpdateGame'
     );
-    GameLoop.__warnedUpdate = true;
+    updateGame.__warned = true;
   }
   coreUpdateGame(p);
 }
 
 export function drawGame(p) {
-  if (!GameLoop.__warnedDraw) {
+  if (!drawGame.__warned) {
     console.warn(
       '⚠️  legacy GameLoop.drawGame deprecated – redirected to coreDrawGame'
     );
-    GameLoop.__warnedDraw = true;
+    drawGame.__warned = true;
   }
   coreDrawGame(p);
 }
@@ -418,7 +400,7 @@ export function drawGame(p) {
 // --- Deterministic RNG Seed -----------------------------------------------
 // Already set by GameLoopCore; guard to avoid double-initialization
 if (typeof window.gameSeed === 'undefined') {
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = new window.URLSearchParams(window.location.search);
   const _urlSeed = Number(searchParams.get('seed'));
   window.gameSeed = Number.isFinite(_urlSeed) ? _urlSeed : 1337;
   setRandomSeed(window.gameSeed);

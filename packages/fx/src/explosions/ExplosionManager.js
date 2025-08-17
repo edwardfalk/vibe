@@ -77,6 +77,22 @@ class EnemyFragmentExplosion {
         } else {
           fragmentType = 'weapon';
         }
+      } else if (this.enemy.type === 'stabber') {
+        // Cycle through specialized stabber fragments
+        const cycle = i % 4;
+        if (cycle === 0) {
+          fragmentColor = weaponColor;
+          fragmentType = 'knife';
+        } else if (cycle === 1) {
+          fragmentColor = helmetColor;
+          fragmentType = 'metal';
+        } else if (cycle === 2) {
+          fragmentColor = [255, 215, 0]; // Bright spark
+          fragmentType = 'spark';
+        } else {
+          fragmentColor = bodyColor;
+          fragmentType = 'gear';
+        }
       } else if (i < 3) {
         fragmentColor = skinColor;
         fragmentType = 'head';
@@ -308,6 +324,37 @@ class EnemyFragmentExplosion {
           fragment.size * 0.6,
           fragment.size * 0.2
         );
+      } else if (fragment.type === 'knife') {
+        // Long, thin blade
+        const w = fragment.size * 0.45;
+        const h = fragment.size * 0.12;
+        p.quad(-w, -h, w, -h * 0.3, w, h * 0.3, -w, h);
+      } else if (fragment.type === 'metal') {
+        // Jagged metal shard
+        p.beginShape();
+        const sides = 5;
+        for (let j = 0; j < sides; j++) {
+          const a = (j / sides) * TWO_PI;
+          const r = fragment.size * 0.45 * (0.7 + random(0.6));
+          p.vertex(cos(a) * r, sin(a) * r);
+        }
+        p.endShape(p.CLOSE);
+      } else if (fragment.type === 'spark') {
+        // Small bright spark
+        p.ellipse(0, 0, Math.max(3, fragment.size * 0.2));
+      } else if (fragment.type === 'gear') {
+        // Spiky gear/star
+        p.beginShape();
+        const teeth = 8;
+        for (let j = 0; j < teeth; j++) {
+          const a = (j / teeth) * TWO_PI;
+          const r = (j % 2 === 0 ? 0.55 : 0.3) * fragment.size;
+          p.vertex(cos(a) * r, sin(a) * r);
+        }
+        p.endShape(p.CLOSE);
+      } else {
+        // Fallback for unknown types
+        p.ellipse(0, 0, fragment.size);
       }
 
       // Add subtle highlight (skip for grunt)
@@ -391,12 +438,7 @@ export class ExplosionManager {
       window.backgroundRenderer.psychedelicEffects.triggerCosmicBlast(x, y, intensity);
     }
     // Trigger VFX burst & chromatic shift via VisualEffectsManager
-    // Skip external VFX burst for grunt to avoid additive residue
-    if (
-      typeof window !== 'undefined' &&
-      window.visualEffectsManager &&
-      enemyType !== 'grunt'
-    ) {
+    if (typeof window !== 'undefined' && window.visualEffectsManager) {
       window.visualEffectsManager.addExplosionParticles(x, y, {
         enemyKey: enemyType,
         paletteKey:
