@@ -148,6 +148,13 @@ const CONFIG = {
       CHANT_MAX: 6,
     },
   },
+  SPEECH_VOLUMES: {
+    PLAYER: 0.5,
+    GRUNT: 0.45,
+    RUSHER: 0.55,
+    TANK: 0.4,
+    STABBER: 0.7,
+  },
   STABBER_SETTINGS: {
     MIN_STAB_DISTANCE: 200,
     MAX_STAB_DISTANCE: 350,

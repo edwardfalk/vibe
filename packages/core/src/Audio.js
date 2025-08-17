@@ -54,6 +54,7 @@ import { random, randomRange, floor, PI } from './mathUtils.js';
 import { SFXManager } from './audio/SFXManager.js';
 import { SOUND } from './audio/SoundIds.js';
 import { withBlendMode } from './render/blendUtils.js';
+import { CONFIG } from './config.js';
 
 export class Audio {
   /**
@@ -322,11 +323,15 @@ export class Audio {
     // Voice configuration - REDUCED VOLUMES for background speech effect
     this.voiceConfig = {
       // Player voice tweaked for mysterious tone
-      player: { rate: 0.85, pitch: 0.15, volume: 0.5 },
-      grunt: { rate: 0.6, pitch: 1.6, volume: 0.45 }, // Increased from 0.3 to 0.45 for better audibility
-      rusher: { rate: 1.4, pitch: 1.5, volume: 0.35 }, // Reduced from 0.9 to 0.35
-      tank: { rate: 0.5, pitch: 0.2, volume: 0.4 }, // Reduced from 1.0 to 0.4
-      stabber: { rate: 0.8, pitch: 2.0, volume: 0.55 }, // Raised volume for better audibility
+      player: {
+        rate: 0.85,
+        pitch: 0.15,
+        volume: CONFIG.SPEECH_VOLUMES.PLAYER,
+      },
+      grunt: { rate: 0.6, pitch: 1.6, volume: CONFIG.SPEECH_VOLUMES.GRUNT },
+      rusher: { rate: 1.4, pitch: 1.5, volume: CONFIG.SPEECH_VOLUMES.RUSHER },
+      tank: { rate: 0.5, pitch: 0.2, volume: CONFIG.SPEECH_VOLUMES.TANK },
+      stabber: { rate: 0.8, pitch: 2.0, volume: CONFIG.SPEECH_VOLUMES.STABBER },
     };
 
     // Initialise dedicated SFX Manager (first extraction step)

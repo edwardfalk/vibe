@@ -256,6 +256,9 @@ class Grunt extends BaseEnemy {
    */
   drawBody(s) {
     // Main round body (baby-like proportions)
+    this.p.push();
+    // Shift artwork slightly so the visual center matches the collision circle
+    this.p.translate(-s * 0.1, 0);
     this.p.fill(this.bodyColor);
     this.p.noStroke();
     this.p.ellipse(0, 0, s, s * 0.9); // Rounder baby-like body
@@ -328,6 +331,8 @@ class Grunt extends BaseEnemy {
       this.bodyColor.levels[2] + 30
     );
     this.p.rect(-s * 0.3, s * 0.1, s * 0.6, s * 0.08); // Simple belt
+
+    this.p.pop();
   }
 
   /**
