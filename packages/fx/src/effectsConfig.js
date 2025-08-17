@@ -21,19 +21,19 @@ export const effectsConfig = {
     glow: {
       // Matches knife core orange-white
       color: [255, 140, 0],
-      alpha: 180,
-      sizeMult: 1.2,
+      alpha: 120, // Reduced from 180 for better performance and less visual noise
+      sizeMult: 1.1, // Reduced from 1.2
     },
     burst: {
-      // Slightly stronger since Stabber is melee focused
-      count: 18,
+      // Reduced intensity for better performance during attacks
+      count: 12, // Reduced from 18
       palette: [
         [255, 140, 0],
         [255, 200, 50],
         [255, 255, 180],
       ],
-      gravity: 0.12,
-      fade: 0.04,
+      gravity: 0.14, // Increased to make particles fall faster
+      fade: 0.06, // Increased fade rate for shorter particle life
     },
   },
 
@@ -78,8 +78,8 @@ export const effectsConfig = {
   tank: {
     glow: {
       color: [100, 50, 200],
-      alpha: 130,
-      sizeMult: 1.4,
+      alpha: 100, // Reduced from 130 for better performance
+      sizeMult: 1.2, // Reduced from 1.4 to be less overwhelming
     },
     burst: {
       count: 20,
@@ -97,4 +97,4 @@ export const effectsConfig = {
 // Convenience helper ---------------------------------------------------------
 export function getEnemyConfig(type = '') {
   return effectsConfig[type] || {};
-} 
+}

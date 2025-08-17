@@ -277,16 +277,62 @@ export class Explosion {
     const MAX_DEPTH = 3;
     const nextVisited = visited ? new Set(visited) : new Set();
     if (depth >= MAX_DEPTH || nextVisited.has(type)) {
-      return random(explosionPalette.default);
+      const fallbackColor = explosionPalette?.default
+        ? explosionPalette.default[
+            Math.floor(Math.random() * explosionPalette.default.length)
+          ]
+        : [255, 255, 255];
+      return fallbackColor;
     }
     nextVisited.add(type);
 
+    // Check if explosionPalette is available (import issue fallback)
+    if (!explosionPalette) {
+      // Hardcoded fallback colors
+      const fallbackPalette = {
+        'grunt-death': [
+          [50, 205, 50],
+          [60, 220, 60],
+          [40, 180, 40],
+        ],
+        'stabber-death': [
+          [255, 215, 0],
+          [255, 200, 40],
+          [240, 180, 0],
+        ],
+        'tank-death': [
+          [138, 43, 226],
+          [123, 104, 238],
+          [147, 112, 219],
+        ],
+        'rusher-explosion': [
+          [255, 20, 147],
+          [255, 40, 130],
+          [255, 80, 160],
+        ],
+        default: [
+          [255, 255, 255],
+          [220, 220, 220],
+          [200, 200, 200],
+        ],
+      };
+      const fallback = fallbackPalette[type] || fallbackPalette.default;
+      const selectedColor =
+        fallback[Math.floor(Math.random() * fallback.length)];
+      return selectedColor;
+    }
+
     const palette = explosionPalette[type];
-    if (palette) return random(palette);
+    if (palette && Array.isArray(palette)) {
+      const randomIndex = Math.floor(Math.random() * palette.length);
+      const selectedColor = palette[randomIndex];
+      return selectedColor;
+    }
 
     if (type.includes('bullet-kill') || type.includes('plasma-kill')) {
-      if (type.includes('grunt'))
+      if (type.includes('grunt')) {
         return this.getParticleColor('grunt-death', depth + 1, nextVisited);
+      }
       if (type.includes('stabber'))
         return this.getParticleColor('stabber-death', depth + 1, nextVisited);
       if (type.includes('tank'))
@@ -299,8 +345,11 @@ export class Explosion {
         );
     }
 
-    // Fallback default palette
-    return random(explosionPalette.default);
+    // Fallback default palette with safety check
+    const defaultPalette = explosionPalette?.default || [[255, 255, 255]];
+    const randomIndex = Math.floor(Math.random() * defaultPalette.length);
+    const finalColor = defaultPalette[randomIndex];
+    return finalColor;
   }
 
   /**

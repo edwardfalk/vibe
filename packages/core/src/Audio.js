@@ -323,7 +323,7 @@ export class Audio {
     this.voiceConfig = {
       // Player voice tweaked for mysterious tone
       player: { rate: 0.85, pitch: 0.15, volume: 0.5 },
-      grunt: { rate: 0.6, pitch: 1.6, volume: 0.3 }, // Reduced from 0.8 to 0.3
+      grunt: { rate: 0.6, pitch: 1.6, volume: 0.45 }, // Increased from 0.3 to 0.45 for better audibility
       rusher: { rate: 1.4, pitch: 1.5, volume: 0.35 }, // Reduced from 0.9 to 0.35
       tank: { rate: 0.5, pitch: 0.2, volume: 0.4 }, // Reduced from 1.0 to 0.4
       stabber: { rate: 0.8, pitch: 2.0, volume: 0.4 }, // Fixed: was 0.4, comment said 0.3
@@ -624,8 +624,8 @@ export class Audio {
       const reverbGain = this.audioContext.createGain();
       const lowPassFilter = this.audioContext.createBiquadFilter();
 
-      // REDUCED: Reverb intensity from 65% to 45% for more subtle atmospheric effects
-      const reverbIntensity = 0.15 + normalizedDistance * 0.15; // Further reduced from 0.25 + 0.2 to 0.15 + 0.15 (range: 15-30% instead of 25-45%)
+      // REDUCED: Reverb intensity lowered further for less intrusive ambient effects
+      const reverbIntensity = 0.1 + normalizedDistance * 0.1; // Reduced from 0.15 + 0.15 to 0.1 + 0.1 (range: 10-20% instead of 15-30%)
       reverbGain.gain.setValueAtTime(
         reverbIntensity,
         this.audioContext.currentTime

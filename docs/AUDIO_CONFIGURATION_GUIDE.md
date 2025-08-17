@@ -126,10 +126,10 @@ const delayTime = 0.15 + normalizedDistance * 0.25;
 **More reverb on distant enemies:**
 
 ```javascript
-// Change this line:
-const reverbIntensity = 0.4 + normalizedDistance * 0.5;
-// To this for more reverb:
-const reverbIntensity = 0.6 + normalizedDistance * 0.4;
+// Current setting (reduced for less intrusion):
+const reverbIntensity = 0.1 + normalizedDistance * 0.1;
+// To increase reverb:
+const reverbIntensity = 0.15 + normalizedDistance * 0.15;
 ```
 
 **More distortion on distant enemies:**
@@ -191,13 +191,13 @@ const distortionAmount = 20 + normalizedDistance * 40;
 ### Location: Line ~25 in `packages/core/src/Audio.js`
 
 ```javascript
-this.volume = 0.7; // Master volume (0.0-1.0)
+this.volume = 1.0; // Master volume (0.0-1.0) - Updated to current setting
 ```
 
 **Adjust overall game volume:**
 
-- Quieter: `this.volume = 0.5;`
-- Louder: `this.volume = 0.9;`
+- Quieter: `this.volume = 0.7;`
+- Louder: `this.volume = 1.0;` (current setting)
 
 ## 🔄 Testing Changes
 
