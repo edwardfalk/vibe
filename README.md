@@ -14,6 +14,7 @@
 - [docs/DESIGN.md](./docs/DESIGN.md): Game design and Cosmic Beat System
 
 ## Game Definition
+
 Vibe is a fast-paced, top-down space shooter where every entity obeys the “Cosmic Beat”, a global 4/4 rhythm. Players can act at any time, yet enemies perform only on their assigned beats, turning firefights into dynamic, procedurally generated music.
 
 ---
@@ -36,6 +37,16 @@ For the project's core vision, design pillars, and development philosophy, see [
 - **Testing**: Probe-driven Playwright
 
 For a detailed explanation of the Cosmic Beat System and musical gameplay, see [`docs/DESIGN.md`](./docs/DESIGN.md).
+
+## Visuals
+
+We want pleasing, interesting slightly psychedelic visuals reflecting the brain of the madman waging this hopeless war. Is it even for real or just going on in a deranged brain.
+
+Enemy kill explosions should look like they belong to the enemy that is killed. Mostly the same color, maybe mixed with whatever color nazi alien blood is. Preferrably it should look like the alien is actually blown to pices. Make them beautiful and violent while keeping the performance hit reasonable enough to keep the game working on a standard laptop with integrated graphics.
+
+Be creative and make it interesting.
+
+Utilize the possibilities of p5 to make dark magic art of the strange universe this takes place in. Use mcp Context7 to get inspiration and crisp code references.
 
 ---
 
@@ -67,13 +78,13 @@ vibe/
 
 ## Issue Tracking
 
-Use GitHub Issues via the GitHub UI for bugs/features in this branch.
+Use the MD document ticketing system.
 
 ---
 
 ## Development & Testing
 
-- **Dev server**: Five Server runs on port 5500 (`http://localhost:5500`).
+- **Dev server**: Server runs on port 5500 (`http://localhost:5500`).
 - **Testing**: Probe-driven Playwright tests (see `docs/MCP_PLAYWRIGHT_TESTING_GUIDE.md`).
 - **Test mode**: Press 'T' in-game to enable scripted testing.
 
