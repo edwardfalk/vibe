@@ -626,11 +626,18 @@ export class UIRenderer {
       spawnEl.id = 'spawnInstructions';
       spawnEl.style.cssText =
         'position: absolute; top: 20px; right: 20px; color: #aaa; font-size: 11px; text-align: left; z-index: 101; pointer-events: none; line-height: 1.5;';
-      spawnEl.innerHTML =
-        '<div><b>Dev Shortcuts</b></div><div>1: Grunt</div><div>2: Rusher</div><div>3: Tank</div><div>4: Stabber</div><div>I: Invincibility</div>';
       document.body.appendChild(spawnEl);
     }
     if (spawnEl) {
+      spawnEl.innerHTML =
+        '<div><b>Dev Shortcuts</b></div>' +
+        '<div>1: Grunt</div>' +
+        '<div>2: Rusher</div>' +
+        '<div>3: Tank</div>' +
+        '<div>4: Stabber</div>' +
+        '<div>P: Toggle profiler</div>' +
+        '<div>F10: Audio debug</div>' +
+        '<div>I: Invincibility</div>';
       spawnEl.style.display = this.devMode ? 'block' : 'none';
     }
     if (this.devMode) {
