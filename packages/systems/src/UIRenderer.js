@@ -620,6 +620,10 @@ export class UIRenderer {
     this.devMode = !this.devMode;
     console.log(`🛠️ Dev mode ${this.devMode ? 'ENABLED' : 'DISABLED'}`);
     this._showToast(`Dev mode ${this.devMode ? 'ON' : 'OFF'}`);
+    const spawnEl = document.getElementById('spawnInstructions');
+    if (spawnEl) {
+      spawnEl.style.display = this.devMode ? 'block' : 'none';
+    }
     if (this.devMode) {
       if (!this.settingsMenu) {
         const p = window.p5?.instance;
