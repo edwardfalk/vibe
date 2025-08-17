@@ -70,8 +70,9 @@ export class BeatClock {
     const elapsed = Date.now() - this.startTime;
     const beatPosition = (elapsed % this.beatInterval) / this.beatInterval;
     const currentBeat = this.getCurrentBeat();
-    if (currentBeat === 2) return beatPosition >= 0.75;
-    if (currentBeat === 3) return beatPosition <= 0.25;
+    // Beat 3.5 (1-based) = Beat 2.5 (0-based)
+    // This means halfway through beat 2 (0-based)
+    if (currentBeat === 2) return beatPosition >= 0.5;
     return false;
   }
   canRusherCharge() {
