@@ -281,6 +281,15 @@ class Grunt extends BaseEnemy {
     this.p.ellipse(-s * 0.15, -s * 0.35, s * 0.16); // Left eye (bigger and rounder)
     this.p.ellipse(s * 0.12, -s * 0.38, s * 0.12); // Right eye (smaller, slightly offset)
 
+    // Front-facing directional indicators
+    // Small nose/snout
+    this.p.fill(this.bodyColor.levels[0] - 10, this.bodyColor.levels[1] - 10, this.bodyColor.levels[2] - 10);
+    this.p.ellipse(s * 0.25, -s * 0.25, s * 0.08, s * 0.06); // Small protruding nose to show front
+    
+    // Small mouth to clearly show front direction
+    this.p.fill(50, 50, 50); // Dark mouth
+    this.p.ellipse(s * 0.22, -s * 0.15, s * 0.06, s * 0.04); // Small mouth opening
+
     // Eye highlights (make them look innocent/bumbling)
     this.p.fill(255);
     this.p.ellipse(-s * 0.12, -s * 0.32, s * 0.06); // Left highlight (bigger)

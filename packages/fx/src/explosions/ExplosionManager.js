@@ -33,7 +33,7 @@ class EnemyFragmentExplosion {
   createEnemyFragments() {
     const size = this.enemy.size;
     // More fragments for grunts to make them really explode into pieces
-    const fragmentCount = this.enemy.type === 'grunt' ? 18 : 12;
+    const fragmentCount = this.enemy.type === 'grunt' ? 24 : 15; // More fragments for fuller explosions
 
     // Get enemy colors
     const bodyColor = this.enemy.bodyColor || [100, 150, 100];
@@ -49,7 +49,7 @@ class EnemyFragmentExplosion {
         this.enemy.type === 'grunt'
           ? random(8, 20) // More dramatic for grunts
           : random(6, 15);
-      const fragmentSize = random(size * 0.4, size * 1.2);
+      const fragmentSize = random(size * 0.6, size * 1.5); // Increased from 0.4-1.2 to 0.6-1.5 for bigger fragments
 
       // Determine fragment type and color; for grunt use green palette exclusively
       let fragmentColor, fragmentType;
@@ -111,7 +111,7 @@ class EnemyFragmentExplosion {
   createCentralExplosion() {
     // Create a much more dramatic explosion in the center using enemy colors
     // Extra particles for grunts to make them really satisfying to kill
-    const particleCount = this.enemy.type === 'grunt' ? 30 : 20;
+    const particleCount = this.enemy.type === 'grunt' ? 40 : 25; // More particles for fuller central explosions
 
     // Get primary enemy color for explosion
     let primaryColor;
@@ -136,7 +136,7 @@ class EnemyFragmentExplosion {
         y: this.y,
         vx: cos(angle) * speed,
         vy: sin(angle) * speed,
-        size: random(12, 30), // Increased from 8-20 to 12-30 for much more visibility
+        size: random(16, 40), // Increased from 12-30 to 16-40 for even fuller explosions
         color: primaryColor,
         life: random(20, 40), // Shorter lifespan to ensure fade-out before probe
         maxLife: random(20, 40),

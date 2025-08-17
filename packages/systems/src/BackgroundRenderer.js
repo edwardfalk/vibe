@@ -319,8 +319,8 @@ export class BackgroundRenderer {
   drawCosmicAuroraBackground(p = this.p) {
     p.push();
 
-    // Create a clean gradient using rectangles
-    const gradientSteps = 8;
+    // Create smooth gradient using many small steps to eliminate stripes
+    const gradientSteps = 120; // Much higher resolution for smooth gradient
     const stepHeight = p.height / gradientSteps;
 
     for (let i = 0; i < gradientSteps; i++) {
@@ -349,10 +349,10 @@ export class BackgroundRenderer {
       }
 
       // Very subtle time-based variation for darker, more mysterious feel
-      const timeShift = p.sin(p.frameCount * 0.003 + inter) * 4;
-      r += timeShift * 0.3;
-      g += timeShift * 0.2;
-      b += timeShift * 0.5;
+      const timeShift = p.sin(p.frameCount * 0.003 + inter) * 2; // Reduced intensity
+      r += timeShift * 0.2;
+      g += timeShift * 0.1;
+      b += timeShift * 0.3;
 
       p.fill(r, g, b);
       p.noStroke();
