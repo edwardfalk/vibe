@@ -23,6 +23,7 @@ export class Player {
     this.size = 32;
     this.health = 100;
     this.maxHealth = 100;
+    this.invincible = false;
     this.speed = 3;
 
     // Movement
@@ -686,6 +687,12 @@ export class Player {
   takeDamage(amount, damageSource = 'unknown') {
     if (window.gameState && window.gameState.gameState !== 'playing') {
       return false; // Ignore damage when not in active play state
+    }
+    if (this.invincible) {
+      console.log(
+        `🛡️ Player is invincible; ignored ${amount} damage from ${damageSource}`
+      );
+      return false;
     }
     console.log(
       `🩸 PLAYER DAMAGE: ${amount} HP from ${damageSource} (Health: ${this.health} → ${this.health - amount})`

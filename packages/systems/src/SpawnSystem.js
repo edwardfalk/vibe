@@ -151,7 +151,6 @@ export class SpawnSystem {
         attempts++;
         continue;
       }
-      const angle = random(0, Math.PI * 2);
       break;
     } while (attempts < 50);
 
@@ -192,7 +191,15 @@ export class SpawnSystem {
       }
     }
 
-    const enemy = this.enemyFactory.createEnemy(x, y, enemyType);
+    // Ensure enemies get the current p5 instance and audio context
+    const p = window.player ? window.player.p : undefined;
+    const enemy = this.enemyFactory.createEnemy(
+      x,
+      y,
+      enemyType,
+      p,
+      window.audio
+    );
     gs.enemies.push(enemy);
     console.log(
       `👾 Force-spawned ${enemyType} at (${x.toFixed(1)}, ${y.toFixed(1)})`
