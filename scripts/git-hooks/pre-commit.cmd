@@ -4,6 +4,8 @@ setlocal enabledelayedexpansion
 REM Windows-friendly pre-commit hook: scan staged files for ANSI escapes
 REM Requires Bun to be installed and available in PATH
 
+REM Ensure Bun is in PATH even when invoked via Git Bash
+where bun > NUL 2>&1 || set "PATH=%USERPROFILE%\AppData\Local\bun\bin;%PATH%"
 where bun > NUL 2>&1
 if errorlevel 1 (
   echo [pre-commit] Bun is not installed or not in PATH. Skipping ANSI scan.

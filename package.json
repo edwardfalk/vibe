@@ -38,6 +38,7 @@
     "format:check": "bunx prettier --check \"**/*.{js,md,json}\"",
     "scan:ansi": "bun --bun scripts/scan/ansi-scan.js",
     "scan:math": "bun --bun scripts/scan/scan-math.js",
+    "scan:secrets": "bun --bun scripts/scan/secret-scan.js",
     "scan:no-tier3-globals": "bun scripts/scan/scan-no-tier3-globals.js",
     "scan:no-tier3-globals:strict": "set NO_TIER3_GLOBALS_STRICT=1&& bun scripts/scan/scan-no-tier3-globals.js",
     "hooks:install": "scripts\\install-hooks.cmd",
