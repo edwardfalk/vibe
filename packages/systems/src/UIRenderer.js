@@ -467,6 +467,12 @@ export class UIRenderer {
         this.gameState.restart();
         return true;
       }
+      window.autoFireEnabled = !window.autoFireEnabled;
+      window.playerIsShooting = window.autoFireEnabled;
+      this._showToast(
+        `Auto-fire ${window.autoFireEnabled ? 'ON' : 'OFF'}`
+      );
+      return true;
     }
 
     if (key === 'Escape') {
@@ -637,6 +643,7 @@ export class UIRenderer {
         '<div>4: Stabber</div>' +
         '<div>P: Toggle profiler</div>' +
         '<div>F10: Audio debug</div>' +
+        '<div>R: Toggle autofire</div>' +
         '<div>I: Invincibility</div>';
       spawnEl.style.display = this.devMode ? 'block' : 'none';
     }

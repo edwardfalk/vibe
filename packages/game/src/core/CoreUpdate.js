@@ -34,6 +34,9 @@ export function coreUpdateGame(p) {
   }
 
   // Shooting input → bullet spawn
+  if (window.autoFireEnabled) {
+    window.playerIsShooting = true;
+  }
   if (window.playerIsShooting && window.player) {
     const b = window.player.shoot();
     if (b) {

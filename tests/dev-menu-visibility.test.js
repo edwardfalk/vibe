@@ -12,4 +12,5 @@ test('dev menu shows only in dev mode', async ({ page }) => {
   const panel = page.locator('#spawnInstructions');
   await expect(panel).toBeVisible();
   await expect(panel).toContainText('I: Invincibility');
+  await expect(panel).toContainText('R: Toggle autofire');
 });
