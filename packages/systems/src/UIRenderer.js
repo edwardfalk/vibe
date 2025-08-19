@@ -328,7 +328,7 @@ export class UIRenderer {
     const barWidth = 200;
     const barHeight = 8;
     const barX = p.width - barWidth - 20;
-    const barY = 20;
+    const barY = 100;
     // Background bar
     p.fill(50, 50, 50, 150);
     p.noStroke();
@@ -467,6 +467,12 @@ export class UIRenderer {
         this.gameState.restart();
         return true;
       }
+      window.autoFireEnabled = !window.autoFireEnabled;
+      window.playerIsShooting = window.autoFireEnabled;
+      this._showToast(
+        `Auto-fire ${window.autoFireEnabled ? 'ON' : 'OFF'}`
+      );
+      return true;
     }
 
     if (key === 'Escape') {
@@ -620,6 +626,27 @@ export class UIRenderer {
     this.devMode = !this.devMode;
     console.log(`🛠️ Dev mode ${this.devMode ? 'ENABLED' : 'DISABLED'}`);
     this._showToast(`Dev mode ${this.devMode ? 'ON' : 'OFF'}`);
+    let spawnEl = document.getElementById('spawnInstructions');
+    if (!spawnEl && this.devMode) {
+      spawnEl = document.createElement('div');
+      spawnEl.id = 'spawnInstructions';
+      spawnEl.style.cssText =
+        'position: absolute; top: 40px; right: 20px; color: #aaa; font-size: 11px; text-align: left; z-index: 101; pointer-events: none; line-height: 1.5;';
+      document.body.appendChild(spawnEl);
+    }
+    if (spawnEl) {
+      spawnEl.innerHTML =
+        '<div><b>Dev Shortcuts</b></div>' +
+        '<div>1: Grunt</div>' +
+        '<div>2: Rusher</div>' +
+        '<div>3: Tank</div>' +
+        '<div>4: Stabber</div>' +
+        '<div>P: Toggle profiler</div>' +
+        '<div>F10: Audio debug</div>' +
+        '<div>R: Toggle autofire</div>' +
+        '<div>I: Invincibility</div>';
+      spawnEl.style.display = this.devMode ? 'block' : 'none';
+    }
     if (this.devMode) {
       if (!this.settingsMenu) {
         const p = window.p5?.instance;

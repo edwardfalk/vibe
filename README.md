@@ -139,6 +139,14 @@ bun run test:debug
 - **Bug Reports**: `tests/bug-reports/`
 - **Playwright Reports**: `playwright-report/`
 
+### BeatClock Unit Test
+
+Run a lightweight timing check with Bun:
+
+```
+bun test tests/beatclock-precision.test.js
+```
+
 ### Config
 
 - **Game URL**: `http://localhost:5500`

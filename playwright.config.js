@@ -13,12 +13,12 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://localhost:5500',
-    headless: false,
+    headless: true,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     launchOptions: {
       env: { ELECTRON_RUN_AS_NODE: undefined },
-      headless: false,
+      headless: true,
       slowMo: 100, // Add a small delay to make actions visible
     },
   },

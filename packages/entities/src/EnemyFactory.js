@@ -55,7 +55,7 @@ class EnemyFactory {
       1: ['grunt'],
       2: ['grunt', 'stabber'],
       3: ['grunt', 'stabber', 'rusher'],
-      5: ['grunt', 'stabber', 'rusher', 'tank'],
+      4: ['grunt', 'stabber', 'rusher', 'tank'],
     };
   }
 

@@ -1,8 +1,7 @@
 import { LAYERS } from './RenderPipeline.js';
 
 /**
- * HudRenderer – draws minimal HUD text directly on the p5 canvas.
- * Replaces missing level indicator and provides redundant score/health for probe use.
+ * HudRenderer – draws the level progress bar on the p5 canvas.
  */
 export class HudRenderer {
   /**
@@ -20,24 +19,12 @@ export class HudRenderer {
     p.push();
     p.resetMatrix(); // ensure screen-space
 
-    p.textAlign(p.LEFT, p.TOP);
-    p.fill(255);
-    p.noStroke();
-    p.textSize(14);
-    const scoreTxt = `Score: ${this.gameState.score}`;
-    const healthTxt = `Health: ${this.player.health}`;
-    const levelTxt = `Level: ${this.gameState.level}`;
-
-    p.text(scoreTxt, 10, 10);
-    p.text(healthTxt, 10, 28);
-    p.text(levelTxt, 10, 46);
-
-    // Level progress bar
+    // Level progress bar on right side
     const progress = this.gameState.getProgressToNextLevel?.() ?? 0;
-    const barWidth = 120;
+    const barWidth = 200;
     const barHeight = 8;
-    const barX = 10;
-    const barY = 64;
+    const barX = p.width - barWidth - 20;
+    const barY = 20;
 
     // Background bar
     p.fill(50, 50, 50, 150);
@@ -52,6 +39,13 @@ export class HudRenderer {
     p.strokeWeight(1);
     p.noFill();
     p.rect(barX, barY, barWidth, barHeight);
+
+    // Label
+    p.fill(255, 255, 255);
+    p.textAlign(p.RIGHT, p.TOP);
+    p.textSize(12);
+    p.noStroke();
+    p.text(`Level ${this.gameState.level} Progress`, barX + barWidth, barY - 15);
 
     p.pop();
   }
