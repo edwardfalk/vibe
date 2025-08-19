@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vibe - Geometric Space Shooter</title>
+    <link rel="icon" href="./public/favicon.ico" />
+    <link rel="stylesheet" href="./public/css/hud.css" />
     <style>
       body {
         margin: 0;
@@ -55,7 +57,7 @@
       <div id="score">Score: 0</div>
       <div id="health">Health: 100</div>
       <div id="level">Level: 1</div>
-      <div style="margin-top: 10px; font-size: 12px">
+      <div id="instructions">
         <div id="soundStatus">🔇 Click or press M to enable sound</div>
         <div>💥 WASD to move, Mouse to aim & shoot</div>
         <div>💨 Press E to dash</div>
@@ -65,20 +67,7 @@
       </div>
     </div>
 
-    <div
-      id="spawnInstructions"
-      style="
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        color: #aaa;
-        font-size: 11px;
-        text-align: left;
-        z-index: 101;
-        pointer-events: none;
-        line-height: 1.5;
-      "
-    >
+    <div id="spawnInstructions">
       <div><b>Enemy Spawn Keys</b></div>
       <div>1: Grunt</div>
       <div>2: Rusher</div>

@@ -120,6 +120,12 @@ MIT
 
 ## Testing
 
+### Prerequisites
+
+- Bun (or Node.js) installed to run unit tests
+- A mockable WebAudio context for audio-based tests
+- Install Playwright browsers before running the tests: `bunx playwright install`
+
 ### Playwright Gameplay Probes
 
 ```
@@ -133,11 +139,27 @@ bun run test:headed
 bun run test:debug
 ```
 
+### Beat-synced Music Test
+
+Run the deterministic BeatClock audio test:
+
+```
+bun test tests/music-beat.test.js
+```
+
 ### Test Artifacts
 
 - **Screenshots**: `test-results/`
 - **Bug Reports**: `tests/bug-reports/`
 - **Playwright Reports**: `playwright-report/`
+
+### BeatClock Unit Test
+
+Run a lightweight timing check with Bun:
+
+```
+bun test tests/beatclock-precision.test.js
+```
 
 ### Config
 

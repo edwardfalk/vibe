@@ -66,11 +66,19 @@ export class SpawnSystem {
     if (level <= 2) {
       weightedTypes.push('grunt', 'grunt', 'grunt');
       if (level >= 2) weightedTypes.push('stabber');
-    } else if (level <= 4) {
+    } else if (level <= 3) {
       weightedTypes.push('grunt', 'grunt', 'stabber', 'stabber');
       if (level >= 3) weightedTypes.push('rusher');
     } else {
-      weightedTypes.push('grunt', 'stabber', 'rusher', 'tank');
+      weightedTypes.push(
+        'grunt',
+        'grunt',
+        'stabber',
+        'stabber',
+        'rusher',
+        'rusher',
+        'tank'
+      );
     }
     return weightedTypes[floor(random() * weightedTypes.length)];
   }

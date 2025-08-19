@@ -186,7 +186,11 @@ export class SettingsMenu {
         const percentage = ((value - item.min) / (item.max - item.min)) * 100;
         
         p.textAlign(p.RIGHT, p.TOP);
-        p.fill(isSelected ? 100, 255, 100 : 150);
+        if (isSelected) {
+        p.fill(100, 255, 100);
+        } else {
+        p.fill(150);
+        }
         p.text(`${value.toFixed(1)} (${percentage.toFixed(0)}%)`, panelX + panelW - 20, y);
         
         if (isSelected) {

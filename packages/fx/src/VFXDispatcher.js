@@ -9,6 +9,20 @@ const VFX_EVENTS = {
   ENEMY_HIT: 'vfx:enemy-hit', // optional future use
 };
 
+const ENEMY_ALERT_COLORS = {
+  grunt: [50, 205, 50],
+  stabber: [255, 215, 0],
+  rusher: [255, 40, 60],
+};
+
+function getPriorityEnemyType(enemies) {
+  if (!Array.isArray(enemies)) return null;
+  if (enemies.some((e) => e.type === 'rusher')) return 'rusher';
+  if (enemies.some((e) => e.type === 'stabber')) return 'stabber';
+  if (enemies.some((e) => e.type === 'grunt')) return 'grunt';
+  return null;
+}
+
 function installVFXDispatcher() {
   if (typeof window === 'undefined') return;
   if (window.__vfxDispatcherInstalled) return;
@@ -77,6 +91,25 @@ function installVFXDispatcher() {
       }
     } catch (_) {}
   });
+
+  // Enemy spawn/composition change → subtle chromatic aberration warning
+  let lastComposition = '';
+  const monitorEnemyComposition = () => {
+    try {
+      const enemies = window.gameState?.enemies || [];
+      const current = enemies.map((e) => e.type).sort().join(',');
+      if (current !== lastComposition) {
+        lastComposition = current;
+        const priority = getPriorityEnemyType(enemies);
+        const color = priority && ENEMY_ALERT_COLORS[priority];
+        if (color && window.visualEffectsManager?.triggerChromaticAberration) {
+          window.visualEffectsManager.triggerChromaticAberration(0.15, 45, color);
+        }
+      }
+    } catch (_) {}
+    window.requestAnimationFrame(monitorEnemyComposition);
+  };
+  window.requestAnimationFrame(monitorEnemyComposition);
 }
 
 export { VFX_EVENTS, installVFXDispatcher };

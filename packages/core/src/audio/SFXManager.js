@@ -49,7 +49,7 @@ export class SFXManager {
     const audio = this.audio;
     const ctx = audio.audioContext;
 
-    const oscillator = ctx.createOscillator();
+    let source;
     const gainNode = ctx.createGain();
     const panNode = ctx.createStereoPanner();
 
@@ -58,33 +58,48 @@ export class SFXManager {
     const volumeVariation = 1 + (random() - 0.5) * 0.15;
     const durationVariation = 1 + (random() - 0.5) * 0.2;
 
-    oscillator.type =
-      config.waveform === 'noise' ? 'sawtooth' : config.waveform;
-    const startFreq = config.frequency * frequencyVariation;
-    oscillator.frequency.setValueAtTime(startFreq, ctx.currentTime);
-
-    // Optional frequency sweep
-    if (config.sweep) {
-      if (config.sweep.curve === 'exponential' && config.sweep.to <= 0) {
-        console.warn(
-          `Invalid exponential sweep target: ${config.sweep.to}. Using linear ramp instead.`
-        );
-        config.sweep.curve = 'linear';
+    if (config.waveform === 'noise') {
+      const bufferSize = Math.floor(
+        ctx.sampleRate * config.duration * durationVariation
+      );
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = random() * 2 - 1;
       }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      source = noise;
+    } else {
+      const oscillator = ctx.createOscillator();
+      oscillator.type = config.waveform;
+      const startFreq = config.frequency * frequencyVariation;
+      oscillator.frequency.setValueAtTime(startFreq, ctx.currentTime);
 
-      const endFreq = config.sweep.to * frequencyVariation;
-      const sweepDuration = config.duration * durationVariation;
-      if (config.sweep.curve === 'exponential') {
-        oscillator.frequency.exponentialRampToValueAtTime(
-          Math.max(0.1, endFreq),
-          ctx.currentTime + sweepDuration
-        );
-      } else {
-        oscillator.frequency.linearRampToValueAtTime(
-          endFreq,
-          ctx.currentTime + sweepDuration
-        );
+      // Optional frequency sweep
+      if (config.sweep) {
+        if (config.sweep.curve === 'exponential' && config.sweep.to <= 0) {
+          console.warn(
+            `Invalid exponential sweep target: ${config.sweep.to}. Using linear ramp instead.`
+          );
+          config.sweep.curve = 'linear';
+        }
+
+        const endFreq = config.sweep.to * frequencyVariation;
+        const sweepDuration = config.duration * durationVariation;
+        if (config.sweep.curve === 'exponential') {
+          oscillator.frequency.exponentialRampToValueAtTime(
+            Math.max(0.1, endFreq),
+            ctx.currentTime + sweepDuration
+          );
+        } else {
+          oscillator.frequency.linearRampToValueAtTime(
+            endFreq,
+            ctx.currentTime + sweepDuration
+          );
+        }
       }
+      source = oscillator;
     }
 
     // Player position (defaults to centre)
@@ -158,9 +173,9 @@ export class SFXManager {
       });
     }
 
-    // Node graph – oscillator ▶ tremoloGain ▶ gain ▶ pan ▶ (reverb?) ▶ master
+    // Node graph – source ▶ tremoloGain ▶ gain ▶ pan ▶ (reverb?) ▶ master
     const tremoloGain = ctx.createGain();
-    oscillator.connect(tremoloGain);
+    source.connect(tremoloGain);
     tremoloGain.connect(gainNode);
     gainNode.connect(panNode);
 
@@ -217,8 +232,8 @@ export class SFXManager {
       panNode.connect(audio.masterGain);
     }
 
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + config.duration * durationVariation);
+    source.start(ctx.currentTime);
+    source.stop(ctx.currentTime + config.duration * durationVariation);
   }
 
   // ----- helper maths ----------------------------------------------------

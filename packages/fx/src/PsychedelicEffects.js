@@ -128,8 +128,10 @@ export class PsychedelicEffects {
   /**
    * Draw subtle background waves that blend into space
    */
-  drawBackgroundWaves(p) {
+  drawBackgroundWaves(p, camera = { x: 0, y: 0 }, parallaxFactor = 0.1) {
     p.push();
+    // Apply a small parallax translation so waves move with the camera
+    p.translate(-camera.x * parallaxFactor, -camera.y * parallaxFactor);
     p.noFill();
     p.strokeWeight(1); // Much thinner for subtlety
     
@@ -145,8 +147,9 @@ export class PsychedelicEffects {
         const colorPhase = x * 0.005 + this.colorShift * 0.5 + wave * 0.5;
         const colorIndex = Math.floor((colorPhase * 2) % this.cosmicPalette.length);
         const color = this.cosmicPalette[colorIndex]; // Use cosmic palette for background
-        
-        p.stroke(color[0], color[1], color[2], 15 + wave * 5); // Much more transparent
+
+        // Increase alpha so colors remain visible against space background
+        p.stroke(color[0], color[1], color[2], 40 + wave * 10);
         p.vertex(x, y);
       }
       p.endShape();

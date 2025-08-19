@@ -120,6 +120,13 @@ const CONFIG = {
     ENABLE_AUDIO_EFFECTS: true,
     ENABLE_AUDIO_CACHE: true,
   },
+  AUDIO: {
+    COMPRESSOR: {
+      THRESHOLD: -24,
+      KNEE: 30,
+      RATIO: 12,
+    },
+  },
   GAME_SETTINGS: {
     get BPM() {
       const raw = getEnv('GAME_BPM', '');

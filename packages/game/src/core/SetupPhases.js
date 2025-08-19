@@ -79,7 +79,10 @@ export function initializeSystems(p) {
 
   // Beat clock + music
   if (!window.beatClock) {
-    window.beatClock = new BeatClock(CONFIG.GAME_SETTINGS.BPM);
+    window.beatClock = new BeatClock(
+      window.audio ? window.audio.audioContext : null,
+      CONFIG.GAME_SETTINGS.BPM
+    );
   }
   if (!window.musicManager) {
     window.musicManager = new MusicManager(window.audio, window.beatClock);

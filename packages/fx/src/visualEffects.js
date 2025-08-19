@@ -21,6 +21,9 @@ class VisualEffectsManager {
     this.bloomFrames = 0;
     this.chromaticAberration = 0;
     this.chromaticAberrationFrames = 0;
+    this.defaultChromaticColor = [255, 40, 60]; // Reddish default
+    this.chromaticColor = this.defaultChromaticColor;
+    this.chromaticWarningType = null;
     this.timeOffset = 0;
     this.initialized = false;
     // Store a reference to the p5 instance once available
@@ -440,6 +443,18 @@ class VisualEffectsManager {
   updateParticles() {
     if (!this.initialized) return;
 
+    // Reset chromatic warning if its enemy type vanished
+    if (this.chromaticWarningType) {
+      const enemies = window.gameState?.enemies || [];
+      const stillExists = enemies.some(
+        (e) => e.type === this.chromaticWarningType
+      );
+      if (!stillExists) {
+        this.chromaticWarningType = null;
+        this.triggerChromaticAberration(0, 0, this.defaultChromaticColor);
+      }
+    }
+
     // Update frame-based transient screen effects
     if (this.chromaticAberrationFrames > 0) {
       this.chromaticAberrationFrames -= 1;
@@ -522,12 +537,13 @@ class VisualEffectsManager {
   }
 
   drawChromaticAberration(p) {
-    // Subtle reddish global shift; slower and gentle
+    // Subtle global shift; color determined by warning state
     p.push();
     p.blendMode(p.MULTIPLY);
     const alpha = Math.max(0, Math.min(100, this.chromaticAberration * 12));
     p.noStroke();
-    p.fill(255, 40, 60, alpha);
+    const [r, g, b] = this.chromaticColor;
+    p.fill(r, g, b, alpha);
     p.rect(0, 0, p.width, p.height);
     p.pop();
   }
@@ -546,10 +562,26 @@ class VisualEffectsManager {
   }
 
   // Trigger effects
-  triggerChromaticAberration(intensity = 0.5, duration = 30) {
+  triggerChromaticAberration(
+    intensity = 0.5,
+    duration = 30,
+    color = null,
+    warningType = null
+  ) {
     // duration is in frames; set immediately and count down per frame
+    const resolvedColor =
+      color ||
+      (this.chromaticWarningType
+        ? this.chromaticColor
+        : this.defaultChromaticColor);
+    this.chromaticColor = resolvedColor;
     this.chromaticAberration = intensity;
     this.chromaticAberrationFrames = Math.max(0, Math.floor(duration));
+    if (warningType) {
+      this.chromaticWarningType = warningType;
+    } else if (intensity === 0) {
+      this.chromaticWarningType = null;
+    }
   }
 
   triggerBloom(intensity = 0.3, duration = 20) {

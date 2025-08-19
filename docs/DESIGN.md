@@ -39,7 +39,7 @@ The `BeatClock` class (see `packages/core/src/BeatClock.js`) provides the follow
 
 ```js
 import { BeatClock } from './BeatClock.js';
-const beatClock = new BeatClock(120); // 120 BPM
+const beatClock = new BeatClock(audioContext, 120); // 120 BPM
 if (beatClock.isOnBeat([2, 4])) {
   // Grunt attacks (snare)
 }

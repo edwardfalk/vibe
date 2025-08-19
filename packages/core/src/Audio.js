@@ -67,6 +67,7 @@ export class Audio {
     // Core audio setup
     this.audioContext = null;
     this.masterGain = null;
+    this.compressor = null;
     this.initialized = false;
     this.enabled = true;
     // Master volume (increased from 0.7 → 1.0 for better baseline loudness)
@@ -92,6 +93,10 @@ export class Audio {
     this.speechSynthesis = window.speechSynthesis;
     this.speechEnabled = true;
     this.englishVoices = [];
+    this.fallbackVoice = null;
+    this.voicesReady = false;
+    this.voiceLoadPromise = null;
+    this.speechQueue = [];
     this.lastSpeechTime = 0;
     this.speechCooldown = 2500; // 2.5 seconds - reasonable cooldown to prevent excessive chatter
 
@@ -100,19 +105,39 @@ export class Audio {
 
     // Sound configuration - MUSICAL COMBAT SYSTEM
     this.sounds = {
+      // --- Rhythm section used by MusicManager ---------------------------
+      kick: {
+        frequency: 100,
+        waveform: 'sine',
+        volume: 0.25,
+        duration: 0.2,
+        sweep: { to: 40, curve: 'exponential' },
+      }, // Short-decay sine for a soft kick
+      snare: {
+        waveform: 'noise',
+        volume: 0.18,
+        duration: 0.1,
+      }, // Noise burst snare
+      hihat: {
+        frequency: 8000,
+        waveform: 'square',
+        volume: 0.1,
+        duration: 0.02,
+      }, // Crisp hi-hat
+
       // MUSICAL WEAPONS: Each enemy type becomes an instrument
       playerShoot: {
         frequency: 480,
         waveform: 'sawtooth',
         volume: 0.2,
         duration: 0.01,
-      }, // Hi-hat: crisp, high, short
+      },
       alienShoot: {
         frequency: 800,
         waveform: 'square',
         volume: 0.25,
         duration: 0.15,
-      }, // Snare: punchy, mid-range
+      },
       tankEnergy: {
         frequency: 80,
         waveform: 'sine',
@@ -125,6 +150,18 @@ export class Audio {
         volume: 0.3,
         duration: 0.1,
       }, // Sharp accent: cutting through
+      openHihat: {
+        frequency: 600,
+        waveform: 'sawtooth',
+        volume: 0.3,
+        duration: 0.3,
+      }, // Open hi-hat accent when stabbers swarm
+      tom: {
+        frequency: 150,
+        waveform: 'sine',
+        volume: 0.5,
+        duration: 0.2,
+      }, // Tom hit for rusher pressure
 
       // NON-MUSICAL SOUNDS: Effects and ambience - ENHANCED EXPLOSIONS
       explosion: {
@@ -152,7 +189,6 @@ export class Audio {
         duration: 1.0,
       },
       enemyFrying: {
-        frequency: 1400,
         waveform: 'noise',
         duration: 0.3,
         volume: 0.3,
@@ -381,14 +417,31 @@ export class Audio {
       this.audioContext = new (window.AudioContext ||
         window.webkitAudioContext)();
       this.masterGain = this.audioContext.createGain();
-      this.masterGain.connect(this.audioContext.destination);
+      this.compressor = this.audioContext.createDynamicsCompressor();
+
+      const { THRESHOLD, KNEE, RATIO } = CONFIG.AUDIO.COMPRESSOR;
+      this.compressor.threshold.setValueAtTime(
+        THRESHOLD,
+        this.audioContext.currentTime
+      );
+      this.compressor.knee.setValueAtTime(
+        KNEE,
+        this.audioContext.currentTime
+      );
+      this.compressor.ratio.setValueAtTime(
+        RATIO,
+        this.audioContext.currentTime
+      );
+
+      this.masterGain.connect(this.compressor);
+      this.compressor.connect(this.audioContext.destination);
       this.masterGain.gain.setValueAtTime(
         this.volume,
         this.audioContext.currentTime
       );
 
       this.createEffects();
-      this.loadVoices();
+      this.voiceLoadPromise = this.loadVoices();
 
       this.initialized = true;
       console.log('✅ Audio system initialized');
@@ -473,26 +526,46 @@ export class Audio {
   }
 
   loadVoices() {
-    const loadVoices = () => {
-      const allVoices = this.speechSynthesis.getVoices();
-      this.englishVoices = allVoices.filter(
-        (voice) =>
-          voice.lang.startsWith('en-') &&
-          (voice.lang.includes('US') || voice.lang.includes('GB'))
-      );
-      console.log(`🎤 Loaded ${this.englishVoices.length} English voices`);
-    };
+    if (this.voiceLoadPromise) return this.voiceLoadPromise;
+    this.voiceLoadPromise = new Promise((resolve) => {
+      const loadVoices = () => {
+        const allVoices = this.speechSynthesis.getVoices();
+        this.englishVoices = allVoices.filter(
+          (voice) =>
+            voice.lang.startsWith('en-') &&
+            (voice.lang.includes('US') || voice.lang.includes('GB'))
+        );
+        if (this.englishVoices.length === 0 && allVoices.length > 0) {
+          const sorted = [...allVoices].sort((a, b) =>
+            a.name.localeCompare(b.name)
+          );
+          this.fallbackVoice = sorted[0];
+        }
+        this.voicesReady = true;
+        console.log(`🎤 Loaded ${this.englishVoices.length} English voices`);
+        resolve();
+        this.flushSpeechQueue();
+      };
 
-    if (this.speechSynthesis.getVoices().length === 0) {
-      this.speechSynthesis.onvoiceschanged = loadVoices;
-      // Fallback: some browsers never fire onvoiceschanged reliably – poll once after a short delay
-      setTimeout(() => {
-        try {
-          loadVoices();
-        } catch (_) {}
-      }, 300);
-    } else {
-      loadVoices();
+      if (this.speechSynthesis.getVoices().length === 0) {
+        this.speechSynthesis.onvoiceschanged = loadVoices;
+        // Fallback: some browsers never fire onvoiceschanged reliably – poll once after a short delay
+        setTimeout(() => {
+          try {
+            loadVoices();
+          } catch (_) {}
+        }, 300);
+      } else {
+        loadVoices();
+      }
+    });
+    return this.voiceLoadPromise;
+  }
+
+  flushSpeechQueue() {
+    while (this.speechQueue.length > 0) {
+      const [entity, text, voiceType, force] = this.speechQueue.shift();
+      this.speak(entity, text, voiceType, force);
     }
   }
 
@@ -736,6 +809,12 @@ export class Audio {
       return false;
     }
 
+    if (!this.voicesReady) {
+      this.speechQueue.push([entity, text, voiceType, force]);
+      this.loadVoices();
+      return false;
+    }
+
     // Check cooldown unless force is true
     const now = Date.now();
     if (!force && now - this.lastSpeechTime < this.speechCooldown) {
@@ -837,7 +916,7 @@ export class Audio {
 
   // SIMPLIFIED voice selection
   selectVoice(voiceType) {
-    if (this.englishVoices.length === 0) return null;
+    if (this.englishVoices.length === 0) return this.fallbackVoice;
 
     // Prefer US voices, fallback to any English
     const usVoices = this.englishVoices.filter((v) => v.lang.includes('US'));
@@ -885,7 +964,7 @@ export class Audio {
 
   // ENHANCED voice selection with effects
   selectVoiceWithEffects(voiceType, text) {
-    if (this.englishVoices.length === 0) return null;
+    if (this.englishVoices.length === 0) return this.fallbackVoice;
 
     // Prefer US voices, fallback to any English
     const usVoices = this.englishVoices.filter((v) => v.lang.includes('US'));

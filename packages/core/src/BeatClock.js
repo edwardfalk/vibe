@@ -1,29 +1,41 @@
 /* BeatClock - Musical Timing System (moved to @vibe/core) */
 
 export class BeatClock {
-  constructor(bpm = 120) {
+  constructor(audioContext, bpm = 120) {
+    this.audioContext = audioContext;
     this.bpm = bpm;
     this.beatInterval = (60 / bpm) * 1000; // ms per beat
     // Time-scale factor (1 = normal, <1 slow-motion, >1 fast). Used by DeathTransitionSystem.
     this.timeScale = 1;
-    this.startTime = Date.now();
-    this.tolerance = 100; // ms tolerance for on-beat
+    this.startTime = this._now();
+    this.tolerance = 20; // ms tolerance for on-beat
     this.beatsPerMeasure = 4;
     console.log(
       `🎵 BeatClock initialized: ${bpm} BPM (${this.beatInterval}ms per beat)`
     );
   }
+
+  _now() {
+    return this.audioContext && typeof this.audioContext.currentTime === 'number'
+      ? this.audioContext.currentTime * 1000
+      : Date.now();
+  }
+
+  _getElapsed() {
+    return (this._now() - this.startTime) * this.timeScale;
+  }
+
   getCurrentBeat() {
-    const elapsed = (Date.now() - this.startTime) * this.timeScale;
+    const elapsed = this._getElapsed();
     const totalBeats = Math.floor(elapsed / this.beatInterval);
     return totalBeats % this.beatsPerMeasure;
   }
   getTotalBeats() {
-    const elapsed = (Date.now() - this.startTime) * this.timeScale;
+    const elapsed = this._getElapsed();
     return Math.floor(elapsed / this.beatInterval);
   }
   getTimeToNextBeat() {
-    const elapsed = (Date.now() - this.startTime) * this.timeScale;
+    const elapsed = this._getElapsed();
     const timeSinceLastBeat = elapsed % this.beatInterval;
     return this.beatInterval - timeSinceLastBeat;
   }
@@ -41,7 +53,7 @@ export class BeatClock {
     return this.isOnBeat();
   }
   canPlayerShootQuarterBeat() {
-    const elapsed = (Date.now() - this.startTime) * this.timeScale;
+    const elapsed = this._getElapsed();
     const quarterBeatInterval = this.beatInterval / 4;
     const timeSinceLastQuarterBeat = elapsed % quarterBeatInterval;
     const exactTolerance = 16;
@@ -51,7 +63,7 @@ export class BeatClock {
     );
   }
   getTimeToNextQuarterBeat() {
-    const elapsed = (Date.now() - this.startTime) * this.timeScale;
+    const elapsed = this._getElapsed();
     const quarterBeatInterval = this.beatInterval / 4;
     const timeSinceLastQuarterBeat = elapsed % quarterBeatInterval;
     return quarterBeatInterval - timeSinceLastQuarterBeat;
@@ -67,7 +79,7 @@ export class BeatClock {
     return currentBeat === 0;
   }
   canStabberAttack() {
-    const elapsed = Date.now() - this.startTime;
+    const elapsed = this._getElapsed();
     const beatPosition = (elapsed % this.beatInterval) / this.beatInterval;
     const currentBeat = this.getCurrentBeat();
     // Beat 3.5 (1-based) = Beat 2.5 (0-based)
@@ -98,7 +110,7 @@ export class BeatClock {
     console.log(`🎵 Tempo changed to ${newBPM} BPM`);
   }
   reset() {
-    this.startTime = Date.now();
+    this.startTime = this._now();
     console.log('🎵 BeatClock reset');
   }
 

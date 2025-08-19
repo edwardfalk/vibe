@@ -273,7 +273,10 @@ export function setup(p) {
 
   // Initialize BeatClock for rhythm-locked gameplay
   if (!window.beatClock) {
-    window.beatClock = new BeatClock(120); // 120 BPM default, adjust as needed
+    window.beatClock = new BeatClock(
+      window.audio ? window.audio.audioContext : null,
+      120
+    ); // 120 BPM default, adjust as needed
     console.log('🎵 BeatClock initialized and assigned to window.beatClock');
   }
 

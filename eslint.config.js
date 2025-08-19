@@ -47,6 +47,11 @@ export default [
         global: 'readonly',
         beforeAll: 'readonly',
         MouseEvent: 'readonly',
+        URLSearchParams: 'readonly',
+        AbortController: 'readonly',
+        getAudioContext: 'readonly',
+        AudioContext: 'readonly',
+        Bun: 'readonly',
       },
     },
     rules: {

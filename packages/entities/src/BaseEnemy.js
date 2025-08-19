@@ -335,6 +335,10 @@ export class BaseEnemy {
     this.drawArms(s, p);
     this.drawWeapon(s, p);
 
+    // Reset tint before drawing contour lines
+    p.noTint();
+    this.drawBodyOutline(s, p);
+
     p.pop();
 
     // Draw UI elements
@@ -369,6 +373,13 @@ export class BaseEnemy {
     p.fill(this.bodyColor);
     p.noStroke();
     p.ellipse(0, 0, s, s * 0.8);
+  }
+
+  /**
+   * Draw body outline - can be overridden by subclasses
+   */
+  drawBodyOutline(s, p) {
+    // Base implementation does nothing; subclasses can override for contour lines
   }
 
   /**

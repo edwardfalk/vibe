@@ -360,6 +360,20 @@ class Grunt extends BaseEnemy {
     this.p.pop();
   }
 
+  drawBodyOutline(s, p) {
+    p.push();
+    p.translate(-s * 0.05, 0);
+    p.noFill();
+    p.stroke(0);
+    p.strokeWeight(2);
+    p.ellipse(0, 0, s, s * 0.9);
+    p.ellipse(0, -s * 0.4, s * 0.8, s * 0.8);
+    if (this.variant === 'doubleHead') {
+      p.ellipse(s * 0.45, -s * 0.2, s * 0.5, s * 0.5);
+    }
+    p.pop();
+  }
+
   /**
    * Special deferred death logic for stabber melee:
    * If a Grunt is killed by a stabber melee attack, it plays an "ow" sound and delays actual death for a short period (e.g., 12 frames).

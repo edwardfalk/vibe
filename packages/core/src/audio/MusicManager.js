@@ -5,8 +5,8 @@ import { floor } from '../mathUtils.js';
 import { SOUND } from './SoundIds.js';
 
 /**
- * MusicManager – drives a simple 4-beat backing track using existing SFX.
- * Currently uses kick (tankEnergy), snare (alienShoot) and hi-hat (playerShoot).
+ * MusicManager – drives a simple 4-beat backing track.
+ * Uses dedicated kick, snare and hi-hat sounds from the Audio system.
  * All events are scheduled on-beat via BeatClock every frame.
  */
 export class MusicManager {
@@ -45,14 +45,23 @@ export class MusicManager {
    * Kick on 1 & 3, Snare on 2 & 4, Hi-hat every beat.
    */
   triggerBeat(beat) {
+    const enemies = (typeof window !== 'undefined' && window.gameState?.enemies) || [];
+    const stabbers = enemies.filter((e) => e?.type === 'stabber').length;
+    const rushers = enemies.filter((e) => e?.type === 'rusher').length;
     // Hi-hat (quiet)
-    this.audio.playSound(SOUND.playerShoot);
+    this.audio.playSound(SOUND.hihat);
+    if (stabbers >= 3) {
+      this.audio.playSound(SOUND.openHihat);
+    }
+    if (rushers > 0 && (beat === 1 || beat === 3)) {
+      this.audio.playSound(SOUND.tom);
+    }
 
     if (beat === 1 || beat === 3) {
-      this.audio.playSound(SOUND.tankEnergy); // Kick
+      this.audio.playSound(SOUND.kick); // Kick
     }
     if (beat === 2 || beat === 4) {
-      this.audio.playSound(SOUND.alienShoot); // Snare
+      this.audio.playSound(SOUND.snare); // Snare
     }
   }
 }

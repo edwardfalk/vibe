@@ -84,7 +84,8 @@ export function buildRestartContext() {
       return new CollisionSystem();
     },
     createBeatClock(bpm) {
-      return new BeatClock(bpm);
+      const ctx = window.audio ? window.audio.audioContext : null;
+      return new BeatClock(ctx, bpm);
     },
     setSystems({ spawnSystem, collisionSystem, beatClock }) {
       if (spawnSystem) window.spawnSystem = spawnSystem;

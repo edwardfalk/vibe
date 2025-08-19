@@ -1,0 +1,41 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'Courier New', monospace;
+}
+
+#gameContainer {
+  border: 2px solid #333;
+}
+
+#ui {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  color: #fff;
+  font-size: 16px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+#instructions {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+#spawnInstructions {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  color: #aaa;
+  font-size: 11px;
+  text-align: left;
+  z-index: 101;
+  pointer-events: none;
+  line-height: 1.5;
+}

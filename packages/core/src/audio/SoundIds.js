@@ -1,8 +1,13 @@
 export const SOUND = Object.freeze({
+  kick: 'kick',
+  snare: 'snare',
+  hihat: 'hihat',
   playerShoot: 'playerShoot',
   alienShoot: 'alienShoot',
   tankEnergy: 'tankEnergy',
   stabAttack: 'stabAttack',
+  openHihat: 'openHihat',
+  tom: 'tom',
   explosion: 'explosion',
   hit: 'hit',
   playerHit: 'playerHit',

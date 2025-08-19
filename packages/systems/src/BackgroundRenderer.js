@@ -519,8 +519,11 @@ export class BackgroundRenderer {
     p.fill(nebula2Color[0], nebula2Color[1], nebula2Color[2], 15);
     p.ellipse(p.width * 0.8, p.height * 0.7, 180, 120);
 
-    // Subtle background waves that blend into space
-    this.psychedelicEffects.drawBackgroundWaves(p);
+    // Subtle background waves that blend into space. Pass camera info so
+    // waves parallax with the rest of the background.
+    const cameraX = this.cameraSystem ? this.cameraSystem.x : 0;
+    const cameraY = this.cameraSystem ? this.cameraSystem.y : 0;
+    this.psychedelicEffects.drawBackgroundWaves(p, { x: cameraX, y: cameraY });
 
     // Gentle twinkling stars (much reduced)
     for (let i = 0; i < 3; i++) { // Only 3 stars instead of 12

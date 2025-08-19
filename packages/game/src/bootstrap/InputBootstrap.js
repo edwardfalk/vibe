@@ -7,6 +7,8 @@ window.arrowUpPressed = false;
 window.arrowDownPressed = false;
 window.arrowLeftPressed = false;
 window.arrowRightPressed = false;
+// Autofire toggle
+window.autoFireEnabled = false;
 
 // Extended WASD tracking for AI scripts
 window.keys = window.keys ?? {
