@@ -24,7 +24,7 @@ export class HudRenderer {
     const barWidth = 200;
     const barHeight = 8;
     const barX = p.width - barWidth - 20;
-    const barY = 120;
+    const barY = 20;
 
     // Background bar
     p.fill(50, 50, 50, 150);

@@ -625,7 +625,7 @@ export class UIRenderer {
       spawnEl = document.createElement('div');
       spawnEl.id = 'spawnInstructions';
       spawnEl.style.cssText =
-        'position: absolute; top: 20px; right: 20px; color: #aaa; font-size: 11px; text-align: left; z-index: 101; pointer-events: none; line-height: 1.5;';
+        'position: absolute; top: 40px; right: 20px; color: #aaa; font-size: 11px; text-align: left; z-index: 101; pointer-events: none; line-height: 1.5;';
       document.body.appendChild(spawnEl);
     }
     if (spawnEl) {
