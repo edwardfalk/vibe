@@ -8,7 +8,7 @@ import { shouldAvoidFriendlyFire } from './EnemyAIUtils.js';
  * Maintains tactical distance, uses friendly fire avoidance, confused personality
  */
 class Grunt extends BaseEnemy {
-  constructor(x, y, type, config, p, audio) {
+  constructor(x, y, type, config, p, audio, squadId = null) {
     const gruntConfig = {
       size: 32, // Increased hitbox for better bullet collision
       health: 2,
@@ -18,6 +18,7 @@ class Grunt extends BaseEnemy {
     super(x, y, 'grunt', gruntConfig, p, audio);
     this.p = p;
     this.audio = audio;
+    this.squadId = squadId;
 
     // Visual variant for silly shapes
     this.variant = random() < 0.4 ? 'doubleHead' : 'default';
@@ -155,6 +156,24 @@ class Grunt extends BaseEnemy {
         // At ideal distance - maintain position with small movements
         this.velocity.x = random(-0.3, 0.3);
         this.velocity.y = random(-0.3, 0.3);
+      }
+    }
+
+    // Maintain spacing from squadmates
+    const separationThreshold = 30;
+    if (this.squadId && Array.isArray(window?.enemies)) {
+      const squadmates = window.enemies.filter(
+        (e) => e !== this && e.squadId === this.squadId
+      );
+      for (const mate of squadmates) {
+        const sdx = this.x - mate.x;
+        const sdy = this.y - mate.y;
+        const sDist = sqrt(sdx * sdx + sdy * sdy);
+        if (sDist > 0 && sDist < separationThreshold) {
+          const force = (separationThreshold - sDist) / separationThreshold;
+          this.velocity.x += (sdx / sDist) * force * this.speed;
+          this.velocity.y += (sdy / sDist) * force * this.speed;
+        }
       }
     }
 

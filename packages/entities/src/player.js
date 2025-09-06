@@ -41,6 +41,7 @@ export class Player {
     // NEW: Improved shooting system state
     this.isCurrentlyShooting = false;
     this.firstShotFired = false;
+    this.lastShotQuarter = -1; // tracks last quarter-beat where a shot occurred
 
     // Dash ability
     this.isDashing = false;
@@ -238,6 +239,14 @@ export class Player {
           console.log('🎵 Queued shot fired on beat!');
         }
 
+        if (window.beatClock) {
+          const elapsed =
+            (Date.now() - window.beatClock.startTime) *
+            window.beatClock.timeScale;
+          const quarterBeatInterval = window.beatClock.beatInterval / 4;
+          this.lastShotQuarter = Math.floor(elapsed / quarterBeatInterval);
+        }
+
         // Ensure cooldown doesn't expire this frame (prevents double shots)
         this.shootCooldownMs += deltaTimeMs;
 
@@ -271,8 +280,24 @@ export class Player {
     }
   }
 
+  getHueShiftSpeed() {
+    const base = 2;
+    return this.isDashing || this.health < this.maxHealth * 0.3
+      ? base * 3
+      : base;
+  }
+
   draw(p) {
     // Motion trail disabled for stability
+
+    const hueSpeed = this.getHueShiftSpeed();
+    const auraHue = (p.frameCount * hueSpeed) % 360;
+    const auraPulse = sin(p.frameCount * 0.1) * 0.5 + 0.5;
+    p.push();
+    p.noStroke();
+    p.fill(p.color(`hsla(${auraHue},100%,60%,${0.2 * auraPulse})`));
+    p.ellipse(this.x, this.y, this.size * (2.5 + auraPulse));
+    p.pop();
 
     // Draw enhanced glow effect
     try {
@@ -379,11 +404,27 @@ export class Player {
     p.ellipse(0, -s * 0.25, s * 0.3);
     p.noStroke();
 
-    // Draw simple hair instead of bandana
-    p.fill(80, 50, 20); // Visible brown hair
-    p.rect(-s * 0.18, -s * 0.38, s * 0.36, s * 0.12); // Hair on top
-    p.rect(-s * 0.15, -s * 0.32, s * 0.08, s * 0.15); // Left sideburn
-    p.rect(s * 0.07, -s * 0.32, s * 0.08, s * 0.15); // Right sideburn
+    // Spiky hair with neon color cycling
+    const spikeCount = 8;
+    const innerR = s * 0.18;
+    const outerR = s * 0.28;
+    p.strokeWeight(1);
+    for (let i = 0; i < spikeCount; i++) {
+      const angle = (TWO_PI / spikeCount) * i;
+      const nextAngle = angle + TWO_PI / spikeCount / 2;
+      const hue = (p.frameCount * hueSpeed + i * 45) % 360;
+      p.fill(p.color(`hsla(${hue},100%,60%,1)`));
+      p.stroke(p.color(`hsla(${hue},100%,80%,1)`));
+      const ax = cos(angle) * innerR;
+      const ay = -s * 0.25 + sin(angle) * innerR;
+      const bx = cos(nextAngle) * innerR;
+      const by = -s * 0.25 + sin(nextAngle) * innerR;
+      const midAngle = angle + (nextAngle - angle) / 2;
+      const cx = cos(midAngle) * outerR;
+      const cy = -s * 0.25 + sin(midAngle) * outerR;
+      p.triangle(ax, ay, bx, by, cx, cy);
+    }
+    p.noStroke();
 
     // Mysterious eyes
     p.fill(0);
@@ -397,9 +438,10 @@ export class Player {
     const lensH = eyeSize * 1.5; // Taller lenses
     
     // Sunglasses frame with stronger outline
+    p.noTint();
     p.fill(40, 40, 40); // Dark frame
-    p.stroke(10);
-    p.strokeWeight(2);
+    p.stroke(255);
+    p.strokeWeight(this.size > 32 ? 3 : 2);
     p.rect(-lensW * 0.6, -s * 0.25 - lensH * 0.6, lensW * 1.2, lensH * 1.2); // Left frame
     p.rect(lensW * 0.6 - lensW * 1.2, -s * 0.25 - lensH * 0.6, lensW * 1.2, lensH * 1.2); // Right frame
     p.noStroke();
@@ -582,8 +624,20 @@ export class Player {
     const beatClockReady =
       window.beatClock &&
       typeof window.beatClock.canPlayerShootQuarterBeat === 'function';
-    if (beatClockReady && !window.beatClock.canPlayerShootQuarterBeat()) {
-      return null;
+    let currentQuarter = null;
+    if (beatClockReady) {
+      const elapsed =
+        (Date.now() - window.beatClock.startTime) * window.beatClock.timeScale;
+      const quarterBeatInterval = window.beatClock.beatInterval / 4;
+      currentQuarter = Math.floor(elapsed / quarterBeatInterval);
+      if (!window.beatClock.canPlayerShootQuarterBeat()) {
+        const waitMs = window.beatClock.getTimeToNextQuarterBeat();
+        this.queueShot(waitMs);
+        return null;
+      }
+      if (currentQuarter === this.lastShotQuarter) {
+        return null;
+      }
     }
 
     // Cool-down check
@@ -599,10 +653,12 @@ export class Player {
           ? window.beatClock.beatInterval / 4
           : 150;
       this.shootCooldownMs = quarterBeatMs;
+      if (currentQuarter !== null) this.lastShotQuarter = currentQuarter;
       return this.fireBullet();
     }
 
     // Subsequent shots
+    if (currentQuarter !== null) this.lastShotQuarter = currentQuarter;
     return this.fireBullet();
   }
 

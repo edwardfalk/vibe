@@ -368,6 +368,11 @@ class Stabber extends BaseEnemy {
         this.stabWarning = true;
         this.stabWarningTime = 0;
 
+        // Telegraph dash with a short charge sound
+        if (window.audio) {
+          window.audio.playSound(SOUND.stabAttack, this.x, this.y);
+        }
+
         // Lock attack direction
         this.stabDirection = this.aimAngle;
 
@@ -676,11 +681,26 @@ class Stabber extends BaseEnemy {
    * Draw type-specific indicators
    */
   drawSpecificIndicators() {
-    if (this.stabWarning) {
+    if (this.stabPreparing) {
+      this.drawStabPreparingIndicator();
+    } else if (this.stabWarning) {
       this.drawStabWarning();
     } else if (this.stabRecovering) {
       this.drawStabRecovery();
     }
+  }
+
+  /**
+   * Draw stab preparation indicator
+   */
+  drawStabPreparingIndicator() {
+    const prepPercent = this.stabPreparingTime / this.maxStabPreparingTime;
+    const radius = this.size * (1 + prepPercent);
+
+    // Growing translucent circle to telegraph dash
+    this.p.noStroke();
+    this.p.fill(255, 215, 0, 80);
+    this.p.ellipse(this.x, this.y, radius * 2);
   }
 
   /**

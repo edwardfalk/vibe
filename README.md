@@ -128,6 +128,20 @@ MIT
 
 ### Playwright Gameplay Probes
 
+Install the Playwright browsers once:
+
+```
+npx playwright install
+```
+
+Run the suite:
+
+```
+npm run test:pw
+```
+
+Existing Bun helpers remain available:
+
 ```
 # Headless
 bun run test

@@ -137,6 +137,7 @@ const CONFIG = {
     DEBUG_COLLISIONS: false,
     WORLD_WIDTH: 1150,
     WORLD_HEIGHT: 850,
+    ENABLE_ELITE_ENEMIES: false,
     SPEECH_FREQUENCY: {
       MIN: 5,
       MAX: 15,

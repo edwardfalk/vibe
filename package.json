@@ -19,6 +19,7 @@
     "test:playwright": "bunx playwright test",
     "test:headed": "bunx playwright test --headed",
     "test:debug": "bunx playwright test --debug",
+    "test:pw": "playwright test",
     "test:mcp": "echo deprecated mcp runner; use Playwright directly",
     "test:probes": "echo deprecated mcp runner; use Playwright directly",
     "test:comprehensive": "bun run test:playwright",
@@ -80,24 +81,24 @@
     }
   },
   "devDependencies": {
-    "@playwright/test": "^1.53.0",
-    "concurrently": "^9.1.2",
+    "@playwright/test": "^1.54.2",
+    "compression": "^1.8.1",
+    "concurrently": "^9.2.0",
     "dotenv-cli": "^8.0.0",
-    "eslint": "^9.28.0",
-    "eslint-config-prettier": "^9.0.0",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^9.1.2",
     "five-server": "^0.4.4",
     "kill-port": "^2.0.1",
     "live-server": "^1.2.2",
-    "prettier": "^3.5.3",
-    "tsx": "^4.19.4",
-    "vitest": "^3.2.2",
-    "compression": "^1.8.0"
+    "prettier": "^3.6.2",
+    "tsx": "^4.20.4",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "jszip": "^3.10.1",
-    "p5": "^1.7.0"
+    "p5": "^1.11.9"
   },
   "keywords": [
     "game",
