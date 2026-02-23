@@ -205,6 +205,7 @@ function setup(p) {
   if (!window.gameState) {
     window.gameState = new GameState();
   }
+  window.gameState.activeBombs = activeBombs;
 
   if (!window.cameraSystem) {
     window.cameraSystem = new CameraSystem(p);

@@ -166,28 +166,36 @@ async function chooseGamePort() {
 async function runMcpTests() {
   const startTime = Date.now();
   let serverProcess = null;
-  const selectedPort = await chooseGamePort();
-  const gameUrl = process.env.GAME_URL || `http://localhost:${selectedPort}`;
+  let exitCode = 0;
+  let gameUrl;
+
+  if (process.env.GAME_URL) {
+    gameUrl = process.env.GAME_URL;
+  } else {
+    const selectedPort = await chooseGamePort();
+    gameUrl = `http://localhost:${selectedPort}`;
+    serverProcess = startServer(selectedPort);
+  }
 
   try {
-    serverProcess = startServer(selectedPort);
     await waitForServerReady(gameUrl);
 
-    const exitCode = await runPlaywrightSmoke(gameUrl);
-    if (exitCode !== 0) {
-      log('fail', `Gameplay probes failed with exit code ${exitCode}`);
-      process.exit(exitCode);
+    const probeExitCode = await runPlaywrightSmoke(gameUrl);
+    if (probeExitCode !== 0) {
+      log('fail', `Gameplay probes failed with exit code ${probeExitCode}`);
+      exitCode = probeExitCode;
+    } else {
+      log('pass', 'Gameplay probes passed');
+      log('info', `Duration: ${Date.now() - startTime}ms`);
     }
-
-    log('pass', 'Gameplay probes passed');
-    log('info', `Duration: ${Date.now() - startTime}ms`);
-    process.exit(0);
   } catch (error) {
     log('error', 'MCP smoke runner failed', error.message);
-    process.exit(1);
+    exitCode = 1;
   } finally {
     stopServer(serverProcess);
   }
+
+  process.exit(exitCode);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

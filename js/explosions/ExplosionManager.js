@@ -66,7 +66,7 @@ class EnemyFragmentExplosion {
         fragmentType = 'weapon';
       }
 
-      this.fragments.push({
+      const fragment = {
         x: this.x + random(-size * 0.3, size * 0.3),
         y: this.y + random(-size * 0.3, size * 0.3),
         vx: cos(angle) * speed,
@@ -80,7 +80,11 @@ class EnemyFragmentExplosion {
         maxLife: random(80, 120),
         gravity: 0.08, // Reduced gravity for more floating effect
         friction: 0.98, // Increased friction slightly for better control
-      });
+      };
+      if (fragmentType === 'body') {
+        fragment.bodyOffsets = [random(0.4), random(0.4), random(0.4), random(0.4), random(0.4), random(0.4)];
+      }
+      this.fragments.push(fragment);
     }
   }
 
@@ -228,9 +232,10 @@ class EnemyFragmentExplosion {
         p.ellipse(0, 0, fragment.size);
       } else if (fragment.type === 'body') {
         p.beginShape();
+        const offsets = fragment.bodyOffsets || [0.4, 0.4, 0.4, 0.4, 0.4, 0.4];
         for (let i = 0; i < 6; i++) {
           const angle = (i / 6) * TWO_PI;
-          const radius = fragment.size * 0.5 * (0.8 + random(0.4));
+          const radius = fragment.size * 0.5 * (0.8 + offsets[i]);
           const x = cos(angle) * radius;
           const y = sin(angle) * radius;
           p.vertex(x, y);

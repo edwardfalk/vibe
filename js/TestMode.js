@@ -2,7 +2,7 @@
  * TestMode.js - Handles automated testing including player movement patterns, auto-shooting, and test enemy spawning
  */
 
-// Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
+// Requires p5.js for: lerp(), map(), etc. (constrain, random from mathUtils.js)
 
 import { Bullet } from './bullet.js';
 import { sin, cos, min, floor, random, atan2, dist, constrain } from './mathUtils.js';

@@ -20,7 +20,10 @@ export const TWO_PI = Math.PI * 2;
  *   random(array)     → random element
  */
 export function random(a, b) {
-  if (Array.isArray(a)) return a[floor(Math.random() * a.length)];
+  if (Array.isArray(a)) {
+    if (a.length === 0) throw new Error('random(array): array must not be empty');
+    return a[floor(Math.random() * a.length)];
+  }
   if (a === undefined) return Math.random();
   if (b === undefined) return Math.random() * a;
   return Math.random() * (b - a) + a;

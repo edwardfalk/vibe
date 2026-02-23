@@ -276,7 +276,7 @@ export class Player {
         drawGlow(p, this.x, this.y, this.size * 2.5, p.color(255, 100, 100), pulse * 0.8);
       }
     } catch (error) {
-      console.log('⚠️ Player glow error:', error);
+      console.error('⚠️ Player glow error:', error);
     }
 
     p.push();
@@ -386,21 +386,6 @@ export class Player {
       -s * 0.35
     );
     p.triangle(s * 0.12, -s * 0.35, s * 0.05, -s * 0.55, s * 0.01, -s * 0.35);
-
-    // Add cosmic glow effect when healthy
-    if (this.health > this.maxHealth * 0.7) {
-      p.fill(64, 224, 208, 40); // Turquoise glow
-      p.noStroke();
-      p.ellipse(0, 0, s * 1.8);
-    }
-
-    // Add warning glow when low health
-    if (this.health < this.maxHealth * 0.3) {
-      const pulse = p.sin(p.frameCount * 0.3) * 0.5 + 0.5;
-      p.fill(255, 20, 147, pulse * 60); // Deep pink warning
-      p.noStroke();
-      p.ellipse(0, 0, s * 2.2);
-    }
 
     // Enhanced dash effect
     if (this.isDashing) {

@@ -116,6 +116,14 @@ export class BaseEnemy {
     if (this.speechTimer > 0) this.speechTimer -= dt;
     if (this.speechCooldown > 0) this.speechCooldown -= dt;
 
+    // Spawn animation (frame-rate independent)
+    if (this.isSpawning) {
+      this.spawnTimer += dt;
+      if (this.spawnTimer >= this.spawnDuration) {
+        this.isSpawning = false;
+      }
+    }
+
     // Calculate basic aim angle (subclasses can override targeting)
     const dx = playerX - this.x;
     const dy = playerY - this.y;
@@ -207,7 +215,7 @@ export class BaseEnemy {
             this.x,
             this.y,
             this.size * 2,
-            this.p.color(255, 0, 0),
+            p.color(255, 0, 0),
             aggressivePulse * 0.6
           );
         }
@@ -267,13 +275,6 @@ export class BaseEnemy {
       );
     }
 
-    // Spawn animation progress
-    if (this.isSpawning) {
-      this.spawnTimer++;
-      if (this.spawnTimer >= this.spawnDuration) {
-        this.isSpawning = false;
-      }
-    }
     const spawnProgress = this.isSpawning
       ? this.spawnTimer / this.spawnDuration
       : 1;
@@ -299,10 +300,10 @@ export class BaseEnemy {
     p.translate(this.x, this.y);
 
     // Apply spawn scale and opacity
+    const spawnAlpha = this.isSpawning ? spawnProgress * 255 : 255;
     if (this.isSpawning) {
       const eased = spawnProgress * spawnProgress; // ease-in
       p.scale(0.3 + eased * 0.7);
-      p.tint(255, spawnProgress * 255);
     }
 
     p.rotate(this.aimAngle);
@@ -319,9 +320,12 @@ export class BaseEnemy {
     // Apply animation offsets
     p.translate(waddle, bobble);
 
-    // Hit flash effect
+    // Compose spawn alpha with hit-flash alpha; apply tint once
+    const hitAlpha = this.hitFlash > 0 ? 100 : 255;
+    const finalAlpha = Math.round(spawnAlpha * (hitAlpha / 255));
+    p.tint(255, 255, 255, finalAlpha);
+
     if (this.hitFlash > 0) {
-      p.tint(255, 255, 255, 100);
       const hitIntensity = this.hitFlash / 8;
       const shakeX = randomRange(-hitIntensity * 4, hitIntensity * 4);
       const shakeY = randomRange(-hitIntensity * 3, hitIntensity * 3);

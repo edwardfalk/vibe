@@ -5,7 +5,7 @@
  * Run a browser-side liveness probe and return structured diagnostics.
  */
 export async function runAiLivenessProbe() {
-  const fc = window.frameCount || null;
+  const fc = window.frameCount ?? null;
   const result = {
     frameCount: fc,
     gameState: window.gameState ? window.gameState.gameState : null,

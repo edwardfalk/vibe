@@ -216,11 +216,11 @@ export class UIRenderer {
 
   // Draw bomb countdown indicators
   drawBombs(p) {
-    if (!window.activeBombs || window.activeBombs.length === 0) return;
+    if (!this.gameState || !this.gameState.activeBombs || this.gameState.activeBombs.length === 0) return;
 
     p.push();
 
-    for (const bomb of window.activeBombs) {
+    for (const bomb of this.gameState.activeBombs) {
       const screenX = bomb.x - (this.cameraSystem ? this.cameraSystem.x : 0);
       const screenY = bomb.y - (this.cameraSystem ? this.cameraSystem.y : 0);
 

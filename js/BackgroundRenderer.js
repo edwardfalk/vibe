@@ -541,9 +541,9 @@ export class BackgroundRenderer {
     if (window.beatClock) {
       const timeToNext = window.beatClock.getTimeToNextBeat();
       const beatInterval = window.beatClock.beatInterval;
-      const timeSinceLast = beatInterval - timeToNext;
+      const timeSinceLast = Math.max(0, beatInterval - timeToNext);
       if (timeSinceLast < 80) {
-        const beatFlash = 1 - timeSinceLast / 80;
+        const beatFlash = Math.min(1, 1 - timeSinceLast / 80);
         const currentBeat = window.beatClock.getCurrentBeat();
         // Stronger flash on beat 1 (downbeat)
         const intensity = currentBeat === 0 ? beatFlash * 25 : beatFlash * 12;

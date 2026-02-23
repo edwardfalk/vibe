@@ -56,6 +56,9 @@ export class Explosion {
     } else if (type === 'enemy') {
       particleCount = 4; // Reduced from 8
       this.flashIntensity = 0; // No flash for basic explosions
+    } else if (type === 'armor-break') {
+      particleCount = 8;
+      this.flashIntensity = 0.2;
     } else {
       particleCount = 3; // Reduced from 6
       this.flashIntensity = 0; // No flash for basic hits
@@ -166,6 +169,11 @@ export class Explosion {
         vyRange = [-3, 3]; // Reduced from [-5, 5]
         sizeRange = [3, 6];
         lifeRange = [20, 35]; // Reduced
+      } else if (type === 'armor-break') {
+        vxRange = [-3, 3];
+        vyRange = [-3, 3];
+        sizeRange = [3, 7];
+        lifeRange = [25, 40];
       } else {
         vxRange = [-2, 2];
         vyRange = [-2, 2]; // Reduced from [-4, 4]

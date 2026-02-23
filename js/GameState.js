@@ -138,7 +138,7 @@ export class GameState {
     if (window.enemies) window.enemies.length = 0;
     if (window.playerBullets) window.playerBullets.length = 0;
     if (window.enemyBullets) window.enemyBullets.length = 0;
-    if (window.activeBombs) window.activeBombs.length = 0;
+    if (this.activeBombs) this.activeBombs.length = 0;
 
     // Reset camera
     if (window.cameraSystem) {

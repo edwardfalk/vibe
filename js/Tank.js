@@ -340,20 +340,18 @@ class Tank extends BaseEnemy {
    * Spawn visual effect when an armor plate is destroyed
    */
   spawnArmorBreakEffect(plate) {
-    if (!window.explosionManager) return;
-
     // Offset based on which plate broke
     let ox = 0, oy = 0;
     if (plate === 'front') { ox = cos(this.aimAngle) * this.size * 0.6; oy = sin(this.aimAngle) * this.size * 0.6; }
     else if (plate === 'left') { ox = cos(this.aimAngle - PI / 2) * this.size * 0.6; oy = sin(this.aimAngle - PI / 2) * this.size * 0.6; }
     else if (plate === 'right') { ox = cos(this.aimAngle + PI / 2) * this.size * 0.6; oy = sin(this.aimAngle + PI / 2) * this.size * 0.6; }
 
-    window.explosionManager.addExplosion(this.x + ox, this.y + oy, 'tank-bullet-kill');
-
+    if (window.explosionManager) {
+      window.explosionManager.addExplosion(this.x + ox, this.y + oy, 'armor-break');
+    }
     if (window.floatingText) {
       window.floatingText.addText(this.x + ox, this.y + oy - 15, 'ARMOR BREAK!', [150, 150, 200], 12);
     }
-
     if (window.cameraSystem) {
       window.cameraSystem.addShake(12, 15);
     }

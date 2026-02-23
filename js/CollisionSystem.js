@@ -178,9 +178,9 @@ export class CollisionSystem {
               window.hitStopFrames = Math.max(window.hitStopFrames || 0, stopFrames);
             }
 
-            // Screen shake on kill
-            if (window.cameraSystem) {
-              const shakeIntensity = enemyType === 'tank' ? 15 : enemyType === 'rusher' ? 12 : 8;
+            // Screen shake on kill (handleEnemyDeath already shakes for tank)
+            if (window.cameraSystem && enemyType !== 'tank') {
+              const shakeIntensity = enemyType === 'rusher' ? 12 : 8;
               window.cameraSystem.addShake(shakeIntensity, 12);
             }
 
@@ -198,7 +198,8 @@ export class CollisionSystem {
 
             // Floating damage number
             if (window.floatingText) {
-              window.floatingText.addDamage(enemy.x, enemy.y - enemy.size * 0.5, bullet.damage);
+              const size = Number(enemy.size) || 0;
+              window.floatingText.addDamage(enemy.x, enemy.y - size * 0.5, bullet.damage);
             }
 
             if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {

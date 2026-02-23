@@ -8,14 +8,19 @@ const GAME_URL = process.env.GAME_URL || 'http://localhost:5500';
  */
 const bootGame = async (page) => {
   await page.goto(GAME_URL);
-  await page.waitForSelector('canvas');
-  await page.click('canvas', { position: { x: 400, y: 300 } });
+  const canvas = await page.waitForSelector('canvas');
+  const box = await canvas.boundingBox();
+  const centerX = box ? box.width / 2 : 400;
+  const centerY = box ? box.height / 2 : 300;
+  await page.click('canvas', { position: { x: centerX, y: centerY } });
   await page.waitForFunction(
     () =>
       window.gameState &&
       window.player &&
       Array.isArray(window.enemies) &&
-      window.enemies.filter((enemy) => !enemy.markedForRemoval).length > 0
+      window.enemies.filter((enemy) => !enemy.markedForRemoval).length > 0 &&
+      typeof window.frameCount === 'number' &&
+      window.frameCount > 0
   );
 };
 
