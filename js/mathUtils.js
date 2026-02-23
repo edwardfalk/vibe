@@ -5,7 +5,6 @@ export const min = Math.min;
 export const floor = Math.floor;
 export const ceil = Math.ceil;
 export const round = Math.round;
-export const random = Math.random;
 export const sin = Math.sin;
 export const cos = Math.cos;
 export const atan2 = Math.atan2;
@@ -14,12 +13,35 @@ export const PI = Math.PI;
 export const TWO_PI = Math.PI * 2;
 
 /**
- * Calculate distance between two points
- * @param {number} x1
- * @param {number} y1
- * @param {number} x2
- * @param {number} y2
- * @returns {number}
+ * p5-compatible random(). Supports:
+ *   random()          → 0..1
+ *   random(max)       → 0..max
+ *   random(min, max)  → min..max
+ *   random(array)     → random element
+ */
+export function random(a, b) {
+  if (Array.isArray(a)) return a[floor(Math.random() * a.length)];
+  if (a === undefined) return Math.random();
+  if (b === undefined) return Math.random() * a;
+  return Math.random() * (b - a) + a;
+}
+
+/**
+ * Linear interpolation between a and b by t (0..1).
+ */
+export function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+/**
+ * Clamp value between low and high.
+ */
+export function constrain(value, low, high) {
+  return max(low, min(high, value));
+}
+
+/**
+ * Calculate distance between two points.
  */
 export function dist(x1, y1, x2, y2) {
   const dx = x2 - x1;
@@ -28,9 +50,7 @@ export function dist(x1, y1, x2, y2) {
 }
 
 /**
- * Normalize angle to [-PI, PI]
- * @param {number} angle
- * @returns {number}
+ * Normalize angle to [-PI, PI].
  */
 export function normalizeAngle(angle) {
   while (angle > PI) angle -= TWO_PI;
@@ -39,17 +59,12 @@ export function normalizeAngle(angle) {
 }
 
 /**
- * Generate a random number between min (inclusive) and max (exclusive).
- * If only one argument is provided, the range is [0, min).
- * Mirrors the behavior of p5.js random().
- * @param {number} min
- * @param {number} [max]
- * @returns {number}
+ * Alias for random(min, max). Kept for backward compat.
  */
-export function randomRange(min, max) {
-  if (max === undefined) {
-    max = min;
-    min = 0;
+export function randomRange(a, b) {
+  if (b === undefined) {
+    b = a;
+    a = 0;
   }
-  return random() * (max - min) + min;
+  return random(a, b);
 }

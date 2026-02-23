@@ -21,8 +21,8 @@ import { TestMode } from './TestMode.js';
 import { Audio } from './Audio.js';
 import { BeatClock } from './BeatClock.js';
 import { Bullet } from './bullet.js';
-import { EffectsManager } from './effects.js';
 import VisualEffectsManager from './visualEffects.js';
+import { FloatingTextManager } from './effects.js';
 import { CONFIG } from './config.js';
 import {
   sqrt,
@@ -39,15 +39,13 @@ import {
 
 // Core game objects
 let player;
-let enemies = [];
-let playerBullets = [];
-let enemyBullets = [];
-let activeBombs = [];
+const enemies = [];
+const playerBullets = [];
+const enemyBullets = [];
+const activeBombs = [];
 
 // Systems
 let explosionManager;
-let effectsManager;
-let visualEffectsManager;
 let audio;
 
 // Global system references for easy access
@@ -186,20 +184,22 @@ function setup(p) {
   explosionManager = new ExplosionManager();
   window.explosionManager = explosionManager;
 
-  // Disable visual effects for stability
-  effectsManager = null;
+  window.floatingText = new FloatingTextManager();
+  window.hitStopFrames = 0;
+
+  // Use one visual effects manager path to avoid split state.
   if (!window.visualEffectsManager) {
     window.visualEffectsManager = new VisualEffectsManager(
       window.backgroundLayers
     );
   }
-      console.log('🎮 Visual effects disabled - using stable rendering');
-    
-    // Initialize unified audio system
-    if (!window.audio) {
-        window.audio = new Audio(p, window.player);
-    }
-    console.log('🎵 Unified audio system initialized');
+  console.log('🎮 Visual effects manager initialized');
+
+  // Initialize unified audio system
+  if (!window.audio) {
+    window.audio = new Audio(p, window.player);
+  }
+  console.log('🎵 Unified audio system initialized');
 
   // Initialize modular systems
   if (!window.gameState) {
@@ -328,6 +328,14 @@ function draw(p) {
 }
 
 function updateGame(p) {
+  // Hitstop: freeze game updates for a few frames on impactful kills
+  if (window.hitStopFrames > 0) {
+    window.hitStopFrames--;
+    // Still update floating text during hitstop so they don't freeze
+    if (window.floatingText) window.floatingText.update();
+    return;
+  }
+
   // Update BeatClock every frame for accurate rhythm timing
   if (window.beatClock && typeof window.beatClock.update === 'function') {
     window.beatClock.update();
@@ -416,18 +424,15 @@ function updateGame(p) {
         }
 
         // Add enhanced particle explosion
-        if (
-          typeof visualEffectsManager !== 'undefined' &&
-          visualEffectsManager
-        ) {
+        if (window.visualEffectsManager) {
           try {
-            visualEffectsManager.addExplosionParticles(
+            window.visualEffectsManager.addExplosionParticles(
               result.x,
               result.y,
               'rusher-explosion'
             );
-            visualEffectsManager.triggerChromaticAberration(0.8, 45);
-            visualEffectsManager.triggerBloom(0.5, 30);
+            window.visualEffectsManager.triggerChromaticAberration(0.8, 45);
+            window.visualEffectsManager.triggerBloom(0.5, 30);
           } catch (error) {
             console.log('⚠️ Explosion effects error:', error);
           }
@@ -621,6 +626,11 @@ function updateGame(p) {
   if (window.audio) {
     window.audio.update();
   }
+
+  // Update floating text
+  if (window.floatingText) {
+    window.floatingText.update();
+  }
 }
 
 function drawGame(p) {
@@ -660,6 +670,11 @@ function drawGame(p) {
   // Draw explosions
   if (explosionManager) {
     explosionManager.draw(p);
+  }
+
+  // Draw floating damage/kill text (world space)
+  if (window.floatingText) {
+    window.floatingText.draw(p);
   }
 
   // Draw speech bubbles/text (world space - with camera transform)

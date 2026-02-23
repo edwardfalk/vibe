@@ -1,6 +1,7 @@
 import { Bullet } from './bullet.js';
 import { CONFIG } from './config.js';
 import { random, randomRange, sin, cos, atan2 } from './mathUtils.js';
+import { drawGlow } from './visualEffects.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
@@ -57,10 +58,14 @@ export class BaseEnemy {
       speechConfig.AMBIENT_MAX * 60
     ); // seconds to frames
 
+    // Spawn animation
+    this.spawnTimer = 0;
+    this.spawnDuration = 25; // frames to fully materialize
+    this.isSpawning = true;
+
     this.p = p;
     this.audio = audio;
 
-    // Initialize type-specific colors
     this.initializeColors();
   }
 
@@ -181,38 +186,34 @@ export class BaseEnemy {
   /**
    * Enhanced glow effects with speech indicators
    */
-  drawGlow(p) {
-    if (typeof drawGlow !== 'undefined') {
-      try {
-        // Check if currently speaking (has active speech timer)
-        const isSpeaking = this.speechTimer > 0;
-        const speechGlowIntensity = isSpeaking ? 0.8 : 0.3;
-        const speechGlowSize = isSpeaking ? 1.3 : 1.0;
+  drawEnemyGlow(p) {
+    try {
+      const isSpeaking = this.speechTimer > 0;
+      const speechGlowIntensity = isSpeaking ? 0.8 : 0.3;
+      const speechGlowSize = isSpeaking ? 1.3 : 1.0;
 
-        // Get type-specific glow color
-        const glowColor = this.getGlowColor(isSpeaking);
-        const glowSize = this.getGlowSize() * speechGlowSize;
+      const glowColor = this.getGlowColor(isSpeaking);
+      const glowSize = this.getGlowSize() * speechGlowSize;
 
-        drawGlow(this.x, this.y, glowSize, glowColor, speechGlowIntensity);
+      drawGlow(p, this.x, this.y, glowSize, glowColor, speechGlowIntensity);
 
-        // Add extra pulsing glow for aggressive speech
-        if (isSpeaking && this.audio) {
-          const activeTexts = this.audio.activeTexts || [];
-          const myText = activeTexts.find((text) => text.entity === this);
-          if (myText && myText.isAggressive) {
-            const aggressivePulse = sin(p.frameCount * 0.8) * 0.3 + 0.5;
-            drawGlow(
-              this.x,
-              this.y,
-              this.size * 2,
-              this.p.color(255, 0, 0),
-              aggressivePulse * 0.6
-            );
-          }
+      if (isSpeaking && this.audio) {
+        const activeTexts = this.audio.activeTexts || [];
+        const myText = activeTexts.find((text) => text.entity === this);
+        if (myText && myText.isAggressive) {
+          const aggressivePulse = sin(p.frameCount * 0.8) * 0.3 + 0.5;
+          drawGlow(
+            p,
+            this.x,
+            this.y,
+            this.size * 2,
+            this.p.color(255, 0, 0),
+            aggressivePulse * 0.6
+          );
         }
-      } catch (error) {
-        console.log('⚠️ Enemy glow error:', error);
       }
+    } catch (error) {
+      console.log('⚠️ Enemy glow error:', error);
     }
   }
 
@@ -257,24 +258,53 @@ export class BaseEnemy {
    * Draw method - handles common rendering and calls specific draw methods
    */
   draw(p = this.p) {
-    // Debug: Log enemy type and position every 30 frames
     if (
-      typeof p.frameCount !== 'undefined' &&
       p.frameCount % 30 === 0 &&
       CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS
     ) {
       console.log(
-        `[ENEMY DRAW] type=${this.type} x=${this.x.toFixed(1)} y=${this.y.toFixed(1)} health=${this.health} visible=${this.isVisible ? this.isVisible : 'n/a'}`
+        `[ENEMY DRAW] type=${this.type} x=${this.x.toFixed(1)} y=${this.y.toFixed(1)} health=${this.health}`
       );
     }
-    // Draw glow effects first
-    this.drawGlow(p);
 
-    // Add motion trail for fast enemies (can be overridden)
+    // Spawn animation progress
+    if (this.isSpawning) {
+      this.spawnTimer++;
+      if (this.spawnTimer >= this.spawnDuration) {
+        this.isSpawning = false;
+      }
+    }
+    const spawnProgress = this.isSpawning
+      ? this.spawnTimer / this.spawnDuration
+      : 1;
+
+    // Draw spawn warp effect
+    if (this.isSpawning) {
+      const warpAlpha = (1 - spawnProgress) * 180;
+      const warpSize = this.size * (2.5 - spawnProgress * 1.5);
+      p.fill(255, 255, 255, warpAlpha * 0.3);
+      p.noStroke();
+      p.ellipse(this.x, this.y, warpSize, warpSize);
+      p.stroke(255, 255, 255, warpAlpha);
+      p.strokeWeight(1);
+      p.noFill();
+      p.ellipse(this.x, this.y, warpSize * 1.2, warpSize * 1.2);
+      p.noStroke();
+    }
+
+    this.drawEnemyGlow(p);
     this.drawMotionTrail();
 
     p.push();
     p.translate(this.x, this.y);
+
+    // Apply spawn scale and opacity
+    if (this.isSpawning) {
+      const eased = spawnProgress * spawnProgress; // ease-in
+      p.scale(0.3 + eased * 0.7);
+      p.tint(255, spawnProgress * 255);
+    }
+
     p.rotate(this.aimAngle);
 
     const s = this.size;

@@ -536,7 +536,23 @@ export class BackgroundRenderer {
   // Draw interactive background effects that respond to gameplay
   drawInteractiveBackgroundEffects(p = this.p) {
     p.push();
-    // Use injected player and gameState for robust, modular background effects (do not use global or p.*)
+
+    // Beat-reactive pulse: flash on each beat
+    if (window.beatClock) {
+      const timeToNext = window.beatClock.getTimeToNextBeat();
+      const beatInterval = window.beatClock.beatInterval;
+      const timeSinceLast = beatInterval - timeToNext;
+      if (timeSinceLast < 80) {
+        const beatFlash = 1 - timeSinceLast / 80;
+        const currentBeat = window.beatClock.getCurrentBeat();
+        // Stronger flash on beat 1 (downbeat)
+        const intensity = currentBeat === 0 ? beatFlash * 25 : beatFlash * 12;
+        p.fill(138, 43, 226, intensity);
+        p.noStroke();
+        p.rect(0, 0, p.width, p.height);
+      }
+    }
+
     if (this.player && this.player.isMoving) {
       const rippleIntensity = p.map(this.player.speed, 0, 5, 0, 1);
       for (let i = 0; i < 3; i++) {

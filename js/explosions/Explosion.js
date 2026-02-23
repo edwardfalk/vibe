@@ -2,7 +2,7 @@
  * Basic explosion effects system
  * Handles particle-based explosions for various game events
  */
-import { random, TWO_PI } from '../mathUtils.js';
+import { random, TWO_PI, PI } from '../mathUtils.js';
 export class Explosion {
   constructor(x, y, type = 'enemy') {
     this.x = x;

@@ -5,7 +5,7 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
 
 import { Bullet } from './bullet.js';
-import { sin, cos, min, floor, random, atan2 } from './mathUtils.js';
+import { sin, cos, min, floor, random, atan2, dist, constrain } from './mathUtils.js';
 
 /**
  * @param {Player} player - The player object (dependency injected for modularity)

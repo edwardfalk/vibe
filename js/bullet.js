@@ -15,6 +15,7 @@ import {
   normalizeAngle,
   dist,
 } from './mathUtils.js';
+import { drawGlow } from './visualEffects.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
@@ -96,41 +97,17 @@ export class Bullet {
   draw(p) {
     if (!this.active) return;
 
-    // Draw enhanced glow effect
-    if (typeof drawGlow !== 'undefined') {
-      try {
-        if (this.owner === 'player') {
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 2,
-            p.color(255, 255, 100),
-            0.8
-          );
-        } else if (this.owner === 'enemy-tank') {
-          const energyPercent = this.energy ? this.energy / 100 : 1;
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 3 * energyPercent,
-            p.color(150, 100, 255),
-            1.2
-          );
-        } else {
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 1.5,
-            p.color(255, 100, 255),
-            0.5
-          );
-        }
-      } catch (error) {
-        console.log('⚠️ Bullet glow error:', error);
+    try {
+      if (this.owner === 'player') {
+        drawGlow(p, this.x, this.y, this.size * 2, p.color(255, 255, 100), 0.8);
+      } else if (this.owner === 'enemy-tank') {
+        const energyPercent = this.energy ? this.energy / 100 : 1;
+        drawGlow(p, this.x, this.y, this.size * 3 * energyPercent, p.color(150, 100, 255), 1.2);
+      } else {
+        drawGlow(p, this.x, this.y, this.size * 1.5, p.color(255, 100, 255), 0.5);
       }
+    } catch (error) {
+      console.log('⚠️ Bullet glow error:', error);
     }
 
     // Draw trail

@@ -1,18 +1,13 @@
 // ai-liveness-probe.js
 // Probe: Liveness and Entity Presence with Automated Bug Reporting
 
-(async function () {
-  const { random } = await import('./mathUtils.js');
-  // Import ticketManager API if available (assume browser context with ES modules)
-  let ticketManager = null;
-  try {
-    ticketManager = await import('./ticketManager.js');
-  } catch (e) {
-    // Not available in all contexts
-  }
-
+/**
+ * Run a browser-side liveness probe and return structured diagnostics.
+ */
+export async function runAiLivenessProbe() {
+  const fc = window.frameCount || null;
   const result = {
-    frameCount: typeof frameCount !== 'undefined' ? frameCount : null,
+    frameCount: fc,
     gameState: window.gameState ? window.gameState.gameState : null,
     playerAlive: !!window.player && !window.player.markedForRemoval,
     enemyCount: Array.isArray(window.enemies)
@@ -22,8 +17,7 @@
     failure: null,
   };
 
-  // Liveness check
-  if (typeof frameCount === 'undefined' || frameCount === null) {
+  if (fc === null || fc === undefined) {
     result.failure = 'Frame count not available (draw loop may be stopped)';
   }
 
@@ -37,49 +31,18 @@
     result.failure = 'No enemies present or all marked for removal';
   }
 
-  // If failure, trigger screenshot, log state, and file bug report
+  // If failure, capture screenshot and log state for debugging.
   if (result.failure) {
-    let screenshotData = null;
     if (window.mcp && window.mcp.screenshot) {
-      // If MCP API is available, capture screenshot and get base64
-      screenshotData = await window.mcp.screenshot(
+      await window.mcp.screenshot(
         'failure-' + result.failure.replace(/\s+/g, '-')
       );
-    } else if (document.querySelector('canvas')) {
-      // Fallback: capture canvas as base64
-      screenshotData = document.querySelector('canvas').toDataURL('image/png');
     }
-    // Log state for diagnosis
+
     console.error('Liveness/Entity Probe Failure:', result);
-    // Automated bug reporting via ticketManager API
-    if (ticketManager && ticketManager.createTicket) {
-      try {
-        const shortId = random().toString(36).substr(2, 6);
-        const ticketData = {
-          id: shortId,
-          title: 'probe-failure',
-          description: result.failure,
-          timestamp: new Date().toISOString(),
-          state: result,
-          artifacts: screenshotData ? [screenshotData] : [],
-          status: 'Open',
-          history: [
-            {
-              type: 'probe_failure',
-              description: result.failure,
-              at: new Date().toISOString(),
-            },
-          ],
-          verification: [],
-          relatedTickets: [],
-        };
-        await ticketManager.createTicket(ticketData);
-        console.log('🎫 Automated bug ticket created for probe failure.');
-      } catch (err) {
-        console.error('Failed to create automated bug ticket:', err);
-      }
-    }
   }
 
   return result;
-})();
+}
+
+export default runAiLivenessProbe;

@@ -3,6 +3,7 @@
 import { CONFIG } from './config.js';
 import { Bullet } from './bullet.js';
 import { max, atan2, sin, cos, random, TWO_PI } from './mathUtils.js';
+import { drawGlow } from './visualEffects.js';
 
 const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
@@ -175,7 +176,7 @@ export class Player {
         this.p.mouseY
       );
       this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && frameCount % 60 === 0) {
+      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && this.p.frameCount % 60 === 0) {
         console.log(
           `[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
         );
@@ -183,7 +184,7 @@ export class Player {
     } else {
       // Fallback for when camera system is not available
       this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && frameCount % 60 === 0) {
+      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && this.p.frameCount % 60 === 0) {
         console.log(
           `[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
         );
@@ -266,34 +267,16 @@ export class Player {
   draw(p) {
     // Motion trail disabled for stability
 
-    // Draw enhanced glow effect
-    if (typeof drawGlow !== 'undefined') {
-      try {
-        const healthPercent = this.health / this.maxHealth;
-        if (healthPercent > 0.7) {
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 2,
-            p.color(100, 200, 255),
-            0.6
-          );
-        } else if (healthPercent < 0.3) {
-          // Pulsing red glow when low health
-          const pulse = sin(p.frameCount * 0.3) * 0.5 + 0.5;
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 2.5,
-            p.color(255, 100, 100),
-            pulse * 0.8
-          );
-        }
-      } catch (error) {
-        console.log('⚠️ Player glow error:', error);
+    try {
+      const healthPercent = this.health / this.maxHealth;
+      if (healthPercent > 0.7) {
+        drawGlow(p, this.x, this.y, this.size * 2, p.color(100, 200, 255), 0.6);
+      } else if (healthPercent < 0.3) {
+        const pulse = sin(p.frameCount * 0.3) * 0.5 + 0.5;
+        drawGlow(p, this.x, this.y, this.size * 2.5, p.color(255, 100, 100), pulse * 0.8);
       }
+    } catch (error) {
+      console.log('⚠️ Player glow error:', error);
     }
 
     p.push();

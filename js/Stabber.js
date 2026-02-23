@@ -738,8 +738,8 @@ class Stabber extends BaseEnemy {
     const stabPercent = this.stabWarningTime / this.maxStabWarningTime;
 
     // Dramatic charging animation with building energy
-    const pulse = sin(frameCount * 3.0) * 0.5 + 0.5;
-    const chargePulse = sin(frameCount * 1.5) * 0.3 + 0.7;
+    const pulse = sin(this.p.frameCount * 3.0) * 0.5 + 0.5;
+    const chargePulse = sin(this.p.frameCount * 1.5) * 0.3 + 0.7;
     const warningRadius = this.size * (1.2 + stabPercent * 0.8); // Growing energy field
 
     // Building energy circle - intensifying over time
@@ -752,10 +752,10 @@ class Stabber extends BaseEnemy {
     this.p.ellipse(this.x, this.y, warningRadius);
 
     // Charging sparks around the stabber
-    if (frameCount % 3 === 0) {
+    if (this.p.frameCount % 3 === 0) {
       for (let i = 0; i < 6; i++) {
         const sparkAngle =
-          (frameCount * 0.1 + (i * Math.PI) / 3) % (2 * Math.PI);
+          (this.p.frameCount * 0.1 + (i * Math.PI) / 3) % (2 * Math.PI);
         const sparkDist = this.size * (0.8 + stabPercent * 0.4);
         const sparkX = this.x + cos(sparkAngle) * sparkDist;
         const sparkY = this.y + sin(sparkAngle) * sparkDist;
@@ -781,7 +781,7 @@ class Stabber extends BaseEnemy {
     const recoveryPercent = this.stabRecoveryTime / this.maxStabRecoveryTime;
 
     // Exhausted/stuck indicator - fading red glow
-    const pulse = sin(frameCount * 1.0) * 0.3 + 0.7;
+    const pulse = sin(this.p.frameCount * 1.0) * 0.3 + 0.7;
     const recoveryRadius = this.size * (1.5 - recoveryPercent * 0.5); // Shrinking as recovery progresses
 
     // Exhausted red glow - fading over time

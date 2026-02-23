@@ -254,7 +254,7 @@ class Tank extends BaseEnemy {
     const chassisFrontX = s * 0.5; // X-coordinate of the front of the main chassis.
 
     // Front Armor (Tank's local +X side - its nose)
-    push();
+    this.p.push();
     if (!this.frontArmorDestroyed) {
       this.p.fill(120, 120, 140);
       this.p.stroke(60, 60, 70);
@@ -280,10 +280,10 @@ class Tank extends BaseEnemy {
         armorPlateLength * 0.8
       );
     }
-    pop();
+    this.p.pop();
 
     // Left Armor (Tank's local -Y side)
-    push();
+    this.p.push();
     if (!this.leftArmorDestroyed) {
       this.p.fill(100, 100, 120);
       this.p.stroke(50, 50, 60);
@@ -307,10 +307,10 @@ class Tank extends BaseEnemy {
         armorPlateThickness
       );
     }
-    pop();
+    this.p.pop();
 
     // Right Armor (Tank's local +Y side)
-    push();
+    this.p.push();
     if (!this.rightArmorDestroyed) {
       this.p.fill(100, 100, 120);
       this.p.stroke(50, 50, 60);
@@ -333,7 +333,30 @@ class Tank extends BaseEnemy {
         armorPlateThickness
       );
     }
-    pop();
+    this.p.pop();
+  }
+
+  /**
+   * Spawn visual effect when an armor plate is destroyed
+   */
+  spawnArmorBreakEffect(plate) {
+    if (!window.explosionManager) return;
+
+    // Offset based on which plate broke
+    let ox = 0, oy = 0;
+    if (plate === 'front') { ox = cos(this.aimAngle) * this.size * 0.6; oy = sin(this.aimAngle) * this.size * 0.6; }
+    else if (plate === 'left') { ox = cos(this.aimAngle - PI / 2) * this.size * 0.6; oy = sin(this.aimAngle - PI / 2) * this.size * 0.6; }
+    else if (plate === 'right') { ox = cos(this.aimAngle + PI / 2) * this.size * 0.6; oy = sin(this.aimAngle + PI / 2) * this.size * 0.6; }
+
+    window.explosionManager.addExplosion(this.x + ox, this.y + oy, 'tank-bullet-kill');
+
+    if (window.floatingText) {
+      window.floatingText.addText(this.x + ox, this.y + oy - 15, 'ARMOR BREAK!', [150, 150, 200], 12);
+    }
+
+    if (window.cameraSystem) {
+      window.cameraSystem.addShake(12, 15);
+    }
   }
 
   /**
@@ -469,7 +492,7 @@ class Tank extends BaseEnemy {
         this.frontArmorHP = 0;
         console.log('💥 Tank Front Armor Destroyed!');
         if (window.audio) window.audio.playSound('explosion', this.x, this.y);
-        // TODO: Add visual effect for front armor breaking
+        this.spawnArmorBreakEffect('front');
         this.hitFlash = 8;
         if (leftover > 0) {
           // Pass overflow damage to main body
@@ -497,10 +520,9 @@ class Tank extends BaseEnemy {
         this.leftArmorHP = 0;
         console.log('💥 Tank Left Armor Destroyed!');
         if (window.audio) window.audio.playSound('explosion', this.x, this.y);
-        // TODO: Add visual effect for armor breaking
+        this.spawnArmorBreakEffect('left');
         this.hitFlash = 8;
         if (leftover > 0) {
-          // Pass overflow damage to main body
           return super.takeDamage(leftover, bulletAngle, damageSource);
         }
         return false; // No overflow, armor absorbed
@@ -525,7 +547,7 @@ class Tank extends BaseEnemy {
         this.rightArmorHP = 0;
         console.log('💥 Tank Right Armor Destroyed!');
         if (window.audio) window.audio.playSound('explosion', this.x, this.y);
-        // TODO: Add visual effect for armor breaking
+        this.spawnArmorBreakEffect('right');
         this.hitFlash = 8;
         if (leftover > 0) {
           // Pass overflow damage to main body

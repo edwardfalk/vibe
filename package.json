@@ -6,17 +6,15 @@
   "main": "index.html",
   "scripts": {
     "serve": "bun run five-server --port=5500",
-    "watch-bugs": "bun run move-bug-reports.js",
-    "predev": "bunx kill-port 5500 3001",
-    "dev": "concurrently \"bun run serve\" \"bun run watch-bugs\" \"bun run api\"",
-    "dev:parallel": "bun run --parallel serve watch-bugs api",
+    "predev": "bunx kill-port 5500",
+    "dev": "bun run serve",
+    "dev:parallel": "bun run serve",
     "test": "bun test",
     "test:playwright": "bunx playwright test",
     "test:headed": "bunx playwright test --headed",
     "test:debug": "bunx playwright test --debug",
     "test:mcp": "bun run run-mcp-tests.js",
     "test:comprehensive": "bun run test:playwright && bun run test:mcp",
-    "api": "bun run ticket-api.js",
     "lint": "bunx eslint \"**/*.js\"",
     "format": "bunx prettier --write \"**/*.{js,md,json}\"",
     "clean": "Remove-Item -Recurse -Force node_modules, bun.lockb -ErrorAction SilentlyContinue",
@@ -49,8 +47,6 @@
   },
   "dependencies": {
     "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "jszip": "^3.10.1",
     "p5": "^1.7.0"
   },
   "keywords": [

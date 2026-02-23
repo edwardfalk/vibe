@@ -40,8 +40,7 @@ class Grunt extends BaseEnemy {
    */
   updateSpecificBehavior(playerX, playerY, deltaTimeMs = 16.6667) {
     if (
-      typeof frameCount !== 'undefined' &&
-      frameCount % 30 === 0 &&
+      this.p.frameCount % 30 === 0 &&
       CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS
     ) {
       console.log(
@@ -168,8 +167,7 @@ class Grunt extends BaseEnemy {
 
     // After movement logic
     if (
-      typeof frameCount !== 'undefined' &&
-      frameCount % 30 === 0 &&
+      this.p.frameCount % 30 === 0 &&
       CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS
     ) {
       console.log(

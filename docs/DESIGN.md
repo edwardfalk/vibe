@@ -16,7 +16,7 @@ Vibe is built around a unique musical timing system—the "Cosmic Beat"—which 
 
 #### Musical Mapping
 
-- **Player**: Free shooting (creates a hi-hat feel)
+- **Player**: Shooting aligns with 8th notes (creates a hi-hat feel)
 - **Grunts**: Attack on beats 2 & 4 (snare drum)
 - **Tanks**: Attack on beat 1 (bass drum)
 - **Stabbers**: Attack on beat 3.5 (off-beat accent)
@@ -62,5 +62,3 @@ if (beatClock.isOnBeat([2, 4])) {
 - ../README.md: Project overview and modular architecture
 
 ---
-
-_For further details on the ticketing system, coding standards, and architecture, see the README and .cursorrules._

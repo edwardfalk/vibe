@@ -15,7 +15,10 @@ import {
   cos,
   atan2,
   sqrt,
+  lerp,
+  TWO_PI,
 } from './mathUtils.js';
+import { drawGlow } from './visualEffects.js';
 
 class EffectsManager {
   constructor() {
@@ -408,5 +411,103 @@ class EnhancedExplosion {
   }
 }
 
-// Add export to main effects manager(s) here
-export { EffectsManager };
+/**
+ * Floating text system for damage numbers, kill text, combo indicators.
+ * Rendered in world space (inside camera transform).
+ */
+class FloatingTextManager {
+  constructor() {
+    this.texts = [];
+  }
+
+  addDamage(x, y, amount) {
+    this.texts.push({
+      x, y,
+      text: `-${amount}`,
+      color: [255, 255, 255],
+      size: 14 + Math.min(amount * 2, 10),
+      vy: -1.5,
+      life: 40,
+      maxLife: 40,
+    });
+  }
+
+  addKill(x, y, enemyType, streak = 0) {
+    const typeColors = {
+      grunt: [50, 255, 50],
+      rusher: [255, 50, 150],
+      tank: [150, 100, 255],
+      stabber: [255, 215, 0],
+    };
+    const color = typeColors[enemyType] || [255, 255, 255];
+
+    this.texts.push({
+      x, y: y - 10,
+      text: 'KILL!',
+      color,
+      size: 18,
+      vy: -2,
+      life: 50,
+      maxLife: 50,
+    });
+
+    if (streak >= 3) {
+      this.texts.push({
+        x, y: y - 28,
+        text: `${streak}x STREAK`,
+        color: [255, 200, 50],
+        size: 14 + Math.min(streak, 10),
+        vy: -2.5,
+        life: 60,
+        maxLife: 60,
+      });
+    }
+  }
+
+  addText(x, y, text, color = [255, 255, 255], size = 14) {
+    this.texts.push({
+      x, y,
+      text,
+      color,
+      size,
+      vy: -1.5,
+      life: 45,
+      maxLife: 45,
+    });
+  }
+
+  update() {
+    for (let i = this.texts.length - 1; i >= 0; i--) {
+      const t = this.texts[i];
+      t.y += t.vy;
+      t.vy *= 0.97;
+      t.life--;
+      if (t.life <= 0) {
+        this.texts.splice(i, 1);
+      }
+    }
+  }
+
+  draw(p) {
+    for (const t of this.texts) {
+      const alpha = (t.life / t.maxLife) * 255;
+      const scale = 1 + (1 - t.life / t.maxLife) * 0.3;
+
+      p.push();
+      p.translate(t.x, t.y);
+      p.scale(scale);
+      p.textAlign(p.CENTER, p.CENTER);
+      p.textSize(t.size);
+
+      p.fill(0, 0, 0, alpha * 0.5);
+      p.noStroke();
+      p.text(t.text, 1, 1);
+
+      p.fill(t.color[0], t.color[1], t.color[2], alpha);
+      p.text(t.text, 0, 0);
+      p.pop();
+    }
+  }
+}
+
+export { EffectsManager, FloatingTextManager };

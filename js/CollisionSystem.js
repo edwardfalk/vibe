@@ -157,31 +157,50 @@ export class CollisionSystem {
               );
             }
           } else if (damageResult === true) {
-            // Enemy died - create beautiful fragment explosion
             this.handleEnemyDeath(enemy, enemyType, bullet.x, bullet.y);
 
             enemy.markedForRemoval = true;
             if (window.gameState) {
               window.gameState.addKill();
 
-              // Calculate score with multipliers
               let points = 10;
-              if (window.gameState.killStreak >= 5) points *= 2; // Double points for 5+ streak
-              if (window.gameState.killStreak >= 10) points *= 1.5; // 3x total for 10+ streak
+              if (window.gameState.killStreak >= 5) points *= 2;
+              if (window.gameState.killStreak >= 10) points *= 1.5;
 
               window.gameState.addScore(points);
+
+              // Kill text + hitstop
+              if (window.floatingText) {
+                window.floatingText.addKill(enemy.x, enemy.y, enemyType, window.gameState.killStreak);
+              }
+              // Hitstop scales with streak
+              const stopFrames = window.gameState.killStreak >= 5 ? 5 : 3;
+              window.hitStopFrames = Math.max(window.hitStopFrames || 0, stopFrames);
             }
+
+            // Screen shake on kill
+            if (window.cameraSystem) {
+              const shakeIntensity = enemyType === 'tank' ? 15 : enemyType === 'rusher' ? 12 : 8;
+              window.cameraSystem.addShake(shakeIntensity, 12);
+            }
+
             if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
               console.log(`💀 ${enemyType} killed by bullet!`);
             }
           } else {
-            // Enemy hit but not dead - smaller effect
+            // Enemy hit but not dead
             if (window.explosionManager) {
               window.explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
             }
             if (window.audio) {
               window.audio.playHit(bullet.x, bullet.y);
             }
+
+            // Floating damage number
+            if (window.floatingText) {
+              window.floatingText.addDamage(enemy.x, enemy.y - enemy.size * 0.5, bullet.damage);
+            }
+
             if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
               console.log(
                 `🎯 ${enemyType} damaged, health now: ${enemy.health}`
