@@ -266,10 +266,7 @@ export class BaseEnemy {
    * Draw method - handles common rendering and calls specific draw methods
    */
   draw(p = this.p) {
-    if (
-      p.frameCount % 30 === 0 &&
-      CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS
-    ) {
+    if (p.frameCount % 30 === 0 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
         `[ENEMY DRAW] type=${this.type} x=${this.x.toFixed(1)} y=${this.y.toFixed(1)} health=${this.health}`
       );
@@ -511,7 +508,7 @@ export class BaseEnemy {
     const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
 
     // Create bullet with enemy type information
-    const bullet = new Bullet(
+    const bullet = Bullet.acquire(
       bulletX,
       bulletY,
       this.aimAngle,

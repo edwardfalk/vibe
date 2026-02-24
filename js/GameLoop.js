@@ -20,9 +20,12 @@ import { CollisionSystem } from './CollisionSystem.js';
 import { TestMode } from './TestMode.js';
 import { Audio } from './Audio.js';
 import { BeatClock } from './BeatClock.js';
+import { BeatTrack } from './BeatTrack.js';
+import { RhythmFX } from './RhythmFX.js';
 import { Bullet } from './bullet.js';
 import VisualEffectsManager from './visualEffects.js';
 import { FloatingTextManager } from './effects.js';
+import { handleAreaDamageEvents } from './AreaDamageHandler.js';
 import { CONFIG } from './config.js';
 import {
   sqrt,
@@ -36,6 +39,8 @@ import {
   cos,
   sin,
 } from './mathUtils.js';
+
+const DEFAULT_PERF_LOG_INTERVAL_FRAMES = 300;
 
 // Core game objects
 let player;
@@ -57,6 +62,7 @@ window.activeBombs = activeBombs;
 window.explosionManager = null;
 window.audio = null;
 window.speechManager = null;
+window.performanceDiagnostics = null;
 
 // Keys system for testing
 window.keys = {
@@ -258,8 +264,19 @@ function setup(p) {
 
   // Initialize BeatClock for rhythm-locked gameplay
   if (!window.beatClock) {
-    window.beatClock = new BeatClock(120); // 120 BPM default, adjust as needed
+    window.beatClock = new BeatClock(120);
     console.log('🎵 BeatClock initialized and assigned to window.beatClock');
+  }
+
+  // Initialize procedural beat track (starts on first user interaction)
+  if (!window.beatTrack) {
+    window.beatTrack = new BeatTrack(120);
+  }
+
+  // Initialize beat visualizer for UI feedback
+  if (!window.rhythmFX) {
+    window.rhythmFX = new RhythmFX();
+    console.log('🎵 RhythmFX initialized');
   }
 
   // Initial enemy spawn
@@ -326,6 +343,11 @@ function draw(p) {
   if (window.uiRenderer) {
     window.uiRenderer.drawUI(p);
   }
+
+  // Draw beat visualizer effects (telegraphs, beat bar)
+  if (window.rhythmFX) {
+    window.rhythmFX.draw(p, window.cameraSystem);
+  }
 }
 
 function updateGame(p) {
@@ -334,12 +356,25 @@ function updateGame(p) {
     window.hitStopFrames--;
     // Still update floating text during hitstop so they don't freeze
     if (window.floatingText) window.floatingText.update();
+
+    // Apply chromatic aberration during hit-stop (decays as hitstop ends)
+    if (window.visualEffectsManager && window.hitStopFrames > 0) {
+      const hitStopProgress = window.hitStopFrames / 8; // Normalize to max expected frames
+      const chromaIntensity = hitStopProgress * 0.6;
+      window.visualEffectsManager.chromaticAberration = chromaIntensity;
+    }
+
     return;
   }
 
   // Update BeatClock every frame for accurate rhythm timing
   if (window.beatClock && typeof window.beatClock.update === 'function') {
     window.beatClock.update();
+  }
+
+  // Update beat visualizer
+  if (window.rhythmFX) {
+    window.rhythmFX.update();
   }
 
   // Test mode - automated movement and shooting
@@ -619,7 +654,15 @@ function updateGame(p) {
 
     // Process area damage events from plasma clouds and radioactive debris
     if (damageEvents && damageEvents.length > 0) {
-      handleAreaDamageEvents(damageEvents);
+      handleAreaDamageEvents(damageEvents, {
+        player: window.player,
+        enemies,
+        audio: window.audio,
+        gameState: window.gameState,
+        cameraSystem: window.cameraSystem,
+        collisionSystem: window.collisionSystem,
+        explosionManager: window.explosionManager,
+      });
     }
   }
 
@@ -632,6 +675,78 @@ function updateGame(p) {
   if (window.floatingText) {
     window.floatingText.update();
   }
+
+  updatePerformanceDiagnostics(p.frameCount);
+}
+
+function updatePerformanceDiagnostics(frameCount) {
+  const gameSettings = CONFIG.GAME_SETTINGS || {};
+  const perfEnabled = Boolean(gameSettings.PERF_DIAGNOSTICS);
+  const interval =
+    Number(gameSettings.PERF_LOG_INTERVAL_FRAMES) ||
+    DEFAULT_PERF_LOG_INTERVAL_FRAMES;
+
+  if (!perfEnabled || frameCount % interval !== 0) return;
+
+  const collisionStats =
+    window.collisionSystem &&
+    typeof window.collisionSystem.getPerformanceSnapshot === 'function'
+      ? window.collisionSystem.getPerformanceSnapshot()
+      : null;
+  const bulletPoolStats =
+    typeof Bullet.getPoolStats === 'function' ? Bullet.getPoolStats() : null;
+  const floatingTextPoolStats =
+    window.floatingText &&
+    window.floatingText.textPool &&
+    typeof window.floatingText.textPool.getStats === 'function'
+      ? window.floatingText.textPool.getStats()
+      : null;
+  const explosionPoolStats =
+    window.explosionManager &&
+    typeof window.explosionManager.getPoolStats === 'function'
+      ? window.explosionManager.getPoolStats()
+      : null;
+
+  window.performanceDiagnostics = {
+    frameCount,
+    collision: collisionStats,
+    pools: {
+      bullets: bulletPoolStats,
+      floatingText: floatingTextPoolStats,
+      explosions: explosionPoolStats,
+    },
+  };
+
+  console.log('🎮 PerfDiagnostics', {
+    frameCount,
+    collisionAverages: collisionStats?.averages,
+    bulletPool: bulletPoolStats
+      ? {
+          inUse: bulletPoolStats.inUse,
+          peakInUse: bulletPoolStats.peakInUse,
+          poolSize: bulletPoolStats.poolSize,
+          peakPoolSize: bulletPoolStats.peakPoolSize,
+          created: bulletPoolStats.created,
+          reused: bulletPoolStats.reused,
+        }
+      : null,
+    floatingTextPool: floatingTextPoolStats
+      ? {
+          inUse: floatingTextPoolStats.inUse,
+          peakInUse: floatingTextPoolStats.peakInUse,
+          poolSize: floatingTextPoolStats.poolSize,
+          peakPoolSize: floatingTextPoolStats.peakPoolSize,
+        }
+      : null,
+    explosionPools: explosionPoolStats
+      ? {
+          fragmentPoolSize: explosionPoolStats.fragmentPoolSize,
+          peakFragmentPoolSize: explosionPoolStats.peakFragmentPoolSize,
+          centralPoolSize: explosionPoolStats.centralPoolSize,
+          peakCentralPoolSize: explosionPoolStats.peakCentralPoolSize,
+        }
+      : null,
+  });
 }
 
 function drawGame(p) {
@@ -644,6 +759,12 @@ function drawGame(p) {
       `🎮 [DRAW GAME] camera=(${cam.x},${cam.y}) enemies=${enemies.length}`
     );
   }
+
+  // Apply screen effects (chromatic aberration, bloom) before camera transform
+  if (window.visualEffectsManager) {
+    window.visualEffectsManager.applyScreenEffects(p);
+  }
+
   // Apply camera transform for world objects
   if (window.cameraSystem) {
     window.cameraSystem.applyTransform();
@@ -689,108 +810,6 @@ function drawGame(p) {
   }
 }
 
-function handleAreaDamageEvents(damageEvents) {
-  for (const event of damageEvents) {
-    // Check player damage
-    if (window.player) {
-      const dx = event.x - window.player.x;
-      const dy = event.y - window.player.y;
-      const playerDistSq = dx * dx + dy * dy;
-      const radiusSq = event.radius * event.radius;
-      if (playerDistSq < radiusSq) {
-        console.log(
-          `☢️ Player took ${event.damage} damage from area effect at (${event.x}, ${event.y})`
-        );
-
-        if (window.audio) {
-          window.audio.playPlayerHit();
-        }
-
-        if (window.gameState) {
-          window.gameState.resetKillStreak(); // Reset kill streak on taking damage
-        }
-
-        // Apply damage
-        if (window.player.takeDamage(event.damage, 'area-effect')) {
-          if (window.gameState) {
-            window.gameState.setGameState('gameOver');
-          }
-          console.log('💀 PLAYER KILLED BY AREA DAMAGE!');
-          continue;
-        }
-
-        // Apply knockback
-        const knockbackAngle = atan2(
-          window.player.y - event.y,
-          window.player.x - event.x
-        );
-        const knockbackForce = 6;
-        window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
-        window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
-
-        // Screen shake
-        if (window.cameraSystem) {
-          window.cameraSystem.addShake(8, 15);
-        }
-      }
-    }
-
-    // Check enemy damage
-    for (let i = enemies.length - 1; i >= 0; i--) {
-      const enemy = enemies[i];
-      const dx = event.x - enemy.x;
-      const dy = event.y - enemy.y;
-      const enemyDistSq = dx * dx + dy * dy;
-      const radiusSq = event.radius * event.radius;
-      if (enemyDistSq < radiusSq) {
-        console.log(
-          `☢️ ${enemy.type} took ${event.damage} damage from area effect`
-        );
-
-        const damageResult = enemy.takeDamage(event.damage, null, 'area');
-
-        if (damageResult === true) {
-          // Enemy died from area damage
-          console.log(`💀 ${enemy.type} killed by area damage!`);
-
-          if (window.collisionSystem) {
-            window.collisionSystem.handleEnemyDeath(
-              enemy,
-              enemy.type,
-              enemy.x,
-              enemy.y
-            );
-          }
-
-          enemy.markedForRemoval = true;
-
-          if (window.gameState) {
-            window.gameState.addKill();
-            window.gameState.addScore(10); // Area effect kills
-          }
-        } else if (damageResult === 'exploding') {
-          // Rusher started exploding from area damage
-          if (window.explosionManager) {
-            window.explosionManager.addExplosion(enemy.x, enemy.y, 'hit');
-          }
-          if (window.audio) {
-            window.audio.playHit(enemy.x, enemy.y);
-          }
-          console.log(`💥 Area damage caused ${enemy.type} to explode!`);
-        } else {
-          // Enemy damaged but not dead
-          if (window.explosionManager) {
-            window.explosionManager.addExplosion(enemy.x, enemy.y, 'hit');
-          }
-          if (window.audio) {
-            window.audio.playHit(enemy.x, enemy.y);
-          }
-        }
-      }
-    }
-  }
-}
-
 function updateBullets(p) {
   // Update player bullets
   for (let i = playerBullets.length - 1; i >= 0; i--) {
@@ -798,6 +817,7 @@ function updateBullets(p) {
     bullet.update();
 
     if (bullet.isOffScreen()) {
+      Bullet.release(bullet);
       playerBullets.splice(i, 1);
     }
   }
@@ -811,6 +831,7 @@ function updateBullets(p) {
       console.log(
         `➖ Removing enemy bullet (off-screen): ${bullet.owner} at (${Math.round(bullet.x)}, ${Math.round(bullet.y)}) - Remaining: ${enemyBullets.length - 1}`
       );
+      Bullet.release(bullet);
       enemyBullets.splice(i, 1);
     }
   }
@@ -974,6 +995,10 @@ function unlockAudioAndShowCanvas() {
   // Resume your own audio context
   if (window.audio && typeof window.audio.ensureAudioContext === 'function') {
     window.audio.ensureAudioContext();
+  }
+  // Start the procedural beat track
+  if (window.beatTrack && !window.beatTrack.isPlaying) {
+    window.beatTrack.start();
   }
   // Try to show the canvas if hidden
   const canvas = document.querySelector('canvas');

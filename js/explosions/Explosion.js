@@ -461,18 +461,31 @@ export class Explosion {
         );
         p.pop();
       } else if (particle.sparkle) {
-        // Draw sparkle particles as stars
+        // Draw sparkle particles as sharp cross stars
         p.push();
         p.translate(particle.x, particle.y);
         p.rotate(particle.rotation);
-        for (let i = 0; i < 4; i++) {
-          p.rotate(PI / 2);
-          p.line(0, 0, particle.size, 0);
-        }
+        p.stroke(
+          p.red(particle.color),
+          p.green(particle.color),
+          p.blue(particle.color),
+          alpha
+        );
+        p.strokeWeight(1);
+        p.line(-particle.size, 0, particle.size, 0);
+        p.line(0, -particle.size, 0, particle.size);
         p.pop();
       } else {
-        // Draw normal particles as circles
-        p.ellipse(particle.x, particle.y, particle.size);
+        // Draw normal particles as sharp triangles/shards instead of circles for synthwave look
+        p.push();
+        p.translate(particle.x, particle.y);
+        p.rotate(particle.rotation);
+        p.triangle(
+          0, -particle.size,
+          -particle.size * 0.8, particle.size * 0.5,
+          particle.size * 0.8, particle.size * 0.5
+        );
+        p.pop();
       }
 
       // Draw particle trail

@@ -155,12 +155,27 @@ class Grunt extends BaseEnemy {
 
     // RHYTHMIC GRUNT SHOOTING: Check if grunt can shoot
     if (distance < 300 && this.shootCooldown <= 0) {
-      if (window.beatClock && window.beatClock.canGruntShoot()) {
-        // Check for friendly fire avoidance
-        if (!this.shouldAvoidFriendlyFire()) {
-          this.shootCooldown = 45 + random(30); // Faster shooting for ranged combat
-          this.muzzleFlash = 4;
-          return this.createBullet();
+      if (window.beatClock) {
+        // Register attack telegraph when approaching attack beat
+        const timeToNextAttack = window.beatClock.getTimeToNextBeat();
+        if (timeToNextAttack < 500 && window.beatClock.isOnBeat([2, 4])) {
+          if (window.rhythmFX) {
+            window.rhythmFX.addAttackTelegraph(
+              this.x,
+              this.y,
+              'grunt',
+              timeToNextAttack / window.beatClock.beatInterval
+            );
+          }
+        }
+
+        if (window.beatClock.canGruntShoot()) {
+          // Check for friendly fire avoidance
+          if (!this.shouldAvoidFriendlyFire()) {
+            this.shootCooldown = 45 + random(30); // Faster shooting for ranged combat
+            this.muzzleFlash = 4;
+            return this.createBullet();
+          }
         }
       }
     }

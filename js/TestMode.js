@@ -5,7 +5,16 @@
 // Dependencies: mathUtils.js (sin, cos, min, floor, random, atan2, dist, constrain). No direct p5.js globals used.
 
 import { Bullet } from './bullet.js';
-import { sin, cos, min, floor, random, atan2, dist, constrain } from './mathUtils.js';
+import {
+  sin,
+  cos,
+  min,
+  floor,
+  random,
+  atan2,
+  dist,
+  constrain,
+} from './mathUtils.js';
 
 /**
  * @param {Player} player - The player object (dependency injected for modularity)
@@ -194,7 +203,7 @@ export class TestMode {
     const bulletX = this.player.x + cos(angle) * bulletDistance;
     const bulletY = this.player.y + sin(angle) * bulletDistance;
 
-    const bullet = new Bullet(bulletX, bulletY, angle, 6, 'player');
+    const bullet = Bullet.acquire(bulletX, bulletY, angle, 6, 'player');
     if (window.playerBullets) {
       window.playerBullets.push(bullet);
     }

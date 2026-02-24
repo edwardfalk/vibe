@@ -4,7 +4,7 @@
 
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
-import { floor, ceil, min, random } from './mathUtils.js';
+import { floor, ceil, min, max, abs, sin, random } from './mathUtils.js';
 
 /**
  * @param {GameState} gameState - The game state object (dependency injected for modularity)
@@ -72,17 +72,17 @@ export class UIRenderer {
       this.dashElement = document.createElement('div');
       this.dashElement.id = 'dash';
       this.dashElement.style.cssText =
-        'position: absolute; top: 120px; left: 10px; color: white; font-family: monospace; font-size: 14px;';
+        'position: absolute; top: 120px; left: 10px; color: white; font-family: monospace; font-size: 14px; text-shadow: 0 0 5px currentColor;';
       document.body.appendChild(this.dashElement);
     }
 
     if (this.player.dashCooldownMs > 0) {
       const cooldownSeconds = (this.player.dashCooldownMs / 1000).toFixed(1);
-      this.dashElement.textContent = `Dash: ${cooldownSeconds}s`;
-      this.dashElement.style.color = '#ff6666';
+      this.dashElement.textContent = `DASH RECHARGING: ${cooldownSeconds}S`;
+      this.dashElement.style.color = '#ff1493'; // Hot pink
     } else {
-      this.dashElement.textContent = 'Dash: READY (E) | Shoot: SPACE or Mouse';
-      this.dashElement.style.color = '#66ff66';
+      this.dashElement.textContent = 'DASH: READY [E] | SHOOT: [SPACE] OR MOUSE';
+      this.dashElement.style.color = '#00ffff'; // Cyan
     }
   }
 
@@ -104,16 +104,26 @@ export class UIRenderer {
     }
 
     // Game over text with animation
-    p.fill(255, 100, 100);
+    p.textFont('monospace');
+    p.fill(255, 20, 147); // Hot pink
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(48 + p.sin(p.frameCount * 0.1) * 4);
+    
+    // Additive glow for title
+    p.blendMode(p.ADD);
+    p.text(this.gameOverMessages[messageIndex], p.width / 2, p.height / 2 - 80);
+    p.blendMode(p.BLEND);
+    
+    p.stroke(255, 255, 255);
+    p.strokeWeight(2);
     const messageIndex =
       floor(this.gameState.score / 50) % this.gameOverMessages.length;
     p.text(this.gameOverMessages[messageIndex], p.width / 2, p.height / 2 - 80);
+    p.noStroke();
 
     // New high score celebration
     if (isNewHighScore) {
-      p.fill(255, 255, 0);
+      p.fill(0, 255, 255); // Cyan
       p.textSize(20 + p.sin(p.frameCount * 0.2) * 3);
       p.text('NEW HIGH SCORE! 🎉', p.width / 2, p.height / 2 - 50);
     }
@@ -122,38 +132,38 @@ export class UIRenderer {
     p.fill(255);
     p.textSize(24);
     p.text(
-      `Final Score: ${this.gameState.score.toLocaleString()}`,
+      `FINAL SCORE: ${this.gameState.score.toLocaleString()}`,
       p.width / 2,
       p.height / 2 - 10
     );
     p.text(
-      `Level Reached: ${this.gameState.level}`,
+      `LEVEL REACHED: ${this.gameState.level}`,
       p.width / 2,
       p.height / 2 + 20
     );
 
     // Stats
-    p.fill(200, 200, 255);
+    p.fill(0, 255, 255); // Cyan
     p.textSize(16);
     p.text(
-      `Enemies Killed: ${this.gameState.totalKills}`,
+      `ENEMIES KILLED: ${this.gameState.totalKills}`,
       p.width / 2,
       p.height / 2 + 45
     );
     const accuracy = this.gameState.getAccuracy();
-    p.text(`Accuracy: ${accuracy}%`, p.width / 2, p.height / 2 + 65);
+    p.text(`ACCURACY: ${accuracy}%`, p.width / 2, p.height / 2 + 65);
 
     // High score display
-    p.fill(255, 255, 100);
+    p.fill(255, 215, 0); // Gold
     p.textSize(18);
     p.text(
-      `High Score: ${this.gameState.highScore.toLocaleString()}`,
+      `HIGH SCORE: ${this.gameState.highScore.toLocaleString()}`,
       p.width / 2,
       p.height / 2 + 90
     );
 
     // Funny comment
-    p.fill(255, 255, 100);
+    p.fill(255, 20, 147); // Pink
     p.textSize(16);
     const commentIndex =
       floor(this.gameState.score / 30) % this.funnyComments.length;
@@ -162,50 +172,67 @@ export class UIRenderer {
     // Restart instruction
     p.fill(255);
     p.textSize(16);
-    p.text('Press R to restart', p.width / 2, p.height / 2 + 140);
+    // Blinking effect
+    if (p.frameCount % 60 < 40) {
+      p.text('PRESS R TO RESTART', p.width / 2, p.height / 2 + 145);
+    }
 
     p.pop();
   }
 
-  // Draw pause screen
+    // Draw pause screen
   drawPauseScreen(p) {
     if (!this.gameState) return;
 
     p.push();
+    p.textFont('monospace');
 
     // Semi-transparent overlay
-    p.fill(0, 0, 0, 100);
+    p.fill(5, 2, 15, 200); // Darker blue-purple tint
     p.rect(0, 0, p.width, p.height);
 
-    // Pause text
-    p.fill(255, 255, 255);
+    // Pause text with synthwave style
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(48);
+    
+    // Cyan glow layer
+    p.blendMode(p.ADD);
+    p.fill(0, 255, 255, 150);
     p.text('PAUSED', p.width / 2, p.height / 2 - 40);
+    p.blendMode(p.BLEND);
+    
+    // Sharp white core text with cyan border
+    p.stroke(0, 255, 255);
+    p.strokeWeight(2);
+    p.fill(255, 255, 255);
+    p.text('PAUSED', p.width / 2, p.height / 2 - 40);
+    p.noStroke();
 
     // Instructions
-    p.fill(200, 200, 200);
+    p.fill(0, 255, 255);
     p.textSize(20);
-    p.text('Press P to resume', p.width / 2, p.height / 2 + 20);
+    if (p.frameCount % 60 < 40) {
+      p.text('PRESS P TO RESUME', p.width / 2, p.height / 2 + 20);
+    }
 
     // Current stats
-    p.fill(255, 255, 100);
+    p.fill(255, 20, 147); // Hot pink
     p.textSize(16);
     p.text(
-      `Score: ${this.gameState.score.toLocaleString()}`,
+      `SCORE: ${this.gameState.score.toLocaleString()}`,
       p.width / 2,
       p.height / 2 + 60
     );
     p.text(
-      `Level: ${this.gameState.level} | Kills: ${this.gameState.totalKills}`,
+      `LEVEL: ${this.gameState.level} | KILLS: ${this.gameState.totalKills}`,
       p.width / 2,
       p.height / 2 + 80
     );
 
     if (this.gameState.killStreak >= 5) {
-      p.fill(255, 100, 100);
+      p.fill(255, 215, 0); // Gold for streak
       p.text(
-        `🔥 ${this.gameState.killStreak}x KILL STREAK! 🔥`,
+        `⚡ ${this.gameState.killStreak}X KILL STREAK! ⚡`,
         p.width / 2,
         p.height / 2 + 100
       );
@@ -268,25 +295,41 @@ export class UIRenderer {
     const barHeight = 8;
     const barX = p.width - barWidth - 20;
     const barY = 20;
+
+    // Use a retro/monospace font if available
+    p.textFont('monospace');
+
+    // Synthwave Neon style
     // Background bar
-    p.fill(50, 50, 50, 150);
-    p.noStroke();
-    p.rect(barX, barY, barWidth, barHeight);
-    // Progress bar
-    p.fill(100, 255, 100, 200);
-    p.rect(barX, barY, barWidth * progress, barHeight);
-    // Border
-    p.stroke(255, 255, 255, 100);
+    p.fill(10, 5, 20, 200);
+    p.stroke(255, 20, 147, 100); // Hot pink faint border
     p.strokeWeight(1);
+    p.rect(barX, barY, barWidth, barHeight);
+
+    // Progress bar (Neon Pink)
+    p.fill(255, 20, 147, 220);
+    p.noStroke();
+    p.rect(barX, barY, barWidth * progress, barHeight);
+    
+    // Add additive glow
+    p.blendMode(p.ADD);
+    p.fill(255, 20, 147, 100);
+    p.rect(barX, barY - 2, barWidth * progress, barHeight + 4);
+    p.blendMode(p.BLEND);
+
+    // Sharp Border
+    p.stroke(255, 20, 147);
+    p.strokeWeight(1.5);
     p.noFill();
     p.rect(barX, barY, barWidth, barHeight);
+
     // Label
     p.fill(255, 255, 255);
     p.textAlign(p.RIGHT, p.TOP);
     p.textSize(12);
     p.noStroke();
     p.text(
-      `Level ${this.gameState.level} Progress`,
+      `LEVEL ${this.gameState.level} PROGRESS`,
       barX + barWidth,
       barY - 15
     );
@@ -300,64 +343,131 @@ export class UIRenderer {
     const streak = this.gameState.killStreak;
     const x = p.width / 2;
     const y = 80;
+
+    p.textFont('monospace');
+
     // Pulsing effect for high streaks
     const pulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5;
     const intensity = Math.min(streak / 10, 1);
-    // Background glow
-    p.fill(255, 100, 100, 50 + pulse * 50 * intensity);
+    
+    p.blendMode(p.ADD);
+    // Background glow (Neon Cyan to Pink depending on streak)
+    const glowColor = streak >= 10 ? p.color(255, 20, 147) : p.color(0, 255, 255);
+    
+    p.fill(p.red(glowColor), p.green(glowColor), p.blue(glowColor), 50 + pulse * 50 * intensity);
     p.noStroke();
     p.ellipse(x, y, 120 + pulse * 20, 40 + pulse * 10);
+    p.blendMode(p.BLEND);
+
     // Text
     p.fill(255, 255, 255);
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(16 + pulse * 4);
-    p.text(`${streak}x KILL STREAK!`, x, y);
-    // Fire effects for high streaks
+    p.stroke(p.red(glowColor), p.green(glowColor), p.blue(glowColor));
+    p.strokeWeight(2);
+    p.text(`[ ${streak}X STREAK ]`, x, y);
+    p.noStroke();
+
+    // Fire effects for high streaks -> Synthwave "OVERLOAD"
     if (streak >= 10) {
-      p.fill(255, 150, 0, 100 + pulse * 100);
+      p.fill(255, 20, 147, 150 + pulse * 105);
       p.textSize(20 + pulse * 6);
-      p.text('🔥 ON FIRE! 🔥', x, y + 25);
+      p.text('OVERLOAD', x, y + 25);
     }
     p.pop();
   }
 
-  // Draw health bar
+  // Draw health bar with smooth damage animation (chunk loss)
   drawHealthBar(p) {
     if (!this.player) return;
     p.push();
+
+    p.textFont('monospace');
+
+    // Initialize animated health value if not set
+    if (this.animatedHealth === undefined) {
+      this.animatedHealth = this.player.health;
+    }
+
+    // Smoothly interpolate animated health toward actual health
+    const healthDiff = this.player.health - this.animatedHealth;
+    if (abs(healthDiff) > 0.1) {
+      // Damage loses health quickly, healing gains slowly
+      const lerpSpeed = healthDiff < 0 ? 0.15 : 0.05;
+      this.animatedHealth += healthDiff * lerpSpeed;
+    } else {
+      this.animatedHealth = this.player.health;
+    }
+
     const healthPercent = this.player.health / this.player.maxHealth;
+    const animatedPercent = max(0, this.animatedHealth / this.player.maxHealth);
     const barWidth = 150;
     const barHeight = 12;
     const barX = 20;
     const barY = p.height - 40;
-    // Background bar
-    p.fill(50, 50, 50, 150);
+
+    // Synthwave Style Health Bar
+    // Background bar (dark)
+    p.fill(5, 5, 15, 200);
     p.noStroke();
     p.rect(barX, barY, barWidth, barHeight);
-    // Health bar color based on health level
-    if (healthPercent > 0.6) {
-      p.fill(100, 255, 100, 200); // Green
-    } else if (healthPercent > 0.3) {
-      p.fill(255, 255, 100, 200); // Yellow
-    } else {
-      p.fill(255, 100, 100, 200); // Red
+
+    // "Ghost" bar showing the damage chunk (health that's been lost but still animating)
+    if (this.animatedHealth > this.player.health) {
+      p.fill(255, 20, 147, 150); // Neon pink for damage chunk
+      p.rect(barX, barY, barWidth * animatedPercent, barHeight);
     }
+
+    // Actual health bar color based on health level
+    let healthColor;
+    if (healthPercent > 0.6) {
+      healthColor = p.color(0, 255, 255); // Neon Cyan
+    } else if (healthPercent > 0.3) {
+      healthColor = p.color(255, 215, 0); // Neon Gold
+    } else {
+      // Red that pulses when critical
+      const pulse = sin(Date.now() * 0.01) * 0.3 + 0.7;
+      healthColor = p.color(255 * pulse, 20 * pulse, 147 * pulse); // Pulsing Hot Pink
+    }
+    
+    p.fill(healthColor);
     p.rect(barX, barY, barWidth * healthPercent, barHeight);
-    // Border
-    p.stroke(255, 255, 255, 100);
-    p.strokeWeight(1);
+
+    // Additive glow on the health bar edge
+    if (healthPercent > 0) {
+      p.blendMode(p.ADD);
+      p.fill(healthColor.levels[0], healthColor.levels[1], healthColor.levels[2], 100);
+      p.rect(barX + barWidth * healthPercent - 2, barY - 2, 4, barHeight + 4);
+      p.blendMode(p.BLEND);
+    }
+
+    // Sharp Border
+    p.stroke(healthColor);
+    p.strokeWeight(1.5);
     p.noFill();
     p.rect(barX, barY, barWidth, barHeight);
-    // Health text
+
+    // Health text with icon
     p.fill(255, 255, 255);
     p.textAlign(p.LEFT, p.BOTTOM);
     p.textSize(12);
     p.noStroke();
+
+    // Health text (no heart icon, more sci-fi)
     p.text(
-      `Health: ${this.player.health}/${this.player.maxHealth}`,
+      `SYS.INTEGRITY [${floor(this.player.health)}/${this.player.maxHealth}]`,
       barX,
       barY - 5
     );
+
+    // Show damage number if recently damaged
+    if (this.player.hitFlash > 0) {
+      p.fill(255, 20, 147, this.player.hitFlash * 30); // Pink damage text
+      p.textAlign(p.CENTER, p.CENTER);
+      p.textSize(14);
+      p.text(`-${ceil(this.player.maxHealth - this.player.health)}`, barX + barWidth / 2, barY - 20);
+    }
+
     p.pop();
   }
 

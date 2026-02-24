@@ -32,9 +32,59 @@ if (!GAME_SETTINGS) {
 
 const WORLD_WIDTH = GAME_SETTINGS?.WORLD_WIDTH ?? DEFAULT_WORLD_WIDTH;
 const WORLD_HEIGHT = GAME_SETTINGS?.WORLD_HEIGHT ?? DEFAULT_WORLD_HEIGHT;
+const MAX_BULLET_POOL_SIZE = 400;
 
 export class Bullet {
   constructor(x, y, angle, speed, owner) {
+    this.trail = [];
+    this.maxTrailLength = 5;
+    this.reset(x, y, angle, speed, owner);
+  }
+
+  static acquire(x, y, angle, speed, owner) {
+    Bullet.poolStats.acquired++;
+    let bullet;
+    if (Bullet.pool.length > 0) {
+      bullet = Bullet.pool.pop();
+      bullet._inPool = false;
+      bullet.reset(x, y, angle, speed, owner);
+      Bullet.poolStats.reused++;
+    } else {
+      bullet = new Bullet(x, y, angle, speed, owner);
+      Bullet.poolStats.created++;
+    }
+    Bullet.poolStats.inUse++;
+    Bullet.poolStats.peakInUse = Math.max(
+      Bullet.poolStats.peakInUse,
+      Bullet.poolStats.inUse
+    );
+    return bullet;
+  }
+
+  static release(bullet) {
+    if (!bullet || bullet._inPool || Bullet.pool.length >= MAX_BULLET_POOL_SIZE)
+      return;
+    bullet._inPool = true;
+    bullet.active = false;
+    bullet.trail.length = 0;
+    Bullet.pool.push(bullet);
+    Bullet.poolStats.released++;
+    Bullet.poolStats.inUse = Math.max(0, Bullet.poolStats.inUse - 1);
+    Bullet.poolStats.peakPoolSize = Math.max(
+      Bullet.poolStats.peakPoolSize,
+      Bullet.pool.length
+    );
+  }
+
+  static getPoolStats() {
+    return {
+      ...Bullet.poolStats,
+      poolSize: Bullet.pool.length,
+      maxPoolSize: MAX_BULLET_POOL_SIZE,
+    };
+  }
+
+  reset(x, y, angle, speed, owner) {
     this.x = x;
     this.y = y;
     this.prevX = x;
@@ -42,6 +92,11 @@ export class Bullet {
     this.angle = angle;
     this.speed = speed;
     this.owner = owner; // 'player' or 'enemy'
+    this.ownerId = undefined;
+    this.type = undefined;
+    this.energy = undefined;
+    this.penetrating = false;
+    this._inPool = false;
 
     this.velocity = {
       x: cos(angle) * speed,
@@ -50,25 +105,22 @@ export class Bullet {
 
     // Size and damage based on owner type - increased for better visibility
     if (owner === 'player') {
-      this.size = 8; // Increased from 6
+      this.size = 8;
       this.damage = 1;
     } else if (owner === 'enemy-rusher') {
-      this.size = 5; // Increased from 3
+      this.size = 5;
       this.damage = 1;
     } else if (owner === 'enemy-tank') {
-      this.size = 20; // Made bigger for more impact
-      this.damage = 999; // Instant kill
-      this.energy = 100; // Energy that decreases when killing enemies
-      this.penetrating = true; // Can pass through enemies
+      this.size = 20;
+      this.damage = 999;
+      this.energy = 100;
+      this.penetrating = true;
     } else {
-      this.size = 6; // Increased from 4
+      this.size = 6;
       this.damage = 1;
     }
     this.active = true;
-
-    // Trail effect
-    this.trail = [];
-    this.maxTrailLength = 5;
+    this.trail.length = 0;
   }
 
   update() {
@@ -104,9 +156,23 @@ export class Bullet {
         const energyPercent = Number.isFinite(this.energy)
           ? Math.min(1, Math.max(0, this.energy / 100))
           : 1;
-        drawGlow(p, this.x, this.y, this.size * 3 * energyPercent, p.color(150, 100, 255), 1.2);
+        drawGlow(
+          p,
+          this.x,
+          this.y,
+          this.size * 3 * energyPercent,
+          p.color(150, 100, 255),
+          1.2
+        );
       } else {
-        drawGlow(p, this.x, this.y, this.size * 1.5, p.color(255, 100, 255), 0.5);
+        drawGlow(
+          p,
+          this.x,
+          this.y,
+          this.size * 1.5,
+          p.color(255, 100, 255),
+          0.5
+        );
       }
     } catch (error) {
       console.log('⚠️ Bullet glow error:', error);
@@ -119,69 +185,55 @@ export class Bullet {
     p.push();
     p.translate(this.x, this.y);
     p.rotate(this.angle);
+    
+    // Synthwave bright core with thick neon glow
+    p.blendMode(p.ADD);
 
     if (this.owner === 'player') {
-      // Player bullet - cosmic turquoise energy
-      p.fill(64, 224, 208);
-      p.noStroke();
-      p.ellipse(0, 0, this.size);
-
-      // Bright core
-      p.fill(255, 255, 255, 180);
-      p.ellipse(0, 0, this.size * 0.6);
-
-      // Outer glow
-      p.fill(0, 255, 255, 80);
-      p.ellipse(0, 0, this.size * 1.4);
+      // Player bullet - neon cyan line
+      p.stroke(0, 255, 255, 200);
+      p.strokeWeight(this.size);
+      p.line(-this.size, 0, this.size, 0);
+      
+      p.stroke(255, 255, 255);
+      p.strokeWeight(this.size * 0.4);
+      p.line(-this.size * 0.5, 0, this.size * 0.5, 0);
     } else if (this.owner === 'enemy-rusher') {
-      // Rusher bullet - small, fast, pink
-      p.fill(255, 150, 200);
-      p.noStroke();
-      p.ellipse(0, 0, this.size);
-
-      // Small glow
-      p.fill(255, 200, 220, 120);
-      p.ellipse(0, 0, this.size * 1.3);
+      // Rusher bullet - hot pink shard
+      p.fill(255, 255, 255);
+      p.stroke(255, 20, 147, 200);
+      p.strokeWeight(this.size * 0.8);
+      p.triangle(this.size, 0, -this.size, -this.size * 0.5, -this.size, this.size * 0.5);
     } else if (this.owner === 'enemy-tank') {
-      // Tank bullet - massive, devastating energy ball with vibrating pulse
+      // Tank bullet - massive vibrating neon purple hexagon
       const energyPercent = Number.isFinite(this.energy)
         ? Math.min(1, Math.max(0, this.energy / 100))
         : 1;
       const vibration = sin(p.frameCount * 0.8) * 2; // Fast vibration
-      const pulse = sin(p.frameCount * 0.5) * 0.4 + 0.6; // Slower pulse
 
-      p.push();
-      p.translate(vibration, vibration * 0.5); // Vibrating effect
+      p.translate(vibration, vibration * 0.5);
 
-      // Main energy ball - size based on remaining energy
-      p.fill(150 * energyPercent, 100 * energyPercent, 255);
-      p.noStroke();
-      p.ellipse(0, 0, this.size * energyPercent);
-
-      // Massive plasma glow
-      p.fill(200 * energyPercent, 150 * energyPercent, 255, 120 * pulse);
-      p.ellipse(0, 0, this.size * 2.2 * energyPercent);
-
-      // Pulsing outer aura with vibration
-      p.fill(255, 200 * energyPercent, 255, 60 * pulse * energyPercent);
-      p.ellipse(0, 0, this.size * 3 * energyPercent);
-
-      // Bright inner core
-      p.fill(255, 255, 255, 200 * energyPercent);
-      p.ellipse(0, 0, this.size * 0.4 * energyPercent);
-
-      p.pop();
+      p.stroke(138, 43, 226, 200);
+      p.strokeWeight(this.size * 0.5 * energyPercent);
+      p.fill(255, 255, 255);
+      
+      p.beginShape();
+      for(let i=0; i<6; i++) {
+        p.vertex(cos(i * PI/3) * this.size * energyPercent, sin(i * PI/3) * this.size * energyPercent);
+      }
+      p.endShape(p.CLOSE);
     } else {
-      // Standard enemy bullet - purple/pink energy
-      p.fill(255, 100, 255);
-      p.noStroke();
-      p.ellipse(0, 0, this.size);
-
-      // Energy glow
-      p.fill(255, 150, 255, 100);
-      p.ellipse(0, 0, this.size * 1.5);
+      // Standard enemy bullet - neon green line
+      p.stroke(0, 255, 0, 200);
+      p.strokeWeight(this.size);
+      p.line(-this.size, 0, this.size, 0);
+      
+      p.stroke(255, 255, 255);
+      p.strokeWeight(this.size * 0.4);
+      p.line(-this.size * 0.5, 0, this.size * 0.5, 0);
     }
 
+    p.blendMode(p.BLEND);
     p.pop();
   }
 
@@ -224,6 +276,7 @@ export class Bullet {
 
   destroy() {
     this.active = false;
+    Bullet.release(this);
   }
 
   // Check if bullet is off screen
@@ -261,3 +314,14 @@ export class Bullet {
     return dist(px, py, lx, ly);
   }
 }
+
+Bullet.pool = [];
+Bullet.poolStats = {
+  acquired: 0,
+  released: 0,
+  created: 0,
+  reused: 0,
+  inUse: 0,
+  peakInUse: 0,
+  peakPoolSize: 0,
+};

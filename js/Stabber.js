@@ -204,8 +204,7 @@ class Stabber extends BaseEnemy {
 
           // Spawn hit visual effect
           if (
-            typeof visualEffectsManager !== 'undefined' &&
-            visualEffectsManager &&
+            window.visualEffectsManager &&
             this.stabDirection !== null
           ) {
             const impactX =
@@ -213,7 +212,7 @@ class Stabber extends BaseEnemy {
             const impactY =
               this.y + sin(this.stabDirection) * (this.meleeReach * 0.9);
             // Using a small, sharp explosion effect
-            visualEffectsManager.addExplosion(
+            window.visualEffectsManager.addExplosion(
               impactX,
               impactY,
               20,
@@ -384,21 +383,50 @@ class Stabber extends BaseEnemy {
           );
       } else if (distance <= this.maxStabDistance) {
         // In attack window
-        if (window.beatClock && window.beatClock.canStabberAttack()) {
-          this.stabPreparing = true;
-          this.stabPreparingTime = 0;
-          if (CONFIG.DEBUG)
-            console.log(
-              `🎯 Stabber starting attack (dist: ${distance.toFixed(0)}px) on beat.`
+        if (window.beatClock) {
+          // Register attack telegraph when approaching beat 3.5 (off-beat attack)
+          const currentBeat = window.beatClock.getCurrentBeat();
+          const beatPhase = window.beatClock.getBeatPhase();
+          let beatsUntilStab = null;
+
+          // Calculate beats until stabber attack window (beat 3.5)
+          if (currentBeat === 2) {
+            // Currently on beat 3, approaching 3.5
+            if (beatPhase < 0.75) {
+              beatsUntilStab = 0.75 - beatPhase;
+            }
+          } else if (currentBeat === 3) {
+            // Currently on beat 4, just passed 3.5
+            if (beatPhase > 0.25) {
+              beatsUntilStab = 3.75 - beatPhase; // Next cycle
+            }
+          }
+
+          if (beatsUntilStab !== null && beatsUntilStab < 1.5 && window.rhythmFX) {
+            window.rhythmFX.addAttackTelegraph(
+              this.x,
+              this.y,
+              'stabber',
+              beatsUntilStab
             );
-        } else {
-          // Creep slowly if in range and off-beat
-          this.velocity.x = unitX * this.speed * 0.8;
-          this.velocity.y = unitY * this.speed * 0.8;
-          if (CONFIG.DEBUG)
-            console.log(
-              `🎯 Stabber in range (dist: ${distance.toFixed(0)}px), creeping slowly off-beat.`
-            );
+          }
+
+          if (window.beatClock.canStabberAttack()) {
+            this.stabPreparing = true;
+            this.stabPreparingTime = 0;
+            if (CONFIG.DEBUG)
+              console.log(
+                `🎯 Stabber starting attack (dist: ${distance.toFixed(0)}px) on beat.`
+              );
+          } else {
+            // Creep slowly if in range and off-beat
+            this.velocity.x = unitX * this.speed * 0.8;
+            this.velocity.y = unitY * this.speed * 0.8;
+            if (CONFIG.DEBUG)
+              console.log(
+                `🎯 Stabber in range (dist: ${distance.toFixed(0)}px), creeping slowly off-beat.`
+              );
+          }
         }
       } else {
         // Outside attack range
@@ -462,8 +490,8 @@ class Stabber extends BaseEnemy {
       result.stabAngle = this.stabDirection;
       result.hitType = 'player';
       // Spark effect at tip
-      if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
-        visualEffectsManager.addExplosion(
+      if (window.visualEffectsManager) {
+        window.visualEffectsManager.addExplosion(
           tipX,
           tipY,
           10,
@@ -472,8 +500,7 @@ class Stabber extends BaseEnemy {
           3,
           8
         );
-        // Red splash effect
-        visualEffectsManager.addExplosion(
+        window.visualEffectsManager.addExplosion(
           tipX,
           tipY,
           14,
@@ -519,11 +546,8 @@ class Stabber extends BaseEnemy {
       // After collecting all enemy hits, trigger effects and sound only once if any were hit
       if (result.enemiesHit.length > 0) {
         // Spark effect at tip
-        if (
-          typeof visualEffectsManager !== 'undefined' &&
-          visualEffectsManager
-        ) {
-          visualEffectsManager.addExplosion(
+        if (window.visualEffectsManager) {
+          window.visualEffectsManager.addExplosion(
             tipX,
             tipY,
             10,
@@ -532,8 +556,7 @@ class Stabber extends BaseEnemy {
             3,
             8
           );
-          // Red splash effect
-          visualEffectsManager.addExplosion(
+          window.visualEffectsManager.addExplosion(
             tipX,
             tipY,
             14,
@@ -551,9 +574,9 @@ class Stabber extends BaseEnemy {
     }
     // Miss case as before
     if (result.type === 'stabber-miss') {
-      if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
+      if (window.visualEffectsManager) {
         try {
-          visualEffectsManager.addExplosion(
+          window.visualEffectsManager.addExplosion(
             this.x,
             this.y,
             15,
@@ -623,10 +646,10 @@ class Stabber extends BaseEnemy {
    * Note: This is now called from updateSpecificBehavior based on deltaTime timer
    */
   drawMotionTrail() {
-    if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
+    if (window.visualEffectsManager) {
       try {
         const trailColor = [255, 140, 0];
-        visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
+        window.visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
       } catch (error) {
         console.log('⚠️ Stabber trail error:', error);
       }

@@ -198,48 +198,102 @@ export class BackgroundRenderer {
     p.pop();
   }
 
-  // Draw distant stars with twinkling
+  // Draw distant stars with twinkling + beat-reactive brightness
   drawDistantStars(stars, p = this.p) {
+    const beatBoost = window.beatClock
+      ? window.beatClock.getBeatIntensity(10) * 80
+      : 0;
+
     p.noStroke();
     for (const star of stars) {
       const twinkle = p.sin(p.frameCount * star.twinkleSpeed) * 0.5 + 0.5;
-      const alpha = star.brightness * twinkle * 255;
+      const alpha = Math.min(255, star.brightness * twinkle * 255 + beatBoost);
 
       p.fill(255, 255, 255, alpha);
       p.ellipse(star.x, star.y, star.size, star.size);
     }
   }
 
-  // Draw nebula clouds
+  // Draw nebula clouds — beat-reactive: brighter and more saturated on beat
   drawNebulaClouds(clouds, p = this.p) {
+    const beatPulse = window.beatClock
+      ? window.beatClock.getBeatIntensity(6)
+      : 0;
+
     p.noStroke();
     for (const cloud of clouds) {
       const drift = p.sin(p.frameCount * cloud.driftSpeed) * 20;
-      const alpha = cloud.alpha * 255;
+      const boost = beatPulse * 0.7;
+      const r = Math.min(255, cloud.color.r + boost * 60);
+      const g = Math.min(255, cloud.color.g + boost * 30);
+      const b = Math.min(255, cloud.color.b + boost * 80);
+      const alpha = Math.min(255, cloud.alpha * 255 * (1 + boost * 2.5));
 
-      p.fill(cloud.color.r, cloud.color.g, cloud.color.b, alpha);
+      p.fill(r, g, b, alpha);
       p.ellipse(cloud.x + drift, cloud.y, cloud.size, cloud.size * 0.6);
     }
   }
 
-  // Draw medium stars
+  // Draw medium stars with beat-synchronized twinkling
   drawMediumStars(stars, p = this.p) {
+    // Get beat intensity for synchronized twinkling
+    const beatPulse = window.beatClock
+      ? window.beatClock.getBeatIntensity(8)
+      : 0;
+    const measurePhase = window.beatClock
+      ? window.beatClock.getMeasurePhase()
+      : 0;
+
     p.noStroke();
+    let starIndex = 0;
     for (const star of stars) {
+      // Create a unique twinkle phase for each star based on its position
+      const starPhase = (star.x * 0.01 + star.y * 0.01) % p.TWO_PI;
+      // Twinkle speed varies by star
+      const twinkleSpeed = 0.05 + star.size * 0.01;
+
+      // Combine time-based and beat-based twinkling
+      const timeTwinkle = p.sin(p.frameCount * twinkleSpeed + starPhase) * 0.5 + 0.5;
+      // Beat-synchronized: stars pulse together on beats, offset by star's "phase" in the measure
+      const beatTwinkle = (p.sin(measurePhase * p.TWO_PI + starPhase) * 0.5 + 0.5) * beatPulse;
+
+      // Combined brightness: base + time twinkle + beat pulse
+      const combinedBrightness = star.brightness * (0.7 + timeTwinkle * 0.3 + beatTwinkle * 0.3);
+      const alpha = min(255, combinedBrightness * 255);
+
+      // Size also pulses slightly with beat
+      const sizePulse = 1 + beatPulse * 0.2 * ((starIndex % 3) / 3);
+      const finalSize = star.size * sizePulse;
+
       switch (star.color) {
         case 'blue':
-          p.fill(173, 216, 230, star.brightness * 255);
+          p.fill(173, 216, 230, alpha);
           break;
         case 'yellow':
-          p.fill(255, 255, 224, star.brightness * 255);
+          // Yellow stars get warmer on beat
+          p.fill(255, 255, 150 + beatPulse * 50, alpha);
           break;
         case 'orange':
-          p.fill(255, 165, 0, star.brightness * 255);
+          p.fill(255, 165 + beatPulse * 20, 0, alpha);
           break;
         default:
-          p.fill(255, 255, 255, star.brightness * 255);
+          // White stars get subtle blue tint on beat
+          p.fill(255, 255, 255 + beatPulse * 20, alpha);
       }
-      p.ellipse(star.x, star.y, star.size, star.size);
+      p.ellipse(star.x, star.y, finalSize, finalSize);
+
+      // Add sparkle cross on bright beats for brighter stars
+      if (combinedBrightness > 0.85 && beatPulse > 0.3) {
+        const sparkleAlpha = (combinedBrightness - 0.85) * beatPulse * 255;
+        p.stroke(255, 255, 255, sparkleAlpha);
+        p.strokeWeight(1);
+        const sparkleSize = finalSize * 1.5;
+        p.line(star.x - sparkleSize, star.y, star.x + sparkleSize, star.y);
+        p.line(star.x, star.y - sparkleSize, star.x, star.y + sparkleSize);
+        p.noStroke();
+      }
+
+      starIndex++;
     }
   }
 
@@ -296,100 +350,179 @@ export class BackgroundRenderer {
     }
   }
 
-  // Draw cosmic aurora background
+  // Draw cosmic aurora background with beat-reactive color shifts
   drawCosmicAuroraBackground(p = this.p) {
     p.push();
 
-    // Create a clean gradient using rectangles
-    const gradientSteps = 8;
-    const stepHeight = p.height / gradientSteps;
+    // Deep space black to purple background
+    p.background(5, 2, 15);
 
-    for (let i = 0; i < gradientSteps; i++) {
-      const inter = i / (gradientSteps - 1);
+    // Get beat intensity for color modulation
+    const beatIntensity = window.beatClock
+      ? window.beatClock.getBeatIntensity(4)
+      : 0;
+    const downbeatIntensity = window.beatClock
+      ? window.beatClock.getDownbeatIntensity(3)
+      : 0;
 
-      // Cosmic aurora gradient colors
-      let r, g, b;
-      if (inter < 0.3) {
-        // Deep space black to purple
-        const t = p.map(inter, 0, 0.3, 0, 1);
-        r = p.lerp(8, 25, t);
-        g = p.lerp(5, 15, t);
-        b = p.lerp(20, 45, t);
-      } else if (inter < 0.7) {
-        // Purple to cosmic blue
-        const t = p.map(inter, 0.3, 0.7, 0, 1);
-        r = p.lerp(25, 20, t);
-        g = p.lerp(15, 30, t);
-        b = p.lerp(45, 65, t);
-      } else {
-        // Cosmic blue to deep purple
-        const t = p.map(inter, 0.7, 1, 0, 1);
-        r = p.lerp(20, 30, t);
-        g = p.lerp(30, 20, t);
-        b = p.lerp(65, 50, t);
-      }
+    // Horizon line position
+    const horizonY = p.height * 0.45;
 
-      // Subtle time-based variation
-      const timeShift = p.sin(p.frameCount * 0.005 + inter) * 8;
-      r += timeShift * 0.5;
-      g += timeShift * 0.3;
-      b += timeShift * 0.8;
+    // Draw sky gradient
+    const skySteps = 20;
+    const skyStepHeight = horizonY / skySteps;
+
+    p.noStroke();
+    for (let i = 0; i < skySteps; i++) {
+      const inter = i / (skySteps - 1);
+      
+      // Synthwave sunset gradient (deep blue/purple to hot pink/orange at horizon)
+      // Top of sky
+      const topColor = { r: 10, g: 5, b: 30 };
+      // Horizon color
+      const horizonColor = { 
+        r: 255 - beatIntensity * 20, 
+        g: 20 + beatIntensity * 40, 
+        b: 147 + downbeatIntensity * 50 
+      };
+
+      // Exponential interpolation for more intense color near horizon
+      const easeInter = p.pow(inter, 2.5);
+
+      const r = p.lerp(topColor.r, horizonColor.r, easeInter);
+      const g = p.lerp(topColor.g, horizonColor.g, easeInter);
+      const b = p.lerp(topColor.b, horizonColor.b, easeInter);
 
       p.fill(r, g, b);
-      p.noStroke();
-      p.rect(0, i * stepHeight, p.width, stepHeight + 1);
+      p.rect(0, i * skyStepHeight, p.width, skyStepHeight + 1);
     }
+
+    // Synthwave Sun
+    const sunRadius = 150 + beatIntensity * 5;
+    const sunX = p.width / 2;
+    const sunY = horizonY - 20;
+
+    // Sun glow
+    p.blendMode(p.ADD);
+    for (let i = 0; i < 3; i++) {
+      const glowRadius = sunRadius * (1.2 + i * 0.2);
+      p.fill(255, 100, 0, 30 - i * 10);
+      p.ellipse(sunX, sunY, glowRadius, glowRadius);
+    }
+    p.blendMode(p.BLEND);
+
+    // Draw the sun with retro stripes
+    p.fill(255, 200, 0); // Yellow-orange top
+    p.arc(sunX, sunY, sunRadius, sunRadius, p.PI, p.TWO_PI); // Top half
+    
+    // Bottom half with stripes
+    const stripeCount = 6;
+    for (let i = 0; i < stripeCount; i++) {
+      const yOffset = i * (sunRadius / 2 / stripeCount);
+      const stripeHeight = (sunRadius / 2 / stripeCount) * 0.6; // Gap gets larger towards bottom
+      
+      // Calculate width of sun at this y position using circle equation x^2 + y^2 = r^2
+      const chordHalfWidth = p.sqrt(p.sq(sunRadius/2) - p.sq(yOffset));
+      
+      p.fill(255, 50 + i * 20, 0); // Gradient down to deep orange/red
+      p.arc(
+        sunX, 
+        sunY, 
+        sunRadius, 
+        sunRadius, 
+        p.asin(yOffset / (sunRadius/2)), 
+        p.PI - p.asin(yOffset / (sunRadius/2)),
+        p.CHORD
+      );
+      // We overwrite the gaps with background color to make the stripes
+      p.fill(5, 2, 15);
+      p.rect(sunX - sunRadius/2, sunY + yOffset + stripeHeight, sunRadius, (sunRadius / 2 / stripeCount) - stripeHeight);
+    }
+
+    // Synthwave Perspective Grid
+    const gridYStart = horizonY;
+    const gridHeight = p.height - horizonY;
+    
+    // Grid movement based on frame count (simulating forward motion)
+    const speed = 2 + beatIntensity * 2;
+    const gridOffset = (p.frameCount * speed) % 40;
+
+    // Draw grid background
+    p.fill(10, 0, 20);
+    p.rect(0, gridYStart, p.width, gridHeight);
+
+    p.stroke(0, 255, 255, 150 + beatIntensity * 55); // Cyan lines
+    p.strokeWeight(2);
+
+    // Horizontal lines (perspective)
+    const numHorizontalLines = 15;
+    for (let i = 0; i < numHorizontalLines; i++) {
+      // Exponential distribution for perspective
+      let yProgress = p.pow((i / numHorizontalLines), 2);
+      
+      // Apply movement offset to the progress
+      let shiftedProgress = yProgress + (gridOffset / gridHeight) * p.pow(((i+1) / numHorizontalLines), 1.5);
+      if (shiftedProgress > 1) continue; // Skip lines that moved off screen
+
+      const y = gridYStart + shiftedProgress * gridHeight;
+      
+      // Fade out lines near the horizon
+      const alpha = p.map(shiftedProgress, 0, 0.1, 0, 255, true);
+      p.stroke(0, 255, 255, alpha);
+      
+      // Thicker lines closer to bottom
+      p.strokeWeight(1 + shiftedProgress * 3);
+      
+      p.line(0, y, p.width, y);
+    }
+
+    // Vertical/Perspective lines
+    const numVerticalLines = 21; // Odd number so there's a center line
+    const vanishingPointX = p.width / 2;
+    const vanishingPointY = horizonY;
+
+    for (let i = 0; i < numVerticalLines; i++) {
+      // Calculate x position at the bottom of the screen
+      // Spread wider than screen width to maintain perspective at edges
+      const bottomX = p.map(i, 0, numVerticalLines - 1, -p.width, p.width * 2);
+      
+      // Calculate x position at horizon (slightly spread to avoid crowding)
+      const topX = p.map(i, 0, numVerticalLines - 1, vanishingPointX - 100, vanishingPointX + 100);
+
+      // Create a gradient for the vertical lines fading into the horizon
+      const ctx2d = p.drawingContext;
+      const grad = ctx2d.createLinearGradient(0, gridYStart, 0, p.height);
+      grad.addColorStop(0, 'rgba(0, 255, 255, 0)');
+      grad.addColorStop(0.1, 'rgba(0, 255, 255, 0.1)');
+      grad.addColorStop(1, `rgba(0, 255, 255, ${0.5 + beatIntensity * 0.5})`);
+      
+      ctx2d.strokeStyle = grad;
+      ctx2d.lineWidth = 2;
+      ctx2d.beginPath();
+      ctx2d.moveTo(topX, gridYStart);
+      ctx2d.lineTo(bottomX, p.height);
+      ctx2d.stroke();
+    }
+
+    // Horizon glow line
+    p.blendMode(p.ADD);
+    p.stroke(255, 20, 147, 200 + downbeatIntensity * 55); // Hot pink horizon
+    p.strokeWeight(4 + beatIntensity * 4);
+    p.line(0, horizonY, p.width, horizonY);
+    
+    p.stroke(255, 255, 255, 100);
+    p.strokeWeight(1);
+    p.line(0, horizonY, p.width, horizonY);
+    p.blendMode(p.BLEND);
 
     p.pop();
   }
 
-  // Draw enhanced space elements
+  // Draw enhanced space elements (modified for synthwave)
   drawEnhancedSpaceElements(p = this.p) {
     p.push();
 
-    // Flowing nebula streams
-    p.fill(64, 224, 208, 12);
-    p.noStroke();
-    for (let i = 0; i < 12; i++) {
-      const streamX = ((i * 97 + p.frameCount * 0.15) % (p.width + 150)) - 75;
-      const streamY = (i * 143) % p.height;
-      const streamSize = 80 + p.sin(p.frameCount * 0.008 + i) * 30;
-      const streamFlow = p.sin(p.frameCount * 0.01 + i * 0.5) * 20;
-
-      // Create flowing stream effect
-      for (let j = 0; j < 5; j++) {
-        const segmentX = streamX + j * 15 + streamFlow;
-        const segmentY = streamY + p.sin(p.frameCount * 0.006 + i + j) * 10;
-        const segmentAlpha = 12 - j * 2;
-        p.fill(64 + j * 10, 224 - j * 5, 208 + j * 8, segmentAlpha);
-        p.ellipse(
-          segmentX,
-          segmentY,
-          streamSize - j * 10,
-          (streamSize - j * 10) * 0.6
-        );
-      }
-    }
-
-    // Enhanced aurora wisps
-    for (let i = 0; i < 8; i++) {
-      const wispX = ((i * 127 + p.frameCount * 0.08) % (p.width + 100)) - 50;
-      const wispY = (i * 179) % p.height;
-      const wispSize = 100 + p.cos(p.frameCount * 0.006 + i) * 35;
-      const colorPhase = p.frameCount * 0.01 + i;
-
-      const r = 138 + p.sin(colorPhase) * 50;
-      const g = 43 + p.cos(colorPhase * 1.3) * 40;
-      const b = 226 + p.sin(colorPhase * 0.7) * 30;
-
-      p.fill(r, g, b, 15);
-      p.ellipse(wispX, wispY, wispSize, wispSize * 0.4);
-
-      p.fill(r * 0.8, g * 0.8, b * 0.8, 8);
-      p.ellipse(wispX - 20, wispY, wispSize * 0.7, wispSize * 0.3);
-    }
-
-    // Shooting stars
+    // Keep the shooting stars but make them bright cyan/pink
     for (let i = 0; i < 3; i++) {
       const starLife = (p.frameCount + i * 200) % 600;
       if (starLife < 120) {
@@ -402,8 +535,8 @@ export class BackgroundRenderer {
         const starX = p.lerp(startX, endX, progress);
         const starY = p.lerp(startY, endY, progress);
 
-        // Shooting star trail
-        p.stroke(255, 215, 0, 150 * (1 - progress));
+        // Shooting star trail (cyan)
+        p.stroke(0, 255, 255, 150 * (1 - progress));
         p.strokeWeight(3);
         p.line(starX, starY, starX - 30, starY + 15);
 
@@ -412,42 +545,43 @@ export class BackgroundRenderer {
         p.noStroke();
         p.ellipse(starX, starY, 4, 4);
 
-        // Sparkle trail
+        // Sparkle trail (pink)
         for (let j = 1; j <= 5; j++) {
           const trailX = starX - j * 8;
           const trailY = starY + j * 4;
           const trailAlpha = (150 * (1 - progress)) / j;
-          p.fill(255, 215 - j * 20, 0, trailAlpha);
+          p.fill(255, 20, 147, trailAlpha);
           p.ellipse(trailX, trailY, 3 - j * 0.4, 3 - j * 0.4);
         }
       }
     }
 
-    // Enhanced distant sparkles
-    for (let i = 0; i < 20; i++) {
+    // Enhanced distant sparkles (stars stretched horizontally for speed effect)
+    for (let i = 0; i < 40; i++) {
       const sparkleX = (i * 67) % p.width;
-      const sparkleY = (i * 103) % p.height;
+      const sparkleY = (i * 103) % (p.height * 0.45); // Only in sky area
       const twinkle = p.sin(p.frameCount * 0.02 + i * 2) * 0.5 + 0.5;
-      const colorPhase = p.frameCount * 0.008 + i;
 
       const sparkleColors = [
-        [255, 215, 0], // Gold
-        [255, 182, 193], // Light pink
-        [173, 216, 230], // Light blue
-        [221, 160, 221], // Plum
-        [255, 255, 224], // Light yellow
+        [0, 255, 255],   // Cyan
+        [255, 20, 147],  // Hot pink
+        [148, 0, 211],   // Violet
+        [255, 255, 255], // White
       ];
 
-      const colorIndex = p.floor(colorPhase) % sparkleColors.length;
+      const colorIndex = i % sparkleColors.length;
       const currentColor = sparkleColors[colorIndex];
-      const alpha = 30 + twinkle * 40;
+      const alpha = 30 + twinkle * 80;
 
       p.fill(currentColor[0], currentColor[1], currentColor[2], alpha);
       p.noStroke();
-      p.ellipse(sparkleX, sparkleY, 2 + twinkle, 2 + twinkle);
+      
+      // Horizontal stretch for speed effect
+      const stretch = 1 + twinkle * 3;
+      p.ellipse(sparkleX, sparkleY, 2 * stretch, 2);
 
       // Add cross sparkle for brighter ones
-      if (twinkle > 0.7) {
+      if (twinkle > 0.8) {
         p.stroke(
           currentColor[0],
           currentColor[1],
@@ -457,9 +591,9 @@ export class BackgroundRenderer {
         p.strokeWeight(1);
         const sparkleSize = 4 + twinkle * 2;
         p.line(
-          sparkleX - sparkleSize,
+          sparkleX - sparkleSize * 2,
           sparkleY,
-          sparkleX + sparkleSize,
+          sparkleX + sparkleSize * 2,
           sparkleY
         );
         p.line(
@@ -470,41 +604,6 @@ export class BackgroundRenderer {
         );
         p.noStroke();
       }
-    }
-
-    // Distant galaxies
-    for (let i = 0; i < 4; i++) {
-      const galaxyX = (i * 200 + 100) % p.width;
-      const galaxyY = (i * 150 + 80) % p.height;
-      const rotation = p.frameCount * 0.002 + i;
-      const galaxySize = 60 + p.sin(p.frameCount * 0.005 + i) * 15;
-
-      p.push();
-      p.translate(galaxyX, galaxyY);
-      p.rotate(rotation);
-
-      // Galaxy spiral arms
-      for (let arm = 0; arm < 3; arm++) {
-        p.push();
-        p.rotate((arm * p.TWO_PI) / 3);
-
-        for (let r = 0; r < galaxySize; r += 3) {
-          const armAngle = r * 0.1;
-          const armX = p.cos(armAngle) * r;
-          const armY = p.sin(armAngle) * r;
-          const armAlpha = p.map(r, 0, galaxySize, 20, 2);
-
-          p.fill(200, 150, 255, armAlpha);
-          p.ellipse(armX, armY, 3, 1);
-        }
-        p.pop();
-      }
-
-      // Galaxy core
-      p.fill(255, 200, 255, 40);
-      p.ellipse(0, 0, galaxySize * 0.3, galaxySize * 0.3);
-
-      p.pop();
     }
 
     p.pop();
@@ -537,19 +636,52 @@ export class BackgroundRenderer {
   drawInteractiveBackgroundEffects(p = this.p) {
     p.push();
 
-    // Beat-reactive pulse: flash on each beat
+    // Beat-reactive pulse system
     if (window.beatClock) {
-      const timeToNext = window.beatClock.getTimeToNextBeat();
-      const beatInterval = window.beatClock.beatInterval;
-      const timeSinceLast = Math.max(0, beatInterval - timeToNext);
-      if (timeSinceLast < 80) {
-        const beatFlash = Math.min(1, 1 - timeSinceLast / 80);
-        const currentBeat = window.beatClock.getCurrentBeat();
-        // Stronger flash on beat 1 (downbeat)
-        const intensity = currentBeat === 0 ? beatFlash * 25 : beatFlash * 12;
-        p.fill(138, 43, 226, intensity);
+      const phase = window.beatClock.getBeatPhase();
+      const intensity = window.beatClock.getBeatIntensity(8);
+      const currentBeat = window.beatClock.getCurrentBeat();
+      const isDownbeat = currentBeat === 0;
+
+      // 1. Screen flash overlay — warm white on downbeat, purple on others
+      const flashAlpha = isDownbeat ? intensity * 45 : intensity * 18;
+      if (flashAlpha > 1) {
+        if (isDownbeat) {
+          p.fill(200, 180, 255, flashAlpha);
+        } else {
+          p.fill(138, 43, 226, flashAlpha);
+        }
         p.noStroke();
         p.rect(0, 0, p.width, p.height);
+      }
+
+      // 2. Beat ring — expanding circle from screen center
+      if (phase < 0.6) {
+        const ringProgress = phase / 0.6;
+        const ringRadius = 40 + ringProgress * 350;
+        const ringAlpha = (1 - ringProgress) * (isDownbeat ? 70 : 30);
+        const ringWeight = (1 - ringProgress) * 2.5 + 0.5;
+
+        p.noFill();
+        p.stroke(180, 140, 255, ringAlpha);
+        p.strokeWeight(ringWeight);
+        p.ellipse(p.width / 2, p.height / 2, ringRadius * 2, ringRadius * 2);
+      }
+
+      // 3. Vignette pulse — edges darken briefly on beat for "breathing" feel
+      const vigAlpha = intensity * 0.12;
+      if (vigAlpha > 0.005) {
+        const ctx2d = p.drawingContext;
+        ctx2d.save();
+        const grad = ctx2d.createRadialGradient(
+          p.width / 2, p.height / 2, p.width * 0.25,
+          p.width / 2, p.height / 2, p.width * 0.72
+        );
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, `rgba(20,10,40,${vigAlpha})`);
+        ctx2d.fillStyle = grad;
+        ctx2d.fillRect(0, 0, p.width, p.height);
+        ctx2d.restore();
       }
     }
 

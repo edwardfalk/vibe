@@ -34,6 +34,10 @@ const CONFIG = {
     DEBUG_MODE: false,
     // Enable verbose collision debug logging (per-frame/per-entity)
     DEBUG_COLLISIONS: false,
+    // Enable periodic performance diagnostics logs and snapshots
+    PERF_DIAGNOSTICS: false,
+    // Frames between performance diagnostics reports
+    PERF_LOG_INTERVAL_FRAMES: 300,
 
     // Canonical world dimensions for all systems
     WORLD_WIDTH: 1150,

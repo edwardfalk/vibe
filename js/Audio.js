@@ -53,6 +53,19 @@
 import { random, randomRange, floor } from './mathUtils.js';
 import { drawGlow } from './visualEffects.js';
 
+const AMBIENT_SOUNDS = new Set([
+  'enemyIdle',
+  'stabberChant',
+  'gruntAdvance',
+  'gruntRetreat',
+  'stabberStalk',
+  'gruntMalfunction',
+  'gruntBeep',
+  'gruntWhir',
+  'gruntError',
+  'gruntGlitch',
+]);
+
 export class Audio {
   /**
    * @param {p5} p - The p5 instance
@@ -445,10 +458,10 @@ export class Audio {
       return;
     }
 
-    this.playTone(soundConfig, x, y);
+    this.playTone(soundConfig, x, y, soundName);
   }
 
-  playTone(config, x, y) {
+  playTone(config, x, y, soundName = '') {
     const oscillator = this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
     const panNode = this.audioContext.createStereoPanner();
@@ -540,21 +553,7 @@ export class Audio {
     }
 
     // Check if this is an ambient enemy sound that should have reverb
-    const soundName = Object.keys(this.sounds).find(
-      (key) => this.sounds[key] === config
-    );
-    const isAmbientSound = [
-      'enemyIdle',
-      'stabberChant',
-      'gruntAdvance',
-      'gruntRetreat',
-      'stabberStalk',
-      'gruntMalfunction',
-      'gruntBeep',
-      'gruntWhir',
-      'gruntError',
-      'gruntGlitch',
-    ].includes(soundName);
+    const isAmbientSound = AMBIENT_SOUNDS.has(soundName);
 
     if (isAmbientSound && this.effects.reverb) {
       // OPTIMIZED: Simplified atmospheric effects for better performance
@@ -695,11 +694,11 @@ export class Audio {
       playerY = this.player.y;
     }
     // Ensure entity.x and entity.y are valid numbers
-    let ex =
+    const ex =
       entity && typeof entity.x === 'number' && !isNaN(entity.x)
         ? entity.x
         : 400;
-    let ey =
+    const ey =
       entity && typeof entity.y === 'number' && !isNaN(entity.y)
         ? entity.y
         : 300;

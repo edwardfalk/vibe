@@ -20,6 +20,16 @@ export class BeatClock {
 
     // Beat pattern tracking (4/4 time signature)
     this.beatsPerMeasure = 4;
+    this.cache = {
+      timestamp: 0,
+      elapsed: 0,
+      totalBeats: 0,
+      currentBeat: 0,
+      timeToNextBeat: this.beatInterval,
+      beatPhase: 0,
+      measurePhase: 0,
+    };
+    this.update(true);
 
     console.log(
       `🎵 BeatClock initialized: ${bpm} BPM (${this.beatInterval}ms per beat)`
@@ -28,22 +38,20 @@ export class BeatClock {
 
   // Get current beat number (0-based, resets every measure)
   getCurrentBeat() {
-    const elapsed = Date.now() - this.startTime;
-    const totalBeats = Math.floor(elapsed / this.beatInterval);
-    return totalBeats % this.beatsPerMeasure; // 0, 1, 2, 3, 0, 1, 2, 3...
+    this.update();
+    return this.cache.currentBeat;
   }
 
   // Get total beats since start (for longer patterns)
   getTotalBeats() {
-    const elapsed = Date.now() - this.startTime;
-    return Math.floor(elapsed / this.beatInterval);
+    this.update();
+    return this.cache.totalBeats;
   }
 
   // Time until next beat
   getTimeToNextBeat() {
-    const elapsed = Date.now() - this.startTime;
-    const timeSinceLastBeat = elapsed % this.beatInterval;
-    return this.beatInterval - timeSinceLastBeat;
+    this.update();
+    return this.cache.timeToNextBeat;
   }
 
   // Check if we're currently on a beat (within tolerance)
@@ -73,7 +81,8 @@ export class BeatClock {
 
   // NEW: PLAYER QUARTER-BEAT SHOOTING - Exact timing, no tolerance windows
   canPlayerShootQuarterBeat() {
-    const elapsed = Date.now() - this.startTime;
+    this.update();
+    const elapsed = this.cache.elapsed;
     const quarterBeatInterval = this.beatInterval / 4; // 125ms at 120 BPM
     const timeSinceLastQuarterBeat = elapsed % quarterBeatInterval;
 
@@ -89,7 +98,8 @@ export class BeatClock {
 
   // Get time until next quarter beat for queuing
   getTimeToNextQuarterBeat() {
-    const elapsed = Date.now() - this.startTime;
+    this.update();
+    const elapsed = this.cache.elapsed;
     const quarterBeatInterval = this.beatInterval / 4;
     const timeSinceLastQuarterBeat = elapsed % quarterBeatInterval;
     return quarterBeatInterval - timeSinceLastQuarterBeat;
@@ -111,7 +121,8 @@ export class BeatClock {
 
   // STABBER TIMING: Off-beat (syncopated, creates tension)
   canStabberAttack() {
-    const elapsed = Date.now() - this.startTime;
+    this.update();
+    const elapsed = this.cache.elapsed;
     const beatPosition = (elapsed % this.beatInterval) / this.beatInterval;
 
     // Attack on beat 3.5 (75% through beat 3, or 25% through beat 4)
@@ -153,18 +164,59 @@ export class BeatClock {
   setBPM(newBPM) {
     this.bpm = newBPM;
     this.beatInterval = (60 / newBPM) * 1000;
+    this.update(true);
     console.log(`🎵 Tempo changed to ${newBPM} BPM`);
   }
 
   // Reset timing (for level transitions)
   reset() {
     this.startTime = Date.now();
+    this.update(true);
     console.log('🎵 BeatClock reset');
   }
 
+  // Continuous beat phase: 0 = beat just hit, 1 = next beat about to hit
+  getBeatPhase() {
+    this.update();
+    return this.cache.beatPhase;
+  }
+
+  // Exponential decay intensity from last beat (1 at beat, decays toward 0)
+  getBeatIntensity(decayRate = 8) {
+    const phase = this.getBeatPhase();
+    return Math.exp(-phase * decayRate);
+  }
+
+  // Same as getBeatIntensity but stronger on downbeat (beat 1)
+  getDownbeatIntensity(decayRate = 6) {
+    const beat = this.getCurrentBeat();
+    const intensity = this.getBeatIntensity(decayRate);
+    return beat === 0 ? intensity : intensity * 0.4;
+  }
+
+  // Phase through a full measure (0-1 over 4 beats)
+  getMeasurePhase() {
+    this.update();
+    return this.cache.measurePhase;
+  }
+
   // No-op update method for compatibility with GameLoop
-  update() {
-    // BeatClock is stateless; nothing to update per frame
+  update(force = false) {
+    const now = Date.now();
+    if (!force && now === this.cache.timestamp) return;
+
+    const elapsed = now - this.startTime;
+    const totalBeats = Math.floor(elapsed / this.beatInterval);
+    const timeSinceLastBeat = elapsed % this.beatInterval;
+    const measureLength = this.beatInterval * this.beatsPerMeasure;
+
+    this.cache.timestamp = now;
+    this.cache.elapsed = elapsed;
+    this.cache.totalBeats = totalBeats;
+    this.cache.currentBeat = totalBeats % this.beatsPerMeasure;
+    this.cache.timeToNextBeat = this.beatInterval - timeSinceLastBeat;
+    this.cache.beatPhase = timeSinceLastBeat / this.beatInterval;
+    this.cache.measurePhase = (elapsed % measureLength) / measureLength;
   }
 
   // Getter for currentBeat for probe/debug compatibility

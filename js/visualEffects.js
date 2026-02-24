@@ -226,14 +226,27 @@ class VisualEffectsManager {
     p.pop();
   }
 
-  // Particle system for explosions and effects
+  // Particle system for explosions and effects with beat-reactivity
   addExplosionParticles(x, y, type = 'normal') {
     if (!this.initialized) {
       this.init();
       if (!this.initialized) return;
     }
 
-    const particleCount = type === 'rusher-explosion' ? 25 : 15;
+    // Get beat intensity for enhanced effects on-beat
+    const beatIntensity = window.beatClock
+      ? window.beatClock.getBeatIntensity(8)
+      : 0;
+    const isDownbeat = window.beatClock
+      ? window.beatClock.getCurrentBeat() === 0
+      : false;
+
+    // Increase particle count on beats
+    let particleCount = type === 'rusher-explosion' ? 25 : 15;
+    if (beatIntensity > 0.3) {
+      particleCount = Math.floor(particleCount * (isDownbeat ? 1.6 : 1.3));
+    }
+
     const colors =
       type === 'tank'
         ? [
@@ -248,19 +261,31 @@ class VisualEffectsManager {
           ];
 
     for (let i = 0; i < particleCount; i++) {
+      // Boost velocities on beats
+      let speedBoost = 1;
+      if (beatIntensity > 0.3) {
+        speedBoost = 1 + beatIntensity * 0.5;
+      }
+
       this.particles.push({
         x: x,
         y: y,
-        vx: random(-8, 8),
-        vy: random(-8, 8),
-        size: random(3, 8),
+        vx: random(-8, 8) * speedBoost,
+        vy: random(-8, 8) * speedBoost,
+        size: random(3, 8) * (beatIntensity > 0.3 ? 1.2 : 1),
         life: 60,
         maxLife: 60,
         color: random(colors),
         type: 'explosion',
         gravity: 0.1,
         fade: random(0.02, 0.05),
+        beatBoost: beatIntensity,
       });
+    }
+
+    // Add bloom effect on-beat explosions
+    if (beatIntensity > 0.4) {
+      this.triggerBloom(0.3 + beatIntensity * 0.3, 15);
     }
   }
 
@@ -426,17 +451,24 @@ class VisualEffectsManager {
   }
 }
 
-// Enhanced glow effect function
+// Enhanced glow effect function using additive blending for neon pop
 function drawGlow(p, x, y, size, color, intensity = 1) {
   p.push();
   p.blendMode(p.ADD);
   p.noStroke();
-  for (let i = 0; i < 5; i++) {
-    const alpha = p.map(i, 0, 4, intensity * 100, 0);
-    const glowSize = size * (1 + i * 0.3);
+  
+  // Create a sharp center with a wider faint glow
+  const maxLayers = 3;
+  for (let i = 0; i < maxLayers; i++) {
+    // Inverse exponential dropoff for alpha
+    const alpha = (intensity * 255) / p.pow(2, i);
+    // Linear growth for size
+    const glowSize = size * (0.8 + i * 0.6);
+    
     p.fill(p.red(color), p.green(color), p.blue(color), alpha);
     p.ellipse(x, y, glowSize, glowSize);
   }
+  
   p.blendMode(p.BLEND);
   p.pop();
 }

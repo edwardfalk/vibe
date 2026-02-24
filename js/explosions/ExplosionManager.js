@@ -3,6 +3,50 @@ import { RadioactiveDebris } from './RadioactiveDebris.js';
 import { PlasmaCloud } from './PlasmaCloud.js';
 import { random, TWO_PI, cos, sin, PI } from '../mathUtils.js';
 
+const MAX_FRAGMENT_POOL_SIZE = 600;
+const MAX_CENTRAL_PARTICLE_POOL_SIZE = 600;
+const fragmentPool = [];
+const centralParticlePool = [];
+const explosionPoolStats = {
+  fragmentAcquired: 0,
+  fragmentReleased: 0,
+  centralAcquired: 0,
+  centralReleased: 0,
+  peakFragmentPoolSize: 0,
+  peakCentralPoolSize: 0,
+};
+
+function acquireFragment() {
+  explosionPoolStats.fragmentAcquired++;
+  return fragmentPool.pop() || {};
+}
+
+function releaseFragment(fragment) {
+  if (!fragment || fragmentPool.length >= MAX_FRAGMENT_POOL_SIZE) return;
+  fragmentPool.push(fragment);
+  explosionPoolStats.fragmentReleased++;
+  explosionPoolStats.peakFragmentPoolSize = Math.max(
+    explosionPoolStats.peakFragmentPoolSize,
+    fragmentPool.length
+  );
+}
+
+function acquireCentralParticle() {
+  explosionPoolStats.centralAcquired++;
+  return centralParticlePool.pop() || {};
+}
+
+function releaseCentralParticle(particle) {
+  if (!particle || centralParticlePool.length >= MAX_CENTRAL_PARTICLE_POOL_SIZE)
+    return;
+  centralParticlePool.push(particle);
+  explosionPoolStats.centralReleased++;
+  explosionPoolStats.peakCentralPoolSize = Math.max(
+    explosionPoolStats.peakCentralPoolSize,
+    centralParticlePool.length
+  );
+}
+
 /**
  * Explosion management system
  * Coordinates all explosion types and effects in the game
@@ -66,23 +110,33 @@ class EnemyFragmentExplosion {
         fragmentType = 'weapon';
       }
 
-      const fragment = {
-        x: this.x + random(-size * 0.3, size * 0.3),
-        y: this.y + random(-size * 0.3, size * 0.3),
-        vx: cos(angle) * speed,
-        vy: sin(angle) * speed,
-        size: fragmentSize,
-        color: fragmentColor,
-        type: fragmentType,
-        rotation: random(TWO_PI),
-        rotationSpeed: random(-0.4, 0.4), // Increased rotation speed for more dramatic spinning
-        life: random(80, 120), // Increased from 60-90 for much longer visibility
-        maxLife: random(80, 120),
-        gravity: 0.08, // Reduced gravity for more floating effect
-        friction: 0.98, // Increased friction slightly for better control
-      };
+      const fragment = acquireFragment();
+      fragment.x = this.x + random(-size * 0.3, size * 0.3);
+      fragment.y = this.y + random(-size * 0.3, size * 0.3);
+      fragment.vx = cos(angle) * speed;
+      fragment.vy = sin(angle) * speed;
+      fragment.size = fragmentSize;
+      fragment.color = fragmentColor;
+      fragment.type = fragmentType;
+      fragment.rotation = random(TWO_PI);
+      fragment.rotationSpeed = random(-0.4, 0.4); // Increased rotation speed for more dramatic spinning
+      fragment.life = random(80, 120); // Increased from 60-90 for much longer visibility
+      fragment.maxLife = random(80, 120);
+      fragment.gravity = 0.08; // Reduced gravity for more floating effect
+      fragment.friction = 0.98; // Increased friction slightly for better control
       if (fragmentType === 'body') {
-        fragment.bodyOffsets = [random(0.4), random(0.4), random(0.4), random(0.4), random(0.4), random(0.4)];
+        if (!fragment.bodyOffsets) {
+          fragment.bodyOffsets = [0, 0, 0, 0, 0, 0];
+        }
+        for (
+          let offsetIndex = 0;
+          offsetIndex < fragment.bodyOffsets.length;
+          offsetIndex++
+        ) {
+          fragment.bodyOffsets[offsetIndex] = random(0.4);
+        }
+      } else {
+        fragment.bodyOffsets = null;
       }
       this.fragments.push(fragment);
     }
@@ -110,17 +164,17 @@ class EnemyFragmentExplosion {
       const angle = (i / particleCount) * TWO_PI + random(-0.3, 0.3);
       const speed = random(3, 10); // Increased from 2-8 for more dramatic spread
 
-      this.centralExplosion.particles.push({
-        x: this.x,
-        y: this.y,
-        vx: cos(angle) * speed,
-        vy: sin(angle) * speed,
-        size: random(12, 30), // Increased from 8-20 to 12-30 for much more visibility
-        color: primaryColor,
-        life: random(40, 70), // Increased from 30-50 for longer visibility
-        maxLife: random(40, 70),
-        glow: random(0.7, 1.2), // Increased glow intensity even more
-      });
+      const particle = acquireCentralParticle();
+      particle.x = this.x;
+      particle.y = this.y;
+      particle.vx = cos(angle) * speed;
+      particle.vy = sin(angle) * speed;
+      particle.size = random(12, 30); // Increased from 8-20 to 12-30 for much more visibility
+      particle.color = primaryColor;
+      particle.life = random(40, 70); // Increased from 30-50 for longer visibility
+      particle.maxLife = random(40, 70);
+      particle.glow = random(0.7, 1.2); // Increased glow intensity even more
+      this.centralExplosion.particles.push(particle);
     }
   }
 
@@ -148,7 +202,12 @@ class EnemyFragmentExplosion {
 
       // Remove dead fragments
       if (fragment.life <= 0) {
-        this.fragments.splice(i, 1);
+        const lastIndex = this.fragments.length - 1;
+        releaseFragment(fragment);
+        if (i !== lastIndex) {
+          this.fragments[i] = this.fragments[lastIndex];
+        }
+        this.fragments.pop();
       }
     }
 
@@ -164,7 +223,13 @@ class EnemyFragmentExplosion {
       particle.life--;
 
       if (particle.life <= 0) {
-        this.centralExplosion.particles.splice(i, 1);
+        const lastIndex = this.centralExplosion.particles.length - 1;
+        releaseCentralParticle(particle);
+        if (i !== lastIndex) {
+          this.centralExplosion.particles[i] =
+            this.centralExplosion.particles[lastIndex];
+        }
+        this.centralExplosion.particles.pop();
       }
     }
 
@@ -198,12 +263,7 @@ class EnemyFragmentExplosion {
         p.ellipse(0, 0, particle.size * 3);
       }
 
-      p.fill(
-        particle.color[0],
-        particle.color[1],
-        particle.color[2],
-        alpha
-      );
+      p.fill(particle.color[0], particle.color[1], particle.color[2], alpha);
       p.noStroke();
       p.ellipse(0, 0, particle.size);
 
@@ -220,12 +280,7 @@ class EnemyFragmentExplosion {
       p.translate(fragment.x, fragment.y);
       p.rotate(fragment.rotation);
 
-      p.fill(
-        fragment.color[0],
-        fragment.color[1],
-        fragment.color[2],
-        alpha
-      );
+      p.fill(fragment.color[0], fragment.color[1], fragment.color[2], alpha);
       p.noStroke();
 
       if (fragment.type === 'head' || fragment.type === 'helmet') {
@@ -267,7 +322,26 @@ export class ExplosionManager {
   }
 
   addExplosion(x, y, type = 'enemy') {
-    this.explosions.push(new Explosion(x, y, type));
+    // Get beat intensity for enhanced on-beat explosions
+    const beatIntensity = window.beatClock
+      ? window.beatClock.getBeatIntensity(6)
+      : 0;
+    const isDownbeat = window.beatClock
+      ? window.beatClock.getCurrentBeat() === 0
+      : false;
+
+    // Create explosion with beat-enhanced properties
+    const explosion = new Explosion(x, y, type);
+
+    // Enhance explosion on strong beats
+    if (beatIntensity > 0.3) {
+      explosion.beatBoost = beatIntensity;
+      explosion.sizeMultiplier = isDownbeat ? 1.3 : 1.15;
+      explosion.particleMultiplier = isDownbeat ? 1.5 : 1.2;
+      explosion.glowMultiplier = isDownbeat ? 1.4 : 1.2;
+    }
+
+    this.explosions.push(explosion);
   }
 
   addPlasmaCloud(x, y) {
@@ -356,7 +430,7 @@ export class ExplosionManager {
       this.explosions.push(new Explosion(x, y, 'enemy'));
     }
 
-    let effectName = `${enemyType}-${killMethod}-kill`;
+    const effectName = `${enemyType}-${killMethod}-kill`;
     console.log(
       `💥 ${enemyType} killed by ${killMethod} - created ${effectName} effect`
     );
@@ -364,7 +438,22 @@ export class ExplosionManager {
 
   // Add beautiful fragment explosion that cuts enemy into pieces
   addFragmentExplosion(x, y, enemy) {
-    this.fragmentExplosions.push(new EnemyFragmentExplosion(x, y, enemy));
+    const fragmentExplosion = new EnemyFragmentExplosion(x, y, enemy);
+
+    // Enhance with beat intensity
+    const beatIntensity = window.beatClock
+      ? window.beatClock.getBeatIntensity(6)
+      : 0;
+    if (beatIntensity > 0.3) {
+      // Boost fragment speeds on beat
+      fragmentExplosion.fragments.forEach((f) => {
+        f.vx *= 1 + beatIntensity * 0.3;
+        f.vy *= 1 + beatIntensity * 0.3;
+        f.glow += beatIntensity * 0.3;
+      });
+    }
+
+    this.fragmentExplosions.push(fragmentExplosion);
     // console.log(`✨ Created beautiful fragment explosion for ${enemy.type} at (${x}, ${y})`);
   }
 
@@ -373,14 +462,22 @@ export class ExplosionManager {
     for (let i = this.explosions.length - 1; i >= 0; i--) {
       this.explosions[i].update();
       if (!this.explosions[i].active) {
-        this.explosions.splice(i, 1);
+        const lastIndex = this.explosions.length - 1;
+        if (i !== lastIndex) {
+          this.explosions[i] = this.explosions[lastIndex];
+        }
+        this.explosions.pop();
       }
     }
     // Update fragment explosions
     for (let i = this.fragmentExplosions.length - 1; i >= 0; i--) {
       this.fragmentExplosions[i].update();
       if (!this.fragmentExplosions[i].active) {
-        this.fragmentExplosions.splice(i, 1);
+        const lastIndex = this.fragmentExplosions.length - 1;
+        if (i !== lastIndex) {
+          this.fragmentExplosions[i] = this.fragmentExplosions[lastIndex];
+        }
+        this.fragmentExplosions.pop();
       }
     }
     // Update plasma clouds and collect area damage events
@@ -389,7 +486,11 @@ export class ExplosionManager {
       const damageInfo = this.plasmaClouds[i].update();
       if (damageInfo) damageEvents.push(damageInfo);
       if (!this.plasmaClouds[i].active) {
-        this.plasmaClouds.splice(i, 1);
+        const lastIndex = this.plasmaClouds.length - 1;
+        if (i !== lastIndex) {
+          this.plasmaClouds[i] = this.plasmaClouds[lastIndex];
+        }
+        this.plasmaClouds.pop();
       }
     }
     // Update radioactive debris and collect area damage events
@@ -397,7 +498,11 @@ export class ExplosionManager {
       const damageInfo = this.radioactiveDebris[i].update();
       if (damageInfo) damageEvents.push(damageInfo);
       if (!this.radioactiveDebris[i].active) {
-        this.radioactiveDebris.splice(i, 1);
+        const lastIndex = this.radioactiveDebris.length - 1;
+        if (i !== lastIndex) {
+          this.radioactiveDebris[i] = this.radioactiveDebris[lastIndex];
+        }
+        this.radioactiveDebris.pop();
       }
     }
     return damageEvents;
@@ -420,5 +525,15 @@ export class ExplosionManager {
     for (const debris of this.radioactiveDebris) {
       debris.draw(p);
     }
+  }
+
+  getPoolStats() {
+    return {
+      ...explosionPoolStats,
+      fragmentPoolSize: fragmentPool.length,
+      centralPoolSize: centralParticlePool.length,
+      maxFragmentPoolSize: MAX_FRAGMENT_POOL_SIZE,
+      maxCentralPoolSize: MAX_CENTRAL_PARTICLE_POOL_SIZE,
+    };
   }
 }

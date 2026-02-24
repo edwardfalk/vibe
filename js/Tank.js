@@ -172,11 +172,27 @@ class Tank extends BaseEnemy {
       }
     } else if (distance < 400 && this.shootCooldown <= 0) {
       // RHYTHMIC TANK SHOOTING: Tanks can only shoot on beat 1 (bass drum pattern)
-      if (window.beatClock && window.beatClock.canTankShoot()) {
-        // Start charging
-        this.chargingShot = true;
-        this.chargeTime = 0;
-        console.log('🎯 Tank starting charge sequence!');
+      if (window.beatClock) {
+        // Register attack telegraph when approaching attack beat
+        const timeToNextAttack = window.beatClock.getTimeToNextBeat();
+        if (timeToNextAttack < 800 && window.beatClock.getCurrentBeat() === 3) {
+          // Beat 4 (0-indexed as 3) means next beat is 1 (0-indexed as 0)
+          if (window.rhythmFX) {
+            window.rhythmFX.addAttackTelegraph(
+              this.x,
+              this.y,
+              'tank',
+              1 + timeToNextAttack / window.beatClock.beatInterval
+            );
+          }
+        }
+
+        if (window.beatClock.canTankShoot()) {
+          // Start charging
+          this.chargingShot = true;
+          this.chargeTime = 0;
+          console.log('🎯 Tank starting charge sequence!');
+        }
       }
     }
 
@@ -212,43 +228,50 @@ class Tank extends BaseEnemy {
   }
 
   /**
-   * Draw tank-specific body shape
+   * Draw tank-specific body shape - heavy geometric block
    */
   drawBody(s) {
-    // Massive, blocky body
-    this.p.fill(this.bodyColor);
+    this.p.strokeJoin(this.p.MITER);
+
+    // Deep Violet outline
+    this.p.stroke(138, 43, 226);
+    this.p.strokeWeight(3);
+    
+    // Dark heavy interior
+    this.p.fill(15, 10, 25);
+
+    // Main heavy hexagon chassis
+    this.p.beginShape();
+    this.p.vertex(-s * 0.3, -s * 0.6);
+    this.p.vertex(s * 0.3, -s * 0.6);
+    this.p.vertex(s * 0.6, 0);
+    this.p.vertex(s * 0.3, s * 0.6);
+    this.p.vertex(-s * 0.3, s * 0.6);
+    this.p.vertex(-s * 0.6, 0);
+    this.p.endShape(this.p.CLOSE);
+
+    // Glowing core reactor
     this.p.noStroke();
-    this.p.rect(-s * 0.5, -s * 0.6, s, s * 1.2); // Main chassis (center part)
+    this.p.fill(148, 0, 211, 150 + Math.sin(this.p.frameCount * 0.1) * 50);
+    this.p.ellipse(0, 0, s * 0.5, s * 0.5);
 
-    // Decorative plating on main chassis (these are not the destructible armor)
-    this.p.fill(
-      this.bodyColor.levels[0] + 20,
-      this.bodyColor.levels[1] + 20,
-      this.bodyColor.levels[2] + 20
-    );
-    this.p.rect(-s * 0.45, -s * 0.5, s * 0.9, s * 0.2); // Top plate on chassis
-    this.p.rect(-s * 0.45, -s * 0.1, s * 0.9, s * 0.2); // Middle plate on chassis
-    this.p.rect(-s * 0.45, s * 0.3, s * 0.9, s * 0.2); // Bottom plate on chassis
+    // Core bright center
+    this.p.fill(255, 255, 255, 200);
+    this.p.ellipse(0, 0, s * 0.2, s * 0.2);
 
-    // Tank treads (visual only)
-    this.p.fill(
-      this.bodyColor.levels[0] - 30,
-      this.bodyColor.levels[1] - 30,
-      this.bodyColor.levels[2] - 30
-    );
-    this.p.rect(-s * 0.55, -s * 0.7, s * 1.1, s * 0.15); // Top of treads
-    this.p.rect(-s * 0.55, s * 0.55, s * 1.1, s * 0.15); // Bottom of treads
-
-    // Draw Destructible Armor Pieces (these are drawn relative to the tank's center after rotation)
+    // Draw Destructible Armor Pieces
     this.drawArmorPlates(s);
   }
 
   drawArmorPlates(s) {
-    // We are in the Tank's local coordinate system, centered and rotated.
-    // Main chassis' local Y extents are roughly -s*0.6 to +s*0.6.
-    // Main chassis' local X extents are roughly -s*0.5 to +s*0.5.
-
-    const armorPlateThickness = s * 0.2; // Thickness of the side armor plates
+    // Synthwave style armor plates - geometric with neon outlines
+    const armorPlateThickness = s * 0.2;
+    const armorColor = this.p.color(20, 15, 35);
+    const outlineColor = this.p.color(138, 43, 226);
+    
+    this.p.stroke(outlineColor);
+    this.p.strokeWeight(2);
+    this.p.fill(armorColor); // Thickness of the side armor plates
     const armorPlateLength = s * 1.0; // Length of the side armor plates
     const chassisSideY = s * 0.6; // Y-coordinate of the edge of the main chassis' side.
     const chassisFrontX = s * 0.5; // X-coordinate of the front of the main chassis.
@@ -341,16 +364,34 @@ class Tank extends BaseEnemy {
    */
   spawnArmorBreakEffect(plate) {
     // Offset based on which plate broke
-    let ox = 0, oy = 0;
-    if (plate === 'front') { ox = cos(this.aimAngle) * this.size * 0.6; oy = sin(this.aimAngle) * this.size * 0.6; }
-    else if (plate === 'left') { ox = cos(this.aimAngle - PI / 2) * this.size * 0.6; oy = sin(this.aimAngle - PI / 2) * this.size * 0.6; }
-    else if (plate === 'right') { ox = cos(this.aimAngle + PI / 2) * this.size * 0.6; oy = sin(this.aimAngle + PI / 2) * this.size * 0.6; }
+    let ox = 0,
+      oy = 0;
+    if (plate === 'front') {
+      ox = cos(this.aimAngle) * this.size * 0.6;
+      oy = sin(this.aimAngle) * this.size * 0.6;
+    } else if (plate === 'left') {
+      ox = cos(this.aimAngle - PI / 2) * this.size * 0.6;
+      oy = sin(this.aimAngle - PI / 2) * this.size * 0.6;
+    } else if (plate === 'right') {
+      ox = cos(this.aimAngle + PI / 2) * this.size * 0.6;
+      oy = sin(this.aimAngle + PI / 2) * this.size * 0.6;
+    }
 
     if (window.explosionManager) {
-      window.explosionManager.addExplosion(this.x + ox, this.y + oy, 'armor-break');
+      window.explosionManager.addExplosion(
+        this.x + ox,
+        this.y + oy,
+        'armor-break'
+      );
     }
     if (window.floatingText) {
-      window.floatingText.addText(this.x + ox, this.y + oy - 15, 'ARMOR BREAK!', [150, 150, 200], 12);
+      window.floatingText.addText(
+        this.x + ox,
+        this.y + oy - 15,
+        'ARMOR BREAK!',
+        [150, 150, 200],
+        12
+      );
     }
     if (window.cameraSystem) {
       window.cameraSystem.addShake(12, 15);
@@ -449,7 +490,13 @@ class Tank extends BaseEnemy {
     const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
 
     // Devastating slow energy ball with owner ID
-    const bullet = new Bullet(bulletX, bulletY, this.aimAngle, 2, 'enemy-tank');
+    const bullet = Bullet.acquire(
+      bulletX,
+      bulletY,
+      this.aimAngle,
+      2,
+      'enemy-tank'
+    );
     bullet.ownerId = this.id; // Track which tank fired this
     return bullet;
   }
@@ -469,7 +516,7 @@ class Tank extends BaseEnemy {
       }
       return died;
     }
-    let impactAngle = normalizeAngle(bulletAngle - this.aimAngle + PI);
+    const impactAngle = normalizeAngle(bulletAngle - this.aimAngle + PI);
     const PI_4 = PI / 4; // 45 degrees
     const THREE_PI_4 = (3 * PI) / 4; // 135 degrees
 

@@ -100,6 +100,16 @@ class Rusher extends BaseEnemy {
           console.log(
             `💥 RUSHER PROXIMITY EXPLOSION! Distance: ${distance.toFixed(0)}px`
           );
+
+          // Register explosion telegraph
+          if (window.rhythmFX) {
+            window.rhythmFX.addAttackTelegraph(
+              this.x,
+              this.y,
+              'rusher',
+              0.2 // About to explode very soon
+            );
+          }
         } else if (distance <= this.chargeDistance) {
           // Battle cry and charge sequence
           if (!this.hasScreamed) {
@@ -209,10 +219,10 @@ class Rusher extends BaseEnemy {
    * Note: This is now called from updateSpecificBehavior based on deltaTime timer
    */
   drawMotionTrail() {
-    if (typeof visualEffectsManager !== 'undefined' && visualEffectsManager) {
+    if (window.visualEffectsManager) {
       try {
         const trailColor = [255, 100, 100];
-        visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
+        window.visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
       } catch (error) {
         console.log('⚠️ Rusher trail error:', error);
       }
@@ -220,20 +230,37 @@ class Rusher extends BaseEnemy {
   }
 
   /**
-   * Draw rusher-specific body shape
+   * Draw rusher-specific body shape - sharp arrow/dart design
    */
   drawBody(s) {
-    // Lean, angular body for speed
-    this.p.fill(this.bodyColor);
-    this.p.noStroke();
+    this.p.strokeJoin(this.p.MITER);
+
+    // Hot pink outline
+    this.p.stroke(255, 20, 147);
+    this.p.strokeWeight(2);
+    
+    // Dark interior
+    this.p.fill(20, 5, 15);
+
+    // Sharp swept-back shape
     this.p.beginShape();
-    this.p.vertex(-s * 0.3, -s * 0.4);
-    this.p.vertex(s * 0.3, -s * 0.3);
-    this.p.vertex(s * 0.4, s * 0.3);
-    this.p.vertex(s * 0.2, s * 0.6);
-    this.p.vertex(-s * 0.2, s * 0.6);
-    this.p.vertex(-s * 0.4, s * 0.3);
+    this.p.vertex(0, -s * 0.6); // Sharp nose
+    this.p.vertex(s * 0.4, s * 0.4); // Right wing tip
+    this.p.vertex(0, s * 0.2); // Back indent
+    this.p.vertex(-s * 0.4, s * 0.4); // Left wing tip
     this.p.endShape(this.p.CLOSE);
+
+    // Inner glowing lines
+    this.p.stroke(255, 105, 180, 150);
+    this.p.strokeWeight(1);
+    this.p.line(0, -s * 0.5, 0, s * 0.1); // Center spine
+    this.p.line(0, 0, s * 0.2, s * 0.2); // Right rib
+    this.p.line(0, 0, -s * 0.2, s * 0.2); // Left rib
+
+    // Thruster flame at the back
+    this.p.noStroke();
+    this.p.fill(255, 0, 255, 200); // Yellow/Pink flame
+    this.p.triangle(-s * 0.2, s * 0.25, s * 0.2, s * 0.25, 0, s * 0.6 + Math.random() * s * 0.3);
   }
 
   /**
@@ -291,6 +318,17 @@ class Rusher extends BaseEnemy {
       this.explosionTimer = 0;
       this.shotTriggered = true; // Mark as shot-triggered for faster explosion
       console.log(`💥 RUSHER SHOT: Starting explosion! Health: ${this.health}`);
+
+      // Register explosion telegraph when shot
+      if (window.rhythmFX) {
+        window.rhythmFX.addAttackTelegraph(
+          this.x,
+          this.y,
+          'rusher',
+          0.5 // Exploding very soon (shot-triggered is faster)
+        );
+      }
+
       // Return special flag to indicate explosion started
       return 'exploding';
     }

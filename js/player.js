@@ -50,12 +50,12 @@ export class Player {
     this.dashCooldownMs = 0; // ms
     this.maxDashCooldownMs = 3000; // ms (was 180 frames)
 
-    // Visual colors with better contrast
-    this.vestColor = this.p.color(70, 130, 180); // Steel blue vest
-    this.pantsColor = this.p.color(25, 25, 112); // Midnight blue pants
-    this.skinColor = this.p.color(255, 219, 172); // Peach skin
-    this.gunColor = this.p.color(169, 169, 169); // Dark gray gun
-    this.bandanaColor = this.p.color(139, 69, 19); // Brown bandana
+    // Visual colors with better contrast - Synthwave style
+    this.vestColor = this.p.color(10, 10, 20); // Dark sleek body
+    this.pantsColor = this.p.color(5, 5, 10);
+    this.skinColor = this.p.color(0, 255, 255); // Neon Cyan accents
+    this.gunColor = this.p.color(30, 30, 40); 
+    this.bandanaColor = this.p.color(255, 20, 147); // Hot pink accent
 
     // Speech is now handled by unified Audio system
   }
@@ -176,7 +176,10 @@ export class Player {
         this.p.mouseY
       );
       this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && this.p.frameCount % 60 === 0) {
+      if (
+        CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
+        this.p.frameCount % 60 === 0
+      ) {
         console.log(
           `[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
         );
@@ -184,7 +187,10 @@ export class Player {
     } else {
       // Fallback for when camera system is not available
       this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS && this.p.frameCount % 60 === 0) {
+      if (
+        CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
+        this.p.frameCount % 60 === 0
+      ) {
         console.log(
           `[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
         );
@@ -270,10 +276,17 @@ export class Player {
     try {
       const healthPercent = this.health / this.maxHealth;
       if (healthPercent > 0.7) {
-        drawGlow(p, this.x, this.y, this.size * 2, p.color(100, 200, 255), 0.6);
+        drawGlow(p, this.x, this.y, this.size * 2, p.color(0, 255, 255), 0.6);
       } else if (healthPercent < 0.3) {
         const pulse = sin(p.frameCount * 0.3) * 0.5 + 0.5;
-        drawGlow(p, this.x, this.y, this.size * 2.5, p.color(255, 100, 100), pulse * 0.8);
+        drawGlow(
+          p,
+          this.x,
+          this.y,
+          this.size * 2.5,
+          p.color(255, 20, 147), // Hot pink for danger
+          pulse * 0.8
+        );
       }
     } catch (error) {
       console.error('⚠️ Player glow error:', error);
@@ -289,132 +302,118 @@ export class Player {
     // Body bob
     p.translate(0, walkBob);
 
-    // Draw legs (behind body) - ensure they're always visible
+    // Synthwave sharp vector style
+    p.strokeJoin(p.MITER);
+    
+    // Draw legs (engines/thrusters in this style)
     p.fill(this.pantsColor);
-    p.noStroke();
+    p.stroke(this.skinColor); // Cyan outline
+    p.strokeWeight(2);
 
-    // Reset any potential rendering state issues that might hide legs
-    p.blendMode(p.BLEND);
-
-    // Animated leg positions for walking
     const legOffset = this.isMoving ? sin(this.animFrame) * 3 : 0;
-    // Ensure leg dimensions are always positive and visible
-    const legWidth = max(s * 0.15, 2); // Minimum width of 2 pixels
-    const legHeight = max(s * 0.35, 8); // Minimum height of 8 pixels
+    
+    // Left thruster
+    p.beginShape();
+    p.vertex(-s * 0.25, s * 0.1 - legOffset);
+    p.vertex(-s * 0.1, s * 0.1 - legOffset);
+    p.vertex(-s * 0.15, s * 0.4 - legOffset);
+    p.vertex(-s * 0.2, s * 0.4 - legOffset);
+    p.endShape(p.CLOSE);
 
-    p.rect(-s * 0.25, s * 0.1 - legOffset, legWidth, legHeight); // Left leg
-    p.rect(s * 0.1, s * 0.1 + legOffset, legWidth, legHeight); // Right leg
+    // Right thruster
+    p.beginShape();
+    p.vertex(s * 0.1, s * 0.1 + legOffset);
+    p.vertex(s * 0.25, s * 0.1 + legOffset);
+    p.vertex(s * 0.2, s * 0.4 + legOffset);
+    p.vertex(s * 0.15, s * 0.4 + legOffset);
+    p.endShape(p.CLOSE);
 
-    // Draw main body with better visibility
+    // Main body (sleek geometric ship/marine)
     p.fill(this.vestColor);
-    p.stroke(255, 255, 255, 100); // Light outline for clarity
+    p.stroke(this.skinColor);
+    p.strokeWeight(2);
+    
+    p.beginShape();
+    p.vertex(0, -s * 0.4); // Nose/head
+    p.vertex(s * 0.3, -s * 0.1); // Right shoulder
+    p.vertex(s * 0.2, s * 0.2); // Right hip
+    p.vertex(-s * 0.2, s * 0.2); // Left hip
+    p.vertex(-s * 0.3, -s * 0.1); // Left shoulder
+    p.endShape(p.CLOSE);
+
+    // Inner detail lines
     p.strokeWeight(1);
-    p.rect(-s * 0.3, -s * 0.1, s * 0.6, s * 0.4);
+    p.line(0, -s * 0.4, 0, s * 0.2); // Center line
+    p.line(-s * 0.2, 0, s * 0.2, 0); // Cross line
+
+    // Cockpit / Visor (Hot pink accent)
+    p.fill(this.bandanaColor);
     p.noStroke();
+    p.triangle(0, -s * 0.3, s * 0.15, -s * 0.1, -s * 0.15, -s * 0.1);
+    
+    // Visor glow
+    p.fill(255, 100, 200, 150);
+    p.triangle(0, -s * 0.25, s * 0.1, -s * 0.1, -s * 0.1, -s * 0.1);
 
-    // Draw arms
-    p.fill(this.skinColor);
-
-    // Left arm (animated)
-    p.push();
-    p.translate(-s * 0.25, 0);
-    p.rotate(this.isMoving ? sin(this.animFrame) * 0.3 : 0);
-    p.rect(-s * 0.06, 0, s * 0.12, s * 0.25);
-    p.pop();
-
-    // Right arm (gun arm - steady)
-    p.rect(s * 0.2, -s * 0.02, s * 0.12, s * 0.25);
-
-    // Draw gun
+    // Gun/Cannon arm
     p.fill(this.gunColor);
-    p.rect(s * 0.25, -s * 0.04, s * 0.4, s * 0.08);
+    p.stroke(this.skinColor);
+    p.strokeWeight(1.5);
+    
+    // Gun body
+    p.rect(s * 0.25, -s * 0.05, s * 0.45, s * 0.1);
+    
+    // Gun barrel detail
+    p.line(s * 0.3, 0, s * 0.65, 0);
 
-    // Gun barrel
-    p.fill(60);
-    p.rect(s * 0.65, -s * 0.025, s * 0.12, s * 0.05);
-
-    // Enhanced muzzle flash with glow
+    // Enhanced muzzle flash with neon glow
     if (this.muzzleFlash > 0) {
       const flashSize = this.muzzleFlash * 0.4;
       const flashIntensity = this.muzzleFlash / 10;
 
-      // Outer glow
       p.push();
       p.blendMode(p.ADD);
-      p.fill(255, 255, 100, 100 * flashIntensity);
+      
+      // Cyan outer flash
+      p.fill(0, 255, 255, 150 * flashIntensity);
       p.noStroke();
-      p.ellipse(s * 0.8, 0, flashSize * 2);
+      p.ellipse(s * 0.8, 0, flashSize * 2.5);
 
-      // Inner flash
-      p.fill(255, 255, 200, 200 * flashIntensity);
-      p.ellipse(s * 0.8, 0, flashSize);
-
-      // Core
+      // White inner flash
       p.fill(255, 255, 255, 255 * flashIntensity);
-      p.ellipse(s * 0.8, 0, flashSize * 0.4);
+      p.ellipse(s * 0.8, 0, flashSize);
+      
       p.blendMode(p.BLEND);
       p.pop();
     }
 
-    // Draw head
-    p.fill(this.skinColor);
-    p.ellipse(0, -s * 0.25, s * 0.3);
-
-    // Draw bandana
-    p.fill(this.bandanaColor);
-    p.rect(-s * 0.15, -s * 0.35, s * 0.3, s * 0.08);
-
-    // Bandana tails
-    p.rect(-s * 0.12, -s * 0.27, s * 0.04, s * 0.15);
-    p.rect(s * 0.08, -s * 0.25, s * 0.04, s * 0.12);
-
-    // Mysterious eyes
-    p.fill(0);
-    const eyeOffset = s * 0.07;
-    const eyeSize = s * 0.06;
-    p.ellipse(-eyeOffset, -s * 0.25, eyeSize);
-    p.ellipse(eyeOffset, -s * 0.25, eyeSize);
-
-    // Small cosmic horns for flair
-    p.fill(128, 0, 128);
-    p.triangle(
-      -s * 0.12,
-      -s * 0.35,
-      -s * 0.05,
-      -s * 0.55,
-      -s * 0.01,
-      -s * 0.35
-    );
-    p.triangle(s * 0.12, -s * 0.35, s * 0.05, -s * 0.55, s * 0.01, -s * 0.35);
-
-    // Enhanced dash effect
+    // Enhanced dash effect (Synthwave style)
     if (this.isDashing) {
       const dashProgress = this.dashTimerMs / this.maxDashTimeMs;
       const dashIntensity = 1 - dashProgress; // Fade out over dash duration
 
+      p.push();
+      p.blendMode(p.ADD);
+      
       // Multiple layered dash trail effects
-      // Outer glow
-      p.fill(100, 200, 255, dashIntensity * 80); // Cyan outer glow
+      // Outer cyan glow
+      p.fill(0, 255, 255, dashIntensity * 80); 
       p.noStroke();
       p.ellipse(0, 0, s * 4 * dashIntensity);
 
-      // Middle trail
-      p.fill(150, 220, 255, dashIntensity * 120); // Brighter cyan
+      // Inner pink glow
+      p.fill(255, 20, 147, dashIntensity * 120); 
       p.ellipse(0, 0, s * 2.5 * dashIntensity);
 
-      // Inner core
-      p.fill(200, 240, 255, dashIntensity * 160); // Almost white core
-      p.ellipse(0, 0, s * 1.5 * dashIntensity);
-
-      // Enhanced speed lines with multiple layers
+      // Enhanced speed lines with sharp geometric styling
       for (let layer = 0; layer < 3; layer++) {
-        p.stroke(255, 255, 255, dashIntensity * (120 - layer * 30));
+        p.stroke(layer % 2 === 0 ? p.color(0, 255, 255) : p.color(255, 20, 147), dashIntensity * (150 - layer * 30));
         p.strokeWeight(3 - layer);
         for (let i = 0; i < 8; i++) {
           const lineLength = s * (1.5 + i * 0.4 + layer * 0.3);
           const lineAngle =
             atan2(-this.dashVelocity.y, -this.dashVelocity.x) +
-            random(-0.3, 0.3);
+            random(-0.15, 0.15); // Tighter spread for more vector look
           const startX = cos(lineAngle) * lineLength * (0.3 + layer * 0.2);
           const startY = sin(lineAngle) * lineLength * (0.3 + layer * 0.2);
           const endX = cos(lineAngle) * lineLength;
@@ -423,30 +422,16 @@ export class Player {
         }
       }
 
-      // Particle burst effect
-      for (let i = 0; i < 12; i++) {
-        const particleAngle = (i / 12) * TWO_PI;
-        const particleDistance = s * 2 * dashIntensity;
-        const particleX = cos(particleAngle) * particleDistance;
-        const particleY = sin(particleAngle) * particleDistance;
-
-        p.fill(100 + i * 10, 200, 255, dashIntensity * 100);
-        p.noStroke();
-        p.ellipse(particleX, particleY, 4 * dashIntensity, 4 * dashIntensity);
-      }
-
-      // Energy distortion rings
-      for (let ring = 0; ring < 3; ring++) {
-        const ringSize = s * (2 + ring * 0.8) * dashIntensity;
-        const ringAlpha = dashIntensity * (60 - ring * 15);
-
-        p.stroke(150, 220, 255, ringAlpha);
-        p.strokeWeight(2);
-        p.noFill();
-        p.ellipse(0, 0, ringSize, ringSize);
-      }
-
+      // Digital "glitch" blocks trailing behind
       p.noStroke();
+      p.fill(0, 255, 255, dashIntensity * 150);
+      for(let i=0; i < 5; i++) {
+        const glitchX = cos(atan2(-this.dashVelocity.y, -this.dashVelocity.x)) * s * random(1, 3);
+        const glitchY = sin(atan2(-this.dashVelocity.y, -this.dashVelocity.x)) * s * random(1, 3);
+        p.rect(glitchX + random(-s, s), glitchY + random(-s, s), random(s*0.2, s*0.6), random(2, 6));
+      }
+
+      p.pop();
     }
 
     // Health bar above player (drawn relative to player)
@@ -524,7 +509,7 @@ export class Player {
     const bulletX = this.x + this.p.cos(this.aimAngle) * bulletDistance;
     const bulletY = this.y + this.p.sin(this.aimAngle) * bulletDistance;
 
-    return new Bullet(bulletX, bulletY, this.aimAngle, 8, 'player');
+    return Bullet.acquire(bulletX, bulletY, this.aimAngle, 8, 'player');
   }
 
   queueShot(timeToNextBeat) {
