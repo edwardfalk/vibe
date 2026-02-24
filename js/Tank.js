@@ -17,7 +17,7 @@ import { CONFIG } from './config.js';
  * Features anger system that targets other enemies when friendly fire occurs
  */
 class Tank extends BaseEnemy {
-  constructor(x, y, type, config, p, audio) {
+  constructor(x, y, type, config, p, audio, context = null) {
     const tankConfig = {
       size: 50,
       health: 60,
@@ -25,7 +25,7 @@ class Tank extends BaseEnemy {
       color: p.color(138, 43, 226), // Blue violet - massive
     };
 
-    super(x, y, 'tank', tankConfig, p, audio);
+    super(x, y, 'tank', tankConfig, p, audio, context);
     this.p = p;
     this.audio = audio;
 
@@ -72,7 +72,8 @@ class Tank extends BaseEnemy {
         console.log(`😌 Tank calmed down, returning to normal behavior`);
 
         // Tank speaks about calming down
-        if (window.audio) {
+        const audio = this.getContextValue('audio');
+        if (audio) {
           const calmLines = [
             'BACK TO NORMAL TARGETS',
             'ANGER SUBSIDING',
@@ -80,7 +81,7 @@ class Tank extends BaseEnemy {
             'FOCUS ON HUMAN AGAIN',
           ];
           const calmLine = calmLines[floor(random() * calmLines.length)];
-          window.audio.speak(this, calmLine, 'tank');
+          audio.speak(this, calmLine, 'tank');
         }
       }
     }
@@ -90,11 +91,12 @@ class Tank extends BaseEnemy {
     let targetY = playerY;
 
     // Tank anger targeting - find nearest enemy of angry target type
-    if (this.isAngry && this.angerTarget && window.enemies) {
+    const enemies = this.getContextValue('enemies');
+    if (this.isAngry && this.angerTarget && enemies) {
       let nearestAngryTarget = null;
       let nearestDistance = Infinity;
 
-      for (const enemy of window.enemies) {
+      for (const enemy of enemies) {
         if (enemy.type === this.angerTarget && enemy !== this) {
           const dist = sqrt((enemy.x - this.x) ** 2 + (enemy.y - this.y) ** 2);
           if (dist < nearestDistance) {
@@ -130,64 +132,61 @@ class Tank extends BaseEnemy {
       this.velocity.y = unitY * this.speed;
     }
 
+    const audioTank = this.getContextValue('audio');
+    const beatClock = this.getContextValue('beatClock');
+    const rhythmFX = this.getContextValue('rhythmFX');
+
     // Handle charging shot system
     if (this.chargingShot) {
       this.chargeTime += dt;
 
-      // Tank power sound at different charge stages
-      if (window.audio && window.beatClock) {
-        // Tank power sounds play on beat 1 with 25% chance
-        if (window.beatClock.isOnBeat([1]) && random() < 0.25) {
-          window.audio.playSound('tankPower', this.x, this.y);
+      if (audioTank && beatClock) {
+        if (beatClock.isOnBeat([1]) && random() < 0.25) {
+          audioTank.playSound('tankPower', this.x, this.y);
         }
       }
 
-      // Different charging sounds at different stages
-      if (this.chargeTime >= 1 && this.chargeTime < 1 + dt && window.audio) {
+      if (this.chargeTime >= 1 && this.chargeTime < 1 + dt && audioTank) {
         console.log('🔋 Tank starting to charge!');
-        window.audio.speak(this, 'CHARGING!', 'tank');
-        window.audio.playSound('tankCharging', this.x, this.y);
+        audioTank.speak(this, 'CHARGING!', 'tank');
+        audioTank.playSound('tankCharging', this.x, this.y);
       } else if (
         this.chargeTime >= this.maxChargeTime / 2 &&
         this.chargeTime < this.maxChargeTime / 2 + dt &&
-        window.audio
+        audioTank
       ) {
         console.log('⚡ Tank 50% charged!');
-        window.audio.speak(this, 'POWER UP!', 'tank');
-        window.audio.playSound('tankPowerUp', this.x, this.y);
+        audioTank.speak(this, 'POWER UP!', 'tank');
+        audioTank.playSound('tankPowerUp', this.x, this.y);
       }
 
       if (this.chargeTime >= this.maxChargeTime) {
-        // Fire the charged shot
         this.chargingShot = false;
         this.chargeTime = 0;
-        this.shootCooldown = 180; // 3 second cooldown after firing
+        this.shootCooldown = 180;
 
         console.log('💥 Tank firing charged shot!');
-        if (window.audio) {
-          window.audio.speak(this, 'FIRE!', 'tank');
+        if (audioTank) {
+          audioTank.speak(this, 'FIRE!', 'tank');
         }
 
         return this.createBullet();
       }
     } else if (distance < 400 && this.shootCooldown <= 0) {
-      // RHYTHMIC TANK SHOOTING: Tanks can only shoot on beat 1 (bass drum pattern)
-      if (window.beatClock) {
-        // Register attack telegraph when approaching attack beat
-        const timeToNextAttack = window.beatClock.getTimeToNextBeat();
-        if (timeToNextAttack < 800 && window.beatClock.getCurrentBeat() === 3) {
-          // Beat 4 (0-indexed as 3) means next beat is 1 (0-indexed as 0)
-          if (window.rhythmFX) {
-            window.rhythmFX.addAttackTelegraph(
+      if (beatClock) {
+        const timeToNextAttack = beatClock.getTimeToNextBeat();
+        if (timeToNextAttack < 800 && beatClock.getCurrentBeat() === 3) {
+          if (rhythmFX) {
+            rhythmFX.addAttackTelegraph(
               this.x,
               this.y,
               'tank',
-              1 + timeToNextAttack / window.beatClock.beatInterval
+              1 + timeToNextAttack / beatClock.beatInterval
             );
           }
         }
 
-        if (window.beatClock.canTankShoot()) {
+        if (beatClock.canTankShoot()) {
           // Start charging
           this.chargingShot = true;
           this.chargeTime = 0;
@@ -203,12 +202,10 @@ class Tank extends BaseEnemy {
    * Trigger ambient speech specific to tanks
    */
   triggerAmbientSpeech() {
-    if (window.audio && this.speechCooldown <= 0) {
-      if (
-        window.beatClock &&
-        window.beatClock.isOnBeat([1]) &&
-        random() < 0.25
-      ) {
+    const audio = this.getContextValue('audio');
+    const beatClock = this.getContextValue('beatClock');
+    if (audio && this.speechCooldown <= 0) {
+      if (beatClock && beatClock.isOnBeat([1]) && random() < 0.25) {
         const tankLines = [
           'HEAVY ARTILLERY!',
           'SIEGE MODE!',
@@ -221,7 +218,7 @@ class Tank extends BaseEnemy {
           'ALPHA MALE!',
         ];
         const randomLine = tankLines[floor(random() * tankLines.length)];
-        window.audio.speak(this, randomLine, 'tank');
+        audio.speak(this, randomLine, 'tank');
         this.speechCooldown = this.maxSpeechCooldown;
       }
     }
@@ -236,7 +233,7 @@ class Tank extends BaseEnemy {
     // Deep Violet outline
     this.p.stroke(138, 43, 226);
     this.p.strokeWeight(3);
-    
+
     // Dark heavy interior
     this.p.fill(15, 10, 25);
 
@@ -268,7 +265,7 @@ class Tank extends BaseEnemy {
     const armorPlateThickness = s * 0.2;
     const armorColor = this.p.color(20, 15, 35);
     const outlineColor = this.p.color(138, 43, 226);
-    
+
     this.p.stroke(outlineColor);
     this.p.strokeWeight(2);
     this.p.fill(armorColor); // Thickness of the side armor plates
@@ -377,15 +374,14 @@ class Tank extends BaseEnemy {
       oy = sin(this.aimAngle + PI / 2) * this.size * 0.6;
     }
 
-    if (window.explosionManager) {
-      window.explosionManager.addExplosion(
-        this.x + ox,
-        this.y + oy,
-        'armor-break'
-      );
+    const explosionManager = this.getContextValue('explosionManager');
+    const floatingText = this.getContextValue('floatingText');
+    const cameraSystem = this.getContextValue('cameraSystem');
+    if (explosionManager) {
+      explosionManager.addExplosion(this.x + ox, this.y + oy, 'armor-break');
     }
-    if (window.floatingText) {
-      window.floatingText.addText(
+    if (floatingText) {
+      floatingText.addText(
         this.x + ox,
         this.y + oy - 15,
         'ARMOR BREAK!',
@@ -393,8 +389,8 @@ class Tank extends BaseEnemy {
         12
       );
     }
-    if (window.cameraSystem) {
-      window.cameraSystem.addShake(12, 15);
+    if (cameraSystem) {
+      cameraSystem.addShake(12, 15);
     }
   }
 
@@ -430,10 +426,8 @@ class Tank extends BaseEnemy {
     if (this.chargingShot) {
       this.drawChargingIndicator();
     }
-    if (
-      window.activeBombs &&
-      window.activeBombs.some((bomb) => bomb.tankId === this.id)
-    ) {
+    const activeBombs = this.getContextValue('activeBombs');
+    if (activeBombs?.some((bomb) => bomb.tankId === this.id)) {
       this.p.push();
       this.p.fill(255, 0, 0);
       this.p.textAlign(this.p.CENTER, this.p.CENTER);
@@ -529,14 +523,14 @@ class Tank extends BaseEnemy {
       // Calculate overflow damage if incoming damage exceeds armor HP
       const prevHP = this.frontArmorHP;
       this.frontArmorHP -= amount;
-      if (window.audio) window.audio.playSound('hit', this.x, this.y);
+      const audioHit = this.getContextValue('audio');
+      if (audioHit) audioHit.playSound('hit', this.x, this.y);
       if (this.frontArmorHP <= 0) {
-        // Armor destroyed, propagate leftover damage to main body
-        const leftover = -this.frontArmorHP; // positive overflow
+        const leftover = -this.frontArmorHP;
         this.frontArmorDestroyed = true;
         this.frontArmorHP = 0;
         console.log('💥 Tank Front Armor Destroyed!');
-        if (window.audio) window.audio.playSound('explosion', this.x, this.y);
+        if (audioHit) audioHit.playSound('explosion', this.x, this.y);
         this.spawnArmorBreakEffect('front');
         this.hitFlash = 8;
         if (leftover > 0) {
@@ -557,14 +551,14 @@ class Tank extends BaseEnemy {
       // Calculate overflow damage if incoming damage exceeds armor HP
       const prevHP = this.leftArmorHP;
       this.leftArmorHP -= amount;
-      if (window.audio) window.audio.playSound('hit', this.x, this.y);
+      const audioLeft = this.getContextValue('audio');
+      if (audioLeft) audioLeft.playSound('hit', this.x, this.y);
       if (this.leftArmorHP <= 0) {
-        // Armor destroyed, propagate leftover damage to main body
-        const leftover = -this.leftArmorHP; // positive overflow
+        const leftover = -this.leftArmorHP;
         this.leftArmorDestroyed = true;
         this.leftArmorHP = 0;
         console.log('💥 Tank Left Armor Destroyed!');
-        if (window.audio) window.audio.playSound('explosion', this.x, this.y);
+        if (audioLeft) audioLeft.playSound('explosion', this.x, this.y);
         this.spawnArmorBreakEffect('left');
         this.hitFlash = 8;
         if (leftover > 0) {
@@ -584,14 +578,14 @@ class Tank extends BaseEnemy {
       // Calculate overflow damage if incoming damage exceeds armor HP
       const prevHP = this.rightArmorHP;
       this.rightArmorHP -= amount;
-      if (window.audio) window.audio.playSound('hit', this.x, this.y);
+      const audioRight = this.getContextValue('audio');
+      if (audioRight) audioRight.playSound('hit', this.x, this.y);
       if (this.rightArmorHP <= 0) {
-        // Armor destroyed, propagate leftover damage to main body
-        const leftover = -this.rightArmorHP; // positive overflow
+        const leftover = -this.rightArmorHP;
         this.rightArmorDestroyed = true;
         this.rightArmorHP = 0;
         console.log('💥 Tank Right Armor Destroyed!');
-        if (window.audio) window.audio.playSound('explosion', this.x, this.y);
+        if (audioRight) audioRight.playSound('explosion', this.x, this.y);
         this.spawnArmorBreakEffect('right');
         this.hitFlash = 8;
         if (leftover > 0) {
@@ -619,7 +613,8 @@ class Tank extends BaseEnemy {
         this.angerTarget = damageSource; // Target the type of enemy that angered it
         this.angerCooldown = this.maxAngerCooldown;
         console.log(`😡 TANK IS ANGRY! Targeting ${this.angerTarget} enemies!`);
-        if (window.audio) {
+        const audioAnger = this.getContextValue('audio');
+        if (audioAnger) {
           const angerLines = [
             'ENOUGH! YOU DIE FIRST!',
             'TARGETING TRAITORS!',
@@ -627,7 +622,7 @@ class Tank extends BaseEnemy {
             'YOU MADE ME MAD!',
             'TURNING GUNS ON YOU!',
           ];
-          window.audio.speak(
+          audioAnger.speak(
             this,
             angerLines[floor(random() * angerLines.length)],
             'tank'

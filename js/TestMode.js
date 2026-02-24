@@ -18,11 +18,13 @@ import {
 
 /**
  * @param {Player} player - The player object (dependency injected for modularity)
+ * @param {GameContext} [context] - Game context for enemies, bullets, audio, etc.
  */
 export class TestMode {
-  constructor(player) {
+  constructor(player, context = null) {
     // Test mode state
     this.player = player;
+    this.context = context;
     this.enabled = false;
     this.timer = 0;
 
@@ -114,6 +116,13 @@ export class TestMode {
     );
   }
 
+  getContextValue(key) {
+    if (this.context && typeof this.context.get === 'function') {
+      return this.context.get(key);
+    }
+    return typeof window !== 'undefined' ? window[key] : undefined;
+  }
+
   // Move player to corners in sequence
   moveToCorners(phase, halfSize) {
     const cornerPhase = (phase / (Math.PI * 2)) * 4;
@@ -179,12 +188,13 @@ export class TestMode {
 
   // Find nearest enemy to player
   findNearestEnemy() {
-    if (!window.enemies || window.enemies.length === 0) return null;
+    const enemies = this.getContextValue('enemies');
+    if (!enemies || enemies.length === 0) return null;
 
     let nearestEnemy = null;
     let nearestDistance = Infinity;
 
-    for (const enemy of window.enemies) {
+    for (const enemy of enemies) {
       const distance = dist(this.player.x, this.player.y, enemy.x, enemy.y);
       if (distance < nearestDistance) {
         nearestDistance = distance;
@@ -204,20 +214,23 @@ export class TestMode {
     const bulletY = this.player.y + sin(angle) * bulletDistance;
 
     const bullet = Bullet.acquire(bulletX, bulletY, angle, 6, 'player');
-    if (window.playerBullets) {
-      window.playerBullets.push(bullet);
+    const playerBullets = this.getContextValue('playerBullets');
+    if (playerBullets) {
+      playerBullets.push(bullet);
     }
 
     console.log(`🎯 Auto-shot at ${enemy.type} enemy!`);
 
     // Track shots fired
-    if (window.gameState) {
-      window.gameState.addShotFired();
+    const gameState = this.getContextValue('gameState');
+    if (gameState) {
+      gameState.addShotFired();
     }
 
     // Play shoot sound
-    if (window.audio) {
-      window.audio.playPlayerShoot(this.player.x, this.player.y);
+    const audio = this.getContextValue('audio');
+    if (audio) {
+      audio.playPlayerShoot(this.player.x, this.player.y);
     }
   }
 
@@ -233,17 +246,16 @@ export class TestMode {
     const enemyTypes = ['grunt', 'stabber', 'rusher', 'tank'];
     const randomType = enemyTypes[floor(random() * enemyTypes.length)];
 
-    if (
-      window.enemies &&
-      window.spawnSystem &&
-      window.spawnSystem.enemyFactory
-    ) {
-      const enemy = window.spawnSystem.enemyFactory.createEnemy(
+    const enemies = this.getContextValue('enemies');
+    const spawnSystem = this.getContextValue('spawnSystem');
+    if (enemies && spawnSystem?.enemyFactory) {
+      const enemy = spawnSystem.enemyFactory.createEnemy(
         testX,
         testY,
-        randomType
+        randomType,
+        this.player?.p
       );
-      window.enemies.push(enemy);
+      enemies.push(enemy);
     }
 
     console.log(`🧪 Spawned test ${randomType} for shooting practice`);
@@ -254,8 +266,9 @@ export class TestMode {
   updateLogging() {
     // Log detailed position info for debugging
     if (this.timer - this.lastLogFrame >= this.logInterval) {
-      const cameraX = window.cameraSystem ? window.cameraSystem.x : 0;
-      const cameraY = window.cameraSystem ? window.cameraSystem.y : 0;
+      const cameraSystem = this.getContextValue('cameraSystem');
+      const cameraX = cameraSystem ? cameraSystem.x : 0;
+      const cameraY = cameraSystem ? cameraSystem.y : 0;
       const visualX = this.player.x - cameraX;
       const visualY = this.player.y - cameraY;
 
@@ -267,10 +280,10 @@ export class TestMode {
 
     // Log test progress periodically
     if (this.timer % 120 === 0) {
-      const enemyCount = window.enemies ? window.enemies.length : 0;
-      const bulletCount = window.playerBullets
-        ? window.playerBullets.length
-        : 0;
+      const enemies = this.getContextValue('enemies');
+      const playerBullets = this.getContextValue('playerBullets');
+      const enemyCount = enemies ? enemies.length : 0;
+      const bulletCount = playerBullets ? playerBullets.length : 0;
       console.log(
         `🤖 Test running... Timer: ${this.timer}, Enemies: ${enemyCount}, Bullets: ${bulletCount}`
       );
@@ -299,18 +312,21 @@ export class TestMode {
 
   // Force spawn specific enemy type
   forceSpawnEnemy(type, x = null, y = null) {
-    if (!window.enemies) return;
+    const enemies = this.getContextValue('enemies');
+    if (!enemies) return;
 
     const spawnX = x !== null ? x : random(50, this.player.p.width - 50);
     const spawnY = y !== null ? y : random(50, this.player.p.height - 50);
 
-    if (window.spawnSystem && window.spawnSystem.enemyFactory) {
-      const enemy = window.spawnSystem.enemyFactory.createEnemy(
+    const spawnSystem = this.getContextValue('spawnSystem');
+    if (spawnSystem?.enemyFactory) {
+      const enemy = spawnSystem.enemyFactory.createEnemy(
         spawnX,
         spawnY,
-        type
+        type,
+        this.player?.p
       );
-      window.enemies.push(enemy);
+      enemies.push(enemy);
     }
     console.log(
       `🎯 Force spawned ${type} at (${spawnX.toFixed(1)}, ${spawnY.toFixed(1)})`
@@ -319,14 +335,16 @@ export class TestMode {
 
   // Get test statistics
   getStats() {
+    const enemies = this.getContextValue('enemies');
+    const playerBullets = this.getContextValue('playerBullets');
     return {
       enabled: this.enabled,
       timer: this.timer,
       pattern: this.currentPattern,
       shootInterval: this.shootInterval,
       enemySpawnInterval: this.enemySpawnInterval,
-      enemyCount: window.enemies ? window.enemies.length : 0,
-      bulletCount: window.playerBullets ? window.playerBullets.length : 0,
+      enemyCount: enemies ? enemies.length : 0,
+      bulletCount: playerBullets ? playerBullets.length : 0,
     };
   }
 

@@ -185,7 +185,7 @@ export class Bullet {
     p.push();
     p.translate(this.x, this.y);
     p.rotate(this.angle);
-    
+
     // Synthwave bright core with thick neon glow
     p.blendMode(p.ADD);
 
@@ -194,7 +194,7 @@ export class Bullet {
       p.stroke(0, 255, 255, 200);
       p.strokeWeight(this.size);
       p.line(-this.size, 0, this.size, 0);
-      
+
       p.stroke(255, 255, 255);
       p.strokeWeight(this.size * 0.4);
       p.line(-this.size * 0.5, 0, this.size * 0.5, 0);
@@ -203,7 +203,14 @@ export class Bullet {
       p.fill(255, 255, 255);
       p.stroke(255, 20, 147, 200);
       p.strokeWeight(this.size * 0.8);
-      p.triangle(this.size, 0, -this.size, -this.size * 0.5, -this.size, this.size * 0.5);
+      p.triangle(
+        this.size,
+        0,
+        -this.size,
+        -this.size * 0.5,
+        -this.size,
+        this.size * 0.5
+      );
     } else if (this.owner === 'enemy-tank') {
       // Tank bullet - massive vibrating neon purple hexagon
       const energyPercent = Number.isFinite(this.energy)
@@ -216,10 +223,13 @@ export class Bullet {
       p.stroke(138, 43, 226, 200);
       p.strokeWeight(this.size * 0.5 * energyPercent);
       p.fill(255, 255, 255);
-      
+
       p.beginShape();
-      for(let i=0; i<6; i++) {
-        p.vertex(cos(i * PI/3) * this.size * energyPercent, sin(i * PI/3) * this.size * energyPercent);
+      for (let i = 0; i < 6; i++) {
+        p.vertex(
+          cos((i * PI) / 3) * this.size * energyPercent,
+          sin((i * PI) / 3) * this.size * energyPercent
+        );
       }
       p.endShape(p.CLOSE);
     } else {
@@ -227,7 +237,7 @@ export class Bullet {
       p.stroke(0, 255, 0, 200);
       p.strokeWeight(this.size);
       p.line(-this.size, 0, this.size, 0);
-      
+
       p.stroke(255, 255, 255);
       p.strokeWeight(this.size * 0.4);
       p.line(-this.size * 0.5, 0, this.size * 0.5, 0);

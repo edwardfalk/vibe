@@ -7,7 +7,7 @@ import { CONFIG } from './config.js';
  * Two-stage system: battle cry at distance, explosion when close, enhanced explosion effects
  */
 class Rusher extends BaseEnemy {
-  constructor(x, y, type, config, p, audio) {
+  constructor(x, y, type, config, p, audio, context = null) {
     const rusherConfig = {
       size: 22,
       health: 1,
@@ -15,7 +15,7 @@ class Rusher extends BaseEnemy {
       color: p.color(255, 20, 147), // Deep pink - aggressive
     };
 
-    super(x, y, 'rusher', rusherConfig, p, audio);
+    super(x, y, 'rusher', rusherConfig, p, audio, context);
     this.p = p;
     this.audio = audio;
 
@@ -102,8 +102,9 @@ class Rusher extends BaseEnemy {
           );
 
           // Register explosion telegraph
-          if (window.rhythmFX) {
-            window.rhythmFX.addAttackTelegraph(
+          const rhythmFX = this.getContextValue('rhythmFX');
+          if (rhythmFX) {
+            rhythmFX.addAttackTelegraph(
               this.x,
               this.y,
               'rusher',
@@ -121,7 +122,9 @@ class Rusher extends BaseEnemy {
             );
 
             // Rusher scream with audio
-            if (window.audio) {
+            const audio = this.getContextValue('audio');
+            const beatClock = this.getContextValue('beatClock');
+            if (audio) {
               const battleCries = [
                 'INCOMING!',
                 'BOOM!',
@@ -135,11 +138,10 @@ class Rusher extends BaseEnemy {
               ];
               const battleCry =
                 battleCries[floor(random() * battleCries.length)];
-              window.audio.speak(this, battleCry, 'rusher');
+              audio.speak(this, battleCry, 'rusher');
 
-              // Play rusher charge sound on-beat
-              if (!window.beatClock || window.beatClock.canRusherCharge()) {
-                window.audio.playRusherCharge(this.x, this.y);
+              if (!beatClock || beatClock.canRusherCharge()) {
+                audio.playRusherCharge(this.x, this.y);
               }
             }
           }
@@ -162,8 +164,10 @@ class Rusher extends BaseEnemy {
    * Trigger ambient speech specific to rushers
    */
   triggerAmbientSpeech() {
-    if (window.audio && this.speechCooldown <= 0) {
-      if (window.beatClock && random() < 0.15) {
+    const audio = this.getContextValue('audio');
+    const beatClock = this.getContextValue('beatClock');
+    if (audio && this.speechCooldown <= 0) {
+      if (beatClock && random() < 0.15) {
         const rusherLines = [
           'KAMIKAZE TIME!',
           'SUICIDE RUN!',
@@ -177,7 +181,7 @@ class Rusher extends BaseEnemy {
           'KAMIKAZE PIZZA PARTY!',
         ];
         const randomLine = rusherLines[floor(random() * rusherLines.length)];
-        window.audio.speak(this, randomLine, 'rusher');
+        audio.speak(this, randomLine, 'rusher');
         this.speechCooldown = this.maxSpeechCooldown;
       }
     }
@@ -219,10 +223,11 @@ class Rusher extends BaseEnemy {
    * Note: This is now called from updateSpecificBehavior based on deltaTime timer
    */
   drawMotionTrail() {
-    if (window.visualEffectsManager) {
+    const visualEffectsManager = this.getContextValue('visualEffectsManager');
+    if (visualEffectsManager) {
       try {
         const trailColor = [255, 100, 100];
-        window.visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
+        visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
       } catch (error) {
         console.log('⚠️ Rusher trail error:', error);
       }
@@ -238,7 +243,7 @@ class Rusher extends BaseEnemy {
     // Hot pink outline
     this.p.stroke(255, 20, 147);
     this.p.strokeWeight(2);
-    
+
     // Dark interior
     this.p.fill(20, 5, 15);
 
@@ -260,7 +265,14 @@ class Rusher extends BaseEnemy {
     // Thruster flame at the back
     this.p.noStroke();
     this.p.fill(255, 0, 255, 200); // Yellow/Pink flame
-    this.p.triangle(-s * 0.2, s * 0.25, s * 0.2, s * 0.25, 0, s * 0.6 + Math.random() * s * 0.3);
+    this.p.triangle(
+      -s * 0.2,
+      s * 0.25,
+      s * 0.2,
+      s * 0.25,
+      0,
+      s * 0.6 + Math.random() * s * 0.3
+    );
   }
 
   /**
@@ -320,8 +332,9 @@ class Rusher extends BaseEnemy {
       console.log(`💥 RUSHER SHOT: Starting explosion! Health: ${this.health}`);
 
       // Register explosion telegraph when shot
-      if (window.rhythmFX) {
-        window.rhythmFX.addAttackTelegraph(
+      const rhythmFX = this.getContextValue('rhythmFX');
+      if (rhythmFX) {
+        rhythmFX.addAttackTelegraph(
           this.x,
           this.y,
           'rusher',

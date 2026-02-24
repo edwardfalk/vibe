@@ -9,7 +9,8 @@ import { random } from './mathUtils.js';
  * Provides unified interface for spawning different enemy types
  */
 class EnemyFactory {
-  constructor() {
+  constructor(context = null) {
+    this.context = context;
     // Enemy type configurations
     this.configs = {
       grunt: {
@@ -87,8 +88,20 @@ class EnemyFactory {
       return null;
     }
 
-    // Create the enemy using the appropriate class with correct constructor signature
-    const enemy = new EnemyClass(x, y, type, config, p, audio || window.audio);
+    const resolvedAudio =
+      audio ??
+      (this.context && typeof this.context.get === 'function'
+        ? this.context.get('audio')
+        : window.audio);
+    const enemy = new EnemyClass(
+      x,
+      y,
+      type,
+      config,
+      p,
+      resolvedAudio,
+      this.context
+    );
 
     console.log(
       `🏭 EnemyFactory created ${type} at (${x.toFixed(0)}, ${y.toFixed(0)})`

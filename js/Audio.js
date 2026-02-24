@@ -56,6 +56,60 @@ import {
   AMBIENT_SOUNDS,
   resolveSoundSourcePosition,
 } from './audio/AmbientSoundProfile.js';
+import {
+  calculatePanForPosition,
+  calculateVolumeForPosition,
+} from './audio/SpatialAudio.js';
+import { applyBeatTremolo as applyBeatTremoloEffect } from './audio/BeatTremolo.js';
+import { drawActiveTexts, updateActiveTexts } from './audio/TextDisplay.js';
+import { selectVoiceWithEffects as selectVoiceWithEffectsHelper } from './audio/VoiceSelection.js';
+import { applyVoiceEffects as applyVoiceEffectsHelper } from './audio/VoiceEffects.js';
+import {
+  isAggressiveText as isAggressiveTextHelper,
+  isConfusedText as isConfusedTextHelper,
+} from './audio/TextSemantics.js';
+import {
+  getEnemyDialogueLine,
+  getPlayerDialogueLine,
+} from './audio/DialogueLines.js';
+
+const SOUND_METHOD_TO_KEY = {
+  playPlayerShoot: 'playerShoot',
+  playAlienShoot: 'alienShoot',
+  playExplosion: 'explosion',
+  playHit: 'hit',
+  playPlayerHit: 'playerHit',
+  playEnemyHit: 'hit',
+  playRusherScream: 'rusherScream',
+  playTankEnergyBall: 'tankEnergy',
+  playStabAttack: 'stabAttack',
+  playEnemyFrying: 'enemyFrying',
+  playPlasmaCloud: 'plasmaCloud',
+  playTankCharging: 'tankCharging',
+  playTankPower: 'tankPower',
+  playStabberChant: 'stabberChant',
+  playGruntAdvance: 'gruntAdvance',
+  playGruntRetreat: 'gruntRetreat',
+  playRusherCharge: 'rusherCharge',
+  playStabberKnife: 'stabberKnife',
+  playEnemyIdle: 'enemyIdle',
+  playTankPowerUp: 'tankPowerUp',
+  playStabberStalk: 'stabberStalk',
+  playStabberDash: 'stabberDash',
+  playGruntMalfunction: 'gruntMalfunction',
+  playGruntBeep: 'gruntBeep',
+  playGruntWhir: 'gruntWhir',
+  playGruntError: 'gruntError',
+  playGruntGlitch: 'gruntGlitch',
+  playGruntPop: 'gruntPop',
+  playEnemyOhNo: 'enemyOhNo',
+  playStabberOhNo: 'stabberOhNo',
+  playRusherOhNo: 'rusherOhNo',
+  playTankOhNo: 'tankOhNo',
+  playBombExplosion: 'explosion',
+  playRusherExplosion: 'explosion',
+  playStabberAttack: 'stabAttack',
+};
 
 export class Audio {
   /**
@@ -313,6 +367,8 @@ export class Audio {
       stabber: { rate: 0.8, pitch: 2.0, volume: 0.4 }, // Fixed: was 0.4, comment said 0.3
     };
 
+    this.bindConvenienceSoundMethods();
+
     console.log('🎵 Optimized Audio System ready');
   }
 
@@ -328,6 +384,12 @@ export class Audio {
       return this.context[key];
     }
     return window[key];
+  }
+
+  bindConvenienceSoundMethods() {
+    for (const [methodName, soundKey] of Object.entries(SOUND_METHOD_TO_KEY)) {
+      this[methodName] = (...args) => this.playSound(soundKey, ...args);
+    }
   }
 
   // ========================================================================
@@ -529,8 +591,8 @@ export class Audio {
         volume =
           config.volume *
           volumeVariation *
-          this.calculateVolume(x, y, playerX, playerY);
-        panValue = this.calculatePan(x, playerX);
+          calculateVolumeForPosition(x, y, playerX, playerY);
+        panValue = calculatePanForPosition(x, playerX);
       }
       // If it's a player sound, keep full volume and center panning (defaults above)
     }
@@ -555,7 +617,13 @@ export class Audio {
     gainNode.connect(panNode);
 
     if (config.tremolo) {
-      this.applyBeatTremolo(tremoloGain, config.duration * durationVariation);
+      const beatClock = this.getContextValue('beatClock');
+      applyBeatTremoloEffect(
+        this.audioContext,
+        beatClock,
+        tremoloGain,
+        config.duration * durationVariation
+      );
     }
 
     // Check if this is an ambient enemy sound that should have reverb
@@ -625,51 +693,6 @@ export class Audio {
     );
   }
 
-  calculatePan(x, playerX = 400) {
-    if (playerX === 400 && typeof this.player !== 'undefined')
-      playerX = this.player.x;
-    if (x === null || x === undefined) return 0;
-    // Pan relative to player position instead of screen center
-    return Math.max(-1, Math.min(1, (x - playerX) / 400));
-  }
-
-  calculateVolume(x, y, playerX = 400, playerY = 300) {
-    if (playerX === 400 && typeof this.player !== 'undefined')
-      playerX = this.player.x;
-    if (playerY === 300 && typeof this.player !== 'undefined')
-      playerY = this.player.y;
-    if (x === null || y === null) return 1.0;
-
-    // Calculate distance relative to player position instead of screen center
-    const distance = Math.sqrt((x - playerX) ** 2 + (y - playerY) ** 2);
-    const normalizedDistance = Math.min(distance / 600, 1); // Longer range for less dramatic falloff
-
-    // Less dramatic volume reduction for distant enemies
-    return Math.max(0.3, 1.0 - normalizedDistance * 0.6);
-  }
-
-  // Apply beat-synced tremolo using the global BeatClock
-  applyBeatTremolo(targetGain, duration) {
-    const beatClock = this.getContextValue('beatClock');
-    if (!beatClock) return;
-
-    const lfo = this.audioContext.createOscillator();
-    const depth = this.audioContext.createGain();
-
-    lfo.type = 'sine';
-    lfo.frequency.setValueAtTime(
-      beatClock.bpm / 60,
-      this.audioContext.currentTime
-    );
-    depth.gain.setValueAtTime(0.5, this.audioContext.currentTime);
-
-    lfo.connect(depth);
-    depth.connect(targetGain.gain);
-
-    lfo.start(this.audioContext.currentTime);
-    lfo.stop(this.audioContext.currentTime + duration);
-  }
-
   // ========================================================================
   // SPEECH SYSTEM (SIMPLIFIED AND RELIABLE)
   // ========================================================================
@@ -721,19 +744,31 @@ export class Audio {
     utterance.volume = Math.min(
       1,
       config.volume *
-        this.calculateVolume(ex, ey, playerX, playerY) *
+        calculateVolumeForPosition(ex, ey, playerX, playerY) *
         this.volume
     );
 
     // Enhanced voice selection with effects
-    const voice = this.selectVoiceWithEffects(voiceType, text);
+    const voice = selectVoiceWithEffectsHelper(
+      this.englishVoices,
+      voiceType,
+      text,
+      random,
+      floor
+    );
     if (voice) {
       utterance.voice = voice;
       utterance.lang = voice.lang;
     }
 
     // Apply dynamic voice effects based on content
-    this.applyVoiceEffects(utterance, voiceType, text);
+    applyVoiceEffectsHelper(
+      utterance,
+      voiceType,
+      text,
+      this.voiceConfig,
+      randomRange
+    );
 
     // IMPROVED text-speech synchronization
     const estimatedDuration = this.calculateSpeechDuration(
@@ -765,236 +800,14 @@ export class Audio {
     return frames;
   }
 
-  // SIMPLIFIED voice selection
-  selectVoice(voiceType) {
-    if (this.englishVoices.length === 0) return null;
-
-    // Prefer US voices, fallback to any English
-    const usVoices = this.englishVoices.filter((v) => v.lang.includes('US'));
-    const availableVoices = usVoices.length > 0 ? usVoices : this.englishVoices;
-
-    if (voiceType === 'player') {
-      // Enhanced masculine voice detection
-      const maleVoices = availableVoices.filter((v) => {
-        const name = v.name.toLowerCase();
-        return (
-          name.includes('male') ||
-          name.includes('david') ||
-          name.includes('alex') ||
-          name.includes('james') ||
-          name.includes('john') ||
-          name.includes('michael') ||
-          name.includes('mark') ||
-          name.includes('paul') ||
-          name.includes('daniel') ||
-          name.includes('deep') ||
-          name.includes('bass') ||
-          name.includes('rich')
-        );
-      });
-
-      // Prefer deeper/richer sounding voices
-      const deepVoices = maleVoices.filter((v) => {
-        const name = v.name.toLowerCase();
-        return (
-          name.includes('deep') ||
-          name.includes('bass') ||
-          name.includes('rich') ||
-          name.includes('low')
-        );
-      });
-
-      if (deepVoices.length > 0) return deepVoices[0];
-      if (maleVoices.length > 0) return maleVoices[0];
-      return availableVoices[0];
-    }
-
-    // Random voice for enemies
-    return availableVoices[Math.floor(random() * availableVoices.length)];
-  }
-
-  // ENHANCED voice selection with effects
-  selectVoiceWithEffects(voiceType, text) {
-    if (this.englishVoices.length === 0) return null;
-
-    // Prefer US voices, fallback to any English
-    const usVoices = this.englishVoices.filter((v) => v.lang.includes('US'));
-    const availableVoices = usVoices.length > 0 ? usVoices : this.englishVoices;
-
-    if (voiceType === 'player') {
-      // Enhanced masculine voice detection for heroic sound
-      const maleVoices = availableVoices.filter((v) => {
-        const name = v.name.toLowerCase();
-        return (
-          name.includes('male') ||
-          name.includes('david') ||
-          name.includes('alex') ||
-          name.includes('james') ||
-          name.includes('john') ||
-          name.includes('michael') ||
-          name.includes('mark') ||
-          name.includes('paul') ||
-          name.includes('daniel') ||
-          name.includes('deep') ||
-          name.includes('bass') ||
-          name.includes('rich') ||
-          name.includes('low') ||
-          name.includes('tom') ||
-          name.includes('sam')
-        );
-      });
-
-      // Prefer deeper/richer sounding voices for hero
-      const deepVoices = maleVoices.filter((v) => {
-        const name = v.name.toLowerCase();
-        return (
-          name.includes('deep') ||
-          name.includes('bass') ||
-          name.includes('rich') ||
-          name.includes('low') ||
-          name.includes('resonant')
-        );
-      });
-
-      if (deepVoices.length > 0) return deepVoices[0];
-      if (maleVoices.length > 0) return maleVoices[0];
-      return availableVoices[0];
-    }
-
-    // Enemy voice selection based on character type and content
-    if (voiceType === 'grunt') {
-      // Prefer robotic or monotone voices for confused grunts
-      const roboticVoices = availableVoices.filter((v) => {
-        const name = v.name.toLowerCase();
-        return (
-          name.includes('robot') ||
-          name.includes('computer') ||
-          name.includes('synthetic') ||
-          name.includes('monotone') ||
-          name.includes('flat')
-        );
-      });
-      if (roboticVoices.length > 0)
-        return roboticVoices[Math.floor(random() * roboticVoices.length)];
-    }
-
-    if (voiceType === 'rusher') {
-      // Prefer higher, more frantic voices for rushers
-      const franticVoices = availableVoices.filter((v) => {
-        const name = v.name.toLowerCase();
-        return (
-          name.includes('female') ||
-          name.includes('high') ||
-          name.includes('fast') ||
-          name.includes('excited') ||
-          name.includes('energetic')
-        );
-      });
-      if (franticVoices.length > 0)
-        return franticVoices[Math.floor(random() * franticVoices.length)];
-    }
-
-    if (voiceType === 'tank') {
-      // Prefer deep, intimidating voices for tanks
-      const deepVoices = availableVoices.filter((v) => {
-        const name = v.name.toLowerCase();
-        return (
-          name.includes('deep') ||
-          name.includes('bass') ||
-          name.includes('low') ||
-          name.includes('heavy') ||
-          name.includes('strong') ||
-          name.includes('male')
-        );
-      });
-      if (deepVoices.length > 0)
-        return deepVoices[Math.floor(random() * deepVoices.length)];
-    }
-
-    if (voiceType === 'stabber') {
-      // Prefer precise, clinical voices for stabbers
-      const preciseVoices = availableVoices.filter((v) => {
-        const name = v.name.toLowerCase();
-        return (
-          name.includes('clear') ||
-          name.includes('precise') ||
-          name.includes('clinical') ||
-          name.includes('sharp') ||
-          name.includes('articulate')
-        );
-      });
-      if (preciseVoices.length > 0)
-        return preciseVoices[floor(random() * preciseVoices.length)];
-    }
-
-    // Fallback to random voice
-    return availableVoices[floor(random() * availableVoices.length)];
-  }
-
-  // DYNAMIC voice effects based on content and character
-  applyVoiceEffects(utterance, voiceType, text) {
-    const baseConfig = this.voiceConfig[voiceType] || this.voiceConfig.player;
-
-    // Content-based effects
-    const isAggressive = this.isAggressiveText(text);
-    const isConfused = this.isConfusedText(text);
-    const isScreaming =
-      text.includes('!') || text.includes('AHHH') || text.includes('WHEEE');
-
-    // Apply dynamic modifications
-    if (voiceType === 'player') {
-      // Hero gets confident, clear speech with slight dramatic flair
-      if (isAggressive) {
-        utterance.rate = Math.max(0.8, baseConfig.rate - 0.1); // Slower for emphasis
-        utterance.pitch = Math.max(0.3, baseConfig.pitch - 0.1); // Deeper for intimidation
-      }
-    } else if (voiceType === 'grunt') {
-      // Grunts get robotic, confused effects
-      if (isConfused) {
-        utterance.rate = Math.max(0.4, baseConfig.rate - 0.2); // Much slower when confused
-        utterance.pitch = baseConfig.pitch + randomRange(-0.1, 0.1); // Slight pitch variation
-      }
-      if (isAggressive) {
-        utterance.rate = Math.min(1.0, baseConfig.rate + 0.2); // Faster when angry
-        utterance.pitch = Math.min(1.0, baseConfig.pitch + 0.2); // Higher when excited
-      }
-    } else if (voiceType === 'rusher') {
-      // Rushers get frantic, escalating effects
-      if (isScreaming || isAggressive) {
-        utterance.rate = Math.min(2.0, baseConfig.rate + 0.3); // Much faster when screaming
-        utterance.pitch = Math.min(2.0, baseConfig.pitch + 0.2); // Higher pitch for screams
-      }
-    } else if (voiceType === 'tank') {
-      // Tanks get intimidating, powerful effects
-      if (isAggressive) {
-        utterance.rate = Math.max(0.3, baseConfig.rate - 0.2); // Slower for menace
-        utterance.pitch = Math.max(0.1, baseConfig.pitch - 0.1); // Deeper for intimidation
-      }
-    } else if (voiceType === 'stabber') {
-      // Stabbers get precise, clinical effects
-      if (isAggressive) {
-        utterance.rate = Math.max(0.7, baseConfig.rate - 0.2); // Slower, more deliberate
-        utterance.pitch = baseConfig.pitch + randomRange(-0.05, 0.05); // Slight variation for unsettling effect
-      }
-    }
-
-    // Add some randomness for variety (small amounts)
-    utterance.rate += randomRange(-0.05, 0.05);
-    utterance.pitch += randomRange(-0.03, 0.03);
-
-    // Ensure values stay in valid ranges
-    utterance.rate = Math.max(0.1, Math.min(2.0, utterance.rate));
-    utterance.pitch = Math.max(0.1, Math.min(2.0, utterance.pitch));
-  }
-
   // ========================================================================
   // TEXT DISPLAY SYSTEM
   // ========================================================================
 
   showText(entity, text, voiceType, duration) {
     // Determine aggression level and style based on text content
-    const isAggressive = this.isAggressiveText(text);
-    const isConfused = this.isConfusedText(text);
+    const isAggressive = isAggressiveTextHelper(text);
+    const isConfused = isConfusedTextHelper(text);
 
     this.activeTexts.push({
       entity: entity,
@@ -1010,247 +823,24 @@ export class Audio {
     });
   }
 
-  // Helper methods to detect text types
-  isAggressiveText(text) {
-    const aggressiveWords = [
-      'KILL',
-      'DEATH',
-      'DESTROY',
-      'BLOOD',
-      'TEAR',
-      'CRUSH',
-      'OBLITERATE',
-      'VIOLENCE',
-      'CARNAGE',
-      'ANNIHILATION',
-      'CARVE',
-      'SLICE',
-      'BUTCHER',
-    ];
-    return aggressiveWords.some((word) => text.includes(word));
-  }
-
-  isConfusedText(text) {
-    const confusedWords = [
-      'WAIT',
-      'UH',
-      'THINK',
-      'MAYBE',
-      'PROBABLY',
-      '?',
-      'FORGOT',
-      'LOST',
-    ];
-    return confusedWords.some((word) => text.includes(word));
-  }
-
   updateTexts() {
-    for (let i = this.activeTexts.length - 1; i >= 0; i--) {
-      const textObj = this.activeTexts[i];
-      textObj.timer--;
-
-      // Update position to follow entity
-      if (textObj.entity) {
-        textObj.x = textObj.entity.x;
-        textObj.y = textObj.entity.y - 30;
-      }
-
-      // Update animation timers
-      if (textObj.shakeTimer > 0) textObj.shakeTimer--;
-      if (textObj.wobbleTimer > 0) textObj.wobbleTimer--;
-
-      if (textObj.timer <= 0) {
-        this.activeTexts.splice(i, 1);
-      }
-    }
+    updateActiveTexts(this.activeTexts);
   }
 
   drawTexts(p) {
-    p.push();
-    p.textAlign(p.CENTER, p.CENTER);
-
-    for (const textObj of this.activeTexts) {
-      // Defines how long the fade-out animation should last, in frames.
-      const fadeOutDuration = 30; // 30 frames = 0.5 seconds at 60fps
-      let alpha;
-
-      if (textObj.timer <= fadeOutDuration) {
-        // If the remaining time for the text is less than or equal to the fade-out duration,
-        // calculate alpha to create a linear fade-out effect.
-        alpha = (textObj.timer / fadeOutDuration) * 255;
-      } else {
-        // If there's more time remaining than the fade-out duration,
-        // the text should be fully opaque.
-        alpha = 255;
-      }
-      // Ensure alpha is clamped to the valid range [0, 255].
-      alpha = Math.max(0, Math.min(255, alpha));
-
-      // Different colors and styles based on content and character
-      const isPlayer = textObj.voiceType === 'player';
-      let textColor = [255, 255, 255]; // Default white
-      let textSizeValue = 10; // Same size for all
-      let strokeWeightValue = 2;
-
-      if (isPlayer) {
-        textColor = [255, 255, 0]; // Yellow for player
-        textSizeValue = 11; // Slightly larger for player
-      } else {
-        // All enemies use white text, same size
-        textColor = [255, 255, 255]; // White for all enemies
-        textSizeValue = 10; // Same size for all enemies
-
-        // Only adjust stroke weight for aggressive content
-        if (textObj.isAggressive) {
-          strokeWeightValue = 3; // Thicker stroke for aggressive
-        }
-      }
-
-      p.textSize(textSizeValue);
-
-      // NEW LOGIC: Use world coordinates directly.
-      // The camera transform is already applied globally in GameLoop.js
-      let screenX = textObj.x;
-      let screenY = textObj.y;
-
-      // Add animation effects
-      if (textObj.shakeTimer > 0) {
-        // Shake effect for aggressive text
-        screenX += randomRange(-2, 2);
-        screenY += randomRange(-1, 1);
-      }
-
-      if (textObj.wobbleTimer > 0) {
-        // Wobble effect for confused text
-        const wobble = this.p.sin(this.p.frameCount * 0.3) * 1.5;
-        screenX += wobble;
-        screenY += this.p.sin(this.p.frameCount * 0.2) * 0.8;
-      }
-
-      // Enhanced stroke for better visibility
-      p.stroke(0, 0, 0, alpha);
-      p.strokeWeight(strokeWeightValue);
-
-      // Fill with calculated color
-      p.fill(textColor[0], textColor[1], textColor[2], alpha);
-
-      p.text(textObj.text, screenX, screenY);
-    }
-
-    if (this.showBeatIndicator) {
-      drawGlow(p, this.beatX, this.beatY, 40, p.color(255, 255, 100), 0.5);
-    }
-
-    p.pop();
+    drawActiveTexts(
+      p,
+      this.activeTexts,
+      this.showBeatIndicator,
+      this.beatX,
+      this.beatY,
+      drawGlow
+    );
   }
 
   // ========================================================================
   // CONVENIENCE METHODS
   // ========================================================================
-
-  // Sound effects
-  playPlayerShoot(x, y) {
-    this.playSound('playerShoot', x, y);
-  }
-  playAlienShoot(x, y) {
-    this.playSound('alienShoot', x, y);
-  }
-  playExplosion(x, y) {
-    this.playSound('explosion', x, y);
-  }
-  playHit(x, y) {
-    this.playSound('hit', x, y);
-  }
-  playPlayerHit() {
-    this.playSound('playerHit');
-  }
-  playEnemyHit(x, y) {
-    this.playSound('hit', x, y);
-  }
-  playRusherScream(x, y) {
-    this.playSound('rusherScream', x, y);
-  }
-  playTankEnergyBall(x, y) {
-    this.playSound('tankEnergy', x, y);
-  }
-  playStabAttack(x, y) {
-    this.playSound('stabAttack', x, y);
-  }
-  playEnemyFrying(x, y) {
-    this.playSound('enemyFrying', x, y);
-  }
-
-  // NEW CHARACTER-BUILDING SOUND METHODS
-  playPlasmaCloud(x, y) {
-    this.playSound('plasmaCloud', x, y);
-  }
-  playTankCharging(x, y) {
-    this.playSound('tankCharging', x, y);
-  }
-  playTankPower(x, y) {
-    this.playSound('tankPower', x, y);
-  }
-  playStabberChant(x, y) {
-    this.playSound('stabberChant', x, y);
-  }
-  playGruntAdvance(x, y) {
-    this.playSound('gruntAdvance', x, y);
-  }
-  playGruntRetreat(x, y) {
-    this.playSound('gruntRetreat', x, y);
-  }
-  playRusherCharge(x, y) {
-    this.playSound('rusherCharge', x, y);
-  }
-  playStabberKnife(x, y) {
-    this.playSound('stabberKnife', x, y);
-  }
-  playEnemyIdle(x, y) {
-    this.playSound('enemyIdle', x, y);
-  }
-  playTankPowerUp(x, y) {
-    this.playSound('tankPowerUp', x, y);
-  }
-  playStabberStalk(x, y) {
-    this.playSound('stabberStalk', x, y);
-  }
-  playStabberDash(x, y) {
-    this.playSound('stabberDash', x, y);
-  }
-
-  // NEW GRUNT AMBIENT SOUND METHODS
-  playGruntMalfunction(x, y) {
-    this.playSound('gruntMalfunction', x, y);
-  }
-  playGruntBeep(x, y) {
-    this.playSound('gruntBeep', x, y);
-  }
-  playGruntWhir(x, y) {
-    this.playSound('gruntWhir', x, y);
-  }
-  playGruntError(x, y) {
-    this.playSound('gruntError', x, y);
-  }
-  playGruntGlitch(x, y) {
-    this.playSound('gruntGlitch', x, y);
-  }
-
-  // NEW SATISFYING KILL SOUND METHODS - The good stuff!
-  playGruntPop(x, y) {
-    this.playSound('gruntPop', x, y);
-  }
-  playEnemyOhNo(x, y) {
-    this.playSound('enemyOhNo', x, y);
-  }
-  playStabberOhNo(x, y) {
-    this.playSound('stabberOhNo', x, y);
-  }
-  playRusherOhNo(x, y) {
-    this.playSound('rusherOhNo', x, y);
-  }
-  playTankOhNo(x, y) {
-    this.playSound('tankOhNo', x, y);
-  }
 
   // Speech methods (simplified - no Promises)
   speakPlayerLine(player, context) {
@@ -1271,176 +861,23 @@ export class Audio {
 
   // Dialogue lines
   getPlayerLine(context) {
-    const lines = {
-      start: [
-        'RISE!',
-        'CRUSH!',
-        'BLOOD MOON!',
-        'CHAOS!',
-        'DANCE DEATH!',
-        'COSMIC!',
-        'LAUGH!',
-        'RIOT!',
-      ],
-      damage: [
-        'PAIN!',
-        'BROKEN!',
-        'HA!',
-        'YOU MISS!',
-        'TRY AGAIN!',
-        'BITTER!',
-        'BLEED!',
-        'MAD!',
-      ],
-      lowHealth: [
-        'MORE!',
-        'STILL HERE!',
-        'NO FEAR!',
-        'DEEP CUT!',
-        'GASP!',
-        'WE CONTINUE!',
-        'HOLD FAST!',
-        'NEVER DONE!',
-      ],
-      death: [
-        'FALLING...',
-        'FAREWELL!',
-        'DARKNESS...',
-        'SEE YOU...',
-        'I END...',
-        'GOODBYE...',
-        'VOID CALLS!',
-        'FADING...',
-      ],
-    };
-    const contextLines = lines[context] || lines.start;
-    return contextLines[floor(random() * contextLines.length)];
+    return getPlayerDialogueLine(context, random, floor);
   }
 
   getGruntLine() {
-    const lines = [
-      // Threatening but confused
-      'KILL HUMAN!',
-      'DESTROY TARGET!',
-      'ELIMINATE!',
-      'ATTACK MODE!',
-      'HOSTILE DETECTED!',
-      'ENGAGE ENEMY!',
-      'FIRE WEAPONS!',
-      'DEATH TO HUMANS!',
-
-      // Confused/stupid moments (the good stuff but shorter)
-      'WAIT WHAT?',
-      'I FORGOT SOMETHING!',
-      'WHERE AM I?',
-      'HELP!',
-      'WRONG PLANET?',
-      'NEED BACKUP!',
-      'LOST AGAIN!',
-      'OOPS!',
-      'MY HELMET IS TIGHT!',
-      'WIFI PASSWORD?',
-      'MOMMY?',
-      'SCARED!',
-      'IS THAT MY TARGET?',
-      'WHICH BUTTON?',
-      "I'M CONFUSED!",
-    ];
-    return lines[floor(random() * lines.length)];
+    return getEnemyDialogueLine('grunt', random, floor);
   }
 
   getRusherLine() {
-    const lines = [
-      // Aggressive charging
-      'INCOMING!',
-      'KAMIKAZE TIME!',
-      'SUICIDE RUN!',
-      'BOOM BOOM!',
-      'DIE WITH ME!',
-      'EXPLOSIVE DEATH!',
-      'RAMPAGE MODE!',
-      'BERSERKER!',
-      'DEATH RUSH!',
-      'BLAST RADIUS!',
-      'DETONATE!',
-      'KABOOM!',
-
-      // Crazy moments (keep the fun)
-      'WHEEEEE!',
-      'YOLO BOMB!',
-      'CANNONBALL!',
-      'ZOOM ZOOM!',
-      'TOO FAST!',
-      "CAN'T STOP!",
-      'EXPLOSIVE DIARRHEA!',
-      'REGRET NOTHING!',
-      'WITNESS ME!',
-      'LEEROY JENKINS!',
-      'OOPS BOOM!',
-    ];
-    return lines[floor(random() * lines.length)];
+    return getEnemyDialogueLine('rusher', random, floor);
   }
 
   getTankLine() {
-    const lines = [
-      // Heavy intimidation
-      'CRUSH ENEMIES!',
-      'HEAVY ARTILLERY!',
-      'DEVASTATE ALL!',
-      'SIEGE MODE!',
-      'BIG GUN READY!',
-      'UNSTOPPABLE FORCE!',
-      'FORTRESS ONLINE!',
-      'APOCALYPSE!',
-      'OVERWHELMING POWER!',
-      'JUGGERNAUT!',
-      'PULVERIZE!',
-      'DOMINATE!',
-
-      // Macho moments (the good compensating humor)
-      'DO YOU LIFT BRO?',
-      'BIG MUSCLES!',
-      'ALPHA MALE!',
-      'COMPENSATING!',
-      'SIZE MATTERS!',
-      'PROTEIN POWER!',
-      'HULK SMASH!',
-      'BEAST MODE!',
-      'MY GUN IS BIGGER!',
-      'MAXIMUM TESTOSTERONE!',
-    ];
-    return lines[floor(random() * lines.length)];
+    return getEnemyDialogueLine('tank', random, floor);
   }
 
   getStabberLine() {
-    const lines = [
-      // Sharp and deadly
-      'STAB TIME!',
-      'SLICE AND DICE!',
-      'PRECISION CUT!',
-      'BLADE READY!',
-      'SURGICAL STRIKE!',
-      'SHARP DEATH!',
-      'KNIFE WORK!',
-      'CARVE YOU UP!',
-      'CUTTING EDGE!',
-      'STABBING SPREE!',
-      'DISSECTION!',
-      'PIERCE!',
-
-      // Poke humor (the good surgical jokes)
-      'ACUPUNCTURE TIME!',
-      'JUST A PRICK!',
-      'SURGERY!',
-      'POKE POKE!',
-      'NEEDLE THERAPY!',
-      'OOPS SORRY!',
-      'STABBY MCSTABFACE!',
-      'HUMAN PINCUSHION!',
-      'LITTLE SCRATCH!',
-      'POINTY DEATH!',
-    ];
-    return lines[floor(random() * lines.length)];
+    return getEnemyDialogueLine('stabber', random, floor);
   }
 
   // Control methods
@@ -1477,15 +914,4 @@ export class Audio {
     // Update text display system
     this.updateTexts();
   }
-
-  // MISSING METHODS - Added to fix silent sounds after refactoring
-  playBombExplosion(x, y) {
-    this.playSound('explosion', x, y);
-  } // Bombs use explosion sound
-  playRusherExplosion(x, y) {
-    this.playSound('explosion', x, y);
-  } // Rusher explosions use explosion sound
-  playStabberAttack(x, y) {
-    this.playSound('stabAttack', x, y);
-  } // Stabber attacks use stabAttack sound
 }

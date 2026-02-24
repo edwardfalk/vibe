@@ -83,13 +83,21 @@ export class PlasmaCloud {
       const colorPhase = (pt.angle + colorShift) % (TWO_PI * 2);
       let cr, cg, cb;
       if (colorPhase < TWO_PI * 0.5) {
-        cr = 138; cg = 43; cb = 226;
+        cr = 138;
+        cg = 43;
+        cb = 226;
       } else if (colorPhase < TWO_PI) {
-        cr = 64; cg = 224; cb = 208;
+        cr = 64;
+        cg = 224;
+        cb = 208;
       } else if (colorPhase < TWO_PI * 1.5) {
-        cr = 255; cg = 20; cb = 147;
+        cr = 255;
+        cg = 20;
+        cb = 147;
       } else {
-        cr = 255; cg = 215; cb = 0;
+        cr = 255;
+        cg = 215;
+        cb = 0;
       }
 
       p.fill(cr, cg, cb, pt.brightness * (alpha / 150));

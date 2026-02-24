@@ -7,14 +7,14 @@ import { CONFIG } from './config.js';
  * Maintains tactical distance, uses friendly fire avoidance, confused personality
  */
 class Grunt extends BaseEnemy {
-  constructor(x, y, type, config, p, audio) {
+  constructor(x, y, type, config, p, audio, context = null) {
     const gruntConfig = {
       size: 26,
       health: 2,
       speed: 1.2,
       color: p.color(50, 205, 50), // Lime green
     };
-    super(x, y, 'grunt', gruntConfig, p, audio);
+    super(x, y, 'grunt', gruntConfig, p, audio, context);
     this.p = p;
     this.audio = audio;
 
@@ -39,10 +39,7 @@ class Grunt extends BaseEnemy {
    * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
    */
   updateSpecificBehavior(playerX, playerY, deltaTimeMs = 16.6667) {
-    if (
-      this.p.frameCount % 30 === 0 &&
-      CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS
-    ) {
+    if (this.p.frameCount % 30 === 0 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
         `[GRUNT AI] updateSpecificBehavior called for Grunt at (${this.x.toFixed(1)},${this.y.toFixed(1)})`
       );
@@ -62,13 +59,9 @@ class Grunt extends BaseEnemy {
           );
           this._pendingStabDeathParams = null;
         }
-        if (window.collisionSystem) {
-          window.collisionSystem.handleEnemyDeath(
-            this,
-            this.type,
-            this.x,
-            this.y
-          );
+        const collisionSystem = this.getContextValue('collisionSystem');
+        if (collisionSystem) {
+          collisionSystem.handleEnemyDeath(this, this.type, this.x, this.y);
         }
         // Mark for removal instead of splicing the array
         this.markedForRemoval = true;
@@ -107,6 +100,8 @@ class Grunt extends BaseEnemy {
     if (distance > 0) {
       const unitX = dx / distance;
       const unitY = dy / distance;
+      const beatClock = this.getContextValue('beatClock');
+      const audio = this.getContextValue('audio');
 
       if (distance < tooClose) {
         // Too close - retreat while maintaining line of sight
@@ -120,14 +115,9 @@ class Grunt extends BaseEnemy {
         }
 
         // Play grunt retreat sound if beatClock available
-        if (
-          window.beatClock &&
-          window.beatClock.isOnBeat([2, 4]) &&
-          window.audio
-        ) {
+        if (beatClock && beatClock.isOnBeat([2, 4]) && audio) {
           if (random() < 0.3) {
-            // 30% chance on beats 2&4
-            window.audio.playSound('gruntRetreat', this.x, this.y);
+            audio.playSound('gruntRetreat', this.x, this.y);
           }
         }
       } else if (distance > tooFar) {
@@ -136,14 +126,9 @@ class Grunt extends BaseEnemy {
         this.velocity.y = unitY * this.speed * 0.6;
 
         // Play grunt advance sound if beatClock available
-        if (
-          window.beatClock &&
-          window.beatClock.isOnBeat([2, 4]) &&
-          window.audio
-        ) {
+        if (beatClock && beatClock.isOnBeat([2, 4]) && audio) {
           if (random() < 0.25) {
-            // 25% chance on beats 2&4
-            window.audio.playSound('gruntAdvance', this.x, this.y);
+            audio.playSound('gruntAdvance', this.x, this.y);
           }
         }
       } else {
@@ -154,22 +139,23 @@ class Grunt extends BaseEnemy {
     }
 
     // RHYTHMIC GRUNT SHOOTING: Check if grunt can shoot
+    const beatClockShoot = this.getContextValue('beatClock');
+    const rhythmFX = this.getContextValue('rhythmFX');
     if (distance < 300 && this.shootCooldown <= 0) {
-      if (window.beatClock) {
-        // Register attack telegraph when approaching attack beat
-        const timeToNextAttack = window.beatClock.getTimeToNextBeat();
-        if (timeToNextAttack < 500 && window.beatClock.isOnBeat([2, 4])) {
-          if (window.rhythmFX) {
-            window.rhythmFX.addAttackTelegraph(
+      if (beatClockShoot) {
+        const timeToNextAttack = beatClockShoot.getTimeToNextBeat();
+        if (timeToNextAttack < 500 && beatClockShoot.isOnBeat([2, 4])) {
+          if (rhythmFX) {
+            rhythmFX.addAttackTelegraph(
               this.x,
               this.y,
               'grunt',
-              timeToNextAttack / window.beatClock.beatInterval
+              timeToNextAttack / beatClockShoot.beatInterval
             );
           }
         }
 
-        if (window.beatClock.canGruntShoot()) {
+        if (beatClockShoot.canGruntShoot()) {
           // Check for friendly fire avoidance
           if (!this.shouldAvoidFriendlyFire()) {
             this.shootCooldown = 45 + random(30); // Faster shooting for ranged combat
@@ -181,10 +167,7 @@ class Grunt extends BaseEnemy {
     }
 
     // After movement logic
-    if (
-      this.p.frameCount % 30 === 0 &&
-      CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS
-    ) {
+    if (this.p.frameCount % 30 === 0 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
         `[GRUNT AI] velocity after logic: x=${this.velocity.x} y=${this.velocity.y}`
       );
@@ -197,7 +180,8 @@ class Grunt extends BaseEnemy {
    * Check if grunt should avoid friendly fire
    */
   shouldAvoidFriendlyFire() {
-    if (!window.enemies) return false;
+    const enemies = this.getContextValue('enemies');
+    if (!enemies) return false;
     // Defensive: If aimAngle is not set, skip friendly fire check to avoid NaN results
     if (!this.aimAngle && this.aimAngle !== 0) return false;
 
@@ -208,7 +192,7 @@ class Grunt extends BaseEnemy {
       range: 400, // Check 400 pixels ahead
     };
 
-    for (const otherEnemy of window.enemies) {
+    for (const otherEnemy of enemies) {
       if (otherEnemy === this) continue; // Skip self
 
       // Calculate if other enemy is in the line of fire
@@ -256,9 +240,10 @@ class Grunt extends BaseEnemy {
    * Make weird grunt noises (separate from speech)
    */
   makeGruntWeirdNoise() {
-    if (window.audio && window.beatClock) {
-      // Grunt weird noises sync to beats 2&4 with 40% chance
-      if (window.beatClock.isOnBeat([2, 4]) && random() < 0.4) {
+    const audio = this.getContextValue('audio');
+    const beatClock = this.getContextValue('beatClock');
+    if (audio && beatClock) {
+      if (beatClock.isOnBeat([2, 4]) && random() < 0.4) {
         const weirdSounds = [
           'gruntMalfunction',
           'gruntBeep',
@@ -267,7 +252,7 @@ class Grunt extends BaseEnemy {
           'gruntGlitch',
         ];
         const randomSound = weirdSounds[floor(random() * weirdSounds.length)];
-        window.audio.playSound(randomSound, this.x, this.y);
+        audio.playSound(randomSound, this.x, this.y);
         if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
           console.log(`🤖 Grunt making weird noise: ${randomSound}`);
         }
@@ -279,9 +264,11 @@ class Grunt extends BaseEnemy {
    * Trigger ambient speech specific to grunts
    */
   triggerAmbientSpeech() {
-    if (window.audio && this.speechCooldown <= 0) {
+    const audio = this.getContextValue('audio');
+    const beatClock = this.getContextValue('beatClock');
+    if (audio && this.speechCooldown <= 0) {
       let shouldSpeak = false;
-      if (window.beatClock && window.beatClock.isOnBeat([2, 4])) {
+      if (beatClock && beatClock.isOnBeat([2, 4])) {
         shouldSpeak = random() < 0.9;
       } else {
         shouldSpeak = random() < 0.3;
@@ -315,7 +302,7 @@ class Grunt extends BaseEnemy {
           "I'M CONFUSED!",
         ];
         const randomLine = gruntLines[floor(random() * gruntLines.length)];
-        if (window.audio.speak(this, randomLine, 'grunt')) {
+        if (audio.speak(this, randomLine, 'grunt')) {
           this.speechCooldown = this.maxSpeechCooldown;
         }
       }
@@ -412,8 +399,9 @@ class Grunt extends BaseEnemy {
       amount >= this.health
     ) {
       // About to die from stabber: play 'ow', delay death
-      if (window.audio) {
-        const ttsSuccess = window.audio.speak(this, 'ow', 'grunt', true); // force = true
+      const audio = this.getContextValue('audio');
+      if (audio) {
+        const ttsSuccess = audio.speak(this, 'ow', 'grunt', true); // force = true
         if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
           console.log(
             '💬 Grunt stabbed: trying to say "ow" (TTS success:',
@@ -421,8 +409,8 @@ class Grunt extends BaseEnemy {
             ')'
           );
         }
-        if (!ttsSuccess && window.audio.playSound) {
-          window.audio.playSound('gruntOw', this.x, this.y);
+        if (!ttsSuccess && audio.playSound) {
+          audio.playSound('gruntOw', this.x, this.y);
           if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
             console.log('🔊 Fallback gruntOw sound played.');
           }
@@ -446,13 +434,14 @@ class Grunt extends BaseEnemy {
         `[GRUNT DEBUG] Grunt at (${this.x.toFixed(1)},${this.y.toFixed(1)}) died and should be removed.`
       );
     }
+    const audioSurv = this.getContextValue('audio');
     if (
       damageSource === 'stabber_melee' &&
       !died &&
-      window.audio &&
+      audioSurv &&
       this.speechCooldown <= 0
     ) {
-      const ttsSuccess = window.audio.speak(this, 'ow', 'grunt', true); // force = true
+      const ttsSuccess = audioSurv.speak(this, 'ow', 'grunt', true); // force = true
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
         console.log(
           '💬 Grunt stabbed (survived): trying to say "ow" (TTS success:',
@@ -460,8 +449,8 @@ class Grunt extends BaseEnemy {
           ')'
         );
       }
-      if (!ttsSuccess && window.audio.playSound) {
-        window.audio.playSound('gruntOw', this.x, this.y);
+      if (!ttsSuccess && audioSurv.playSound) {
+        audioSurv.playSound('gruntOw', this.x, this.y);
         if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
           console.log('🔊 Fallback gruntOw sound played.');
         }

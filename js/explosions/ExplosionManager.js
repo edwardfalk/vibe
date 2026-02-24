@@ -314,21 +314,25 @@ class EnemyFragmentExplosion {
 }
 
 export class ExplosionManager {
-  constructor() {
+  constructor(context = null) {
+    this.context = context;
     this.explosions = [];
     this.plasmaClouds = [];
-    this.radioactiveDebris = []; // New array for radioactive debris
-    this.fragmentExplosions = []; // New array for fragment explosions
+    this.radioactiveDebris = [];
+    this.fragmentExplosions = [];
+  }
+
+  getContextValue(key) {
+    if (this.context && typeof this.context.get === 'function') {
+      return this.context.get(key);
+    }
+    return window[key];
   }
 
   addExplosion(x, y, type = 'enemy') {
-    // Get beat intensity for enhanced on-beat explosions
-    const beatIntensity = window.beatClock
-      ? window.beatClock.getBeatIntensity(6)
-      : 0;
-    const isDownbeat = window.beatClock
-      ? window.beatClock.getCurrentBeat() === 0
-      : false;
+    const beatClock = this.getContextValue('beatClock');
+    const beatIntensity = beatClock ? beatClock.getBeatIntensity(6) : 0;
+    const isDownbeat = beatClock ? beatClock.getCurrentBeat() === 0 : false;
 
     // Create explosion with beat-enhanced properties
     const explosion = new Explosion(x, y, type);
@@ -346,19 +350,14 @@ export class ExplosionManager {
 
   addPlasmaCloud(x, y) {
     this.plasmaClouds.push(new PlasmaCloud(x, y));
-    // Play ominous plasma formation sound
-    if (window.audio) {
-      window.audio.playPlasmaCloud(x, y);
-    }
+    const audio = this.getContextValue('audio');
+    if (audio) audio.playPlasmaCloud(x, y);
   }
 
-  // Add radioactive debris clouds from tank bomb explosions
   addRadioactiveDebris(x, y) {
     this.radioactiveDebris.push(new RadioactiveDebris(x, y));
-    // Play radioactive debris sound (reuse plasma sound for now)
-    if (window.audio) {
-      window.audio.playPlasmaCloud(x, y);
-    }
+    const audio = this.getContextValue('audio');
+    if (audio) audio.playPlasmaCloud(x, y);
   }
 
   // Create multiple radioactive debris clouds around a bomb explosion
@@ -436,14 +435,10 @@ export class ExplosionManager {
     );
   }
 
-  // Add beautiful fragment explosion that cuts enemy into pieces
   addFragmentExplosion(x, y, enemy) {
     const fragmentExplosion = new EnemyFragmentExplosion(x, y, enemy);
-
-    // Enhance with beat intensity
-    const beatIntensity = window.beatClock
-      ? window.beatClock.getBeatIntensity(6)
-      : 0;
+    const beatClock = this.getContextValue('beatClock');
+    const beatIntensity = beatClock ? beatClock.getBeatIntensity(6) : 0;
     if (beatIntensity > 0.3) {
       // Boost fragment speeds on beat
       fragmentExplosion.fragments.forEach((f) => {

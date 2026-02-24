@@ -104,16 +104,19 @@ export function updateBombs(context) {
             gameState.setGameState('gameOver');
           }
         } else {
-          const knockbackAngle = atan2(player.y - bomb.y, player.x - bomb.x);
-          const knockbackForce = 15;
-          player.velocity.x += cos(knockbackAngle) * knockbackForce;
-          player.velocity.y += sin(knockbackAngle) * knockbackForce;
+          if (player.velocity) {
+            const knockbackAngle = atan2(player.y - bomb.y, player.x - bomb.x);
+            const knockbackForce = 15;
+            player.velocity.x += cos(knockbackAngle) * knockbackForce;
+            player.velocity.y += sin(knockbackAngle) * knockbackForce;
+          }
         }
       }
     }
 
     for (let j = enemies.length - 1; j >= 0; j--) {
       const enemy = enemies[j];
+      if (enemy.id === bomb.tankId) continue; // originating tank placed the bomb
       const dx = bomb.x - enemy.x;
       const dy = bomb.y - enemy.y;
       const enemyDistSq = dx * dx + dy * dy;

@@ -17,7 +17,8 @@ import {
 } from './mathUtils.js';
 
 export class SpawnSystem {
-  constructor() {
+  constructor(context = null) {
+    this.context = context;
     // Spawning timers
     this.enemySpawnTimer = 0;
     this.enemySpawnRate = 180; // frames - slower, more controlled spawning
@@ -27,13 +28,20 @@ export class SpawnSystem {
     this.minSpawnRate = 60; // Fastest possible spawn rate
     this.spawnRateDecreasePerLevel = 8; // How much faster spawning gets per level
 
-    // Create enemy factory
-    this.enemyFactory = new EnemyFactory();
+    this.enemyFactory = new EnemyFactory(context);
+  }
+
+  getContextValue(key) {
+    if (this.context && typeof this.context.get === 'function') {
+      return this.context.get(key);
+    }
+    return window[key];
   }
 
   // Update spawning system
   update() {
-    if (!window.gameState || window.gameState.gameState !== 'playing') return;
+    const gameState = this.getContextValue('gameState');
+    if (!gameState || gameState.gameState !== 'playing') return;
 
     // Update spawn timer
     this.enemySpawnTimer++;
@@ -42,16 +50,16 @@ export class SpawnSystem {
     const currentSpawnRate = max(
       this.minSpawnRate,
       this.baseSpawnRate -
-        (window.gameState.level - 1) * this.spawnRateDecreasePerLevel
+        (gameState.level - 1) * this.spawnRateDecreasePerLevel
     );
 
     // Spawn enemies when timer reaches spawn rate
     if (this.enemySpawnTimer >= currentSpawnRate) {
       this.enemySpawnTimer = 0;
 
-      // Calculate how many enemies to spawn based on level
-      const maxEnemies = this.getMaxEnemiesForLevel(window.gameState.level);
-      const currentEnemyCount = window.enemies ? window.enemies.length : 0;
+      const enemies = this.getContextValue('enemies');
+      const maxEnemies = this.getMaxEnemiesForLevel(gameState.level);
+      const currentEnemyCount = enemies ? enemies.length : 0;
 
       if (currentEnemyCount < maxEnemies) {
         const enemiesToSpawn = min(2, maxEnemies - currentEnemyCount);
@@ -67,9 +75,12 @@ export class SpawnSystem {
 
   // Spawn enemies based on level progression
   spawnEnemies(count) {
-    if (!window.enemies) window.enemies = [];
-    const level = window.gameState ? window.gameState.level : 1;
-    const p = window.player && window.player.p;
+    const gameState = this.getContextValue('gameState');
+    const enemies = this.getContextValue('enemies');
+    const player = this.getContextValue('player');
+    if (!enemies) return;
+    const level = gameState ? gameState.level : 1;
+    const p = player && player.p;
     for (let i = 0; i < count; i++) {
       const enemyType = this.getEnemyTypeForLevel(level);
       const spawnPos = this.findSpawnPosition();
@@ -79,9 +90,9 @@ export class SpawnSystem {
         enemyType,
         p
       );
-      window.enemies.push(enemy);
+      enemies.push(enemy);
       console.log(
-        `👾 Spawned ${enemyType} at level ${level} (${window.enemies.length}/${this.getMaxEnemiesForLevel(level)} enemies)`
+        `👾 Spawned ${enemyType} at level ${level} (${enemies.length}/${this.getMaxEnemiesForLevel(level)} enemies)`
       );
     }
   }
@@ -129,7 +140,7 @@ export class SpawnSystem {
 
   // Find a good spawn position away from player
   findSpawnPosition() {
-    const player = window.player;
+    const player = this.getContextValue('player');
     if (!player) {
       // fallback: use 800x600 as default if no player (should never happen in normal play)
       return { x: random(100, 700), y: random(100, 500) };
@@ -177,9 +188,10 @@ export class SpawnSystem {
       attempts++;
 
       // Check if too close to existing enemies
-      if (window.enemies && window.enemies.length > 0) {
+      const enemies = this.getContextValue('enemies');
+      if (enemies && enemies.length > 0) {
         let tooCloseToOtherEnemy = false;
-        for (const enemy of window.enemies) {
+        for (const enemy of enemies) {
           if (this.getDistance(spawnX, spawnY, enemy.x, enemy.y) < 200) {
             tooCloseToOtherEnemy = true;
             break;
@@ -221,10 +233,11 @@ export class SpawnSystem {
 
   // Force spawn specific enemy type (for testing)
   forceSpawn(enemyType, x, y) {
-    if (!window.enemies) window.enemies = [];
+    const enemies = this.getContextValue('enemies');
+    if (!enemies) return null;
 
     const enemy = this.enemyFactory.createEnemy(x, y, enemyType);
-    window.enemies.push(enemy);
+    enemies.push(enemy);
 
     console.log(`🎯 Force spawned ${enemyType} at (${x}, ${y})`);
     return enemy;

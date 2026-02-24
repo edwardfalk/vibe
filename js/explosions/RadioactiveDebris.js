@@ -85,11 +85,17 @@ export class RadioactiveDebris {
       const colorPhase = (pt.angle + radioactiveShift) % TWO_PI;
       let cr, cg, cb;
       if (colorPhase < TWO_PI * 0.33) {
-        cr = 50; cg = 205; cb = 50;
+        cr = 50;
+        cg = 205;
+        cb = 50;
       } else if (colorPhase < TWO_PI * 0.66) {
-        cr = 255; cg = 255; cb = 0;
+        cr = 255;
+        cg = 255;
+        cb = 0;
       } else {
-        cr = 154; cg = 205; cb = 50;
+        cr = 154;
+        cg = 205;
+        cb = 50;
       }
 
       const glowIntensity = sin(pt.glowPhase) * 0.3 + 0.7;
@@ -107,7 +113,12 @@ export class RadioactiveDebris {
       p.ellipse(px, py, pt.size * 1.8);
 
       if (pt.brightness > 150) {
-        p.fill(255, 255, 255, pt.brightness * 0.5 * glowIntensity * (alpha / 120));
+        p.fill(
+          255,
+          255,
+          255,
+          pt.brightness * 0.5 * glowIntensity * (alpha / 120)
+        );
         p.ellipse(px, py, pt.size * 0.4);
       }
     }

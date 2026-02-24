@@ -4,4 +4,4 @@ This folder is for documents intended for human gameplay tuning and non-architec
 
 Current user-facing reference:
 
-- Audio tuning guide: `../AUDIO_CONFIGURATION_GUIDE.md`
+- Audio tuning guide: `AUDIO_CONFIGURATION_GUIDE.md`

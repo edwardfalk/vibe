@@ -18,13 +18,34 @@ This file is the source of truth for module layout and runtime wiring.
   - `BombSystem.js` - bomb placement + bomb explosion damage updates.
   - `collision/CollisionMetrics.js` - frame and rolling collision metrics helpers.
   - `collision/CollisionSpatialGrid.js` - spatial grid build/query helpers.
+  - `gameplay/EnemyUpdatePipeline.js` - enemy update-result handling extracted from GameLoop.
+  - `gameplay/BulletUpdatePipeline.js` - player/enemy bullet update and off-screen cleanup.
+  - `gameplay/RenderPipeline.js` - world render pipeline extracted from GameLoop.
+  - `gameplay/PerformanceDiagnostics.js` - periodic pool/collision diagnostics logging.
   - `background/BeatReactiveBackground.js` - beat-reactive background helper logic.
   - `background/BeatPulseOverlay.js` - beat pulse overlay rendering helper.
+  - `background/ParallaxLayerRenderers.js` - distant star + nebula layer render helpers.
+  - `background/MediumStarRenderer.js` - beat-synced medium-star rendering helper.
+  - `background/ParallaxLayerConfig.js` - canonical parallax layer configuration helper.
+  - `background/ParallaxLayerFactory.js` - parallax layer element generation helper.
+  - `background/CosmicAuroraBackground.js` - aurora gradient renderer helper.
+  - `background/AuroraWisps.js` - beat-reactive aurora wisp renderer helper.
+  - `background/EnhancedSpaceElements.js` - streams/shooting-stars/sparkles/galaxies renderer helper.
+  - `background/InteractiveBackgroundEffects.js` - gameplay-reactive overlays (pulse/ripple/health/score/streak).
+  - `background/NearFieldParallax.js` - close debris + foreground spark layer render helpers.
+  - `background/SubtleSpaceElements.js` - static subtle-space nebula/stars layer helper.
   - `combat/EnemyDeathHandler.js` - centralized enemy death effects/audio handling.
 - `js/audio/`
   - `BeatClock.js` - rhythm timing and beat phase/intensity helpers.
   - `BeatTrack.js` - procedural beat backing track scheduler.
   - `AmbientSoundProfile.js` - ambient sound tags and source-position helpers.
+  - `SpatialAudio.js` - pan/volume helper math for player-relative spatialization.
+  - `BeatTremolo.js` - beat-synced tremolo DSP helper.
+  - `TextDisplay.js` - speech-text update/draw helpers.
+  - `TextSemantics.js` - aggressive/confused/screaming text classifiers.
+  - `DialogueLines.js` - centralized player/enemy dialogue line pools + random selection helpers.
+  - `VoiceSelection.js` - voice profile selection heuristics by role.
+  - `VoiceEffects.js` - runtime pitch/rate modulation rules per role.
 - `js/shared/`
   - `contracts/DamageResult.js` - normalized damage/death result contract.
 

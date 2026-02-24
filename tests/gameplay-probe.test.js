@@ -62,4 +62,56 @@ test.describe('Gameplay Probes', () => {
     expect(after.enemyCount).toBeGreaterThan(0);
     expect(after.playerAlive).toBe(true);
   });
+
+  test('Collision diagnostics API available', async ({ page }) => {
+    await bootGame(page);
+
+    const snapshot = await page.evaluate(() => {
+      if (!window.collisionSystem?.getPerformanceSnapshot) return null;
+      return window.collisionSystem.getPerformanceSnapshot();
+    });
+
+    expect(snapshot).not.toBeNull();
+    expect(snapshot).toHaveProperty('frameSampleSize');
+    expect(snapshot).toHaveProperty('latestFrame');
+    expect(snapshot).toHaveProperty('averages');
+  });
+
+  test('Score and health UI elements present', async ({ page }) => {
+    await bootGame(page);
+
+    const scoreEl = await page.locator('#score').textContent();
+    const healthEl = await page.locator('#health').textContent();
+
+    expect(scoreEl).toMatch(/Score:\s*\d+/);
+    expect(healthEl).toMatch(/Health:\s*\d+/);
+  });
+
+  test('Game state is playing after boot', async ({ page }) => {
+    await bootGame(page);
+
+    const state = await page.evaluate(
+      () => window.gameState?.gameState ?? null
+    );
+    expect(state).toBe('playing');
+  });
+
+  test('Player input affects position', async ({ page }) => {
+    await bootGame(page);
+
+    const before = await page.evaluate(() =>
+      window.player ? { x: window.player.x, y: window.player.y } : null
+    );
+    expect(before).not.toBeNull();
+
+    await page.keyboard.down('w');
+    await page.waitForTimeout(200);
+    await page.keyboard.up('w');
+
+    const after = await page.evaluate(() =>
+      window.player ? { x: window.player.x, y: window.player.y } : null
+    );
+    expect(after).not.toBeNull();
+    expect(after.y).toBeLessThan(before.y);
+  });
 });

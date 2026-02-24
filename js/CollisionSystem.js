@@ -274,7 +274,13 @@ export class CollisionSystem {
         const baseStopFrames = isOnBeat ? 5 : 3; // Longer hitstop when on-beat
         const streakBonus = gameState.killStreak >= 5 ? 2 : 0;
         const stopFrames = baseStopFrames + streakBonus;
-        window.hitStopFrames = Math.max(window.hitStopFrames || 0, stopFrames);
+        const current =
+          this.context?.get?.('hitStopFrames') ?? window.hitStopFrames ?? 0;
+        const next = Math.max(current, stopFrames);
+        if (this.context && typeof this.context.set === 'function') {
+          this.context.set('hitStopFrames', next);
+        }
+        window.hitStopFrames = next;
 
         // Trigger chromatic aberration on beat-perfect kills
         if (isOnBeat && visualEffectsManager) {
@@ -356,8 +362,10 @@ export class CollisionSystem {
           if (gameState) {
             gameState.setGameState('gameOver');
           }
+          const testMode =
+            this.getContextValue('testModeManager')?.enabled ?? false;
           console.log(
-            `💀 PLAYER DIED! Game state changed to gameOver. Test mode: ${window.testMode}`
+            `💀 PLAYER DIED! Game state changed to gameOver. Test mode: ${testMode}`
           );
           return;
         }
@@ -522,7 +530,7 @@ export class CollisionSystem {
     // Remove bullet after hit
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
-        `➖ Removing enemy bullet (hit enemy): ${bullet.owner} hit ${enemy.type} - Remaining: ${window.enemyBullets.length - 1}`
+        `➖ Removing enemy bullet (hit enemy): ${bullet.owner} hit ${enemy.type} - Remaining: ${enemyBullets.length - 1}`
       );
     }
     Bullet.release(bullet);
@@ -536,7 +544,12 @@ export class CollisionSystem {
 
   // Handle stabber attack collision
   handleStabberAttack(attack, stabber) {
-    if (!window.player) return;
+    const player = this.getContextValue('player');
+    const audio = this.getContextValue('audio');
+    const gameState = this.getContextValue('gameState');
+    const cameraSystem = this.getContextValue('cameraSystem');
+    const explosionManager = this.getContextValue('explosionManager');
+    if (!player) return;
 
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log('🗡️ Stabber executing deadly stab attack!');
@@ -544,7 +557,7 @@ export class CollisionSystem {
 
     // Check if player is still in stab range
     const distance = Math.sqrt(
-      (window.player.x - stabber.x) ** 2 + (window.player.y - stabber.y) ** 2
+      (player.x - stabber.x) ** 2 + (player.y - stabber.y) ** 2
     );
 
     if (distance <= attack.range + 10) {
@@ -555,19 +568,19 @@ export class CollisionSystem {
         );
       }
 
-      if (window.audio) {
-        window.audio.playPlayerHit();
-        window.audio.playStabberAttack(stabber.x, stabber.y);
+      if (audio) {
+        audio.playPlayerHit();
+        audio.playStabberAttack(stabber.x, stabber.y);
       }
 
-      if (window.gameState) {
-        window.gameState.resetKillStreak(); // Reset kill streak on taking damage
+      if (gameState) {
+        gameState.resetKillStreak(); // Reset kill streak on taking damage
       }
 
       // Apply damage and knockback
-      if (window.player.takeDamage(attack.damage, 'stabber-legacy')) {
-        if (window.gameState) {
-          window.gameState.setGameState('gameOver');
+      if (player.takeDamage(attack.damage, 'stabber-legacy')) {
+        if (gameState) {
+          gameState.setGameState('gameOver');
         }
         if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
           console.log('💀 PLAYER KILLED BY STABBER ATTACK!');
@@ -577,25 +590,21 @@ export class CollisionSystem {
 
       // Apply knockback to player
       const knockbackAngle = Math.atan2(
-        window.player.y - stabber.y,
-        window.player.x - stabber.x
+        player.y - stabber.y,
+        player.x - stabber.x
       );
       const knockbackForce = 8;
-      window.player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
-      window.player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
+      player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
+      player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
 
       // Screen shake for dramatic effect
-      if (window.cameraSystem) {
-        window.cameraSystem.addShake(10, 20);
+      if (cameraSystem) {
+        cameraSystem.addShake(10, 20);
       }
 
       // Create impact effect
-      if (window.explosionManager) {
-        window.explosionManager.addExplosion(
-          window.player.x,
-          window.player.y,
-          'hit'
-        );
+      if (explosionManager) {
+        explosionManager.addExplosion(player.x, player.y, 'hit');
       }
     } else {
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
@@ -608,11 +617,16 @@ export class CollisionSystem {
 
   // Handle rusher explosion collision
   handleRusherExplosion(explosion, rusherIndex) {
-    if (!window.player) return;
+    const player = this.getContextValue('player');
+    const audio = this.getContextValue('audio');
+    const gameState = this.getContextValue('gameState');
+    const cameraSystem = this.getContextValue('cameraSystem');
+    const explosionManager = this.getContextValue('explosionManager');
+    const enemies = this.getContextValue('enemies');
+    if (!player) return;
 
     const distance = Math.sqrt(
-      (window.player.x - explosion.x) ** 2 +
-        (window.player.y - explosion.y) ** 2
+      (player.x - explosion.x) ** 2 + (player.y - explosion.y) ** 2
     );
 
     if (distance <= explosion.radius) {
@@ -622,19 +636,19 @@ export class CollisionSystem {
         );
       }
 
-      if (window.audio) {
-        window.audio.playPlayerHit();
-        window.audio.playRusherExplosion(explosion.x, explosion.y);
+      if (audio) {
+        audio.playPlayerHit();
+        audio.playRusherExplosion(explosion.x, explosion.y);
       }
 
-      if (window.gameState) {
-        window.gameState.resetKillStreak(); // Reset kill streak on taking damage
+      if (gameState) {
+        gameState.resetKillStreak(); // Reset kill streak on taking damage
       }
 
       // Apply damage
-      if (window.player.takeDamage(explosion.damage, 'rusher-explosion')) {
-        if (window.gameState) {
-          window.gameState.setGameState('gameOver');
+      if (player.takeDamage(explosion.damage, 'rusher-explosion')) {
+        if (gameState) {
+          gameState.setGameState('gameOver');
         }
         console.log('💀 PLAYER KILLED BY RUSHER EXPLOSION!');
         return;
@@ -642,35 +656,26 @@ export class CollisionSystem {
 
       // Apply knockback
       const knockbackAngle = Math.atan2(
-        window.player.y - explosion.y,
-        window.player.x - explosion.x
+        player.y - explosion.y,
+        player.x - explosion.x
       );
       const knockbackForce = 12;
-      window.player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
-      window.player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
+      player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
+      player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
 
       // Strong screen shake
-      if (window.cameraSystem) {
-        window.cameraSystem.addShake(15, 25);
+      if (cameraSystem) {
+        cameraSystem.addShake(15, 25);
       }
 
       // Create impact effect
-      if (window.explosionManager) {
-        window.explosionManager.addExplosion(
-          window.player.x,
-          window.player.y,
-          'hit'
-        );
+      if (explosionManager) {
+        explosionManager.addExplosion(player.x, player.y, 'hit');
       }
 
       // Remove the rusher that exploded
-      if (
-        window.enemies &&
-        rusherIndex >= 0 &&
-        rusherIndex < window.enemies.length
-      ) {
-        // Mark the rusher for removal; actual removal will be handled in the cleanup phase
-        window.enemies[rusherIndex].markedForRemoval = true;
+      if (enemies && rusherIndex >= 0 && rusherIndex < enemies.length) {
+        enemies[rusherIndex].markedForRemoval = true;
       }
     }
   }

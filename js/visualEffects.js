@@ -6,7 +6,8 @@ import { sin, cos, random } from './mathUtils.js';
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
 class VisualEffectsManager {
-  constructor(backgroundLayers) {
+  constructor(backgroundLayers, context = null) {
+    this.context = context;
     // Particle systems
     this.particles = [];
     this.cosmicDust = [];
@@ -226,20 +227,15 @@ class VisualEffectsManager {
     p.pop();
   }
 
-  // Particle system for explosions and effects with beat-reactivity
   addExplosionParticles(x, y, type = 'normal') {
     if (!this.initialized) {
       this.init();
       if (!this.initialized) return;
     }
 
-    // Get beat intensity for enhanced effects on-beat
-    const beatIntensity = window.beatClock
-      ? window.beatClock.getBeatIntensity(8)
-      : 0;
-    const isDownbeat = window.beatClock
-      ? window.beatClock.getCurrentBeat() === 0
-      : false;
+    const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
+    const beatIntensity = beatClock ? beatClock.getBeatIntensity(8) : 0;
+    const isDownbeat = beatClock ? beatClock.getCurrentBeat() === 0 : false;
 
     // Increase particle count on beats
     let particleCount = type === 'rusher-explosion' ? 25 : 15;
@@ -456,7 +452,7 @@ function drawGlow(p, x, y, size, color, intensity = 1) {
   p.push();
   p.blendMode(p.ADD);
   p.noStroke();
-  
+
   // Create a sharp center with a wider faint glow
   const maxLayers = 3;
   for (let i = 0; i < maxLayers; i++) {
@@ -464,11 +460,11 @@ function drawGlow(p, x, y, size, color, intensity = 1) {
     const alpha = (intensity * 255) / p.pow(2, i);
     // Linear growth for size
     const glowSize = size * (0.8 + i * 0.6);
-    
+
     p.fill(p.red(color), p.green(color), p.blue(color), alpha);
     p.ellipse(x, y, glowSize, glowSize);
   }
-  
+
   p.blendMode(p.BLEND);
   p.pop();
 }

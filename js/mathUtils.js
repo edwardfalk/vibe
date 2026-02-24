@@ -22,7 +22,8 @@ export const TWO_PI = Math.PI * 2;
  */
 export function random(a, b) {
   if (Array.isArray(a)) {
-    if (a.length === 0) throw new Error('random(array): array must not be empty');
+    if (a.length === 0)
+      throw new Error('random(array): array must not be empty');
     return a[floor(Math.random() * a.length)];
   }
   if (a === undefined) return Math.random();

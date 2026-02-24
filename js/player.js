@@ -14,8 +14,9 @@ export class Player {
    * @param {number} x - Initial x position
    * @param {number} y - Initial y position
    * @param {CameraSystem} cameraSystem - The camera system (dependency injected for modularity)
+   * @param {GameContext} [context] - Game context for bullets, audio, etc.
    */
-  constructor(p, x, y, cameraSystem) {
+  constructor(p, x, y, cameraSystem, context = null) {
     this.p = p;
     this.x = x;
     this.y = y;
@@ -57,7 +58,15 @@ export class Player {
     this.gunColor = this.p.color(169, 169, 169); // Dark gray gun
     this.bandanaColor = this.p.color(139, 69, 19); // Brown bandana
 
+    this.context = context;
     // Speech is now handled by unified Audio system
+  }
+
+  getContextValue(key) {
+    if (this.context && typeof this.context.get === 'function') {
+      return this.context.get(key);
+    }
+    return typeof window !== 'undefined' ? window[key] : undefined;
   }
 
   update(deltaTimeMs) {
@@ -222,16 +231,18 @@ export class Player {
       if (this.queuedShot.timerMs <= 0) {
         // Time to fire the queued shot
         const bullet = this.fireBullet();
-        if (bullet && window.playerBullets) {
-          window.playerBullets.push(bullet);
+        const playerBullets = this.getContextValue('playerBullets');
+        const gameState = this.getContextValue('gameState');
+        const audio = this.getContextValue('audio');
+        if (bullet && playerBullets) {
+          playerBullets.push(bullet);
 
-          if (window.gameState) {
-            window.gameState.addShotFired();
+          if (gameState) {
+            gameState.addShotFired();
           }
 
-          // Play shooting sound with spatial audio
-          if (window.audio) {
-            window.audio.playPlayerShoot(this.x, this.y);
+          if (audio) {
+            audio.playPlayerShoot(this.x, this.y);
           }
 
           console.log('🎵 Queued shot fired on beat!');
@@ -507,13 +518,14 @@ export class Player {
       }
 
       // Subsequent shots follow quarter-beat timing for musical flow
-      if (window.beatClock) {
+      const beatClock = this.getContextValue('beatClock');
+      if (beatClock) {
         // Check for quarter-beat timing (4x faster than full beats)
-        if (window.beatClock.canPlayerShootQuarterBeat()) {
+        if (beatClock.canPlayerShootQuarterBeat()) {
           return this.fireBullet();
         } else if (!this.queuedShot) {
           // Queue shot for next quarter-beat if not already queued
-          const timeToNext = window.beatClock.getTimeToNextQuarterBeat();
+          const timeToNext = beatClock.getTimeToNextQuarterBeat();
           this.queueShot(timeToNext);
           return null;
         }
@@ -602,19 +614,16 @@ export class Player {
 
     this.health -= amount;
 
-    // Only trigger speech if game is still playing and audio system is available
-    if (
-      window.gameState &&
-      window.gameState.gameState === 'playing' &&
-      window.audio
-    ) {
+    const gameState = this.getContextValue('gameState');
+    const audio = this.getContextValue('audio');
+    if (gameState && gameState.gameState === 'playing' && audio) {
       const context =
         this.health <= 0
           ? 'death'
           : this.health < this.maxHealth * 0.3
             ? 'lowHealth'
             : 'damage';
-      if (window.audio.speakPlayerLine(this, context)) {
+      if (audio.speakPlayerLine(this, context)) {
         console.log(`🎤 Player damage reaction triggered`);
       }
     }

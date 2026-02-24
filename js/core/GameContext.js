@@ -8,11 +8,14 @@ const WINDOW_CONTEXT_KEYS = [
   'gameState',
   'cameraSystem',
   'collisionSystem',
+  'spawnSystem',
   'explosionManager',
   'floatingText',
   'beatClock',
   'rhythmFX',
   'visualEffectsManager',
+  'hitStopFrames',
+  'testModeManager',
 ];
 
 export class GameContext {

@@ -81,7 +81,8 @@ export class UIRenderer {
       this.dashElement.textContent = `DASH RECHARGING: ${cooldownSeconds}S`;
       this.dashElement.style.color = '#ff1493'; // Hot pink
     } else {
-      this.dashElement.textContent = 'DASH: READY [E] | SHOOT: [SPACE] OR MOUSE';
+      this.dashElement.textContent =
+        'DASH: READY [E] | SHOOT: [SPACE] OR MOUSE';
       this.dashElement.style.color = '#00ffff'; // Cyan
     }
   }
@@ -108,12 +109,12 @@ export class UIRenderer {
     p.fill(255, 20, 147); // Hot pink
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(48 + p.sin(p.frameCount * 0.1) * 4);
-    
+
     // Additive glow for title
     p.blendMode(p.ADD);
     p.text(this.gameOverMessages[messageIndex], p.width / 2, p.height / 2 - 80);
     p.blendMode(p.BLEND);
-    
+
     p.stroke(255, 255, 255);
     p.strokeWeight(2);
     const messageIndex =
@@ -180,7 +181,7 @@ export class UIRenderer {
     p.pop();
   }
 
-    // Draw pause screen
+  // Draw pause screen
   drawPauseScreen(p) {
     if (!this.gameState) return;
 
@@ -194,13 +195,13 @@ export class UIRenderer {
     // Pause text with synthwave style
     p.textAlign(p.CENTER, p.CENTER);
     p.textSize(48);
-    
+
     // Cyan glow layer
     p.blendMode(p.ADD);
     p.fill(0, 255, 255, 150);
     p.text('PAUSED', p.width / 2, p.height / 2 - 40);
     p.blendMode(p.BLEND);
-    
+
     // Sharp white core text with cyan border
     p.stroke(0, 255, 255);
     p.strokeWeight(2);
@@ -243,7 +244,12 @@ export class UIRenderer {
 
   // Draw bomb countdown indicators
   drawBombs(p) {
-    if (!this.gameState || !this.gameState.activeBombs || this.gameState.activeBombs.length === 0) return;
+    if (
+      !this.gameState ||
+      !this.gameState.activeBombs ||
+      this.gameState.activeBombs.length === 0
+    )
+      return;
 
     p.push();
 
@@ -310,7 +316,7 @@ export class UIRenderer {
     p.fill(255, 20, 147, 220);
     p.noStroke();
     p.rect(barX, barY, barWidth * progress, barHeight);
-    
+
     // Add additive glow
     p.blendMode(p.ADD);
     p.fill(255, 20, 147, 100);
@@ -349,12 +355,18 @@ export class UIRenderer {
     // Pulsing effect for high streaks
     const pulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5;
     const intensity = Math.min(streak / 10, 1);
-    
+
     p.blendMode(p.ADD);
     // Background glow (Neon Cyan to Pink depending on streak)
-    const glowColor = streak >= 10 ? p.color(255, 20, 147) : p.color(0, 255, 255);
-    
-    p.fill(p.red(glowColor), p.green(glowColor), p.blue(glowColor), 50 + pulse * 50 * intensity);
+    const glowColor =
+      streak >= 10 ? p.color(255, 20, 147) : p.color(0, 255, 255);
+
+    p.fill(
+      p.red(glowColor),
+      p.green(glowColor),
+      p.blue(glowColor),
+      50 + pulse * 50 * intensity
+    );
     p.noStroke();
     p.ellipse(x, y, 120 + pulse * 20, 40 + pulse * 10);
     p.blendMode(p.BLEND);
@@ -429,14 +441,19 @@ export class UIRenderer {
       const pulse = sin(Date.now() * 0.01) * 0.3 + 0.7;
       healthColor = p.color(255 * pulse, 20 * pulse, 147 * pulse); // Pulsing Hot Pink
     }
-    
+
     p.fill(healthColor);
     p.rect(barX, barY, barWidth * healthPercent, barHeight);
 
     // Additive glow on the health bar edge
     if (healthPercent > 0) {
       p.blendMode(p.ADD);
-      p.fill(healthColor.levels[0], healthColor.levels[1], healthColor.levels[2], 100);
+      p.fill(
+        healthColor.levels[0],
+        healthColor.levels[1],
+        healthColor.levels[2],
+        100
+      );
       p.rect(barX + barWidth * healthPercent - 2, barY - 2, 4, barHeight + 4);
       p.blendMode(p.BLEND);
     }
@@ -465,7 +482,11 @@ export class UIRenderer {
       p.fill(255, 20, 147, this.player.hitFlash * 30); // Pink damage text
       p.textAlign(p.CENTER, p.CENTER);
       p.textSize(14);
-      p.text(`-${ceil(this.player.maxHealth - this.player.health)}`, barX + barWidth / 2, barY - 20);
+      p.text(
+        `-${ceil(this.player.maxHealth - this.player.health)}`,
+        barX + barWidth / 2,
+        barY - 20
+      );
     }
 
     p.pop();

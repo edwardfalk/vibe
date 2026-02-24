@@ -481,9 +481,12 @@ export class Explosion {
         p.translate(particle.x, particle.y);
         p.rotate(particle.rotation);
         p.triangle(
-          0, -particle.size,
-          -particle.size * 0.8, particle.size * 0.5,
-          particle.size * 0.8, particle.size * 0.5
+          0,
+          -particle.size,
+          -particle.size * 0.8,
+          particle.size * 0.5,
+          particle.size * 0.8,
+          particle.size * 0.5
         );
         p.pop();
       }

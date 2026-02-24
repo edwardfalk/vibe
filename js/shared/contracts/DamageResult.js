@@ -30,4 +30,3 @@ export function normalizeDamageResult(rawResult) {
 export function isEnemyDeadResult(result) {
   return normalizeDamageResult(result) === DAMAGE_RESULT.DIED;
 }
-

@@ -8,7 +8,16 @@
 
 ## Commands
 
-- `bun run test:mcp` - starts local server and runs `tests/gameplay-probe.test.js`.
+- `bun run test:mcp` - starts local server and runs `tests/gameplay-probe.test.js` (6 probes).
+
+## Gameplay Probes
+
+1. **Liveness probe** - AI liveness probe; player alive, enemies present.
+2. **Game loop advances** - frame count increases, entities persist.
+3. **Collision diagnostics API** - `window.collisionSystem.getPerformanceSnapshot()` returns valid structure.
+4. **Score and health UI** - `#score` and `#health` elements present with expected format.
+5. **Game state playing** - `gameState.gameState === 'playing'` after boot.
+6. **Player input** - W key moves player upward (y decreases).
 - `bun run test:playwright` - full Playwright run.
 - `bun run test:headed` - visual Playwright run.
 - `bun run test:debug` - debug-mode Playwright run.

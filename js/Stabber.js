@@ -17,7 +17,7 @@ import { CONFIG } from './config.js';
  * Features three-phase attack system: approach → prepare → dash attack
  */
 class Stabber extends BaseEnemy {
-  constructor(x, y, type, config, p, audio) {
+  constructor(x, y, type, config, p, audio, context = null) {
     const stabberConfig = {
       size: 28,
       health: 10,
@@ -25,7 +25,7 @@ class Stabber extends BaseEnemy {
       color: p.color(255, 215, 0), // Gold - heavily armored melee fighter
     };
 
-    super(x, y, 'stabber', stabberConfig, p, audio);
+    super(x, y, 'stabber', stabberConfig, p, audio, context);
     this.p = p;
     this.audio = audio;
 
@@ -106,14 +106,12 @@ class Stabber extends BaseEnemy {
       );
 
       // Enhanced stabber ambient sounds on off-beat 3.5 with 30% chance
-      if (
-        window.beatClock &&
-        window.beatClock.canStabberAttack() &&
-        window.audio
-      ) {
+      const beatClock = this.getContextValue('beatClock');
+      const audio = this.getContextValue('audio');
+      if (beatClock?.canStabberAttack() && audio) {
         const ambientSounds = ['stabberChant', 'stabberStalk'];
         const sound = ambientSounds[floor(random() * ambientSounds.length)];
-        window.audio.playSound(sound, this.x, this.y);
+        audio.playSound(sound, this.x, this.y);
         console.log(`🗡️ Stabber ambient sound: ${sound} on off-beat 3.5`);
       }
     }
@@ -203,16 +201,15 @@ class Stabber extends BaseEnemy {
           );
 
           // Spawn hit visual effect
-          if (
-            window.visualEffectsManager &&
-            this.stabDirection !== null
-          ) {
+          const visualEffectsManager = this.getContextValue(
+            'visualEffectsManager'
+          );
+          if (visualEffectsManager && this.stabDirection !== null) {
             const impactX =
-              this.x + cos(this.stabDirection) * (this.meleeReach * 0.9); // Slightly back from full reach
+              this.x + cos(this.stabDirection) * (this.meleeReach * 0.9);
             const impactY =
               this.y + sin(this.stabDirection) * (this.meleeReach * 0.9);
-            // Using a small, sharp explosion effect
-            window.visualEffectsManager.addExplosion(
+            visualEffectsManager.addExplosion(
               impactX,
               impactY,
               20,
@@ -278,9 +275,10 @@ class Stabber extends BaseEnemy {
       this.velocity.y = 0;
 
       // Play warning sounds
-      if (this.stabWarningTime === 1 && window.audio) {
-        window.audio.playSound('stabberStalk', this.x, this.y);
-        window.audio.playSound('stabberKnife', this.x, this.y);
+      const audioWarn = this.getContextValue('audio');
+      if (this.stabWarningTime === 1 && audioWarn) {
+        audioWarn.playSound('stabberStalk', this.x, this.y);
+        audioWarn.playSound('stabberKnife', this.x, this.y);
 
         const stabWarnings = [
           'STAB TIME!',
@@ -289,19 +287,18 @@ class Stabber extends BaseEnemy {
           'STABBY MCSTABFACE!',
         ];
         const warning = stabWarnings[floor(random() * stabWarnings.length)];
-        window.audio.speak(this, warning, 'stabber');
+        audioWarn.speak(this, warning, 'stabber');
       }
 
       if (this.stabWarningTime >= this.maxStabWarningTime) {
-        // Start explosive dash attack
         this.stabWarning = false;
         this.stabWarningTime = 0;
         this.isStabbing = true;
         this.stabAnimationTime = 0;
 
-        // Play explosive dash sound
-        if (window.audio) {
-          window.audio.playSound('stabberDash', this.x, this.y);
+        const audioDash = this.getContextValue('audio');
+        if (audioDash) {
+          audioDash.playSound('stabberDash', this.x, this.y);
         }
 
         console.log(`🚀 Stabber starting explosive dash attack!`);
@@ -312,14 +309,14 @@ class Stabber extends BaseEnemy {
 
     // Preparing phase - gradual slow to stop
     if (this.stabPreparing) {
-      // Play extension sound only on the first frame of preparing, and only if beat allows
+      const audioPrep = this.getContextValue('audio');
+      const beatClockPrep = this.getContextValue('beatClock');
       if (
         this.stabPreparingTime === 0 &&
-        window.audio &&
-        window.beatClock &&
-        window.beatClock.canStabberAttack()
+        audioPrep &&
+        beatClockPrep?.canStabberAttack()
       ) {
-        window.audio.playSound('stabberKnifeExtend', this.x, this.y);
+        audioPrep.playSound('stabberKnifeExtend', this.x, this.y);
       }
       this.stabPreparingTime += dt;
 
@@ -382,28 +379,25 @@ class Stabber extends BaseEnemy {
             `🎯 Stabber TOO CLOSE (dist: ${distance.toFixed(0)}px), falling back.`
           );
       } else if (distance <= this.maxStabDistance) {
-        // In attack window
-        if (window.beatClock) {
-          // Register attack telegraph when approaching beat 3.5 (off-beat attack)
-          const currentBeat = window.beatClock.getCurrentBeat();
-          const beatPhase = window.beatClock.getBeatPhase();
+        const beatClockAtk = this.getContextValue('beatClock');
+        const rhythmFX = this.getContextValue('rhythmFX');
+        if (beatClockAtk) {
+          const currentBeat = beatClockAtk.getCurrentBeat();
+          const beatPhase = beatClockAtk.getBeatPhase();
           let beatsUntilStab = null;
 
-          // Calculate beats until stabber attack window (beat 3.5)
           if (currentBeat === 2) {
-            // Currently on beat 3, approaching 3.5
             if (beatPhase < 0.75) {
               beatsUntilStab = 0.75 - beatPhase;
             }
           } else if (currentBeat === 3) {
-            // Currently on beat 4, just passed 3.5
             if (beatPhase > 0.25) {
-              beatsUntilStab = 3.75 - beatPhase; // Next cycle
+              beatsUntilStab = 3.75 - beatPhase;
             }
           }
 
-          if (beatsUntilStab !== null && beatsUntilStab < 1.5 && window.rhythmFX) {
-            window.rhythmFX.addAttackTelegraph(
+          if (beatsUntilStab !== null && beatsUntilStab < 1.5 && rhythmFX) {
+            rhythmFX.addAttackTelegraph(
               this.x,
               this.y,
               'stabber',
@@ -411,7 +405,7 @@ class Stabber extends BaseEnemy {
             );
           }
 
-          if (window.beatClock.canStabberAttack()) {
+          if (beatClockAtk.canStabberAttack()) {
             this.stabPreparing = true;
             this.stabPreparingTime = 0;
             if (CONFIG.DEBUG)
@@ -474,7 +468,7 @@ class Stabber extends BaseEnemy {
     const angleDifference = Math.abs(playerDiff);
     const maxStabAngle = Math.PI / 6;
     const inStabDirection = angleDifference <= maxStabAngle;
-    let result = {
+    const result = {
       type: 'stabber-miss',
       x: tipX,
       y: tipY,
@@ -489,9 +483,8 @@ class Stabber extends BaseEnemy {
       result.reach = stabReach;
       result.stabAngle = this.stabDirection;
       result.hitType = 'player';
-      // Spark effect at tip
-      if (window.visualEffectsManager) {
-        window.visualEffectsManager.addExplosion(
+      if (visualEffectsManager) {
+        visualEffectsManager.addExplosion(
           tipX,
           tipY,
           10,
@@ -500,7 +493,7 @@ class Stabber extends BaseEnemy {
           3,
           8
         );
-        window.visualEffectsManager.addExplosion(
+        visualEffectsManager.addExplosion(
           tipX,
           tipY,
           14,
@@ -510,15 +503,13 @@ class Stabber extends BaseEnemy {
           10
         );
       }
-      // Play hit sound
-      if (window.audio) {
-        window.audio.playSound('stabberKnifeHit', tipX, tipY);
+      if (audioHit) {
+        audioHit.playSound('stabberKnifeHit', tipX, tipY);
       }
     }
-    // Check enemy hits (friendly fire)
-    if (window.enemies) {
-      for (let i = 0; i < window.enemies.length; i++) {
-        const enemy = window.enemies[i];
+    if (enemies) {
+      for (let i = 0; i < enemies.length; i++) {
+        const enemy = enemies[i];
         if (enemy === this) continue;
         const enemyDistance = sqrt(
           (enemy.x - tipX) ** 2 + (enemy.y - tipY) ** 2
@@ -543,11 +534,9 @@ class Stabber extends BaseEnemy {
           }
         }
       }
-      // After collecting all enemy hits, trigger effects and sound only once if any were hit
       if (result.enemiesHit.length > 0) {
-        // Spark effect at tip
-        if (window.visualEffectsManager) {
-          window.visualEffectsManager.addExplosion(
+        if (visualEffectsManager) {
+          visualEffectsManager.addExplosion(
             tipX,
             tipY,
             10,
@@ -556,7 +545,7 @@ class Stabber extends BaseEnemy {
             3,
             8
           );
-          window.visualEffectsManager.addExplosion(
+          visualEffectsManager.addExplosion(
             tipX,
             tipY,
             14,
@@ -566,17 +555,15 @@ class Stabber extends BaseEnemy {
             10
           );
         }
-        // Play hit sound
-        if (window.audio) {
-          window.audio.playSound('stabberKnifeHit', tipX, tipY);
+        if (audioHit) {
+          audioHit.playSound('stabberKnifeHit', tipX, tipY);
         }
       }
     }
-    // Miss case as before
     if (result.type === 'stabber-miss') {
-      if (window.visualEffectsManager) {
+      if (visualEffectsManager) {
         try {
-          window.visualEffectsManager.addExplosion(
+          visualEffectsManager.addExplosion(
             this.x,
             this.y,
             15,
@@ -599,12 +586,10 @@ class Stabber extends BaseEnemy {
    * Trigger ambient speech specific to stabbers
    */
   triggerAmbientSpeech() {
-    if (window.audio && this.speechCooldown <= 0) {
-      if (
-        window.beatClock &&
-        window.beatClock.canStabberAttack() &&
-        random() < 0.2
-      ) {
+    const audio = this.getContextValue('audio');
+    const beatClock = this.getContextValue('beatClock');
+    if (audio && this.speechCooldown <= 0) {
+      if (beatClock?.canStabberAttack() && random() < 0.2) {
         const stabberLines = [
           'STAB!',
           'SLICE!',
@@ -617,7 +602,7 @@ class Stabber extends BaseEnemy {
           'I COLLECT BELLY BUTTONS!',
         ];
         const randomLine = stabberLines[floor(random() * stabberLines.length)];
-        window.audio.speak(this, randomLine, 'stabber');
+        audio.speak(this, randomLine, 'stabber');
         this.speechCooldown = this.maxSpeechCooldown;
       }
     }
@@ -646,10 +631,11 @@ class Stabber extends BaseEnemy {
    * Note: This is now called from updateSpecificBehavior based on deltaTime timer
    */
   drawMotionTrail() {
-    if (window.visualEffectsManager) {
+    const visualEffectsManager = this.getContextValue('visualEffectsManager');
+    if (visualEffectsManager) {
       try {
         const trailColor = [255, 140, 0];
-        window.visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
+        visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
       } catch (error) {
         console.log('⚠️ Stabber trail error:', error);
       }
@@ -703,8 +689,8 @@ class Stabber extends BaseEnemy {
    */
   drawWeapon(s) {
     // Base knife dimensions
-    let knifeLength = s * 0.6; // Base length
-    let knifeWidth = s * 0.2; // Base width
+    const knifeLength = s * 0.6; // Base length
+    const knifeWidth = s * 0.2; // Base width
     let extensionFactor = 1.0; // Default (retracted)
     const extendedFactor = 2.0; // New fixed extension (about half of old max)
     let isExtended = false;
@@ -717,7 +703,7 @@ class Stabber extends BaseEnemy {
     // Color: always white when extended or retracted
     this.p.fill(255, 255, 255);
 
-    let currentKnifeLength = s * 0.6 * extensionFactor;
+    const currentKnifeLength = s * 0.6 * extensionFactor;
 
     // Draw main blade
     this.p.beginShape();

@@ -195,7 +195,7 @@ export class GameState {
       this.gameOverTimer++;
 
       // Auto-restart in test mode
-      if (window.testMode && this.gameOverTimer >= 60) {
+      if (window.testModeManager?.enabled && this.gameOverTimer >= 60) {
         console.log(
           '🔄 Auto-restarting game in test mode for continuous testing'
         );

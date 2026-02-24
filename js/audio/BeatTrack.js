@@ -16,8 +16,9 @@ const SCHEDULE_AHEAD_SEC = 0.1;
 const SCHEDULER_INTERVAL_MS = 25;
 
 export class BeatTrack {
-  constructor(bpm = 120) {
+  constructor(bpm = 120, context = null) {
     this.bpm = bpm;
+    this.context = context;
     this.beatDuration = 60 / bpm;
     this.eighthDuration = this.beatDuration / 2;
     this.volume = 0.25;
@@ -38,17 +39,26 @@ export class BeatTrack {
     this.hihatOpenBuffer = null;
   }
 
-  start() {
+  _getAudio() {
+    if (this.context && typeof this.context.get === 'function') {
+      return this.context.get('audio');
+    }
+    return window.audio;
+  }
+
+  async start() {
     if (this.isPlaying) return;
 
-    if (window.audio && window.audio.audioContext) {
-      this.ctx = window.audio.audioContext;
+    const audio = this._getAudio();
+    if (audio && audio.audioContext) {
+      this.ctx = audio.audioContext;
     } else {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new Ctx();
     }
 
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      await this.ctx.resume();
     }
 
     this.masterGain = this.ctx.createGain();

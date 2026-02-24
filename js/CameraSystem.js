@@ -7,8 +7,9 @@ import { randomRange } from './mathUtils.js';
  */
 
 export class CameraSystem {
-  constructor(p) {
+  constructor(p, context = null) {
     this.p = p;
+    this.context = context;
     // Camera position and targeting
     this.x = 0;
     this.y = 0;
@@ -33,16 +34,22 @@ export class CameraSystem {
     this.screenShake.duration = Math.max(this.screenShake.duration, duration);
   }
 
+  _getPlayer() {
+    if (this.context && typeof this.context.get === 'function') {
+      return this.context.get('player');
+    }
+    return window.player;
+  }
+
   // Update camera position based on player
   update() {
-    if (!window.player) return;
+    const player = this._getPlayer();
+    if (!player) return;
     const p = this.p;
-    // Calculate target position based on player movement
-    const playerVelocity = window.player.velocity || { x: 0, y: 0 };
+    const playerVelocity = player.velocity || { x: 0, y: 0 };
 
-    // Camera follows player with offset based on movement direction
-    this.targetX = window.player.x + playerVelocity.x * 50 * this.sensitivity;
-    this.targetY = window.player.y + playerVelocity.y * 50 * this.sensitivity;
+    this.targetX = player.x + playerVelocity.x * 50 * this.sensitivity;
+    this.targetY = player.y + playerVelocity.y * 50 * this.sensitivity;
 
     // Use canonical world bounds from config.js
     const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;

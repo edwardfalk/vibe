@@ -10,7 +10,8 @@
 import { sin, min, max, abs } from './mathUtils.js';
 
 export class RhythmFX {
-  constructor() {
+  constructor(context = null) {
+    this.context = context;
     // Attack telegraphs for enemies
     this.telegraphs = []; // {x, y, type, beatsUntil, intensity}
 
@@ -29,13 +30,20 @@ export class RhythmFX {
     };
   }
 
+  _getBeatClock() {
+    if (this.context && typeof this.context.get === 'function') {
+      return this.context.get('beatClock');
+    }
+    return window.beatClock;
+  }
+
   /**
    * Update beat visualization state
    */
   update() {
-    // Check if we just hit a new beat
-    if (window.beatClock) {
-      const currentBeat = window.beatClock.getCurrentBeat();
+    const beatClock = this._getBeatClock();
+    if (beatClock) {
+      const currentBeat = beatClock.getCurrentBeat();
       if (currentBeat !== this.lastBeat) {
         this.beatJustHit = true;
         this.lastBeat = currentBeat;
@@ -48,8 +56,7 @@ export class RhythmFX {
       // Decay pulse intensity
       this.pulseIntensity *= 0.92;
 
-      // Update edge flash based on beat
-      const beatPhase = window.beatClock.getBeatPhase();
+      const beatPhase = beatClock.getBeatPhase();
       const isDownbeat = currentBeat === 0;
       if (beatPhase < 0.15 && isDownbeat) {
         this.edgeFlashIntensity = (1 - beatPhase / 0.15) * 0.6;
@@ -94,7 +101,7 @@ export class RhythmFX {
    * Draw enemy attack telegraph rings
    */
   drawAttackTelegraphs(p, cameraSystem) {
-    if (!window.beatClock || this.telegraphs.length === 0) return;
+    if (!this._getBeatClock() || this.telegraphs.length === 0) return;
 
     const cameraX = cameraSystem ? cameraSystem.x : 0;
     const cameraY = cameraSystem ? cameraSystem.y : 0;

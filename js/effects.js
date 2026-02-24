@@ -302,27 +302,33 @@ class Trail {
 
 // Enhanced explosion manager with better effects
 class EnhancedExplosionManager {
-  constructor() {
+  constructor(context = null) {
+    this.context = context;
     this.explosions = [];
+  }
+
+  _getEffects() {
+    const vfx =
+      this.context?.get?.('visualEffectsManager') ??
+      window.visualEffectsManager;
+    const cam = this.context?.get?.('cameraSystem') ?? window.cameraSystem;
+    return { visualEffectsManager: vfx, cameraSystem: cam };
   }
 
   addExplosion(x, y, type = 'normal', size = 1.0) {
     this.explosions.push(new EnhancedExplosion(x, y, type, size));
 
-    // Add screen effects based on explosion type
-    if (window.effectsManager) {
+    const { visualEffectsManager, cameraSystem } = this._getEffects();
+    if (visualEffectsManager) {
       if (type === 'enemy') {
-        window.effectsManager.addShake(8, 15);
-        window.effectsManager.addScreenFlash([255, 200, 100], 5);
-        window.effectsManager.addExplosionParticles(x, y, 25, 'enemy');
+        if (cameraSystem) cameraSystem.addShake(8, 15);
+        visualEffectsManager.addExplosionParticles(x, y, 'enemy');
       } else if (type === 'rusher-explosion') {
-        window.effectsManager.addShake(15, 25);
-        window.effectsManager.addScreenFlash([255, 100, 100], 8);
-        window.effectsManager.addExplosionParticles(x, y, 40, 'enemy');
-        window.effectsManager.setSlowMotion(0.4, 30);
+        if (cameraSystem) cameraSystem.addShake(15, 25);
+        visualEffectsManager.addExplosionParticles(x, y, 'rusher-explosion');
       } else {
-        window.effectsManager.addShake(4, 10);
-        window.effectsManager.addExplosionParticles(x, y, 15);
+        if (cameraSystem) cameraSystem.addShake(4, 10);
+        visualEffectsManager.addExplosionParticles(x, y);
       }
     }
   }
@@ -418,7 +424,8 @@ class EnhancedExplosion {
  * Enhanced with momentum physics, merging, and beat-synced effects.
  */
 class FloatingTextManager {
-  constructor() {
+  constructor(context = null) {
+    this.context = context;
     this.texts = [];
     this.textPool = new FloatingTextPool(200);
     this.damageMergeRadius = 60; // Distance to merge damage numbers
@@ -471,10 +478,8 @@ class FloatingTextManager {
       this.accumulatorPos = { x, y };
       this.accumulatorTimer = 10;
 
-      // Get beat intensity for special effects on-beat
-      const beatPulse = window.beatClock
-        ? window.beatClock.getBeatIntensity(8)
-        : 0;
+      const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
+      const beatPulse = beatClock ? beatClock.getBeatIntensity(8) : 0;
       const isOnBeat = beatPulse > 0.5;
 
       this.texts.push(
@@ -506,10 +511,8 @@ class FloatingTextManager {
     };
     const color = typeColors[enemyType] || [255, 255, 255];
 
-    // Kill text with pop-in effect
-    const beatPulse = window.beatClock
-      ? window.beatClock.getBeatIntensity(6)
-      : 0;
+    const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
+    const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
     const sizeBonus = streak >= 5 ? 4 : streak >= 3 ? 2 : 0;
 
     this.texts.push(
@@ -574,9 +577,8 @@ class FloatingTextManager {
   }
 
   addScorePopup(x, y, score, isCombo = false) {
-    const beatPulse = window.beatClock
-      ? window.beatClock.getBeatIntensity(6)
-      : 0;
+    const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
+    const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
 
     this.texts.push(
       this.acquireText({

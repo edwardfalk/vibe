@@ -35,7 +35,10 @@ export class FloatingTextPool {
     this.pool.push(text);
     this.stats.released++;
     this.stats.inUse = Math.max(0, this.stats.inUse - 1);
-    this.stats.peakPoolSize = Math.max(this.stats.peakPoolSize, this.pool.length);
+    this.stats.peakPoolSize = Math.max(
+      this.stats.peakPoolSize,
+      this.pool.length
+    );
   }
 
   getStats() {
