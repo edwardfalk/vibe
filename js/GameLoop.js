@@ -19,13 +19,21 @@ import { UIRenderer } from './UIRenderer.js';
 import { CollisionSystem } from './CollisionSystem.js';
 import { TestMode } from './TestMode.js';
 import { Audio } from './Audio.js';
-import { BeatClock } from './BeatClock.js';
-import { BeatTrack } from './BeatTrack.js';
+import { BeatClock } from './audio/BeatClock.js';
+import { BeatTrack } from './audio/BeatTrack.js';
 import { RhythmFX } from './RhythmFX.js';
+import { GameContext, createWindowBackedContext } from './core/GameContext.js';
+import { initializeInputHandlers } from './core/InputHandlers.js';
+import { updateBombs as updateBombSystem } from './systems/BombSystem.js';
+import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
+import {
+  DAMAGE_RESULT,
+  normalizeDamageResult,
+} from './shared/contracts/DamageResult.js';
 import { Bullet } from './bullet.js';
 import VisualEffectsManager from './visualEffects.js';
 import { FloatingTextManager } from './effects.js';
-import { handleAreaDamageEvents } from './AreaDamageHandler.js';
+import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
 import { CONFIG } from './config.js';
 import {
   sqrt,
@@ -52,6 +60,8 @@ const activeBombs = [];
 // Systems
 let explosionManager;
 let audio;
+let gameContext;
+let enemyDeathHandler;
 
 // Global system references for easy access
 window.player = null;
@@ -83,98 +93,14 @@ window.arrowDownPressed = false;
 window.arrowLeftPressed = false;
 window.arrowRightPressed = false;
 
-// Input event handler helpers
-function onKeyDown(e) {
-  switch (e.code) {
-    case 'Space':
-      window.playerIsShooting = true;
-      e.preventDefault();
-      break;
-    case 'ArrowUp':
-      window.arrowUpPressed = true;
-      e.preventDefault();
-      break;
-    case 'ArrowDown':
-      window.arrowDownPressed = true;
-      e.preventDefault();
-      break;
-    case 'ArrowLeft':
-      window.arrowLeftPressed = true;
-      e.preventDefault();
-      break;
-    case 'ArrowRight':
-      window.arrowRightPressed = true;
-      e.preventDefault();
-      break;
-  }
-}
-
-function onKeyUp(e) {
-  switch (e.code) {
-    case 'Space':
-      window.playerIsShooting = false;
-      e.preventDefault();
-      break;
-    case 'ArrowUp':
-      window.arrowUpPressed = false;
-      e.preventDefault();
-      break;
-    case 'ArrowDown':
-      window.arrowDownPressed = false;
-      e.preventDefault();
-      break;
-    case 'ArrowLeft':
-      window.arrowLeftPressed = false;
-      e.preventDefault();
-      break;
-    case 'ArrowRight':
-      window.arrowRightPressed = false;
-      e.preventDefault();
-      break;
-  }
-}
-
-// Only add listeners once
-if (!window.inputListenersAdded) {
-  window.addEventListener('mousedown', () => {
-    window.playerIsShooting = true;
-  });
-  window.addEventListener('mouseup', () => {
-    window.playerIsShooting = false;
-  });
-  window.addEventListener('keydown', onKeyDown);
-  window.addEventListener('keyup', onKeyUp);
-  window.inputListenersAdded = true;
-}
-
-if (!window.uiKeyListenersAdded) {
-  // Prevent rapid-fire for single-action UI keys (R, P, M, T, E, Space)
-  window.addEventListener('keydown', (event) => {
-    // Only handle on initial keydown, not auto-repeat
-    if (!event.repeat) {
-      const singleActionKeys = [
-        'r',
-        'R',
-        'p',
-        'P',
-        'm',
-        'M',
-        't',
-        'T',
-        'e',
-        'E',
-        ' ',
-      ];
-      if (singleActionKeys.includes(event.key) && window.uiRenderer) {
-        window.uiRenderer.handleKeyPress(event.key);
-      }
-    }
-  });
-  window.uiKeyListenersAdded = true;
-}
+initializeInputHandlers();
 
 function setup(p) {
   p.createCanvas(800, 600);
+  if (!gameContext) {
+    gameContext = createWindowBackedContext(new GameContext());
+    window.gameContext = gameContext;
+  }
 
   // Initialize player at center
   player = new Player(p, p.width / 2, p.height / 2, window.cameraSystem);
@@ -203,7 +129,7 @@ function setup(p) {
 
   // Initialize unified audio system
   if (!window.audio) {
-    window.audio = new Audio(p, window.player);
+    window.audio = new Audio(p, window.player, gameContext);
   }
   console.log('🎵 Unified audio system initialized');
 
@@ -242,9 +168,13 @@ function setup(p) {
   console.log('🌌 Background renderer initialized');
 
   if (!window.collisionSystem) {
-    window.collisionSystem = new CollisionSystem();
+    window.collisionSystem = new CollisionSystem(gameContext);
   }
   console.log('💥 Collision system initialized');
+
+  if (!enemyDeathHandler) {
+    enemyDeathHandler = new EnemyDeathHandler(gameContext);
+  }
 
   if (!window.uiRenderer) {
     window.uiRenderer = new UIRenderer(
@@ -283,6 +213,23 @@ function setup(p) {
   if (window.spawnSystem) {
     window.spawnSystem.spawnEnemies(1);
   }
+
+  gameContext.assign({
+    player: window.player,
+    enemies: window.enemies,
+    playerBullets: window.playerBullets,
+    enemyBullets: window.enemyBullets,
+    activeBombs: window.activeBombs,
+    audio: window.audio,
+    gameState: window.gameState,
+    cameraSystem: window.cameraSystem,
+    collisionSystem: window.collisionSystem,
+    explosionManager: window.explosionManager,
+    floatingText: window.floatingText,
+    beatClock: window.beatClock,
+    rhythmFX: window.rhythmFX,
+    visualEffectsManager: window.visualEffectsManager,
+  });
 
   console.log('🎮 Game setup complete - all systems initialized');
 }
@@ -351,6 +298,25 @@ function draw(p) {
 }
 
 function updateGame(p) {
+  if (gameContext) {
+    gameContext.assign({
+      player: window.player,
+      enemies: window.enemies,
+      playerBullets: window.playerBullets,
+      enemyBullets: window.enemyBullets,
+      activeBombs: window.activeBombs,
+      audio: window.audio,
+      gameState: window.gameState,
+      cameraSystem: window.cameraSystem,
+      collisionSystem: window.collisionSystem,
+      explosionManager: window.explosionManager,
+      floatingText: window.floatingText,
+      beatClock: window.beatClock,
+      rhythmFX: window.rhythmFX,
+      visualEffectsManager: window.visualEffectsManager,
+    });
+  }
+
   // Hitstop: freeze game updates for a few frames on impactful kills
   if (window.hitStopFrames > 0) {
     window.hitStopFrames--;
@@ -418,8 +384,17 @@ function updateGame(p) {
     window.collisionSystem.checkBulletCollisions();
   }
 
-  // Update bombs
-  updateBombs(p);
+  // Update bombs (split into dedicated BombSystem module)
+  updateBombSystem({
+    activeBombs,
+    enemies,
+    player: window.player,
+    explosionManager,
+    audio: window.audio,
+    cameraSystem: window.cameraSystem,
+    gameState: window.gameState,
+    collisionSystem: window.collisionSystem,
+  });
 
   // Update enemies
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -562,13 +537,11 @@ function updateGame(p) {
             const targetEnemy = hit.enemy;
 
             // Apply damage to enemy
-            const damageResult = targetEnemy.takeDamage(
-              hit.damage,
-              hit.angle,
-              'stabber'
+            const damageResult = normalizeDamageResult(
+              targetEnemy.takeDamage(hit.damage, hit.angle, 'stabber')
             );
 
-            if (damageResult === true) {
+            if (damageResult === DAMAGE_RESULT.DIED) {
               // Enemy killed by friendly fire
               console.log(
                 `💀 ${targetEnemy.type} killed by stabber friendly fire!`
@@ -595,7 +568,7 @@ function updateGame(p) {
                 window.gameState.addKill();
                 window.gameState.addScore(15); // Bonus points for friendly fire
               }
-            } else if (damageResult === 'exploding') {
+            } else if (damageResult === DAMAGE_RESULT.EXPLODING) {
               // Rusher started exploding from friendly fire
               if (window.explosionManager) {
                 window.explosionManager.addExplosion(
@@ -655,13 +628,22 @@ function updateGame(p) {
     // Process area damage events from plasma clouds and radioactive debris
     if (damageEvents && damageEvents.length > 0) {
       handleAreaDamageEvents(damageEvents, {
-        player: window.player,
-        enemies,
-        audio: window.audio,
-        gameState: window.gameState,
-        cameraSystem: window.cameraSystem,
-        collisionSystem: window.collisionSystem,
-        explosionManager: window.explosionManager,
+        player: gameContext ? gameContext.get('player') : window.player,
+        enemies: gameContext ? gameContext.get('enemies') : enemies,
+        audio: gameContext ? gameContext.get('audio') : window.audio,
+        gameState: gameContext
+          ? gameContext.get('gameState')
+          : window.gameState,
+        cameraSystem: gameContext
+          ? gameContext.get('cameraSystem')
+          : window.cameraSystem,
+        collisionSystem: gameContext
+          ? gameContext.get('collisionSystem')
+          : window.collisionSystem,
+        explosionManager: gameContext
+          ? gameContext.get('explosionManager')
+          : window.explosionManager,
+        enemyDeathHandler,
       });
     }
   }
@@ -837,146 +819,18 @@ function updateBullets(p) {
   }
 }
 
-function updateBombs(p) {
-  for (let i = activeBombs.length - 1; i >= 0; i--) {
-    const bomb = activeBombs[i];
-    bomb.timer--;
-
-    // Find the tank that placed this bomb to update its position
-    const tank = enemies.find((e) => e.id === bomb.tankId);
-    if (tank) {
-      bomb.x = tank.x;
-      bomb.y = tank.y;
-    }
-
-    // Show countdown warnings
-    const secondsLeft = Math.ceil(bomb.timer / 60);
-    if (secondsLeft <= 3 && secondsLeft > 0 && bomb.timer % 60 === 0) {
-      if (window.audio && window.audio.speak && tank) {
-        window.audio.speak(tank, secondsLeft.toString(), 'player');
-        console.log(
-          `⏰ TIME BOMB COUNTDOWN: ${secondsLeft} (Tank ID: ${tank.id}) - Voice: Player`
-        );
-      }
-    }
-
-    if (bomb.timer <= 0) {
-      // BOMB EXPLODES!
-      console.log(
-        `💥 TANK TIME BOMB EXPLODED! Massive damage at (${bomb.x}, ${bomb.y})`
-      );
-
-      // Create massive explosion effects
-      if (explosionManager) {
-        explosionManager.addExplosion(bomb.x, bomb.y, 'tank-plasma');
-        explosionManager.addRadioactiveDebris(bomb.x, bomb.y);
-        explosionManager.addPlasmaCloud(bomb.x, bomb.y);
-      }
-
-      if (window.audio) {
-        window.audio.playBombExplosion(bomb.x, bomb.y);
-      }
-
-      if (window.cameraSystem) {
-        window.cameraSystem.addShake(20, 40); // Massive screen shake
-      }
-
-      // Apply massive damage to everything in explosion radius
-      const explosionRadius = 250; // Large damage radius
-      const explosionRadiusSq = explosionRadius * explosionRadius;
-
-      // Damage player if in range
-      if (window.player) {
-        const dx = bomb.x - window.player.x;
-        const dy = bomb.y - window.player.y;
-        const playerDistSq = dx * dx + dy * dy;
-        if (playerDistSq < explosionRadiusSq) {
-          const playerDistance = sqrt(playerDistSq); // Only for proportional damage
-          const damage = max(
-            10,
-            floor(40 * (1 - playerDistance / explosionRadius))
-          );
-          console.log(
-            `💥 Player took ${damage} bomb damage! Distance: ${playerDistance.toFixed(1)}`
-          );
-
-          if (window.audio) {
-            window.audio.playPlayerHit();
-          }
-
-          if (window.gameState) {
-            window.gameState.resetKillStreak();
-          }
-
-          if (window.player.takeDamage(damage, 'tank-bomb')) {
-            if (window.gameState) {
-              window.gameState.setGameState('gameOver');
-            }
-            console.log('💀 PLAYER KILLED BY TANK BOMB!');
-          } else {
-            // Apply massive knockback
-            const knockbackAngle = atan2(
-              window.player.y - bomb.y,
-              window.player.x - bomb.x
-            );
-            const knockbackForce = 15;
-            window.player.velocity.x += cos(knockbackAngle) * knockbackForce;
-            window.player.velocity.y += sin(knockbackAngle) * knockbackForce;
-          }
-        }
-      }
-
-      // Damage enemies in range (including the tank that placed the bomb)
-      for (let j = enemies.length - 1; j >= 0; j--) {
-        const enemy = enemies[j];
-        const dx = bomb.x - enemy.x;
-        const dy = bomb.y - enemy.y;
-        const enemyDistSq = dx * dx + dy * dy;
-        if (enemyDistSq < explosionRadiusSq) {
-          const enemyDistance = sqrt(enemyDistSq); // Only for proportional damage
-          const damage = max(
-            5,
-            floor(30 * (1 - enemyDistance / explosionRadius))
-          );
-          const damageResult = enemy.takeDamage(damage, null, 'bomb');
-
-          if (damageResult === true) {
-            // Enemy killed by bomb
-            console.log(`💥 ${enemy.type} destroyed by tank bomb explosion!`);
-
-            // Special message if the tank destroyed itself
-            if (enemy.id === bomb.tankId) {
-              console.log(`💀 TANK DESTROYED BY TIME BOMB! Self-destruction!`);
-            }
-
-            if (window.collisionSystem) {
-              window.collisionSystem.handleEnemyDeath(
-                enemy,
-                enemy.type,
-                enemy.x,
-                enemy.y
-              );
-            }
-
-            enemies.splice(j, 1);
-
-            if (window.gameState) {
-              window.gameState.addKill();
-              window.gameState.addScore(20); // Bomb kills worth more points
-            }
-          } else if (damageResult === 'exploding') {
-            // Rusher started exploding from bomb
-            if (window.explosionManager) {
-              window.explosionManager.addExplosion(enemy.x, enemy.y, 'hit');
-            }
-            console.log(
-              `💥 Stabber friendly fire caused ${enemy.type} to explode!`
-            );
-          }
-        }
-      }
-    }
-  }
+function updateBombs() {
+  // Kept as compatibility wrapper while call sites migrate.
+  updateBombSystem({
+    activeBombs,
+    enemies,
+    player: window.player,
+    explosionManager,
+    audio: window.audio,
+    cameraSystem: window.cameraSystem,
+    gameState: window.gameState,
+    collisionSystem: window.collisionSystem,
+  });
 }
 
 // --- p5.js instance mode initialization for ES module compatibility ---

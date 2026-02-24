@@ -96,8 +96,7 @@ export class BeatTrack {
     while (this.nextNoteTime < this.ctx.currentTime + SCHEDULE_AHEAD_SEC) {
       this._scheduleNote(this.nextNoteTime, this.currentEighth);
       this.nextNoteTime += this.eighthDuration;
-      this.currentEighth =
-        (this.currentEighth + 1) % EIGHTH_NOTES_PER_MEASURE;
+      this.currentEighth = (this.currentEighth + 1) % EIGHTH_NOTES_PER_MEASURE;
     }
 
     this.schedulerTimer = setTimeout(

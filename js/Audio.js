@@ -52,28 +52,20 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { random, randomRange, floor } from './mathUtils.js';
 import { drawGlow } from './visualEffects.js';
-
-const AMBIENT_SOUNDS = new Set([
-  'enemyIdle',
-  'stabberChant',
-  'gruntAdvance',
-  'gruntRetreat',
-  'stabberStalk',
-  'gruntMalfunction',
-  'gruntBeep',
-  'gruntWhir',
-  'gruntError',
-  'gruntGlitch',
-]);
+import {
+  AMBIENT_SOUNDS,
+  resolveSoundSourcePosition,
+} from './audio/AmbientSoundProfile.js';
 
 export class Audio {
   /**
    * @param {p5} p - The p5 instance
    * @param {Player} player - The player object (dependency injected for modularity)
    */
-  constructor(p, player, ...args) {
+  constructor(p, player, context = null, ...args) {
     this.p = p;
     this.player = player;
+    this.context = context;
     // Core audio setup
     this.audioContext = null;
     this.masterGain = null;
@@ -324,6 +316,20 @@ export class Audio {
     console.log('🎵 Optimized Audio System ready');
   }
 
+  setContext(context) {
+    this.context = context;
+  }
+
+  getContextValue(key) {
+    if (this.context && typeof this.context.get === 'function') {
+      return this.context.get(key);
+    }
+    if (this.context && key in this.context) {
+      return this.context[key];
+    }
+    return window[key];
+  }
+
   // ========================================================================
   // INITIALIZATION - CENTRALIZED AUDIO CONTEXT MANAGEMENT
   // ========================================================================
@@ -557,7 +563,15 @@ export class Audio {
 
     if (isAmbientSound && this.effects.reverb) {
       // OPTIMIZED: Simplified atmospheric effects for better performance
-      const distance = Math.sqrt((x - playerX) ** 2 + (y - playerY) ** 2);
+      const { sourceX, sourceY } = resolveSoundSourcePosition(
+        x,
+        y,
+        playerX,
+        playerY
+      );
+      const distance = Math.sqrt(
+        (sourceX - playerX) ** 2 + (sourceY - playerY) ** 2
+      );
       const normalizedDistance = Math.min(distance / 600, 1); // 0 = close, 1 = far
 
       // Simplified reverb processing - REDUCED intensity from 65% to 45% for less overwhelming effects
@@ -636,14 +650,15 @@ export class Audio {
 
   // Apply beat-synced tremolo using the global BeatClock
   applyBeatTremolo(targetGain, duration) {
-    if (!window.beatClock) return;
+    const beatClock = this.getContextValue('beatClock');
+    if (!beatClock) return;
 
     const lfo = this.audioContext.createOscillator();
     const depth = this.audioContext.createGain();
 
     lfo.type = 'sine';
     lfo.frequency.setValueAtTime(
-      window.beatClock.bpm / 60,
+      beatClock.bpm / 60,
       this.audioContext.currentTime
     );
     depth.gain.setValueAtTime(0.5, this.audioContext.currentTime);

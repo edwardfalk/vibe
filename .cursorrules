@@ -7,12 +7,10 @@
 ## 1) Architecture (source of truth)
 
 - Use strict modular architecture under `js/`.
+- `ARCHITECTURE.md` is the architecture source of truth (module inventory + migration state).
 - Do not reintroduce legacy/monolithic files.
-- Current core modules:
-  - Core: `GameLoop.js`, `GameState.js`, `CameraSystem.js`, `SpawnSystem.js`, `CollisionSystem.js`, `UIRenderer.js`, `BackgroundRenderer.js`, `TestMode.js`
-  - Entities: `player.js`, `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js`, `EnemyFactory.js`, `bullet.js`
-  - Support: `Audio.js`, `BeatClock.js`, `visualEffects.js`, `effects.js`, `config.js`, `mathUtils.js`
-  - Other: `ai-liveness-probe.js`
+- Prefer domain folders for new/refactored files:
+  - `js/core/`, `js/systems/`, `js/entities/`, `js/audio/`, `js/effects/`, `js/shared/`, `js/testing/`
 - Legacy files that must stay unused:
   - `js/game.js`
   - `js/enemy.js`

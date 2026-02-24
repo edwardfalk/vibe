@@ -5,180 +5,96 @@
 import { round, sqrt, atan2, cos, sin, dist } from './mathUtils.js';
 import { CONFIG } from './config.js';
 import { Bullet } from './bullet.js';
+import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
+import {
+  beginMetricsFrame,
+  buildPerformanceSnapshot,
+  createEmptyFrameMetrics,
+  createEmptyRollingMetrics,
+  finalizeMetricsFrame,
+} from './systems/collision/CollisionMetrics.js';
+import {
+  buildEnemySpatialGrid,
+  queryNearbyEnemyIndices,
+} from './systems/collision/CollisionSpatialGrid.js';
+import {
+  DAMAGE_RESULT,
+  normalizeDamageResult,
+} from './shared/contracts/DamageResult.js';
+import { tryPlaceTankBomb } from './systems/BombSystem.js';
 
 // Default countdown for tank time bombs (in frames)
 const TIME_BOMB_FRAMES = 180; // 3 seconds at 60fps
-const SPATIAL_GRID_CELL_SIZE = 120;
-const PERF_SAMPLE_WINDOW_FRAMES = 300;
 
 export class CollisionSystem {
-  constructor() {
+  constructor(context = null) {
     // Collision detection settings
     this.friendlyFireEnabled = true;
-    this.frameMetrics = this.createEmptyFrameMetrics();
-    this.rollingMetrics = this.createEmptyRollingMetrics();
+    this.frameMetrics = createEmptyFrameMetrics();
+    this.rollingMetrics = createEmptyRollingMetrics();
+    this.context = context;
+    this.enemyDeathHandler = new EnemyDeathHandler(context || window);
+  }
+
+  setContext(context) {
+    this.context = context;
+    this.enemyDeathHandler.setContext(context || window);
+  }
+
+  getContextValue(key) {
+    if (this.context && typeof this.context.get === 'function') {
+      return this.context.get(key);
+    }
+    if (this.context && key in this.context) {
+      return this.context[key];
+    }
+    return window[key];
   }
 
   // Main collision detection function
   checkBulletCollisions() {
     this.beginCollisionMetricsFrame();
-    const enemySpatialGrid = this.buildEnemySpatialGrid(window.enemies);
+    const enemies = this.getContextValue('enemies');
+    const enemySpatialGrid = buildEnemySpatialGrid(enemies);
     this.checkPlayerBulletsVsEnemies(enemySpatialGrid);
     this.checkEnemyBulletsVsPlayer();
     this.checkEnemyBulletsVsEnemies(enemySpatialGrid);
     this.finalizeCollisionMetricsFrame();
   }
 
-  createEmptyFrameMetrics() {
-    return {
-      playerBulletCandidates: 0,
-      playerBulletChecks: 0,
-      playerBulletHits: 0,
-      enemyBulletCandidates: 0,
-      enemyBulletChecks: 0,
-      enemyBulletHits: 0,
-      enemiesAtFrameStart: 0,
-      playerBulletsAtFrameStart: 0,
-      enemyBulletsAtFrameStart: 0,
-    };
-  }
-
-  createEmptyRollingMetrics() {
-    return {
-      frames: 0,
-      totalPlayerBulletCandidates: 0,
-      totalPlayerBulletChecks: 0,
-      totalPlayerBulletHits: 0,
-      totalEnemyBulletCandidates: 0,
-      totalEnemyBulletChecks: 0,
-      totalEnemyBulletHits: 0,
-      peakPlayerBulletCandidatesPerFrame: 0,
-      peakEnemyBulletCandidatesPerFrame: 0,
-    };
-  }
-
   beginCollisionMetricsFrame() {
-    this.frameMetrics = this.createEmptyFrameMetrics();
-    this.frameMetrics.enemiesAtFrameStart = window.enemies?.length || 0;
-    this.frameMetrics.playerBulletsAtFrameStart = window.playerBullets?.length || 0;
-    this.frameMetrics.enemyBulletsAtFrameStart = window.enemyBullets?.length || 0;
+    const enemies = this.getContextValue('enemies');
+    const playerBullets = this.getContextValue('playerBullets');
+    const enemyBullets = this.getContextValue('enemyBullets');
+    this.frameMetrics = beginMetricsFrame({
+      enemiesLength: enemies?.length || 0,
+      playerBulletsLength: playerBullets?.length || 0,
+      enemyBulletsLength: enemyBullets?.length || 0,
+    });
   }
 
   finalizeCollisionMetricsFrame() {
-    this.rollingMetrics.frames++;
-    this.rollingMetrics.totalPlayerBulletCandidates +=
-      this.frameMetrics.playerBulletCandidates;
-    this.rollingMetrics.totalPlayerBulletChecks +=
-      this.frameMetrics.playerBulletChecks;
-    this.rollingMetrics.totalPlayerBulletHits += this.frameMetrics.playerBulletHits;
-    this.rollingMetrics.totalEnemyBulletCandidates +=
-      this.frameMetrics.enemyBulletCandidates;
-    this.rollingMetrics.totalEnemyBulletChecks += this.frameMetrics.enemyBulletChecks;
-    this.rollingMetrics.totalEnemyBulletHits += this.frameMetrics.enemyBulletHits;
-    this.rollingMetrics.peakPlayerBulletCandidatesPerFrame = Math.max(
-      this.rollingMetrics.peakPlayerBulletCandidatesPerFrame,
-      this.frameMetrics.playerBulletCandidates
-    );
-    this.rollingMetrics.peakEnemyBulletCandidatesPerFrame = Math.max(
-      this.rollingMetrics.peakEnemyBulletCandidatesPerFrame,
-      this.frameMetrics.enemyBulletCandidates
-    );
+    finalizeMetricsFrame(this.rollingMetrics, this.frameMetrics);
   }
 
   getPerformanceSnapshot() {
-    const frames = Math.max(1, this.rollingMetrics.frames);
-    return {
-      frameSampleSize: Math.min(this.rollingMetrics.frames, PERF_SAMPLE_WINDOW_FRAMES),
-      latestFrame: { ...this.frameMetrics },
-      averages: {
-        playerBulletCandidatesPerFrame:
-          this.rollingMetrics.totalPlayerBulletCandidates / frames,
-        playerBulletChecksPerFrame:
-          this.rollingMetrics.totalPlayerBulletChecks / frames,
-        playerBulletHitsPerFrame: this.rollingMetrics.totalPlayerBulletHits / frames,
-        enemyBulletCandidatesPerFrame:
-          this.rollingMetrics.totalEnemyBulletCandidates / frames,
-        enemyBulletChecksPerFrame:
-          this.rollingMetrics.totalEnemyBulletChecks / frames,
-        enemyBulletHitsPerFrame: this.rollingMetrics.totalEnemyBulletHits / frames,
-      },
-      peaks: {
-        playerBulletCandidatesPerFrame:
-          this.rollingMetrics.peakPlayerBulletCandidatesPerFrame,
-        enemyBulletCandidatesPerFrame:
-          this.rollingMetrics.peakEnemyBulletCandidatesPerFrame,
-      },
-    };
-  }
-
-  buildEnemySpatialGrid(enemies) {
-    if (!enemies || enemies.length === 0) return null;
-
-    const cellSize = SPATIAL_GRID_CELL_SIZE;
-    const grid = new Map();
-    let maxEnemySize = 0;
-
-    for (let i = 0; i < enemies.length; i++) {
-      const enemy = enemies[i];
-      const cellX = Math.floor(enemy.x / cellSize);
-      const cellY = Math.floor(enemy.y / cellSize);
-      const key = `${cellX},${cellY}`;
-
-      if (!grid.has(key)) {
-        grid.set(key, []);
-      }
-      grid.get(key).push(i);
-      maxEnemySize = Math.max(maxEnemySize, Number(enemy.size) || 0);
-    }
-
-    return { grid, cellSize, maxEnemySize };
-  }
-
-  queryNearbyEnemyIndices(spatialGrid, bullet) {
-    if (!spatialGrid || !bullet) return [];
-
-    const currentX = Number.isFinite(bullet.x) ? bullet.x : 0;
-    const currentY = Number.isFinite(bullet.y) ? bullet.y : 0;
-    const prevX = Number.isFinite(bullet.prevX) ? bullet.prevX : currentX;
-    const prevY = Number.isFinite(bullet.prevY) ? bullet.prevY : currentY;
-    const bulletSize = Number(bullet.size) || 0;
-    const expansion = bulletSize + spatialGrid.maxEnemySize;
-
-    const minX = Math.min(prevX, currentX) - expansion;
-    const maxX = Math.max(prevX, currentX) + expansion;
-    const minY = Math.min(prevY, currentY) - expansion;
-    const maxY = Math.max(prevY, currentY) + expansion;
-    const minCellX = Math.floor(minX / spatialGrid.cellSize);
-    const maxCellX = Math.floor(maxX / spatialGrid.cellSize);
-    const minCellY = Math.floor(minY / spatialGrid.cellSize);
-    const maxCellY = Math.floor(maxY / spatialGrid.cellSize);
-
-    const uniqueIndices = new Set();
-
-    for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
-      for (let cellY = minCellY; cellY <= maxCellY; cellY++) {
-        const key = `${cellX},${cellY}`;
-        const bucket = spatialGrid.grid.get(key);
-        if (!bucket) continue;
-
-        for (let i = 0; i < bucket.length; i++) {
-          uniqueIndices.add(bucket[i]);
-        }
-      }
-    }
-
-    return Array.from(uniqueIndices).sort((a, b) => b - a);
+    return buildPerformanceSnapshot(this.rollingMetrics, this.frameMetrics);
   }
 
   // ADD: Check contact collisions between enemies and player
   checkContactCollisions() {
-    if (!window.player || !window.enemies) return;
+    const player = this.getContextValue('player');
+    const enemies = this.getContextValue('enemies');
+    const audio = this.getContextValue('audio');
+    const gameState = this.getContextValue('gameState');
+    const activeBombs = this.getContextValue('activeBombs');
+    if (!player || !enemies) return;
 
-    for (let i = window.enemies.length - 1; i >= 0; i--) {
-      const enemy = window.enemies[i];
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const enemy = enemies[i];
 
       // Check if enemy is touching player
-      if (enemy.checkCollision(window.player)) {
+      if (enemy.checkCollision(player)) {
         let damage = 0;
         let shouldPlaceBomb = false;
 
@@ -205,17 +121,17 @@ export class CollisionSystem {
 
         // Only play hurt sound and reset kill streak if actual damage is dealt
         if (damage > 0) {
-          if (window.audio) {
-            window.audio.playPlayerHit();
+          if (audio) {
+            audio.playPlayerHit();
           }
-          if (window.gameState) {
-            window.gameState.resetKillStreak(); // Reset kill streak on taking damage
+          if (gameState) {
+            gameState.resetKillStreak(); // Reset kill streak on taking damage
           }
         }
 
-        if (window.player.takeDamage(damage, `${enemy.type}-contact`)) {
-          if (window.gameState) {
-            window.gameState.setGameState('gameOver');
+        if (player.takeDamage(damage, `${enemy.type}-contact`)) {
+          if (gameState) {
+            gameState.setGameState('gameOver');
           }
           if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
             console.log(
@@ -228,23 +144,12 @@ export class CollisionSystem {
           if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
             console.log(`💣 Tank contact - placing time bomb!`);
           }
-          window.activeBombs = window.activeBombs || [];
-          // Place bomb if under limit (regardless of debug mode)
-          if (window.activeBombs.length < 3) {
-            const timer = TIME_BOMB_FRAMES;
-            window.activeBombs.push({
-              x: enemy.x,
-              y: enemy.y,
-              timer,
-              maxTimer: timer,
-              tankId: enemy.id,
-            });
-            // Only log bomb placement in debug mode
-            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-              console.log(
-                `💣 Tank placed time bomb at (${round(enemy.x)}, ${round(enemy.y)})`
-              );
-            }
+          if (!activeBombs) return;
+          tryPlaceTankBomb(activeBombs, enemy);
+          if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+            console.log(
+              `💣 Tank placed time bomb at (${round(enemy.x)}, ${round(enemy.y)})`
+            );
           }
         }
       }
@@ -253,18 +158,20 @@ export class CollisionSystem {
 
   // Player bullets vs enemies
   checkPlayerBulletsVsEnemies(enemySpatialGrid = null) {
-    if (!window.playerBullets || !window.enemies) return;
+    const playerBullets = this.getContextValue('playerBullets');
+    const enemies = this.getContextValue('enemies');
+    if (!playerBullets || !enemies) return;
 
-    for (let i = window.playerBullets.length - 1; i >= 0; i--) {
-      const bullet = window.playerBullets[i];
+    for (let i = playerBullets.length - 1; i >= 0; i--) {
+      const bullet = playerBullets[i];
       const candidateEnemyIndices = enemySpatialGrid
-        ? this.queryNearbyEnemyIndices(enemySpatialGrid, bullet)
-        : window.enemies.map((_, index) => index).reverse();
+        ? queryNearbyEnemyIndices(enemySpatialGrid, bullet)
+        : enemies.map((_, index) => index).reverse();
       this.frameMetrics.playerBulletCandidates += candidateEnemyIndices.length;
 
       for (let k = 0; k < candidateEnemyIndices.length; k++) {
         const j = candidateEnemyIndices[k];
-        const enemy = window.enemies[j];
+        const enemy = enemies[j];
         if (!enemy) continue;
 
         // Log positions and health before collision check
@@ -293,6 +200,14 @@ export class CollisionSystem {
   }
 
   resolveBulletEnemyHit(bullet, bulletIndex, enemy) {
+    const explosionManager = this.getContextValue('explosionManager');
+    const audio = this.getContextValue('audio');
+    const gameState = this.getContextValue('gameState');
+    const floatingText = this.getContextValue('floatingText');
+    const beatClock = this.getContextValue('beatClock');
+    const visualEffectsManager = this.getContextValue('visualEffectsManager');
+    const cameraSystem = this.getContextValue('cameraSystem');
+    const playerBullets = this.getContextValue('playerBullets');
     if (!bullet.checkCollision(enemy)) return false;
 
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
@@ -309,72 +224,74 @@ export class CollisionSystem {
         `[DEBUG] Calling takeDamage on enemy: type=${enemyType}, health=${enemy.health}, bullet.damage=${bullet.damage}, bullet.angle=${bullet.angle}`
       );
     }
-    const damageResult = enemy.takeDamage(bullet.damage, bullet.angle);
+    const damageResult = normalizeDamageResult(
+      enemy.takeDamage(bullet.damage, bullet.angle)
+    );
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
         `[DEBUG] takeDamage result: ${damageResult}, enemyHealthAfter=${enemy.health}`
       );
     }
 
-    if (damageResult === 'exploding') {
+    if (damageResult === DAMAGE_RESULT.EXPLODING) {
       // Rusher started exploding - create hit effect but don't remove enemy yet
-      if (window.explosionManager) {
-        window.explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
+      if (explosionManager) {
+        explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
       }
-      if (window.audio) {
-        window.audio.playHit(bullet.x, bullet.y);
+      if (audio) {
+        audio.playHit(bullet.x, bullet.y);
       }
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
         console.log(
           `💥 RUSHER SHOT! Starting explosion sequence! Was already exploding: ${wasExploding}`
         );
       }
-    } else if (damageResult === true) {
+    } else if (damageResult === DAMAGE_RESULT.DIED) {
       this.handleEnemyDeath(enemy, enemyType, bullet.x, bullet.y);
 
       enemy.markedForRemoval = true;
-      if (window.gameState) {
-        window.gameState.addKill();
+      if (gameState) {
+        gameState.addKill();
 
         let points = 10;
-        if (window.gameState.killStreak >= 5) points *= 2;
-        if (window.gameState.killStreak >= 10) points *= 1.5;
+        if (gameState.killStreak >= 5) points *= 2;
+        if (gameState.killStreak >= 10) points *= 1.5;
 
-        window.gameState.addScore(points);
+        gameState.addScore(points);
 
         // Kill text + hitstop
-        if (window.floatingText) {
-          window.floatingText.addKill(
+        if (floatingText) {
+          floatingText.addKill(
             enemy.x,
             enemy.y,
             enemyType,
-            window.gameState.killStreak
+            gameState.killStreak
           );
         }
 
         // Enhanced hitstop with chromatic aberration and beat-sensitivity
-        const isOnBeat = window.beatClock && window.beatClock.isOnBeat();
+        const isOnBeat = beatClock && beatClock.isOnBeat();
         const baseStopFrames = isOnBeat ? 5 : 3; // Longer hitstop when on-beat
-        const streakBonus = window.gameState.killStreak >= 5 ? 2 : 0;
+        const streakBonus = gameState.killStreak >= 5 ? 2 : 0;
         const stopFrames = baseStopFrames + streakBonus;
         window.hitStopFrames = Math.max(window.hitStopFrames || 0, stopFrames);
 
         // Trigger chromatic aberration on beat-perfect kills
-        if (isOnBeat && window.visualEffectsManager) {
-          const chromaIntensity = window.gameState.killStreak >= 5 ? 0.8 : 0.5;
-          window.visualEffectsManager.triggerChromaticAberration(
+        if (isOnBeat && visualEffectsManager) {
+          const chromaIntensity = gameState.killStreak >= 5 ? 0.8 : 0.5;
+          visualEffectsManager.triggerChromaticAberration(
             chromaIntensity,
             stopFrames * 3
           );
           // Also trigger bloom for on-beat kills
-          window.visualEffectsManager.triggerBloom(0.4, stopFrames * 2);
+          visualEffectsManager.triggerBloom(0.4, stopFrames * 2);
         }
       }
 
       // Screen shake on kill (handleEnemyDeath already shakes for tank)
-      if (window.cameraSystem && enemyType !== 'tank') {
+      if (cameraSystem && enemyType !== 'tank') {
         const shakeIntensity = enemyType === 'rusher' ? 12 : 8;
-        window.cameraSystem.addShake(shakeIntensity, 12);
+        cameraSystem.addShake(shakeIntensity, 12);
       }
 
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
@@ -382,21 +299,17 @@ export class CollisionSystem {
       }
     } else {
       // Enemy hit but not dead
-      if (window.explosionManager) {
-        window.explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
+      if (explosionManager) {
+        explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
       }
-      if (window.audio) {
-        window.audio.playHit(bullet.x, bullet.y);
+      if (audio) {
+        audio.playHit(bullet.x, bullet.y);
       }
 
       // Floating damage number
-      if (window.floatingText) {
+      if (floatingText) {
         const size = Number(enemy.size) || 0;
-        window.floatingText.addDamage(
-          enemy.x,
-          enemy.y - size * 0.5,
-          bullet.damage
-        );
+        floatingText.addDamage(enemy.x, enemy.y - size * 0.5, bullet.damage);
       }
 
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
@@ -409,35 +322,39 @@ export class CollisionSystem {
       console.log(`[DEBUG] Removing bullet at index ${bulletIndex} after hit`);
     }
     Bullet.release(bullet);
-    window.playerBullets.splice(bulletIndex, 1);
+    playerBullets.splice(bulletIndex, 1);
     return true;
   }
 
   // Enemy bullets vs player
   checkEnemyBulletsVsPlayer() {
-    if (!window.enemyBullets || !window.player) return;
+    const enemyBullets = this.getContextValue('enemyBullets');
+    const player = this.getContextValue('player');
+    const audio = this.getContextValue('audio');
+    const gameState = this.getContextValue('gameState');
+    if (!enemyBullets || !player) return;
 
-    for (let i = window.enemyBullets.length - 1; i >= 0; i--) {
-      const bullet = window.enemyBullets[i];
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+      const bullet = enemyBullets[i];
 
       // Check player collision
-      if (bullet.checkCollision(window.player)) {
-        if (window.audio) {
-          window.audio.playPlayerHit();
+      if (bullet.checkCollision(player)) {
+        if (audio) {
+          audio.playPlayerHit();
         }
 
-        if (window.gameState) {
-          window.gameState.resetKillStreak(); // Reset kill streak on taking damage
+        if (gameState) {
+          gameState.resetKillStreak(); // Reset kill streak on taking damage
         }
 
         if (
-          window.player.takeDamage(
+          player.takeDamage(
             bullet.damage,
             `${bullet.owner || bullet.type}-bullet`
           )
         ) {
-          if (window.gameState) {
-            window.gameState.setGameState('gameOver');
+          if (gameState) {
+            gameState.setGameState('gameOver');
           }
           console.log(
             `💀 PLAYER DIED! Game state changed to gameOver. Test mode: ${window.testMode}`
@@ -445,7 +362,7 @@ export class CollisionSystem {
           return;
         }
         Bullet.release(bullet);
-        window.enemyBullets.splice(i, 1);
+        enemyBullets.splice(i, 1);
         break; // Exit loop since bullet hit player
       }
     }
@@ -453,19 +370,20 @@ export class CollisionSystem {
 
   // Enemy bullets vs enemies (friendly fire)
   checkEnemyBulletsVsEnemies(enemySpatialGrid = null) {
-    if (!this.friendlyFireEnabled || !window.enemyBullets || !window.enemies)
-      return;
+    const enemyBullets = this.getContextValue('enemyBullets');
+    const enemies = this.getContextValue('enemies');
+    if (!this.friendlyFireEnabled || !enemyBullets || !enemies) return;
 
-    for (let i = window.enemyBullets.length - 1; i >= 0; i--) {
-      const bullet = window.enemyBullets[i];
+    for (let i = enemyBullets.length - 1; i >= 0; i--) {
+      const bullet = enemyBullets[i];
       const candidateEnemyIndices = enemySpatialGrid
-        ? this.queryNearbyEnemyIndices(enemySpatialGrid, bullet)
-        : window.enemies.map((_, index) => index).reverse();
+        ? queryNearbyEnemyIndices(enemySpatialGrid, bullet)
+        : enemies.map((_, index) => index).reverse();
       this.frameMetrics.enemyBulletCandidates += candidateEnemyIndices.length;
 
       for (let k = 0; k < candidateEnemyIndices.length; k++) {
         const j = candidateEnemyIndices[k];
-        const enemy = window.enemies[j];
+        const enemy = enemies[j];
         if (!enemy) continue;
         if (bullet.ownerId === enemy.id) continue;
 
@@ -493,8 +411,11 @@ export class CollisionSystem {
 
   // Handle tank energy ball hitting enemy
   handleTankEnergyBallHit(bullet, enemy, bulletIndex, enemyIndex) {
-    if (window.audio) {
-      window.audio.playTankEnergyBall(bullet.x, bullet.y);
+    const audio = this.getContextValue('audio');
+    const gameState = this.getContextValue('gameState');
+    const enemyBullets = this.getContextValue('enemyBullets');
+    if (audio) {
+      audio.playTankEnergyBall(bullet.x, bullet.y);
     }
 
     // Calculate energy cost based on enemy's remaining health
@@ -503,22 +424,22 @@ export class CollisionSystem {
     // Kill the enemy and create explosion
     this.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y, true);
 
-    if (window.audio) {
-      window.audio.playEnemyFrying(enemy.x, enemy.y);
-      window.audio.playExplosion(enemy.x, enemy.y);
+    if (audio) {
+      audio.playEnemyFrying(enemy.x, enemy.y);
+      audio.playExplosion(enemy.x, enemy.y);
     }
 
     enemy.markedForRemoval = true;
 
-    if (window.gameState) {
-      window.gameState.addKill();
+    if (gameState) {
+      gameState.addKill();
 
       // Energy ball kills get bonus points
       let points = 12;
-      if (window.gameState.killStreak >= 5) points *= 2;
-      if (window.gameState.killStreak >= 10) points *= 1.5;
+      if (gameState.killStreak >= 5) points *= 2;
+      if (gameState.killStreak >= 10) points *= 1.5;
 
-      window.gameState.addScore(points);
+      gameState.addScore(points);
     }
 
     // Reduce bullet energy proportionally
@@ -528,13 +449,17 @@ export class CollisionSystem {
       // If energy depleted, remove bullet
       if (bullet.energy <= 0) {
         Bullet.release(bullet);
-        window.enemyBullets.splice(bulletIndex, 1);
+        enemyBullets.splice(bulletIndex, 1);
       }
     }
   }
 
   // Handle regular enemy bullet hitting enemy
   handleRegularEnemyBulletHit(bullet, enemy, bulletIndex, enemyIndex) {
+    const explosionManager = this.getContextValue('explosionManager');
+    const audio = this.getContextValue('audio');
+    const gameState = this.getContextValue('gameState');
+    const enemyBullets = this.getContextValue('enemyBullets');
     // Determine bullet source type for tank anger tracking
     let bulletSource = 'unknown';
     if (bullet.type === 'grunt' || bullet.owner === 'enemy-grunt') {
@@ -545,35 +470,33 @@ export class CollisionSystem {
       bulletSource = 'tank';
     }
 
-    const damageResult = enemy.takeDamage(
-      bullet.damage,
-      bullet.angle,
-      bulletSource
+    const damageResult = normalizeDamageResult(
+      enemy.takeDamage(bullet.damage, bullet.angle, bulletSource)
     );
 
-    if (damageResult === 'exploding') {
+    if (damageResult === DAMAGE_RESULT.EXPLODING) {
       // Rusher started exploding
-      if (window.explosionManager) {
-        window.explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
+      if (explosionManager) {
+        explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
       }
-      if (window.audio) {
-        window.audio.playHit(bullet.x, bullet.y);
+      if (audio) {
+        audio.playHit(bullet.x, bullet.y);
       }
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
         console.log(`💥 FRIENDLY FIRE caused rusher to explode!`);
       }
-    } else if (damageResult === true) {
+    } else if (damageResult === DAMAGE_RESULT.DIED) {
       // Enemy died from friendly fire
       this.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
 
-      if (window.audio) {
-        window.audio.playExplosion(enemy.x, enemy.y);
+      if (audio) {
+        audio.playExplosion(enemy.x, enemy.y);
       }
 
       enemy.markedForRemoval = true;
-      if (window.gameState) {
-        window.gameState.addKill();
-        window.gameState.addScore(8); // Friendly fire kills get some points
+      if (gameState) {
+        gameState.addKill();
+        gameState.addScore(8); // Friendly fire kills get some points
       }
 
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
@@ -583,11 +506,11 @@ export class CollisionSystem {
       }
     } else {
       // Enemy damaged but not dead
-      if (window.explosionManager) {
-        window.explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
+      if (explosionManager) {
+        explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
       }
-      if (window.audio) {
-        window.audio.playHit(bullet.x, bullet.y);
+      if (audio) {
+        audio.playHit(bullet.x, bullet.y);
       }
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
         console.log(
@@ -603,37 +526,12 @@ export class CollisionSystem {
       );
     }
     Bullet.release(bullet);
-    window.enemyBullets.splice(bulletIndex, 1);
+    enemyBullets.splice(bulletIndex, 1);
   }
 
   // Handle enemy death effects
   handleEnemyDeath(enemy, enemyType, x, y, isEnergyBall = false) {
-    if (!window.explosionManager || !window.audio) return;
-
-    if (enemyType === 'tank') {
-      // Tanks get special plasma effects + fragments
-      window.explosionManager.addFragmentExplosion(x, y, enemy);
-      window.explosionManager.addPlasmaCloud(x, y);
-      if (window.cameraSystem) {
-        window.cameraSystem.addShake(8, 15);
-      }
-      window.audio.playTankOhNo(x, y);
-      window.audio.playExplosion(x, y);
-    } else {
-      // All other enemies get beautiful fragment explosions
-      window.explosionManager.addFragmentExplosion(x, y, enemy);
-
-      // Type-specific kill sounds ONLY (remove generic explosion)
-      if (enemyType === 'grunt') {
-        window.audio.playGruntPop(x, y);
-      } else if (enemyType === 'stabber') {
-        window.audio.playStabberOhNo(x, y);
-      } else if (enemyType === 'rusher') {
-        window.audio.playRusherOhNo(x, y);
-      } else {
-        window.audio.playEnemyOhNo(x, y);
-      }
-    }
+    this.enemyDeathHandler.handleEnemyDeath(enemy, enemyType, x, y);
   }
 
   // Handle stabber attack collision

@@ -1,4 +1,8 @@
-import { atan2, cos, sin } from './mathUtils.js';
+import { atan2, cos, sin } from '../mathUtils.js';
+import {
+  DAMAGE_RESULT,
+  normalizeDamageResult,
+} from '../shared/contracts/DamageResult.js';
 
 export function handleAreaDamageEvents(damageEvents, context) {
   const {
@@ -9,6 +13,7 @@ export function handleAreaDamageEvents(damageEvents, context) {
     cameraSystem,
     collisionSystem,
     explosionManager,
+    enemyDeathHandler,
   } = context;
 
   for (const event of damageEvents) {
@@ -63,12 +68,21 @@ export function handleAreaDamageEvents(damageEvents, context) {
           `☢️ ${enemy.type} took ${event.damage} damage from area effect`
         );
 
-        const damageResult = enemy.takeDamage(event.damage, null, 'area');
+        const damageResult = normalizeDamageResult(
+          enemy.takeDamage(event.damage, null, 'area')
+        );
 
-        if (damageResult === true) {
+        if (damageResult === DAMAGE_RESULT.DIED) {
           console.log(`💀 ${enemy.type} killed by area damage!`);
 
-          if (collisionSystem) {
+          if (enemyDeathHandler) {
+            enemyDeathHandler.handleEnemyDeath(
+              enemy,
+              enemy.type,
+              enemy.x,
+              enemy.y
+            );
+          } else if (collisionSystem) {
             collisionSystem.handleEnemyDeath(
               enemy,
               enemy.type,
@@ -83,7 +97,7 @@ export function handleAreaDamageEvents(damageEvents, context) {
             gameState.addKill();
             gameState.addScore(10); // Area effect kills
           }
-        } else if (damageResult === 'exploding') {
+        } else if (damageResult === DAMAGE_RESULT.EXPLODING) {
           if (explosionManager) {
             explosionManager.addExplosion(enemy.x, enemy.y, 'hit');
           }

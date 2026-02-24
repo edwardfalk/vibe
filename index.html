@@ -1,101 +1,81 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vibe - Geometric Space Shooter</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: 'Courier New', monospace;
-        }
-        
-        #gameContainer {
-            border: 2px solid #333;
-        }
-        
-        #ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: #fff;
-            font-size: 16px;
-            z-index: 100;
-            pointer-events: none;
-        }
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: 'Courier New', monospace;
+      }
 
+      #gameContainer {
+        border: 2px solid #333;
+      }
+
+      #ui {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: #fff;
+        font-size: 16px;
+        z-index: 100;
+        pointer-events: none;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="ui">
-        <div id="score">Score: 0</div>
-        <div id="health">Health: 100</div>
-        <div id="level">Level: 1</div>
-        <div style="margin-top: 10px; font-size: 12px;">
-            <div id="soundStatus">🔇 Click or press M to enable sound</div>
-            <div>💥 WASD to move, Mouse to aim & shoot</div>
-            <div>💨 Press Space to dash</div>
-            <div>⏸️ Press P to pause/resume</div>
-            <div>🧪 Press T to toggle test mode (auto-movement & shooting)</div>
-            <div>🚀 Press F7 for 3-minute extended gameplay test</div>
-            <div>📍 Press F6 for edge exploration test (visits all screen edges)</div>
-            <div>🛡️ Press F8 for enhanced edge exploration (with survival strategies)</div>
+      <div id="score">Score: 0</div>
+      <div id="health">Health: 100</div>
+      <div id="level">Level: 1</div>
+      <div style="margin-top: 10px; font-size: 12px">
+        <div id="soundStatus">🔇 Click or press M to enable sound</div>
+        <div>💥 WASD to move, Mouse to aim & shoot</div>
+        <div>💨 Press Space to dash</div>
+        <div>⏸️ Press P to pause/resume</div>
+        <div>🧪 Press T to toggle test mode (auto-movement & shooting)</div>
+        <div>🚀 Press F7 for 3-minute extended gameplay test</div>
+        <div>
+          📍 Press F6 for edge exploration test (visits all screen edges)
         </div>
+        <div>
+          🛡️ Press F8 for enhanced edge exploration (with survival strategies)
+        </div>
+      </div>
     </div>
-    
-    <div id="spawnInstructions" style="position: absolute; top: 20px; right: 20px; color: #aaa; font-size: 11px; text-align: left; z-index: 101; pointer-events: none; line-height: 1.5;">
+
+    <div
+      id="spawnInstructions"
+      style="
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: #aaa;
+        font-size: 11px;
+        text-align: left;
+        z-index: 101;
+        pointer-events: none;
+        line-height: 1.5;
+      "
+    >
       <div><b>Enemy Spawn Keys</b></div>
       <div>1: Grunt</div>
       <div>2: Rusher</div>
       <div>3: Tank</div>
       <div>4: Stabber</div>
     </div>
-    
-    <!-- Core configuration and utilities -->
-    <script type="module" src="js/config.js"></script>
-    <script type="module" src="js/BeatClock.js"></script>
-    <script type="module" src="js/RhythmFX.js"></script>
-    <script type="module" src="js/Audio.js"></script>
-    
-    <!-- New modular systems (load before game objects) -->
-    <script type="module" src="js/GameState.js"></script>
-    <script type="module" src="js/CameraSystem.js"></script>
-    <script type="module" src="js/SpawnSystem.js"></script>
-    <script type="module" src="js/BackgroundRenderer.js"></script>
-    <script type="module" src="js/UIRenderer.js"></script>
-    <script type="module" src="js/CollisionSystem.js"></script>
-    <script type="module" src="js/TestMode.js"></script>
-    
-    <!-- Modular explosion system -->
-    <script type="module" src="js/explosions/Explosion.js"></script>
-    <script type="module" src="js/explosions/PlasmaCloud.js"></script>
-    <script type="module" src="js/explosions/RadioactiveDebris.js"></script>
-    <script type="module" src="js/explosions/ExplosionManager.js"></script>
-    
-    <!-- Game objects and effects -->
-    <script type="module" src="js/effects.js"></script>
-    <script type="module" src="js/visualEffects.js"></script>
-    <script type="module" src="js/player.js"></script>
-    
-    <!-- Modular enemy system (load in dependency order) -->
-    <script type="module" src="js/BaseEnemy.js"></script>
-    <script type="module" src="js/Grunt.js"></script>
-    <script type="module" src="js/Rusher.js"></script>
-    <script type="module" src="js/Tank.js"></script>
-    <script type="module" src="js/Stabber.js"></script>
-    <script type="module" src="js/EnemyFactory.js"></script>
-    
-    <script type="module" src="js/bullet.js"></script>
-    
-    <!-- Main game loop (load last) -->
+
+    <!-- Single module entrypoint; GameLoop imports all dependencies -->
     <script type="module" src="js/GameLoop.js"></script>
-</body>
-</html> 
+  </body>
+</html>

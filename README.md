@@ -1,24 +1,27 @@
 # Vibe: Cosmic Beat Space Shooter
 
-Vibe is a weird rhythm-driven space shooter built with `p5.js` in instance mode.  
+Vibe is a weird rhythm-driven space shooter built with `p5.js` in instance mode.
 
-Core idea: enemy behavior follows musical timing while player action stays mostly free-form. 
+Core idea: enemy behavior follows musical timing while player action stays mostly free-form.
 
-The alien enemies are different mixes of evil, psycho, big baby-cowards, fascists and silly but always entertaining. 
+The alien enemies are different mixes of evil, psycho, big-baby-cowards, fascists and silly but always entertaining.
 
 ## Current State
 
 - Modular JavaScript codebase under `js/`
 - Main game entry in `js/GameLoop.js`
+- Architecture source of truth in `ARCHITECTURE.md`
 - Playable browser build via Five Server
 - Smoke testing via Playwright probes in `tests/`
 - Project rules in `.cursorrules`
 
 ## Documentation
 
-- `.cursorrules` - architecture and coding rules
+- `ARCHITECTURE.md` - module structure and migration rules
+- `.cursorrules` - coding/runtime rules
 - `docs/DESIGN.md` - gameplay and beat-system design
-- `docs/AUDIO_CONFIGURATION_GUIDE.md` - audio setup/tuning
+- `docs/TESTING.md` - testing strategy and smoke-runner behavior
+- `docs/for-the-user/README.md` - user-facing docs index
 
 ## Quick Start
 
@@ -47,7 +50,7 @@ bun run test:mcp
 
 ## Project Structure
 
-- `js/` - game systems, entities, support modules
+- `js/` - game modules with domain migration folders (`core/`, `systems/`, `entities/`, `audio/`, `effects/`, `shared/`, `testing/`)
 - `tests/` - Playwright gameplay probes
 - `docs/` - design/audio documentation
 - `index.html` - browser entry point
@@ -61,6 +64,7 @@ bun run test:mcp
 - `bun run test:mcp` - run smoke test orchestrator
 - `bun run lint` - run ESLint
 - `bun run format` - run Prettier
+- `bun run clean` - remove install artifacts (`node_modules`, `bun.lockb`)
 
 ## Notes
 
