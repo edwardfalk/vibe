@@ -36,8 +36,13 @@ const MAX_BULLET_POOL_SIZE = 400;
 
 export class Bullet {
   constructor(x, y, angle, speed, owner) {
-    this.trail = [];
     this.maxTrailLength = 5;
+    this._trailSlots = Array.from({ length: this.maxTrailLength }, () => ({
+      x: 0,
+      y: 0,
+    }));
+    this._trailHead = 0;
+    this._trailCount = 0;
     this.reset(x, y, angle, speed, owner);
   }
 
@@ -63,11 +68,15 @@ export class Bullet {
   }
 
   static release(bullet) {
-    if (!bullet || bullet._inPool || Bullet.pool.length >= MAX_BULLET_POOL_SIZE)
+    if (!bullet || bullet._inPool) return;
+    if (Bullet.pool.length >= MAX_BULLET_POOL_SIZE) {
+      Bullet.poolStats.inUse = Math.max(0, Bullet.poolStats.inUse - 1);
       return;
+    }
     bullet._inPool = true;
     bullet.active = false;
-    bullet.trail.length = 0;
+    bullet._trailHead = 0;
+    bullet._trailCount = 0;
     Bullet.pool.push(bullet);
     Bullet.poolStats.released++;
     Bullet.poolStats.inUse = Math.max(0, Bullet.poolStats.inUse - 1);
@@ -121,18 +130,20 @@ export class Bullet {
       this.damage = 1;
     }
     this.active = true;
-    this.trail.length = 0;
+    this._trailHead = 0;
+    this._trailCount = 0;
   }
 
   update() {
     // Remember previous position for collision checking
     this.prevX = this.x;
     this.prevY = this.y;
-    // Store position for trail
-    this.trail.push({ x: this.x, y: this.y });
-    if (this.trail.length > this.maxTrailLength) {
-      this.trail.shift();
-    }
+    // Store position for trail (ring buffer)
+    const slot = this._trailSlots[this._trailHead];
+    slot.x = this.x;
+    slot.y = this.y;
+    this._trailHead = (this._trailHead + 1) % this.maxTrailLength;
+    if (this._trailCount < this.maxTrailLength) this._trailCount++;
 
     // Move bullet
     this.x += this.velocity.x;
@@ -141,9 +152,6 @@ export class Bullet {
     // Use centralized world bounds check
     if (this._isOutOfWorldBounds()) {
       this.active = false;
-      console.log(
-        `🗑️ Removing bullet (off-world): ${this.x.toFixed(0)}, ${this.y.toFixed(0)}`
-      );
     }
   }
 
@@ -249,11 +257,15 @@ export class Bullet {
   }
 
   drawTrail(p) {
-    if (this.trail.length < 2) return;
+    if (this._trailCount < 2) return;
 
-    for (let i = 0; i < this.trail.length - 1; i++) {
-      const alpha = (i / this.trail.length) * 150;
-      const size = (i / this.trail.length) * this.size * 0.5;
+    for (let i = 0; i < this._trailCount - 1; i++) {
+      const idx =
+        (this._trailHead - this._trailCount + i + this.maxTrailLength) %
+        this.maxTrailLength;
+      const slot = this._trailSlots[idx];
+      const alpha = (i / this._trailCount) * 150;
+      const size = (i / this._trailCount) * this.size * 0.5;
 
       if (this.owner === 'player') {
         p.fill(255, 255, 100, alpha);
@@ -266,12 +278,13 @@ export class Bullet {
       }
 
       p.noStroke();
-      p.ellipse(this.trail[i].x, this.trail[i].y, size);
+      p.ellipse(slot.x, slot.y, size);
     }
   }
 
   checkCollision(target) {
     if (!this.active) return false;
+    if (!target || typeof target.size !== 'number') return false;
 
     const threshold = (this.size + target.size) * 0.5;
     const distance = this._pointSegmentDistance(

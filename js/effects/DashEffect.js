@@ -4,8 +4,13 @@ export function drawPlayerDashEffect(p, playerSize, dashState) {
   const { isDashing, dashTimerMs, maxDashTimeMs, dashVelocity } = dashState;
   if (!isDashing) return;
 
-  const dashProgress = dashTimerMs / maxDashTimeMs;
+  const safeMaxTime =
+    maxDashTimeMs && Number.isFinite(maxDashTimeMs) ? maxDashTimeMs : 1;
+  const dashProgress = Math.min(1, dashTimerMs / safeMaxTime);
   const dashIntensity = 1 - dashProgress;
+
+  const vx = dashVelocity?.x ?? 0;
+  const vy = dashVelocity?.y ?? 0;
 
   p.fill(100, 200, 255, dashIntensity * 80);
   p.noStroke();
@@ -22,8 +27,7 @@ export function drawPlayerDashEffect(p, playerSize, dashState) {
     p.strokeWeight(3 - layer);
     for (let i = 0; i < 8; i++) {
       const lineLength = playerSize * (1.5 + i * 0.4 + layer * 0.3);
-      const lineAngle =
-        atan2(-dashVelocity.y, -dashVelocity.x) + random(-0.3, 0.3);
+      const lineAngle = atan2(-vy, -vx) + random(-0.3, 0.3);
       const startX = cos(lineAngle) * lineLength * (0.3 + layer * 0.2);
       const startY = sin(lineAngle) * lineLength * (0.3 + layer * 0.2);
       const endX = cos(lineAngle) * lineLength;

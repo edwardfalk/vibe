@@ -190,6 +190,12 @@ function setup(p) {
     console.log('🧪 Test mode manager initialized');
   }
 
+  // Initialize collision system before sync/restart (context and spawn logic may reference it)
+  if (!window.collisionSystem) {
+    window.collisionSystem = new CollisionSystem(gameContext);
+  }
+  console.log('💥 Collision system initialized');
+
   // Sync context before restart (spawnEnemies reads from context)
   syncRuntimeContext(window.hitStopFrames);
 
@@ -208,11 +214,6 @@ function setup(p) {
   }
   window.backgroundRenderer.createParallaxBackground(p);
   console.log('🌌 Background renderer initialized');
-
-  if (!window.collisionSystem) {
-    window.collisionSystem = new CollisionSystem(gameContext);
-  }
-  console.log('💥 Collision system initialized');
 
   if (!enemyDeathHandler) {
     enemyDeathHandler = new EnemyDeathHandler(gameContext);

@@ -175,7 +175,7 @@ class EnemyFactory {
       size: config.size,
       health: config.health,
       speed: config.speed,
-      color: this.getColor(type),
+      colorValues: config.colorValues ? [...config.colorValues] : null,
       description: config.description,
     };
   }
@@ -247,7 +247,7 @@ class EnemyFactory {
     let x, y;
 
     // Choose random edge (0=top, 1=right, 2=bottom, 3=left)
-    const edge = Math.floor(random() * 4);
+    const edge = Math.min(3, Math.floor(random() * 4));
 
     switch (edge) {
       case 0: // Top
@@ -265,6 +265,10 @@ class EnemyFactory {
       case 3: // Left
         x = cameraOffsetX - margin;
         y = random() * screenHeight + cameraOffsetY;
+        break;
+      default:
+        x = random() * screenWidth + cameraOffsetX;
+        y = cameraOffsetY - margin;
         break;
     }
 

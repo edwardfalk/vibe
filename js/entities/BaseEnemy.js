@@ -39,6 +39,7 @@ export class BaseEnemy {
     this.shootCooldown = 0;
     this.muzzleFlash = 0;
     this.hitFlash = 0;
+    this.markedForRemoval = false;
 
     // Speech bubble system
     this.speechText = '';
@@ -123,6 +124,7 @@ export class BaseEnemy {
     if (this.hitFlash > 0) this.hitFlash -= dt;
     if (this.speechTimer > 0) this.speechTimer -= dt;
     if (this.speechCooldown > 0) this.speechCooldown -= dt;
+    if (this.speechTimer <= 0 && this.speechText) this.speechText = '';
 
     // Spawn animation (frame-rate independent)
     if (this.isSpawning) {
@@ -139,9 +141,9 @@ export class BaseEnemy {
       this.aimAngle = atan2(dy, dx);
     }
 
-    // Apply velocity
-    this.x += this.velocity.x;
-    this.y += this.velocity.y;
+    // Apply velocity (frame-rate independent)
+    this.x += this.velocity.x * dt;
+    this.y += this.velocity.y * dt;
 
     // Handle ambient speech timing
     this.updateAmbientSpeech(deltaTimeMs);
@@ -325,10 +327,11 @@ export class BaseEnemy {
     // Apply animation offsets
     p.translate(waddle, bobble);
 
-    // Compose spawn alpha with hit-flash alpha; apply tint once
+    // Compose spawn alpha with hit-flash alpha; p.tint doesn't affect shape primitives, use globalAlpha
     const hitAlpha = this.hitFlash > 0 ? 100 : 255;
-    const finalAlpha = Math.round(spawnAlpha * (hitAlpha / 255));
-    p.tint(255, 255, 255, finalAlpha);
+    const finalAlpha = Math.round(spawnAlpha * (hitAlpha / 255)) / 255;
+    const prevAlpha = p.drawingContext?.globalAlpha ?? 1;
+    if (p.drawingContext) p.drawingContext.globalAlpha = finalAlpha;
 
     if (this.hitFlash > 0) {
       const hitIntensity = this.hitFlash / 8;
@@ -351,14 +354,14 @@ export class BaseEnemy {
 
     p.pop();
 
+    if (p.drawingContext) p.drawingContext.globalAlpha = prevAlpha;
+
     // Draw UI elements
     this.drawHealthBar(p);
     this.drawSpeechBubble(p);
 
     // Draw type-specific indicators
     this.drawSpecificIndicators(p);
-
-    p.noTint();
   }
 
   /**
@@ -488,7 +491,7 @@ export class BaseEnemy {
    * Draw speech bubble
    */
   drawSpeechBubble(p) {
-    if (!this.speechText) return;
+    if (!this.speechText || this.speechTimer <= 0) return;
 
     // Simple text above head - smaller and closer
     p.fill(255, 255, 255);
@@ -546,7 +549,7 @@ export class BaseEnemy {
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
-        `[DEBUG] Grunt takeDamage called: health=${this.health} markedForRemoval=${this.markedForRemoval}`
+        `[DEBUG] ${this.type || this.constructor.name} takeDamage called: health=${this.health} markedForRemoval=${this.markedForRemoval}`
       );
     }
     this.health -= amount;

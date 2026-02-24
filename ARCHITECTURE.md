@@ -62,6 +62,8 @@ This file is the source of truth for module layout and runtime wiring.
   - `bullet.js` - projectile model/pool behavior.
 - `js/shared/`
   - `contracts/DamageResult.js` - normalized damage/death result contract.
+- `js/testing/`
+  - Probe tests and test utilities (see `tests/`).
 
 ## Active Canonical Paths
 
@@ -69,8 +71,11 @@ This file is the source of truth for module layout and runtime wiring.
 - Core: `js/core/GameContext.js`, `js/core/GameState.js`, `js/core/InputHandlers.js`
 - Entities: `js/entities/*`
 - Systems: `js/systems/*`
+- Audio: `js/audio/`
+- Shared contracts: `js/shared/`
+- Testing: `js/testing/`
 - Audio/support still rooted by design: `js/Audio.js`, `js/RhythmFX.js`, `js/config.js`, `js/mathUtils.js`
-- Effects currently split across `js/effects/*`, `js/effects.js`, `js/visualEffects.js`, and `js/explosions/*`
+- Effects: migration target `js/effects/` — consolidate from `js/effects.js`, `js/visualEffects.js`, `js/explosions/*`; avoid adding new root-level effect modules.
 
 ## Combat Contracts
 

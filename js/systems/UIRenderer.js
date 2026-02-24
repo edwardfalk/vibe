@@ -51,11 +51,12 @@ export class UIRenderer {
         ? `Score: ${this.gameState.score.toLocaleString()} (${this.gameState.killStreak}x STREAK!)`
         : `Score: ${this.gameState.score.toLocaleString()}`;
 
-    document.getElementById('score').textContent = scoreText;
-    document.getElementById('health').textContent =
-      `Health: ${this.player.health}`;
-    document.getElementById('level').textContent =
-      `Level: ${this.gameState.level}`;
+    const scoreEl = document.getElementById('score');
+    const healthEl = document.getElementById('health');
+    const levelEl = document.getElementById('level');
+    if (scoreEl) scoreEl.textContent = scoreText;
+    if (healthEl) healthEl.textContent = `Health: ${this.player?.health ?? 0}`;
+    if (levelEl) levelEl.textContent = `Level: ${this.gameState?.level ?? 1}`;
 
     // Add dash cooldown indicator
     this.updateDashIndicator();
@@ -68,6 +69,7 @@ export class UIRenderer {
 
   // Update dash cooldown indicator
   updateDashIndicator() {
+    if (!this.player) return;
     if (!this.dashElement) {
       this.dashElement = document.createElement('div');
       this.dashElement.id = 'dash';
@@ -97,12 +99,9 @@ export class UIRenderer {
     p.fill(0, 0, 0, 150);
     p.rect(0, 0, p.width, p.height);
 
-    // Check for new high score
-    let isNewHighScore = false;
-    if (this.gameState.score > this.gameState.highScore) {
-      this.gameState.updateHighScore();
-      isNewHighScore = true;
-    }
+    const messageIndex =
+      floor(this.gameState.score / 50) % this.gameOverMessages.length;
+    const isNewHighScore = this.gameState.score > this.gameState.highScore;
 
     // Game over text with animation
     p.textFont('monospace');
@@ -117,8 +116,6 @@ export class UIRenderer {
 
     p.stroke(255, 255, 255);
     p.strokeWeight(2);
-    const messageIndex =
-      floor(this.gameState.score / 50) % this.gameOverMessages.length;
     p.text(this.gameOverMessages[messageIndex], p.width / 2, p.height / 2 - 80);
     p.noStroke();
 
@@ -621,6 +618,7 @@ export class UIRenderer {
       this.dashElement.remove();
       this.dashElement = null;
     }
+    this.animatedHealth = undefined;
   }
 
   // Toast/banner for confirmations
@@ -645,9 +643,11 @@ export class UIRenderer {
   }
   _showToast(msg) {
     if (!this.toast) this._createToast();
+    if (this._toastTimeout) clearTimeout(this._toastTimeout);
     this.toast.textContent = msg;
     this.toast.style.display = 'block';
-    setTimeout(() => {
+    this._toastTimeout = setTimeout(() => {
+      this._toastTimeout = null;
       this.toast.style.display = 'none';
     }, 2200);
   }

@@ -3,6 +3,7 @@
  */
 
 import { EnemyFactory } from '../entities/EnemyFactory.js';
+import { CONFIG } from '../config.js';
 import {
   max,
   min,
@@ -99,27 +100,6 @@ export class SpawnSystem {
 
   // Determine enemy type based on level
   getEnemyTypeForLevel(level) {
-    const enemyTypes = [];
-
-    // Grunts available from level 1
-    enemyTypes.push('grunt');
-
-    // Stabbers available from level 2
-    if (level >= 2) {
-      enemyTypes.push('stabber');
-    }
-
-    // Rushers available from level 3
-    if (level >= 3) {
-      enemyTypes.push('rusher');
-    }
-
-    // Tanks available from level 5
-    if (level >= 5) {
-      enemyTypes.push('tank');
-    }
-
-    // Weight the selection to favor appropriate enemies for level
     let weightedTypes = [];
 
     if (level <= 2) {
@@ -142,8 +122,9 @@ export class SpawnSystem {
   findSpawnPosition() {
     const player = this.getContextValue('player');
     if (!player) {
-      // fallback: use 800x600 as default if no player (should never happen in normal play)
-      return { x: random(100, 700), y: random(100, 500) };
+      const w = CONFIG.GAME_SETTINGS?.WORLD_WIDTH ?? 1150;
+      const h = CONFIG.GAME_SETTINGS?.WORLD_HEIGHT ?? 850;
+      return { x: random(100, w - 100), y: random(100, h - 100) };
     }
     const p = player.p;
     let attempts = 0;
@@ -236,7 +217,9 @@ export class SpawnSystem {
     const enemies = this.getContextValue('enemies');
     if (!enemies) return null;
 
-    const enemy = this.enemyFactory.createEnemy(x, y, enemyType);
+    const p = this.getContextValue('p') ?? this.context?.get?.('p');
+    const enemy = this.enemyFactory.createEnemy(x, y, enemyType, p);
+    if (!enemy) return null;
     enemies.push(enemy);
 
     console.log(`🎯 Force spawned ${enemyType} at (${x}, ${y})`);

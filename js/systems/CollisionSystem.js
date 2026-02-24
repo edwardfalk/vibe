@@ -279,7 +279,6 @@ export class CollisionSystem {
               `💀 PLAYER DIED! Game state changed to gameOver. Test mode: ${testMode}`
             );
           }
-          return;
         }
         Bullet.release(bullet);
         enemyBullets.splice(i, 1);
@@ -342,7 +341,7 @@ export class CollisionSystem {
     const energyCost = (enemy.health / enemy.maxHealth) * 30;
 
     // Kill the enemy and create explosion
-    this.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y, true);
+    this.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
 
     if (audio) {
       audio.playEnemyFrying(enemy.x, enemy.y);
@@ -362,15 +361,17 @@ export class CollisionSystem {
       gameState.addScore(points);
     }
 
-    // Reduce bullet energy proportionally
-    if (bullet.energy) {
-      bullet.energy -= energyCost;
-
-      // If energy depleted, remove bullet
+    // Reduce bullet energy proportionally; non-energy bullets get removed immediately
+    const energy = bullet.energy;
+    if (typeof energy === 'number' && energy > 0) {
+      bullet.energy = energy - energyCost;
       if (bullet.energy <= 0) {
         Bullet.release(bullet);
         enemyBullets.splice(bulletIndex, 1);
       }
+    } else {
+      Bullet.release(bullet);
+      enemyBullets.splice(bulletIndex, 1);
     }
   }
 
@@ -450,7 +451,7 @@ export class CollisionSystem {
   }
 
   // Handle enemy death effects
-  handleEnemyDeath(enemy, enemyType, x, y, isEnergyBall = false) {
+  handleEnemyDeath(enemy, enemyType, x, y) {
     this.enemyDeathHandler.handleEnemyDeath(enemy, enemyType, x, y);
   }
 

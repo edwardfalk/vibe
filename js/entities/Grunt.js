@@ -145,14 +145,14 @@ class Grunt extends BaseEnemy {
     if (distance < 300 && this.shootCooldown <= 0) {
       if (beatClockShoot) {
         const timeToNextAttack = beatClockShoot.getTimeToNextBeat();
+        const beatInterval = beatClockShoot.beatInterval;
+        const safeScale =
+          beatInterval && Number.isFinite(beatInterval)
+            ? timeToNextAttack / beatInterval
+            : 0;
         if (timeToNextAttack < 500 && beatClockShoot.isOnBeat([2, 4])) {
-          if (rhythmFX) {
-            rhythmFX.addAttackTelegraph(
-              this.x,
-              this.y,
-              'grunt',
-              timeToNextAttack / beatClockShoot.beatInterval
-            );
+          if (rhythmFX && safeScale >= 0) {
+            rhythmFX.addAttackTelegraph(this.x, this.y, 'grunt', safeScale);
           }
         }
 
@@ -319,12 +319,12 @@ class Grunt extends BaseEnemy {
     this.p.noStroke();
     this.p.ellipse(0, 0, s, s * 0.9); // Rounder main body
 
+    const r = this.p.red(this.bodyColor);
+    const g = this.p.green(this.bodyColor);
+    const b = this.p.blue(this.bodyColor);
+
     // Round baby-like head (larger and rounder)
-    this.p.fill(
-      this.bodyColor.levels[0] + 20,
-      this.bodyColor.levels[1] + 20,
-      this.bodyColor.levels[2] + 20
-    );
+    this.p.fill(r + 20, g + 20, b + 20);
     this.p.ellipse(0, -s * 0.4, s * 0.8, s * 0.8); // Big round head
 
     // Simple round helmet (baby helmet style)
@@ -358,11 +358,7 @@ class Grunt extends BaseEnemy {
     this.p.ellipse(s * 0.18, -s * 0.85, s * 0.12); // Right bobble (bigger)
 
     // Chubby little arms
-    this.p.fill(
-      this.bodyColor.levels[0] + 10,
-      this.bodyColor.levels[1] + 10,
-      this.bodyColor.levels[2] + 10
-    );
+    this.p.fill(r + 10, g + 10, b + 10);
     this.p.ellipse(-s * 0.4, -s * 0.1, s * 0.2, s * 0.35); // Left arm (round)
     this.p.ellipse(s * 0.4, -s * 0.1, s * 0.2, s * 0.35); // Right arm (round)
 
@@ -372,11 +368,7 @@ class Grunt extends BaseEnemy {
     this.p.ellipse(s * 0.45, s * 0.05, s * 0.12); // Right hand
 
     // Minimal tactical gear (just a belt so they look "official")
-    this.p.fill(
-      this.bodyColor.levels[0] + 30,
-      this.bodyColor.levels[1] + 30,
-      this.bodyColor.levels[2] + 30
-    );
+    this.p.fill(r + 30, g + 30, b + 30);
     this.p.rect(-s * 0.3, s * 0.1, s * 0.6, s * 0.08); // Simple belt
   }
 

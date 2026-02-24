@@ -26,8 +26,13 @@ export function applyKillFeedback({
   const baseStopFrames = isOnBeat ? 5 : 3;
   const streakBonus = gameState.killStreak >= 5 ? 2 : 0;
   const stopFrames = baseStopFrames + streakBonus;
-  const current = getHitStopFrames();
-  setHitStopFrames(Math.max(current, stopFrames));
+  if (
+    typeof getHitStopFrames === 'function' &&
+    typeof setHitStopFrames === 'function'
+  ) {
+    const current = getHitStopFrames();
+    setHitStopFrames(Math.max(current, stopFrames));
+  }
 
   if (isOnBeat && visualEffectsManager) {
     const chromaIntensity = gameState.killStreak >= 5 ? 0.8 : 0.5;

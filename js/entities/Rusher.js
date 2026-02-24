@@ -37,6 +37,12 @@ class Rusher extends BaseEnemy {
     this.motionTrailInterval = 66.67; // ~4 frames at 60fps (4 * 16.67ms)
   }
 
+  get effectiveExplosionTime() {
+    return this.shotTriggered
+      ? this.maxExplosionTime * 0.5
+      : this.maxExplosionTime;
+  }
+
   /**
    * Update specific rusher behavior - suicide bombing
    * @param {number} playerX - Player X position
@@ -63,11 +69,7 @@ class Rusher extends BaseEnemy {
       this.explosionTimer += dt;
 
       // Check if explosion should occur
-      const explosionTime = this.shotTriggered
-        ? this.maxExplosionTime * 0.5
-        : this.maxExplosionTime;
-
-      if (this.explosionTimer >= explosionTime) {
+      if (this.explosionTimer >= this.effectiveExplosionTime) {
         // Create explosion
         return {
           type: 'rusher-explosion',
@@ -211,7 +213,7 @@ class Rusher extends BaseEnemy {
 
     // Intense vibration for exploding rushers
     if (this.exploding) {
-      const intensity = (this.explosionTimer / this.maxExplosionTime) * 8;
+      const intensity = (this.explosionTimer / this.effectiveExplosionTime) * 8;
       bobble += sin(this.p.frameCount * 0.8) * intensity;
       waddle += cos(this.p.frameCount * 1.2) * intensity;
     }
@@ -289,10 +291,7 @@ class Rusher extends BaseEnemy {
    * Draw explosion warning
    */
   drawExplosionWarning() {
-    const explosionTime = this.shotTriggered
-      ? this.maxExplosionTime * 0.5
-      : this.maxExplosionTime;
-    const explosionPercent = this.explosionTimer / explosionTime;
+    const explosionPercent = this.explosionTimer / this.effectiveExplosionTime;
     const pulse = sin(this.p.frameCount * 1.5) * 0.5 + 0.5;
     const warningRadius = this.explosionRadius * (0.3 + explosionPercent * 0.7);
 
@@ -310,7 +309,9 @@ class Rusher extends BaseEnemy {
     this.p.fill(255, 255, 255);
     this.p.textAlign(this.p.CENTER, this.p.CENTER);
     this.p.textSize(12);
-    const countdown = ceil((explosionTime - this.explosionTimer) / 60);
+    const countdown = ceil(
+      (this.effectiveExplosionTime - this.explosionTimer) / 60
+    );
     this.p.text(countdown, this.x, this.y - this.size - 20);
 
     // Add "SHOT!" text if triggered by shooting
@@ -332,6 +333,9 @@ class Rusher extends BaseEnemy {
       this.shotTriggered = true; // Mark as shot-triggered for faster explosion
       console.log(`💥 RUSHER SHOT: Starting explosion! Health: ${this.health}`);
 
+      // Apply damage and hit effects via base class, but return exploding so we stay in play
+      super.takeDamage(amount, bulletAngle, damageSource);
+
       // Register explosion telegraph when shot
       const rhythmFX = this.getContextValue('rhythmFX');
       if (rhythmFX) {
@@ -343,7 +347,7 @@ class Rusher extends BaseEnemy {
         );
       }
 
-      // Return special flag to indicate explosion started
+      // Return special flag so pipeline keeps entity for explosion
       return 'exploding';
     }
 

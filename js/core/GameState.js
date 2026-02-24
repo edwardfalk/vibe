@@ -6,6 +6,7 @@ export class GameState {
   constructor() {
     // Core game state
     this.score = 0;
+    this.startSpeechTimer = null;
     this.highScore = parseInt(localStorage.getItem('vibeHighScore')) || 0;
     this.level = 1;
     this.nextLevelThreshold = 150; // First level up at 150 points
@@ -43,7 +44,7 @@ export class GameState {
 
   // Level progression
   checkLevelProgression() {
-    if (this.score >= this.nextLevelThreshold) {
+    while (this.score >= this.nextLevelThreshold) {
       this.level++;
 
       // Calculate next level threshold with increasing requirements
@@ -87,6 +88,7 @@ export class GameState {
     } else if (newState === 'gameOver') {
       this.gameOverTimer = 0;
       this.resetKillStreak();
+      this.updateHighScore();
 
       // Game over speech
       if (window.audio && window.player) {
@@ -107,6 +109,11 @@ export class GameState {
   // Game restart
   restart() {
     console.log('🔄 Restarting game...');
+
+    if (this.startSpeechTimer) {
+      clearTimeout(this.startSpeechTimer);
+      this.startSpeechTimer = null;
+    }
 
     // Reset all state
     this.score = 0;
@@ -166,7 +173,12 @@ export class GameState {
     }
 
     // Game start speech
-    setTimeout(() => {
+    if (this.startSpeechTimer) {
+      clearTimeout(this.startSpeechTimer);
+      this.startSpeechTimer = null;
+    }
+    this.startSpeechTimer = setTimeout(() => {
+      this.startSpeechTimer = null;
       if (window.audio && window.player) {
         window.audio.speakPlayerLine(window.player, 'start');
       }

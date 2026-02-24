@@ -115,6 +115,7 @@ export class Audio {
     this.beatY = 0;
 
     // Sound configuration - MUSICAL COMBAT SYSTEM
+    // Spread SOUND_CONFIG first; inline block overrides (playerShoot, explosion, hit, etc.) are authoritative for game-specific tuning
     this.sounds = {
       ...SOUND_CONFIG,
       // MUSICAL WEAPONS: Each enemy type becomes an instrument

@@ -5,6 +5,7 @@
 // Dependencies: mathUtils.js (sin, cos, min, floor, random, atan2, dist, constrain). No direct p5.js globals used.
 
 import { Bullet } from '../entities/bullet.js';
+import { CONFIG } from '../config.js';
 import {
   sin,
   cos,
@@ -49,6 +50,10 @@ export class TestMode {
   setEnabled(enabled) {
     this.enabled = enabled;
     this.timer = 0;
+    if (this._testInterval) {
+      clearInterval(this._testInterval);
+      this._testInterval = null;
+    }
     console.log('🧪 Test mode:', enabled ? 'ON' : 'OFF');
     if (enabled) {
       console.log(
@@ -170,7 +175,7 @@ export class TestMode {
     const centerY = this.player.p.height / 2;
     const radius = Math.min(this.player.p.width, this.player.p.height) * 0.2;
     this.player.x = centerX + radius * cos(phase * 2);
-    this.player.y = centerY + radius * cos(phase * 2);
+    this.player.y = centerY + radius * sin(phase * 2);
   }
 
   // Update auto-shooting
@@ -223,7 +228,9 @@ export class TestMode {
       console.warn('⚠️ Bullet.acquire returned null (pool exhausted or error)');
     }
 
-    console.log(`🎯 Auto-shot at ${enemy.type} enemy!`);
+    if (CONFIG?.GAME_SETTINGS?.DEBUG_COLLISIONS) {
+      console.log(`🎯 Auto-shot at ${enemy.type} enemy!`);
+    }
 
     // Track shots fired
     const gameState = this.getContextValue('gameState');
@@ -259,7 +266,7 @@ export class TestMode {
         randomType,
         this.player?.p
       );
-      enemies.push(enemy);
+      if (enemy) enemies.push(enemy);
     }
 
     console.log(`🧪 Spawned test ${randomType} for shooting practice`);
@@ -330,7 +337,7 @@ export class TestMode {
         type,
         this.player?.p
       );
-      enemies.push(enemy);
+      if (enemy) enemies.push(enemy);
     }
     console.log(
       `🎯 Force spawned ${type} at (${spawnX.toFixed(1)}, ${spawnY.toFixed(1)})`
@@ -358,6 +365,10 @@ export class TestMode {
     this.lastShotFrame = 0;
     this.lastEnemySpawnFrame = 0;
     this.lastLogFrame = 0;
+    if (this._testInterval) {
+      clearInterval(this._testInterval);
+      this._testInterval = null;
+    }
     console.log('🔄 Test mode reset');
   }
 
@@ -365,16 +376,19 @@ export class TestMode {
   runTestSuite() {
     console.log('🧪 Starting comprehensive test suite...');
 
-    // Test different movement patterns
+    if (this._testInterval) clearInterval(this._testInterval);
+
     const patterns = ['corners', 'edges', 'center', 'random'];
     let patternIndex = 0;
+    const self = this;
 
-    const testInterval = setInterval(() => {
+    this._testInterval = setInterval(() => {
       if (patternIndex < patterns.length) {
-        this.setMovementPattern(patterns[patternIndex]);
+        self.setMovementPattern(patterns[patternIndex]);
         patternIndex++;
       } else {
-        clearInterval(testInterval);
+        clearInterval(self._testInterval);
+        self._testInterval = null;
         console.log('✅ Test suite completed');
       }
     }, 5000); // Change pattern every 5 seconds

@@ -9,9 +9,9 @@
 ## Commands
 
 - `bun run test:mcp` - starts local server and runs `tests/gameplay-probe.test.js` (9 probes). Primary gate for refactor safety.
-- `bun run test:playwright` - runs the full Playwright suite directly.
-- `bun run test:headed` - headed Playwright run for visual debugging.
-- `bun run test:debug` - Playwright debug mode.
+- `bun run test:playwright` - runs the Playwright probe suite (MCP probe files only; no hand-written `.spec.js` tests).
+- `bun run test:headed` - headed Playwright run for visual debugging (probe tests only).
+- `bun run test:debug` - Playwright debug mode (probe tests only).
 
 ## Gameplay Probes
 

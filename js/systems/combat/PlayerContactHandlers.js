@@ -40,12 +40,11 @@ export function handleContactCollisions({
       logDebug(`💥 ${enemy.type} contact damage! Damage: ${damage}`);
       audio?.playPlayerHit?.();
       gameState?.resetKillStreak?.();
-    }
-
-    if (player.takeDamage(damage, `${enemy.type}-contact`)) {
-      gameState?.setGameState?.('gameOver');
-      logDebug(`💀 PLAYER DIED from ${enemy.type} contact!`);
-      return true;
+      if (player.takeDamage(damage, `${enemy.type}-contact`)) {
+        gameState?.setGameState?.('gameOver');
+        logDebug(`💀 PLAYER DIED from ${enemy.type} contact!`);
+        return true;
+      }
     }
 
     if (!shouldPlaceBomb || !activeBombs) continue;
@@ -131,7 +130,7 @@ export function handleRusherExplosionCollision({
 
   if (player.takeDamage(explosion.damage, 'rusher-explosion')) {
     gameState?.setGameState?.('gameOver');
-    console.log('💀 PLAYER KILLED BY RUSHER EXPLOSION!');
+    logDebug('💀 PLAYER KILLED BY RUSHER EXPLOSION!');
     return;
   }
 

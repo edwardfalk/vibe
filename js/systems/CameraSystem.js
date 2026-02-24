@@ -66,8 +66,8 @@ export class CameraSystem {
     // So camera max = world edge - viewport/2
     const VIEWPORT_WIDTH = p.width;
     const VIEWPORT_HEIGHT = p.height;
-    const cameraMaxX = WORLD_WIDTH / 2 - VIEWPORT_WIDTH / 2; // 1150/2 - 800/2 = 575 - 400 = 175
-    const cameraMaxY = WORLD_HEIGHT / 2 - VIEWPORT_HEIGHT / 2; // 850/2 - 600/2 = 425 - 300 = 125
+    const cameraMaxX = Math.max(0, WORLD_WIDTH / 2 - VIEWPORT_WIDTH / 2);
+    const cameraMaxY = Math.max(0, WORLD_HEIGHT / 2 - VIEWPORT_HEIGHT / 2);
     this.targetX = p.constrain(this.targetX, -cameraMaxX, cameraMaxX);
     this.targetY = p.constrain(this.targetY, -cameraMaxY, cameraMaxY);
 
@@ -84,6 +84,9 @@ export class CameraSystem {
     // Apply screen shake
     if (this.screenShake.duration > 0) {
       this.screenShake.duration--;
+      if (this.screenShake.duration <= 0) {
+        this.screenShake.intensity = 0;
+      }
       const shakeX = randomRange(
         -this.screenShake.intensity,
         this.screenShake.intensity

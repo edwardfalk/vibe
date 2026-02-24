@@ -139,31 +139,26 @@ test.describe('Gameplay Probes', () => {
   test('Enemy lifecycle cleanup removes marked enemies', async ({ page }) => {
     await bootGame(page);
 
-    const before = await page.evaluate(() =>
-      Array.isArray(window.enemies)
-        ? window.enemies.filter((enemy) => !enemy.markedForRemoval).length
-        : 0
-    );
-    expect(before).toBeGreaterThan(0);
-
-    await page.evaluate(() => {
-      const enemy = window.enemies.find(
-        (candidate) => !candidate.markedForRemoval
-      );
+    const { marked, targetId, countBefore } = await page.evaluate(() => {
+      const enemies = Array.isArray(window.enemies) ? window.enemies : [];
+      const countBefore = enemies.filter((e) => !e.markedForRemoval).length;
+      const enemy = enemies.find((c) => !c.markedForRemoval);
       if (enemy) {
         enemy.markedForRemoval = true;
+        return { marked: true, targetId: enemy.id, countBefore };
       }
+      return { marked: false, targetId: null, countBefore };
     });
 
+    expect(marked).toBe(true);
+    expect(countBefore).toBeGreaterThan(0);
+
     await page.waitForFunction(
-      (countBefore) => {
+      (id) => {
         if (!Array.isArray(window.enemies)) return false;
-        const alive = window.enemies.filter(
-          (enemy) => !enemy.markedForRemoval
-        ).length;
-        return alive < countBefore;
+        return !window.enemies.some((e) => e.id === id);
       },
-      before,
+      targetId,
       { timeout: 3000 }
     );
   });
@@ -173,11 +168,10 @@ test.describe('Gameplay Probes', () => {
   }) => {
     await bootGame(page);
 
-    const result = await page.evaluate(() => {
+    const ok = await page.evaluate(() => {
       if (!window.player || !window.collisionSystem || !window.gameState) {
-        return { ok: false, reason: 'missing-runtime' };
+        return false;
       }
-
       window.player.health = 1;
       window.collisionSystem.handleRusherExplosion(
         {
@@ -186,19 +180,18 @@ test.describe('Gameplay Probes', () => {
           radius: 999,
           damage: 50,
         },
-        -1
+        -1 // rusherIndex sentinel: no owner (handler treats negative as safe)
       );
-
-      return {
-        ok: true,
-        gameState: window.gameState.gameState,
-        playerHealth: window.player.health,
-      };
+      return true;
     });
+    expect(ok).toBe(true);
 
-    expect(result.ok).toBe(true);
-    expect(result.playerHealth).toBeLessThanOrEqual(0);
-    expect(result.gameState).toBe('gameOver');
+    await page.waitForFunction(
+      () =>
+        window.gameState?.gameState === 'gameOver' &&
+        window.player?.health <= 0,
+      { timeout: 2000 }
+    );
   });
 
   test('Score and kill streak transitions stay consistent', async ({
@@ -208,20 +201,21 @@ test.describe('Gameplay Probes', () => {
 
     const snapshot = await page.evaluate(() => {
       if (!window.gameState) return null;
-      window.gameState.score = 0;
-      window.gameState.killStreak = 0;
-      window.gameState.totalKills = 0;
+      const gs = window.gameState;
+      gs.score = 0;
+      gs.killStreak = 0;
+      gs.totalKills = 0;
 
-      window.gameState.addKill();
-      window.gameState.addScore(10);
-      window.gameState.addKill();
-      window.gameState.addScore(5);
-      window.gameState.resetKillStreak();
+      gs.addKill();
+      gs.addScore(10);
+      gs.addKill();
+      gs.addScore(5);
+      gs.resetKillStreak();
 
       return {
-        score: window.gameState.score,
-        totalKills: window.gameState.totalKills,
-        killStreak: window.gameState.killStreak,
+        score: gs.score,
+        totalKills: gs.totalKills,
+        killStreak: gs.killStreak,
       };
     });
 

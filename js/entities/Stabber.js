@@ -118,11 +118,13 @@ class Stabber extends BaseEnemy {
       }
     }
 
-    // Apply knockback velocity and decay
-    this.x += this.knockbackVelocity.x;
-    this.y += this.knockbackVelocity.y;
-    this.knockbackVelocity.x *= this.knockbackDecay;
-    this.knockbackVelocity.y *= this.knockbackDecay;
+    // Apply knockback velocity and decay (frame-rate independent)
+    const dtSeconds = deltaTimeMs / 1000;
+    this.x += this.knockbackVelocity.x * dtSeconds;
+    this.y += this.knockbackVelocity.y * dtSeconds;
+    const decayFactor = Math.pow(this.knockbackDecay, dt);
+    this.knockbackVelocity.x *= decayFactor;
+    this.knockbackVelocity.y *= decayFactor;
 
     // Recovery phase - stuck after attack
     if (this.stabRecovering) {
@@ -143,8 +145,8 @@ class Stabber extends BaseEnemy {
         const progress = this.stabRecoveryTime / penetrationFrames;
         const currentPenetrationSpeed =
           this.speed * 7.0 * penetrationSpeedFactor * (1 - progress); // Decays to 0
-        const dx = cos(this.stabDirection) * currentPenetrationSpeed;
-        const dy = sin(this.stabDirection) * currentPenetrationSpeed;
+        const dx = cos(this.stabDirection) * currentPenetrationSpeed * dt;
+        const dy = sin(this.stabDirection) * currentPenetrationSpeed * dt;
         this.x += dx;
         this.y += dy;
         // Set velocity to 0 to avoid double movement next frame
@@ -442,6 +444,10 @@ class Stabber extends BaseEnemy {
    * Check if stab hit player during dash
    */
   checkStabHit(playerX, playerY) {
+    const visualEffectsManager = this.getContextValue('visualEffectsManager');
+    const audioHit = this.getContextValue('audio');
+    const enemies = this.getContextValue('enemies') ?? [];
+
     if (this.stabDirection == null) {
       return {
         type: 'stabber-miss',
@@ -867,16 +873,7 @@ class Stabber extends BaseEnemy {
       console.log(`⚡ Stabber knocked back! Knockback: ${knockbackForce}`);
     }
 
-    // Apply damage using actual damage amount
-    this.health -= actualDamage;
-    // Clamp health to never go below 0, and check for NaN
-    if (isNaN(this.health) || this.health < 0) this.health = 0;
-    this.hitFlash = 8;
-
-    if (this.health <= 0) {
-      return true; // Enemy died
-    }
-    return false;
+    return super.takeDamage(actualDamage, bulletAngle, damageSource);
   }
 
   /**

@@ -234,30 +234,30 @@ export class Player {
         const playerBullets = this.getContextValue('playerBullets');
         if (!playerBullets) {
           this.queuedShot = null;
-          return;
-        }
-        const bullet = this.fireBullet();
-        const gameState = this.getContextValue('gameState');
-        const audio = this.getContextValue('audio');
-        if (bullet) {
-          playerBullets.push(bullet);
+          // Fall through so cooldowns and other update logic still run
+        } else {
+          const bullet = this.fireBullet();
+          const gameState = this.getContextValue('gameState');
+          const audio = this.getContextValue('audio');
+          if (bullet) {
+            playerBullets.push(bullet);
 
-          if (gameState) {
-            gameState.addShotFired();
+            if (gameState) {
+              gameState.addShotFired();
+            }
+
+            if (audio) {
+              audio.playPlayerShoot(this.x, this.y);
+            }
+
+            console.log('🎵 Queued shot fired on beat!');
           }
 
-          if (audio) {
-            audio.playPlayerShoot(this.x, this.y);
-          }
+          // Ensure cooldown doesn't expire this frame (prevents double shots)
+          this.shootCooldownMs += deltaTimeMs;
 
-          console.log('🎵 Queued shot fired on beat!');
+          this.queuedShot = null; // Clear the queue
         }
-
-        // Ensure cooldown doesn't expire this frame (prevents double shots)
-        this.shootCooldownMs += deltaTimeMs;
-
-        this.queuedShot = null; // Clear the queue
-
         // Don't immediately re-queue - let the regular shoot() call handle it
       }
     }
@@ -523,21 +523,38 @@ export class Player {
     // Determine dash direction based on current movement
     let dashDirX = 0;
     let dashDirY = 0;
+    let dashFromKeyboard = false;
 
-    if (this.p.keyIsDown(87)) dashDirY = -1; // W
-    if (this.p.keyIsDown(83)) dashDirY = 1; // S
-    if (this.p.keyIsDown(65)) dashDirX = -1; // A
-    if (this.p.keyIsDown(68)) dashDirX = 1; // D
+    if (this.p.keyIsDown(87)) {
+      dashDirY = -1;
+      dashFromKeyboard = true;
+    }
+    if (this.p.keyIsDown(83)) {
+      dashDirY = 1;
+      dashFromKeyboard = true;
+    }
+    if (this.p.keyIsDown(65)) {
+      dashDirX = -1;
+      dashFromKeyboard = true;
+    }
+    if (this.p.keyIsDown(68)) {
+      dashDirX = 1;
+      dashFromKeyboard = true;
+    }
 
     // If no movement keys, dash away from mouse (emergency escape)
-    if (dashDirX === 0 && dashDirY === 0) {
-      const mouseAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
+    if (dashDirX === 0 && dashDirY === 0 && this.cameraSystem) {
+      const worldMouse = this.cameraSystem.screenToWorld(
+        this.p.mouseX,
+        this.p.mouseY
+      );
+      const mouseAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
       dashDirX = -this.p.cos(mouseAngle); // Opposite direction from mouse
       dashDirY = -this.p.sin(mouseAngle);
     }
 
-    // Normalize diagonal dashes
-    if (dashDirX !== 0 && dashDirY !== 0) {
+    // Normalize diagonal dashes (keyboard only; mouse-derived vectors are already unit length)
+    if (dashFromKeyboard && dashDirX !== 0 && dashDirY !== 0) {
       dashDirX *= 0.707;
       dashDirY *= 0.707;
     }

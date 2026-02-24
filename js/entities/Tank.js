@@ -110,9 +110,11 @@ class Tank extends BaseEnemy {
       if (nearestAngryTarget) {
         targetX = nearestAngryTarget.x;
         targetY = nearestAngryTarget.y;
-        console.log(
-          `😡 Tank targeting angry enemy: ${this.angerTarget} at distance ${nearestDistance.toFixed(0)}`
-        );
+        if (CONFIG?.GAME_SETTINGS?.DEBUG_COLLISIONS) {
+          console.log(
+            `😡 Tank targeting angry enemy: ${this.angerTarget} at distance ${nearestDistance.toFixed(0)}`
+          );
+        }
       }
     }
 
@@ -492,8 +494,38 @@ class Tank extends BaseEnemy {
       2,
       'enemy-tank'
     );
+    if (!bullet) return null;
     bullet.ownerId = this.id; // Track which tank fired this
     return bullet;
+  }
+
+  /**
+   * Track anger when hit by non-player damage (armor overflow or main body).
+   */
+  handleAngerForDamage(damageSource, bulletAngle, amount) {
+    if (!damageSource || damageSource === 'player') return;
+    const currentCount = this.damageTracker.get(damageSource) || 0;
+    this.damageTracker.set(damageSource, currentCount + 1);
+    if (currentCount + 1 >= this.angerThreshold && !this.isAngry) {
+      this.isAngry = true;
+      this.angerTarget = damageSource;
+      this.angerCooldown = this.maxAngerCooldown;
+      const audioAnger = this.getContextValue('audio');
+      if (audioAnger) {
+        const angerLines = [
+          'ENOUGH! YOU DIE FIRST!',
+          'TARGETING TRAITORS!',
+          'FRIENDLY FIRE? NOT ANYMORE!',
+          'YOU MADE ME MAD!',
+          'TURNING GUNS ON YOU!',
+        ];
+        audioAnger.speak(
+          this,
+          angerLines[floor(random() * angerLines.length)],
+          'tank'
+        );
+      }
+    }
   }
 
   /**
@@ -534,7 +566,7 @@ class Tank extends BaseEnemy {
         this.spawnArmorBreakEffect('front');
         this.hitFlash = 8;
         if (leftover > 0) {
-          // Pass overflow damage to main body
+          this.handleAngerForDamage(damageSource, bulletAngle, leftover);
           return super.takeDamage(leftover, bulletAngle, damageSource);
         }
         return false; // No overflow, armor absorbed
@@ -561,6 +593,7 @@ class Tank extends BaseEnemy {
         this.spawnArmorBreakEffect('left');
         this.hitFlash = 8;
         if (leftover > 0) {
+          this.handleAngerForDamage(damageSource, bulletAngle, leftover);
           return super.takeDamage(leftover, bulletAngle, damageSource);
         }
         return false; // No overflow, armor absorbed
@@ -587,7 +620,7 @@ class Tank extends BaseEnemy {
         this.spawnArmorBreakEffect('right');
         this.hitFlash = 8;
         if (leftover > 0) {
-          // Pass overflow damage to main body
+          this.handleAngerForDamage(damageSource, bulletAngle, leftover);
           return super.takeDamage(leftover, bulletAngle, damageSource);
         }
         return false; // No overflow, armor absorbed
@@ -599,35 +632,7 @@ class Tank extends BaseEnemy {
     // Hit main body (front/rear, or side if armor is gone)
     console.log(`🎯 Tank Main Body Hit!`);
 
-    // Tank anger system - track damage sources (only if main body is hit by non-player)
-    if (damageSource && damageSource !== 'player') {
-      const currentCount = this.damageTracker.get(damageSource) || 0;
-      this.damageTracker.set(damageSource, currentCount + 1);
-      console.log(
-        `💢 Tank hit by ${damageSource}! Count: ${currentCount + 1}. AngerTarget: ${this.angerTarget}`
-      );
-      if (currentCount + 1 >= this.angerThreshold && !this.isAngry) {
-        this.isAngry = true;
-        this.angerTarget = damageSource; // Target the type of enemy that angered it
-        this.angerCooldown = this.maxAngerCooldown;
-        console.log(`😡 TANK IS ANGRY! Targeting ${this.angerTarget} enemies!`);
-        const audioAnger = this.getContextValue('audio');
-        if (audioAnger) {
-          const angerLines = [
-            'ENOUGH! YOU DIE FIRST!',
-            'TARGETING TRAITORS!',
-            'FRIENDLY FIRE? NOT ANYMORE!',
-            'YOU MADE ME MAD!',
-            'TURNING GUNS ON YOU!',
-          ];
-          audioAnger.speak(
-            this,
-            angerLines[floor(random() * angerLines.length)],
-            'tank'
-          );
-        }
-      }
-    }
+    this.handleAngerForDamage(damageSource, bulletAngle, amount);
     // Apply damage to main health
     const died = super.takeDamage(amount, bulletAngle, damageSource);
     if (died) {

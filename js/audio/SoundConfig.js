@@ -26,6 +26,7 @@ export const SOUND_METHOD_TO_KEY = {
   playGruntWhir: 'gruntWhir',
   playGruntError: 'gruntError',
   playGruntGlitch: 'gruntGlitch',
+  playGruntOw: 'gruntOw',
   playGruntPop: 'gruntPop',
   playEnemyOhNo: 'enemyOhNo',
   playStabberOhNo: 'stabberOhNo',
