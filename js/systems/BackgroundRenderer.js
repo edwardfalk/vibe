@@ -3,22 +3,22 @@
  * BackgroundRenderer.js - Handles all background drawing including parallax, cosmic effects, and space elements
  */
 
-import { randomRange } from './mathUtils.js';
+import { randomRange } from '../mathUtils.js';
 import {
   drawDistantStarsLayer,
   drawNebulaCloudLayer,
-} from './systems/background/ParallaxLayerRenderers.js';
-import { drawCosmicAuroraBackgroundLayer } from './systems/background/CosmicAuroraBackground.js';
-import { drawEnhancedSpaceElementsLayer } from './systems/background/EnhancedSpaceElements.js';
-import { drawInteractiveBackgroundEffectsLayer } from './systems/background/InteractiveBackgroundEffects.js';
-import { drawMediumStarsLayer } from './systems/background/MediumStarRenderer.js';
+} from './background/ParallaxLayerRenderers.js';
+import { drawCosmicAuroraBackgroundLayer } from './background/CosmicAuroraBackground.js';
+import { drawEnhancedSpaceElementsLayer } from './background/EnhancedSpaceElements.js';
+import { drawInteractiveBackgroundEffectsLayer } from './background/InteractiveBackgroundEffects.js';
+import { drawMediumStarsLayer } from './background/MediumStarRenderer.js';
 import {
   drawCloseDebrisLayer,
   drawForegroundSparksLayer,
-} from './systems/background/NearFieldParallax.js';
-import { createParallaxLayerConfig } from './systems/background/ParallaxLayerConfig.js';
-import { generateParallaxLayerElements } from './systems/background/ParallaxLayerFactory.js';
-import { drawSubtleSpaceElementsLayer } from './systems/background/SubtleSpaceElements.js';
+} from './background/NearFieldParallax.js';
+import { createParallaxLayerConfig } from './background/ParallaxLayerConfig.js';
+import { generateParallaxLayerElements } from './background/ParallaxLayerFactory.js';
+import { drawSubtleSpaceElementsLayer } from './background/SubtleSpaceElements.js';
 
 /**
  * @param {p5} p - The p5 instance

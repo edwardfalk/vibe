@@ -8,7 +8,10 @@
 
 ## Commands
 
-- `bun run test:mcp` - starts local server and runs `tests/gameplay-probe.test.js` (6 probes). Primary gate; uses MCP Playwright and probe files only. Manual Playwright variants (`test:playwright`, `test:headed`, `test:debug`) were removed in favor of MCP Playwright.
+- `bun run test:mcp` - starts local server and runs `tests/gameplay-probe.test.js` (9 probes). Primary gate for refactor safety.
+- `bun run test:playwright` - runs the full Playwright suite directly.
+- `bun run test:headed` - headed Playwright run for visual debugging.
+- `bun run test:debug` - Playwright debug mode.
 
 ## Gameplay Probes
 
@@ -18,6 +21,9 @@
 4. **Score and health UI** - `#score` and `#health` elements present with expected format.
 5. **Game state playing** - `gameState.gameState === 'playing'` after boot.
 6. **Player input** - W key moves player upward (y decreases).
+7. **Enemy lifecycle cleanup** - enemies marked for removal are cleaned from active arrays.
+8. **Game-over flow** - explosion damage can transition runtime to `gameOver`.
+9. **Score + kill streak transitions** - state counters update and reset consistently.
 
 ## MCP Smoke Runner
 

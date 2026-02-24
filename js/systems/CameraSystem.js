@@ -1,6 +1,6 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
-import { CONFIG } from './config.js';
-import { randomRange } from './mathUtils.js';
+import { CONFIG } from '../config.js';
+import { randomRange } from '../mathUtils.js';
 
 /**
  * CameraSystem.js - Handles camera movement, parallax effects, and screen shake

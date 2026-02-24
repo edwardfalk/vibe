@@ -6,8 +6,8 @@ It is written for the next stateless AI agent and should be treated as the worki
 
 ## Current Baseline (Observed)
 
-- Architecture migration is partially complete: extracted domain modules exist, but many canonical runtime modules are still rooted under `js/`.
-- Smoke gate passes: `bun run test:mcp` (`6 passed`: liveness, game loop, collision API, UI elements, game state, player input).
+- Architecture migration is complete for core/entity/system runtime modules: canonical gameplay paths are now domain-aligned under `js/core`, `js/entities`, and `js/systems`.
+- Smoke gate passes: `bun run test:mcp` (`9 passed`: liveness, game loop, collision API, UI elements, game state, player input, enemy cleanup, game-over flow, score/kill-streak transitions).
 - Lint gate passes: `bun run lint` (Phase 1 complete).
 - Runtime global coupling reduced: CollisionSystem, ExplosionManager, EnemyFactory, SpawnSystem migrated to context; others remain.
 
@@ -75,19 +75,19 @@ All items below are considered complete only when:
 Target modules still showing notable global coupling (priority order):
 
 - `js/GameLoop.js`
-- `js/GameState.js`
-- `js/CollisionSystem.js` ✅ (wave 1: handleStabberAttack, handleRusherExplosion, hitStopFrames, testMode via context)
+- `js/core/GameState.js`
+- `js/systems/CollisionSystem.js` ✅ (wave 1: handleStabberAttack, handleRusherExplosion, hitStopFrames, testMode via context)
 - `js/Audio.js`
-- `js/BackgroundRenderer.js` ✅ (wave 6: beatClock via context; 5→4 refs)
-- `js/player.js` ✅ (wave 10: context; playerBullets, gameState, audio, beatClock via getContextValue)
-- `js/SpawnSystem.js` ✅ (wave 4: gameState, enemies, player via getContextValue; 21→0 refs)
-- `js/TestMode.js` ✅ (wave 9: all deps via context; 31→0 refs)
-- `js/CameraSystem.js` ✅ (wave 6: player via context; 4→1 ref)
-- `js/EnemyFactory.js` ✅ (wave 3: audio via context from SpawnSystem)
-- `js/Grunt.js` ✅ (wave 10: context via EnemyFactory; beatClock, audio, rhythmFX, collisionSystem, enemies via getContextValue)
-- `js/Rusher.js` ✅ (wave 10)
-- `js/Tank.js` ✅ (wave 10)
-- `js/Stabber.js` ✅ (wave 10)
+- `js/systems/BackgroundRenderer.js` ✅ (wave 6: beatClock via context; 5→4 refs)
+- `js/entities/player.js` ✅ (wave 10: context; playerBullets, gameState, audio, beatClock via getContextValue)
+- `js/systems/SpawnSystem.js` ✅ (wave 4: gameState, enemies, player via getContextValue; 21→0 refs)
+- `js/systems/TestMode.js` ✅ (wave 9: all deps via context; 31→0 refs)
+- `js/systems/CameraSystem.js` ✅ (wave 6: player via context; 4→1 ref)
+- `js/entities/EnemyFactory.js` ✅ (wave 3: audio via context from SpawnSystem)
+- `js/entities/Grunt.js` ✅ (wave 10: context via EnemyFactory; beatClock, audio, rhythmFX, collisionSystem, enemies via getContextValue)
+- `js/entities/Rusher.js` ✅ (wave 10)
+- `js/entities/Tank.js` ✅ (wave 10)
+- `js/entities/Stabber.js` ✅ (wave 10)
 - `js/RhythmFX.js` ✅ (wave 7: beatClock via context; 4→1 ref)
 - `js/visualEffects.js` ✅ (wave 8: beatClock via context; 4→1 ref)
 - `js/explosions/ExplosionManager.js` ✅ (wave 2: beatClock, audio via context)
@@ -109,15 +109,15 @@ Target modules still showing notable global coupling (priority order):
 
 ---
 
-## Phase 3 - Complete Domain Path Migration
+## Phase 3 - Complete Domain Path Migration ✅ COMPLETED 2026-02-24
 
 ### Scope
 
-Migrate remaining root-level canonical modules into domain folders in staged waves:
+Completed migration wave:
 
-- Core systems: `GameState`, `CameraSystem`, `SpawnSystem`, `UIRenderer`, `TestMode`.
-- Entity modules: `player`, `BaseEnemy`, `Grunt`, `Rusher`, `Tank`, `Stabber`, `EnemyFactory`, `bullet`.
-- Effects/audio support modules still rooted in `js/`.
+- Core systems moved to `js/core` and `js/systems`.
+- Entity modules moved to `js/entities`.
+- Import graph updated directly without temporary re-export shims.
 
 ### Deliverables
 
@@ -156,15 +156,15 @@ Migrate remaining root-level canonical modules into domain folders in staged wav
 
 ---
 
-## Phase 5 - Testing and Regression Hardening 🔄 IN PROGRESS
+## Phase 5 - Testing and Regression Hardening ✅ COMPLETED 2026-02-24
 
 ### Scope
 
-- Expand probes beyond current 6-test smoke baseline: ✅ (6 tests: liveness, game loop, collision API, UI elements, game state, player input)
+- Expand probes beyond the original 6-test smoke baseline: ✅ (9 tests total)
   - player input and movement loop. ✅
-  - enemy spawn/damage/death cleanup. (pending)
-  - bomb/area damage and game-over flow. (pending)
-  - score + kill streak state changes. (partial: UI elements probe)
+  - enemy spawn/damage/death cleanup. ✅
+  - bomb/area damage and game-over flow. ✅
+  - score + kill streak state changes. ✅
   - collision diagnostics API availability. ✅
 
 ### Deliverables
@@ -214,9 +214,9 @@ Migrate remaining root-level canonical modules into domain folders in staged wav
 ## Current Known Debt (2026-02-24)
 
 - **Phase 2 remaining**: GameLoop (~102 refs), GameState (~50 refs), InputHandlers (23 refs, input state intentionally global), residual refs in effects (`js/effects.js` — 5 `window.*` refs remaining), and smaller counts in Audio.
-- **Phase 3**: Domain path migration not started; modules remain at root.
+- **Phase 3**: Domain path migration completed for core/entity/system runtime modules.
 - **Phase 4**: Audio consolidation (speech wrapper map, config extraction) not started.
-- **Phase 5**: Enemy spawn/damage/death and bomb/game-over probes pending.
+- **Phase 5**: Probe hardening delivered to 9-test smoke baseline.
 
 ## Suggested Branch Exit Criteria
 

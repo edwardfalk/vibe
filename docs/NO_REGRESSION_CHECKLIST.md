@@ -13,8 +13,18 @@ This checklist is the release gate for the aggressive refactor program.
 
 ## Latest Refactor Validation (2026-02-24)
 
-- `bun run test:mcp`: pass (`2 passed`, runtime ~12.5s).
+- `bun run test:mcp`: pass (`9 passed`, runtime ~29s).
 - ESLint on refactored files: pass.
+- Domain migration completed for canonical gameplay modules:
+  - `js/core/GameState.js`
+  - `js/entities/*` (player, enemies, factory, bullet)
+  - `js/systems/*` (camera, spawn, UI, background, collision, test mode)
+- Added extraction modules for cleanup:
+  - `js/systems/combat/PlayerContactHandlers.js`
+  - `js/systems/combat/KillFeedback.js`
+  - `js/audio/SoundConfig.js`
+  - `js/audio/VoiceConfig.js`
+  - `js/effects/DashEffect.js`
 
 ## Phase 1 Quality Gate Recovery (2026-02-24)
 

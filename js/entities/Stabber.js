@@ -9,8 +9,8 @@ import {
   min,
   max,
   ceil,
-} from './mathUtils.js';
-import { CONFIG } from './config.js';
+} from '../mathUtils.js';
+import { CONFIG } from '../config.js';
 
 /**
  * Stabber class - Melee assassin with armor system

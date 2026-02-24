@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 import {
   max,
   min,
@@ -14,8 +14,8 @@ import {
   TWO_PI,
   normalizeAngle,
   dist,
-} from './mathUtils.js';
-import { drawGlow } from './visualEffects.js';
+} from '../mathUtils.js';
+import { drawGlow } from '../visualEffects.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 

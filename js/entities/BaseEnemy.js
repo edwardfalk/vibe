@@ -1,7 +1,7 @@
 import { Bullet } from './bullet.js';
-import { CONFIG } from './config.js';
-import { random, randomRange, sin, cos, atan2 } from './mathUtils.js';
-import { drawGlow } from './visualEffects.js';
+import { CONFIG } from '../config.js';
+import { random, randomRange, sin, cos, atan2 } from '../mathUtils.js';
+import { drawGlow } from '../visualEffects.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types

@@ -2,7 +2,7 @@ import { Grunt } from './Grunt.js';
 import { Rusher } from './Rusher.js';
 import { Tank } from './Tank.js';
 import { Stabber } from './Stabber.js';
-import { random } from './mathUtils.js';
+import { random } from '../mathUtils.js';
 
 /**
  * EnemyFactory class - Handles enemy creation and type management

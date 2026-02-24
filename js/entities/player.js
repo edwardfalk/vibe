@@ -1,9 +1,10 @@
 // Requires p5.js for global utility functions: constrain(), random(), lerp(), etc.
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
-import { CONFIG } from './config.js';
+import { CONFIG } from '../config.js';
 import { Bullet } from './bullet.js';
-import { max, atan2, sin, cos, random, TWO_PI } from './mathUtils.js';
-import { drawGlow } from './visualEffects.js';
+import { max, atan2, sin, cos, random, TWO_PI } from '../mathUtils.js';
+import { drawGlow } from '../visualEffects.js';
+import { drawPlayerDashEffect } from '../effects/DashEffect.js';
 
 const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
@@ -412,67 +413,12 @@ export class Player {
     );
     p.triangle(s * 0.12, -s * 0.35, s * 0.05, -s * 0.55, s * 0.01, -s * 0.35);
 
-    // Enhanced dash effect
-    if (this.isDashing) {
-      const dashProgress = this.dashTimerMs / this.maxDashTimeMs;
-      const dashIntensity = 1 - dashProgress; // Fade out over dash duration
-
-      // Multiple layered dash trail effects
-      // Outer glow
-      p.fill(100, 200, 255, dashIntensity * 80); // Cyan outer glow
-      p.noStroke();
-      p.ellipse(0, 0, s * 4 * dashIntensity);
-
-      // Middle trail
-      p.fill(150, 220, 255, dashIntensity * 120); // Brighter cyan
-      p.ellipse(0, 0, s * 2.5 * dashIntensity);
-
-      // Inner core
-      p.fill(200, 240, 255, dashIntensity * 160); // Almost white core
-      p.ellipse(0, 0, s * 1.5 * dashIntensity);
-
-      // Enhanced speed lines with multiple layers
-      for (let layer = 0; layer < 3; layer++) {
-        p.stroke(255, 255, 255, dashIntensity * (120 - layer * 30));
-        p.strokeWeight(3 - layer);
-        for (let i = 0; i < 8; i++) {
-          const lineLength = s * (1.5 + i * 0.4 + layer * 0.3);
-          const lineAngle =
-            atan2(-this.dashVelocity.y, -this.dashVelocity.x) +
-            random(-0.3, 0.3);
-          const startX = cos(lineAngle) * lineLength * (0.3 + layer * 0.2);
-          const startY = sin(lineAngle) * lineLength * (0.3 + layer * 0.2);
-          const endX = cos(lineAngle) * lineLength;
-          const endY = sin(lineAngle) * lineLength;
-          p.line(startX, startY, endX, endY);
-        }
-      }
-
-      // Particle burst effect
-      for (let i = 0; i < 12; i++) {
-        const particleAngle = (i / 12) * TWO_PI;
-        const particleDistance = s * 2 * dashIntensity;
-        const particleX = cos(particleAngle) * particleDistance;
-        const particleY = sin(particleAngle) * particleDistance;
-
-        p.fill(100 + i * 10, 200, 255, dashIntensity * 100);
-        p.noStroke();
-        p.ellipse(particleX, particleY, 4 * dashIntensity, 4 * dashIntensity);
-      }
-
-      // Energy distortion rings
-      for (let ring = 0; ring < 3; ring++) {
-        const ringSize = s * (2 + ring * 0.8) * dashIntensity;
-        const ringAlpha = dashIntensity * (60 - ring * 15);
-
-        p.stroke(150, 220, 255, ringAlpha);
-        p.strokeWeight(2);
-        p.noFill();
-        p.ellipse(0, 0, ringSize, ringSize);
-      }
-
-      p.noStroke();
-    }
+    drawPlayerDashEffect(p, s, {
+      isDashing: this.isDashing,
+      dashTimerMs: this.dashTimerMs,
+      maxDashTimeMs: this.maxDashTimeMs,
+      dashVelocity: this.dashVelocity,
+    });
 
     // Health bar above player (drawn relative to player)
     this.drawHealthBar(p);

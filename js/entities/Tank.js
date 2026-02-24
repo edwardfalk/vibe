@@ -9,8 +9,8 @@ import {
   PI,
   TWO_PI,
   normalizeAngle,
-} from './mathUtils.js';
-import { CONFIG } from './config.js';
+} from '../mathUtils.js';
+import { CONFIG } from '../config.js';
 
 /**
  * Tank class - Heavy artillery with charging system

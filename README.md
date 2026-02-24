@@ -61,10 +61,14 @@ bun run test:mcp
 - `bun run serve` - start Five Server on `5500`
 - `bun run dev` - start local game server
 - `bun run test:playwright` - run Playwright tests
+- `bun run test:headed` - run Playwright tests in headed mode
+- `bun run test:debug` - run Playwright tests in debug mode
 - `bun run test:mcp` - run smoke test orchestrator
+- `bun run test:comprehensive` - run Playwright suite then MCP smoke probes
 - `bun run lint` - run ESLint
 - `bun run format` - run Prettier
 - `bun run clean` - remove install artifacts (`node_modules`, `bun.lockb`)
+- `bun run fresh` - clean then reinstall dependencies
 
 ## Notes
 

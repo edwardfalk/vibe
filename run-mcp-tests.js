@@ -44,7 +44,7 @@ function log(category, message, data = null) {
  */
 function startServer(port) {
   log('server', `Starting local game server on port ${port}...`);
-  const serverProcess = spawn('bun', ['run', 'five-server', `--port=${port}`], {
+  const serverProcess = spawn('bun', ['run', 'serve', `--port=${port}`], {
     cwd: __dirname,
     stdio: 'pipe',
   });

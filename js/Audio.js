@@ -72,44 +72,8 @@ import {
   getEnemyDialogueLine,
   getPlayerDialogueLine,
 } from './audio/DialogueLines.js';
-
-const SOUND_METHOD_TO_KEY = {
-  playPlayerShoot: 'playerShoot',
-  playAlienShoot: 'alienShoot',
-  playExplosion: 'explosion',
-  playHit: 'hit',
-  playPlayerHit: 'playerHit',
-  playEnemyHit: 'hit',
-  playRusherScream: 'rusherScream',
-  playTankEnergyBall: 'tankEnergy',
-  playStabAttack: 'stabAttack',
-  playEnemyFrying: 'enemyFrying',
-  playPlasmaCloud: 'plasmaCloud',
-  playTankCharging: 'tankCharging',
-  playTankPower: 'tankPower',
-  playStabberChant: 'stabberChant',
-  playGruntAdvance: 'gruntAdvance',
-  playGruntRetreat: 'gruntRetreat',
-  playRusherCharge: 'rusherCharge',
-  playStabberKnife: 'stabberKnife',
-  playEnemyIdle: 'enemyIdle',
-  playTankPowerUp: 'tankPowerUp',
-  playStabberStalk: 'stabberStalk',
-  playStabberDash: 'stabberDash',
-  playGruntMalfunction: 'gruntMalfunction',
-  playGruntBeep: 'gruntBeep',
-  playGruntWhir: 'gruntWhir',
-  playGruntError: 'gruntError',
-  playGruntGlitch: 'gruntGlitch',
-  playGruntPop: 'gruntPop',
-  playEnemyOhNo: 'enemyOhNo',
-  playStabberOhNo: 'stabberOhNo',
-  playRusherOhNo: 'rusherOhNo',
-  playTankOhNo: 'tankOhNo',
-  playBombExplosion: 'explosion',
-  playRusherExplosion: 'explosion',
-  playStabberAttack: 'stabAttack',
-};
+import { SOUND_CONFIG, SOUND_METHOD_TO_KEY } from './audio/SoundConfig.js';
+import { VOICE_CONFIG } from './audio/VoiceConfig.js';
 
 export class Audio {
   /**
@@ -152,6 +116,7 @@ export class Audio {
 
     // Sound configuration - MUSICAL COMBAT SYSTEM
     this.sounds = {
+      ...SOUND_CONFIG,
       // MUSICAL WEAPONS: Each enemy type becomes an instrument
       playerShoot: {
         frequency: 480,
@@ -360,15 +325,7 @@ export class Audio {
       }, // Quick, soft "ow" fallback
     };
 
-    // Voice configuration - REDUCED VOLUMES for background speech effect
-    this.voiceConfig = {
-      // Player voice tweaked for mysterious tone
-      player: { rate: 0.85, pitch: 0.15, volume: 0.5 },
-      grunt: { rate: 0.6, pitch: 1.6, volume: 0.3 }, // Reduced from 0.8 to 0.3
-      rusher: { rate: 1.4, pitch: 1.5, volume: 0.35 }, // Reduced from 0.9 to 0.35
-      tank: { rate: 0.5, pitch: 0.2, volume: 0.4 }, // Reduced from 1.0 to 0.4
-      stabber: { rate: 0.8, pitch: 2.0, volume: 0.4 }, // Fixed: was 0.4, comment said 0.3
-    };
+    this.voiceConfig = { ...VOICE_CONFIG };
 
     this.bindConvenienceSoundMethods();
 

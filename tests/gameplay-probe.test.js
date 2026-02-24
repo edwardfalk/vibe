@@ -135,4 +135,99 @@ test.describe('Gameplay Probes', () => {
     expect(after).not.toBeNull();
     expect(after.y).toBeLessThan(before.y);
   });
+
+  test('Enemy lifecycle cleanup removes marked enemies', async ({ page }) => {
+    await bootGame(page);
+
+    const before = await page.evaluate(() =>
+      Array.isArray(window.enemies)
+        ? window.enemies.filter((enemy) => !enemy.markedForRemoval).length
+        : 0
+    );
+    expect(before).toBeGreaterThan(0);
+
+    await page.evaluate(() => {
+      const enemy = window.enemies.find(
+        (candidate) => !candidate.markedForRemoval
+      );
+      if (enemy) {
+        enemy.markedForRemoval = true;
+      }
+    });
+
+    await page.waitForFunction(
+      (countBefore) => {
+        if (!Array.isArray(window.enemies)) return false;
+        const alive = window.enemies.filter(
+          (enemy) => !enemy.markedForRemoval
+        ).length;
+        return alive < countBefore;
+      },
+      before,
+      { timeout: 3000 }
+    );
+  });
+
+  test('Rusher explosion damage can drive game over state', async ({
+    page,
+  }) => {
+    await bootGame(page);
+
+    const result = await page.evaluate(() => {
+      if (!window.player || !window.collisionSystem || !window.gameState) {
+        return { ok: false, reason: 'missing-runtime' };
+      }
+
+      window.player.health = 1;
+      window.collisionSystem.handleRusherExplosion(
+        {
+          x: window.player.x,
+          y: window.player.y,
+          radius: 999,
+          damage: 50,
+        },
+        -1
+      );
+
+      return {
+        ok: true,
+        gameState: window.gameState.gameState,
+        playerHealth: window.player.health,
+      };
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.playerHealth).toBeLessThanOrEqual(0);
+    expect(result.gameState).toBe('gameOver');
+  });
+
+  test('Score and kill streak transitions stay consistent', async ({
+    page,
+  }) => {
+    await bootGame(page);
+
+    const snapshot = await page.evaluate(() => {
+      if (!window.gameState) return null;
+      window.gameState.score = 0;
+      window.gameState.killStreak = 0;
+      window.gameState.totalKills = 0;
+
+      window.gameState.addKill();
+      window.gameState.addScore(10);
+      window.gameState.addKill();
+      window.gameState.addScore(5);
+      window.gameState.resetKillStreak();
+
+      return {
+        score: window.gameState.score,
+        totalKills: window.gameState.totalKills,
+        killStreak: window.gameState.killStreak,
+      };
+    });
+
+    expect(snapshot).not.toBeNull();
+    expect(snapshot.score).toBe(15);
+    expect(snapshot.totalKills).toBe(2);
+    expect(snapshot.killStreak).toBe(0);
+  });
 });

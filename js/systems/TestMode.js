@@ -4,7 +4,7 @@
 
 // Dependencies: mathUtils.js (sin, cos, min, floor, random, atan2, dist, constrain). No direct p5.js globals used.
 
-import { Bullet } from './bullet.js';
+import { Bullet } from '../entities/bullet.js';
 import {
   sin,
   cos,
@@ -14,7 +14,7 @@ import {
   atan2,
   dist,
   constrain,
-} from './mathUtils.js';
+} from '../mathUtils.js';
 
 /**
  * @param {Player} player - The player object (dependency injected for modularity)

@@ -8,16 +8,16 @@
  * - Stabbers = Off-beat accent (beat 3.5)
  */
 
-import { Player } from './player.js';
-import { EnemyFactory } from './EnemyFactory.js';
+import { Player } from './entities/player.js';
+import { EnemyFactory } from './entities/EnemyFactory.js';
 import { ExplosionManager } from './explosions/ExplosionManager.js';
-import { GameState } from './GameState.js';
-import { CameraSystem } from './CameraSystem.js';
-import { SpawnSystem } from './SpawnSystem.js';
-import { BackgroundRenderer } from './BackgroundRenderer.js';
-import { UIRenderer } from './UIRenderer.js';
-import { CollisionSystem } from './CollisionSystem.js';
-import { TestMode } from './TestMode.js';
+import { GameState } from './core/GameState.js';
+import { CameraSystem } from './systems/CameraSystem.js';
+import { SpawnSystem } from './systems/SpawnSystem.js';
+import { BackgroundRenderer } from './systems/BackgroundRenderer.js';
+import { UIRenderer } from './systems/UIRenderer.js';
+import { CollisionSystem } from './systems/CollisionSystem.js';
+import { TestMode } from './systems/TestMode.js';
 import { Audio } from './Audio.js';
 import { BeatClock } from './audio/BeatClock.js';
 import { BeatTrack } from './audio/BeatTrack.js';
@@ -30,7 +30,7 @@ import { updateBullets } from './systems/gameplay/BulletUpdatePipeline.js';
 import { drawGameplayWorld } from './systems/gameplay/RenderPipeline.js';
 import { updatePerformanceDiagnostics } from './systems/gameplay/PerformanceDiagnostics.js';
 import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
-import { Bullet } from './bullet.js';
+import { Bullet } from './entities/bullet.js';
 import VisualEffectsManager from './visualEffects.js';
 import { FloatingTextManager } from './effects.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
@@ -81,6 +81,35 @@ window.arrowLeftPressed = false;
 window.arrowRightPressed = false;
 
 initializeInputHandlers();
+
+function syncRuntimeContext(hitStopFramesOverride = null) {
+  if (!gameContext) return;
+  const hitStopFrames =
+    hitStopFramesOverride ??
+    gameContext.get('hitStopFrames') ??
+    window.hitStopFrames ??
+    0;
+
+  gameContext.assign({
+    player: window.player,
+    enemies: window.enemies,
+    playerBullets: window.playerBullets,
+    enemyBullets: window.enemyBullets,
+    activeBombs: window.activeBombs,
+    audio: window.audio,
+    gameState: window.gameState,
+    cameraSystem: window.cameraSystem,
+    collisionSystem: window.collisionSystem,
+    spawnSystem: window.spawnSystem,
+    explosionManager: window.explosionManager,
+    floatingText: window.floatingText,
+    beatClock: window.beatClock,
+    rhythmFX: window.rhythmFX,
+    visualEffectsManager: window.visualEffectsManager,
+    hitStopFrames,
+    testModeManager: window.testModeManager,
+  });
+}
 
 function setup(p) {
   p.createCanvas(800, 600);
@@ -162,25 +191,7 @@ function setup(p) {
   }
 
   // Sync context before restart (spawnEnemies reads from context)
-  gameContext.assign({
-    player: window.player,
-    enemies: window.enemies,
-    playerBullets: window.playerBullets,
-    enemyBullets: window.enemyBullets,
-    activeBombs: window.activeBombs,
-    audio: window.audio,
-    gameState: window.gameState,
-    cameraSystem: window.cameraSystem,
-    collisionSystem: window.collisionSystem,
-    spawnSystem: window.spawnSystem,
-    explosionManager: window.explosionManager,
-    floatingText: window.floatingText,
-    beatClock: window.beatClock,
-    rhythmFX: window.rhythmFX,
-    visualEffectsManager: window.visualEffectsManager,
-    hitStopFrames: window.hitStopFrames,
-    testModeManager: window.testModeManager,
-  });
+  syncRuntimeContext(window.hitStopFrames);
 
   // Now restart the game state (this calls spawnEnemies which needs camera)
   window.gameState.restart();
@@ -228,25 +239,7 @@ function setup(p) {
     window.spawnSystem.spawnEnemies(1);
   }
 
-  gameContext.assign({
-    player: window.player,
-    enemies: window.enemies,
-    playerBullets: window.playerBullets,
-    enemyBullets: window.enemyBullets,
-    activeBombs: window.activeBombs,
-    audio: window.audio,
-    gameState: window.gameState,
-    cameraSystem: window.cameraSystem,
-    collisionSystem: window.collisionSystem,
-    spawnSystem: window.spawnSystem,
-    explosionManager: window.explosionManager,
-    floatingText: window.floatingText,
-    beatClock: window.beatClock,
-    rhythmFX: window.rhythmFX,
-    visualEffectsManager: window.visualEffectsManager,
-    hitStopFrames: window.hitStopFrames,
-    testModeManager: window.testModeManager,
-  });
+  syncRuntimeContext(window.hitStopFrames);
 
   console.log('🎮 Game setup complete - all systems initialized');
 }
@@ -315,27 +308,7 @@ function draw(p) {
 }
 
 function updateGame(p) {
-  if (gameContext) {
-    gameContext.assign({
-      player: window.player,
-      enemies: window.enemies,
-      playerBullets: window.playerBullets,
-      enemyBullets: window.enemyBullets,
-      activeBombs: window.activeBombs,
-      audio: window.audio,
-      gameState: window.gameState,
-      cameraSystem: window.cameraSystem,
-      collisionSystem: window.collisionSystem,
-      spawnSystem: window.spawnSystem,
-      explosionManager: window.explosionManager,
-      floatingText: window.floatingText,
-      beatClock: window.beatClock,
-      rhythmFX: window.rhythmFX,
-      visualEffectsManager: window.visualEffectsManager,
-      hitStopFrames: gameContext.get('hitStopFrames') ?? window.hitStopFrames,
-      testModeManager: window.testModeManager,
-    });
-  }
+  syncRuntimeContext();
 
   // Hitstop: freeze game updates for a few frames on impactful kills
   const hitStopFrames =

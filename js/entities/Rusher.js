@@ -1,6 +1,6 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, sin, cos } from './mathUtils.js';
-import { CONFIG } from './config.js';
+import { floor, random, sqrt, sin, cos, ceil } from '../mathUtils.js';
+import { CONFIG } from '../config.js';
 
 /**
  * Rusher class - Suicide bomber mechanics
@@ -272,7 +272,7 @@ class Rusher extends BaseEnemy {
       s * 0.2,
       s * 0.25,
       0,
-      s * 0.6 + Math.random() * s * 0.3
+      s * 0.6 + random() * s * 0.3
     );
   }
 

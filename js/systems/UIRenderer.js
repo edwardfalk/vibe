@@ -4,7 +4,7 @@
 
 // Requires p5.js for constrain(), random(), lerp(), etc.
 
-import { floor, ceil, min, max, abs, sin, random } from './mathUtils.js';
+import { floor, ceil, min, max, abs, sin, random } from '../mathUtils.js';
 
 /**
  * @param {GameState} gameState - The game state object (dependency injected for modularity)

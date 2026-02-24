@@ -28,7 +28,7 @@ This mapping ensures that gameplay actions naturally form a musical pattern, whi
 
 ## BeatClock: Technical Details
 
-The `BeatClock` class (see `js/BeatClock.js`) provides the following features:
+The `BeatClock` class (see `js/audio/BeatClock.js`) provides the following features:
 
 - Tracks elapsed time and calculates the current beat within each measure.
 - Provides methods for checking if the game is "on beat" (with a configurable tolerance window).
@@ -38,7 +38,7 @@ The `BeatClock` class (see `js/BeatClock.js`) provides the following features:
 **Example Usage:**
 
 ```js
-import { BeatClock } from './BeatClock.js';
+import { BeatClock } from './js/audio/BeatClock.js';
 const beatClock = new BeatClock(120); // 120 BPM
 if (beatClock.isOnBeat([2, 4])) {
   // Grunt attacks (snare)
@@ -57,7 +57,7 @@ if (beatClock.isOnBeat([2, 4])) {
 
 ## References
 
-- `js/BeatClock.js`: Full implementation and in-code documentation
+- `js/audio/BeatClock.js`: Full implementation and in-code documentation
 - `js/GameLoop.js`: Integration of BeatClock with the main game loop
 - ../README.md: Project overview and modular architecture
 

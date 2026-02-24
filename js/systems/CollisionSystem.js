@@ -2,29 +2,31 @@
  * CollisionSystem.js - Handles all collision detection between bullets, enemies, and player
  */
 
-import { round, sqrt, atan2, cos, sin, dist } from './mathUtils.js';
-import { CONFIG } from './config.js';
-import { Bullet } from './bullet.js';
-import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
+import { dist } from '../mathUtils.js';
+import { CONFIG } from '../config.js';
+import { Bullet } from '../entities/bullet.js';
+import { EnemyDeathHandler } from './combat/EnemyDeathHandler.js';
 import {
   beginMetricsFrame,
   buildPerformanceSnapshot,
   createEmptyFrameMetrics,
   createEmptyRollingMetrics,
   finalizeMetricsFrame,
-} from './systems/collision/CollisionMetrics.js';
+} from './collision/CollisionMetrics.js';
 import {
   buildEnemySpatialGrid,
   queryNearbyEnemyIndices,
-} from './systems/collision/CollisionSpatialGrid.js';
+} from './collision/CollisionSpatialGrid.js';
 import {
   DAMAGE_RESULT,
   normalizeDamageResult,
-} from './shared/contracts/DamageResult.js';
-import { tryPlaceTankBomb } from './systems/BombSystem.js';
-
-// Default countdown for tank time bombs (in frames)
-const TIME_BOMB_FRAMES = 180; // 3 seconds at 60fps
+} from '../shared/contracts/DamageResult.js';
+import {
+  handleContactCollisions,
+  handleRusherExplosionCollision,
+  handleStabberAttackCollision,
+} from './combat/PlayerContactHandlers.js';
+import { applyKillFeedback } from './combat/KillFeedback.js';
 
 export class CollisionSystem {
   constructor(context = null) {
@@ -81,78 +83,16 @@ export class CollisionSystem {
     return buildPerformanceSnapshot(this.rollingMetrics, this.frameMetrics);
   }
 
-  // ADD: Check contact collisions between enemies and player
   checkContactCollisions() {
-    const player = this.getContextValue('player');
-    const enemies = this.getContextValue('enemies');
-    const audio = this.getContextValue('audio');
-    const gameState = this.getContextValue('gameState');
-    const activeBombs = this.getContextValue('activeBombs');
-    if (!player || !enemies) return;
-
-    for (let i = enemies.length - 1; i >= 0; i--) {
-      const enemy = enemies[i];
-
-      // Check if enemy is touching player
-      if (enemy.checkCollision(player)) {
-        let damage = 0;
-        let shouldPlaceBomb = false;
-
-        // Different contact damage rules based on enemy type
-        switch (enemy.type) {
-          case 'grunt':
-            damage = 1; // Standard contact damage for grunts
-            break;
-          case 'tank':
-            // Tanks place bombs instead of dealing direct damage
-            shouldPlaceBomb = true;
-            break;
-          case 'rusher':
-            // Rushers don't deal contact damage - only explosion damage
-            break;
-          case 'stabber':
-            // Stabbers don't deal contact damage - only melee attack damage
-            break;
-        }
-
-        if (damage > 0 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-          console.log(`💥 ${enemy.type} contact damage! Damage: ${damage}`);
-        }
-
-        // Only play hurt sound and reset kill streak if actual damage is dealt
-        if (damage > 0) {
-          if (audio) {
-            audio.playPlayerHit();
-          }
-          if (gameState) {
-            gameState.resetKillStreak(); // Reset kill streak on taking damage
-          }
-        }
-
-        if (player.takeDamage(damage, `${enemy.type}-contact`)) {
-          if (gameState) {
-            gameState.setGameState('gameOver');
-          }
-          if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-            console.log(
-              `💀 PLAYER DIED from ${enemy.type} contact! Game state changed to gameOver.`
-            );
-          }
-          return;
-        } else if (shouldPlaceBomb) {
-          // Tank contact - place bomb
-          if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-            console.log(`💣 Tank contact - placing time bomb!`);
-          }
-          if (!activeBombs) return;
-          tryPlaceTankBomb(activeBombs, enemy);
-          if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-            console.log(
-              `💣 Tank placed time bomb at (${round(enemy.x)}, ${round(enemy.y)})`
-            );
-          }
-        }
-      }
+    const playerDied = handleContactCollisions({
+      player: this.getContextValue('player'),
+      enemies: this.getContextValue('enemies'),
+      audio: this.getContextValue('audio'),
+      gameState: this.getContextValue('gameState'),
+      activeBombs: this.getContextValue('activeBombs'),
+    });
+    if (playerDied) {
+      return;
     }
   }
 
@@ -248,58 +188,27 @@ export class CollisionSystem {
       }
     } else if (damageResult === DAMAGE_RESULT.DIED) {
       this.handleEnemyDeath(enemy, enemyType, bullet.x, bullet.y);
-
       enemy.markedForRemoval = true;
-      if (gameState) {
-        gameState.addKill();
-
-        let points = 10;
-        if (gameState.killStreak >= 5) points *= 2;
-        if (gameState.killStreak >= 10) points *= 1.5;
-
-        gameState.addScore(points);
-
-        // Kill text + hitstop
-        if (floatingText) {
-          floatingText.addKill(
-            enemy.x,
-            enemy.y,
-            enemyType,
-            gameState.killStreak
-          );
-        }
-
-        // Enhanced hitstop with chromatic aberration and beat-sensitivity
-        const isOnBeat = beatClock && beatClock.isOnBeat();
-        const baseStopFrames = isOnBeat ? 5 : 3; // Longer hitstop when on-beat
-        const streakBonus = gameState.killStreak >= 5 ? 2 : 0;
-        const stopFrames = baseStopFrames + streakBonus;
-        const current =
-          this.context?.get?.('hitStopFrames') ?? window.hitStopFrames ?? 0;
-        const next = Math.max(current, stopFrames);
-        if (this.context && typeof this.context.set === 'function') {
-          this.context.set('hitStopFrames', next);
-        } else if (typeof window !== 'undefined') {
-          window.hitStopFrames = next;
-        }
-
-        // Trigger chromatic aberration on beat-perfect kills
-        if (isOnBeat && visualEffectsManager) {
-          const chromaIntensity = gameState.killStreak >= 5 ? 0.8 : 0.5;
-          visualEffectsManager.triggerChromaticAberration(
-            chromaIntensity,
-            stopFrames * 3
-          );
-          // Also trigger bloom for on-beat kills
-          visualEffectsManager.triggerBloom(0.4, stopFrames * 2);
-        }
-      }
-
-      // Screen shake on kill (handleEnemyDeath already shakes for tank)
-      if (cameraSystem && enemyType !== 'tank') {
-        const shakeIntensity = enemyType === 'rusher' ? 12 : 8;
-        cameraSystem.addShake(shakeIntensity, 12);
-      }
+      applyKillFeedback({
+        gameState,
+        enemy,
+        enemyType,
+        beatClock,
+        floatingText,
+        visualEffectsManager,
+        cameraSystem,
+        getHitStopFrames: () =>
+          this.context?.get?.('hitStopFrames') ?? window.hitStopFrames ?? 0,
+        setHitStopFrames: (value) => {
+          if (this.context && typeof this.context.set === 'function') {
+            this.context.set('hitStopFrames', value);
+            return;
+          }
+          if (typeof window !== 'undefined') {
+            window.hitStopFrames = value;
+          }
+        },
+      });
 
       if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
         console.log(`💀 ${enemyType} killed by bullet!`);
@@ -547,139 +456,28 @@ export class CollisionSystem {
 
   // Handle stabber attack collision
   handleStabberAttack(attack, stabber) {
-    const player = this.getContextValue('player');
-    const audio = this.getContextValue('audio');
-    const gameState = this.getContextValue('gameState');
-    const cameraSystem = this.getContextValue('cameraSystem');
-    const explosionManager = this.getContextValue('explosionManager');
-    if (!player) return;
-
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log('🗡️ Stabber executing deadly stab attack!');
-    }
-
-    // Check if player is still in stab range
-    const distance = Math.sqrt(
-      (player.x - stabber.x) ** 2 + (player.y - stabber.y) ** 2
-    );
-
-    if (distance <= attack.range + 10) {
-      // Small buffer for fairness
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-        console.log(
-          `⚔️ STABBER HIT! Player took ${attack.damage} damage from stab attack`
-        );
-      }
-
-      if (audio) {
-        audio.playPlayerHit();
-        audio.playStabberAttack(stabber.x, stabber.y);
-      }
-
-      if (gameState) {
-        gameState.resetKillStreak(); // Reset kill streak on taking damage
-      }
-
-      // Apply damage and knockback
-      if (player.takeDamage(attack.damage, 'stabber-legacy')) {
-        if (gameState) {
-          gameState.setGameState('gameOver');
-        }
-        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-          console.log('💀 PLAYER KILLED BY STABBER ATTACK!');
-        }
-        return;
-      }
-
-      // Apply knockback to player
-      const knockbackAngle = Math.atan2(
-        player.y - stabber.y,
-        player.x - stabber.x
-      );
-      const knockbackForce = 8;
-      player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
-      player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
-
-      // Screen shake for dramatic effect
-      if (cameraSystem) {
-        cameraSystem.addShake(10, 20);
-      }
-
-      // Create impact effect
-      if (explosionManager) {
-        explosionManager.addExplosion(player.x, player.y, 'hit');
-      }
-    } else {
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-        console.log(
-          `🗡️ Stabber attack missed! Player distance: ${distance.toFixed(1)}, range: ${attack.range}`
-        );
-      }
-    }
+    handleStabberAttackCollision({
+      attack,
+      stabber,
+      player: this.getContextValue('player'),
+      audio: this.getContextValue('audio'),
+      gameState: this.getContextValue('gameState'),
+      cameraSystem: this.getContextValue('cameraSystem'),
+      explosionManager: this.getContextValue('explosionManager'),
+    });
   }
 
   // Handle rusher explosion collision
   handleRusherExplosion(explosion, rusherIndex) {
-    const player = this.getContextValue('player');
-    const audio = this.getContextValue('audio');
-    const gameState = this.getContextValue('gameState');
-    const cameraSystem = this.getContextValue('cameraSystem');
-    const explosionManager = this.getContextValue('explosionManager');
-    const enemies = this.getContextValue('enemies');
-    if (!player) return;
-
-    const distance = Math.sqrt(
-      (player.x - explosion.x) ** 2 + (player.y - explosion.y) ** 2
-    );
-
-    if (distance <= explosion.radius) {
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-        console.log(
-          `💥 RUSHER EXPLOSION HIT PLAYER! Distance: ${distance.toFixed(1)}, Radius: ${explosion.radius}`
-        );
-      }
-
-      if (audio) {
-        audio.playPlayerHit();
-        audio.playRusherExplosion(explosion.x, explosion.y);
-      }
-
-      if (gameState) {
-        gameState.resetKillStreak(); // Reset kill streak on taking damage
-      }
-
-      // Apply damage
-      if (player.takeDamage(explosion.damage, 'rusher-explosion')) {
-        if (gameState) {
-          gameState.setGameState('gameOver');
-        }
-        console.log('💀 PLAYER KILLED BY RUSHER EXPLOSION!');
-        return;
-      }
-
-      // Apply knockback
-      const knockbackAngle = Math.atan2(
-        player.y - explosion.y,
-        player.x - explosion.x
-      );
-      const knockbackForce = 12;
-      player.velocity.x += Math.cos(knockbackAngle) * knockbackForce;
-      player.velocity.y += Math.sin(knockbackAngle) * knockbackForce;
-
-      // Strong screen shake
-      if (cameraSystem) {
-        cameraSystem.addShake(15, 25);
-      }
-
-      // Create impact effect
-      if (explosionManager) {
-        explosionManager.addExplosion(player.x, player.y, 'hit');
-      }
-
-      // Remove the rusher that exploded
-      if (enemies && rusherIndex >= 0 && rusherIndex < enemies.length) {
-        enemies[rusherIndex].markedForRemoval = true;
-      }
-    }
+    handleRusherExplosionCollision({
+      explosion,
+      rusherIndex,
+      player: this.getContextValue('player'),
+      audio: this.getContextValue('audio'),
+      gameState: this.getContextValue('gameState'),
+      cameraSystem: this.getContextValue('cameraSystem'),
+      explosionManager: this.getContextValue('explosionManager'),
+      enemies: this.getContextValue('enemies'),
+    });
   }
 }

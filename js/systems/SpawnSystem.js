@@ -2,7 +2,7 @@
  * SpawnSystem.js - Handles enemy spawning logic and timing
  */
 
-import { EnemyFactory } from './EnemyFactory.js';
+import { EnemyFactory } from '../entities/EnemyFactory.js';
 import {
   max,
   min,
@@ -14,7 +14,7 @@ import {
   cos,
   atan2,
   sqrt,
-} from './mathUtils.js';
+} from '../mathUtils.js';
 
 export class SpawnSystem {
   constructor(context = null) {

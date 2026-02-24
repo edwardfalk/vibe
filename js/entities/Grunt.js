@@ -1,6 +1,6 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, atan2, min, max } from './mathUtils.js';
-import { CONFIG } from './config.js';
+import { floor, random, sqrt, atan2, min, max } from '../mathUtils.js';
+import { CONFIG } from '../config.js';
 
 /**
  * Grunt class - Tactical ranged combat AI

@@ -13,8 +13,15 @@ This file is the source of truth for module layout and runtime wiring.
 
 - `js/core/`
   - `GameContext.js` - dependency container and window-backed bridge.
+  - `GameState.js` - score/level/state transitions and restart flow.
   - `InputHandlers.js` - keyboard/mouse input listener wiring.
 - `js/systems/`
+  - `CameraSystem.js` - camera follow and shake system.
+  - `SpawnSystem.js` - enemy spawning schedule and level scaling.
+  - `UIRenderer.js` - HUD and game state overlays.
+  - `BackgroundRenderer.js` - top-level background orchestrator.
+  - `CollisionSystem.js` - bullet/contact collision coordination and outcomes.
+  - `TestMode.js` - automated movement/shooting runtime mode.
   - `BombSystem.js` - bomb placement + bomb explosion damage updates.
   - `collision/CollisionMetrics.js` - frame and rolling collision metrics helpers.
   - `collision/CollisionSpatialGrid.js` - spatial grid build/query helpers.
@@ -36,6 +43,8 @@ This file is the source of truth for module layout and runtime wiring.
   - `background/SubtleSpaceElements.js` - static subtle-space nebula/stars layer helper.
   - `combat/EnemyDeathHandler.js` - centralized enemy death effects/audio handling.
 - `js/audio/`
+  - `SoundConfig.js` - centralized sound maps and configuration presets.
+  - `VoiceConfig.js` - centralized voice rate/pitch/volume presets.
   - `BeatClock.js` - rhythm timing and beat phase/intensity helpers.
   - `BeatTrack.js` - procedural beat backing track scheduler.
   - `AmbientSoundProfile.js` - ambient sound tags and source-position helpers.
@@ -46,17 +55,22 @@ This file is the source of truth for module layout and runtime wiring.
   - `DialogueLines.js` - centralized player/enemy dialogue line pools + random selection helpers.
   - `VoiceSelection.js` - voice profile selection heuristics by role.
   - `VoiceEffects.js` - runtime pitch/rate modulation rules per role.
+- `js/entities/`
+  - `player.js` - player movement/combat/dash logic.
+  - `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js` - enemy classes.
+  - `EnemyFactory.js` - enemy creation and type config.
+  - `bullet.js` - projectile model/pool behavior.
 - `js/shared/`
   - `contracts/DamageResult.js` - normalized damage/death result contract.
 
-## Legacy Modules Still Active (Pre-Migration Paths)
+## Active Canonical Paths
 
-The canonical gameplay modules are still active while import migration rolls forward:
-
-- Core: `js/GameLoop.js`, `js/GameState.js`, `js/CameraSystem.js`, `js/SpawnSystem.js`, `js/CollisionSystem.js`, `js/UIRenderer.js`, `js/BackgroundRenderer.js`, `js/TestMode.js`
-- Entities: `js/player.js`, `js/BaseEnemy.js`, `js/Grunt.js`, `js/Rusher.js`, `js/Tank.js`, `js/Stabber.js`, `js/EnemyFactory.js`, `js/bullet.js`
-- Audio/support: `js/Audio.js`, `js/audio/BeatClock.js`, `js/audio/BeatTrack.js`, `js/RhythmFX.js`, `js/config.js`, `js/mathUtils.js`
-- Effects: `js/visualEffects.js`, `js/effects.js`, `js/effects/AreaDamageHandler.js`, `js/explosions/*`
+- Entry: `js/GameLoop.js`
+- Core: `js/core/GameContext.js`, `js/core/GameState.js`, `js/core/InputHandlers.js`
+- Entities: `js/entities/*`
+- Systems: `js/systems/*`
+- Audio/support still rooted by design: `js/Audio.js`, `js/RhythmFX.js`, `js/config.js`, `js/mathUtils.js`
+- Effects currently split across `js/effects/*`, `js/effects.js`, `js/visualEffects.js`, and `js/explosions/*`
 
 ## Combat Contracts
 
@@ -71,7 +85,7 @@ The canonical gameplay modules are still active while import migration rolls for
 ## Migration Rules
 
 - New code should prefer domain paths (`js/core`, `js/systems`, `js/entities`, `js/audio`, `js/effects`, `js/shared`, `js/testing`).
-- Existing gameplay modules currently remain at canonical root paths under `js/` while feature-specific extracted modules live in domain folders.
+- Canonical gameplay modules should remain in domain paths; avoid adding new root-level gameplay modules.
 - Do not reintroduce temporary re-export shim files; migrate by updating real imports directly.
 
 ## Removed/Forbidden Legacy Files
