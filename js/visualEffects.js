@@ -237,7 +237,7 @@ class VisualEffectsManager {
     const beatClock =
       bc !== undefined
         ? bc
-        : typeof window !== 'undefined'
+        : typeof window !== 'undefined' && window.beatClock !== undefined
           ? window.beatClock
           : null;
     const beatIntensity = beatClock ? beatClock.getBeatIntensity(8) : 0;

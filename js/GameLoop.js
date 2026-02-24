@@ -158,8 +158,8 @@ function setup(p) {
   }
   if (!window.testModeManager) {
     window.testModeManager = new TestMode(window.player, gameContext);
+    console.log('🧪 Test mode manager initialized');
   }
-  console.log('🧪 Test mode manager initialized');
 
   // Sync context before restart (spawnEnemies reads from context)
   gameContext.assign({

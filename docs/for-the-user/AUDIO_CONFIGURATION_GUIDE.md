@@ -58,7 +58,7 @@ Each character voice has these properties:
 voiceType: {
     rate: 0.8,      // Speech speed (0.1-10.0 per SpeechSynthesisUtterance.rate, 1.0 = normal)
     pitch: 0.1,     // Voice pitch (0.0-2.0, 1.0 = normal)
-    volume: 0.4     // Speech volume (0.0-1.0) - NOW REDUCED for background effect
+    volume: 0.4     // Speech volume (0.0-1.0) - kept low so speech stays secondary to sound effects
 }
 ```
 

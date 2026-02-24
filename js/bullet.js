@@ -41,6 +41,7 @@ export class Bullet {
     this.reset(x, y, angle, speed, owner);
   }
 
+  /** Returns a bullet from pool or creates new; never returns null. Callers should still guard for null for defensive robustness. */
   static acquire(x, y, angle, speed, owner) {
     Bullet.poolStats.acquired++;
     let bullet;

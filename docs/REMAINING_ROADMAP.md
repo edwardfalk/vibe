@@ -160,7 +160,7 @@ Migrate remaining root-level canonical modules into domain folders in staged wav
 
 ### Scope
 
-- Expand probes beyond current 2-test smoke baseline: ✅ (6 tests: liveness, game loop, collision API, UI elements, game state, player input)
+- Expand probes beyond current 6-test smoke baseline: ✅ (6 tests: liveness, game loop, collision API, UI elements, game state, player input)
   - player input and movement loop. ✅
   - enemy spawn/damage/death cleanup. (pending)
   - bomb/area damage and game-over flow. (pending)
@@ -213,7 +213,7 @@ Migrate remaining root-level canonical modules into domain folders in staged wav
 
 ## Current Known Debt (2026-02-24)
 
-- **Phase 2 remaining**: GameLoop (~102 refs), GameState (~50 refs), InputHandlers (23 refs, input state intentionally global), and smaller counts in Audio and effects.
+- **Phase 2 remaining**: GameLoop (~102 refs), GameState (~50 refs), InputHandlers (23 refs, input state intentionally global), residual refs in effects (`js/effects.js` — 5 `window.*` refs remaining), and smaller counts in Audio.
 - **Phase 3**: Domain path migration not started; modules remain at root.
 - **Phase 4**: Audio consolidation (speech wrapper map, config extraction) not started.
 - **Phase 5**: Enemy spawn/damage/death and bomb/game-over probes pending.

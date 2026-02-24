@@ -108,15 +108,21 @@ test.describe('Gameplay Probes', () => {
     expect(before).not.toBeNull();
 
     await page.keyboard.down('w');
-    // Wait for game loop to advance; y decreases when moving up (canvas coords)
+    // Wait for player movement; y decreases when moving up (canvas coords)
     await page.waitForFunction(
       ([startY, startFrame]) => {
         if (!window.player) return false;
         const moved = window.player.y < startY - 5;
+        if (moved) return true;
         const framesAdvanced =
           typeof window.frameCount === 'number' &&
-          window.frameCount >= startFrame + 8;
-        return moved || framesAdvanced;
+          window.frameCount >= startFrame + 60;
+        if (framesAdvanced) {
+          throw new Error(
+            `Player did not move after 60 frames (startY=${startY}, currentY=${window.player.y})`
+          );
+        }
+        return false;
       },
       [before.y, before.frame],
       { timeout: 3000 }

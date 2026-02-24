@@ -96,9 +96,9 @@ This checklist is the release gate for the aggressive refactor program.
 - Player: context param; playerBullets, gameState, audio, beatClock via getContextValue.
 - TestMode: fixed createEnemy calls to pass this.player?.p.
 
-## Phase 3 & Phase 4
+## Phase 3 & Phase 4 (2026-02-24)
 
-- Phases 3 and 4 were intentionally skipped/merged into Phase 5; no separate validation entries exist for them. The audit trail continues at Phase 5.
+- Phases 3 and 4 were intentionally skipped/merged into Phase 5; no separate validation entries exist for them. Phase 3 originally covered domain path migration (moving modules to `js/core`, `js/entities`, `js/systems`, `js/effects`, `js/audio`); Phase 4 covered Audio/orchestrator consolidation (speech wrapper map, config extraction). These items have been absorbed into Phase 5 and are therefore covered by Phase 5's gate. See "Mandatory Checks Per Refactor Wave" for the validation criteria applied. The audit trail continues at Phase 5.
 
 ## Phase 5 Testing Hardening (2026-02-24)
 

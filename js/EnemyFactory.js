@@ -92,7 +92,12 @@ class EnemyFactory {
       audio ??
       this.context?.get?.('audio') ??
       (typeof window !== 'undefined' ? window.audio : null);
-    const enrichedConfig = { ...config, context: this.context };
+    const { class: _class, colorValues, ...rest } = config;
+    const enrichedConfig = {
+      ...rest,
+      context: this.context,
+      colorValues: colorValues ? [...colorValues] : undefined,
+    };
     const enemy = new EnemyClass(x, y, type, enrichedConfig, p, resolvedAudio);
 
     console.log(

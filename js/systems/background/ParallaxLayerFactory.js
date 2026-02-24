@@ -66,7 +66,7 @@ export function generateParallaxLayerElements(parallaxLayers, p) {
       x: randomRange(-p.width, p.width * 2),
       y: randomRange(-p.height, p.height * 2),
       size: randomRange(2, 4),
-      alpha: randomRange(150, 255),
+      alpha: randomRange(150 / 255, 1),
       flickerSpeed: randomRange(0.05, 0.15),
     });
   }

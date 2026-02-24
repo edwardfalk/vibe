@@ -44,7 +44,7 @@ export function drawForegroundSparksLayer(sparks, p) {
   p.noStroke();
   for (const spark of sparks) {
     const flicker = p.sin(p.frameCount * spark.flickerSpeed) * 0.5 + 0.5;
-    p.fill(255, 255, 255, spark.alpha * flicker);
+    p.fill(255, 255, 255, spark.alpha * 255 * flicker);
     p.ellipse(spark.x, spark.y, spark.size, spark.size);
   }
 }

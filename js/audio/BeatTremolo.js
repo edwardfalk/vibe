@@ -1,3 +1,5 @@
+const MIN_TREMOLO_DEPTH = 1e-3;
+
 export function applyBeatTremolo(
   audioContext,
   beatClock,
@@ -14,13 +16,22 @@ export function applyBeatTremolo(
   )
     return;
 
+  const bpm = beatClock.bpm;
+  if (!Number.isFinite(bpm) || bpm <= 0) {
+    console.warn('⚠️ BeatTremolo: invalid beatClock.bpm, using safe default');
+    return;
+  }
+
   const lfo = audioContext.createOscillator();
   const depth = audioContext.createGain();
 
   lfo.type = 'sine';
-  lfo.frequency.setValueAtTime(beatClock.bpm / 60, audioContext.currentTime);
+  lfo.frequency.setValueAtTime(bpm / 60, audioContext.currentTime);
   const baseGain = targetGain.gain.value;
-  const safeDepth = Math.min(0.5, baseGain * 0.5);
+  const safeDepth = Math.max(
+    MIN_TREMOLO_DEPTH,
+    Math.min(0.5, Math.abs(baseGain) * 0.5)
+  );
   depth.gain.setValueAtTime(safeDepth, audioContext.currentTime);
 
   lfo.connect(depth);

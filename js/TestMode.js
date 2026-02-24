@@ -217,7 +217,11 @@ export class TestMode {
     const bulletY = this.player.y + sin(angle) * bulletDistance;
 
     const bullet = Bullet.acquire(bulletX, bulletY, angle, 6, 'player');
-    playerBullets.push(bullet);
+    if (bullet) {
+      playerBullets.push(bullet);
+    } else {
+      console.warn('⚠️ Bullet.acquire returned null (pool exhausted or error)');
+    }
 
     console.log(`🎯 Auto-shot at ${enemy.type} enemy!`);
 

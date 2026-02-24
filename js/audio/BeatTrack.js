@@ -53,9 +53,13 @@ export class BeatTrack {
     if (audio && audio.audioContext) {
       this.ctx = audio.audioContext;
     } else {
-      const Ctx =
-        (typeof window !== 'undefined' && window.AudioContext) ||
-        (typeof window !== 'undefined' && window.webkitAudioContext);
+      if (typeof window === 'undefined') {
+        console.error(
+          '⚠️ AudioContext unavailable: no global window (non-browser environment)'
+        );
+        return;
+      }
+      const Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) {
         console.error('⚠️ AudioContext not supported in this browser');
         return;
