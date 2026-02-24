@@ -17,7 +17,7 @@ export async function runAiLivenessProbe() {
     failure: null,
   };
 
-  if (fc === null || fc === undefined) {
+  if (fc === null || fc === 0) {
     result.failure = 'Frame count not available (draw loop may be stopped)';
   }
 

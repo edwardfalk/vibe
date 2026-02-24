@@ -101,7 +101,7 @@ export class Bullet {
       if (this.owner === 'player') {
         drawGlow(p, this.x, this.y, this.size * 2, p.color(255, 255, 100), 0.8);
       } else if (this.owner === 'enemy-tank') {
-        const energyPercent = typeof this.energy === 'number' && this.energy != null
+        const energyPercent = Number.isFinite(this.energy)
           ? Math.min(1, Math.max(0, this.energy / 100))
           : 1;
         drawGlow(p, this.x, this.y, this.size * 3 * energyPercent, p.color(150, 100, 255), 1.2);
@@ -144,7 +144,7 @@ export class Bullet {
       p.ellipse(0, 0, this.size * 1.3);
     } else if (this.owner === 'enemy-tank') {
       // Tank bullet - massive, devastating energy ball with vibrating pulse
-      const energyPercent = typeof this.energy === 'number' && this.energy != null
+      const energyPercent = Number.isFinite(this.energy)
         ? Math.min(1, Math.max(0, this.energy / 100))
         : 1;
       const vibration = sin(p.frameCount * 0.8) * 2; // Fast vibration

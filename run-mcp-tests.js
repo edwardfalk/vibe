@@ -169,15 +169,15 @@ async function runMcpTests() {
   let exitCode = 0;
   let gameUrl;
 
-  if (process.env.GAME_URL) {
-    gameUrl = process.env.GAME_URL;
-  } else {
-    const selectedPort = await chooseGamePort();
-    gameUrl = `http://localhost:${selectedPort}`;
-    serverProcess = startServer(selectedPort);
-  }
-
   try {
+    if (process.env.GAME_URL) {
+      gameUrl = process.env.GAME_URL;
+    } else {
+      const selectedPort = await chooseGamePort();
+      gameUrl = `http://localhost:${selectedPort}`;
+      serverProcess = startServer(selectedPort);
+    }
+
     await waitForServerReady(gameUrl);
 
     const probeExitCode = await runPlaywrightSmoke(gameUrl);
@@ -199,7 +199,10 @@ async function runMcpTests() {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  runMcpTests();
+  runMcpTests().catch((err) => {
+    log('error', 'MCP smoke runner failed', err.message);
+    process.exit(1);
+  });
 }
 
 export default runMcpTests;
