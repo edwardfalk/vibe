@@ -146,6 +146,9 @@ export class Audio {
 
     // Text display system - IMPROVED
     this.activeTexts = [];
+    this.showBeatIndicator = false;
+    this.beatX = 0;
+    this.beatY = 0;
 
     // Sound configuration - MUSICAL COMBAT SYSTEM
     this.sounds = {
@@ -640,7 +643,7 @@ export class Audio {
       const distance = Math.sqrt(
         (sourceX - playerX) ** 2 + (sourceY - playerY) ** 2
       );
-      const normalizedDistance = Math.min(distance / 600, 1); // 0 = close, 1 = far
+      const normalizedDistance = Math.max(0, Math.min(distance / 600, 1)); // 0 = close, 1 = far; clamp to avoid negative
 
       // Simplified reverb processing - REDUCED intensity from 65% to 45% for less overwhelming effects
       const reverbGain = this.audioContext.createGain();

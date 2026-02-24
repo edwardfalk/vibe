@@ -63,11 +63,11 @@ export function generateParallaxLayerElements(parallaxLayers, p) {
   const foregroundSparks = parallaxLayers[4];
   for (let i = 0; i < FOREGROUND_SPARK_COUNT; i++) {
     foregroundSparks.elements.push({
-      x: p.random(-p.width, p.width * 2),
-      y: p.random(-p.height, p.height * 2),
-      size: p.random(2, 4),
-      alpha: p.random(150, 255),
-      flickerSpeed: p.random(0.05, 0.15),
+      x: randomRange(-p.width, p.width * 2),
+      y: randomRange(-p.height, p.height * 2),
+      size: randomRange(2, 4),
+      alpha: randomRange(150, 255),
+      flickerSpeed: randomRange(0.05, 0.15),
     });
   }
 }

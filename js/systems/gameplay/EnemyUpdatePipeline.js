@@ -45,7 +45,8 @@ function handleRusherExplosionResult(result, enemyIndex, context) {
   }
 
   console.log(`💥 RUSHER EXPLOSION at (${result.x}, ${result.y})!`);
-  enemies.splice(enemyIndex, 1);
+  const enemy = enemies[enemyIndex];
+  if (enemy) enemy.markedForRemoval = true;
 }
 
 function handleStabberAttackResult(result, context) {

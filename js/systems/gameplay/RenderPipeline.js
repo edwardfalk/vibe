@@ -1,3 +1,5 @@
+import { CONFIG } from '../../config.js';
+
 export function drawGameplayWorld(context) {
   const {
     p,
@@ -12,12 +14,17 @@ export function drawGameplayWorld(context) {
     visualEffectsManager,
   } = context;
 
-  if (typeof p.frameCount !== 'undefined' && p.frameCount % 30 === 0) {
+  if (
+    CONFIG?.GAME_SETTINGS?.DEBUG_COLLISIONS &&
+    typeof p.frameCount !== 'undefined' &&
+    p.frameCount % 30 === 0
+  ) {
     const cam = cameraSystem
       ? { x: cameraSystem.x, y: cameraSystem.y }
       : { x: 0, y: 0 };
+    const safeEnemies = enemies ?? [];
     console.log(
-      `🎮 [DRAW GAME] camera=(${cam.x},${cam.y}) enemies=${enemies.length}`
+      `🎮 [DRAW GAME] camera=(${cam.x},${cam.y}) enemies=${safeEnemies.length}`
     );
   }
 
@@ -29,7 +36,7 @@ export function drawGameplayWorld(context) {
     cameraSystem.applyTransform();
   }
 
-  for (const enemy of enemies) {
+  for (const enemy of enemies ?? []) {
     enemy.draw(p);
   }
 
@@ -37,11 +44,11 @@ export function drawGameplayWorld(context) {
     player.draw(p);
   }
 
-  for (const bullet of playerBullets) {
+  for (const bullet of playerBullets ?? []) {
     bullet.draw(p);
   }
 
-  for (const bullet of enemyBullets) {
+  for (const bullet of enemyBullets ?? []) {
     bullet.draw(p);
   }
 

@@ -7,6 +7,7 @@ export function drawInteractiveBackgroundEffectsLayer(
   beatClock,
   randomRangeFn
 ) {
+  p.push();
   drawBeatPulseOverlay(p, beatClock);
 
   if (player && player.isMoving) {
@@ -65,4 +66,5 @@ export function drawInteractiveBackgroundEffectsLayer(
       p.ellipse(orbX, orbY, 8 + orbPulse * 4, 8 + orbPulse * 4);
     }
   }
+  p.pop();
 }

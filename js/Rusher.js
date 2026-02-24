@@ -7,15 +7,16 @@ import { CONFIG } from './config.js';
  * Two-stage system: battle cry at distance, explosion when close, enhanced explosion effects
  */
 class Rusher extends BaseEnemy {
-  constructor(x, y, type, config, p, audio, context = null) {
+  constructor(x, y, type, config, p, audio) {
     const rusherConfig = {
+      ...config,
       size: 22,
       health: 1,
       speed: 2.8,
       color: p.color(255, 20, 147), // Deep pink - aggressive
     };
 
-    super(x, y, 'rusher', rusherConfig, p, audio, context);
+    super(x, y, 'rusher', rusherConfig, p, audio);
     this.p = p;
     this.audio = audio;
 
@@ -122,7 +123,7 @@ class Rusher extends BaseEnemy {
             );
 
             // Rusher scream with audio
-            const audio = this.getContextValue('audio');
+            const audio = this.getContextValue('audio') || this.audio;
             const beatClock = this.getContextValue('beatClock');
             if (audio) {
               const battleCries = [
@@ -164,10 +165,10 @@ class Rusher extends BaseEnemy {
    * Trigger ambient speech specific to rushers
    */
   triggerAmbientSpeech() {
-    const audio = this.getContextValue('audio');
+    const audio = this.getContextValue('audio') || this.audio;
     const beatClock = this.getContextValue('beatClock');
     if (audio && this.speechCooldown <= 0) {
-      if (beatClock && random() < 0.15) {
+      if (!beatClock || random() < 0.15) {
         const rusherLines = [
           'KAMIKAZE TIME!',
           'SUICIDE RUN!',

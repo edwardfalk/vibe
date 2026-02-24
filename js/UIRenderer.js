@@ -449,9 +449,9 @@ export class UIRenderer {
     if (healthPercent > 0) {
       p.blendMode(p.ADD);
       p.fill(
-        healthColor.levels[0],
-        healthColor.levels[1],
-        healthColor.levels[2],
+        p.red(healthColor),
+        p.green(healthColor),
+        p.blue(healthColor),
         100
       );
       p.rect(barX + barWidth * healthPercent - 2, barY - 2, 4, barHeight + 4);

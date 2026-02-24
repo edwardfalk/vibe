@@ -29,8 +29,10 @@ export function drawMediumStarsLayer(stars, p) {
       case 'orange':
         p.fill(255, 165 + beatPulse * 20, 0, alpha);
         break;
-      default:
-        p.fill(255, 255, 255 + beatPulse * 20, alpha);
+      default: {
+        const modAlpha = p.constrain(alpha + beatPulse * 40, 0, 255);
+        p.fill(255, 255, 255, modAlpha);
+      }
     }
     p.ellipse(star.x, star.y, finalSize, finalSize);
 

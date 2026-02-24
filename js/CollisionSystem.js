@@ -279,8 +279,9 @@ export class CollisionSystem {
         const next = Math.max(current, stopFrames);
         if (this.context && typeof this.context.set === 'function') {
           this.context.set('hitStopFrames', next);
+        } else if (typeof window !== 'undefined') {
+          window.hitStopFrames = next;
         }
-        window.hitStopFrames = next;
 
         // Trigger chromatic aberration on beat-perfect kills
         if (isOnBeat && visualEffectsManager) {
@@ -362,11 +363,13 @@ export class CollisionSystem {
           if (gameState) {
             gameState.setGameState('gameOver');
           }
-          const testMode =
-            this.getContextValue('testModeManager')?.enabled ?? false;
-          console.log(
-            `💀 PLAYER DIED! Game state changed to gameOver. Test mode: ${testMode}`
-          );
+          if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+            const testMode =
+              this.getContextValue('testModeManager')?.enabled ?? false;
+            console.log(
+              `💀 PLAYER DIED! Game state changed to gameOver. Test mode: ${testMode}`
+            );
+          }
           return;
         }
         Bullet.release(bullet);

@@ -11,7 +11,7 @@ export function applyVoiceEffects(
   voiceConfig,
   randomRange
 ) {
-  const baseConfig = voiceConfig[voiceType] || voiceConfig.player;
+  const baseConfig = voiceConfig[voiceType] || voiceConfig.player || {};
   const isAggressive = isAggressiveText(text);
   const isConfused = isConfusedText(text);
   const isScreaming = isScreamingText(text);

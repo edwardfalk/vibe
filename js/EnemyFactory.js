@@ -90,18 +90,10 @@ class EnemyFactory {
 
     const resolvedAudio =
       audio ??
-      (this.context && typeof this.context.get === 'function'
-        ? this.context.get('audio')
-        : window.audio);
-    const enemy = new EnemyClass(
-      x,
-      y,
-      type,
-      config,
-      p,
-      resolvedAudio,
-      this.context
-    );
+      this.context?.get?.('audio') ??
+      (typeof window !== 'undefined' ? window.audio : null);
+    const enrichedConfig = { ...config, context: this.context };
+    const enemy = new EnemyClass(x, y, type, enrichedConfig, p, resolvedAudio);
 
     console.log(
       `🏭 EnemyFactory created ${type} at (${x.toFixed(0)}, ${y.toFixed(0)})`

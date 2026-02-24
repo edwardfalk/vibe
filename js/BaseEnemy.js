@@ -12,12 +12,11 @@ export class BaseEnemy {
    * @param {number} x - X position
    * @param {number} y - Y position
    * @param {string} type - Enemy type
-   * @param {object} config - Enemy config
+   * @param {object} config - Enemy config (may include config.context for GameContext)
    * @param {p5} p - The p5 instance
    * @param {Audio} audio - The audio system (dependency injected for modularity)
-   * @param {GameContext} [context] - Game context for beatClock, rhythmFX, etc.
    */
-  constructor(x, y, type, config, p, audio, context = null) {
+  constructor(x, y, type, config, p, audio) {
     // Core properties
     this.x = x;
     this.y = y;
@@ -66,7 +65,7 @@ export class BaseEnemy {
 
     this.p = p;
     this.audio = audio;
-    this.context = context;
+    this.context = config?.context ?? null;
 
     this.initializeColors();
   }
@@ -75,7 +74,7 @@ export class BaseEnemy {
     if (this.context && typeof this.context.get === 'function') {
       return this.context.get(key);
     }
-    return typeof window !== 'undefined' ? window[key] : undefined;
+    return undefined;
   }
 
   /**

@@ -230,11 +230,15 @@ export class Player {
 
       if (this.queuedShot.timerMs <= 0) {
         // Time to fire the queued shot
-        const bullet = this.fireBullet();
         const playerBullets = this.getContextValue('playerBullets');
+        if (!playerBullets) {
+          this.queuedShot = null;
+          return;
+        }
+        const bullet = this.fireBullet();
         const gameState = this.getContextValue('gameState');
         const audio = this.getContextValue('audio');
-        if (bullet && playerBullets) {
+        if (bullet) {
           playerBullets.push(bullet);
 
           if (gameState) {
@@ -501,6 +505,8 @@ export class Player {
   }
 
   shoot() {
+    if (!this.getContextValue('playerBullets')) return null;
+
     // IMPROVED SHOOTING SYSTEM: First shot immediate, continuous fire on quarter-beats
     this.wantsToContinueShooting = true; // Player wants to shoot
 

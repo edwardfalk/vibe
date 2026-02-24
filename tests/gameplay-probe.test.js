@@ -17,6 +17,7 @@ const bootGame = async (page) => {
     () =>
       window.gameState &&
       window.player &&
+      window.collisionSystem &&
       Array.isArray(window.enemies) &&
       window.enemies.filter((enemy) => !enemy.markedForRemoval).length > 0 &&
       typeof window.frameCount === 'number' &&
@@ -100,12 +101,26 @@ test.describe('Gameplay Probes', () => {
     await bootGame(page);
 
     const before = await page.evaluate(() =>
-      window.player ? { x: window.player.x, y: window.player.y } : null
+      window.player && typeof window.frameCount === 'number'
+        ? { x: window.player.x, y: window.player.y, frame: window.frameCount }
+        : null
     );
     expect(before).not.toBeNull();
 
     await page.keyboard.down('w');
-    await page.waitForTimeout(200);
+    // Wait for game loop to advance; y decreases when moving up (canvas coords)
+    await page.waitForFunction(
+      ([startY, startFrame]) => {
+        if (!window.player) return false;
+        const moved = window.player.y < startY - 5;
+        const framesAdvanced =
+          typeof window.frameCount === 'number' &&
+          window.frameCount >= startFrame + 8;
+        return moved || framesAdvanced;
+      },
+      [before.y, before.frame],
+      { timeout: 3000 }
+    );
     await page.keyboard.up('w');
 
     const after = await page.evaluate(() =>

@@ -1,4 +1,6 @@
 export function drawAuroraWisps(p, beatClock = null) {
+  p.push();
+  p.noStroke();
   const auroraBeatPulse = beatClock ? beatClock.getBeatIntensity(6) * 20 : 0;
 
   for (let i = 0; i < 8; i++) {
@@ -20,4 +22,5 @@ export function drawAuroraWisps(p, beatClock = null) {
     p.fill(r * 0.8, g * 0.8, b * 0.8, baseAlpha * 0.5);
     p.ellipse(wispX - 20, wispY, wispSize * 0.7, wispSize * 0.3);
   }
+  p.pop();
 }

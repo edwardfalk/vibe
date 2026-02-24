@@ -17,15 +17,16 @@ import { CONFIG } from './config.js';
  * Features anger system that targets other enemies when friendly fire occurs
  */
 class Tank extends BaseEnemy {
-  constructor(x, y, type, config, p, audio, context = null) {
+  constructor(x, y, type, config, p, audio) {
     const tankConfig = {
+      ...config,
       size: 50,
       health: 60,
       speed: 0.3,
       color: p.color(138, 43, 226), // Blue violet - massive
     };
 
-    super(x, y, 'tank', tankConfig, p, audio, context);
+    super(x, y, 'tank', tankConfig, p, audio);
     this.p = p;
     this.audio = audio;
 
@@ -521,7 +522,6 @@ class Tank extends BaseEnemy {
       impactAngle <= PI_4
     ) {
       // Calculate overflow damage if incoming damage exceeds armor HP
-      const prevHP = this.frontArmorHP;
       this.frontArmorHP -= amount;
       const audioHit = this.getContextValue('audio');
       if (audioHit) audioHit.playSound('hit', this.x, this.y);
@@ -549,7 +549,6 @@ class Tank extends BaseEnemy {
       impactAngle < THREE_PI_4
     ) {
       // Calculate overflow damage if incoming damage exceeds armor HP
-      const prevHP = this.leftArmorHP;
       this.leftArmorHP -= amount;
       const audioLeft = this.getContextValue('audio');
       if (audioLeft) audioLeft.playSound('hit', this.x, this.y);
@@ -576,7 +575,6 @@ class Tank extends BaseEnemy {
       impactAngle > -THREE_PI_4
     ) {
       // Calculate overflow damage if incoming damage exceeds armor HP
-      const prevHP = this.rightArmorHP;
       this.rightArmorHP -= amount;
       const audioRight = this.getContextValue('audio');
       if (audioRight) audioRight.playSound('hit', this.x, this.y);

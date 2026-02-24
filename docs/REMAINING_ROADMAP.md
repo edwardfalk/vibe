@@ -7,7 +7,7 @@ It is written for the next stateless AI agent and should be treated as the worki
 ## Current Baseline (Observed)
 
 - Architecture migration is partially complete: extracted domain modules exist, but many canonical runtime modules are still rooted under `js/`.
-- Smoke gate passes: `bun run test:mcp` (`2 passed`).
+- Smoke gate passes: `bun run test:mcp` (`6 passed`: liveness, game loop, collision API, UI elements, game state, player input).
 - Lint gate passes: `bun run lint` (Phase 1 complete).
 - Runtime global coupling reduced: CollisionSystem, ExplosionManager, EnemyFactory, SpawnSystem migrated to context; others remain.
 
@@ -28,6 +28,7 @@ All items below are considered complete only when:
 3. **Complete domain migration** for still-rooted canonical modules.
 4. **Consolidate `Audio` and remaining orchestrators** without API breakage.
 5. **Harden tests and docs** for handoff and regression safety.
+6. **Documentation and handoff cleanup** — keep `ARCHITECTURE.md`, `README.md`, and `docs/` synchronized after each migration wave.
 
 ---
 
@@ -212,7 +213,7 @@ Migrate remaining root-level canonical modules into domain folders in staged wav
 
 ## Current Known Debt (2026-02-24)
 
-- **Phase 2 remaining**: GameLoop (~102 refs), GameState (~50 refs), InputHandlers (23 refs, input state intentionally global), and smaller counts in Audio, effects, BackgroundRenderer, etc.
+- **Phase 2 remaining**: GameLoop (~102 refs), GameState (~50 refs), InputHandlers (23 refs, input state intentionally global), and smaller counts in Audio and effects.
 - **Phase 3**: Domain path migration not started; modules remain at root.
 - **Phase 4**: Audio consolidation (speech wrapper map, config extraction) not started.
 - **Phase 5**: Enemy spawn/damage/death and bomb/game-over probes pending.

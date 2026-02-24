@@ -26,11 +26,13 @@ const CONFUSED_WORDS = [
 ];
 
 export function isAggressiveText(text = '') {
-  return AGGRESSIVE_WORDS.some((word) => text.includes(word));
+  const t = String(text).toUpperCase();
+  return AGGRESSIVE_WORDS.some((word) => t.includes(word));
 }
 
 export function isConfusedText(text = '') {
-  return CONFUSED_WORDS.some((word) => text.includes(word));
+  const t = String(text).toUpperCase();
+  return CONFUSED_WORDS.some((word) => t.includes(word));
 }
 
 export function isScreamingText(text = '') {

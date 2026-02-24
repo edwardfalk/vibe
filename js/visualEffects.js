@@ -233,7 +233,13 @@ class VisualEffectsManager {
       if (!this.initialized) return;
     }
 
-    const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
+    const bc = this.context?.get?.('beatClock');
+    const beatClock =
+      bc !== undefined
+        ? bc
+        : typeof window !== 'undefined'
+          ? window.beatClock
+          : null;
     const beatIntensity = beatClock ? beatClock.getBeatIntensity(8) : 0;
     const isDownbeat = beatClock ? beatClock.getCurrentBeat() === 0 : false;
 

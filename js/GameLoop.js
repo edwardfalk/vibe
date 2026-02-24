@@ -147,6 +147,20 @@ function setup(p) {
   }
   console.log('👾 Spawn system initialized');
 
+  // Initialize beatClock, rhythmFX, testModeManager before first assign so restart/spawnEnemies get defined refs
+  if (!window.beatClock) {
+    window.beatClock = new BeatClock(120);
+    console.log('🎵 BeatClock initialized and assigned to window.beatClock');
+  }
+  if (!window.rhythmFX) {
+    window.rhythmFX = new RhythmFX(gameContext);
+    console.log('🎵 RhythmFX initialized');
+  }
+  if (!window.testModeManager) {
+    window.testModeManager = new TestMode(window.player, gameContext);
+  }
+  console.log('🧪 Test mode manager initialized');
+
   // Sync context before restart (spawnEnemies reads from context)
   gameContext.assign({
     player: window.player,
@@ -204,26 +218,9 @@ function setup(p) {
   }
   console.log('🖥️ UI renderer initialized');
 
-  if (!window.testModeManager) {
-    window.testModeManager = new TestMode(window.player, gameContext);
-  }
-  console.log('🧪 Test mode manager initialized');
-
-  // Initialize BeatClock for rhythm-locked gameplay
-  if (!window.beatClock) {
-    window.beatClock = new BeatClock(120);
-    console.log('🎵 BeatClock initialized and assigned to window.beatClock');
-  }
-
   // Initialize procedural beat track (starts on first user interaction)
   if (!window.beatTrack) {
     window.beatTrack = new BeatTrack(120, gameContext);
-  }
-
-  // Initialize beat visualizer for UI feedback
-  if (!window.rhythmFX) {
-    window.rhythmFX = new RhythmFX(gameContext);
-    console.log('🎵 RhythmFX initialized');
   }
 
   // Initial enemy spawn

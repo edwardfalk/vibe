@@ -46,10 +46,14 @@ export class CameraSystem {
     const player = this._getPlayer();
     if (!player) return;
     const p = this.p;
+    const px = Number(player.x) || 0;
+    const py = Number(player.y) || 0;
     const playerVelocity = player.velocity || { x: 0, y: 0 };
+    const vx = Number(playerVelocity.x) || 0;
+    const vy = Number(playerVelocity.y) || 0;
 
-    this.targetX = player.x + playerVelocity.x * 50 * this.sensitivity;
-    this.targetY = player.y + playerVelocity.y * 50 * this.sensitivity;
+    this.targetX = px + vx * 50 * this.sensitivity;
+    this.targetY = py + vy * 50 * this.sensitivity;
 
     // Use canonical world bounds from config.js
     const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;

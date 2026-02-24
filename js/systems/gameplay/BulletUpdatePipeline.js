@@ -16,9 +16,6 @@ export function updateBullets(context) {
     bullet.update();
 
     if (bullet.isOffScreen()) {
-      console.log(
-        `➖ Removing enemy bullet (off-screen): ${bullet.owner} at (${Math.round(bullet.x)}, ${Math.round(bullet.y)}) - Remaining: ${enemyBullets.length - 1}`
-      );
       bulletClass.release(bullet);
       enemyBullets.splice(i, 1);
     }

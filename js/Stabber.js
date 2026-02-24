@@ -17,15 +17,16 @@ import { CONFIG } from './config.js';
  * Features three-phase attack system: approach → prepare → dash attack
  */
 class Stabber extends BaseEnemy {
-  constructor(x, y, type, config, p, audio, context = null) {
+  constructor(x, y, type, config, p, audio) {
     const stabberConfig = {
+      ...config,
       size: 28,
       health: 10,
       speed: 1.5,
       color: p.color(255, 215, 0), // Gold - heavily armored melee fighter
     };
 
-    super(x, y, 'stabber', stabberConfig, p, audio, context);
+    super(x, y, 'stabber', stabberConfig, p, audio);
     this.p = p;
     this.audio = audio;
 
@@ -39,6 +40,7 @@ class Stabber extends BaseEnemy {
     this.maxStabPreparingTime = CONFIG.STABBER_SETTINGS.MAX_PREPARE_TIME; // Preparation phase duration
     this.stabWarning = false;
     this.stabWarningTime = 0;
+    this.stabWarningPlayed = false;
     this.maxStabWarningTime = CONFIG.STABBER_SETTINGS.MAX_WARNING_TIME; // Warning phase duration
     this.hasYelledStab = false;
 
@@ -274,9 +276,10 @@ class Stabber extends BaseEnemy {
       this.velocity.x = 0;
       this.velocity.y = 0;
 
-      // Play warning sounds
-      const audioWarn = this.getContextValue('audio');
-      if (this.stabWarningTime === 1 && audioWarn) {
+      // Play warning sounds once when entering warning phase
+      const audioWarn = this.getContextValue('audio') || this.audio;
+      if (!this.stabWarningPlayed && audioWarn) {
+        this.stabWarningPlayed = true;
         audioWarn.playSound('stabberStalk', this.x, this.y);
         audioWarn.playSound('stabberKnife', this.x, this.y);
 
@@ -293,6 +296,7 @@ class Stabber extends BaseEnemy {
       if (this.stabWarningTime >= this.maxStabWarningTime) {
         this.stabWarning = false;
         this.stabWarningTime = 0;
+        this.stabWarningPlayed = false;
         this.isStabbing = true;
         this.stabAnimationTime = 0;
 
@@ -349,6 +353,7 @@ class Stabber extends BaseEnemy {
         this.stabPreparingTime = 0;
         this.stabWarning = true;
         this.stabWarningTime = 0;
+        this.stabWarningPlayed = false;
 
         // Lock attack direction
         this.stabDirection = this.aimAngle;

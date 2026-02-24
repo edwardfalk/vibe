@@ -96,6 +96,10 @@ This checklist is the release gate for the aggressive refactor program.
 - Player: context param; playerBullets, gameState, audio, beatClock via getContextValue.
 - TestMode: fixed createEnemy calls to pass this.player?.p.
 
+## Phase 3 & Phase 4
+
+- Phases 3 and 4 were intentionally skipped/merged into Phase 5; no separate validation entries exist for them. The audit trail continues at Phase 5.
+
 ## Phase 5 Testing Hardening (2026-02-24)
 
 - `bun run test:mcp`: pass (`6 passed`, was 2).

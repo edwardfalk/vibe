@@ -109,8 +109,10 @@ export class BackgroundRenderer {
   }
 
   drawCosmicAuroraBackground(p = this.p) {
+    p.push();
     const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
     drawCosmicAuroraBackgroundLayer(p, beatClock);
+    p.pop();
   }
 
   drawEnhancedSpaceElements(p = this.p) {

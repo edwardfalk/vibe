@@ -207,6 +207,9 @@ export class TestMode {
 
   // Shoot at specific enemy
   shootAtEnemy(enemy) {
+    const playerBullets = this.getContextValue('playerBullets');
+    if (!playerBullets) return;
+
     // Aim at enemy
     const angle = atan2(enemy.y - this.player.y, enemy.x - this.player.x);
     const bulletDistance = this.player.size * 0.9;
@@ -214,10 +217,7 @@ export class TestMode {
     const bulletY = this.player.y + sin(angle) * bulletDistance;
 
     const bullet = Bullet.acquire(bulletX, bulletY, angle, 6, 'player');
-    const playerBullets = this.getContextValue('playerBullets');
-    if (playerBullets) {
-      playerBullets.push(bullet);
-    }
+    playerBullets.push(bullet);
 
     console.log(`🎯 Auto-shot at ${enemy.type} enemy!`);
 

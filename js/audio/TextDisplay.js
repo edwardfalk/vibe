@@ -72,7 +72,7 @@ export function drawActiveTexts(
     p.text(textObj.text, screenX, screenY);
   }
 
-  if (showBeatIndicator) {
+  if (showBeatIndicator && typeof drawGlowFn === 'function') {
     drawGlowFn(p, beatX, beatY, 40, p.color(255, 255, 100), 0.5);
   }
 

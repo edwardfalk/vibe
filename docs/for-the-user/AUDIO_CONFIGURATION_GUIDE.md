@@ -2,7 +2,7 @@
 
 > **Purpose:**  
 > This guide explains how to configure and tune all audio parameters in Vibe.  
-> For rules, see [.cursorrules](../.cursorrules).
+> For rules, see [.cursorrules](../../.cursorrules).
 
 ## 📁 File Location
 
@@ -56,7 +56,7 @@ Each character voice has these properties:
 
 ```javascript
 voiceType: {
-    rate: 0.8,      // Speech speed (0.1-2.0, 1.0 = normal)
+    rate: 0.8,      // Speech speed (0.1-10.0 per SpeechSynthesisUtterance.rate, 1.0 = normal)
     pitch: 0.1,     // Voice pitch (0.0-2.0, 1.0 = normal)
     volume: 0.4     // Speech volume (0.0-1.0) - NOW REDUCED for background effect
 }
@@ -87,8 +87,8 @@ Ambient enemy sounds get enhanced effects based on distance:
 ### 🎚️ Effect Parameters
 
 ```javascript
-// Distance calculation (0 = close, 1 = far)
-const normalizedDistance = Math.min(distance / 600, 1);
+// Distance calculation (0 = close, 1 = far); clamp to [0,1] to avoid negative distance
+const normalizedDistance = Math.max(0, Math.min(distance / 600, 1));
 
 // Reverb intensity: close = 0.4, far = 0.9
 const reverbIntensity = 0.4 + normalizedDistance * 0.5;
@@ -193,6 +193,6 @@ this.volume = 0.7; // Master volume (0.0-1.0)
 
 - All volume values are relative to the master volume
 - Distance effects only apply to ambient enemy sounds
-- Speech volumes are now reduced to be background to sound effects
+- Speech volumes are now reduced so speech stays secondary to sound effects
 - Distant enemies get more reverb, distortion, and mystical delays
 - Player sounds always play at full volume regardless of position

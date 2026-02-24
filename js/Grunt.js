@@ -7,14 +7,15 @@ import { CONFIG } from './config.js';
  * Maintains tactical distance, uses friendly fire avoidance, confused personality
  */
 class Grunt extends BaseEnemy {
-  constructor(x, y, type, config, p, audio, context = null) {
+  constructor(x, y, type, config, p, audio) {
     const gruntConfig = {
+      ...config,
       size: 26,
       health: 2,
       speed: 1.2,
       color: p.color(50, 205, 50), // Lime green
     };
-    super(x, y, 'grunt', gruntConfig, p, audio, context);
+    super(x, y, 'grunt', gruntConfig, p, audio);
     this.p = p;
     this.audio = audio;
 

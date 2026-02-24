@@ -43,7 +43,9 @@ export class GameContext {
   static fromWindow() {
     const initial = {};
     for (const key of WINDOW_CONTEXT_KEYS) {
-      initial[key] = window[key];
+      if (typeof window !== 'undefined' && window[key] !== undefined) {
+        initial[key] = window[key];
+      }
     }
     return new GameContext(initial);
   }

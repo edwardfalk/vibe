@@ -19,7 +19,7 @@ export function updatePerformanceDiagnostics(context) {
       ? collisionSystem.getPerformanceSnapshot()
       : null;
   const bulletPoolStats =
-    typeof bulletClass.getPoolStats === 'function'
+    bulletClass && typeof bulletClass.getPoolStats === 'function'
       ? bulletClass.getPoolStats()
       : null;
   const floatingTextPoolStats =

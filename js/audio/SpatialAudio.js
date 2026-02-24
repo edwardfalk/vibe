@@ -4,9 +4,9 @@ export function calculatePanForPosition(x, playerX = 400) {
 }
 
 export function calculateVolumeForPosition(x, y, playerX = 400, playerY = 300) {
-  if (x === null || y === null) return 1.0;
+  if (x == null || y == null) return 1.0;
 
   const distance = Math.sqrt((x - playerX) ** 2 + (y - playerY) ** 2);
-  const normalizedDistance = Math.min(distance / 600, 1);
+  const normalizedDistance = Math.max(0, Math.min(distance / 600, 1));
   return Math.max(0.3, 1.0 - normalizedDistance * 0.6);
 }
