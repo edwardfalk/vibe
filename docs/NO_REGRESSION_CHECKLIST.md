@@ -144,9 +144,20 @@ This checklist is the release gate for the aggressive refactor program.
 - Explosion.js: SHOCKWAVE_ALPHA_SCALE.
 - AuroraWisps.js: AURORA_WISP_BASE_SIZE, AURORA_WISP_MODULATION, AURORA_PHASE_SPEED.
 
+## Testing Infrastructure Overhaul (2026-02-25)
+
+- **Boot crash fixed**: `GameLoopSetup.js` synced context before `restart()` (was crashing `Grunt` constructor with null p5 instance).
+- **MCP test infrastructure removed**: `run-mcp-tests.js` deleted; `test:mcp` script replaced with Playwright `webServer` config.
+- **Playwright config added**: `playwright.config.js` with auto-server, screenshots on failure, traces on failure.
+- **Vitest unit tests added**: 66 tests across 5 modules (mathUtils, BeatClock, GameState, GameContext, DamageResult).
+- **Dead files removed**: `debug.js`, `js/explosions/Explosion.js` (legacy duplicate), `.env.example`, unused deps.
+- **Test commands**: `bun run test:mcp` → `bun run test` (runs `test:e2e` + `test:unit`). Historical entries below use old `test:mcp` name.
+- `bun run test`: pass (9 e2e + 66 unit).
+- `bun run lint`: pass.
+
 ## Mandatory Checks Per Refactor Wave
 
-- [ ] `bun run test:mcp` passes.
+- [ ] `bun run test` passes.
 - [ ] `bun run lint` passes (or only pre-existing unrelated issues remain).
 - [ ] Canvas boot succeeds in browser (`canvas` visible within 30s).
 - [ ] Player input still works (`WASD`, shoot, arrow keys).

@@ -78,7 +78,7 @@ This file is the source of truth for module layout and runtime wiring.
   - `contracts/DamageResult.js` - normalized damage/death result contract.
 - `js/testing/`
   - `ai-liveness-probe.js` - browser-side liveness probe for gameplay smoke tests.
-  - Probe tests and test utilities (see `tests/`).
+- `tests/` - Playwright e2e probes + Vitest unit tests (see `docs/TESTING.md`).
 
 ## Active Canonical Paths
 

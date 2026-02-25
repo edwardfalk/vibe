@@ -35,7 +35,7 @@ export function drawMediumStarsLayer(stars, p) {
       }
     }
 
-    // Note: beatPulse from getBeatReactiveValues() is typically in [0,1], 
+    // Note: beatPulse from getBeatReactiveValues() is typically in [0,1],
     // but we clamp shadowBlur and currentSize defensively.
     const shadowBlurCandidate = 5 + beatPulse * 20;
     p.drawingContext.shadowBlur = Math.max(0, shadowBlurCandidate);

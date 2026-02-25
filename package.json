@@ -8,12 +8,12 @@
     "serve": "bunx five-server --port=5500",
     "predev": "bunx kill-port 5500",
     "dev": "bun run serve",
-    "test": "bun test",
-    "test:playwright": "bunx playwright test",
-    "test:headed": "bunx playwright test --headed",
-    "test:debug": "bunx playwright test --debug",
-    "test:mcp": "bun run run-mcp-tests.js",
-    "test:comprehensive": "bun run test:playwright && bun run test:mcp",
+    "test": "bunx playwright test && bun run test:unit",
+    "test:e2e": "bunx playwright test",
+    "test:e2e:headed": "bunx playwright test --headed",
+    "test:e2e:debug": "bunx playwright test --debug",
+    "test:unit": "bunx vitest run",
+    "test:unit:watch": "bunx vitest",
     "lint": "bunx eslint \"**/*.js\"",
     "format": "bunx prettier --write \"**/*.{js,md,json}\"",
     "clean": "rm -rf node_modules bun.lockb",
@@ -32,23 +32,13 @@
     "test": {}
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
-    "concurrently": "^9.1.2",
-    "dotenv-cli": "^8.0.0",
+    "@playwright/test": "^1.52.0",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
     "five-server": "^0.4.4",
-    "kill-port": "^2.0.1",
-    "live-server": "^1.2.2",
-    "playwright": "^1.52.0",
     "prettier": "^3.5.3",
-    "tsx": "^4.19.4",
     "vitest": "^3.2.2"
-  },
-  "dependencies": {
-    "dotenv": "^16.5.0",
-    "p5": "^1.7.0"
   },
   "keywords": [
     "game",

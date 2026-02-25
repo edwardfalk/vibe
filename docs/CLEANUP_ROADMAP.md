@@ -7,7 +7,7 @@ Execution plan for codebase clean-up, refactoring, and file restructuring. Writt
 ## Definition of Done (per wave)
 
 - `bun run lint` passes
-- `bun run test:mcp` passes
+- `bun run test` passes
 - `docs/NO_REGRESSION_CHECKLIST.md` items verified
 - `ARCHITECTURE.md` updated if structure changed
 
@@ -22,7 +22,7 @@ Execution plan for codebase clean-up, refactoring, and file restructuring. Writt
 - `js/effects/FloatingTextPool.js`, `FloatingTextManager.js`, `EffectsManager.js`, `EnhancedExplosionManager.js`, `VisualEffectsManager.js`, `glowUtils.js`
 - Barrel `js/effects/index.js`
 - Root-level `effects.js`, `visualEffects.js`, `FloatingTextPool.js` removed
-- All imports updated; `bun run test:mcp` and `bun run lint` pass
+- All imports updated; `bun run test` and `bun run lint` pass
 
 ### Previous state (for reference)
 
@@ -90,7 +90,7 @@ Execution plan for codebase clean-up, refactoring, and file restructuring. Writt
 
 ### Execution notes
 
-- One file per wave; run `bun run test:mcp` after each
+- One file per wave; run `bun run test` after each
 - Prefer extraction over moving code between existing files
 - Keep enemy constructor signature: `(x, y, type, config, p, audio)` per `.cursorrules`
 

@@ -121,10 +121,11 @@ export function runSetup(p, arrays, syncContext = null) {
   }
   console.log('💥 Collision system initialized');
 
-  window.gameState.restart();
+  // Sync context BEFORE restart so spawnEnemies() can resolve player/p5 instance
   if (typeof syncContext === 'function') {
     syncContext(gameContext);
   }
+  window.gameState.restart();
   console.log('🎮 GameState system initialized');
 
   console.log('🌌 Background renderer initialized');

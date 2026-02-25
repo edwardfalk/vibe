@@ -12,7 +12,7 @@ The alien enemies are different mixes of evil, psycho, big-baby-cowards, fascist
 - Main game entry in `js/GameLoop.js`
 - Architecture source of truth in `ARCHITECTURE.md`
 - Playable browser build via Five Server
-- Smoke testing via Playwright probes in `tests/`
+- E2E testing via Playwright probes + unit testing via Vitest
 - Project rules in `.cursorrules`
 
 ## Documentation
@@ -44,29 +44,26 @@ The game runs at `http://localhost:5500`.
 ### 3) Run tests
 
 ```bash
-bun run test:playwright
-bun run test:mcp
+bun run test          # all tests (e2e + unit)
+bun run test:e2e      # Playwright gameplay probes (auto-starts server)
+bun run test:unit     # Vitest unit tests
 ```
-
-`test:mcp` runs the smoke runner in `run-mcp-tests.js` (server + gameplay probe tests).
 
 ## Project Structure
 
 - `js/` - game modules with domain migration folders (`core/`, `systems/`, `entities/`, `audio/`, `effects/`, `shared/`, `testing/`)
-- `tests/` - Playwright gameplay probes
+- `tests/` - Playwright e2e probes + Vitest unit tests
 - `docs/` - design/audio documentation
 - `index.html` - browser entry point
-- `run-mcp-tests.js` - smoke probe orchestrator
 
 ## Scripts
 
-- `bun run serve` - start Five Server on `5500`
-- `bun run dev` - start local game server
-- `bun run test:playwright` - run Playwright tests
-- `bun run test:headed` - run Playwright tests in headed mode
-- `bun run test:debug` - run Playwright tests in debug mode
-- `bun run test:mcp` - run smoke test orchestrator
-- `bun run test:comprehensive` - run Playwright suite then MCP smoke probes
+- `bun run dev` - start local game server on port 5500
+- `bun run test` - run all tests (e2e + unit)
+- `bun run test:e2e` - run Playwright gameplay probes (auto-starts server)
+- `bun run test:e2e:headed` - Playwright in headed mode (visual debugging)
+- `bun run test:unit` - run Vitest unit tests
+- `bun run test:unit:watch` - Vitest in watch mode
 - `bun run lint` - run ESLint
 - `bun run format` - run Prettier
 - `bun run clean` - remove install artifacts (`node_modules`, `bun.lockb`)

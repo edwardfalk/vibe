@@ -12,7 +12,11 @@ export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
     instanceCache.set(p, cache);
   }
 
-  if (!cache.aurora || cache.lastWidth !== p.width || cache.lastHeight !== p.height) {
+  if (
+    !cache.aurora ||
+    cache.lastWidth !== p.width ||
+    cache.lastHeight !== p.height
+  ) {
     if (cache.aurora) cache.aurora.remove();
     cache.aurora = p.createGraphics(p.width, p.height);
     cache.lastWidth = p.width;

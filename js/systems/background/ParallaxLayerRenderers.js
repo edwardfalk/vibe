@@ -11,7 +11,12 @@ export function drawDistantStarsLayer(stars, p, beatClock = null) {
     const alpha = Math.min(255, star.brightness * twinkle * 255 + beatBoost);
 
     p.fill(255, 255, 255, alpha);
-    p.ellipse(star.x, star.y, star.size + (beatPulse * STAR_BEAT_MULTIPLIER), star.size + (beatPulse * STAR_BEAT_MULTIPLIER));
+    p.ellipse(
+      star.x,
+      star.y,
+      star.size + beatPulse * STAR_BEAT_MULTIPLIER,
+      star.size + beatPulse * STAR_BEAT_MULTIPLIER
+    );
   }
   p.drawingContext.shadowBlur = 0;
   p.drawingContext.shadowColor = 'transparent';

@@ -1,15 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-// Basic gameplay probe using Playwright evaluation
-const GAME_URL = process.env.GAME_URL || 'http://localhost:5500';
-
 /**
  * Boot the game and wait for core systems to be available.
  * Canvas is hidden (data-hidden) until first user interaction (autoplay policy).
  * Wait for canvas to be attached, then trigger unlock via keydown.
  */
 const bootGame = async (page) => {
-  await page.goto(GAME_URL);
+  await page.goto('/');
   await page.waitForSelector('canvas', { state: 'attached' });
   // Trigger unlockAudioAndShowCanvas (keydown also registered)
   await page.keyboard.press(' ');
@@ -192,6 +189,129 @@ test.describe('Gameplay Probes', () => {
         window.player?.health <= 0,
       { timeout: 2000 }
     );
+  });
+
+  test('All enemy types can be spawned, damaged, and killed', async ({
+    page,
+  }) => {
+    await bootGame(page);
+
+    const results = await page.evaluate(() => {
+      const p = window.player.p;
+      const factory = window.spawnSystem.enemyFactory;
+      const out = {};
+
+      for (const type of ['grunt', 'rusher', 'tank', 'stabber']) {
+        try {
+          const enemy = factory.createEnemy(
+            window.player.x + 150,
+            window.player.y + 150,
+            type,
+            p
+          );
+          if (!enemy) {
+            out[type] = { error: 'null enemy' };
+            continue;
+          }
+          window.enemies.push(enemy);
+
+          enemy.health = 1;
+          const dmgResult = enemy.takeDamage(10, 0);
+          out[type] = { ok: true, dmgResult: String(dmgResult) };
+        } catch (e) {
+          out[type] = { error: e.message };
+        }
+      }
+      return out;
+    });
+
+    for (const type of ['grunt', 'rusher', 'tank', 'stabber']) {
+      expect(results[type].error).toBeUndefined();
+      expect(results[type].ok).toBe(true);
+    }
+
+    // Verify draw loop still running after enemy deaths
+    const fc1 = await page.evaluate(() => window.frameCount);
+    await page.waitForTimeout(500);
+    const fc2 = await page.evaluate(() => window.frameCount);
+    expect(fc2).toBeGreaterThan(fc1);
+  });
+
+  test('Bullet collision kills enemy and awards score', async ({ page }) => {
+    await bootGame(page);
+
+    const result = await page.evaluate(() => {
+      const p = window.player.p;
+      const factory = window.spawnSystem.enemyFactory;
+      const gs = window.gameState;
+
+      const scoreBefore = gs.score;
+      const killsBefore = gs.totalKills;
+
+      const grunt = factory.createEnemy(
+        window.player.x + 30,
+        window.player.y,
+        'grunt',
+        p
+      );
+      grunt.health = 1;
+      window.enemies.push(grunt);
+
+      window.collisionSystem.resolveBulletEnemyHit(
+        {
+          x: grunt.x,
+          y: grunt.y,
+          damage: 10,
+          angle: 0,
+          owner: 'player',
+          checkCollision: () => true,
+        },
+        0,
+        grunt
+      );
+
+      return {
+        scoreIncreased: gs.score > scoreBefore,
+        killsIncreased: gs.totalKills > killsBefore,
+        markedForRemoval: grunt.markedForRemoval,
+      };
+    });
+
+    expect(result.scoreIncreased).toBe(true);
+    expect(result.killsIncreased).toBe(true);
+    expect(result.markedForRemoval).toBe(true);
+  });
+
+  test('Stabber attack handler runs without error', async ({ page }) => {
+    await bootGame(page);
+
+    const result = await page.evaluate(() => {
+      const p = window.player.p;
+      const factory = window.spawnSystem.enemyFactory;
+
+      const stabber = factory.createEnemy(
+        window.player.x + 250,
+        window.player.y,
+        'stabber',
+        p
+      );
+      window.enemies.push(stabber);
+
+      // Run several update cycles
+      for (let i = 0; i < 30; i++) {
+        stabber.update(window.player.x, window.player.y, 16.67);
+      }
+
+      return {
+        ok: true,
+        x: stabber.x,
+        y: stabber.y,
+        health: stabber.health,
+      };
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.health).toBeGreaterThan(0);
   });
 
   test('Score and kill streak transitions stay consistent', async ({

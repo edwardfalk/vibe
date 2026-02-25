@@ -8,7 +8,7 @@ Optimize background rendering performance to maintain 60fps and unify the visual
 - Background elements correctly pan with camera movement (parallax integration).
 - Visual aesthetic uses a strict synthwave color palette (deep violet, hot magenta, bright cyan).
 - Environment visually reacts to the beat without relying solely on full-screen flashes.
-- `bun run lint` passes and `bun run test:mcp` passes (if applicable).
+- `bun run lint` passes and `bun run test` passes.
 
 ## Baseline
 - Heavy trigonometric math (`sin`, `cos`) is computed per-frame for complex elements like galaxies and nebula streams.

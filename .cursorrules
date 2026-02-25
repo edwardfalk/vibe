@@ -83,11 +83,12 @@
 
 ## 7) Testing Rules
 
-- Keep automated testing probe-driven.
-- Primary smoke path:
-  - `bun run test:mcp`
-- Gameplay probes should validate real runtime behavior (not mocked placeholders).
-- On failures, capture screenshot + diagnostics in test artifacts.
+- Two test layers: Vitest unit tests + Playwright e2e probes.
+- Primary gate: `bun run test` (runs both).
+- Unit tests (`tests/unit/`): fast, isolated, for pure logic modules.
+- E2E probes (`tests/gameplay-probe.test.js`): validate real runtime behavior in headless browser.
+- Playwright config auto-starts the dev server (no manual server needed).
+- On e2e failures, screenshots + traces are captured in `test-results/`.
 
 ---
 
