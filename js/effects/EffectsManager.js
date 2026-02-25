@@ -5,14 +5,12 @@
 
 import { max, random, sin, cos, lerp, TWO_PI } from '../mathUtils.js';
 
-const SHAKE_MAX_DURATION_FRAMES = 30;
-const SCREEN_FLASH_MAX_FRAMES = 10;
-
 class EffectsManager {
   constructor() {
     this.shake = {
       intensity: 0,
       duration: 0,
+      maxDuration: 0,
       x: 0,
       y: 0,
     };
@@ -24,6 +22,7 @@ class EffectsManager {
       intensity: 0,
       color: [255, 255, 255],
       duration: 0,
+      maxDuration: 0,
     };
 
     this.timeScale = 1.0;
@@ -33,7 +32,8 @@ class EffectsManager {
   update() {
     if (this.shake.duration > 0) {
       this.shake.duration--;
-      const progress = this.shake.duration / SHAKE_MAX_DURATION_FRAMES;
+      const maxD = this.shake.maxDuration || 1;
+      const progress = Math.max(0, this.shake.duration / maxD);
       const currentIntensity = this.shake.intensity * progress;
 
       this.shake.x = (random() - 0.5) * currentIntensity;
@@ -45,8 +45,11 @@ class EffectsManager {
 
     if (this.screenFlash.duration > 0) {
       this.screenFlash.duration--;
-      this.screenFlash.intensity =
-        this.screenFlash.duration / SCREEN_FLASH_MAX_FRAMES;
+      const maxD = this.screenFlash.maxDuration || 1;
+      this.screenFlash.intensity = Math.max(
+        0,
+        this.screenFlash.duration / maxD
+      );
     }
 
     this.timeScale = lerp(this.timeScale, this.targetTimeScale, 0.1);
@@ -78,18 +81,21 @@ class EffectsManager {
       trail.draw(p);
     }
 
-    if (this.screenFlash.duration > 0) {
-      p.fill(
-        this.screenFlash.color[0],
-        this.screenFlash.color[1],
-        this.screenFlash.color[2],
-        this.screenFlash.intensity * 100
-      );
-      p.noStroke();
-      p.rect(-this.shake.x, -this.shake.y, p.width, p.height);
-    }
+    this._drawScreenFlash(p);
 
     p.pop();
+  }
+
+  _drawScreenFlash(p) {
+    if (this.screenFlash.duration <= 0) return;
+    p.fill(
+      this.screenFlash.color[0],
+      this.screenFlash.color[1],
+      this.screenFlash.color[2],
+      this.screenFlash.intensity * 100
+    );
+    p.noStroke();
+    p.rect(-this.shake.x, -this.shake.y, p.width, p.height);
   }
 
   drawParticles(p) {
@@ -99,26 +105,19 @@ class EffectsManager {
   }
 
   drawScreenEffects(p) {
-    if (this.screenFlash.duration > 0) {
-      p.fill(
-        this.screenFlash.color[0],
-        this.screenFlash.color[1],
-        this.screenFlash.color[2],
-        this.screenFlash.intensity * 100
-      );
-      p.noStroke();
-      p.rect(-this.shake.x, -this.shake.y, p.width, p.height);
-    }
+    this._drawScreenFlash(p);
   }
 
   addShake(intensity, duration = 20) {
     this.shake.intensity = max(this.shake.intensity, intensity);
     this.shake.duration = max(this.shake.duration, duration);
+    this.shake.maxDuration = max(this.shake.maxDuration, duration);
   }
 
   addScreenFlash(color = [255, 255, 255], duration = 8) {
     this.screenFlash.color = color;
     this.screenFlash.duration = duration;
+    this.screenFlash.maxDuration = duration;
     this.screenFlash.intensity = 1.0;
   }
 
@@ -152,8 +151,12 @@ class EffectsManager {
   }
 
   setSlowMotion(scale = 0.3, duration = 60) {
+    if (this._slowMotionTimeoutId) {
+      clearTimeout(this._slowMotionTimeoutId);
+    }
     this.targetTimeScale = scale;
-    setTimeout(() => {
+    this._slowMotionTimeoutId = setTimeout(() => {
+      this._slowMotionTimeoutId = null;
       this.targetTimeScale = 1.0;
     }, duration * 16.67);
   }

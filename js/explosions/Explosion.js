@@ -169,7 +169,8 @@ export class Explosion {
         255,
         255,
         255,
-        SHOCKWAVE_ALPHA_SCALE * (1 - this.shockwaveRadius / this.maxShockwaveRadius)
+        SHOCKWAVE_ALPHA_SCALE *
+          (1 - this.shockwaveRadius / this.maxShockwaveRadius)
       );
       p.strokeWeight(3);
       p.noFill();

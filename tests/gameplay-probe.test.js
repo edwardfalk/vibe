@@ -10,7 +10,7 @@ const GAME_URL = process.env.GAME_URL || 'http://localhost:5500';
  */
 const bootGame = async (page) => {
   await page.goto(GAME_URL);
-  const canvas = await page.waitForSelector('canvas', { state: 'attached' });
+  await page.waitForSelector('canvas', { state: 'attached' });
   // Trigger unlockAudioAndShowCanvas (keydown also registered)
   await page.keyboard.press(' ');
   await page.waitForFunction(

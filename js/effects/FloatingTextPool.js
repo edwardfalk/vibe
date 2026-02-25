@@ -15,12 +15,17 @@ export class FloatingTextPool {
 
   acquire(initialState) {
     this.stats.acquired++;
-    const text = this.pool.pop() || {};
-    if (Object.keys(text).length === 0) {
+    const text = this.pool.pop();
+    if (text === undefined) {
       this.stats.created++;
-    } else {
-      this.stats.reused++;
+      const newText = {};
+      for (const key in newText) delete newText[key];
+      Object.assign(newText, initialState);
+      this.stats.inUse++;
+      this.stats.peakInUse = Math.max(this.stats.peakInUse, this.stats.inUse);
+      return newText;
     }
+    this.stats.reused++;
     for (const key in text) {
       delete text[key];
     }
@@ -31,7 +36,12 @@ export class FloatingTextPool {
   }
 
   release(text) {
-    if (!text || this.pool.length >= this.maxSize) return;
+    if (!text) return;
+    if (this.pool.length >= this.maxSize) {
+      this.stats.released++;
+      this.stats.inUse = Math.max(0, this.stats.inUse - 1);
+      return;
+    }
     this.pool.push(text);
     this.stats.released++;
     this.stats.inUse = Math.max(0, this.stats.inUse - 1);

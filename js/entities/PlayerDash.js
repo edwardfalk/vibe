@@ -3,11 +3,14 @@
  * Extracted from player.js for file-size split (~500 line guideline).
  */
 
-import { atan2 } from '../mathUtils.js';
+import { atan2, cos, sin } from '../mathUtils.js';
+
+const MAX_DELTA_MS = 100;
 
 /** Apply dash movement and update dash timer. Call when player.isDashing. */
 export function updateDash(player, deltaTimeMs) {
-  const dt = deltaTimeMs / 16.6667;
+  const clampedDelta = Math.min(deltaTimeMs, MAX_DELTA_MS);
+  const dt = clampedDelta / 16.6667;
   player.x += player.dashVelocity.x * dt;
   player.y += player.dashVelocity.y * dt;
 
@@ -50,8 +53,8 @@ export function tryStartDash(player) {
       player.p.mouseY
     );
     const mouseAngle = atan2(worldMouse.y - player.y, worldMouse.x - player.x);
-    dashDirX = -player.p.cos(mouseAngle);
-    dashDirY = -player.p.sin(mouseAngle);
+    dashDirX = cos(mouseAngle);
+    dashDirY = sin(mouseAngle);
   }
 
   if (dashFromKeyboard && dashDirX !== 0 && dashDirY !== 0) {

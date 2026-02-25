@@ -4,16 +4,27 @@
  * Extracted from Stabber.js for file-size split (~500 line guideline).
  */
 
-import { floor, random, sqrt, sin, cos, atan2 } from '../mathUtils.js';
+import {
+  floor,
+  random,
+  sqrt,
+  sin,
+  cos,
+  atan2,
+  normalizeAngle,
+} from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 
 /** Update stabber attack behavior; returns hit result or null. */
+const MAX_DELTA_MS = 100;
+
 export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
   const dx = playerX - stabber.x;
   const dy = playerY - stabber.y;
   const distance = sqrt(dx * dx + dy * dy);
 
-  const dt = deltaTimeMs / 16.6667;
+  const clampedDeltaMs = Math.min(deltaTimeMs, MAX_DELTA_MS);
+  const dt = clampedDeltaMs / 16.6667;
   if (stabber.stabCooldown > 0) stabber.stabCooldown -= dt;
   if (stabber.stabChantTimer > 0) stabber.stabChantTimer -= dt;
 
@@ -40,7 +51,7 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
     }
   }
 
-  const dtSeconds = deltaTimeMs / 1000;
+  const dtSeconds = clampedDeltaMs / 1000;
   stabber.x += stabber.knockbackVelocity.x * dtSeconds;
   stabber.y += stabber.knockbackVelocity.y * dtSeconds;
   const decayFactor = Math.pow(stabber.knockbackDecay, dt);
@@ -349,9 +360,7 @@ export function checkStabHit(stabber, playerX, playerY) {
   const playerDistance = sqrt((playerX - tipX) ** 2 + (playerY - tipY) ** 2);
   const stabReach = 16;
   const playerAngle = atan2(playerY - stabber.y, playerX - stabber.x);
-  let playerDiff =
-    ((stabber.stabDirection - playerAngle + Math.PI) % (2 * Math.PI)) - Math.PI;
-  if (playerDiff < -Math.PI) playerDiff += 2 * Math.PI;
+  const playerDiff = normalizeAngle(stabber.stabDirection - playerAngle);
   const angleDifference = Math.abs(playerDiff);
   const maxStabAngle = Math.PI / 6;
   const inStabDirection = angleDifference <= maxStabAngle;
@@ -403,10 +412,7 @@ export function checkStabHit(stabber, playerX, playerY) {
       const enemyDistance = sqrt((enemy.x - tipX) ** 2 + (enemy.y - tipY) ** 2);
       if (enemyDistance <= stabReach) {
         const enemyAngle = atan2(enemy.y - stabber.y, enemy.x - stabber.x);
-        let enemyDiff =
-          ((stabber.stabDirection - enemyAngle + Math.PI) % (2 * Math.PI)) -
-          Math.PI;
-        if (enemyDiff < -Math.PI) enemyDiff += 2 * Math.PI;
+        const enemyDiff = normalizeAngle(stabber.stabDirection - enemyAngle);
         const enemyAngleDifference = Math.abs(enemyDiff);
         const enemyInStabDirection = enemyAngleDifference <= maxStabAngle;
         if (enemyInStabDirection) {

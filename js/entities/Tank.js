@@ -477,7 +477,7 @@ class Tank extends BaseEnemy {
     if (armorResult?.absorbed) return false;
 
     if (armorResult?.overflowAmount !== undefined) {
-      spawnArmorBreakEffect(this, armorResult.plate);
+      if (armorResult.plate) spawnArmorBreakEffect(this, armorResult.plate);
       handleAngerForDamage(this, damageSource, armorResult.overflowAmount);
       return armorResult.overflowAmount > 0
         ? super.takeDamage(

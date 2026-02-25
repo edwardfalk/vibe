@@ -4,7 +4,7 @@ This checklist is the release gate for the aggressive refactor program.
 
 ## Baseline Snapshot (2026-02-24)
 
-- `bun run test:mcp`: pass (`9 passed`, runtime ~29s). Last validated: 2026-02-25.
+- `bun run test:mcp`: pass (`2 passed`, runtime ~9s). Immutable baseline.
 - Collision metrics probe (`window.collisionSystem.getPerformanceSnapshot()` after boot):
   - `frameSampleSize`: `220`
   - `latestFrame.enemiesAtFrameStart`: `2`
@@ -124,6 +124,10 @@ This checklist is the release gate for the aggressive refactor program.
 - New modules: FloatingTextPool, FloatingTextManager, EffectsManager, EnhancedExplosionManager, VisualEffectsManager, glowUtils.
 - Barrel `js/effects/index.js` re-exports all.
 - Imports updated in GameLoop, bullet, BaseEnemy, player, Audio.
+
+## Phase B (skipped)
+
+- Phase B was intentionally skipped/merged: file splits in the Phase B table were completed before Phase C; Phase B table rows are historical and marked Done. No separate Phase B validation entry.
 
 ## Phase C Explosions Consolidation (2026-02-25)
 

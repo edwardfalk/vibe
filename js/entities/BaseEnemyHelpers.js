@@ -77,7 +77,10 @@ export function drawEnemyHealthBar(p, enemy) {
   p.fill(100, 100, 100);
   p.rect(enemy.x - barWidth / 2, barY, barWidth, barHeight);
 
-  const healthPercent = enemy.health / enemy.maxHealth;
+  const healthPercent = Math.max(
+    0,
+    Math.min(1, enemy.maxHealth > 0 ? enemy.health / enemy.maxHealth : 0)
+  );
   const healthColor =
     healthPercent > 0.5
       ? p.color(0, 255, 0)

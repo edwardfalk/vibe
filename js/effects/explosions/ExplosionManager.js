@@ -48,22 +48,25 @@ export class ExplosionManager {
     if (audio) audio.playPlasmaCloud(x, y);
   }
 
-  addRadioactiveDebris(x, y) {
+  addRadioactiveDebris(x, y, playAudio = true) {
     this.radioactiveDebris.push(new RadioactiveDebris(x, y));
-    const audio = this.getContextValue('audio');
-    if (audio) audio.playPlasmaCloud(x, y);
+    if (playAudio) {
+      const audio = this.getContextValue('audio');
+      if (audio) audio.playPlasmaCloud(x, y);
+    }
   }
 
   // Create multiple radioactive debris clouds around a bomb explosion
   addBombDebrisField(centerX, centerY, count = 5) {
     for (let i = 0; i < count; i++) {
-      // Scatter debris clouds around the explosion center
       const angle = (i / count) * TWO_PI + random(-0.5, 0.5);
-      const distance = random(80, 150); // Spread debris around explosion
+      const distance = random(80, 150);
       const debrisX = centerX + cos(angle) * distance;
       const debrisY = centerY + sin(angle) * distance;
-      this.addRadioactiveDebris(debrisX, debrisY);
+      this.addRadioactiveDebris(debrisX, debrisY, false);
     }
+    const audio = this.getContextValue('audio');
+    if (audio) audio.playPlasmaCloud(centerX, centerY);
     console.log(
       `☢️ Created radioactive debris field with ${count} contamination zones`
     );

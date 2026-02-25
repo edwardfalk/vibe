@@ -127,12 +127,12 @@ Execution plan for codebase clean-up, refactoring, and file restructuring. Writt
 
 ### Previous remaining candidates
 
-| Location         | Value                 | Suggested constant                                                             |
-| ---------------- | --------------------- | ------------------------------------------------------------------------------ | ------- |
-| `GameLoop.js`    | 800, 600              | `CONFIG.canvasWidth`, `CONFIG.canvasHeight` or `CANVAS_WIDTH`, `CANVAS_HEIGHT` |
-| `UIRenderer.js`  | 50, 100 (pulse/alpha) | `UI_PULSE_BASE`, `UI_ALPHA_MAX` (in UIConstants.js)                            | ✅ Done |
-| `Explosion.js`   | 100 (shockwave)       | `SHOCKWAVE_ALPHA_SCALE`                                                        |
-| `AuroraWisps.js` | 100, 35, 0.006        | `AURORA_BASE_ALPHA`, `AURORA_MODULATION`, `AURORA_PHASE_SPEED`                 |
+| Location         | Value                 | Suggested constant                                                             | Status   |
+| ---------------- | --------------------- | ------------------------------------------------------------------------------ | -------- |
+| `GameLoop.js`    | 800, 600              | `CONFIG.canvasWidth`, `CONFIG.canvasHeight` or `CANVAS_WIDTH`, `CANVAS_HEIGHT` | -        |
+| `UIRenderer.js`  | 50, 100 (pulse/alpha) | `UI_PULSE_BASE`, `UI_ALPHA_MAX` (in UIConstants.js)                            | ✅ Done  |
+| `Explosion.js`   | 100 (shockwave)       | `SHOCKWAVE_ALPHA_SCALE`                                                        | ✅ Done  |
+| `AuroraWisps.js` | 100, 35, 0.006        | `AURORA_BASE_ALPHA`, `AURORA_MODULATION`, `AURORA_PHASE_SPEED`                 | ✅ Done  |
 
 ### Execution
 

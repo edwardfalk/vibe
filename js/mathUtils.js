@@ -39,6 +39,14 @@ export function lerp(a, b, t) {
 }
 
 /**
+ * Map value from [inMin, inMax] to [outMin, outMax].
+ */
+export function mapRange(value, inMin, inMax, outMin, outMax) {
+  const t = inMax === inMin ? 0 : (value - inMin) / (inMax - inMin);
+  return outMin + (outMax - outMin) * t;
+}
+
+/**
  * Clamp value between low and high.
  */
 export function constrain(value, low, high) {

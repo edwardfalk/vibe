@@ -44,6 +44,7 @@ export class Explosion {
     const { vxRange, vyRange, sizeRange, lifeRange } = params;
 
     for (let i = 0; i < config.particleCount; i++) {
+      const life = random(lifeRange[0], lifeRange[1]);
       this.particles.push({
         x: x + random(-3, 3),
         y: y + random(-3, 3),
@@ -51,8 +52,8 @@ export class Explosion {
         vy: random(vyRange[0], vyRange[1]),
         size: random(sizeRange[0], sizeRange[1]),
         color: getParticleColor(type),
-        life: random(lifeRange[0], lifeRange[1]),
-        maxLife: random(lifeRange[0], lifeRange[1]),
+        life,
+        maxLife: life,
         rotation: random(TWO_PI),
         rotationSpeed: random(-0.2, 0.2),
         trail: [],
@@ -97,13 +98,14 @@ export class Explosion {
 
   createEnergyRings() {
     for (let i = 0; i < 3; i++) {
+      const life = random(40, 60);
       this.sparkles.push({
         x: this.x,
         y: this.y,
         radius: 10 + i * 15,
         maxRadius: 80 + i * 20,
-        life: random(40, 60),
-        maxLife: random(40, 60),
+        life,
+        maxLife: life,
         intensity: random(0.6, 0.9),
         type: 'energyRing',
         ringIndex: i,

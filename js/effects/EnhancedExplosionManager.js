@@ -58,18 +58,22 @@ class EnhancedExplosion {
     this.x = x;
     this.y = y;
     this.type = type;
-    this.size = size;
+    this.size = Math.max(1, size);
     this.life = 30;
     this.maxLife = 30;
     this.rings = [];
 
     const ringCount = type === 'rusher-explosion' ? 4 : 2;
     for (let i = 0; i < ringCount; i++) {
+      const color =
+        type === 'enemy' || type === 'rusher-explosion'
+          ? [255, 100, 50]
+          : [100, 150, 255];
       this.rings.push({
         radius: 0,
-        maxRadius: (20 + i * 15) * size,
+        maxRadius: (20 + i * 15) * this.size,
         speed: 2 + i * 0.5,
-        color: type === 'enemy' ? [255, 100, 50] : [100, 150, 255],
+        color,
         delay: i * 5,
       });
     }
@@ -94,7 +98,7 @@ class EnhancedExplosion {
     for (const ring of this.rings) {
       if (ring.radius > 0) {
         const alpha =
-          max(0, 1 - ring.radius / ring.maxRadius) * lifePercent * 100;
+          max(0, 1 - ring.radius / ring.maxRadius) * lifePercent * 255;
         p.fill(ring.color[0], ring.color[1], ring.color[2], alpha);
         p.noStroke();
         p.ellipse(0, 0, ring.radius * 2);

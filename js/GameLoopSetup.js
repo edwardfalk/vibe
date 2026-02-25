@@ -22,6 +22,7 @@ import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
+const DEFAULT_BPM = 120;
 
 /**
  * Run game setup. Mutates window and returns initialized state refs.
@@ -38,6 +39,14 @@ export function runSetup(p, arrays, syncContext = null) {
   const gameContext = createWindowBackedContext(new GameContext());
   window.gameContext = gameContext;
 
+  if (!window.cameraSystem) {
+    window.cameraSystem = new CameraSystem(p, gameContext);
+  }
+  if (!window.gameState) {
+    window.gameState = new GameState();
+  }
+  window.gameState.activeBombs = activeBombs;
+
   const player = new Player(
     p,
     p.width / 2,
@@ -46,71 +55,20 @@ export function runSetup(p, arrays, syncContext = null) {
     gameContext
   );
   window.player = player;
+  if (player) player.cameraSystem = window.cameraSystem;
 
   window.enemies = enemies;
   window.playerBullets = playerBullets;
   window.enemyBullets = enemyBullets;
   window.activeBombs = activeBombs;
 
-  const explosionManager = new ExplosionManager(gameContext);
+  const explosionManager =
+    window.explosionManager ?? new ExplosionManager(gameContext);
   window.explosionManager = explosionManager;
 
-  window.floatingText = new FloatingTextManager(gameContext);
-  window.hitStopFrames = 0;
+  window.floatingText =
+    window.floatingText ?? new FloatingTextManager(gameContext);
   gameContext.set('hitStopFrames', 0);
-
-  if (!window.visualEffectsManager) {
-    window.visualEffectsManager = new VisualEffectsManager(
-      window.backgroundLayers,
-      gameContext
-    );
-  }
-  console.log('🎮 Visual effects manager initialized');
-
-  if (!window.audio) {
-    window.audio = new Audio(p, window.player, gameContext);
-  }
-  console.log('🎵 Unified audio system initialized');
-
-  if (!window.gameState) {
-    window.gameState = new GameState();
-  }
-  window.gameState.activeBombs = activeBombs;
-
-  if (!window.cameraSystem) {
-    window.cameraSystem = new CameraSystem(p, gameContext);
-    if (player) player.cameraSystem = window.cameraSystem;
-  }
-  console.log('📷 Camera system initialized');
-
-  if (!window.spawnSystem) {
-    window.spawnSystem = new SpawnSystem(gameContext);
-  }
-  console.log('👾 Spawn system initialized');
-
-  if (!window.beatClock) {
-    window.beatClock = new BeatClock(120);
-    console.log('🎵 BeatClock initialized and assigned to window.beatClock');
-  }
-  if (!window.rhythmFX) {
-    window.rhythmFX = new RhythmFX(gameContext);
-    console.log('🎵 RhythmFX initialized');
-  }
-  if (!window.testModeManager) {
-    window.testModeManager = new TestMode(window.player, gameContext);
-    console.log('🧪 Test mode manager initialized');
-  }
-
-  if (!window.collisionSystem) {
-    window.collisionSystem = new CollisionSystem(gameContext);
-  }
-  console.log('💥 Collision system initialized');
-
-  if (typeof syncContext === 'function') {
-    syncContext(gameContext);
-  }
-  window.gameState.restart();
-  console.log('🎮 GameState system initialized');
 
   if (!window.backgroundRenderer) {
     window.backgroundRenderer = new BackgroundRenderer(
@@ -122,23 +80,67 @@ export function runSetup(p, arrays, syncContext = null) {
     );
   }
   window.backgroundRenderer.createParallaxBackground(p);
-  console.log('🌌 Background renderer initialized');
+  const backgroundLayers = window.backgroundRenderer.parallaxLayers ?? [];
 
-  const enemyDeathHandler = new EnemyDeathHandler(gameContext);
-
-  if (!window.uiRenderer) {
-    window.uiRenderer = new UIRenderer(
-      window.gameState,
-      window.player,
-      window.audio,
-      window.cameraSystem,
-      window.testModeManager
+  if (!window.visualEffectsManager) {
+    window.visualEffectsManager = new VisualEffectsManager(
+      backgroundLayers,
+      gameContext
     );
   }
+  console.log('🎮 Visual effects manager initialized');
+
+  if (!window.audio) {
+    window.audio = new Audio(p, window.player, gameContext);
+  }
+  console.log('🎵 Unified audio system initialized');
+
+  console.log('📷 Camera system initialized');
+
+  if (!window.spawnSystem) {
+    window.spawnSystem = new SpawnSystem(gameContext);
+  }
+  console.log('👾 Spawn system initialized');
+
+  if (!window.beatClock) {
+    window.beatClock = new BeatClock(DEFAULT_BPM);
+    console.log('🎵 BeatClock initialized and assigned to window.beatClock');
+  }
+  if (!window.rhythmFX) {
+    window.rhythmFX = new RhythmFX(gameContext);
+    console.log('🎵 RhythmFX initialized');
+  }
+  window.testModeManager = new TestMode(window.player, gameContext);
+  console.log('🧪 Test mode manager initialized');
+
+  if (!window.collisionSystem) {
+    window.collisionSystem = new CollisionSystem(gameContext);
+  }
+  console.log('💥 Collision system initialized');
+
+  window.gameState.restart();
+  if (typeof syncContext === 'function') {
+    syncContext(gameContext);
+  }
+  console.log('🎮 GameState system initialized');
+
+  console.log('🌌 Background renderer initialized');
+
+  const enemyDeathHandler =
+    window.enemyDeathHandler ?? new EnemyDeathHandler(gameContext);
+  window.enemyDeathHandler = enemyDeathHandler;
+
+  window.uiRenderer = new UIRenderer(
+    window.gameState,
+    window.player,
+    window.audio,
+    window.cameraSystem,
+    window.testModeManager
+  );
   console.log('🖥️ UI renderer initialized');
 
   if (!window.beatTrack) {
-    window.beatTrack = new BeatTrack(120, gameContext);
+    window.beatTrack = new BeatTrack(DEFAULT_BPM, gameContext);
   }
 
   if (window.spawnSystem) {

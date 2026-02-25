@@ -16,6 +16,7 @@ class VisualEffectsManager {
     this.chromaticAberration = 0;
     this.timeOffset = 0;
     this.initialized = false;
+    this.initFailed = false;
 
     this.nebulaPalette = [
       [138, 43, 226],
@@ -46,6 +47,7 @@ class VisualEffectsManager {
       console.log('✨ Visual effects fully initialized');
     } catch (error) {
       console.log('⚠️ Visual effects initialization failed:', error);
+      this.initFailed = true;
     }
   }
 
@@ -84,6 +86,7 @@ class VisualEffectsManager {
     if (!this.initialized) {
       this.init(p);
     }
+    this._updateAurorasAndDust(p);
     this.drawSpaceGradient(p);
     if (this.initialized) {
       this.drawAuroras(p, camera);
@@ -97,11 +100,11 @@ class VisualEffectsManager {
   drawSpaceGradient(p) {
     p.push();
     p.noFill();
+    const c1 = p.color(15, 5, 35);
+    const c2 = p.color(60, 30, 80);
+    const c3 = p.color(25, 15, 45);
     for (let i = 0; i <= p.height; i += 2) {
       const inter = p.map(i, 0, p.height, 0, 1);
-      const c1 = p.color(15, 5, 35);
-      const c2 = p.color(60, 30, 80);
-      const c3 = p.color(25, 15, 45);
       let currentColor;
       if (inter < 0.5) {
         currentColor = p.lerpColor(c1, c3, inter * 2);
@@ -114,6 +117,21 @@ class VisualEffectsManager {
     p.pop();
   }
 
+  _updateAurorasAndDust(p) {
+    this.auroras.forEach((aurora) => {
+      aurora.angle += aurora.speed;
+      aurora.phase += 0.02;
+    });
+    this.cosmicDust.forEach((dust) => {
+      dust.x += cos(dust.angle) * dust.speed;
+      dust.y += sin(dust.angle) * dust.speed;
+      if (dust.x > p.width + 50) dust.x = -50;
+      if (dust.x < -50) dust.x = p.width + 50;
+      if (dust.y > p.height + 50) dust.y = -50;
+      if (dust.y < -50) dust.y = p.height + 50;
+    });
+  }
+
   drawAuroras(p, camera) {
     p.push();
     p.blendMode(p.SCREEN);
@@ -123,8 +141,6 @@ class VisualEffectsManager {
       const parallaxY = aurora.y - camera.y * 0.1;
       p.translate(parallaxX, parallaxY);
       p.rotate(aurora.angle);
-      aurora.angle += aurora.speed;
-      aurora.phase += 0.02;
       p.noStroke();
       for (let i = 0; i < aurora.width; i += 20) {
         for (let j = 0; j < aurora.height; j += 20) {
@@ -164,12 +180,6 @@ class VisualEffectsManager {
     p.push();
     p.blendMode(p.SCREEN);
     this.cosmicDust.forEach((dust) => {
-      dust.x += cos(dust.angle) * dust.speed;
-      dust.y += sin(dust.angle) * dust.speed;
-      if (dust.x > p.width + 50) dust.x = -50;
-      if (dust.x < -50) dust.x = p.width + 50;
-      if (dust.y > p.height + 50) dust.y = -50;
-      if (dust.y < -50) dust.y = p.height + 50;
       const parallaxX = dust.x - camera.x * dust.z * 0.3;
       const parallaxY = dust.y - camera.y * dust.z * 0.3;
       p.fill(
@@ -347,8 +357,6 @@ class VisualEffectsManager {
   }
 
   updateParticles() {
-    if (!this.initialized) return;
-
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const part = this.particles[i];
 
@@ -371,6 +379,7 @@ class VisualEffectsManager {
   }
 
   drawParticles(p) {
+    if (this.initFailed) return;
     p.push();
     p.blendMode(p.ADD);
     this.particles.forEach((part) => {
@@ -409,7 +418,6 @@ class VisualEffectsManager {
   drawChromaticAberration(p) {
     p.push();
     p.blendMode(p.MULTIPLY);
-    p.tint(255, 0, 0, 100);
     p.fill(255, 0, 0, this.chromaticAberration * 10);
     p.rect(0, 0, p.width, p.height);
     p.pop();
@@ -428,16 +436,24 @@ class VisualEffectsManager {
   }
 
   triggerChromaticAberration(intensity = 0.5, duration = 30) {
+    if (this.chromaticAberrationTimer) {
+      clearTimeout(this.chromaticAberrationTimer);
+    }
     this.chromaticAberration = intensity;
-    setTimeout(() => {
+    this.chromaticAberrationTimer = setTimeout(() => {
       this.chromaticAberration = 0;
+      this.chromaticAberrationTimer = null;
     }, duration * 16.67);
   }
 
   triggerBloom(intensity = 0.3, duration = 20) {
+    if (this.bloomTimer) {
+      clearTimeout(this.bloomTimer);
+    }
     this.bloomIntensity = intensity;
-    setTimeout(() => {
+    this.bloomTimer = setTimeout(() => {
       this.bloomIntensity = 0;
+      this.bloomTimer = null;
     }, duration * 16.67);
   }
 }

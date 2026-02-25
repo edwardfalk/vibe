@@ -90,7 +90,7 @@ This file is the source of truth for module layout and runtime wiring.
 - Shared contracts: `js/shared/`
 - Testing: `js/testing/`
 - Audio/support still rooted by design: `js/Audio.js`, `js/RhythmFX.js`, `js/config.js`, `js/mathUtils.js`
-- Effects: `js/effects/` — FloatingTextPool, FloatingTextManager, EffectsManager, EnhancedExplosionManager, VisualEffectsManager, glowUtils, AreaDamageHandler, DashEffect.
+- Effects: `js/effects/` — FloatingTextPool, FloatingTextManager, EffectsManager, EnhancedExplosionManager (visual rings/particles), VisualEffectsManager, glowUtils, AreaDamageHandler, DashEffect.
 - Explosions: `js/effects/explosions/` — ExplosionManager, Explosion, ExplosionConfig, EnemyFragmentExplosion, RadioactiveDebris, PlasmaCloud.
 
 ## Combat Contracts

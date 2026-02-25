@@ -40,10 +40,15 @@ export function runDraw(p, updateGame, drawGame) {
 
       case 'gameOver':
         if (window.testModeManager && window.testModeManager.enabled) {
+          if (!Number.isFinite(window.gameState.gameOverTimer)) {
+            window.gameState.gameOverTimer = 0;
+          }
           window.gameState.gameOverTimer++;
           if (window.gameState.gameOverTimer >= 60) {
+            if (window.gameState.gameOverTimer === 60) {
+              console.log('🔄 Auto-restarting game in test mode');
+            }
             window.gameState.restart();
-            console.log('🔄 Auto-restarting game in test mode');
           }
         }
         break;
@@ -55,6 +60,6 @@ export function runDraw(p, updateGame, drawGame) {
   }
 
   if (window.rhythmFX) {
-    window.rhythmFX.draw(p, window.cameraSystem);
+    window.rhythmFX.draw(p, window.cameraSystem ?? null);
   }
 }

@@ -22,7 +22,12 @@ export class FloatingTextManager {
   }
 
   acquireText(initialState) {
-    return this.textPool.acquire(initialState);
+    const t = this.textPool.acquire(initialState);
+    if (!t) {
+      console.warn('⚠️ FloatingTextPool exhausted, dropping text');
+      return null;
+    }
+    return t;
   }
 
   releaseText(text) {
@@ -54,6 +59,21 @@ export class FloatingTextManager {
         existing.life = 40;
         existing.x = this.accumulatorPos.x;
         existing.y = this.accumulatorPos.y;
+      } else {
+        const t = this.acquireText({
+          x: this.accumulatorPos.x,
+          y: this.accumulatorPos.y,
+          text: `-${this.damageAccumulator}`,
+          size: 14 + Math.min(this.damageAccumulator * 1.5, 16),
+          life: 40,
+          maxLife: 40,
+          color: [255, 255, 255],
+          vy: -2,
+          vx: 0,
+          isAccumulated: true,
+          momentum: 1.0,
+        });
+        if (t) this.texts.push(t);
       }
     } else {
       this.damageAccumulator = amount;
@@ -64,21 +84,20 @@ export class FloatingTextManager {
       const beatPulse = beatClock ? beatClock.getBeatIntensity(8) : 0;
       const isOnBeat = beatPulse > 0.5;
 
-      this.texts.push(
-        this.acquireText({
-          x,
-          y,
-          text: `-${amount}`,
-          color: isOnBeat ? [255, 150, 150] : [255, 255, 255],
-          size: 14 + Math.min(amount * 2, 10) + (isOnBeat ? 3 : 0),
-          vy: -2 - Math.min(amount * 0.1, 1),
-          vx: (Math.random() - 0.5) * 0.5,
-          life: 40,
-          maxLife: 40,
-          isAccumulated: true,
-          momentum: 1.0,
-        })
-      );
+      const t = this.acquireText({
+        x,
+        y,
+        text: `-${amount}`,
+        color: isOnBeat ? [255, 150, 150] : [255, 255, 255],
+        size: 14 + Math.min(amount * 2, 10) + (isOnBeat ? 3 : 0),
+        vy: -2 - Math.min(amount * 0.1, 1),
+        vx: (Math.random() - 0.5) * 0.5,
+        life: 40,
+        maxLife: 40,
+        isAccumulated: true,
+        momentum: 1.0,
+      });
+      if (t) this.texts.push(t);
     }
 
     this.lastDamageTime = now;
@@ -97,61 +116,58 @@ export class FloatingTextManager {
     const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
     const sizeBonus = streak >= 5 ? 4 : streak >= 3 ? 2 : 0;
 
-    this.texts.push(
-      this.acquireText({
-        x,
-        y: y - 10,
-        text: 'KILL!',
-        color,
-        size: 18 + sizeBonus + beatPulse * 2,
-        vy: -2.5,
-        vx: 0,
-        life: 50,
-        maxLife: 50,
-        scale: 1.5,
-        targetScale: 1.0,
-        isKill: true,
-        momentum: 0.95,
-      })
-    );
+    const killText = this.acquireText({
+      x,
+      y: y - 10,
+      text: 'KILL!',
+      color,
+      size: 18 + sizeBonus + beatPulse * 2,
+      vy: -2.5,
+      vx: 0,
+      life: 50,
+      maxLife: 50,
+      scale: 1.5,
+      targetScale: 1.0,
+      isKill: true,
+      momentum: 0.95,
+    });
+    if (killText) this.texts.push(killText);
 
     if (streak >= 3) {
-      this.texts.push(
-        this.acquireText({
-          x,
-          y: y - 35,
-          text: `${streak}x STREAK!`,
-          color: [255, 200, 50],
-          size: 14 + Math.min(streak, 8) + beatPulse * 2,
-          vy: -3,
-          vx: 0,
-          life: 70,
-          maxLife: 70,
-          scale: 0.5,
-          targetScale: 1.2,
-          isStreak: true,
-          momentum: 0.92,
-        })
-      );
+      const streakText = this.acquireText({
+        x,
+        y: y - 35,
+        text: `${streak}x STREAK!`,
+        color: [255, 200, 50],
+        size: 14 + Math.min(streak, 8) + beatPulse * 2,
+        vy: -3,
+        vx: 0,
+        life: 70,
+        maxLife: 70,
+        scale: 0.5,
+        targetScale: 1.2,
+        isStreak: true,
+        momentum: 0.92,
+      });
+      if (streakText) this.texts.push(streakText);
 
       if (streak >= 5) {
-        this.texts.push(
-          this.acquireText({
-            x: x + 30,
-            y: y - 35,
-            text: '✦',
-            color: [255, 255, 100],
-            size: 20,
-            vy: -2,
-            vx: 0.5,
-            life: 40,
-            maxLife: 40,
-            scale: 1,
-            momentum: 0.9,
-            rotate: true,
-            rotation: 0,
-          })
-        );
+        const starText = this.acquireText({
+          x: x + 30,
+          y: y - 35,
+          text: '✦',
+          color: [255, 255, 100],
+          size: 20,
+          vy: -2,
+          vx: 0.5,
+          life: 40,
+          maxLife: 40,
+          scale: 1,
+          momentum: 0.9,
+          rotate: true,
+          rotation: 0,
+        });
+        if (starText) this.texts.push(starText);
       }
     }
   }
@@ -160,41 +176,39 @@ export class FloatingTextManager {
     const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
     const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
 
-    this.texts.push(
-      this.acquireText({
-        x,
-        y,
-        text: `+${score}`,
-        color: isCombo ? [255, 215, 0] : [100, 255, 100],
-        size: isCombo ? 20 : 16,
-        vy: -2.2,
-        vx: Math.random() - 0.5,
-        life: 50,
-        maxLife: 50,
-        scale: 0.8 + beatPulse * 0.2,
-        targetScale: 1.0,
-        momentum: 0.96,
-        isScore: true,
-      })
-    );
+    const t = this.acquireText({
+      x,
+      y,
+      text: `+${score}`,
+      color: isCombo ? [255, 215, 0] : [100, 255, 100],
+      size: isCombo ? 20 : 16,
+      vy: -2.2,
+      vx: Math.random() - 0.5,
+      life: 50,
+      maxLife: 50,
+      scale: 0.8 + beatPulse * 0.2,
+      targetScale: 1.0,
+      momentum: 0.96,
+      isScore: true,
+    });
+    if (t) this.texts.push(t);
   }
 
   addText(x, y, text, color = [255, 255, 255], size = 14) {
-    this.texts.push(
-      this.acquireText({
-        x,
-        y,
-        text,
-        color,
-        size,
-        vy: -1.5,
-        vx: 0,
-        life: 45,
-        maxLife: 45,
-        scale: 1,
-        momentum: 0.98,
-      })
-    );
+    const t = this.acquireText({
+      x,
+      y,
+      text,
+      color,
+      size,
+      vy: -1.5,
+      vx: 0,
+      life: 45,
+      maxLife: 45,
+      scale: 1,
+      momentum: 0.98,
+    });
+    if (t) this.texts.push(t);
   }
 
   update() {
@@ -252,7 +266,7 @@ export class FloatingTextManager {
 
       let displayScale = t.scale || 1;
       if (lifePercent > 0.8 && t.isKill) {
-        displayScale = 1 + (1 - lifePercent) * 0.5;
+        displayScale = Math.max(displayScale, 1 + (1 - lifePercent) * 0.5);
       }
 
       p.push();
@@ -266,17 +280,16 @@ export class FloatingTextManager {
       p.textAlign(p.CENTER, p.CENTER);
       p.textSize(t.size);
 
+      if (t.isStreak || t.isKill) {
+        p.fill(t.color[0], t.color[1], t.color[2], displayAlpha * 0.3);
+        p.text(t.text, 0, 0);
+      }
       p.fill(0, 0, 0, displayAlpha * 0.5);
       p.noStroke();
       p.text(t.text, 2, 2);
 
       p.fill(t.color[0], t.color[1], t.color[2], displayAlpha);
       p.text(t.text, 0, 0);
-
-      if (t.isStreak || t.isKill) {
-        p.fill(t.color[0], t.color[1], t.color[2], displayAlpha * 0.3);
-        p.text(t.text, 0, 0);
-      }
 
       p.pop();
     }

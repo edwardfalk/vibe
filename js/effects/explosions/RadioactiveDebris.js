@@ -43,6 +43,7 @@ export class RadioactiveDebris {
 
     if (this.timer >= this.maxTimer) {
       this.active = false;
+      return null;
     }
 
     if (this.damageTimer >= this.damageInterval) {
@@ -134,6 +135,7 @@ export class RadioactiveDebris {
   }
 
   checkDamage(target) {
+    if (!this.active) return false;
     const distance = dist(this.x, this.y, target.x, target.y);
     return distance < this.radius;
   }

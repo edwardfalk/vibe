@@ -91,7 +91,9 @@ export class UIRenderer {
     p.rect(0, 0, p.width, p.height);
 
     const messageIndex =
-      floor(this.gameState.score / 50) % GAME_OVER_MESSAGES.length;
+      GAME_OVER_MESSAGES.length > 0
+        ? floor(this.gameState.score / 50) % GAME_OVER_MESSAGES.length
+        : 0;
     const isNewHighScore = this.gameState.score > this.gameState.highScore;
 
     // Game over text with animation
@@ -155,8 +157,10 @@ export class UIRenderer {
     p.fill(255, 20, 147); // Pink
     p.textSize(16);
     const commentIndex =
-      floor(this.gameState.score / 30) % FUNNY_COMMENTS.length;
-    p.text(FUNNY_COMMENTS[commentIndex], p.width / 2, p.height / 2 + 115);
+      FUNNY_COMMENTS.length > 0
+        ? floor(this.gameState.score / 30) % FUNNY_COMMENTS.length
+        : 0;
+    p.text(FUNNY_COMMENTS[commentIndex] ?? '', p.width / 2, p.height / 2 + 115);
 
     // Restart instruction
     p.fill(255);

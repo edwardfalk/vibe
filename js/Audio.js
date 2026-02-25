@@ -144,8 +144,16 @@ export class Audio {
     for (const [methodName, { getLine, voiceType }] of Object.entries(
       SPEECH_WRAPPER_CONFIG
     )) {
-      this[methodName] = (entity, context) =>
-        this.speak(entity, getLine(entity, context), voiceType);
+      this[methodName] = (entity, lineContext) => {
+        let text;
+        try {
+          text = getLine(entity, lineContext);
+        } catch (err) {
+          console.warn('⚠️ Speech getLine error:', err);
+          text = null;
+        }
+        if (text) this.speak(entity, text, voiceType);
+      };
     }
   }
 

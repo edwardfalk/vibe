@@ -118,8 +118,9 @@ export class EnemyFragmentExplosion {
       fragment.type = fragmentType;
       fragment.rotation = random(TWO_PI);
       fragment.rotationSpeed = random(-0.4, 0.4);
-      fragment.life = random(80, 120);
-      fragment.maxLife = random(80, 120);
+      const lifespan = random(80, 120);
+      fragment.life = lifespan;
+      fragment.maxLife = lifespan;
       fragment.gravity = 0.08;
       fragment.friction = 0.98;
       if (fragmentType === 'body') {
@@ -155,8 +156,9 @@ export class EnemyFragmentExplosion {
       particle.vy = sin(angle) * speed;
       particle.size = random(12, 30);
       particle.color = primaryColor;
-      particle.life = random(40, 70);
-      particle.maxLife = random(40, 70);
+      const lifespan = random(40, 70);
+      particle.life = lifespan;
+      particle.maxLife = lifespan;
       particle.glow = random(0.7, 1.2);
       this.centralExplosion.particles.push(particle);
     }

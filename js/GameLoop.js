@@ -75,7 +75,7 @@ function syncRuntimeContext(
   if (!ctx) return;
   const hitStopFrames =
     hitStopFramesOverride ??
-    gameContext.get('hitStopFrames') ??
+    gameContext?.get?.('hitStopFrames') ??
     window.hitStopFrames ??
     0;
 
