@@ -48,6 +48,7 @@ export function runDraw(p, updateGame, drawGame) {
             if (window.gameState.gameOverTimer === 60) {
               console.log('🔄 Auto-restarting game in test mode');
             }
+            window.gameState.gameOverTimer = 0;
             window.gameState.restart();
           }
         }

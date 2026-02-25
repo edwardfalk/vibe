@@ -40,9 +40,13 @@ export function lerp(a, b, t) {
 
 /**
  * Map value from [inMin, inMax] to [outMin, outMax].
+ * Values outside [inMin, inMax] extrapolate beyond [outMin, outMax].
+ * When inMin === inMax, t is 0 (degenerate guard).
+ * @param {boolean} [clamp=false] - When true, clamp t to [0,1] so out-of-range inputs map to nearest endpoint.
  */
-export function mapRange(value, inMin, inMax, outMin, outMax) {
-  const t = inMax === inMin ? 0 : (value - inMin) / (inMax - inMin);
+export function mapRange(value, inMin, inMax, outMin, outMax, clamp = false) {
+  let t = inMax === inMin ? 0 : (value - inMin) / (inMax - inMin);
+  if (clamp) t = Math.max(0, Math.min(1, t));
   return outMin + (outMax - outMin) * t;
 }
 

@@ -29,7 +29,19 @@ class EffectsManager {
     this.targetTimeScale = 1.0;
   }
 
-  update() {
+  update(deltaTimeMs) {
+    if (
+      this._slowMotionRemainingFrames != null &&
+      this._slowMotionRemainingFrames > 0
+    ) {
+      const dt = typeof deltaTimeMs === 'number' ? deltaTimeMs / 16.6667 : 1;
+      this._slowMotionRemainingFrames -= dt;
+      if (this._slowMotionRemainingFrames <= 0) {
+        this._slowMotionRemainingFrames = null;
+        this.targetTimeScale = 1.0;
+      }
+    }
+
     if (this.shake.duration > 0) {
       this.shake.duration--;
       const maxD = this.shake.maxDuration || 1;
@@ -81,8 +93,6 @@ class EffectsManager {
       trail.draw(p);
     }
 
-    this._drawScreenFlash(p);
-
     p.pop();
   }
 
@@ -95,7 +105,7 @@ class EffectsManager {
       this.screenFlash.intensity * 100
     );
     p.noStroke();
-    p.rect(-this.shake.x, -this.shake.y, p.width, p.height);
+    p.rect(0, 0, p.width, p.height);
   }
 
   drawParticles(p) {
@@ -110,8 +120,11 @@ class EffectsManager {
 
   addShake(intensity, duration = 20) {
     this.shake.intensity = max(this.shake.intensity, intensity);
+    const prevDuration = this.shake.duration;
     this.shake.duration = max(this.shake.duration, duration);
-    this.shake.maxDuration = max(this.shake.maxDuration, duration);
+    if (duration >= prevDuration) {
+      this.shake.maxDuration = duration;
+    }
   }
 
   addScreenFlash(color = [255, 255, 255], duration = 8) {
@@ -153,12 +166,10 @@ class EffectsManager {
   setSlowMotion(scale = 0.3, duration = 60) {
     if (this._slowMotionTimeoutId) {
       clearTimeout(this._slowMotionTimeoutId);
+      this._slowMotionTimeoutId = null;
     }
     this.targetTimeScale = scale;
-    this._slowMotionTimeoutId = setTimeout(() => {
-      this._slowMotionTimeoutId = null;
-      this.targetTimeScale = 1.0;
-    }, duration * 16.67);
+    this._slowMotionRemainingFrames = duration;
   }
 
   getTimeScale() {

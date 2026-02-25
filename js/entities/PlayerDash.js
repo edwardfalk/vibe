@@ -5,16 +5,20 @@
 
 import { atan2, cos, sin } from '../mathUtils.js';
 
+const MIN_DELTA_MS = 1;
 const MAX_DELTA_MS = 100;
 
 /** Apply dash movement and update dash timer. Call when player.isDashing. */
 export function updateDash(player, deltaTimeMs) {
-  const clampedDelta = Math.min(deltaTimeMs, MAX_DELTA_MS);
+  const clampedDelta = Math.max(
+    MIN_DELTA_MS,
+    Math.min(deltaTimeMs, MAX_DELTA_MS)
+  );
   const dt = clampedDelta / 16.6667;
   player.x += player.dashVelocity.x * dt;
   player.y += player.dashVelocity.y * dt;
 
-  player.dashTimerMs += deltaTimeMs;
+  player.dashTimerMs += clampedDelta;
   if (player.dashTimerMs >= player.maxDashTimeMs) {
     player.isDashing = false;
     player.dashTimerMs = 0;

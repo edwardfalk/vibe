@@ -94,6 +94,10 @@ export class UIRenderer {
       GAME_OVER_MESSAGES.length > 0
         ? floor(this.gameState.score / 50) % GAME_OVER_MESSAGES.length
         : 0;
+    const gameOverMessage =
+      GAME_OVER_MESSAGES.length > 0
+        ? (GAME_OVER_MESSAGES[messageIndex] ?? '')
+        : '';
     const isNewHighScore = this.gameState.score > this.gameState.highScore;
 
     // Game over text with animation
@@ -104,12 +108,12 @@ export class UIRenderer {
 
     // Additive glow for title
     p.blendMode(p.ADD);
-    p.text(GAME_OVER_MESSAGES[messageIndex], p.width / 2, p.height / 2 - 80);
+    p.text(gameOverMessage, p.width / 2, p.height / 2 - 80);
     p.blendMode(p.BLEND);
 
     p.stroke(255, 255, 255);
     p.strokeWeight(2);
-    p.text(GAME_OVER_MESSAGES[messageIndex], p.width / 2, p.height / 2 - 80);
+    p.text(gameOverMessage, p.width / 2, p.height / 2 - 80);
     p.noStroke();
 
     // New high score celebration

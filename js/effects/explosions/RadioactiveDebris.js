@@ -135,8 +135,17 @@ export class RadioactiveDebris {
   }
 
   checkDamage(target) {
-    if (!this.active) return false;
+    if (!this.active) return null;
     const distance = dist(this.x, this.y, target.x, target.y);
-    return distance < this.radius;
+    if (distance <= this.radius) {
+      return {
+        hit: true,
+        distance,
+        target,
+        source: this,
+        radius: this.radius,
+      };
+    }
+    return null;
   }
 }

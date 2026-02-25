@@ -87,6 +87,9 @@ export function runSetup(p, arrays, syncContext = null) {
       backgroundLayers,
       gameContext
     );
+  } else {
+    window.visualEffectsManager.backgroundLayers = backgroundLayers;
+    window.visualEffectsManager.context = gameContext;
   }
   console.log('🎮 Visual effects manager initialized');
 
