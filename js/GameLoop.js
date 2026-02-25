@@ -8,21 +8,6 @@
  * - Stabbers = Off-beat accent (beat 3.5)
  */
 
-import { Player } from './entities/player.js';
-import { EnemyFactory } from './entities/EnemyFactory.js';
-import { ExplosionManager } from './explosions/ExplosionManager.js';
-import { GameState } from './core/GameState.js';
-import { CameraSystem } from './systems/CameraSystem.js';
-import { SpawnSystem } from './systems/SpawnSystem.js';
-import { BackgroundRenderer } from './systems/BackgroundRenderer.js';
-import { UIRenderer } from './systems/UIRenderer.js';
-import { CollisionSystem } from './systems/CollisionSystem.js';
-import { TestMode } from './systems/TestMode.js';
-import { Audio } from './Audio.js';
-import { BeatClock } from './audio/BeatClock.js';
-import { BeatTrack } from './audio/BeatTrack.js';
-import { RhythmFX } from './RhythmFX.js';
-import { GameContext, createWindowBackedContext } from './core/GameContext.js';
 import { initializeInputHandlers } from './core/InputHandlers.js';
 import { updateBombs as updateBombSystem } from './systems/BombSystem.js';
 import { updateEnemiesAndResolveResults } from './systems/gameplay/EnemyUpdatePipeline.js';
@@ -31,11 +16,11 @@ import { drawGameplayWorld } from './systems/gameplay/RenderPipeline.js';
 import { updatePerformanceDiagnostics } from './systems/gameplay/PerformanceDiagnostics.js';
 import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
 import { Bullet } from './entities/bullet.js';
-import VisualEffectsManager from './visualEffects.js';
-import { FloatingTextManager } from './effects.js';
+import { VisualEffectsManager, FloatingTextManager } from './effects/index.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
 import { CONFIG } from './config.js';
-import { sqrt, max, min, floor, ceil, round, random } from './mathUtils.js';
+import { runSetup } from './GameLoopSetup.js';
+import { runDraw } from './GameLoopDraw.js';
 
 // Core game objects
 let player;
@@ -82,15 +67,19 @@ window.arrowRightPressed = false;
 
 initializeInputHandlers();
 
-function syncRuntimeContext(hitStopFramesOverride = null) {
-  if (!gameContext) return;
+function syncRuntimeContext(
+  hitStopFramesOverride = null,
+  targetContext = null
+) {
+  const ctx = targetContext ?? gameContext;
+  if (!ctx) return;
   const hitStopFrames =
     hitStopFramesOverride ??
     gameContext.get('hitStopFrames') ??
     window.hitStopFrames ??
     0;
 
-  gameContext.assign({
+  ctx.assign({
     player: window.player,
     enemies: window.enemies,
     playerBullets: window.playerBullets,
@@ -112,200 +101,25 @@ function syncRuntimeContext(hitStopFramesOverride = null) {
 }
 
 function setup(p) {
-  p.createCanvas(800, 600);
-  if (!gameContext) {
-    gameContext = createWindowBackedContext(new GameContext());
-    window.gameContext = gameContext;
-  }
-
-  // Initialize player at center (cameraSystem set later; context populated before first draw)
-  player = new Player(
+  const state = runSetup(
     p,
-    p.width / 2,
-    p.height / 2,
-    window.cameraSystem,
-    gameContext
+    {
+      enemies,
+      playerBullets,
+      enemyBullets,
+      activeBombs,
+    },
+    (ctx) => syncRuntimeContext(window.hitStopFrames, ctx)
   );
-  window.player = player;
-
-  // Initialize global arrays
-  window.enemies = enemies;
-  window.playerBullets = playerBullets;
-  window.enemyBullets = enemyBullets;
-  window.activeBombs = activeBombs;
-
-  // Initialize systems
-  explosionManager = new ExplosionManager(gameContext);
-  window.explosionManager = explosionManager;
-
-  window.floatingText = new FloatingTextManager(gameContext);
-  window.hitStopFrames = 0;
-  gameContext.set('hitStopFrames', 0);
-
-  // Use one visual effects manager path to avoid split state.
-  if (!window.visualEffectsManager) {
-    window.visualEffectsManager = new VisualEffectsManager(
-      window.backgroundLayers,
-      gameContext
-    );
-  }
-  console.log('🎮 Visual effects manager initialized');
-
-  // Initialize unified audio system
-  if (!window.audio) {
-    window.audio = new Audio(p, window.player, gameContext);
-  }
-  console.log('🎵 Unified audio system initialized');
-
-  // Initialize modular systems
-  if (!window.gameState) {
-    window.gameState = new GameState();
-  }
-  window.gameState.activeBombs = activeBombs;
-
-  if (!window.cameraSystem) {
-    window.cameraSystem = new CameraSystem(p, gameContext);
-    if (player) {
-      player.cameraSystem = window.cameraSystem; // Fix mouse aiming
-    }
-  }
-  console.log('📷 Camera system initialized');
-
-  if (!window.spawnSystem) {
-    window.spawnSystem = new SpawnSystem(gameContext);
-  }
-  console.log('👾 Spawn system initialized');
-
-  // Initialize beatClock, rhythmFX, testModeManager before first assign so restart/spawnEnemies get defined refs
-  if (!window.beatClock) {
-    window.beatClock = new BeatClock(120);
-    console.log('🎵 BeatClock initialized and assigned to window.beatClock');
-  }
-  if (!window.rhythmFX) {
-    window.rhythmFX = new RhythmFX(gameContext);
-    console.log('🎵 RhythmFX initialized');
-  }
-  if (!window.testModeManager) {
-    window.testModeManager = new TestMode(window.player, gameContext);
-    console.log('🧪 Test mode manager initialized');
-  }
-
-  // Initialize collision system before sync/restart (context and spawn logic may reference it)
-  if (!window.collisionSystem) {
-    window.collisionSystem = new CollisionSystem(gameContext);
-  }
-  console.log('💥 Collision system initialized');
-
-  // Sync context before restart (spawnEnemies reads from context)
+  player = state.player;
+  explosionManager = state.explosionManager;
+  gameContext = state.gameContext;
+  enemyDeathHandler = state.enemyDeathHandler;
   syncRuntimeContext(window.hitStopFrames);
-
-  // Now restart the game state (this calls spawnEnemies which needs camera)
-  window.gameState.restart();
-  console.log('🎮 GameState system initialized');
-
-  if (!window.backgroundRenderer) {
-    window.backgroundRenderer = new BackgroundRenderer(
-      p,
-      window.cameraSystem,
-      window.player,
-      window.gameState,
-      gameContext
-    );
-  }
-  window.backgroundRenderer.createParallaxBackground(p);
-  console.log('🌌 Background renderer initialized');
-
-  if (!enemyDeathHandler) {
-    enemyDeathHandler = new EnemyDeathHandler(gameContext);
-  }
-
-  if (!window.uiRenderer) {
-    window.uiRenderer = new UIRenderer(
-      window.gameState,
-      window.player,
-      window.audio,
-      window.cameraSystem,
-      window.testModeManager
-    );
-  }
-  console.log('🖥️ UI renderer initialized');
-
-  // Initialize procedural beat track (starts on first user interaction)
-  if (!window.beatTrack) {
-    window.beatTrack = new BeatTrack(120, gameContext);
-  }
-
-  // Initial enemy spawn
-  if (window.spawnSystem) {
-    window.spawnSystem.spawnEnemies(1);
-  }
-
-  syncRuntimeContext(window.hitStopFrames);
-
-  console.log('🎮 Game setup complete - all systems initialized');
 }
 
 function draw(p) {
-  // Ensure global frameCount is updated for all modules and probes (p5 instance mode)
-  window.frameCount = p.frameCount;
-
-  // Log the current game state every frame - DISABLED to reduce console spam
-  // if (window.DEBUG && window.gameState && window.gameState.gameState) {
-  //     console.log('🎮 [STATE] gameState:', window.gameState.gameState);
-  // }
-
-  // Draw background using BackgroundRenderer
-  if (window.backgroundRenderer) {
-    window.backgroundRenderer.drawCosmicAuroraBackground(p);
-    window.backgroundRenderer.drawEnhancedSpaceElements(p);
-  }
-
-  // Draw parallax background
-  if (window.backgroundRenderer) {
-    window.backgroundRenderer.drawParallaxBackground(p);
-
-    if (window.gameState && window.gameState.gameState === 'playing') {
-      window.backgroundRenderer.drawInteractiveBackgroundEffects(p);
-    }
-  }
-
-  // Main game logic based on state
-  if (window.gameState) {
-    switch (window.gameState.gameState) {
-      case 'playing':
-        updateGame(p);
-        drawGame(p);
-        if (window.uiRenderer) {
-          window.uiRenderer.updateUI(p);
-        }
-        break;
-
-      case 'paused':
-        drawGame(p); // Draw game in background
-        break;
-
-      case 'gameOver':
-        // Auto-restart in test mode
-        if (window.testModeManager && window.testModeManager.enabled) {
-          window.gameState.gameOverTimer++;
-          if (window.gameState.gameOverTimer >= 60) {
-            window.gameState.restart();
-            console.log('🔄 Auto-restarting game in test mode');
-          }
-        }
-        break;
-    }
-  }
-
-  // Draw UI overlay
-  if (window.uiRenderer) {
-    window.uiRenderer.drawUI(p);
-  }
-
-  // Draw beat visualizer effects (telegraphs, beat bar)
-  if (window.rhythmFX) {
-    window.rhythmFX.draw(p, window.cameraSystem);
-  }
+  runDraw(p, updateGame, drawGame);
 }
 
 function updateGame(p) {

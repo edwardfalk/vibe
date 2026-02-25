@@ -1,3 +1,10 @@
+/** Base wisp ellipse size before modulation */
+const AURORA_WISP_BASE_SIZE = 100;
+/** Amplitude of cosine size modulation */
+const AURORA_WISP_MODULATION = 35;
+/** Phase speed for size oscillation */
+const AURORA_PHASE_SPEED = 0.006;
+
 export function drawAuroraWisps(p, beatClock = null) {
   p.push();
   p.noStroke();
@@ -8,7 +15,9 @@ export function drawAuroraWisps(p, beatClock = null) {
     const wispY = (i * 179) % p.height;
     const beatModulation = p.sin(p.frameCount * 0.1 + i) * auroraBeatPulse;
     const wispSize =
-      100 + p.cos(p.frameCount * 0.006 + i) * 35 + beatModulation;
+      AURORA_WISP_BASE_SIZE +
+      p.cos(p.frameCount * AURORA_PHASE_SPEED + i) * AURORA_WISP_MODULATION +
+      beatModulation;
     const colorPhase = p.frameCount * 0.01 + i;
 
     const r = 138 + p.sin(colorPhase) * 50 + auroraBeatPulse * 0.5;

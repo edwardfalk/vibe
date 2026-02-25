@@ -21,6 +21,8 @@ The alien enemies are different mixes of evil, psycho, big-baby-cowards, fascist
 - `.cursorrules` - coding/runtime rules
 - `docs/DESIGN.md` - gameplay and beat-system design
 - `docs/TESTING.md` - testing strategy and smoke-runner behavior
+- `docs/CLEANUP_ROADMAP.md` - effects migration, file splits, constants extraction
+- `docs/REMAINING_ROADMAP.md` - window decoupling, Audio consolidation, docs sync
 - `docs/for-the-user/README.md` - user-facing docs index
 
 ## Quick Start

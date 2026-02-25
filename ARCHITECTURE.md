@@ -19,6 +19,7 @@ This file is the source of truth for module layout and runtime wiring.
   - `CameraSystem.js` - camera follow and shake system.
   - `SpawnSystem.js` - enemy spawning schedule and level scaling.
   - `UIRenderer.js` - HUD and game state overlays.
+  - `UIConstants.js` - UI layout, copy, and magic-number constants.
   - `BackgroundRenderer.js` - top-level background orchestrator.
   - `CollisionSystem.js` - bullet/contact collision coordination and outcomes.
   - `TestMode.js` - automated movement/shooting runtime mode.
@@ -42,6 +43,8 @@ This file is the source of truth for module layout and runtime wiring.
   - `background/NearFieldParallax.js` - close debris + foreground spark layer render helpers.
   - `background/SubtleSpaceElements.js` - static subtle-space nebula/stars layer helper.
   - `combat/EnemyDeathHandler.js` - centralized enemy death effects/audio handling.
+  - `combat/PlayerContactHandlers.js` - tank bomb placement, rusher explosion contact handling.
+  - `combat/KillFeedback.js` - hit-stop and kill feedback application.
 - `js/audio/`
   - `SoundConfig.js` - centralized sound maps and configuration presets.
   - `VoiceConfig.js` - centralized voice rate/pitch/volume presets.
@@ -55,14 +58,26 @@ This file is the source of truth for module layout and runtime wiring.
   - `DialogueLines.js` - centralized player/enemy dialogue line pools + random selection helpers.
   - `VoiceSelection.js` - voice profile selection heuristics by role.
   - `VoiceEffects.js` - runtime pitch/rate modulation rules per role.
+  - `SpeechWrappers.js` - map-based speech convenience method config (speakPlayerLine, speakGruntLine, etc.).
 - `js/entities/`
-  - `player.js` - player movement/combat/dash logic.
+  - `player.js` - player movement/combat/shooting logic.
+  - `PlayerDash.js` - player dash ability (updateDash, tryStartDash).
   - `BaseEnemy.js`, `Grunt.js`, `Rusher.js`, `Tank.js`, `Stabber.js` - enemy classes.
+  - `BaseEnemyHelpers.js` - shared color, glow, health bar, speech bubble helpers.
+  - `StabberAttackHandler.js` - Stabber melee attack logic (prepare/warning/dash phases, hit check).
+  - `TankArmorHandler.js` - tank armor hit processing, anger tracking, armor break effects.
   - `EnemyFactory.js` - enemy creation and type config.
   - `bullet.js` - projectile model/pool behavior.
+- `js/effects/explosions/`
+  - `ExplosionManager.js` - explosion coordination and kill effects.
+  - `Explosion.js` - base explosion particles.
+  - `ExplosionConfig.js` - particle/shockwave/color config by explosion type.
+  - `EnemyFragmentExplosion.js` - enemy death fragment effect (extracted sub-handler).
+  - `RadioactiveDebris.js`, `PlasmaCloud.js` - area damage effects.
 - `js/shared/`
   - `contracts/DamageResult.js` - normalized damage/death result contract.
 - `js/testing/`
+  - `ai-liveness-probe.js` - browser-side liveness probe for gameplay smoke tests.
   - Probe tests and test utilities (see `tests/`).
 
 ## Active Canonical Paths
@@ -75,7 +90,8 @@ This file is the source of truth for module layout and runtime wiring.
 - Shared contracts: `js/shared/`
 - Testing: `js/testing/`
 - Audio/support still rooted by design: `js/Audio.js`, `js/RhythmFX.js`, `js/config.js`, `js/mathUtils.js`
-- Effects: migration target `js/effects/` — consolidate from `js/effects.js`, `js/visualEffects.js`, `js/explosions/*`; avoid adding new root-level effect modules.
+- Effects: `js/effects/` — FloatingTextPool, FloatingTextManager, EffectsManager, EnhancedExplosionManager, VisualEffectsManager, glowUtils, AreaDamageHandler, DashEffect.
+- Explosions: `js/effects/explosions/` — ExplosionManager, Explosion, ExplosionConfig, EnemyFragmentExplosion, RadioactiveDebris, PlasmaCloud.
 
 ## Combat Contracts
 

@@ -2,7 +2,7 @@
  * Plasma cloud system for tank death effects
  * Creates dangerous plasma zones that persist and deal area damage
  */
-import { random, TWO_PI, sin, cos, constrain, dist } from '../mathUtils.js';
+import { random, TWO_PI, sin, cos, constrain, dist } from '../../mathUtils.js';
 
 export class PlasmaCloud {
   constructor(x, y) {

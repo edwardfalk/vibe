@@ -1,50 +1,45 @@
-import { sin, cos, random } from './mathUtils.js';
+import { sin, cos, random } from '../mathUtils.js';
 
-// Advanced Visual Effects System for Vibe
-// Leverages p5.js power for stunning graphics
-
-// Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
+/**
+ * Visual effects manager: particles, cosmic dust, auroras, screen effects.
+ * Requires p5.js instance mode.
+ */
 
 class VisualEffectsManager {
   constructor(backgroundLayers, context = null) {
     this.context = context;
-    // Particle systems
     this.particles = [];
     this.cosmicDust = [];
     this.auroras = [];
 
-    // Visual state
     this.bloomIntensity = 0;
     this.chromaticAberration = 0;
     this.timeOffset = 0;
     this.initialized = false;
 
-    // Color palettes
     this.nebulaPalette = [
-      [138, 43, 226], // Blue violet
-      [75, 0, 130], // Indigo
-      [255, 20, 147], // Deep pink
-      [0, 191, 255], // Deep sky blue
-      [148, 0, 211], // Dark violet
+      [138, 43, 226],
+      [75, 0, 130],
+      [255, 20, 147],
+      [0, 191, 255],
+      [148, 0, 211],
     ];
 
     this.auroraPalette = [
-      [0, 255, 127], // Spring green
-      [127, 255, 212], // Aquamarine
-      [173, 216, 230], // Light blue
-      [221, 160, 221], // Plum
-      [255, 182, 193], // Light pink
+      [0, 255, 127],
+      [127, 255, 212],
+      [173, 216, 230],
+      [221, 160, 221],
+      [255, 182, 193],
     ];
 
     this.backgroundLayers = backgroundLayers;
   }
 
-  // Initialize after p5.js is ready
   init(p) {
     if (this.initialized) return;
 
     try {
-      // Initialize cosmic dust and auroras
       this.initCosmicDust(p);
       this.initAuroras(p);
       this.initialized = true;
@@ -85,7 +80,6 @@ class VisualEffectsManager {
     }
   }
 
-  // Enhanced background with dynamic nebulae and aurora effects
   drawEnhancedBackground(p, camera) {
     if (!this.initialized) {
       this.init(p);
@@ -227,12 +221,27 @@ class VisualEffectsManager {
     p.pop();
   }
 
-  addExplosionParticles(x, y, type = 'normal') {
-    if (!this.initialized) {
-      this.init();
-      if (!this.initialized) return;
+  /** Stabber-compatible API: addExplosion(x, y, count, color, intensity?, size?, life?) */
+  addExplosion(x, y, count = 15, color = [255, 200, 100]) {
+    const colors = [color];
+    for (let i = 0; i < count; i++) {
+      this.particles.push({
+        x,
+        y,
+        vx: random(-8, 8),
+        vy: random(-8, 8),
+        size: random(3, 8),
+        life: 60,
+        maxLife: 60,
+        color: random(colors),
+        type: 'explosion',
+        gravity: 0.1,
+        fade: random(0.02, 0.05),
+      });
     }
+  }
 
+  addExplosionParticles(x, y, type = 'normal') {
     const bc = this.context?.get?.('beatClock');
     const beatClock =
       bc !== undefined
@@ -243,7 +252,6 @@ class VisualEffectsManager {
     const beatIntensity = beatClock ? beatClock.getBeatIntensity(8) : 0;
     const isDownbeat = beatClock ? beatClock.getCurrentBeat() === 0 : false;
 
-    // Increase particle count on beats
     let particleCount = type === 'rusher-explosion' ? 25 : 15;
     if (beatIntensity > 0.3) {
       particleCount = Math.floor(particleCount * (isDownbeat ? 1.6 : 1.3));
@@ -263,15 +271,14 @@ class VisualEffectsManager {
           ];
 
     for (let i = 0; i < particleCount; i++) {
-      // Boost velocities on beats
       let speedBoost = 1;
       if (beatIntensity > 0.3) {
         speedBoost = 1 + beatIntensity * 0.5;
       }
 
       this.particles.push({
-        x: x,
-        y: y,
+        x,
+        y,
         vx: random(-8, 8) * speedBoost,
         vy: random(-8, 8) * speedBoost,
         size: random(3, 8) * (beatIntensity > 0.3 ? 1.2 : 1),
@@ -285,18 +292,12 @@ class VisualEffectsManager {
       });
     }
 
-    // Add bloom effect on-beat explosions
     if (beatIntensity > 0.4) {
       this.triggerBloom(0.3 + beatIntensity * 0.3, 15);
     }
   }
 
   addMuzzleFlashParticles(x, y, angle, isPlayer = true) {
-    if (!this.initialized) {
-      this.init();
-      if (!this.initialized) return;
-    }
-
     const colors = isPlayer
       ? [
           [255, 255, 100],
@@ -314,8 +315,8 @@ class VisualEffectsManager {
       const speed = random(3, 6);
 
       this.particles.push({
-        x: x,
-        y: y,
+        x,
+        y,
         vx: cos(spreadAngle) * speed,
         vy: sin(spreadAngle) * speed,
         size: random(2, 5),
@@ -330,20 +331,15 @@ class VisualEffectsManager {
   }
 
   addMotionTrail(x, y, color, size = 3) {
-    if (!this.initialized) {
-      this.init();
-      if (!this.initialized) return;
-    }
-
     this.particles.push({
-      x: x,
-      y: y,
+      x,
+      y,
       vx: 0,
       vy: 0,
-      size: size,
+      size,
       life: 30,
       maxLife: 30,
-      color: color,
+      color,
       type: 'trail',
       gravity: 0,
       fade: 0.05,
@@ -354,23 +350,19 @@ class VisualEffectsManager {
     if (!this.initialized) return;
 
     for (let i = this.particles.length - 1; i >= 0; i--) {
-      const p = this.particles[i];
+      const part = this.particles[i];
 
-      // Update position
-      p.x += p.vx;
-      p.y += p.vy;
+      part.x += part.vx;
+      part.y += part.vy;
 
-      // Apply gravity for explosion particles
-      if (p.type === 'explosion') {
-        p.vy += p.gravity;
-        p.vx *= 0.98; // Air resistance
+      if (part.type === 'explosion') {
+        part.vy += part.gravity;
+        part.vx *= 0.98;
       }
 
-      // Update life
-      p.life -= p.fade * 60;
+      part.life -= part.fade * 60;
 
-      // Remove dead particles
-      if (p.life <= 0) {
+      if (part.life <= 0) {
         this.particles.splice(i, 1);
       }
     }
@@ -404,7 +396,6 @@ class VisualEffectsManager {
     p.pop();
   }
 
-  // Screen effects
   applyScreenEffects(p) {
     if (this.chromaticAberration > 0) {
       this.drawChromaticAberration(p);
@@ -430,19 +421,17 @@ class VisualEffectsManager {
     p.fill(255, 255, 255, this.bloomIntensity * 20);
     p.noStroke();
 
-    // Draw multiple offset copies for blur effect
     for (let i = 0; i < 3; i++) {
       p.rect(-i, -i, p.width + i * 2, p.height + i * 2);
     }
     p.pop();
   }
 
-  // Trigger effects
   triggerChromaticAberration(intensity = 0.5, duration = 30) {
     this.chromaticAberration = intensity;
     setTimeout(() => {
       this.chromaticAberration = 0;
-    }, duration * 16.67); // Convert frames to milliseconds
+    }, duration * 16.67);
   }
 
   triggerBloom(intensity = 0.3, duration = 20) {
@@ -453,48 +442,4 @@ class VisualEffectsManager {
   }
 }
 
-// Enhanced glow effect function using additive blending for neon pop
-function drawGlow(p, x, y, size, color, intensity = 1) {
-  p.push();
-  p.blendMode(p.ADD);
-  p.noStroke();
-
-  // Create a sharp center with a wider faint glow
-  const maxLayers = 3;
-  for (let i = 0; i < maxLayers; i++) {
-    // Inverse exponential dropoff for alpha
-    const alpha = (intensity * 255) / p.pow(2, i);
-    // Linear growth for size
-    const glowSize = size * (0.8 + i * 0.6);
-
-    p.fill(p.red(color), p.green(color), p.blue(color), alpha);
-    p.ellipse(x, y, glowSize, glowSize);
-  }
-
-  p.blendMode(p.BLEND);
-  p.pop();
-}
-
-// Enhanced gradient function
-function drawRadialGradient(
-  p,
-  x,
-  y,
-  innerRadius,
-  outerRadius,
-  innerColor,
-  outerColor
-) {
-  p.push();
-  p.noStroke();
-  for (let r = outerRadius; r > 0; r -= 2) {
-    const inter = p.map(r, 0, outerRadius, 0, 1);
-    const c = p.lerpColor(innerColor, outerColor, inter);
-    p.fill(c);
-    p.ellipse(x, y, r * 2, r * 2);
-  }
-  p.pop();
-}
-
-export { drawGlow, drawRadialGradient };
 export default VisualEffectsManager;

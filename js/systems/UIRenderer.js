@@ -2,9 +2,17 @@
  * UIRenderer.js - Handles all UI drawing including HUD, game over screen, pause screen, and bomb indicators
  */
 
-// Requires p5.js for constrain(), random(), lerp(), etc.
-
-import { floor, ceil, min, max, abs, sin, random } from '../mathUtils.js';
+import { floor, ceil, max, abs, sin } from '../mathUtils.js';
+import {
+  GAME_OVER_MESSAGES,
+  FUNNY_COMMENTS,
+  DASH_INDICATOR,
+  LEVEL_PROGRESS,
+  HEALTH_BAR,
+  KILL_STREAK_Y,
+  BOMB_WARNING_SIZE,
+  TOAST,
+} from './UIConstants.js';
 
 /**
  * @param {GameState} gameState - The game state object (dependency injected for modularity)
@@ -22,22 +30,6 @@ export class UIRenderer {
     this.cameraSystem = cameraSystem;
     this.testModeManager = testModeManager;
     this.dashElement = null;
-    this.gameOverMessages = [
-      'GAME OVER',
-      'YOU GOT VIBED',
-      'ALIEN SUPERIORITY',
-      'SPACE REKT',
-      'COSMIC FAIL',
-    ];
-
-    this.funnyComments = [
-      'The aliens are laughing at you!',
-      'Maybe try not getting exploded?',
-      'Space is hard, who knew?',
-      'The rushers send their regards',
-      'Better luck next time, earthling!',
-    ];
-
     this._createToast(); // Add toast/banner for confirmations
   }
 
@@ -73,8 +65,7 @@ export class UIRenderer {
     if (!this.dashElement) {
       this.dashElement = document.createElement('div');
       this.dashElement.id = 'dash';
-      this.dashElement.style.cssText =
-        'position: absolute; top: 120px; left: 10px; color: white; font-family: monospace; font-size: 14px; text-shadow: 0 0 5px currentColor;';
+      this.dashElement.style.cssText = `position: absolute; top: ${DASH_INDICATOR.top}px; left: ${DASH_INDICATOR.left}px; color: white; font-family: monospace; font-size: 14px; text-shadow: 0 0 5px currentColor;`;
       document.body.appendChild(this.dashElement);
     }
 
@@ -100,7 +91,7 @@ export class UIRenderer {
     p.rect(0, 0, p.width, p.height);
 
     const messageIndex =
-      floor(this.gameState.score / 50) % this.gameOverMessages.length;
+      floor(this.gameState.score / 50) % GAME_OVER_MESSAGES.length;
     const isNewHighScore = this.gameState.score > this.gameState.highScore;
 
     // Game over text with animation
@@ -111,12 +102,12 @@ export class UIRenderer {
 
     // Additive glow for title
     p.blendMode(p.ADD);
-    p.text(this.gameOverMessages[messageIndex], p.width / 2, p.height / 2 - 80);
+    p.text(GAME_OVER_MESSAGES[messageIndex], p.width / 2, p.height / 2 - 80);
     p.blendMode(p.BLEND);
 
     p.stroke(255, 255, 255);
     p.strokeWeight(2);
-    p.text(this.gameOverMessages[messageIndex], p.width / 2, p.height / 2 - 80);
+    p.text(GAME_OVER_MESSAGES[messageIndex], p.width / 2, p.height / 2 - 80);
     p.noStroke();
 
     // New high score celebration
@@ -164,8 +155,8 @@ export class UIRenderer {
     p.fill(255, 20, 147); // Pink
     p.textSize(16);
     const commentIndex =
-      floor(this.gameState.score / 30) % this.funnyComments.length;
-    p.text(this.funnyComments[commentIndex], p.width / 2, p.height / 2 + 115);
+      floor(this.gameState.score / 30) % FUNNY_COMMENTS.length;
+    p.text(FUNNY_COMMENTS[commentIndex], p.width / 2, p.height / 2 + 115);
 
     // Restart instruction
     p.fill(255);
@@ -258,9 +249,8 @@ export class UIRenderer {
       const secondsLeft = ceil(bomb.timer / 60);
       const progress = bomb.timer / bomb.maxTimer;
 
-      // Pulsing red warning circle
       const pulseIntensity = 1 + p.sin(p.frameCount * 0.3) * 0.3;
-      const warningSize = 60 * pulseIntensity;
+      const warningSize = BOMB_WARNING_SIZE * pulseIntensity;
 
       // Warning circle color (red to yellow as time runs out)
       const red = 255;
@@ -294,10 +284,9 @@ export class UIRenderer {
     if (!this.gameState) return;
     p.push();
     const progress = this.gameState.getProgressToNextLevel();
-    const barWidth = 200;
-    const barHeight = 8;
-    const barX = p.width - barWidth - 20;
-    const barY = 20;
+    const { barWidth, barHeight, marginRight, marginTop } = LEVEL_PROGRESS;
+    const barX = p.width - barWidth - marginRight;
+    const barY = marginTop;
 
     // Use a retro/monospace font if available
     p.textFont('monospace');
@@ -345,7 +334,7 @@ export class UIRenderer {
     p.push();
     const streak = this.gameState.killStreak;
     const x = p.width / 2;
-    const y = 80;
+    const y = KILL_STREAK_Y;
 
     p.textFont('monospace');
 
@@ -410,10 +399,9 @@ export class UIRenderer {
 
     const healthPercent = this.player.health / this.player.maxHealth;
     const animatedPercent = max(0, this.animatedHealth / this.player.maxHealth);
-    const barWidth = 150;
-    const barHeight = 12;
-    const barX = 20;
-    const barY = p.height - 40;
+    const { barWidth, barHeight, marginLeft, marginBottom } = HEALTH_BAR;
+    const barX = marginLeft;
+    const barY = p.height - marginBottom;
 
     // Synthwave Style Health Bar
     // Background bar (dark)
@@ -627,7 +615,7 @@ export class UIRenderer {
     const toast = document.createElement('div');
     toast.id = 'statusToast';
     toast.style.position = 'fixed';
-    toast.style.bottom = '32px';
+    toast.style.bottom = `${TOAST.bottom}px`;
     toast.style.left = '50%';
     toast.style.transform = 'translateX(-50%)';
     toast.style.background = '#222';
@@ -649,6 +637,6 @@ export class UIRenderer {
     this._toastTimeout = setTimeout(() => {
       this._toastTimeout = null;
       this.toast.style.display = 'none';
-    }, 2200);
+    }, TOAST.durationMs);
   }
 }

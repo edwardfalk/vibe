@@ -5,14 +5,14 @@ const GAME_URL = process.env.GAME_URL || 'http://localhost:5500';
 
 /**
  * Boot the game and wait for core systems to be available.
+ * Canvas is hidden (data-hidden) until first user interaction (autoplay policy).
+ * Wait for canvas to be attached, then trigger unlock via keydown.
  */
 const bootGame = async (page) => {
   await page.goto(GAME_URL);
-  const canvas = await page.waitForSelector('canvas');
-  const box = await canvas.boundingBox();
-  const centerX = box ? box.width / 2 : 400;
-  const centerY = box ? box.height / 2 : 300;
-  await page.click('canvas', { position: { x: centerX, y: centerY } });
+  const canvas = await page.waitForSelector('canvas', { state: 'attached' });
+  // Trigger unlockAudioAndShowCanvas (keydown also registered)
+  await page.keyboard.press(' ');
   await page.waitForFunction(
     () =>
       window.gameState &&
@@ -29,7 +29,7 @@ test.describe('Gameplay Probes', () => {
   test('Liveness probe passes', async ({ page }) => {
     await bootGame(page);
     const probe = await page.evaluate(async () => {
-      const mod = await import('/js/ai-liveness-probe.js');
+      const mod = await import('/js/testing/ai-liveness-probe.js');
       return mod.runAiLivenessProbe();
     });
 

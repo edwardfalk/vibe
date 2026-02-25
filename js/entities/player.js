@@ -2,9 +2,10 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { CONFIG } from '../config.js';
 import { Bullet } from './bullet.js';
-import { max, atan2, sin, cos, random, TWO_PI } from '../mathUtils.js';
-import { drawGlow } from '../visualEffects.js';
+import { max, atan2, sin } from '../mathUtils.js';
+import { drawGlow } from '../effects/glowUtils.js';
 import { drawPlayerDashEffect } from '../effects/DashEffect.js';
+import { updateDash, tryStartDash } from './PlayerDash.js';
 
 const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
@@ -120,12 +121,8 @@ export class Player {
       this.velocity.y *= 0.707;
     }
 
-    // Apply movement (normal or dash)
     if (this.isDashing) {
-      // Apply dash movement scaled by elapsed time (same baseline as walking)
-      const dt = deltaTimeMs / 16.6667; // 60 FPS baseline
-      this.x += this.dashVelocity.x * dt;
-      this.y += this.dashVelocity.y * dt;
+      updateDash(this, deltaTimeMs);
     } else {
       // Apply normal movement
       const dt = deltaTimeMs / 16.6667; // 60 fps baseline
@@ -210,17 +207,6 @@ export class Player {
     // Update animation
     if (this.isMoving) {
       this.animFrame += 0.15;
-    }
-
-    // Handle dash
-    if (this.isDashing) {
-      this.dashTimerMs += deltaTimeMs;
-      if (this.dashTimerMs >= this.maxDashTimeMs) {
-        this.isDashing = false;
-        this.dashTimerMs = 0;
-        console.log('💨 Dash completed!');
-      }
-      // Skip walking animation, BUT still update combat timers below
     }
 
     // Handle queued shots
@@ -515,65 +501,7 @@ export class Player {
   }
 
   dash() {
-    // Can only dash if not on cooldown and not already dashing
-    if (this.dashCooldownMs > 0 || this.isDashing) {
-      return false;
-    }
-
-    // Determine dash direction based on current movement
-    let dashDirX = 0;
-    let dashDirY = 0;
-    let dashFromKeyboard = false;
-
-    if (this.p.keyIsDown(87)) {
-      dashDirY = -1;
-      dashFromKeyboard = true;
-    }
-    if (this.p.keyIsDown(83)) {
-      dashDirY = 1;
-      dashFromKeyboard = true;
-    }
-    if (this.p.keyIsDown(65)) {
-      dashDirX = -1;
-      dashFromKeyboard = true;
-    }
-    if (this.p.keyIsDown(68)) {
-      dashDirX = 1;
-      dashFromKeyboard = true;
-    }
-
-    // If no movement keys, dash away from mouse (emergency escape)
-    if (dashDirX === 0 && dashDirY === 0 && this.cameraSystem) {
-      const worldMouse = this.cameraSystem.screenToWorld(
-        this.p.mouseX,
-        this.p.mouseY
-      );
-      const mouseAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
-      dashDirX = -this.p.cos(mouseAngle); // Opposite direction from mouse
-      dashDirY = -this.p.sin(mouseAngle);
-    }
-
-    // Normalize diagonal dashes (keyboard only; mouse-derived vectors are already unit length)
-    if (dashFromKeyboard && dashDirX !== 0 && dashDirY !== 0) {
-      dashDirX *= 0.707;
-      dashDirY *= 0.707;
-    }
-
-    // Set dash velocity
-    this.dashVelocity = {
-      x: dashDirX * this.dashSpeed,
-      y: dashDirY * this.dashSpeed,
-    };
-
-    // Start dash
-    this.isDashing = true;
-    this.dashTimerMs = 0;
-    this.dashCooldownMs = this.maxDashCooldownMs;
-
-    console.log(
-      `💨 Player dashed! Direction: (${dashDirX.toFixed(2)}, ${dashDirY.toFixed(2)})`
-    );
-    return true;
+    return tryStartDash(this);
   }
 
   takeDamage(amount, damageSource = 'unknown') {

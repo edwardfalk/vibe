@@ -1,15 +1,11 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { Bullet } from './bullet.js';
+import { floor, random, sqrt, sin, cos } from '../mathUtils.js';
 import {
-  floor,
-  random,
-  sqrt,
-  sin,
-  cos,
-  PI,
-  TWO_PI,
-  normalizeAngle,
-} from '../mathUtils.js';
+  spawnArmorBreakEffect,
+  handleAngerForDamage,
+  processArmorHit,
+} from './TankArmorHandler.js';
 import { CONFIG } from '../config.js';
 
 /**
@@ -360,44 +356,6 @@ class Tank extends BaseEnemy {
   }
 
   /**
-   * Spawn visual effect when an armor plate is destroyed
-   */
-  spawnArmorBreakEffect(plate) {
-    // Offset based on which plate broke
-    let ox = 0,
-      oy = 0;
-    if (plate === 'front') {
-      ox = cos(this.aimAngle) * this.size * 0.6;
-      oy = sin(this.aimAngle) * this.size * 0.6;
-    } else if (plate === 'left') {
-      ox = cos(this.aimAngle - PI / 2) * this.size * 0.6;
-      oy = sin(this.aimAngle - PI / 2) * this.size * 0.6;
-    } else if (plate === 'right') {
-      ox = cos(this.aimAngle + PI / 2) * this.size * 0.6;
-      oy = sin(this.aimAngle + PI / 2) * this.size * 0.6;
-    }
-
-    const explosionManager = this.getContextValue('explosionManager');
-    const floatingText = this.getContextValue('floatingText');
-    const cameraSystem = this.getContextValue('cameraSystem');
-    if (explosionManager) {
-      explosionManager.addExplosion(this.x + ox, this.y + oy, 'armor-break');
-    }
-    if (floatingText) {
-      floatingText.addText(
-        this.x + ox,
-        this.y + oy - 15,
-        'ARMOR BREAK!',
-        [150, 150, 200],
-        12
-      );
-    }
-    if (cameraSystem) {
-      cameraSystem.addShake(12, 15);
-    }
-  }
-
-  /**
    * Override weapon drawing for tank's heavy weapon
    */
   drawWeapon(s) {
@@ -500,145 +458,40 @@ class Tank extends BaseEnemy {
   }
 
   /**
-   * Track anger when hit by non-player damage (armor overflow or main body).
-   */
-  handleAngerForDamage(damageSource, bulletAngle, amount) {
-    if (!damageSource || damageSource === 'player') return;
-    const currentCount = this.damageTracker.get(damageSource) || 0;
-    this.damageTracker.set(damageSource, currentCount + 1);
-    if (currentCount + 1 >= this.angerThreshold && !this.isAngry) {
-      this.isAngry = true;
-      this.angerTarget = damageSource;
-      this.angerCooldown = this.maxAngerCooldown;
-      const audioAnger = this.getContextValue('audio');
-      if (audioAnger) {
-        const angerLines = [
-          'ENOUGH! YOU DIE FIRST!',
-          'TARGETING TRAITORS!',
-          'FRIENDLY FIRE? NOT ANYMORE!',
-          'YOU MADE ME MAD!',
-          'TURNING GUNS ON YOU!',
-        ];
-        audioAnger.speak(
-          this,
-          angerLines[floor(random() * angerLines.length)],
-          'tank'
-        );
-      }
-    }
-  }
-
-  /**
    * Override takeDamage to handle armor and anger system
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
-    // Calculate angle of attack relative to tank's facing direction
     if (bulletAngle === null) {
-      // No angle: bypass armor, apply damage directly to main body
       console.log('🎯 Tank Main Body Hit (no angle info)!');
       const died = super.takeDamage(amount, bulletAngle, damageSource);
-      if (died) {
-        console.log('💀 Tank Died (main health depleted).');
-        // Death effects handled in BaseEnemy or CollisionSystem
-      }
+      if (died) console.log('💀 Tank Died (main health depleted).');
       return died;
     }
-    const impactAngle = normalizeAngle(bulletAngle - this.aimAngle + PI);
-    const PI_4 = PI / 4; // 45 degrees
-    const THREE_PI_4 = (3 * PI) / 4; // 135 degrees
 
-    // Check Front Armor Hit (impactAngle between -PI/4 and PI/4)
-    if (
-      !this.frontArmorDestroyed &&
-      impactAngle >= -PI_4 &&
-      impactAngle <= PI_4
-    ) {
-      // Calculate overflow damage if incoming damage exceeds armor HP
-      this.frontArmorHP -= amount;
-      const audioHit = this.getContextValue('audio');
-      if (audioHit) audioHit.playSound('hit', this.x, this.y);
-      if (this.frontArmorHP <= 0) {
-        const leftover = -this.frontArmorHP;
-        this.frontArmorDestroyed = true;
-        this.frontArmorHP = 0;
-        console.log('💥 Tank Front Armor Destroyed!');
-        if (audioHit) audioHit.playSound('explosion', this.x, this.y);
-        this.spawnArmorBreakEffect('front');
-        this.hitFlash = 8;
-        if (leftover > 0) {
-          this.handleAngerForDamage(damageSource, bulletAngle, leftover);
-          return super.takeDamage(leftover, bulletAngle, damageSource);
-        }
-        return false; // No overflow, armor absorbed
-      }
-      this.hitFlash = 8;
-      return false; // Armor absorbed
-    }
-    // Check Left Armor Hit (impactAngle between PI/4 and 3PI/4)
-    else if (
-      !this.leftArmorDestroyed &&
-      impactAngle > PI_4 &&
-      impactAngle < THREE_PI_4
-    ) {
-      // Calculate overflow damage if incoming damage exceeds armor HP
-      this.leftArmorHP -= amount;
-      const audioLeft = this.getContextValue('audio');
-      if (audioLeft) audioLeft.playSound('hit', this.x, this.y);
-      if (this.leftArmorHP <= 0) {
-        const leftover = -this.leftArmorHP;
-        this.leftArmorDestroyed = true;
-        this.leftArmorHP = 0;
-        console.log('💥 Tank Left Armor Destroyed!');
-        if (audioLeft) audioLeft.playSound('explosion', this.x, this.y);
-        this.spawnArmorBreakEffect('left');
-        this.hitFlash = 8;
-        if (leftover > 0) {
-          this.handleAngerForDamage(damageSource, bulletAngle, leftover);
-          return super.takeDamage(leftover, bulletAngle, damageSource);
-        }
-        return false; // No overflow, armor absorbed
-      }
-      this.hitFlash = 8;
-      return false; // Armor absorbed
-    }
-    // Check Right Armor Hit (impactAngle between -3PI/4 and -PI/4)
-    else if (
-      !this.rightArmorDestroyed &&
-      impactAngle < -PI_4 &&
-      impactAngle > -THREE_PI_4
-    ) {
-      // Calculate overflow damage if incoming damage exceeds armor HP
-      this.rightArmorHP -= amount;
-      const audioRight = this.getContextValue('audio');
-      if (audioRight) audioRight.playSound('hit', this.x, this.y);
-      if (this.rightArmorHP <= 0) {
-        const leftover = -this.rightArmorHP;
-        this.rightArmorDestroyed = true;
-        this.rightArmorHP = 0;
-        console.log('💥 Tank Right Armor Destroyed!');
-        if (audioRight) audioRight.playSound('explosion', this.x, this.y);
-        this.spawnArmorBreakEffect('right');
-        this.hitFlash = 8;
-        if (leftover > 0) {
-          this.handleAngerForDamage(damageSource, bulletAngle, leftover);
-          return super.takeDamage(leftover, bulletAngle, damageSource);
-        }
-        return false; // No overflow, armor absorbed
-      }
-      this.hitFlash = 8;
-      return false; // Armor absorbed
+    const armorResult = processArmorHit(
+      this,
+      amount,
+      bulletAngle,
+      damageSource
+    );
+    if (armorResult?.absorbed) return false;
+
+    if (armorResult?.overflowAmount !== undefined) {
+      spawnArmorBreakEffect(this, armorResult.plate);
+      handleAngerForDamage(this, damageSource, armorResult.overflowAmount);
+      return armorResult.overflowAmount > 0
+        ? super.takeDamage(
+            armorResult.overflowAmount,
+            bulletAngle,
+            damageSource
+          )
+        : false;
     }
 
-    // Hit main body (front/rear, or side if armor is gone)
     console.log(`🎯 Tank Main Body Hit!`);
-
-    this.handleAngerForDamage(damageSource, bulletAngle, amount);
-    // Apply damage to main health
+    handleAngerForDamage(this, damageSource, amount);
     const died = super.takeDamage(amount, bulletAngle, damageSource);
-    if (died) {
-      console.log('💀 Tank Died (main health depleted).');
-      // Death effects handled in BaseEnemy or CollisionSystem
-    }
+    if (died) console.log('💀 Tank Died (main health depleted).');
     return died;
   }
 }

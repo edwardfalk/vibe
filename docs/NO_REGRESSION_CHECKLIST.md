@@ -4,14 +4,14 @@ This checklist is the release gate for the aggressive refactor program.
 
 ## Baseline Snapshot (2026-02-24)
 
-- `bun run test:mcp`: pass (`2 passed`, runtime ~9s).
+- `bun run test:mcp`: pass (`9 passed`, runtime ~29s). Last validated: 2026-02-25.
 - Collision metrics probe (`window.collisionSystem.getPerformanceSnapshot()` after boot):
   - `frameSampleSize`: `220`
   - `latestFrame.enemiesAtFrameStart`: `2`
   - `averages.playerBulletChecksPerFrame`: `0`
   - `averages.enemyBulletChecksPerFrame`: `0`
 
-## Latest Refactor Validation (2026-02-24)
+## Latest Refactor Validation (2026-02-25)
 
 - `bun run test:mcp`: pass (`9 passed`, runtime ~29s).
 - ESLint on refactored files: pass.
@@ -115,6 +115,30 @@ This checklist is the release gate for the aggressive refactor program.
 - `bun run test:mcp`: pass (`6 passed`, was 2).
 - Probes: liveness, game loop, collision API, score/health UI, game state, player input.
 - Smoke baseline expanded from 2 to 6 tests.
+
+## Phase A Effects Migration (2026-02-25)
+
+- `bun run lint`: pass.
+- `bun run test:mcp`: pass (`9 passed`).
+- Root-level `effects.js`, `visualEffects.js`, `FloatingTextPool.js` migrated to `js/effects/`.
+- New modules: FloatingTextPool, FloatingTextManager, EffectsManager, EnhancedExplosionManager, VisualEffectsManager, glowUtils.
+- Barrel `js/effects/index.js` re-exports all.
+- Imports updated in GameLoop, bullet, BaseEnemy, player, Audio.
+
+## Phase C Explosions Consolidation (2026-02-25)
+
+- `bun run lint`: pass.
+- `bun run test:mcp`: pass (`9 passed`).
+- `js/explosions/*` moved to `js/effects/explosions/`.
+- GameLoopSetup imports from `./effects/explosions/ExplosionManager.js`.
+- ARCHITECTURE.md Active Canonical Paths updated.
+
+## Phase D Constants Extraction (2026-02-25)
+
+- `bun run lint`: pass.
+- `bun run test:mcp`: pass (`9 passed`).
+- Explosion.js: SHOCKWAVE_ALPHA_SCALE.
+- AuroraWisps.js: AURORA_WISP_BASE_SIZE, AURORA_WISP_MODULATION, AURORA_PHASE_SPEED.
 
 ## Mandatory Checks Per Refactor Wave
 

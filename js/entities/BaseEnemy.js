@@ -1,7 +1,14 @@
 import { Bullet } from './bullet.js';
 import { CONFIG } from '../config.js';
 import { random, randomRange, sin, cos, atan2 } from '../mathUtils.js';
-import { drawGlow } from '../visualEffects.js';
+import { drawGlow } from '../effects/glowUtils.js';
+import {
+  getEnemyColors,
+  getGlowColorForType,
+  getGlowSizeForType,
+  drawEnemyHealthBar,
+  drawEnemySpeechBubble,
+} from './BaseEnemyHelpers.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
@@ -78,32 +85,12 @@ export class BaseEnemy {
     return undefined;
   }
 
-  /**
-   * Initialize cosmic aurora colors for each enemy type
-   */
   initializeColors() {
-    if (this.type === 'rusher') {
-      this.skinColor = this.p.color(255, 105, 180); // Hot pink skin
-      this.helmetColor = this.p.color(139, 0, 139); // Dark magenta helmet
-      this.weaponColor = this.p.color(255, 20, 147); // Deep pink claws
-      this.eyeColor = this.p.color(255, 215, 0); // Gold eyes (feral)
-    } else if (this.type === 'tank') {
-      this.skinColor = this.p.color(123, 104, 238); // Medium slate blue skin
-      this.helmetColor = this.p.color(72, 61, 139); // Dark slate blue helmet
-      this.weaponColor = this.p.color(138, 43, 226); // Blue violet weapon
-      this.eyeColor = this.p.color(0, 191, 255); // Deep sky blue eyes (tech)
-    } else if (this.type === 'stabber') {
-      this.skinColor = this.p.color(255, 215, 0); // Gold skin - stunning against cosmic background
-      this.helmetColor = this.p.color(218, 165, 32); // Goldenrod helmet
-      this.weaponColor = this.p.color(255, 255, 224); // Light yellow laser knife
-      this.eyeColor = this.p.color(255, 69, 0); // Red orange eyes (deadly)
-    } else {
-      // Grunt colors - lime green theme
-      this.skinColor = this.p.color(50, 205, 50); // Lime green skin
-      this.helmetColor = this.p.color(34, 139, 34); // Forest green helmet
-      this.weaponColor = this.p.color(0, 255, 127); // Spring green weapon
-      this.eyeColor = this.p.color(255, 20, 147); // Deep pink eyes (contrast)
-    }
+    const colors = getEnemyColors(this.type, this.p);
+    this.skinColor = colors.skinColor;
+    this.helmetColor = colors.helmetColor;
+    this.weaponColor = colors.weaponColor;
+    this.eyeColor = colors.eyeColor;
   }
 
   /**
@@ -235,41 +222,12 @@ export class BaseEnemy {
     }
   }
 
-  /**
-   * Get glow color for this enemy type - can be overridden by subclasses
-   */
   getGlowColor(isSpeaking) {
-    if (this.type === 'tank') {
-      return isSpeaking
-        ? this.p.color(150, 100, 255)
-        : this.p.color(100, 50, 200);
-    } else if (this.type === 'rusher') {
-      return isSpeaking
-        ? this.p.color(255, 150, 200)
-        : this.p.color(255, 100, 150);
-    } else if (this.type === 'stabber') {
-      return isSpeaking
-        ? this.p.color(255, 200, 50)
-        : this.p.color(255, 140, 0);
-    } else {
-      // Grunt default
-      return isSpeaking
-        ? this.p.color(100, 255, 100)
-        : this.p.color(50, 200, 50);
-    }
+    return getGlowColorForType(this.type, this.p, isSpeaking);
   }
 
-  /**
-   * Get glow size for this enemy type
-   */
   getGlowSize() {
-    if (this.type === 'tank') {
-      return this.size * 1.5;
-    } else if (this.type === 'rusher' || this.type === 'stabber') {
-      return this.size * 1.2;
-    } else {
-      return this.size * 1.1;
-    }
+    return getGlowSizeForType(this.type, this.size);
   }
 
   /**
@@ -439,68 +397,12 @@ export class BaseEnemy {
     }
   }
 
-  /**
-   * Draw health bar
-   */
   drawHealthBar(p) {
-    if (this.health < this.maxHealth && !this.markedForRemoval) {
-      const barWidth = this.size * 1.2;
-      const barHeight = 4;
-      const barY = this.y - this.size * 0.8;
-      // Debug: Log health bar rendering only if collision debug is enabled
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-        console.log(
-          `[ENEMY DEBUG] drawHealthBar: type=${this.type} health=${this.health} maxHealth=${this.maxHealth} at (${this.x.toFixed(1)},${this.y.toFixed(1)})`
-        );
-      }
-      // Background bar
-      p.fill(100, 100, 100);
-      p.rect(this.x - barWidth / 2, barY, barWidth, barHeight);
-      // Health bar
-      const healthPercent = this.health / this.maxHealth;
-      const healthColor =
-        healthPercent > 0.5
-          ? p.color(0, 255, 0)
-          : healthPercent > 0.25
-            ? p.color(255, 255, 0)
-            : p.color(255, 0, 0);
-      p.fill(healthColor);
-      p.rect(this.x - barWidth / 2, barY, barWidth * healthPercent, barHeight);
-      // Visual cue: Draw red X if health is zero or negative
-      if (this.health <= 0) {
-        p.stroke(255, 0, 0);
-        p.strokeWeight(3);
-        p.line(
-          this.x - barWidth / 2,
-          barY,
-          this.x + barWidth / 2,
-          barY + barHeight
-        );
-        p.line(
-          this.x + barWidth / 2,
-          barY,
-          this.x - barWidth / 2,
-          barY + barHeight
-        );
-        p.noStroke();
-      }
-    }
+    drawEnemyHealthBar(p, this);
   }
 
-  /**
-   * Draw speech bubble
-   */
   drawSpeechBubble(p) {
-    if (!this.speechText || this.speechTimer <= 0) return;
-
-    // Simple text above head - smaller and closer
-    p.fill(255, 255, 255);
-    p.stroke(0, 0, 0);
-    p.strokeWeight(1);
-    p.textAlign(p.CENTER, p.CENTER);
-    p.textSize(10);
-    p.text(this.speechText, this.x, this.y - this.size - 15);
-    p.noStroke();
+    drawEnemySpeechBubble(p, this);
   }
 
   /**

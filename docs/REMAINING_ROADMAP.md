@@ -4,6 +4,8 @@ This document is the execution plan for everything still left after the aggressi
 
 It is written for the next stateless AI agent and should be treated as the working source of truth for remaining execution.
 
+**Related:** `docs/CLEANUP_ROADMAP.md` covers effects domain migration, file splits, explosions consolidation, and constants extraction.
+
 ## Current Baseline (Observed)
 
 - Architecture migration is complete for core/entity/system runtime modules: canonical gameplay paths are now domain-aligned under `js/core`, `js/entities`, and `js/systems`.
@@ -44,9 +46,9 @@ All items below are considered complete only when:
   - `js/Tank.js`
   - `js/UIRenderer.js`
   - `js/bullet.js`
-  - `js/explosions/Explosion.js`
-  - `js/explosions/PlasmaCloud.js`
-  - `js/explosions/RadioactiveDebris.js`
+  - `js/effects/explosions/Explosion.js`
+  - `js/effects/explosions/PlasmaCloud.js`
+  - `js/effects/explosions/RadioactiveDebris.js`
   - `js/mathUtils.js`
   - `js/shared/contracts/DamageResult.js`
   - `js/visualEffects.js`
@@ -90,7 +92,7 @@ Target modules still showing notable global coupling (priority order):
 - `js/entities/Stabber.js` ✅ (wave 10)
 - `js/RhythmFX.js` ✅ (wave 7: beatClock via context; 4→1 ref)
 - `js/visualEffects.js` ✅ (wave 8: beatClock via context; 4→1 ref)
-- `js/explosions/ExplosionManager.js` ✅ (wave 2: beatClock, audio via context)
+- `js/effects/explosions/ExplosionManager.js` ✅ (wave 2: beatClock, audio via context)
 - `js/audio/BeatTrack.js` ✅ (wave 5: audio via context; 5→3 refs, remaining are browser AudioContext API)
 - `js/effects.js` ✅ (wave 8: FloatingTextManager beatClock, EnhancedExplosionManager vfx/cam via context; 16→5 refs)
 - `js/core/InputHandlers.js`

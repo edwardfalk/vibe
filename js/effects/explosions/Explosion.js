@@ -2,7 +2,7 @@
  * Basic explosion effects system
  * Handles particle-based explosions for various game events
  */
-import { random, TWO_PI } from '../mathUtils.js';
+import { random, TWO_PI } from '../../mathUtils.js';
 import {
   getExplosionConfig,
   getParticleParams,
@@ -169,7 +169,8 @@ export class Explosion {
         255,
         255,
         255,
-        SHOCKWAVE_ALPHA_SCALE * (1 - this.shockwaveRadius / this.maxShockwaveRadius)
+        SHOCKWAVE_ALPHA_SCALE *
+          (1 - this.shockwaveRadius / this.maxShockwaveRadius)
       );
       p.strokeWeight(3);
       p.noFill();

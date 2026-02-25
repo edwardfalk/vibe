@@ -2,7 +2,7 @@
  * Radioactive debris system for bomb explosion effects
  * Creates long-lasting contamination zones with lower damage than plasma clouds
  */
-import { random, TWO_PI, sin, cos, constrain, dist } from '../mathUtils.js';
+import { random, TWO_PI, sin, cos, constrain, dist } from '../../mathUtils.js';
 
 export class RadioactiveDebris {
   constructor(x, y) {

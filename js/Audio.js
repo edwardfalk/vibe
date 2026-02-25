@@ -51,7 +51,7 @@
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { random, randomRange, floor } from './mathUtils.js';
-import { drawGlow } from './visualEffects.js';
+import { drawGlow } from './effects/glowUtils.js';
 import {
   AMBIENT_SOUNDS,
   resolveSoundSourcePosition,
@@ -68,12 +68,9 @@ import {
   isAggressiveText as isAggressiveTextHelper,
   isConfusedText as isConfusedTextHelper,
 } from './audio/TextSemantics.js';
-import {
-  getEnemyDialogueLine,
-  getPlayerDialogueLine,
-} from './audio/DialogueLines.js';
 import { SOUND_CONFIG, SOUND_METHOD_TO_KEY } from './audio/SoundConfig.js';
 import { VOICE_CONFIG } from './audio/VoiceConfig.js';
+import { SPEECH_WRAPPER_CONFIG } from './audio/SpeechWrappers.js';
 
 export class Audio {
   /**
@@ -114,221 +111,11 @@ export class Audio {
     this.beatX = 0;
     this.beatY = 0;
 
-    // Sound configuration - MUSICAL COMBAT SYSTEM
-    // Spread SOUND_CONFIG first; inline block overrides (playerShoot, explosion, hit, etc.) are authoritative for game-specific tuning
-    this.sounds = {
-      ...SOUND_CONFIG,
-      // MUSICAL WEAPONS: Each enemy type becomes an instrument
-      playerShoot: {
-        frequency: 480,
-        waveform: 'sawtooth',
-        volume: 0.2,
-        duration: 0.01,
-      }, // Hi-hat: crisp, high, short
-      alienShoot: {
-        frequency: 800,
-        waveform: 'square',
-        volume: 0.25,
-        duration: 0.15,
-      }, // Snare: punchy, mid-range
-      tankEnergy: {
-        frequency: 80,
-        waveform: 'sine',
-        volume: 0.7,
-        duration: 1.0,
-      }, // ENHANCED: Fatter bass drum with more volume and duration
-      stabAttack: {
-        frequency: 2000,
-        waveform: 'sawtooth',
-        volume: 0.3,
-        duration: 0.1,
-      }, // Sharp accent: cutting through
-
-      // NON-MUSICAL SOUNDS: Effects and ambience - ENHANCED EXPLOSIONS
-      explosion: {
-        frequency: 250,
-        waveform: 'sawtooth',
-        volume: 0.7,
-        duration: 0.3,
-      }, // ENHANCED: More snare-like punch
-      hit: {
-        frequency: 1200,
-        waveform: 'triangle',
-        duration: 0.05,
-        volume: 0.2,
-      },
-      playerHit: {
-        frequency: 250,
-        waveform: 'sawtooth',
-        volume: 0.4,
-        duration: 0.3,
-      },
-      rusherScream: {
-        frequency: 800,
-        waveform: 'sawtooth',
-        volume: 0.4,
-        duration: 1.0,
-      },
-      enemyFrying: {
-        frequency: 1400,
-        waveform: 'noise',
-        duration: 0.3,
-        volume: 0.3,
-      }, // ENHANCED: Higher frequency for better audibility
-      stabberDash: {
-        frequency: 2500,
-        waveform: 'sawtooth',
-        volume: 0.4,
-        duration: 0.3,
-      },
-
-      // CHARACTER-BUILDING SOUNDS - ENHANCED PLASMA CLOUD FOR COSMIC BEAT
-      plasmaCloud: {
-        frequency: 75,
-        waveform: 'sawtooth',
-        volume: 0.8,
-        duration: 5.0,
-      }, // ENHANCED: Deeper, more ominous plasma energy with sawtooth for electrical feel
-      tankCharging: {
-        frequency: 60,
-        waveform: 'sawtooth',
-        volume: 0.4,
-        duration: 0.8,
-      },
-      tankPower: {
-        frequency: 40,
-        waveform: 'sawtooth',
-        volume: 0.5,
-        duration: 1.2,
-      },
-      stabberChant: {
-        frequency: 1800,
-        waveform: 'triangle',
-        volume: 0.3,
-        duration: 0.5,
-      },
-      gruntAdvance: {
-        frequency: 400,
-        waveform: 'square',
-        volume: 0.2,
-        duration: 0.2,
-      },
-      gruntRetreat: {
-        frequency: 350,
-        waveform: 'square',
-        volume: 0.15,
-        duration: 0.08,
-      },
-      rusherCharge: {
-        frequency: 1200,
-        waveform: 'sawtooth',
-        volume: 0.5,
-        duration: 0.6,
-        tremolo: true,
-      },
-      stabberKnife: {
-        frequency: 2200,
-        waveform: 'triangle',
-        volume: 0.4,
-        duration: 0.15,
-      },
-      enemyIdle: {
-        frequency: 200,
-        waveform: 'sine',
-        volume: 0.1,
-        duration: 0.8,
-      },
-      tankPowerUp: {
-        frequency: 40,
-        waveform: 'sawtooth',
-        volume: 0.5,
-        duration: 1.2,
-      },
-      stabberStalk: {
-        frequency: 1600,
-        waveform: 'triangle',
-        volume: 0.25,
-        duration: 0.4,
-      },
-
-      // SATISFYING KILL SOUNDS - The good stuff!
-      gruntPop: {
-        frequency: 1200,
-        waveform: 'triangle',
-        volume: 0.4,
-        duration: 0.08,
-      }, // Crisp, satisfying POP!
-      enemyOhNo: {
-        frequency: 800,
-        waveform: 'sawtooth',
-        volume: 0.35,
-        duration: 0.4,
-        sweep: { to: 200, curve: 'exponential' },
-      }, // Descending "oh no!" sweep
-      stabberOhNo: {
-        frequency: 1400,
-        waveform: 'triangle',
-        volume: 0.3,
-        duration: 0.35,
-        sweep: { to: 300, curve: 'exponential' },
-      }, // Higher pitched for stabbers
-      rusherOhNo: {
-        frequency: 1000,
-        waveform: 'sawtooth',
-        volume: 0.4,
-        duration: 0.5,
-        sweep: { to: 150, curve: 'exponential' },
-      }, // Longer for dramatic rushers
-      tankOhNo: {
-        frequency: 600,
-        waveform: 'sawtooth',
-        volume: 0.5,
-        duration: 0.6,
-        sweep: { to: 80, curve: 'exponential' },
-      }, // Deep, ominous for tanks
-
-      // GRUNT AMBIENT SOUNDS (unchanged)
-      gruntMalfunction: {
-        frequency: 180,
-        waveform: 'sawtooth',
-        volume: 0.12,
-        duration: 0.4,
-      },
-      gruntBeep: {
-        frequency: 800,
-        waveform: 'triangle',
-        volume: 0.08,
-        duration: 0.15,
-      },
-      gruntWhir: {
-        frequency: 300,
-        waveform: 'sine',
-        volume: 0.1,
-        duration: 0.6,
-      },
-      gruntError: {
-        frequency: 220,
-        waveform: 'square',
-        volume: 0.1,
-        duration: 0.2,
-      },
-      gruntGlitch: {
-        frequency: 150,
-        waveform: 'sawtooth',
-        volume: 0.09,
-        duration: 0.25,
-      },
-      gruntOw: {
-        frequency: 600,
-        waveform: 'triangle',
-        volume: 0.25,
-        duration: 0.18,
-      }, // Quick, soft "ow" fallback
-    };
-
+    this.sounds = { ...SOUND_CONFIG };
     this.voiceConfig = { ...VOICE_CONFIG };
 
     this.bindConvenienceSoundMethods();
+    this.bindConvenienceSpeechMethods();
 
     console.log('🎵 Optimized Audio System ready');
   }
@@ -350,6 +137,15 @@ export class Audio {
   bindConvenienceSoundMethods() {
     for (const [methodName, soundKey] of Object.entries(SOUND_METHOD_TO_KEY)) {
       this[methodName] = (...args) => this.playSound(soundKey, ...args);
+    }
+  }
+
+  bindConvenienceSpeechMethods() {
+    for (const [methodName, { getLine, voiceType }] of Object.entries(
+      SPEECH_WRAPPER_CONFIG
+    )) {
+      this[methodName] = (entity, context) =>
+        this.speak(entity, getLine(entity, context), voiceType);
     }
   }
 
@@ -802,44 +598,7 @@ export class Audio {
   // ========================================================================
   // CONVENIENCE METHODS
   // ========================================================================
-
-  // Speech methods (simplified - no Promises)
-  speakPlayerLine(player, context) {
-    return this.speak(player, this.getPlayerLine(context), 'player');
-  }
-  speakGruntLine(grunt) {
-    return this.speak(grunt, this.getGruntLine(), 'grunt');
-  }
-  speakRusherLine(rusher) {
-    return this.speak(rusher, this.getRusherLine(), 'rusher');
-  }
-  speakTankLine(tank) {
-    return this.speak(tank, this.getTankLine(), 'tank');
-  }
-  speakStabberLine(stabber) {
-    return this.speak(stabber, this.getStabberLine(), 'stabber');
-  }
-
-  // Dialogue lines
-  getPlayerLine(context) {
-    return getPlayerDialogueLine(context, random, floor);
-  }
-
-  getGruntLine() {
-    return getEnemyDialogueLine('grunt', random, floor);
-  }
-
-  getRusherLine() {
-    return getEnemyDialogueLine('rusher', random, floor);
-  }
-
-  getTankLine() {
-    return getEnemyDialogueLine('tank', random, floor);
-  }
-
-  getStabberLine() {
-    return getEnemyDialogueLine('stabber', random, floor);
-  }
+  // Speech methods bound via bindConvenienceSpeechMethods() from SPEECH_WRAPPER_CONFIG.
 
   // Control methods
   setVolume(volume) {

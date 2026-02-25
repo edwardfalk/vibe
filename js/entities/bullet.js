@@ -15,7 +15,7 @@ import {
   normalizeAngle,
   dist,
 } from '../mathUtils.js';
-import { drawGlow } from '../visualEffects.js';
+import { drawGlow } from '../effects/glowUtils.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
