@@ -8,9 +8,22 @@ import {
   drawDistantStarsLayer,
   drawNebulaCloudLayer,
 } from './background/ParallaxLayerRenderers.js';
-import { drawCosmicAuroraBackgroundLayer } from './background/CosmicAuroraBackground.js';
-import { drawEnhancedSpaceElementsLayer } from './background/EnhancedSpaceElements.js';
-import { drawInteractiveBackgroundEffectsLayer } from './background/InteractiveBackgroundEffects.js';
+import {
+  drawCosmicAuroraBackgroundLayer,
+  resetCosmicAuroraCache,
+} from './background/CosmicAuroraBackground.js';
+import { drawAuroraWispsLayer } from './background/AuroraWisps.js';
+import {
+  drawDistantGalaxiesLayer,
+  drawFlowingNebulaStreamsLayer,
+  drawShootingStarsLayer,
+  drawEnhancedSparklesLayer,
+  resetEnhancedSpaceElementsCache,
+} from './background/EnhancedSpaceElements.js';
+import {
+  drawInteractiveBackgroundEffectsLayer,
+  resetBeatPulseCache,
+} from './background/InteractiveBackgroundEffects.js';
 import { drawMediumStarsLayer } from './background/MediumStarRenderer.js';
 import {
   drawCloseDebrisLayer,
@@ -18,7 +31,10 @@ import {
 } from './background/NearFieldParallax.js';
 import { createParallaxLayerConfig } from './background/ParallaxLayerConfig.js';
 import { generateParallaxLayerElements } from './background/ParallaxLayerFactory.js';
-import { drawSubtleSpaceElementsLayer } from './background/SubtleSpaceElements.js';
+import {
+  drawSubtleSpaceElementsLayer,
+  resetSubtleSpaceElementsCache,
+} from './background/SubtleSpaceElements.js';
 
 /**
  * @param {p5} p - The p5 instance
@@ -88,14 +104,29 @@ export class BackgroundRenderer {
 
     const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
     switch (layer.name) {
+      case 'distant_galaxies':
+        drawDistantGalaxiesLayer(layer.elements, p);
+        break;
       case 'distant_stars':
         drawDistantStarsLayer(layer.elements, p, beatClock);
+        break;
+      case 'nebula_streams':
+        drawFlowingNebulaStreamsLayer(layer.elements, p);
+        break;
+      case 'aurora_wisps':
+        drawAuroraWispsLayer(layer.elements, p, beatClock);
         break;
       case 'nebula_clouds':
         drawNebulaCloudLayer(layer.elements, p, beatClock);
         break;
+      case 'enhanced_sparkles':
+        drawEnhancedSparklesLayer(layer.elements, p);
+        break;
       case 'medium_stars':
         drawMediumStarsLayer(layer.elements, p);
+        break;
+      case 'shooting_stars':
+        drawShootingStarsLayer(layer.elements, p);
         break;
       case 'close_debris':
         drawCloseDebrisLayer(layer.elements, p);
@@ -112,13 +143,6 @@ export class BackgroundRenderer {
     p.push();
     const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
     drawCosmicAuroraBackgroundLayer(p, beatClock);
-    p.pop();
-  }
-
-  drawEnhancedSpaceElements(p = this.p) {
-    p.push();
-    const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
-    drawEnhancedSpaceElementsLayer(p, beatClock);
     p.pop();
   }
 
@@ -146,5 +170,9 @@ export class BackgroundRenderer {
   reset() {
     this.parallaxLayers = [];
     this.parallaxInitialized = false;
+    resetCosmicAuroraCache();
+    resetEnhancedSpaceElementsCache();
+    resetSubtleSpaceElementsCache();
+    resetBeatPulseCache();
   }
 }

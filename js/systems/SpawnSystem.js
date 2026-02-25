@@ -34,7 +34,8 @@ export class SpawnSystem {
 
   getContextValue(key) {
     if (this.context && typeof this.context.get === 'function') {
-      return this.context.get(key);
+      const val = this.context.get(key);
+      if (val !== undefined && val !== null) return val;
     }
     return window[key];
   }

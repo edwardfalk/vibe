@@ -1,4 +1,9 @@
-import { drawBeatPulseOverlay } from './BeatPulseOverlay.js';
+import {
+  drawBeatPulseOverlay,
+  resetBeatPulseCache,
+} from './BeatPulseOverlay.js';
+
+export { resetBeatPulseCache };
 
 export function drawInteractiveBackgroundEffectsLayer(
   p,
@@ -8,7 +13,31 @@ export function drawInteractiveBackgroundEffectsLayer(
   randomRangeFn
 ) {
   p.push();
-  drawBeatPulseOverlay(p, beatClock);
+
+  let healthOverlayColor = null;
+
+  if (player) {
+    const healthPercent = player.health / player.maxHealth;
+    if (healthPercent < 0.3) {
+      const dangerPulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5;
+      healthOverlayColor = {
+        r: 255,
+        g: 0,
+        b: 0,
+        a: dangerPulse * 15 * (1 - healthPercent),
+      };
+    } else if (healthPercent > 0.9) {
+      healthOverlayColor = {
+        r: 0,
+        g: 150,
+        b: 255,
+        a: 8,
+      };
+    }
+  }
+
+  // Draw beat pulse overlay and pass health color to avoid multiple full-screen rects
+  drawBeatPulseOverlay(p, beatClock, healthOverlayColor);
 
   if (player && player.isMoving) {
     const rippleIntensity = p.map(player.speed, 0, 5, 0, 1);
@@ -19,20 +48,6 @@ export function drawInteractiveBackgroundEffectsLayer(
       p.strokeWeight(2);
       p.noFill();
       p.ellipse(player.x, player.y, rippleRadius, rippleRadius);
-    }
-  }
-
-  if (player) {
-    const healthPercent = player.health / player.maxHealth;
-    if (healthPercent < 0.3) {
-      const dangerPulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5;
-      p.fill(255, 0, 0, dangerPulse * 15 * (1 - healthPercent));
-      p.noStroke();
-      p.rect(0, 0, p.width, p.height);
-    } else if (healthPercent > 0.9) {
-      p.fill(0, 150, 255, 8);
-      p.noStroke();
-      p.rect(0, 0, p.width, p.height);
     }
   }
 

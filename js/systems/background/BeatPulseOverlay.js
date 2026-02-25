@@ -1,4 +1,13 @@
-export function drawBeatPulseOverlay(p, beatClock) {
+let cachedVignette = null;
+
+export function resetBeatPulseCache() {
+  if (cachedVignette) {
+    cachedVignette.remove();
+    cachedVignette = null;
+  }
+}
+
+export function drawBeatPulseOverlay(p, beatClock, healthOverlayColor) {
   if (!beatClock) return;
 
   const phase = beatClock.getBeatPhase();
@@ -6,16 +15,46 @@ export function drawBeatPulseOverlay(p, beatClock) {
   const currentBeat = beatClock.getCurrentBeat();
   const isDownbeat = currentBeat === 0;
 
-  // 1. Screen flash overlay — warm white on downbeat, purple on others
-  const flashAlpha = isDownbeat ? intensity * 45 : intensity * 18;
-  if (flashAlpha > 1) {
+  // 1. Calculate beat flash color
+  let flashR = 0,
+    flashG = 0,
+    flashB = 0,
+    flashA = 0;
+  // Significantly reduced full-screen flash intensity so environment reactivity stands out
+  const rawFlashAlpha = isDownbeat ? intensity * 15 : intensity * 5;
+  if (rawFlashAlpha > 1) {
     if (isDownbeat) {
-      p.fill(200, 180, 255, flashAlpha);
+      flashR = 200;
+      flashG = 180;
+      flashB = 255;
     } else {
-      p.fill(138, 43, 226, flashAlpha);
+      flashR = 138;
+      flashG = 43;
+      flashB = 226;
     }
-    p.noStroke();
-    p.rect(0, 0, p.width, p.height);
+    flashA = rawFlashAlpha;
+  }
+
+  // Combine with health overlay
+  if (healthOverlayColor || flashA > 0) {
+    let finalR = flashR;
+    let finalG = flashG;
+    let finalB = flashB;
+    let finalA = flashA;
+
+    if (healthOverlayColor) {
+      // Simple additive color mixing for the overlay
+      finalR = p.constrain(finalR + healthOverlayColor.r, 0, 255);
+      finalG = p.constrain(finalG + healthOverlayColor.g, 0, 255);
+      finalB = p.constrain(finalB + healthOverlayColor.b, 0, 255);
+      finalA = p.constrain(finalA + healthOverlayColor.a, 0, 255);
+    }
+
+    if (finalA > 0) {
+      p.fill(finalR, finalG, finalB, finalA);
+      p.noStroke();
+      p.rect(0, 0, p.width, p.height);
+    }
   }
 
   // 2. Beat ring — expanding circle from screen center
@@ -31,23 +70,30 @@ export function drawBeatPulseOverlay(p, beatClock) {
     p.ellipse(p.width / 2, p.height / 2, ringRadius * 2, ringRadius * 2);
   }
 
-  // 3. Vignette pulse — edges darken briefly on beat for "breathing" feel
+  // 3. Vignette pulse using cached graphics
   const vigAlpha = intensity * 0.12;
   if (vigAlpha > 0.005) {
-    const ctx2d = p.drawingContext;
-    ctx2d.save();
-    const grad = ctx2d.createRadialGradient(
-      p.width / 2,
-      p.height / 2,
-      p.width * 0.25,
-      p.width / 2,
-      p.height / 2,
-      p.width * 0.72
-    );
-    grad.addColorStop(0, 'rgba(0,0,0,0)');
-    grad.addColorStop(1, `rgba(20,10,40,${vigAlpha})`);
-    ctx2d.fillStyle = grad;
-    ctx2d.fillRect(0, 0, p.width, p.height);
-    ctx2d.restore();
+    if (!cachedVignette) {
+      cachedVignette = p.createGraphics(p.width, p.height);
+      const ctx2d = cachedVignette.drawingContext;
+      const grad = ctx2d.createRadialGradient(
+        p.width / 2,
+        p.height / 2,
+        p.width * 0.25,
+        p.width / 2,
+        p.height / 2,
+        p.width * 0.72
+      );
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(20,10,40,1)'); // Full opacity
+      ctx2d.fillStyle = grad;
+      ctx2d.fillRect(0, 0, p.width, p.height);
+    }
+
+    p.push();
+    p.tint(255, vigAlpha * 255);
+    p.imageMode(p.CORNER);
+    p.image(cachedVignette, 0, 0);
+    p.pop();
   }
 }

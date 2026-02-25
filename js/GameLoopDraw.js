@@ -14,7 +14,6 @@ export function runDraw(p, updateGame, drawGame) {
 
   if (window.backgroundRenderer) {
     window.backgroundRenderer.drawCosmicAuroraBackground(p);
-    window.backgroundRenderer.drawEnhancedSpaceElements(p);
   }
 
   if (window.backgroundRenderer) {
