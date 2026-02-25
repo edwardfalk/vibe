@@ -41,6 +41,7 @@ export function drawCloseDebrisLayer(debris, p) {
     p.pop();
   }
   p.drawingContext.shadowBlur = 0;
+  p.drawingContext.shadowColor = 'transparent';
 }
 
 export function drawForegroundSparksLayer(sparks, p) {
@@ -57,4 +58,5 @@ export function drawForegroundSparksLayer(sparks, p) {
     p.line(spark.x, spark.y, spark.x - length * 0.8, spark.y + length * 0.6);
   }
   p.drawingContext.shadowBlur = 0;
+  p.drawingContext.shadowColor = 'transparent';
 }

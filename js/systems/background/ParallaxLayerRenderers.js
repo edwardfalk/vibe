@@ -1,6 +1,7 @@
 export function drawDistantStarsLayer(stars, p, beatClock = null) {
   const beatBoost = beatClock ? beatClock.getBeatIntensity(10) * 80 : 0;
   const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
+  const STAR_BEAT_MULTIPLIER = 10;
 
   p.noStroke();
   p.drawingContext.shadowBlur = 5 + beatPulse * 10;
@@ -10,9 +11,10 @@ export function drawDistantStarsLayer(stars, p, beatClock = null) {
     const alpha = Math.min(255, star.brightness * twinkle * 255 + beatBoost);
 
     p.fill(255, 255, 255, alpha);
-    p.ellipse(star.x, star.y, star.size + beatPulse, star.size + beatPulse);
+    p.ellipse(star.x, star.y, star.size + (beatPulse * STAR_BEAT_MULTIPLIER), star.size + (beatPulse * STAR_BEAT_MULTIPLIER));
   }
   p.drawingContext.shadowBlur = 0;
+  p.drawingContext.shadowColor = 'transparent';
 }
 
 export function drawNebulaCloudLayer(clouds, p, beatClock = null) {
@@ -38,4 +40,5 @@ export function drawNebulaCloudLayer(clouds, p, beatClock = null) {
     );
   }
   p.drawingContext.shadowBlur = 0;
+  p.drawingContext.shadowColor = 'transparent';
 }

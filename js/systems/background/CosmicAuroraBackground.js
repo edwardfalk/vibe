@@ -1,6 +1,4 @@
-let cachedAurora = null;
-let lastWidth = 0;
-let lastHeight = 0;
+const instanceCache = new WeakMap();
 
 export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
   p.push();
@@ -8,11 +6,17 @@ export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
   const beatIntensity = beatClock ? beatClock.getBeatIntensity(4) : 0;
   const downbeatIntensity = beatClock ? beatClock.getDownbeatIntensity(3) : 0;
 
-  if (!cachedAurora || lastWidth !== p.width || lastHeight !== p.height) {
-    if (cachedAurora) cachedAurora.remove();
-    cachedAurora = p.createGraphics(p.width, p.height);
-    lastWidth = p.width;
-    lastHeight = p.height;
+  let cache = instanceCache.get(p);
+  if (!cache) {
+    cache = { aurora: null, lastWidth: 0, lastHeight: 0 };
+    instanceCache.set(p, cache);
+  }
+
+  if (!cache.aurora || cache.lastWidth !== p.width || cache.lastHeight !== p.height) {
+    if (cache.aurora) cache.aurora.remove();
+    cache.aurora = p.createGraphics(p.width, p.height);
+    cache.lastWidth = p.width;
+    cache.lastHeight = p.height;
 
     const gradientSteps = 8;
     const stepHeight = p.height / gradientSteps;
@@ -40,14 +44,14 @@ export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
         b = p.lerp(65, 50, t);
       }
 
-      cachedAurora.fill(r, g, b);
-      cachedAurora.noStroke();
-      cachedAurora.rect(0, i * stepHeight, p.width, stepHeight + 1);
+      cache.aurora.fill(r, g, b);
+      cache.aurora.noStroke();
+      cache.aurora.rect(0, i * stepHeight, p.width, stepHeight + 1);
     }
   }
 
   p.imageMode(p.CORNER);
-  p.image(cachedAurora, 0, 0);
+  p.image(cache.aurora, 0, 0);
 
   // Global overlay for dynamic shift and beat intensity (reduces fill-rate overhead)
   const timeShift = p.sin(p.frameCount * 0.005) * 8;
@@ -56,7 +60,8 @@ export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
   const bShift = timeShift * 0.8 + downbeatIntensity * 20;
   const overlayAlpha = 20 + beatIntensity * 30 + downbeatIntensity * 40;
 
-  p.fillMode = p.BLEND;
+  const prevBlendMode = p.drawingContext.globalCompositeOperation;
+  p.blendMode(p.BLEND);
   p.fill(
     p.constrain(rShift, 0, 255),
     p.constrain(gShift, 0, 255),
@@ -65,13 +70,11 @@ export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
   );
   p.noStroke();
   p.rect(0, 0, p.width, p.height);
+  p.drawingContext.globalCompositeOperation = prevBlendMode;
 
   p.pop();
 }
 
 export function resetCosmicAuroraCache() {
-  if (cachedAurora) {
-    cachedAurora.remove();
-    cachedAurora = null;
-  }
+  // WeakMap handles garbage collection based on p5 instance lifecycle
 }

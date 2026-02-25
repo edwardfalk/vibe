@@ -73,7 +73,8 @@ export function drawBeatPulseOverlay(p, beatClock, healthOverlayColor) {
   // 3. Vignette pulse using cached graphics
   const vigAlpha = intensity * 0.12;
   if (vigAlpha > 0.005) {
-    if (!cachedVignette) {
+    if (!cachedVignette || cachedVignette.width !== p.width || cachedVignette.height !== p.height) {
+      if (cachedVignette) cachedVignette.remove();
       cachedVignette = p.createGraphics(p.width, p.height);
       const ctx2d = cachedVignette.drawingContext;
       const grad = ctx2d.createRadialGradient(

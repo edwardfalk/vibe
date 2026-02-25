@@ -113,7 +113,7 @@ export function generateParallaxLayerElements(parallaxLayers, p) {
         startX: randomRange(-p.width, p.width * 2),
         startY: randomRange(-p.height, p.height * 2),
         endXOffset: randomRange(200, 500),
-        endYOffset: randomRange(-200, -500),
+        endYOffset: randomRange(-500, -200),
         phaseOffset: randomRange(0, 600),
       });
     }

@@ -35,11 +35,16 @@ export function drawMediumStarsLayer(stars, p) {
       }
     }
 
-    p.drawingContext.shadowBlur = 5 + beatPulse * 20;
-    const currentSize = finalSize + beatPulse * 2;
+    // Note: beatPulse from getBeatReactiveValues() is typically in [0,1], 
+    // but we clamp shadowBlur and currentSize defensively.
+    const shadowBlurCandidate = 5 + beatPulse * 20;
+    p.drawingContext.shadowBlur = Math.max(0, shadowBlurCandidate);
+    const currentSizeCandidate = finalSize + beatPulse * 2;
+    const currentSize = Math.max(1, currentSizeCandidate);
     p.ellipse(star.x, star.y, currentSize, currentSize);
 
     starIndex++;
   }
   p.drawingContext.shadowBlur = 0;
+  p.drawingContext.shadowColor = 'transparent';
 }

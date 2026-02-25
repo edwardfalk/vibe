@@ -9,7 +9,10 @@ import { chromium } from 'playwright';
   page.on('console', (msg) => {
     console.log(`[Browser Console] ${msg.type()}: ${msg.text()}`);
   });
-  await page.goto('http://localhost:5500');
-  await page.waitForTimeout(1500);
-  await browser.close();
+  try {
+    await page.goto('http://localhost:5173');
+    await page.waitForTimeout(1500);
+  } finally {
+    if (browser) await browser.close();
+  }
 })();

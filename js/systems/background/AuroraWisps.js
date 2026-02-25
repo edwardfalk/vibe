@@ -6,6 +6,7 @@ const AURORA_WISP_MODULATION = 35;
 const AURORA_PHASE_SPEED = 0.006;
 
 export function drawAuroraWispsLayer(wisps, p, beatClock = null) {
+  if (!wisps || !Array.isArray(wisps) || wisps.length === 0) return;
   p.push();
   p.noStroke();
   const auroraBeatPulse = beatClock ? beatClock.getBeatIntensity(6) * 20 : 0;

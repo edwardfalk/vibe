@@ -17,7 +17,7 @@ export function drawInteractiveBackgroundEffectsLayer(
   let healthOverlayColor = null;
 
   if (player) {
-    const healthPercent = player.health / player.maxHealth;
+    const healthPercent = player.maxHealth > 0 ? Math.max(0, Math.min(1, player.health / player.maxHealth)) : 0;
     if (healthPercent < 0.3) {
       const dangerPulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5;
       healthOverlayColor = {

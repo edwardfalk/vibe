@@ -72,6 +72,7 @@ export function resetEnhancedSpaceElementsCache() {
 
 export function drawFlowingNebulaStreamsLayer(streams, p) {
   initEnhancedCaches(p);
+  p.push();
   p.imageMode(p.CENTER);
   for (let i = 0; i < streams.length; i++) {
     const stream = streams[i];
@@ -85,6 +86,7 @@ export function drawFlowingNebulaStreamsLayer(streams, p) {
     p.image(cachedStream, 0, 0);
     p.pop();
   }
+  p.pop();
 }
 
 export function drawShootingStarsLayer(stars, p) {
@@ -136,10 +138,12 @@ export function drawEnhancedSparklesLayer(sparkles, p) {
     p.ellipse(sparkle.x, sparkle.y, 2 + twinkle, 2 + twinkle);
   }
   p.drawingContext.shadowBlur = 0;
+  p.drawingContext.shadowColor = 'transparent';
 }
 
 export function drawDistantGalaxiesLayer(galaxies, p) {
   initEnhancedCaches(p);
+  p.push();
   p.imageMode(p.CENTER);
   for (let i = 0; i < galaxies.length; i++) {
     const galaxy = galaxies[i];
@@ -156,6 +160,7 @@ export function drawDistantGalaxiesLayer(galaxies, p) {
     p.image(cachedGalaxy, 0, 0);
     p.pop();
   }
+  p.pop();
 }
 
 export { drawAuroraWispsLayer };
