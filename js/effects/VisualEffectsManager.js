@@ -5,6 +5,31 @@ import { sin, cos, random } from '../mathUtils.js';
  * Requires p5.js instance mode.
  */
 
+const PARTICLE_POOL_MAX = 200;
+const particlePool = [];
+
+function acquireParticle(props) {
+  const p = particlePool.length > 0 ? particlePool.pop() : {};
+  p.x = props.x;
+  p.y = props.y;
+  p.vx = props.vx;
+  p.vy = props.vy;
+  p.size = props.size;
+  p.life = props.life;
+  p.maxLife = props.maxLife;
+  p.color = props.color;
+  p.type = props.type;
+  p.gravity = props.gravity || 0;
+  p.fade = props.fade || 0;
+  return p;
+}
+
+function releaseParticle(p) {
+  if (particlePool.length < PARTICLE_POOL_MAX) {
+    particlePool.push(p);
+  }
+}
+
 class VisualEffectsManager {
   constructor(backgroundLayers, context = null) {
     this.context = context;
@@ -17,6 +42,9 @@ class VisualEffectsManager {
     this.timeOffset = 0;
     this.initialized = false;
     this.initFailed = false;
+    this._gradientCache = null;
+    this._gradientW = 0;
+    this._gradientH = 0;
 
     this.nebulaPalette = [
       [138, 43, 226],
@@ -98,23 +126,39 @@ class VisualEffectsManager {
   }
 
   drawSpaceGradient(p) {
-    p.push();
-    p.noFill();
-    const c1 = p.color(15, 5, 35);
-    const c2 = p.color(60, 30, 80);
-    const c3 = p.color(25, 15, 45);
-    for (let i = 0; i <= p.height; i += 2) {
-      const inter = p.map(i, 0, p.height, 0, 1);
+    if (
+      this._gradientCache &&
+      this._gradientW === p.width &&
+      this._gradientH === p.height
+    ) {
+      p.image(this._gradientCache, 0, 0);
+      return;
+    }
+    // Rebuild cache
+    if (this._gradientCache) {
+      this._gradientCache.remove();
+    }
+    this._gradientCache = p.createGraphics(p.width, p.height);
+    this._gradientW = p.width;
+    this._gradientH = p.height;
+
+    const g = this._gradientCache;
+    g.noFill();
+    const c1 = g.color(15, 5, 35);
+    const c2 = g.color(60, 30, 80);
+    const c3 = g.color(25, 15, 45);
+    for (let i = 0; i <= g.height; i += 2) {
+      const inter = g.map(i, 0, g.height, 0, 1);
       let currentColor;
       if (inter < 0.5) {
-        currentColor = p.lerpColor(c1, c3, inter * 2);
+        currentColor = g.lerpColor(c1, c3, inter * 2);
       } else {
-        currentColor = p.lerpColor(c3, c2, (inter - 0.5) * 2);
+        currentColor = g.lerpColor(c3, c2, (inter - 0.5) * 2);
       }
-      p.stroke(currentColor);
-      p.line(0, i, p.width, i);
+      g.stroke(currentColor);
+      g.line(0, i, g.width, i);
     }
-    p.pop();
+    p.image(this._gradientCache, 0, 0);
   }
 
   _updateAurorasAndDust(p) {
@@ -235,7 +279,7 @@ class VisualEffectsManager {
   addExplosion(x, y, count = 15, color = [255, 200, 100]) {
     const colors = [color];
     for (let i = 0; i < count; i++) {
-      this.particles.push({
+      this.particles.push(acquireParticle({
         x,
         y,
         vx: random(-8, 8),
@@ -247,7 +291,7 @@ class VisualEffectsManager {
         type: 'explosion',
         gravity: 0.1,
         fade: random(0.02, 0.05),
-      });
+      }));
     }
   }
 
@@ -286,7 +330,7 @@ class VisualEffectsManager {
         speedBoost = 1 + beatIntensity * 0.5;
       }
 
-      this.particles.push({
+      this.particles.push(acquireParticle({
         x,
         y,
         vx: random(-8, 8) * speedBoost,
@@ -299,7 +343,7 @@ class VisualEffectsManager {
         gravity: 0.1,
         fade: random(0.02, 0.05),
         beatBoost: beatIntensity,
-      });
+      }));
     }
 
     if (beatIntensity > 0.4) {
@@ -324,7 +368,7 @@ class VisualEffectsManager {
       const spreadAngle = angle + random(-0.3, 0.3);
       const speed = random(3, 6);
 
-      this.particles.push({
+      this.particles.push(acquireParticle({
         x,
         y,
         vx: cos(spreadAngle) * speed,
@@ -336,12 +380,12 @@ class VisualEffectsManager {
         type: 'muzzle',
         gravity: 0,
         fade: 0.1,
-      });
+      }));
     }
   }
 
   addMotionTrail(x, y, color, size = 3) {
-    this.particles.push({
+    this.particles.push(acquireParticle({
       x,
       y,
       vx: 0,
@@ -353,7 +397,7 @@ class VisualEffectsManager {
       type: 'trail',
       gravity: 0,
       fade: 0.05,
-    });
+    }));
   }
 
   updateParticles() {
@@ -371,7 +415,12 @@ class VisualEffectsManager {
       part.life -= part.fade * 60;
 
       if (part.life <= 0) {
-        this.particles.splice(i, 1);
+        releaseParticle(part);
+        const last = this.particles.length - 1;
+        if (i < last) {
+          this.particles[i] = this.particles[last];
+        }
+        this.particles.pop();
       }
     }
 

@@ -7,12 +7,21 @@ import { randomRange } from '../mathUtils.js';
 import {
   drawDistantStarsLayer,
   drawNebulaCloudLayer,
-} from './background/ParallaxLayerRenderers.js';
+  drawMediumStarsLayer,
+  drawCloseDebrisLayer,
+  drawForegroundSparksLayer,
+  createParallaxLayerConfig,
+  generateParallaxLayerElements,
+} from './background/BackgroundLayers.js';
 import {
   drawCosmicAuroraBackgroundLayer,
   resetCosmicAuroraCache,
 } from './background/CosmicAuroraBackground.js';
-import { drawAuroraWispsLayer } from './background/AuroraWisps.js';
+import {
+  drawAuroraWispsLayer,
+  drawInteractiveBackgroundEffectsLayer,
+  resetBeatPulseCache,
+} from './background/BackgroundEffects.js';
 import {
   drawDistantGalaxiesLayer,
   drawFlowingNebulaStreamsLayer,
@@ -20,17 +29,6 @@ import {
   drawEnhancedSparklesLayer,
   resetEnhancedSpaceElementsCache,
 } from './background/EnhancedSpaceElements.js';
-import {
-  drawInteractiveBackgroundEffectsLayer,
-  resetBeatPulseCache,
-} from './background/InteractiveBackgroundEffects.js';
-import { drawMediumStarsLayer } from './background/MediumStarRenderer.js';
-import {
-  drawCloseDebrisLayer,
-  drawForegroundSparksLayer,
-} from './background/NearFieldParallax.js';
-import { createParallaxLayerConfig } from './background/ParallaxLayerConfig.js';
-import { generateParallaxLayerElements } from './background/ParallaxLayerFactory.js';
 
 /**
  * @param {p5} p - The p5 instance

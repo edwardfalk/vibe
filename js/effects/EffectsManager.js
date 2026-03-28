@@ -5,6 +5,11 @@
 
 import { max, random, sin, cos, lerp, TWO_PI } from '../mathUtils.js';
 
+const PARTICLE_POOL_MAX = 100;
+const TRAIL_POOL_MAX = 50;
+const particlePool = [];
+const trailPool = [];
+
 class EffectsManager {
   constructor() {
     this.shake = {
@@ -71,7 +76,14 @@ class EffectsManager {
       particle.update();
 
       if (particle.isDead()) {
-        this.particles.splice(i, 1);
+        if (particlePool.length < PARTICLE_POOL_MAX) {
+          particlePool.push(particle);
+        }
+        const last = this.particles.length - 1;
+        if (i < last) {
+          this.particles[i] = this.particles[last];
+        }
+        this.particles.pop();
       }
     }
 
@@ -80,7 +92,14 @@ class EffectsManager {
       trail.update();
 
       if (trail.isDead()) {
-        this.trails.splice(i, 1);
+        if (trailPool.length < TRAIL_POOL_MAX) {
+          trailPool.push(trail);
+        }
+        const last = this.trails.length - 1;
+        if (i < last) {
+          this.trails[i] = this.trails[last];
+        }
+        this.trails.pop();
       }
     }
   }
@@ -154,13 +173,27 @@ class EffectsManager {
       const size = random(3, 8);
       const color = random(colors);
 
-      this.particles.push(new Particle(x, y, angle, speed, size, color, 60));
+      let particle;
+      if (particlePool.length > 0) {
+        particle = particlePool.pop();
+        particle.reset(x, y, angle, speed, size, color, 60);
+      } else {
+        particle = new Particle(x, y, angle, speed, size, color, 60);
+      }
+      this.particles.push(particle);
     }
   }
 
   addBulletTrail(x, y, angle, type = 'player') {
     const color = type === 'player' ? [100, 200, 255] : [255, 100, 150];
-    this.trails.push(new Trail(x, y, angle, color, 15));
+    let trail;
+    if (trailPool.length > 0) {
+      trail = trailPool.pop();
+      trail.reset(x, y, angle, color, 15);
+    } else {
+      trail = new Trail(x, y, angle, color, 15);
+    }
+    this.trails.push(trail);
   }
 
   setSlowMotion(scale = 0.3, duration = 60) {
@@ -232,6 +265,20 @@ class Particle {
   isDead() {
     return this.life <= 0;
   }
+
+  reset(x, y, angle, speed, size, color, life) {
+    this.x = x;
+    this.y = y;
+    this.vx = cos(angle) * speed;
+    this.vy = sin(angle) * speed;
+    this.size = size;
+    this.maxSize = size;
+    this.color = color;
+    this.life = life;
+    this.maxLife = life;
+    this.rotation = random(TWO_PI);
+    this.rotationSpeed = random(-0.2, 0.2);
+  }
 }
 
 class Trail {
@@ -275,6 +322,19 @@ class Trail {
 
   isDead() {
     return this.points.length === 0;
+  }
+
+  reset(x, y, angle, color, segments) {
+    this.points.length = 0;
+    this.color = color;
+    this.maxSegments = segments;
+    for (let i = 0; i < segments; i++) {
+      this.points.push({
+        x: x - cos(angle) * i * 3,
+        y: y - sin(angle) * i * 3,
+        life: segments - i,
+      });
+    }
   }
 }
 

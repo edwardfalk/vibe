@@ -1,5 +1,3 @@
-import { drawAuroraWispsLayer } from './AuroraWisps.js';
-
 const SPARKLE_COLORS = [
   [0, 243, 255], // Cyan
   [255, 0, 200], // Magenta
@@ -162,5 +160,3 @@ export function drawDistantGalaxiesLayer(galaxies, p) {
   }
   p.pop();
 }
-
-export { drawAuroraWispsLayer };
