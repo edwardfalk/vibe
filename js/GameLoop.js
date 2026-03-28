@@ -37,7 +37,7 @@ let enemyDeathHandler;
 
 // Global system references for easy access
 window.player = null;
-window.enemies = [];
+window.enemies = enemies;
 window.playerBullets = playerBullets;
 window.enemyBullets = enemyBullets;
 window.activeBombs = activeBombs;

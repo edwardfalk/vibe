@@ -14,8 +14,8 @@ export function applyKillFeedback({
   gameState.addKill();
 
   let points = 10;
-  if (gameState.killStreak >= 5) points *= 2;
-  if (gameState.killStreak >= 10) points *= 1.5;
+  if (gameState.killStreak >= 10) points *= 3;
+  else if (gameState.killStreak >= 5) points *= 2;
   gameState.addScore(points);
 
   if (floatingText) {

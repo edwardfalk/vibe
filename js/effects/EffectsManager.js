@@ -169,7 +169,7 @@ class EffectsManager {
       const color = random(colors);
 
       let particle;
-      if (particlePool.size > 0) {
+      if (particlePool.pool.length > 0) {
         particle = particlePool.pool.pop();
         particle.reset(x, y, angle, speed, size, color, 60);
       } else {
@@ -182,7 +182,7 @@ class EffectsManager {
   addBulletTrail(x, y, angle, type = 'player') {
     const color = type === 'player' ? [100, 200, 255] : [255, 100, 150];
     let trail;
-    if (trailPool.size > 0) {
+    if (trailPool.pool.length > 0) {
       trail = trailPool.pool.pop();
       trail.reset(x, y, angle, color, 15);
     } else {

@@ -136,7 +136,7 @@ export function updateEnemiesAndResolveResults(context) {
   for (let i = enemies.length - 1; i >= 0; i--) {
     const enemy = enemies[i];
 
-    if (enemy.health <= 0 || enemy.markedForRemoval) {
+    if (enemy.markedForRemoval) {
       enemies.splice(i, 1);
       continue;
     }
