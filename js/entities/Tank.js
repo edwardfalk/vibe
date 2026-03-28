@@ -84,9 +84,10 @@ class Tank extends BaseEnemy {
         this.angerTarget = null;
         console.log(`😌 Tank calmed down, returning to normal behavior`);
 
-        // Tank speaks about calming down
+        // Tank speaks about calming down (beat-gated)
         const audio = this.getContextValue('audio');
-        if (audio) {
+        const beatClock = this.getContextValue('beatClock');
+        if (audio && (!beatClock || beatClock.isOnBeat([1]))) {
           const calmLines = [
             'BACK TO NORMAL TARGETS',
             'ANGER SUBSIDING',

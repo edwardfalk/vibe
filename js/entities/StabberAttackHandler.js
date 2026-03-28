@@ -26,7 +26,6 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
   const clampedDeltaMs = Math.min(deltaTimeMs, MAX_DELTA_MS);
   const dt = clampedDeltaMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
   if (stabber.stabCooldown > 0) stabber.stabCooldown -= dt;
-  if (stabber.stabChantTimer > 0) stabber.stabChantTimer -= dt;
 
   stabber.motionTrailTimer += deltaTimeMs;
   if (stabber.motionTrailTimer >= stabber.motionTrailInterval) {
@@ -34,20 +33,12 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
     stabber.motionTrailTimer = 0;
   }
 
-  if (stabber.stabChantTimer <= 0 && stabber.speechCooldown <= 0) {
-    const speechConfig =
-      CONFIG.SPEECH_SETTINGS['STABBER'] || CONFIG.SPEECH_SETTINGS.DEFAULT;
-    stabber.stabChantTimer = random(
-      (speechConfig.CHANT_MIN || 3) * 60,
-      (speechConfig.CHANT_MAX || 6) * 60
-    );
-    const beatClock = stabber.getContextValue('beatClock');
+  // Beat-gated stabber chant (replaces frame-based stabChantTimer)
+  const beatClock = stabber.getContextValue('beatClock');
+  if (beatClock && beatClock.canStabberAttack() && !stabber.stabPreparing && !stabber.stabbing && !stabber.stabWarning && !stabber.stabRecovering && random() < 0.03) {
     const audio = stabber.getContextValue('audio');
-    if (beatClock?.canStabberAttack() && audio) {
-      const ambientSounds = ['stabberChant', 'stabberStalk'];
-      const sound = random(ambientSounds);
-      audio.playSound(sound, stabber.x, stabber.y);
-      console.log(`🗡️ Stabber ambient sound: ${sound} on off-beat 3.5`);
+    if (audio) {
+      audio.playSound('stabberChant', stabber.x, stabber.y);
     }
   }
 

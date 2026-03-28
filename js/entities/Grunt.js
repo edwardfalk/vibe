@@ -50,8 +50,7 @@ class Grunt extends BaseEnemy {
     this.pendingStabDeathTimer = 0; // frames remaining
     this._pendingStabDeathParams = null;
 
-    // Grunt-specific weird noise timer (more frequent than speech)
-    this.gruntNoiseTimer = random(60, 240);
+    // Grunt weird noises are now beat-gated (no timer needed)
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
         `[GRUNT DEBUG] Spawned Grunt at (${this.x.toFixed(1)},${this.y.toFixed(1)}) with health=${this.health}`
@@ -110,14 +109,10 @@ class Grunt extends BaseEnemy {
     const dy = playerY - this.y;
     const distance = sqrt(dx * dx + dy * dy);
 
-    // Handle grunt weird noise timer (separate from speech)
-    if (this.gruntNoiseTimer > 0) {
-      this.gruntNoiseTimer -= dt;
-    }
-
-    if (this.gruntNoiseTimer <= 0) {
+    // Handle grunt weird noise (beat-gated)
+    const beatClock = this.getContextValue('beatClock');
+    if (beatClock && beatClock.isOnBeat([2, 4]) && random() < 0.02) {
       this.makeGruntWeirdNoise();
-      this.gruntNoiseTimer = random(120, 360); // 2-6 seconds between weird noises
     }
 
     // Grunts maintain tactical distance (150-250 pixels)
@@ -272,21 +267,18 @@ class Grunt extends BaseEnemy {
    */
   makeGruntWeirdNoise() {
     const audio = this.getContextValue('audio');
-    const beatClock = this.getContextValue('beatClock');
-    if (audio && beatClock) {
-      if (beatClock.isOnBeat([2, 4]) && random() < 0.4) {
-        const weirdSounds = [
-          'gruntMalfunction',
-          'gruntBeep',
-          'gruntWhir',
-          'gruntError',
-          'gruntGlitch',
-        ];
-        const randomSound = random(weirdSounds);
-        audio.playSound(randomSound, this.x, this.y);
-        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-          console.log(`🤖 Grunt making weird noise: ${randomSound}`);
-        }
+    if (audio) {
+      const weirdSounds = [
+        'gruntMalfunction',
+        'gruntBeep',
+        'gruntWhir',
+        'gruntError',
+        'gruntGlitch',
+      ];
+      const randomSound = random(weirdSounds);
+      audio.playSound(randomSound, this.x, this.y);
+      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+        console.log(`🤖 Grunt making weird noise: ${randomSound}`);
       }
     }
   }
@@ -296,9 +288,7 @@ class Grunt extends BaseEnemy {
     return {
       lines: GRUNT_LINES,
       shouldSpeak: (beatClock) =>
-        beatClock && beatClock.isOnBeat([2, 4])
-          ? random() < 0.9
-          : random() < 0.3,
+        beatClock && beatClock.isOnBeat([2, 4]) && random() < 0.9,
     };
   }
 

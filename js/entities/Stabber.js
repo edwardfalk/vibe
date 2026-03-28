@@ -51,13 +51,7 @@ class Stabber extends BaseEnemy {
     this.motionTrailTimer = 0;
     this.motionTrailInterval = 66.67; // ~4 frames at 60fps (4 * 16.67ms)
 
-    // Atmospheric TTS system
-    const speechConfig =
-      CONFIG.SPEECH_SETTINGS['STABBER'] || CONFIG.SPEECH_SETTINGS.DEFAULT;
-    this.stabChantTimer = random(
-      (speechConfig.CHANT_MIN || 3) * 60,
-      (speechConfig.CHANT_MAX || 6) * 60
-    );
+    // Stabber chant is now beat-gated (no timer needed)
     this.isStabbing = false;
     this.stabAnimationTime = 0;
     this.maxStabAnimationTime = 120; // 2 second stab animation (dash) - CONTINUOUS HIT WINDOW
