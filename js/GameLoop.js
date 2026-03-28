@@ -217,6 +217,11 @@ function updateGame(p) {
     gameState: window.gameState,
   });
 
+  // Keep BeatTrack informed of enemy count for dynamic volume scaling
+  if (window.beatTrack) {
+    window.beatTrack.setEnemyCount(enemies.length);
+  }
+
   // Check collisions using CollisionSystem
   if (window.collisionSystem) {
     window.collisionSystem.checkBulletCollisions();
