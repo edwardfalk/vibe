@@ -12,10 +12,11 @@
  */
 
 export class BeatClock {
-  constructor(bpm = 120) {
+  constructor(bpm = 120, audioContext = null) {
     this.bpm = bpm;
+    this.audioContext = audioContext ?? null;
     this.beatInterval = (60 / bpm) * 1000; // milliseconds per beat
-    this.startTime = Date.now();
+    this.startTime = this._now();
     this.tolerance = 100; // ms tolerance for "on beat" detection
 
     // Beat pattern tracking (4/4 time signature)
@@ -31,9 +32,15 @@ export class BeatClock {
     };
     this.update(true);
 
+    const clockSource = this.audioContext ? 'AudioContext' : 'Date.now';
     console.log(
-      `🎵 BeatClock initialized: ${bpm} BPM (${this.beatInterval}ms per beat)`
+      `🎵 BeatClock initialized: ${bpm} BPM (${this.beatInterval}ms per beat) [${clockSource}]`
     );
+  }
+
+  // Internal clock source: AudioContext (seconds->ms) or Date.now fallback
+  _now() {
+    return this.audioContext ? this.audioContext.currentTime * 1000 : Date.now();
   }
 
   // Get current beat number (0-based, resets every measure)
@@ -170,7 +177,7 @@ export class BeatClock {
 
   // Reset timing (for level transitions)
   reset() {
-    this.startTime = Date.now();
+    this.startTime = this._now();
     this.update(true);
     console.log('🎵 BeatClock reset');
   }
@@ -202,7 +209,7 @@ export class BeatClock {
 
   // No-op update method for compatibility with GameLoop
   update(force = false) {
-    const now = Date.now();
+    const now = this._now();
     if (!force && now === this.cache.timestamp) return;
 
     const elapsed = now - this.startTime;
