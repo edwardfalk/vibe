@@ -311,7 +311,8 @@ export class Audio {
     const panNode = this.audioContext.createStereoPanner();
 
     // Add subtle randomness to frequency and volume for variety
-    const frequencyVariation = 1 + (random() - 0.5) * 0.1;
+    const freqVarRange = config.frequencyVariationRange || 0.1;
+    const frequencyVariation = 1 + (random() - 0.5) * freqVarRange;
     const volumeVariation = 1 + (random() - 0.5) * 0.15;
     const durationVariation = 1 + (random() - 0.5) * 0.2;
 
