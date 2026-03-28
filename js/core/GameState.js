@@ -20,6 +20,14 @@ export class GameState {
     // Timers
     this.gameOverTimer = 0;
     this.pauseStartTime = 0;
+
+    // High score write debounce
+    this._highScoreDirty = false;
+    this._highScoreDebounceTimer = null;
+    this._boundFlush = () => this._flushHighScore();
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+      window.addEventListener('beforeunload', this._boundFlush);
+    }
   }
 
   // Score management
@@ -71,7 +79,24 @@ export class GameState {
   updateHighScore() {
     if (this.score > this.highScore) {
       this.highScore = this.score;
+      this._highScoreDirty = true;
+      if (!this._highScoreDebounceTimer) {
+        this._highScoreDebounceTimer = setTimeout(() => {
+          this._highScoreDebounceTimer = null;
+          this._flushHighScore();
+        }, 5000);
+      }
+    }
+  }
+
+  _flushHighScore() {
+    if (this._highScoreDirty) {
       localStorage.setItem('vibeHighScore', this.highScore.toString());
+      this._highScoreDirty = false;
+    }
+    if (this._highScoreDebounceTimer) {
+      clearTimeout(this._highScoreDebounceTimer);
+      this._highScoreDebounceTimer = null;
     }
   }
 
@@ -88,7 +113,7 @@ export class GameState {
     } else if (newState === 'gameOver') {
       this.gameOverTimer = 0;
       this.resetKillStreak();
-      this.updateHighScore();
+      this._flushHighScore();
 
       // Game over speech
       if (window.audio && window.player) {
@@ -124,6 +149,7 @@ export class GameState {
     this.shotsFired = 0;
     this.gameOverTimer = 0;
     this.pauseStartTime = 0;
+    this._flushHighScore();
 
     // Reset game state
     this.gameState = 'playing';

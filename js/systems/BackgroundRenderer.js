@@ -31,10 +31,6 @@ import {
 } from './background/NearFieldParallax.js';
 import { createParallaxLayerConfig } from './background/ParallaxLayerConfig.js';
 import { generateParallaxLayerElements } from './background/ParallaxLayerFactory.js';
-import {
-  drawSubtleSpaceElementsLayer,
-  resetSubtleSpaceElementsCache,
-} from './background/SubtleSpaceElements.js';
 
 /**
  * @param {p5} p - The p5 instance
@@ -146,13 +142,6 @@ export class BackgroundRenderer {
     p.pop();
   }
 
-  // Draw subtle space elements
-  drawSubtleSpaceElements(p = this.p) {
-    p.push();
-    drawSubtleSpaceElementsLayer(p);
-    p.pop();
-  }
-
   drawInteractiveBackgroundEffects(p = this.p) {
     p.push();
     const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
@@ -172,7 +161,6 @@ export class BackgroundRenderer {
     this.parallaxInitialized = false;
     resetCosmicAuroraCache();
     resetEnhancedSpaceElementsCache();
-    resetSubtleSpaceElementsCache();
     resetBeatPulseCache();
   }
 }

@@ -74,6 +74,8 @@ describe('GameState', () => {
 
   it('high score persists in localStorage', () => {
     gs.addScore(500);
+    // High score is debounced; flush explicitly to verify persistence
+    gs._flushHighScore();
     expect(localStorage.getItem('vibeHighScore')).toBe('500');
   });
 

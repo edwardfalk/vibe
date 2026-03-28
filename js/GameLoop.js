@@ -139,7 +139,7 @@ function updateGame(p) {
 
     // Apply chromatic aberration during hit-stop (decays as hitstop ends)
     if (window.visualEffectsManager && next > 0) {
-      const hitStopProgress = next / 8; // Normalize to max expected frames
+      const hitStopProgress = (8 - next) / 8; // Intensity peaks at end of hitstop (impact moment)
       const chromaIntensity = hitStopProgress * 0.6;
       window.visualEffectsManager.chromaticAberration = chromaIntensity;
     }
@@ -196,11 +196,6 @@ function updateGame(p) {
     enemyBullets,
     bulletClass: Bullet,
   });
-
-  // Immediately process bullet collisions to catch hits before enemies move
-  if (window.collisionSystem) {
-    window.collisionSystem.checkBulletCollisions();
-  }
 
   // Update bombs (split into dedicated BombSystem module)
   updateBombSystem({
