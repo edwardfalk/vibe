@@ -53,6 +53,9 @@ build/
 # Archive and backup directories
 backups/
 
+# Git worktrees
+.worktrees/
+
 # Game development artifacts
 *.psd
 *.ai
