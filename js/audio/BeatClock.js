@@ -12,10 +12,11 @@
  */
 
 export class BeatClock {
-  constructor(bpm = 120) {
+  constructor(bpm = 120, audioContext = null) {
     this.bpm = bpm;
+    this.audioContext = audioContext ?? null;
     this.beatInterval = (60 / bpm) * 1000; // milliseconds per beat
-    this.startTime = Date.now();
+    this.startTime = this._now();
     this.tolerance = 100; // ms tolerance for "on beat" detection
 
     // Beat pattern tracking (4/4 time signature)
@@ -31,9 +32,15 @@ export class BeatClock {
     };
     this.update(true);
 
+    const clockSource = this.audioContext ? 'AudioContext' : 'Date.now';
     console.log(
-      `🎵 BeatClock initialized: ${bpm} BPM (${this.beatInterval}ms per beat)`
+      `🎵 BeatClock initialized: ${bpm} BPM (${this.beatInterval}ms per beat) [${clockSource}]`
     );
+  }
+
+  // Internal clock source: AudioContext (seconds->ms) or Date.now fallback
+  _now() {
+    return this.audioContext ? this.audioContext.currentTime * 1000 : Date.now();
   }
 
   // Get current beat number (0-based, resets every measure)
@@ -105,6 +112,25 @@ export class BeatClock {
     return quarterBeatInterval - timeSinceLastQuarterBeat;
   }
 
+  // Get time to next 8th note (for player sustained fire)
+  getTimeToNextEighthNote() {
+    this.update();
+    const elapsed = this.cache.elapsed;
+    const eighthInterval = this.beatInterval / 2; // 250ms at 120 BPM
+    const timeSinceLastEighth = elapsed % eighthInterval;
+    return eighthInterval - timeSinceLastEighth;
+  }
+
+  // Check if we're on an 8th note
+  isOnEighthNote() {
+    this.update();
+    const elapsed = this.cache.elapsed;
+    const eighthInterval = this.beatInterval / 2;
+    const timeSinceLastEighth = elapsed % eighthInterval;
+    const tolerance = 20; // ~1 frame
+    return timeSinceLastEighth <= tolerance || timeSinceLastEighth >= eighthInterval - tolerance;
+  }
+
   // GRUNT TIMING: Beats 2 and 4 (snare pattern)
   canGruntShoot() {
     if (!this.isOnBeat()) return false;
@@ -170,7 +196,7 @@ export class BeatClock {
 
   // Reset timing (for level transitions)
   reset() {
-    this.startTime = Date.now();
+    this.startTime = this._now();
     this.update(true);
     console.log('🎵 BeatClock reset');
   }
@@ -202,7 +228,7 @@ export class BeatClock {
 
   // No-op update method for compatibility with GameLoop
   update(force = false) {
-    const now = Date.now();
+    const now = this._now();
     if (!force && now === this.cache.timestamp) return;
 
     const elapsed = now - this.startTime;

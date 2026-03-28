@@ -26,7 +26,6 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
   const clampedDeltaMs = Math.min(deltaTimeMs, MAX_DELTA_MS);
   const dt = clampedDeltaMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
   if (stabber.stabCooldown > 0) stabber.stabCooldown -= dt;
-  if (stabber.stabChantTimer > 0) stabber.stabChantTimer -= dt;
 
   stabber.motionTrailTimer += deltaTimeMs;
   if (stabber.motionTrailTimer >= stabber.motionTrailInterval) {
@@ -34,20 +33,12 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
     stabber.motionTrailTimer = 0;
   }
 
-  if (stabber.stabChantTimer <= 0 && stabber.speechCooldown <= 0) {
-    const speechConfig =
-      CONFIG.SPEECH_SETTINGS['STABBER'] || CONFIG.SPEECH_SETTINGS.DEFAULT;
-    stabber.stabChantTimer = random(
-      (speechConfig.CHANT_MIN || 3) * 60,
-      (speechConfig.CHANT_MAX || 6) * 60
-    );
-    const beatClock = stabber.getContextValue('beatClock');
+  // Beat-gated stabber chant (replaces frame-based stabChantTimer)
+  const beatClock = stabber.getContextValue('beatClock');
+  if (beatClock && beatClock.canStabberAttack() && !stabber.stabPreparing && !stabber.stabbing && !stabber.stabWarning && !stabber.stabRecovering && random() < 0.03) {
     const audio = stabber.getContextValue('audio');
-    if (beatClock?.canStabberAttack() && audio) {
-      const ambientSounds = ['stabberChant', 'stabberStalk'];
-      const sound = random(ambientSounds);
-      audio.playSound(sound, stabber.x, stabber.y);
-      console.log(`🗡️ Stabber ambient sound: ${sound} on off-beat 3.5`);
+    if (audio) {
+      audio.playSound('stabberChant', stabber.x, stabber.y);
     }
   }
 
@@ -97,10 +88,16 @@ function handleRecoveryPhase(stabber, dt) {
     stabber.velocity.y = 0;
   }
 
-  if (stabber.stabRecoveryTime >= stabber.maxStabRecoveryTime) {
-    stabber.stabRecovering = false;
-    stabber.stabRecoveryTime = 0;
-    console.log(`⚡ Stabber recovered from attack`);
+  // Recovery ends at next beat 3.5 (with minimum recovery time)
+  const minRecoveryFrames = 60; // ~1 second minimum
+  const beatClock = stabber.getContextValue('beatClock');
+  if (stabber.stabRecoveryTime >= minRecoveryFrames) {
+    if (!beatClock || beatClock.canStabberAttack()) {
+      stabber.stabRecovering = false;
+      stabber.stabRecoveryTime = 0;
+      stabber.stabCooldown = 0;
+      console.log(`⚡ Stabber recovered from attack on beat`);
+    }
   }
   return null;
 }
@@ -198,7 +195,10 @@ function handleWarningPhase(stabber, dt) {
     audioWarn.speak(stabber, warning, 'stabber');
   }
 
-  if (stabber.stabWarningTime >= stabber.maxStabWarningTime) {
+  // Transition to dash after ~half a beat (beat-relative duration)
+  const beatClock = stabber.getContextValue('beatClock');
+  const warningDuration = beatClock ? beatClock.beatInterval * 0.5 / (1000 / 60) : 15;
+  if (stabber.stabWarningTime >= warningDuration) {
     stabber.stabWarning = false;
     stabber.stabWarningTime = 0;
     stabber.stabWarningPlayed = false;
@@ -215,21 +215,18 @@ function handleWarningPhase(stabber, dt) {
 }
 
 function handlePreparingPhase(stabber, dx, dy, distance, dt) {
-  const audioPrep = stabber.getContextValue('audio');
-  const beatClockPrep = stabber.getContextValue('beatClock');
-  if (
-    stabber.stabPreparingTime === 0 &&
-    audioPrep &&
-    beatClockPrep?.canStabberAttack()
-  ) {
-    audioPrep.playSound('stabberKnifeExtend', stabber.x, stabber.y);
+  const beatClock = stabber.getContextValue('beatClock');
+
+  // First frame: knife extend sound
+  if (stabber.stabPreparingTime === 0) {
+    const audio = stabber.getContextValue('audio');
+    if (audio) audio.playSound('stabberKnifeExtend', stabber.x, stabber.y);
   }
+
   stabber.stabPreparingTime += dt;
 
-  const prepProgressRatio =
-    stabber.stabPreparingTime / stabber.maxStabPreparingTime;
-
-  if (prepProgressRatio < 0.25) {
+  // Back up during preparation if too close
+  if (distance < 200) {
     const moveBackSpeed = stabber.speed * 0.5;
     if (distance > 0) {
       const unitX = dx / distance;
@@ -245,7 +242,9 @@ function handlePreparingPhase(stabber, dx, dy, distance, dt) {
     stabber.velocity.y = 0;
   }
 
-  if (stabber.stabPreparingTime >= stabber.maxStabPreparingTime) {
+  // Transition when beat 3.5 arrives (with minimum prep time)
+  const minPrepFrames = 30; // ~0.5 seconds minimum
+  if (stabber.stabPreparingTime >= minPrepFrames && beatClock && beatClock.canStabberAttack()) {
     stabber.stabPreparing = false;
     stabber.stabPreparingTime = 0;
     stabber.stabWarning = true;

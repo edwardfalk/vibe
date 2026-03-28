@@ -434,44 +434,47 @@ export class Player {
   shoot() {
     if (!this.getContextValue('playerBullets')) return null;
 
-    // IMPROVED SHOOTING SYSTEM: First shot immediate, continuous fire on quarter-beats
-    this.wantsToContinueShooting = true; // Player wants to shoot
+    this.wantsToContinueShooting = true;
 
-    // Check if this is the start of shooting (first shot)
+    // First shot tracking
     if (!this.isCurrentlyShooting) {
       this.isCurrentlyShooting = true;
       this.firstShotFired = false;
     }
 
     if (this.shootCooldownMs <= 0) {
-      // First shot is always immediate for responsive feel
+      // First shot: always immediate
       if (!this.firstShotFired) {
         this.firstShotFired = true;
-        return this.fireBullet();
+        const bullet = this.fireBullet();
+        this.shootCooldownMs = 200; // Tap cooldown (~8th note)
+        return bullet;
       }
 
-      // Subsequent shots follow quarter-beat timing for musical flow
+      // Sustained fire: quantized to 8th notes
       const beatClock = this.getContextValue('beatClock');
       if (beatClock) {
-        // Check for quarter-beat timing (4x faster than full beats)
-        if (beatClock.canPlayerShootQuarterBeat()) {
-          return this.fireBullet();
+        if (beatClock.isOnEighthNote()) {
+          const bullet = this.fireBullet();
+          this.shootCooldownMs = 200;
+          return bullet;
         } else if (!this.queuedShot) {
-          // Queue shot for next quarter-beat if not already queued
-          const timeToNext = beatClock.getTimeToNextQuarterBeat();
+          const timeToNext = beatClock.getTimeToNextEighthNote();
           this.queueShot(timeToNext);
           return null;
         }
       } else {
-        // No beat clock available, fire with normal cooldown (fallback)
-        return this.fireBullet();
+        // Fallback: fixed 250ms interval
+        const bullet = this.fireBullet();
+        this.shootCooldownMs = 250;
+        return bullet;
       }
     }
     return null;
   }
 
   fireBullet() {
-    this.shootCooldownMs = 17; // At least one frame at 60fps (was 5)
+    // Cooldown is set by the caller (shoot method) after this returns
     this.muzzleFlash = 4;
 
     // Calculate bullet spawn position
@@ -489,9 +492,6 @@ export class Player {
         timerMs: timeToNextBeat, // Store milliseconds directly
         aimAngle: this.aimAngle, // Store current aim angle
       };
-      console.log(
-        `🎵 Shot queued for next beat in ${this.queuedShot.timerMs.toFixed(2)} ms`
-      );
     }
   }
 

@@ -8,25 +8,6 @@ import { floor, random, randomRange } from '../../mathUtils.js';
 
 // ─── BeatReactiveBackground ───────────────────────────────────────────────────
 
-export function getBeatReactiveValues() {
-  const beatClock = window.beatClock;
-  if (!beatClock) {
-    return {
-      beatPulse: 0,
-      measurePhase: 0,
-      downbeatIntensity: 0,
-      beatIntensity: 0,
-    };
-  }
-
-  return {
-    beatPulse: beatClock.getBeatIntensity(8),
-    measurePhase: beatClock.getMeasurePhase(),
-    downbeatIntensity: beatClock.getDownbeatIntensity(3),
-    beatIntensity: beatClock.getBeatIntensity(4),
-  };
-}
-
 export function computeMediumStarVisual(
   star,
   starIndex,
@@ -43,8 +24,9 @@ export function computeMediumStarVisual(
     (sinFn(measurePhase * twoPi + starPhase) * 0.5 + 0.5) * beatPulse;
   const combinedBrightness =
     star.brightness * (0.7 + timeTwinkle * 0.3 + beatTwinkle * 0.3);
-  const alpha = Math.min(255, combinedBrightness * 255);
-  const sizePulse = 1 + beatPulse * 0.2 * ((starIndex % 3) / 3);
+  const alpha = Math.min(255, combinedBrightness * 255 + beatPulse * 120);
+  const sizeBoost = 1.0 + beatPulse * 0.3;
+  const sizePulse = sizeBoost + beatPulse * 0.2 * ((starIndex % 3) / 3);
   const finalSize = star.size * sizePulse;
 
   return {
@@ -325,8 +307,9 @@ export function drawNebulaCloudLayer(clouds, p, beatClock = null) {
 
 // ─── MediumStarRenderer ───────────────────────────────────────────────────────
 
-export function drawMediumStarsLayer(stars, p) {
-  const { beatPulse, measurePhase } = getBeatReactiveValues();
+export function drawMediumStarsLayer(stars, p, beatClock = null) {
+  const beatPulse = beatClock ? beatClock.getBeatIntensity(8) : 0;
+  const measurePhase = beatClock ? beatClock.getMeasurePhase() : 0;
 
   p.noStroke();
   let starIndex = 0;

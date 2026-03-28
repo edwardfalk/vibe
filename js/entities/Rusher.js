@@ -46,6 +46,10 @@ class Rusher extends BaseEnemy {
     this.explodeDistance = 50; // Distance to actually explode
     this.isCharging = false; // Track if currently charging
 
+    // Vibrate state - hold between proximity trigger and beat-aligned explosion
+    this.vibrating = false;
+    this.vibrateStartTime = 0;
+
     // deltaTime-based timing for motion trail
     this.motionTrailTimer = 0;
     this.motionTrailInterval = 66.67; // ~4 frames at 60fps (4 * 16.67ms)
@@ -76,6 +80,29 @@ class Rusher extends BaseEnemy {
     if (this.isCharging && this.motionTrailTimer >= this.motionTrailInterval) {
       this.drawMotionTrail();
       this.motionTrailTimer = 0;
+    }
+
+    // Vibrate state handler - waiting for beat to explode
+    if (this.vibrating) {
+      this.vibrateStartTime += deltaTimeMs;
+
+      const beatClock = this.getContextValue('beatClock');
+      if (beatClock && beatClock.canRusherExplode()) {
+        this.vibrating = false;
+        this.exploding = true;
+        this.explosionTimer = 0;
+        this.maxExplosionTime = 5; // Near-instant after beat hit
+      }
+
+      // Safety: explode if vibrated too long or no beatClock
+      if (this.vibrating && (!beatClock || this.vibrateStartTime > 2000)) {
+        this.vibrating = false;
+        this.exploding = true;
+        this.explosionTimer = 0;
+        this.maxExplosionTime = 5;
+      }
+
+      return null;
     }
 
     if (this.exploding) {
@@ -111,12 +138,16 @@ class Rusher extends BaseEnemy {
         const unitY = dy / distance;
 
         if (distance <= this.explodeDistance) {
-          // Close enough - explode immediately
-          this.exploding = true;
-          this.explosionTimer = 0;
+          // Close enough - enter vibrate state, wait for beat to explode
+          this.vibrating = true;
+          this.vibrateStartTime = 0;
+          this.speed = 0; // Stop moving
           console.log(
-            `💥 RUSHER PROXIMITY EXPLOSION! Distance: ${distance.toFixed(0)}px`
+            `💥 RUSHER VIBRATING! Distance: ${distance.toFixed(0)}px`
           );
+
+          const audio = this.getContextValue('audio') || this.audio;
+          if (audio) audio.playRusherCharge(this.x, this.y);
 
           // Register explosion telegraph
           const rhythmFX = this.getContextValue('rhythmFX');
@@ -180,7 +211,8 @@ class Rusher extends BaseEnemy {
   getAmbientSpeechConfig() {
     return {
       lines: RUSHER_LINES,
-      shouldSpeak: (beatClock) => !beatClock || random() < 0.15,
+      shouldSpeak: (beatClock) =>
+        beatClock && beatClock.canRusherExplode() && random() < 0.15,
     };
   }
 
@@ -188,6 +220,10 @@ class Rusher extends BaseEnemy {
    * Enhanced glow effects for rushers
    */
   getGlowColor(isSpeaking) {
+    if (this.vibrating) {
+      const pulse = this.p.sin(this.p.frameCount * 0.3) * 0.5 + 0.5;
+      return this.p.color(255, 80 + pulse * 80, 50);
+    }
     if (this.exploding) {
       const pulse = this.p.sin(this.p.frameCount * 0.5) * 0.5 + 0.5;
       return this.p.color(255, 50 + pulse * 100, 50 + pulse * 100);
@@ -204,6 +240,14 @@ class Rusher extends BaseEnemy {
   getAnimationModifications() {
     let bobble = 0;
     let waddle = 0;
+
+    // Vibrating rusher — increasing intensity while waiting for beat
+    if (this.vibrating) {
+      const intensity = Math.min(this.vibrateStartTime / 1000, 1); // 0 to 1 over 1s
+      const shake = (2 + intensity * 4) * (Math.random() - 0.5);
+      bobble += shake;
+      waddle += shake * 0.7;
+    }
 
     // Intense vibration for exploding rushers
     if (this.exploding) {
@@ -276,7 +320,7 @@ class Rusher extends BaseEnemy {
    * Draw type-specific indicators
    */
   drawSpecificIndicators() {
-    if (this.exploding) {
+    if (this.vibrating || this.exploding) {
       this.drawExplosionWarning();
     }
   }
@@ -320,12 +364,13 @@ class Rusher extends BaseEnemy {
    * Override takeDamage to handle explosion trigger
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
-    // Rushers explode when shot, regardless of health
-    if (!this.exploding) {
-      this.exploding = true;
-      this.explosionTimer = 0;
-      this.shotTriggered = true; // Mark as shot-triggered for faster explosion
-      console.log(`💥 RUSHER SHOT: Starting explosion! Health: ${this.health}`);
+    // Rushers enter vibrate state when shot, then explode on beat
+    if (!this.exploding && !this.vibrating) {
+      this.vibrating = true;
+      this.vibrateStartTime = 0;
+      this.shotTriggered = true; // Mark as shot-triggered
+      this.speed = 0; // Stop moving
+      console.log(`💥 RUSHER SHOT: Vibrating! Health: ${this.health}`);
 
       // Just set hit flash for visual feedback, don't apply damage yet
       // The rusher will be removed when explosion timer completes

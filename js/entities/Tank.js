@@ -38,10 +38,11 @@ class Tank extends BaseEnemy {
     this.p = p;
     this.audio = audio;
 
-    // Tank special charging system
+    // Tank special charging system (beat-aligned)
     this.chargingShot = false;
-    this.chargeTime = 0;
-    this.maxChargeTime = 240; // 4 seconds at 60fps - long, dramatic charge
+    this.chargeStartBeat = -1; // Beat number when charge started
+    this.chargeDurationBeats = 8; // 2 measures (8 beats)
+    this._lastTankFireBeat = -100; // Last beat fired on
 
     // Tank anger system - tracks who damages it
     this.damageTracker = new Map(); // Track damage sources: enemyType -> count
@@ -84,9 +85,10 @@ class Tank extends BaseEnemy {
         this.angerTarget = null;
         console.log(`😌 Tank calmed down, returning to normal behavior`);
 
-        // Tank speaks about calming down
+        // Tank speaks about calming down (beat-gated)
         const audio = this.getContextValue('audio');
-        if (audio) {
+        const beatClock = this.getContextValue('beatClock');
+        if (audio && (!beatClock || beatClock.isOnBeat([1]))) {
           const calmLines = [
             'BACK TO NORMAL TARGETS',
             'ANGER SUBSIDING',
@@ -151,34 +153,32 @@ class Tank extends BaseEnemy {
     const beatClock = this.getContextValue('beatClock');
     const rhythmFX = this.getContextValue('rhythmFX');
 
-    // Handle charging shot system
-    if (this.chargingShot) {
-      this.chargeTime += dt;
+    // Handle charging shot system (beat-aligned)
+    if (!beatClock) return null;
 
-      if (audioTank && beatClock) {
-        if (beatClock.isOnBeat([1]) && random() < 0.25) {
-          audioTank.playSound('tankPower', this.x, this.y);
-        }
+    if (this.chargingShot) {
+      const beatsSinceCharge = beatClock.getTotalBeats() - this.chargeStartBeat;
+
+      // Charge-up sound on beat 1 during charge
+      if (beatClock.isOnBeat([1]) && random() < 0.25) {
+        if (audioTank) audioTank.playSound('tankPower', this.x, this.y);
       }
 
-      if (this.chargeTime >= 1 && this.chargeTime < 1 + dt && audioTank) {
+      // Speech milestones based on beat progress
+      if (beatsSinceCharge >= 1 && beatsSinceCharge < 2 && audioTank && beatClock.isOnBeat([1])) {
         console.log('🔋 Tank starting to charge!');
         audioTank.speak(this, 'CHARGING!', 'tank');
         audioTank.playSound('tankCharging', this.x, this.y);
-      } else if (
-        this.chargeTime >= this.maxChargeTime / 2 &&
-        this.chargeTime < this.maxChargeTime / 2 + dt &&
-        audioTank
-      ) {
+      } else if (beatsSinceCharge >= 4 && beatsSinceCharge < 5 && audioTank && beatClock.isOnBeat([1])) {
         console.log('⚡ Tank 50% charged!');
         audioTank.speak(this, 'POWER UP!', 'tank');
         audioTank.playSound('tankPowerUp', this.x, this.y);
       }
 
-      if (this.chargeTime >= this.maxChargeTime) {
+      // Fire when charge complete AND on beat 1
+      if (beatsSinceCharge >= this.chargeDurationBeats && beatClock.canTankShoot()) {
         this.chargingShot = false;
-        this.chargeTime = 0;
-        this.shootCooldown = 180;
+        this._lastTankFireBeat = beatClock.getTotalBeats();
 
         console.log('💥 Tank firing charged shot!');
         if (audioTank) {
@@ -187,25 +187,22 @@ class Tank extends BaseEnemy {
 
         return this.createBullet();
       }
-    } else if (distance < 400 && this.shootCooldown <= 0) {
-      if (beatClock) {
-        const timeToNextAttack = beatClock.getTimeToNextBeat();
-        if (timeToNextAttack < 800 && beatClock.getCurrentBeat() === 3) {
-          if (rhythmFX) {
-            rhythmFX.addAttackTelegraph(
-              this.x,
-              this.y,
-              'tank',
-              1 + timeToNextAttack / beatClock.beatInterval
-            );
-          }
-        }
+    } else {
+      // Start charge on beat 1, within range, with cooldown since last fire
+      const beatsSinceLastFire = beatClock.getTotalBeats() - this._lastTankFireBeat;
+      if (distance < 400 && beatsSinceLastFire >= 8 && beatClock.canTankShoot()) {
+        this.chargingShot = true;
+        this.chargeStartBeat = beatClock.getTotalBeats();
+        console.log('🎯 Tank starting charge sequence!');
 
-        if (beatClock.canTankShoot()) {
-          // Start charging
-          this.chargingShot = true;
-          this.chargeTime = 0;
-          console.log('🎯 Tank starting charge sequence!');
+        // Telegraph the upcoming fire
+        if (rhythmFX) {
+          rhythmFX.addAttackTelegraph(
+            this.x,
+            this.y,
+            'tank',
+            this.chargeDurationBeats
+          );
         }
       }
     }
@@ -403,7 +400,10 @@ class Tank extends BaseEnemy {
    * Draw charging indicator
    */
   drawChargingIndicator() {
-    const chargePercent = this.chargeTime / this.maxChargeTime;
+    const beatClock = this.getContextValue('beatClock');
+    const chargePercent = beatClock
+      ? Math.min(1, (beatClock.getTotalBeats() - this.chargeStartBeat) / this.chargeDurationBeats)
+      : 0;
 
     // Charging circle around tank
     const pulse = sin(this.p.frameCount * 2.0) * 0.3 + 0.7;

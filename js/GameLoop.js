@@ -147,7 +147,7 @@ function updateGame(p) {
 
   // Update beat visualizer
   if (window.rhythmFX) {
-    window.rhythmFX.update();
+    window.rhythmFX.update(p.deltaTime);
   }
 
   // Test mode - automated movement and shooting
@@ -216,6 +216,11 @@ function updateGame(p) {
     cameraSystem: window.cameraSystem,
     gameState: window.gameState,
   });
+
+  // Keep BeatTrack informed of enemy count for dynamic volume scaling
+  if (window.beatTrack) {
+    window.beatTrack.setEnemyCount(enemies.length);
+  }
 
   // Check collisions using CollisionSystem
   if (window.collisionSystem) {

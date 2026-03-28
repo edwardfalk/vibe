@@ -40,7 +40,7 @@ export class RhythmFX {
   /**
    * Update beat visualization state
    */
-  update() {
+  update(deltaTimeMs = 16.67) {
     const beatClock = this._getBeatClock();
     if (beatClock) {
       const currentBeat = beatClock.getCurrentBeat();
@@ -59,14 +59,24 @@ export class RhythmFX {
       const beatPhase = beatClock.getBeatPhase();
       const isDownbeat = currentBeat === 0;
       if (beatPhase < 0.15 && isDownbeat) {
-        this.edgeFlashIntensity = (1 - beatPhase / 0.15) * 0.6;
+        this.edgeFlashIntensity = (1 - beatPhase / 0.15) * 0.85;
       } else {
         this.edgeFlashIntensity *= 0.9;
       }
     }
 
-    // Clean up old telegraphs
-    this.telegraphs = this.telegraphs.filter((t) => t.beatsUntil > -0.5);
+    // Decay telegraphs using actual deltaTime
+    const beatsPerFrame = beatClock
+      ? deltaTimeMs / beatClock.beatInterval
+      : deltaTimeMs / 500;  // fallback assumes 120 BPM
+    for (let i = this.telegraphs.length - 1; i >= 0; i--) {
+      const t = this.telegraphs[i];
+      t.beatsUntil -= beatsPerFrame;
+      t.intensity *= Math.pow(0.98, deltaTimeMs / 16.67);
+      if (t.beatsUntil <= 0 || t.intensity < 0.01) {
+        this.telegraphs.splice(i, 1);
+      }
+    }
   }
 
   /**
@@ -149,9 +159,6 @@ export class RhythmFX {
       p.noStroke();
       p.ellipse(screenX, screenY, 6 * pulse, 6 * pulse);
 
-      // Decay intensity
-      telegraph.intensity *= 0.98;
-      telegraph.beatsUntil -= 1 / 60; // Decrement by frame at 60fps
     }
 
     p.pop();
