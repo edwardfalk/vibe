@@ -345,7 +345,7 @@ export class Audio {
     // Get player position for relative audio positioning
     let playerX = 400,
       playerY = 300; // Default screen center
-    if (typeof this.player !== 'undefined' && this.player) {
+    if (this.player && Number.isFinite(this.player.x) && Number.isFinite(this.player.y)) {
       playerX = this.player.x;
       playerY = this.player.y;
     }
@@ -461,10 +461,16 @@ export class Audio {
     }
 
     // Play
-    oscillator.start(this.audioContext.currentTime);
-    oscillator.stop(
-      this.audioContext.currentTime + config.duration * durationVariation
-    );
+    try {
+      oscillator.start(this.audioContext.currentTime);
+      oscillator.stop(
+        this.audioContext.currentTime + config.duration * durationVariation
+      );
+    } catch (e) {
+      try { oscillator.disconnect(); } catch (_) {}
+      try { gainNode.disconnect(); } catch (_) {}
+      try { panNode.disconnect(); } catch (_) {}
+    }
   }
 
   // ========================================================================

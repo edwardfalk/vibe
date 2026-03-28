@@ -36,6 +36,7 @@ export function updateBombs(context) {
     gameState,
     collisionSystem,
     enemyDeathHandler,
+    floatingText,
   } = context;
   if (!activeBombs || !enemies) return;
 
@@ -134,6 +135,12 @@ export function updateBombs(context) {
       const damageResult = normalizeDamageResult(
         enemy.takeDamage(damage, null, 'bomb')
       );
+
+      if (damageResult === DAMAGE_RESULT.DAMAGED) {
+        if (floatingText) {
+          floatingText.addDamage(enemy.x, enemy.y - (enemy.size || 0) * 0.5, damage);
+        }
+      }
 
       if (damageResult === DAMAGE_RESULT.DIED) {
         if (enemyDeathHandler) {

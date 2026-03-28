@@ -151,11 +151,6 @@ export class GameState {
   restart() {
     console.log('🔄 Restarting game...');
 
-    if (this.startSpeechTimer) {
-      clearTimeout(this.startSpeechTimer);
-      this.startSpeechTimer = null;
-    }
-
     // Reset all state
     this.score = 0;
     this.level = 1;

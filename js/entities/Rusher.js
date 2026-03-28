@@ -334,8 +334,9 @@ class Rusher extends BaseEnemy {
       this.shotTriggered = true; // Mark as shot-triggered for faster explosion
       console.log(`💥 RUSHER SHOT: Starting explosion! Health: ${this.health}`);
 
-      // Apply damage and hit effects via base class, but return exploding so we stay in play
-      super.takeDamage(amount, bulletAngle, damageSource);
+      // Just set hit flash for visual feedback, don't apply damage yet
+      // The rusher will be removed when explosion timer completes
+      this.hitFlash = 8;
 
       // Register explosion telegraph when shot
       const rhythmFX = this.getContextValue('rhythmFX');
