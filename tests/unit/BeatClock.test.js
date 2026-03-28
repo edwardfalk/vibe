@@ -113,6 +113,18 @@ describe('BeatClock', () => {
     expect(clock.currentBeat).toBe(clock.getCurrentBeat());
   });
 
+  it('getTimeToNextEighthNote returns positive value within half-beat', () => {
+    mockCtx.currentTime = 0.01;
+    clock.update(true);
+    const t = clock.getTimeToNextEighthNote();
+    expect(t).toBeGreaterThan(0);
+    expect(t).toBeLessThanOrEqual(clock.beatInterval / 2);
+  });
+
+  it('isOnEighthNote returns boolean', () => {
+    expect(typeof clock.isOnEighthNote()).toBe('boolean');
+  });
+
   // --- New AudioContext-based tests ---
 
   describe('AudioContext clock source', () => {

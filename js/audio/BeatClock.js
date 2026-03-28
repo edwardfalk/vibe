@@ -112,6 +112,25 @@ export class BeatClock {
     return quarterBeatInterval - timeSinceLastQuarterBeat;
   }
 
+  // Get time to next 8th note (for player sustained fire)
+  getTimeToNextEighthNote() {
+    this.update();
+    const elapsed = this.cache.elapsed;
+    const eighthInterval = this.beatInterval / 2; // 250ms at 120 BPM
+    const timeSinceLastEighth = elapsed % eighthInterval;
+    return eighthInterval - timeSinceLastEighth;
+  }
+
+  // Check if we're on an 8th note
+  isOnEighthNote() {
+    this.update();
+    const elapsed = this.cache.elapsed;
+    const eighthInterval = this.beatInterval / 2;
+    const timeSinceLastEighth = elapsed % eighthInterval;
+    const tolerance = 20; // ~1 frame
+    return timeSinceLastEighth <= tolerance || timeSinceLastEighth >= eighthInterval - tolerance;
+  }
+
   // GRUNT TIMING: Beats 2 and 4 (snare pattern)
   canGruntShoot() {
     if (!this.isOnBeat()) return false;
