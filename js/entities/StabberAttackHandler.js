@@ -88,10 +88,16 @@ function handleRecoveryPhase(stabber, dt) {
     stabber.velocity.y = 0;
   }
 
-  if (stabber.stabRecoveryTime >= stabber.maxStabRecoveryTime) {
-    stabber.stabRecovering = false;
-    stabber.stabRecoveryTime = 0;
-    console.log(`⚡ Stabber recovered from attack`);
+  // Recovery ends at next beat 3.5 (with minimum recovery time)
+  const minRecoveryFrames = 60; // ~1 second minimum
+  const beatClock = stabber.getContextValue('beatClock');
+  if (stabber.stabRecoveryTime >= minRecoveryFrames) {
+    if (!beatClock || beatClock.canStabberAttack()) {
+      stabber.stabRecovering = false;
+      stabber.stabRecoveryTime = 0;
+      stabber.stabCooldown = 0;
+      console.log(`⚡ Stabber recovered from attack on beat`);
+    }
   }
   return null;
 }
@@ -189,7 +195,10 @@ function handleWarningPhase(stabber, dt) {
     audioWarn.speak(stabber, warning, 'stabber');
   }
 
-  if (stabber.stabWarningTime >= stabber.maxStabWarningTime) {
+  // Transition to dash after ~half a beat (beat-relative duration)
+  const beatClock = stabber.getContextValue('beatClock');
+  const warningDuration = beatClock ? beatClock.beatInterval * 0.5 / (1000 / 60) : 15;
+  if (stabber.stabWarningTime >= warningDuration) {
     stabber.stabWarning = false;
     stabber.stabWarningTime = 0;
     stabber.stabWarningPlayed = false;
@@ -206,21 +215,18 @@ function handleWarningPhase(stabber, dt) {
 }
 
 function handlePreparingPhase(stabber, dx, dy, distance, dt) {
-  const audioPrep = stabber.getContextValue('audio');
-  const beatClockPrep = stabber.getContextValue('beatClock');
-  if (
-    stabber.stabPreparingTime === 0 &&
-    audioPrep &&
-    beatClockPrep?.canStabberAttack()
-  ) {
-    audioPrep.playSound('stabberKnifeExtend', stabber.x, stabber.y);
+  const beatClock = stabber.getContextValue('beatClock');
+
+  // First frame: knife extend sound
+  if (stabber.stabPreparingTime === 0) {
+    const audio = stabber.getContextValue('audio');
+    if (audio) audio.playSound('stabberKnifeExtend', stabber.x, stabber.y);
   }
+
   stabber.stabPreparingTime += dt;
 
-  const prepProgressRatio =
-    stabber.stabPreparingTime / stabber.maxStabPreparingTime;
-
-  if (prepProgressRatio < 0.25) {
+  // Back up during preparation if too close
+  if (distance < 200) {
     const moveBackSpeed = stabber.speed * 0.5;
     if (distance > 0) {
       const unitX = dx / distance;
@@ -236,7 +242,9 @@ function handlePreparingPhase(stabber, dx, dy, distance, dt) {
     stabber.velocity.y = 0;
   }
 
-  if (stabber.stabPreparingTime >= stabber.maxStabPreparingTime) {
+  // Transition when beat 3.5 arrives (with minimum prep time)
+  const minPrepFrames = 30; // ~0.5 seconds minimum
+  if (stabber.stabPreparingTime >= minPrepFrames && beatClock && beatClock.canStabberAttack()) {
     stabber.stabPreparing = false;
     stabber.stabPreparingTime = 0;
     stabber.stabWarning = true;
