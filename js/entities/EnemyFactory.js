@@ -209,28 +209,6 @@ class EnemyFactory {
   }
 
   /**
-   * Get enemy count recommendations for level
-   */
-  getEnemyCountForLevel(level) {
-    // Dynamic enemy count limiting - max 2-6 enemies on screen based on level
-    if (level <= 2) return 2;
-    if (level <= 4) return 3;
-    if (level <= 6) return 4;
-    if (level <= 8) return 5;
-    return 6; // Maximum enemies on screen
-  }
-
-  /**
-   * Get spawn rate for level (frames between spawns)
-   */
-  getSpawnRateForLevel(level) {
-    // Start with slower spawning, gradually increase
-    const baseRate = 180; // 3 seconds at 60fps
-    const reduction = Math.min(level * 10, 60); // Max reduction of 60 frames
-    return Math.max(baseRate - reduction, 120); // Minimum 2 seconds between spawns
-  }
-
-  /**
    * Create enemy at random edge position
    */
   createEnemyAtEdge(

@@ -117,7 +117,7 @@ export class BackgroundRenderer {
         drawEnhancedSparklesLayer(layer.elements, p);
         break;
       case 'medium_stars':
-        drawMediumStarsLayer(layer.elements, p);
+        drawMediumStarsLayer(layer.elements, p, beatClock);
         break;
       case 'shooting_stars':
         drawShootingStarsLayer(layer.elements, p);
