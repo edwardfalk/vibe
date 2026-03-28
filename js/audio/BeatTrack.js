@@ -111,7 +111,7 @@ export class BeatTrack {
   // -- Scheduler ----------------------------------------------------------
 
   _scheduler() {
-    if (!this.isPlaying) return;
+    if (!this.isPlaying || !this.ctx) return;
 
     while (this.nextNoteTime < this.ctx.currentTime + SCHEDULE_AHEAD_SEC) {
       this._scheduleNote(this.nextNoteTime, this.currentEighth);

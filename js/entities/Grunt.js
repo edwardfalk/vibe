@@ -184,7 +184,7 @@ class Grunt extends BaseEnemy {
     const enemies = this.getContextValue('enemies');
     if (!enemies) return false;
     // Defensive: If aimAngle is not set, skip friendly fire check to avoid NaN results
-    if (!this.aimAngle && this.aimAngle !== 0) return false;
+    if (typeof this.aimAngle !== 'number') return false;
 
     const bulletPath = {
       startX: this.x,

@@ -75,8 +75,7 @@ function syncRuntimeContext(
   if (!ctx) return;
   const hitStopFrames =
     hitStopFramesOverride ??
-    gameContext?.get?.('hitStopFrames') ??
-    window.hitStopFrames ??
+    ctx.get('hitStopFrames') ??
     0;
 
   ctx.assign({
@@ -126,13 +125,10 @@ function updateGame(p) {
   syncRuntimeContext();
 
   // Hitstop: freeze game updates for a few frames on impactful kills
-  const hitStopFrames =
-    gameContext?.get?.('hitStopFrames') ?? window.hitStopFrames ?? 0;
+  const hitStopFrames = gameContext?.get?.('hitStopFrames') ?? 0;
   if (hitStopFrames > 0) {
     const next = hitStopFrames - 1;
-    if (gameContext && typeof gameContext.set === 'function') {
-      gameContext.set('hitStopFrames', next);
-    }
+    gameContext.set('hitStopFrames', next);
     window.hitStopFrames = next;
     // Still update floating text during hitstop so they don't freeze
     if (window.floatingText) window.floatingText.update();

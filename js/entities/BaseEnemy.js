@@ -452,7 +452,7 @@ export class BaseEnemy {
       );
     }
     this.health -= amount;
-    this.hitFlash = 8;
+    this.hitFlash = Math.max(this.hitFlash, 8);
     if (this.health <= 0) {
       return true; // Enemy died
     }
