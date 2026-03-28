@@ -45,6 +45,9 @@ class Grunt extends BaseEnemy {
     this.p = p;
     this.audio = audio;
 
+    // --- Beat-aligned shooting state ----------------------------
+    this._lastGruntBeat = -1; // Track last beat fired to prevent double-firing
+
     // --- Deferred-death state ---------------------------------
     this.pendingStabDeath = false; // true while "ow" delay active
     this.pendingStabDeathTimer = 0; // frames remaining
@@ -164,27 +167,34 @@ class Grunt extends BaseEnemy {
       }
     }
 
-    // RHYTHMIC GRUNT SHOOTING: Check if grunt can shoot
+    // BEAT-ALIGNED GRUNT SHOOTING: Fire on beats 2 & 4 with random skip
     const beatClockShoot = this.getContextValue('beatClock');
     const rhythmFX = this.getContextValue('rhythmFX');
-    if (distance < 300 && this.shootCooldown <= 0) {
-      if (beatClockShoot) {
-        const timeToNextAttack = beatClockShoot.getTimeToNextBeat();
-        const beatInterval = beatClockShoot.beatInterval;
-        const safeScale =
-          beatInterval && Number.isFinite(beatInterval)
-            ? timeToNextAttack / beatInterval
-            : 0;
-        if (timeToNextAttack < 500 && beatClockShoot.isOnBeat([2, 4])) {
-          if (rhythmFX && safeScale >= 0) {
-            rhythmFX.addAttackTelegraph(this.x, this.y, 'grunt', safeScale);
-          }
+    if (distance < 300 && beatClockShoot) {
+      const timeToNextAttack = beatClockShoot.getTimeToNextBeat();
+      const beatInterval = beatClockShoot.beatInterval;
+      const safeScale =
+        beatInterval && Number.isFinite(beatInterval)
+          ? timeToNextAttack / beatInterval
+          : 0;
+      if (timeToNextAttack < 500 && beatClockShoot.isOnBeat([2, 4])) {
+        if (rhythmFX && safeScale >= 0) {
+          rhythmFX.addAttackTelegraph(this.x, this.y, 'grunt', safeScale);
         }
+      }
 
-        if (beatClockShoot.canGruntShoot()) {
-          // Check for friendly fire avoidance
-          if (!this.shouldAvoidFriendlyFire()) {
-            this.shootCooldown = 45 + random(30); // Faster shooting for ranged combat
+      if (beatClockShoot.canGruntShoot()) {
+        // Already fired this beat? Skip to prevent double-firing
+        if (this._lastGruntBeat === beatClockShoot.getTotalBeats()) {
+          // Do not fire again on the same beat
+        } else {
+          this._lastGruntBeat = beatClockShoot.getTotalBeats();
+
+          // Random skip for variety (~40%)
+          if (random() < 0.4) {
+            // Skipped this beat
+          } else if (!this.shouldAvoidFriendlyFire()) {
+            // Fire!
             this.muzzleFlash = 4;
             return this.createBullet();
           }
