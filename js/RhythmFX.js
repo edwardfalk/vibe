@@ -65,8 +65,18 @@ export class RhythmFX {
       }
     }
 
-    // Clean up old telegraphs
-    this.telegraphs = this.telegraphs.filter((t) => t.beatsUntil > -0.5);
+    // Decay telegraphs using beat-relative timing
+    const beatsPerFrame = beatClock
+      ? (1000 / 60) / beatClock.beatInterval  // approximate, but beat-relative
+      : 1 / 60;
+    for (let i = this.telegraphs.length - 1; i >= 0; i--) {
+      const t = this.telegraphs[i];
+      t.beatsUntil -= beatsPerFrame;
+      t.intensity *= 0.98;
+      if (t.beatsUntil <= 0 || t.intensity < 0.01) {
+        this.telegraphs.splice(i, 1);
+      }
+    }
   }
 
   /**
@@ -149,9 +159,6 @@ export class RhythmFX {
       p.noStroke();
       p.ellipse(screenX, screenY, 6 * pulse, 6 * pulse);
 
-      // Decay intensity
-      telegraph.intensity *= 0.98;
-      telegraph.beatsUntil -= 1 / 60; // Decrement by frame at 60fps
     }
 
     p.pop();
