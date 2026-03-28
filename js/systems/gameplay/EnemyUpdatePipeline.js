@@ -4,9 +4,8 @@ import {
   normalizeDamageResult,
 } from '../../shared/contracts/DamageResult.js';
 
-function handleRusherExplosionResult(result, enemyIndex, context) {
+function handleRusherExplosionResult(result, enemy, context) {
   const {
-    enemies,
     collisionSystem,
     explosionManager,
     visualEffectsManager,
@@ -15,7 +14,7 @@ function handleRusherExplosionResult(result, enemyIndex, context) {
   } = context;
 
   if (collisionSystem) {
-    collisionSystem.handleRusherExplosion(result, enemyIndex);
+    collisionSystem.handleRusherExplosion(result, enemy);
   }
 
   if (explosionManager) {
@@ -45,7 +44,6 @@ function handleRusherExplosionResult(result, enemyIndex, context) {
   }
 
   console.log(`💥 RUSHER EXPLOSION at (${result.x}, ${result.y})!`);
-  const enemy = enemies[enemyIndex];
   if (enemy) enemy.markedForRemoval = true;
 }
 
@@ -172,7 +170,7 @@ export function updateEnemiesAndResolveResults(context) {
     if (!result) continue;
 
     if (result.type === 'rusher-explosion') {
-      handleRusherExplosionResult(result, i, context);
+      handleRusherExplosionResult(result, enemy, context);
       continue;
     }
 

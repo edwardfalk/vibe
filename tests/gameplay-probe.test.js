@@ -177,7 +177,7 @@ test.describe('Gameplay Probes', () => {
           radius: 999,
           damage: 50,
         },
-        -1 // rusherIndex sentinel: no owner (handler treats negative as safe)
+        null // rusherEnemy sentinel: no owner enemy reference
       );
       return true;
     });

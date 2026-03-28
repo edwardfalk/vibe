@@ -82,13 +82,6 @@ export function handleAreaDamageEvents(damageEvents, context) {
               enemy.x,
               enemy.y
             );
-          } else if (collisionSystem) {
-            collisionSystem.handleEnemyDeath(
-              enemy,
-              enemy.type,
-              enemy.x,
-              enemy.y
-            );
           }
 
           enemy.markedForRemoval = true;

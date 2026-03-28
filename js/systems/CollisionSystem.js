@@ -469,16 +469,15 @@ export class CollisionSystem {
   }
 
   // Handle rusher explosion collision
-  handleRusherExplosion(explosion, rusherIndex) {
+  handleRusherExplosion(explosion, rusherEnemy) {
     handleRusherExplosionCollision({
       explosion,
-      rusherIndex,
+      rusherEnemy,
       player: this.getContextValue('player'),
       audio: this.getContextValue('audio'),
       gameState: this.getContextValue('gameState'),
       cameraSystem: this.getContextValue('cameraSystem'),
       explosionManager: this.getContextValue('explosionManager'),
-      enemies: this.getContextValue('enemies'),
     });
   }
 }

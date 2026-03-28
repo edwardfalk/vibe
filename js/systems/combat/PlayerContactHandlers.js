@@ -105,13 +105,12 @@ export function handleStabberAttackCollision({
 
 export function handleRusherExplosionCollision({
   explosion,
-  rusherIndex,
+  rusherEnemy,
   player,
   audio,
   gameState,
   cameraSystem,
   explosionManager,
-  enemies,
 }) {
   if (!player) return;
 
@@ -142,7 +141,7 @@ export function handleRusherExplosionCollision({
   cameraSystem?.addShake?.(15, 25);
   explosionManager?.addExplosion?.(player.x, player.y, 'hit');
 
-  if (enemies && rusherIndex >= 0 && rusherIndex < enemies.length) {
-    enemies[rusherIndex].markedForRemoval = true;
+  if (rusherEnemy) {
+    rusherEnemy.markedForRemoval = true;
   }
 }

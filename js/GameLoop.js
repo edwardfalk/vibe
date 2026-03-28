@@ -207,6 +207,7 @@ function updateGame(p) {
     cameraSystem: window.cameraSystem,
     gameState: window.gameState,
     collisionSystem: window.collisionSystem,
+    enemyDeathHandler,
   });
 
   // Update enemies and resolve their emitted combat results

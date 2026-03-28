@@ -35,6 +35,7 @@ export function updateBombs(context) {
     cameraSystem,
     gameState,
     collisionSystem,
+    enemyDeathHandler,
   } = context;
   if (!activeBombs || !enemies) return;
 
@@ -134,7 +135,9 @@ export function updateBombs(context) {
       );
 
       if (damageResult === DAMAGE_RESULT.DIED) {
-        if (collisionSystem) {
+        if (enemyDeathHandler) {
+          enemyDeathHandler.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
+        } else if (collisionSystem) {
           collisionSystem.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
         }
         enemy.markedForRemoval = true;
