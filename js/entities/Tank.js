@@ -8,6 +8,18 @@ import {
 } from './TankArmorHandler.js';
 import { CONFIG } from '../config.js';
 
+const TANK_LINES = [
+  'HEAVY ARTILLERY!',
+  'SIEGE MODE!',
+  'CRUSH!',
+  'PULVERIZE!',
+  'DEVASTATE!',
+  'DO YOU LIFT BRO?',
+  'SIZE MATTERS!',
+  'BIG MUSCLES!',
+  'ALPHA MALE!',
+];
+
 /**
  * Tank class - Heavy artillery with charging system
  * Features anger system that targets other enemies when friendly fire occurs
@@ -58,9 +70,13 @@ class Tank extends BaseEnemy {
    * @param {number} playerY - Player Y position
    * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
    */
-  updateSpecificBehavior(playerX, playerY, deltaTimeMs = 16.6667) {
+  updateSpecificBehavior(
+    playerX,
+    playerY,
+    deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS
+  ) {
     // Tank anger system - update anger cooldown and targeting
-    const dt = deltaTimeMs / 16.6667; // Normalize to 60fps baseline
+    const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS; // Normalize to 60fps baseline
     if (this.isAngry) {
       this.angerCooldown -= dt;
       if (this.angerCooldown <= 0) {
@@ -77,7 +93,7 @@ class Tank extends BaseEnemy {
             'RETURNING TO MISSION',
             'FOCUS ON HUMAN AGAIN',
           ];
-          const calmLine = calmLines[floor(random() * calmLines.length)];
+          const calmLine = random(calmLines);
           audio.speak(this, calmLine, 'tank');
         }
       }
@@ -197,30 +213,13 @@ class Tank extends BaseEnemy {
     return null;
   }
 
-  /**
-   * Trigger ambient speech specific to tanks
-   */
-  triggerAmbientSpeech() {
-    const audio = this.getContextValue('audio');
-    const beatClock = this.getContextValue('beatClock');
-    if (audio && this.speechCooldown <= 0) {
-      if (beatClock && beatClock.isOnBeat([1]) && random() < 0.25) {
-        const tankLines = [
-          'HEAVY ARTILLERY!',
-          'SIEGE MODE!',
-          'CRUSH!',
-          'PULVERIZE!',
-          'DEVASTATE!',
-          'DO YOU LIFT BRO?',
-          'SIZE MATTERS!',
-          'BIG MUSCLES!',
-          'ALPHA MALE!',
-        ];
-        const randomLine = tankLines[floor(random() * tankLines.length)];
-        audio.speak(this, randomLine, 'tank');
-        this.speechCooldown = this.maxSpeechCooldown;
-      }
-    }
+  /** @override */
+  getAmbientSpeechConfig() {
+    return {
+      lines: TANK_LINES,
+      shouldSpeak: (beatClock) =>
+        beatClock && beatClock.isOnBeat([1]) && random() < 0.25,
+    };
   }
 
   /**

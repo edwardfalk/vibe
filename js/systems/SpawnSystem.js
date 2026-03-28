@@ -116,7 +116,7 @@ export class SpawnSystem {
       weightedTypes = ['grunt', 'stabber', 'rusher', 'tank'];
     }
 
-    return weightedTypes[floor(random() * weightedTypes.length)];
+    return random(weightedTypes);
   }
 
   // Find a good spawn position away from player

@@ -39,6 +39,9 @@ const CONFIG = {
     // Frames between performance diagnostics reports
     PERF_LOG_INTERVAL_FRAMES: 300,
 
+    // Frame time at 60fps baseline, used to normalize deltaTimeMs
+    FRAME_TIME_MS: 16.6667,
+
     // Canonical world dimensions for all systems
     WORLD_WIDTH: 1150,
     WORLD_HEIGHT: 850,

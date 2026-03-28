@@ -24,7 +24,7 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
   const distance = sqrt(dx * dx + dy * dy);
 
   const clampedDeltaMs = Math.min(deltaTimeMs, MAX_DELTA_MS);
-  const dt = clampedDeltaMs / 16.6667;
+  const dt = clampedDeltaMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
   if (stabber.stabCooldown > 0) stabber.stabCooldown -= dt;
   if (stabber.stabChantTimer > 0) stabber.stabChantTimer -= dt;
 
@@ -45,7 +45,7 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
     const audio = stabber.getContextValue('audio');
     if (beatClock?.canStabberAttack() && audio) {
       const ambientSounds = ['stabberChant', 'stabberStalk'];
-      const sound = ambientSounds[floor(random() * ambientSounds.length)];
+      const sound = random(ambientSounds);
       audio.playSound(sound, stabber.x, stabber.y);
       console.log(`🗡️ Stabber ambient sound: ${sound} on off-beat 3.5`);
     }
@@ -194,7 +194,7 @@ function handleWarningPhase(stabber, dt) {
       'ACUPUNCTURE TIME!',
       'STABBY MCSTABFACE!',
     ];
-    const warning = stabWarnings[floor(random() * stabWarnings.length)];
+    const warning = random(stabWarnings);
     audioWarn.speak(stabber, warning, 'stabber');
   }
 

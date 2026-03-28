@@ -127,8 +127,7 @@ class EnemyFactory {
    */
   createRandomEnemyForLevel(x, y, level, p, audio = null) {
     const availableTypes = this.getAvailableTypesForLevel(level);
-    const randomType =
-      availableTypes[Math.floor(random() * availableTypes.length)];
+    const randomType = random(availableTypes);
 
     return this.createEnemy(x, y, randomType, p, audio);
   }
@@ -288,8 +287,7 @@ class EnemyFactory {
     audio = null
   ) {
     const availableTypes = this.getAvailableTypesForLevel(level);
-    const randomType =
-      availableTypes[Math.floor(random() * availableTypes.length)];
+    const randomType = random(availableTypes);
 
     return this.createEnemyAtEdge(
       randomType,

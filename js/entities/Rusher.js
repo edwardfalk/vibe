@@ -3,6 +3,19 @@ import { floor, random, sqrt, sin, cos, ceil } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/contracts/DamageResult.js';
 
+const RUSHER_LINES = [
+  'KAMIKAZE TIME!',
+  'SUICIDE RUN!',
+  'INCOMING!',
+  'BOOM!',
+  'EXPLOSIVE DIARRHEA!',
+  'LEEROY JENKINS!',
+  'WHEEE!',
+  "CAN'T STOP!",
+  'YOLO!',
+  'KAMIKAZE PIZZA PARTY!',
+];
+
 /**
  * Rusher class - Suicide bomber mechanics
  * Two-stage system: battle cry at distance, explosion when close, enhanced explosion effects
@@ -56,7 +69,7 @@ class Rusher extends BaseEnemy {
     const distance = sqrt(dx * dx + dy * dy);
 
     // Update deltaTime-based timers
-    const dt = deltaTimeMs / 16.6667; // Normalize to 60fps baseline
+    const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS; // Normalize to 60fps baseline
 
     // Update motion trail timer
     this.motionTrailTimer += deltaTimeMs;
@@ -140,8 +153,7 @@ class Rusher extends BaseEnemy {
                 'LEEROY JENKINS!',
                 'KAMIKAZE PIZZA PARTY!',
               ];
-              const battleCry =
-                battleCries[floor(random() * battleCries.length)];
+              const battleCry = random(battleCries);
               audio.speak(this, battleCry, 'rusher');
 
               if (!beatClock || beatClock.canRusherCharge()) {
@@ -164,31 +176,12 @@ class Rusher extends BaseEnemy {
     return null;
   }
 
-  /**
-   * Trigger ambient speech specific to rushers
-   */
-  triggerAmbientSpeech() {
-    const audio = this.getContextValue('audio') || this.audio;
-    const beatClock = this.getContextValue('beatClock');
-    if (audio && this.speechCooldown <= 0) {
-      if (!beatClock || random() < 0.15) {
-        const rusherLines = [
-          'KAMIKAZE TIME!',
-          'SUICIDE RUN!',
-          'INCOMING!',
-          'BOOM!',
-          'EXPLOSIVE DIARRHEA!',
-          'LEEROY JENKINS!',
-          'WHEEE!',
-          "CAN'T STOP!",
-          'YOLO!',
-          'KAMIKAZE PIZZA PARTY!',
-        ];
-        const randomLine = rusherLines[floor(random() * rusherLines.length)];
-        audio.speak(this, randomLine, 'rusher');
-        this.speechCooldown = this.maxSpeechCooldown;
-      }
-    }
+  /** @override */
+  getAmbientSpeechConfig() {
+    return {
+      lines: RUSHER_LINES,
+      shouldSpeak: (beatClock) => !beatClock || random() < 0.15,
+    };
   }
 
   /**
@@ -360,7 +353,7 @@ class Rusher extends BaseEnemy {
   /**
    * Override update to pass deltaTimeMs to specific behavior
    */
-  update(playerX, playerY, deltaTimeMs = 16.6667) {
+  update(playerX, playerY, deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
     // Call specific behavior first, then parent update
     const behaviorResult = this.updateSpecificBehavior(
       playerX,

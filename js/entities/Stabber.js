@@ -3,6 +3,18 @@ import { floor, random, sin, cos, ceil, max } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { updateStabberBehavior } from './StabberAttackHandler.js';
 
+const STABBER_LINES = [
+  'STAB!',
+  'SLICE!',
+  'CUT!',
+  'POKE!',
+  'ACUPUNCTURE!',
+  'LITTLE PRICK!',
+  'STABBY MCSTABFACE!',
+  'NEEDLE THERAPY!',
+  'I COLLECT BELLY BUTTONS!',
+];
+
 /**
  * Stabber class - Melee assassin with armor system
  * Features three-phase attack system: approach → prepare → dash attack
@@ -74,30 +86,13 @@ class Stabber extends BaseEnemy {
     return updateStabberBehavior(this, playerX, playerY, deltaTimeMs);
   }
 
-  /**
-   * Trigger ambient speech specific to stabbers
-   */
-  triggerAmbientSpeech() {
-    const audio = this.getContextValue('audio');
-    const beatClock = this.getContextValue('beatClock');
-    if (audio && this.speechCooldown <= 0) {
-      if (beatClock?.canStabberAttack() && random() < 0.2) {
-        const stabberLines = [
-          'STAB!',
-          'SLICE!',
-          'CUT!',
-          'POKE!',
-          'ACUPUNCTURE!',
-          'LITTLE PRICK!',
-          'STABBY MCSTABFACE!',
-          'NEEDLE THERAPY!',
-          'I COLLECT BELLY BUTTONS!',
-        ];
-        const randomLine = stabberLines[floor(random() * stabberLines.length)];
-        audio.speak(this, randomLine, 'stabber');
-        this.speechCooldown = this.maxSpeechCooldown;
-      }
-    }
+  /** @override */
+  getAmbientSpeechConfig() {
+    return {
+      lines: STABBER_LINES,
+      shouldSpeak: (beatClock) =>
+        beatClock?.canStabberAttack() && random() < 0.2,
+    };
   }
 
   /**
@@ -143,7 +138,7 @@ class Stabber extends BaseEnemy {
    * This ensures all velocity changes take effect in the same frame,
    * preventing frame delays and making the update logic robust.
    */
-  update(playerX, playerY, deltaTimeMs = 16.6667) {
+  update(playerX, playerY, deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
     // 1. Run Stabber-specific logic first (sets velocity, handles state)
     const behaviorResult = this.updateSpecificBehavior(
       playerX,

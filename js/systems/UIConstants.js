@@ -52,7 +52,3 @@ export const TOAST = {
   bottom: 32,
   durationMs: 2200,
 };
-
-/** Pulse/alpha for UI effects (Phase D constants) */
-export const UI_PULSE_BASE = 50;
-export const UI_ALPHA_MAX = 100;

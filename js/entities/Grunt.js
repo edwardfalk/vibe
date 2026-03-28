@@ -2,6 +2,32 @@ import { BaseEnemy } from './BaseEnemy.js';
 import { floor, random, sqrt, atan2, min, max } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 
+const GRUNT_LINES = [
+  'KILL HUMAN!',
+  'DESTROY TARGET!',
+  'ELIMINATE!',
+  'ATTACK MODE!',
+  'HOSTILE DETECTED!',
+  'ENGAGE ENEMY!',
+  'FIRE WEAPONS!',
+  'DEATH TO HUMANS!',
+  'WAIT WHAT?',
+  'I FORGOT SOMETHING!',
+  'WHERE AM I?',
+  'HELP!',
+  'WRONG PLANET?',
+  'NEED BACKUP!',
+  'LOST AGAIN!',
+  'OOPS!',
+  'MY HELMET IS TIGHT!',
+  'WIFI PASSWORD?',
+  'MOMMY?',
+  'SCARED!',
+  'IS THAT MY TARGET?',
+  'WHICH BUTTON?',
+  "I'M CONFUSED!",
+];
+
 /**
  * Grunt class - Tactical ranged combat AI
  * Maintains tactical distance, uses friendly fire avoidance, confused personality
@@ -39,14 +65,18 @@ class Grunt extends BaseEnemy {
    * @param {number} playerY - Player Y position
    * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
    */
-  updateSpecificBehavior(playerX, playerY, deltaTimeMs = 16.6667) {
+  updateSpecificBehavior(
+    playerX,
+    playerY,
+    deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS
+  ) {
     if (this.p.frameCount % 30 === 0 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
         `[GRUNT AI] updateSpecificBehavior called for Grunt at (${this.x.toFixed(1)},${this.y.toFixed(1)})`
       );
     }
     // Handle delayed death if stabbed
-    const dt = deltaTimeMs / 16.6667; // Normalize to 60fps baseline
+    const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS; // Normalize to 60fps baseline
     if (this.pendingStabDeath) {
       this.pendingStabDeathTimer -= dt;
       if (this.pendingStabDeathTimer <= 0) {
@@ -252,7 +282,7 @@ class Grunt extends BaseEnemy {
           'gruntError',
           'gruntGlitch',
         ];
-        const randomSound = weirdSounds[floor(random() * weirdSounds.length)];
+        const randomSound = random(weirdSounds);
         audio.playSound(randomSound, this.x, this.y);
         if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
           console.log(`🤖 Grunt making weird noise: ${randomSound}`);
@@ -261,53 +291,15 @@ class Grunt extends BaseEnemy {
     }
   }
 
-  /**
-   * Trigger ambient speech specific to grunts
-   */
-  triggerAmbientSpeech() {
-    const audio = this.getContextValue('audio');
-    const beatClock = this.getContextValue('beatClock');
-    if (audio && this.speechCooldown <= 0) {
-      let shouldSpeak = false;
-      if (beatClock && beatClock.isOnBeat([2, 4])) {
-        shouldSpeak = random() < 0.9;
-      } else {
-        shouldSpeak = random() < 0.3;
-      }
-      if (shouldSpeak) {
-        const gruntLines = [
-          // Threatening but confused
-          'KILL HUMAN!',
-          'DESTROY TARGET!',
-          'ELIMINATE!',
-          'ATTACK MODE!',
-          'HOSTILE DETECTED!',
-          'ENGAGE ENEMY!',
-          'FIRE WEAPONS!',
-          'DEATH TO HUMANS!',
-          // Confused/stupid moments
-          'WAIT WHAT?',
-          'I FORGOT SOMETHING!',
-          'WHERE AM I?',
-          'HELP!',
-          'WRONG PLANET?',
-          'NEED BACKUP!',
-          'LOST AGAIN!',
-          'OOPS!',
-          'MY HELMET IS TIGHT!',
-          'WIFI PASSWORD?',
-          'MOMMY?',
-          'SCARED!',
-          'IS THAT MY TARGET?',
-          'WHICH BUTTON?',
-          "I'M CONFUSED!",
-        ];
-        const randomLine = gruntLines[floor(random() * gruntLines.length)];
-        if (audio.speak(this, randomLine, 'grunt')) {
-          this.speechCooldown = this.maxSpeechCooldown;
-        }
-      }
-    }
+  /** @override */
+  getAmbientSpeechConfig() {
+    return {
+      lines: GRUNT_LINES,
+      shouldSpeak: (beatClock) =>
+        beatClock && beatClock.isOnBeat([2, 4])
+          ? random() < 0.9
+          : random() < 0.3,
+    };
   }
 
   /**

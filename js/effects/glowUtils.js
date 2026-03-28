@@ -3,7 +3,7 @@
  * Requires p5.js for pow(), map(), lerpColor(), blendMode(), etc.
  */
 
-import { mapRange, constrain } from '../mathUtils.js';
+import { constrain } from '../mathUtils.js';
 
 export function drawGlow(p, x, y, size, color, intensity = 1) {
   if (intensity < 0.05) return;
@@ -23,32 +23,5 @@ export function drawGlow(p, x, y, size, color, intensity = 1) {
   }
 
   p.blendMode(p.BLEND);
-  p.pop();
-}
-
-export function drawRadialGradient(
-  p,
-  x,
-  y,
-  innerRadius,
-  outerRadius,
-  innerColor,
-  outerColor
-) {
-  p.push();
-  p.noStroke();
-  for (let r = outerRadius; r > innerRadius; r -= 2) {
-    const inter =
-      outerRadius > innerRadius
-        ? mapRange(r, innerRadius, outerRadius, 0, 1)
-        : 0;
-    const c = p.lerpColor(innerColor, outerColor, inter);
-    p.fill(c);
-    p.ellipse(x, y, r * 2, r * 2);
-  }
-  if (innerRadius > 0) {
-    p.fill(innerColor);
-    p.ellipse(x, y, innerRadius * 2, innerRadius * 2);
-  }
   p.pop();
 }

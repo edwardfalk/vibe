@@ -225,7 +225,7 @@ export function generateParallaxLayerElements(parallaxLayers, p) {
         y: randomRange(-p.height, p.height * 2),
         size: randomRange(2, 5),
         brightness: randomRange(0.5, 1),
-        color: MEDIUM_STAR_COLORS[floor(random() * MEDIUM_STAR_COLORS.length)],
+        color: random(MEDIUM_STAR_COLORS),
       });
     }
   }
@@ -252,7 +252,7 @@ export function generateParallaxLayerElements(parallaxLayers, p) {
         size: randomRange(3, 8),
         rotation: randomRange(0, p.TWO_PI),
         rotationSpeed: randomRange(-0.02, 0.02),
-        shape: DEBRIS_SHAPES[floor(random() * DEBRIS_SHAPES.length)],
+        shape: random(DEBRIS_SHAPES),
       });
     }
   }

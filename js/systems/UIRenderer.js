@@ -30,6 +30,10 @@ export class UIRenderer {
     this.cameraSystem = cameraSystem;
     this.testModeManager = testModeManager;
     this.dashElement = null;
+    // Cache DOM refs to avoid getElementById() every frame
+    this._scoreEl = document.getElementById('score');
+    this._healthEl = document.getElementById('health');
+    this._levelEl = document.getElementById('level');
     this._createToast(); // Add toast/banner for confirmations
   }
 
@@ -43,12 +47,11 @@ export class UIRenderer {
         ? `Score: ${this.gameState.score.toLocaleString()} (${this.gameState.killStreak}x STREAK!)`
         : `Score: ${this.gameState.score.toLocaleString()}`;
 
-    const scoreEl = document.getElementById('score');
-    const healthEl = document.getElementById('health');
-    const levelEl = document.getElementById('level');
-    if (scoreEl) scoreEl.textContent = scoreText;
-    if (healthEl) healthEl.textContent = `Health: ${this.player?.health ?? 0}`;
-    if (levelEl) levelEl.textContent = `Level: ${this.gameState?.level ?? 1}`;
+    if (this._scoreEl) this._scoreEl.textContent = scoreText;
+    if (this._healthEl)
+      this._healthEl.textContent = `Health: ${this.player?.health ?? 0}`;
+    if (this._levelEl)
+      this._levelEl.textContent = `Level: ${this.gameState?.level ?? 1}`;
 
     // Add dash cooldown indicator
     this.updateDashIndicator();

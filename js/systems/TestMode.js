@@ -255,7 +255,7 @@ export class TestMode {
 
     // Randomly choose enemy type for testing
     const enemyTypes = ['grunt', 'stabber', 'rusher', 'tank'];
-    const randomType = enemyTypes[floor(random() * enemyTypes.length)];
+    const randomType = random(enemyTypes);
 
     const enemies = this.getContextValue('enemies');
     const spawnSystem = this.getContextValue('spawnSystem');

@@ -146,7 +146,6 @@ export class ExplosionManager {
     }
 
     this.fragmentExplosions.push(fragmentExplosion);
-    // console.log(`✨ Created beautiful fragment explosion for ${enemy.type} at (${x}, ${y})`);
   }
 
   update() {

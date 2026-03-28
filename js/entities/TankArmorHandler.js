@@ -61,11 +61,7 @@ export function handleAngerForDamage(tank, damageSource, amount) {
         'YOU MADE ME MAD!',
         'TURNING GUNS ON YOU!',
       ];
-      audioAnger.speak(
-        tank,
-        angerLines[floor(random() * angerLines.length)],
-        'tank'
-      );
+      audioAnger.speak(tank, random(angerLines), 'tank');
     }
   }
 }

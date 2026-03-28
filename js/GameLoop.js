@@ -73,10 +73,7 @@ function syncRuntimeContext(
 ) {
   const ctx = targetContext ?? gameContext;
   if (!ctx) return;
-  const hitStopFrames =
-    hitStopFramesOverride ??
-    ctx.get('hitStopFrames') ??
-    0;
+  const hitStopFrames = hitStopFramesOverride ?? ctx.get('hitStopFrames') ?? 0;
 
   ctx.assign({
     player: window.player,
@@ -310,9 +307,11 @@ function unlockAudioAndShowCanvas() {
   if (window.audio && typeof window.audio.ensureAudioContext === 'function') {
     window.audio.ensureAudioContext();
   }
-  // Start the procedural beat track
+  // Start the procedural beat track (async - catch errors from unawaited promise)
   if (window.beatTrack && !window.beatTrack.isPlaying) {
-    window.beatTrack.start();
+    window.beatTrack.start().catch((err) => {
+      console.warn('BeatTrack start failed:', err);
+    });
   }
   // Try to show the canvas if hidden
   const canvas = document.querySelector('canvas');

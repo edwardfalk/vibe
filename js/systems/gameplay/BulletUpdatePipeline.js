@@ -1,23 +1,22 @@
 export function updateBullets(context) {
   const { playerBullets, enemyBullets, bulletClass } = context;
 
-  for (let i = playerBullets.length - 1; i >= 0; i--) {
-    const bullet = playerBullets[i];
+  compactBullets(playerBullets, bulletClass);
+  compactBullets(enemyBullets, bulletClass);
+}
+
+// Single-pass compaction: O(n) instead of O(n²) from repeated splice
+function compactBullets(arr, bulletClass) {
+  let write = 0;
+  for (let read = 0; read < arr.length; read++) {
+    const bullet = arr[read];
     bullet.update();
 
     if (bullet.isOffScreen()) {
       bulletClass.release(bullet);
-      playerBullets.splice(i, 1);
+    } else {
+      arr[write++] = bullet;
     }
   }
-
-  for (let i = enemyBullets.length - 1; i >= 0; i--) {
-    const bullet = enemyBullets[i];
-    bullet.update();
-
-    if (bullet.isOffScreen()) {
-      bulletClass.release(bullet);
-      enemyBullets.splice(i, 1);
-    }
-  }
+  arr.length = write;
 }

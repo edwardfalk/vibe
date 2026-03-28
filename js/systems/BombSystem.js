@@ -22,6 +22,7 @@ export function tryPlaceTankBomb(activeBombs, enemy) {
     timer,
     maxTimer: timer,
     tankId: enemy.id,
+    tankRef: enemy,
   });
 }
 
@@ -44,7 +45,12 @@ export function updateBombs(context) {
     const bomb = activeBombs[i];
     bomb.timer--;
 
-    const tank = enemies.find((e) => e.id === bomb.tankId);
+    // Use cached ref; clear if tank was removed
+    let tank = bomb.tankRef;
+    if (tank && tank.markedForRemoval) {
+      bomb.tankRef = null;
+      tank = null;
+    }
     if (tank) {
       bomb.x = tank.x;
       bomb.y = tank.y;
@@ -138,7 +144,11 @@ export function updateBombs(context) {
 
       if (damageResult === DAMAGE_RESULT.DAMAGED) {
         if (floatingText) {
-          floatingText.addDamage(enemy.x, enemy.y - (enemy.size || 0) * 0.5, damage);
+          floatingText.addDamage(
+            enemy.x,
+            enemy.y - (enemy.size || 0) * 0.5,
+            damage
+          );
         }
       }
 

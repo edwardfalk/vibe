@@ -3,6 +3,7 @@
  * Extracted from player.js for file-size split (~500 line guideline).
  */
 
+import { CONFIG } from '../config.js';
 import { atan2, cos, sin } from '../mathUtils.js';
 
 const MIN_DELTA_MS = 1;
@@ -14,7 +15,7 @@ export function updateDash(player, deltaTimeMs) {
     MIN_DELTA_MS,
     Math.min(deltaTimeMs, MAX_DELTA_MS)
   );
-  const dt = clampedDelta / 16.6667;
+  const dt = clampedDelta / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
   player.x += player.dashVelocity.x * dt;
   player.y += player.dashVelocity.y * dt;
 

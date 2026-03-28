@@ -2,6 +2,7 @@
  * Effects manager: screen shake, particles, trails, screen flash.
  * Requires p5.js instance mode.
  */
+import { CONFIG } from '../config.js';
 
 import { max, random, sin, cos, lerp, TWO_PI } from '../mathUtils.js';
 import { ObjectPool } from '../shared/ObjectPool.js';
@@ -38,7 +39,10 @@ class EffectsManager {
       this._slowMotionRemainingFrames != null &&
       this._slowMotionRemainingFrames > 0
     ) {
-      const dt = typeof deltaTimeMs === 'number' ? deltaTimeMs / 16.6667 : 1;
+      const dt =
+        typeof deltaTimeMs === 'number'
+          ? deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS
+          : 1;
       this._slowMotionRemainingFrames -= dt;
       if (this._slowMotionRemainingFrames <= 0) {
         this._slowMotionRemainingFrames = null;

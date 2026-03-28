@@ -94,12 +94,12 @@ export class BaseEnemy {
    * @param {number} playerY - Player Y position
    * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
    */
-  update(playerX, playerY, deltaTimeMs = 16.6667) {
+  update(playerX, playerY, deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
     // Update animation frame
     this.animFrame += 0.1;
 
     // Normalize deltaTime to 60fps baseline for frame-independent behavior
-    const dt = deltaTimeMs / 16.6667;
+    const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
 
     // Decrease cooldowns using deltaTime
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
@@ -141,7 +141,7 @@ export class BaseEnemy {
    */
   updateAmbientSpeech(deltaTimeMs) {
     // Normalize deltaTime to 60fps baseline
-    const dt = deltaTimeMs / 16.6667;
+    const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
 
     // Handle ambient speech
     if (this.ambientSpeechTimer > 0) {
@@ -164,13 +164,31 @@ export class BaseEnemy {
   }
 
   /**
-   * Trigger ambient speech - should be overridden by subclasses
+   * Trigger ambient speech using subclass-provided config.
+   * Subclasses override getAmbientSpeechConfig() to provide lines and conditions.
    */
   triggerAmbientSpeech() {
-    // Base implementation - subclasses should override
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(`${this.type} making ambient noise`);
+    const config = this.getAmbientSpeechConfig();
+    if (!config) return;
+
+    const audio = this.getContextValue('audio');
+    if (!audio || this.speechCooldown > 0) return;
+
+    const beatClock = this.getContextValue('beatClock');
+    if (!config.shouldSpeak(beatClock)) return;
+
+    const line = random(config.lines);
+    if (audio.speak(this, line, this.type)) {
+      this.speechCooldown = this.maxSpeechCooldown;
     }
+  }
+
+  /**
+   * Override in subclasses to provide ambient speech configuration.
+   * Return { lines: string[], shouldSpeak: (beatClock) => boolean } or null.
+   */
+  getAmbientSpeechConfig() {
+    return null;
   }
 
   /**

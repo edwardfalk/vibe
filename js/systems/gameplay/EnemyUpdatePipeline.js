@@ -1,4 +1,5 @@
 import { atan2, cos, sin } from '../../mathUtils.js';
+import { CONFIG } from '../../config.js';
 import { DAMAGE_RESULT } from '../../shared/contracts/DamageResult.js';
 import { handleDamageResult } from '../../shared/DamageResultHandler.js';
 
@@ -142,8 +143,8 @@ export function updateEnemiesAndResolveResults(context) {
     }
 
     const result = enemy.update(
-      player ? player.x : 400,
-      player ? player.y : 300,
+      player ? player.x : CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2,
+      player ? player.y : CONFIG.GAME_SETTINGS.WORLD_HEIGHT / 2,
       deltaTimeMs
     );
 

@@ -68,6 +68,7 @@ import {
   isAggressiveText as isAggressiveTextHelper,
   isConfusedText as isConfusedTextHelper,
 } from './audio/TextSemantics.js';
+import { CONFIG } from './config.js';
 import { SOUND_CONFIG, SOUND_METHOD_TO_KEY } from './audio/SoundConfig.js';
 import { VOICE_CONFIG } from './audio/VoiceConfig.js';
 import { SPEECH_WRAPPER_CONFIG } from './audio/SpeechWrappers.js';
@@ -198,12 +199,13 @@ export class Audio {
     if (!this.audioContext) return false;
 
     if (this.audioContext.state === 'suspended') {
+      // Fire-and-forget but don't block callers; sound will start once resumed
       this.audioContext.resume().catch((error) => {
         console.warn('Audio context resume failed:', error);
       });
     }
 
-    return true;
+    return this.audioContext.state === 'running';
   }
 
   createEffects() {
@@ -345,7 +347,11 @@ export class Audio {
     // Get player position for relative audio positioning
     let playerX = 400,
       playerY = 300; // Default screen center
-    if (this.player && Number.isFinite(this.player.x) && Number.isFinite(this.player.y)) {
+    if (
+      this.player &&
+      Number.isFinite(this.player.x) &&
+      Number.isFinite(this.player.y)
+    ) {
       playerX = this.player.x;
       playerY = this.player.y;
     }
@@ -467,9 +473,15 @@ export class Audio {
         this.audioContext.currentTime + config.duration * durationVariation
       );
     } catch (e) {
-      try { oscillator.disconnect(); } catch (_) {}
-      try { gainNode.disconnect(); } catch (_) {}
-      try { panNode.disconnect(); } catch (_) {}
+      try {
+        oscillator.disconnect();
+      } catch (_) {}
+      try {
+        gainNode.disconnect();
+      } catch (_) {}
+      try {
+        panNode.disconnect();
+      } catch (_) {}
     }
   }
 
@@ -505,8 +517,8 @@ export class Audio {
     utterance.pitch = config.pitch;
 
     // Get player position for relative audio positioning
-    let playerX = 400,
-      playerY = 300; // Default screen center
+    let playerX = CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2,
+      playerY = CONFIG.GAME_SETTINGS.WORLD_HEIGHT / 2;
     if (typeof this.player !== 'undefined' && this.player) {
       playerX = this.player.x;
       playerY = this.player.y;
