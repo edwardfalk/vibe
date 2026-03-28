@@ -21,58 +21,22 @@ The alien enemies are different mixes of evil, psycho, big-baby-cowards, fascist
 - `.cursorrules` - coding/runtime rules
 - `docs/DESIGN.md` - gameplay and beat-system design
 - `docs/TESTING.md` - testing strategy and smoke-runner behavior
-- `docs/CLEANUP_ROADMAP.md` - effects migration, file splits, constants extraction
-- `docs/REMAINING_ROADMAP.md` - window decoupling, Audio consolidation, docs sync
-- `docs/for-the-user/README.md` - user-facing docs index
 
 ## Quick Start
 
 ### 1) Install dependencies
 
 ```bash
-bun install
+pnpm install
 ```
 
 ### 2) Run the game
 
 ```bash
-bun run dev
+pnpm run dev
 ```
 
 The game runs at `http://localhost:5500`.
-
-### 3) Run tests
-
-```bash
-bun run test          # all tests (e2e + unit)
-bun run test:e2e      # Playwright gameplay probes (auto-starts server)
-bun run test:unit     # Vitest unit tests
-```
-
-## Project Structure
-
-- `js/` - game modules with domain migration folders (`core/`, `systems/`, `entities/`, `audio/`, `effects/`, `shared/`, `testing/`)
-- `tests/` - Playwright e2e probes + Vitest unit tests
-- `docs/` - design/audio documentation
-- `index.html` - browser entry point
-
-## Scripts
-
-- `bun run dev` - start local game server on port 5500
-- `bun run test` - run all tests (e2e + unit)
-- `bun run test:e2e` - run Playwright gameplay probes (auto-starts server)
-- `bun run test:e2e:headed` - Playwright in headed mode (visual debugging)
-- `bun run test:unit` - run Vitest unit tests
-- `bun run test:unit:watch` - Vitest in watch mode
-- `bun run lint` - run ESLint
-- `bun run format` - run Prettier
-- `bun run clean` - remove install artifacts (`node_modules`, `bun.lockb`)
-- `bun run fresh` - clean then reinstall dependencies
-
-## Notes
-
-- This repo currently relies on Bun for scripts. Install Bun first before running commands.
-- Keep `.cursorrules` and docs in sync with architecture changes.
 
 ## License
 
