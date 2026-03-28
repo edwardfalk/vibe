@@ -509,10 +509,22 @@ export class Player {
       `🩸 PLAYER DAMAGE: ${amount} HP from ${damageSource} (Health: ${this.health} → ${this.health - amount})`
     );
 
+    const prevHealth = this.health;
     this.health -= amount;
 
     const gameState = this.getContextValue('gameState');
     const audio = this.getContextValue('audio');
+
+    // Play low health warning sound when crossing the 30% threshold
+    if (
+      audio &&
+      this.health > 0 &&
+      this.health <= this.maxHealth * 0.3 &&
+      prevHealth > this.maxHealth * 0.3
+    ) {
+      audio.playSound('lowHealthWarning', this.x, this.y);
+    }
+
     if (gameState && gameState.gameState === 'playing' && audio) {
       const context =
         this.health <= 0

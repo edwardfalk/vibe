@@ -1,17 +1,13 @@
+import { createContextAccessor } from '../../shared/ContextAccessor.js';
+
 export class EnemyDeathHandler {
   constructor(context = {}) {
     this.context = context;
+    this.getContextValue = createContextAccessor(() => this.context);
   }
 
   setContext(context) {
     this.context = context;
-  }
-
-  getContextValue(key) {
-    if (typeof this.context.get === 'function') {
-      return this.context.get(key);
-    }
-    return this.context?.[key];
   }
 
   handleEnemyDeath(enemy, enemyType, x, y) {

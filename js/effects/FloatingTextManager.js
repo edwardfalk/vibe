@@ -19,6 +19,7 @@ export class FloatingTextManager {
     this.damageAccumulator = 0;
     this.accumulatorPos = { x: 0, y: 0 };
     this.accumulatorTimer = 0;
+    this.accumulatedTextRef = null;
   }
 
   acquireText(initialState) {
@@ -52,13 +53,13 @@ export class FloatingTextManager {
       this.accumulatorPos.y = (this.accumulatorPos.y + y) / 2;
       this.accumulatorTimer = 10;
 
-      const existing = this.texts.find((t) => t.isAccumulated);
-      if (existing) {
-        existing.text = `-${this.damageAccumulator}`;
-        existing.size = 14 + Math.min(this.damageAccumulator * 1.5, 16);
-        existing.life = 40;
-        existing.x = this.accumulatorPos.x;
-        existing.y = this.accumulatorPos.y;
+      if (this.accumulatedTextRef && this.accumulatedTextRef.life > 0) {
+        this.accumulatedTextRef.text = `-${this.damageAccumulator}`;
+        this.accumulatedTextRef.size =
+          14 + Math.min(this.damageAccumulator * 1.5, 16);
+        this.accumulatedTextRef.life = 40;
+        this.accumulatedTextRef.x = this.accumulatorPos.x;
+        this.accumulatedTextRef.y = this.accumulatorPos.y;
       } else {
         const t = this.acquireText({
           x: this.accumulatorPos.x,
@@ -73,7 +74,10 @@ export class FloatingTextManager {
           isAccumulated: true,
           momentum: 1.0,
         });
-        if (t) this.texts.push(t);
+        if (t) {
+          this.accumulatedTextRef = t;
+          this.texts.push(t);
+        }
       }
     } else {
       this.damageAccumulator = amount;
@@ -97,7 +101,10 @@ export class FloatingTextManager {
         isAccumulated: true,
         momentum: 1.0,
       });
-      if (t) this.texts.push(t);
+      if (t) {
+        this.accumulatedTextRef = t;
+        this.texts.push(t);
+      }
     }
 
     this.lastDamageTime = now;
@@ -243,6 +250,9 @@ export class FloatingTextManager {
 
       t.life--;
       if (t.life <= 0) {
+        if (t === this.accumulatedTextRef) {
+          this.accumulatedTextRef = null;
+        }
         const lastIndex = this.texts.length - 1;
         this.releaseText(t);
         if (i !== lastIndex) {
@@ -254,6 +264,9 @@ export class FloatingTextManager {
   }
 
   draw(p) {
+    p.textAlign(p.CENTER, p.CENTER);
+    p.noStroke();
+
     for (const t of this.texts) {
       const lifePercent = t.life / t.maxLife;
       const alpha = lifePercent * 255;
@@ -269,29 +282,42 @@ export class FloatingTextManager {
         displayScale = Math.max(displayScale, 1 + (1 - lifePercent) * 0.5);
       }
 
-      p.push();
-      p.translate(t.x, t.y);
-      p.scale(displayScale);
+      const needsTransform = (t.rotate && t.rotation) || displayScale !== 1;
 
-      if (t.rotate && t.rotation) {
-        p.rotate(t.rotation);
-      }
+      if (needsTransform) {
+        p.push();
+        p.translate(t.x, t.y);
+        p.scale(displayScale);
+        if (t.rotate && t.rotation) {
+          p.rotate(t.rotation);
+        }
 
-      p.textAlign(p.CENTER, p.CENTER);
-      p.textSize(t.size);
+        p.textSize(t.size);
 
-      if (t.isStreak || t.isKill) {
-        p.fill(t.color[0], t.color[1], t.color[2], displayAlpha * 0.3);
+        if (t.isStreak || t.isKill) {
+          p.fill(t.color[0], t.color[1], t.color[2], displayAlpha * 0.3);
+          p.text(t.text, 0, 0);
+        }
+        p.fill(0, 0, 0, displayAlpha * 0.5);
+        p.text(t.text, 2, 2);
+
+        p.fill(t.color[0], t.color[1], t.color[2], displayAlpha);
         p.text(t.text, 0, 0);
+
+        p.pop();
+      } else {
+        p.textSize(t.size);
+
+        if (t.isStreak || t.isKill) {
+          p.fill(t.color[0], t.color[1], t.color[2], displayAlpha * 0.3);
+          p.text(t.text, t.x, t.y);
+        }
+        p.fill(0, 0, 0, displayAlpha * 0.5);
+        p.text(t.text, t.x + 2, t.y + 2);
+
+        p.fill(t.color[0], t.color[1], t.color[2], displayAlpha);
+        p.text(t.text, t.x, t.y);
       }
-      p.fill(0, 0, 0, displayAlpha * 0.5);
-      p.noStroke();
-      p.text(t.text, 2, 2);
-
-      p.fill(t.color[0], t.color[1], t.color[2], displayAlpha);
-      p.text(t.text, 0, 0);
-
-      p.pop();
     }
   }
 }

@@ -61,7 +61,6 @@ export function selectVoiceWithEffects(
   randomFn = Math.random,
   floorFn = Math.floor
 ) {
-  // Reserved for future content-sensitive voice heuristics.
   void text;
   if (englishVoices.length === 0) return null;
   const availableVoices = getUsPreferredVoices(englishVoices);
@@ -105,19 +104,24 @@ export function selectVoiceWithEffects(
   }
 
   if (voiceType === 'grunt') {
-    const roboticVoices = availableVoices.filter((voice) => {
+    // Whiny big-baby voice - prefer high/child-like voices
+    const whinyVoices = availableVoices.filter((voice) => {
       const name = voice.name.toLowerCase();
       return (
-        name.includes('robot') ||
-        name.includes('computer') ||
-        name.includes('synthetic') ||
-        name.includes('monotone') ||
-        name.includes('flat')
+        name.includes('high') ||
+        name.includes('child') ||
+        name.includes('junior') ||
+        name.includes('squeaky') ||
+        name.includes('zira') ||
+        name.includes('flo') ||
+        name.includes('grandma')
       );
     });
-    if (roboticVoices.length > 0) {
-      return pickVoice(roboticVoices, randomFn, floorFn);
+    if (whinyVoices.length > 0) {
+      return pickVoice(whinyVoices, randomFn, floorFn);
     }
+    // Fallback: pick the last voice (typically higher-pitched on most systems)
+    return availableVoices[availableVoices.length - 1];
   }
 
   if (voiceType === 'rusher') {
@@ -128,12 +132,25 @@ export function selectVoiceWithEffects(
         name.includes('high') ||
         name.includes('fast') ||
         name.includes('excited') ||
-        name.includes('energetic')
+        name.includes('energetic') ||
+        name.includes('zira') ||
+        name.includes('samantha') ||
+        name.includes('karen') ||
+        name.includes('moira')
       );
     });
     if (franticVoices.length > 0) {
       return pickVoice(franticVoices, randomFn, floorFn);
     }
+    // Fallback: pick from the upper half of voices (tend to be higher pitched)
+    const upperHalf = availableVoices.slice(
+      floorFn(availableVoices.length / 2)
+    );
+    return pickVoice(
+      upperHalf.length > 0 ? upperHalf : availableVoices,
+      randomFn,
+      floorFn
+    );
   }
 
   if (voiceType === 'tank') {
@@ -145,12 +162,17 @@ export function selectVoiceWithEffects(
         name.includes('low') ||
         name.includes('heavy') ||
         name.includes('strong') ||
-        name.includes('male')
+        name.includes('male') ||
+        name.includes('david') ||
+        name.includes('daniel') ||
+        name.includes('alex')
       );
     });
     if (deepVoices.length > 0) {
       return pickVoice(deepVoices, randomFn, floorFn);
     }
+    // Fallback: pick the first voice (typically lower-pitched on most systems)
+    return availableVoices[0];
   }
 
   if (voiceType === 'stabber') {
@@ -161,12 +183,18 @@ export function selectVoiceWithEffects(
         name.includes('precise') ||
         name.includes('clinical') ||
         name.includes('sharp') ||
-        name.includes('articulate')
+        name.includes('articulate') ||
+        name.includes('google') ||
+        name.includes('reed') ||
+        name.includes('compact')
       );
     });
     if (preciseVoices.length > 0) {
       return pickVoice(preciseVoices, randomFn, floorFn);
     }
+    // Fallback: pick from the middle of the list (neutral/precise-sounding)
+    const midIdx = floorFn(availableVoices.length / 2);
+    return availableVoices[midIdx];
   }
 
   return pickVoice(availableVoices, randomFn, floorFn);

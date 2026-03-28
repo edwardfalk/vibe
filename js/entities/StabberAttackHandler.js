@@ -305,6 +305,7 @@ function handleNormalMovement(stabber, dx, dy, distance) {
       if (beatClockAtk.canStabberAttack()) {
         stabber.stabPreparing = true;
         stabber.stabPreparingTime = 0;
+        stabber.knockbackVelocity = { x: 0, y: 0 };
         if (CONFIG.DEBUG) {
           console.log(
             `🎯 Stabber starting attack (dist: ${distance.toFixed(0)}px) on beat.`

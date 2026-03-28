@@ -8,7 +8,15 @@ export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
 
   let cache = instanceCache.get(p);
   if (!cache) {
-    cache = { aurora: null, lastWidth: 0, lastHeight: 0 };
+    cache = {
+      aurora: null,
+      lastWidth: 0,
+      lastHeight: 0,
+      overlayR: -1,
+      overlayG: -1,
+      overlayB: -1,
+      overlayA: -1,
+    };
     instanceCache.set(p, cache);
   }
 
@@ -59,19 +67,28 @@ export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
 
   // Global overlay for dynamic shift and beat intensity (reduces fill-rate overhead)
   const timeShift = p.sin(p.frameCount * 0.005) * 8;
-  const rShift = timeShift * 0.5 + beatIntensity * 15;
-  const gShift = timeShift * 0.3 + beatIntensity * 10;
-  const bShift = timeShift * 0.8 + downbeatIntensity * 20;
+  const rShift = p.constrain(timeShift * 0.5 + beatIntensity * 15, 0, 255);
+  const gShift = p.constrain(timeShift * 0.3 + beatIntensity * 10, 0, 255);
+  const bShift = p.constrain(timeShift * 0.8 + downbeatIntensity * 20, 0, 255);
   const overlayAlpha = 20 + beatIntensity * 30 + downbeatIntensity * 40;
+
+  // Cache overlay color and skip redundant fill/rect when values are stable
+  const threshold = 2;
+  if (
+    Math.abs(rShift - cache.overlayR) > threshold ||
+    Math.abs(gShift - cache.overlayG) > threshold ||
+    Math.abs(bShift - cache.overlayB) > threshold ||
+    Math.abs(overlayAlpha - cache.overlayA) > threshold
+  ) {
+    cache.overlayR = rShift;
+    cache.overlayG = gShift;
+    cache.overlayB = bShift;
+    cache.overlayA = overlayAlpha;
+  }
 
   const prevBlendMode = p.drawingContext.globalCompositeOperation;
   p.blendMode(p.BLEND);
-  p.fill(
-    p.constrain(rShift, 0, 255),
-    p.constrain(gShift, 0, 255),
-    p.constrain(bShift, 0, 255),
-    overlayAlpha
-  );
+  p.fill(cache.overlayR, cache.overlayG, cache.overlayB, cache.overlayA);
   p.noStroke();
   p.rect(0, 0, p.width, p.height);
   p.drawingContext.globalCompositeOperation = prevBlendMode;

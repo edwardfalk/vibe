@@ -1,6 +1,7 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { floor, random, sqrt, sin, cos, ceil } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
+import { DAMAGE_RESULT } from '../shared/contracts/DamageResult.js';
 
 /**
  * Rusher class - Suicide bomber mechanics
@@ -348,7 +349,7 @@ class Rusher extends BaseEnemy {
       }
 
       // Return special flag so pipeline keeps entity for explosion
-      return 'exploding';
+      return DAMAGE_RESULT.EXPLODING;
     }
 
     // Apply normal damage

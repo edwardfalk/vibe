@@ -1,8 +1,6 @@
 import { atan2, cos, sin } from '../../mathUtils.js';
-import {
-  DAMAGE_RESULT,
-  normalizeDamageResult,
-} from '../../shared/contracts/DamageResult.js';
+import { DAMAGE_RESULT } from '../../shared/contracts/DamageResult.js';
+import { handleDamageResult } from '../../shared/DamageResultHandler.js';
 
 function handleRusherExplosionResult(result, enemy, context) {
   const {
@@ -102,48 +100,29 @@ function handleStabberAttackResult(result, context) {
     const hit = result.enemiesHit[k];
     const targetEnemy = hit.enemy;
 
-    const damageResult = normalizeDamageResult(
-      targetEnemy.takeDamage(hit.damage, hit.angle, 'stabber')
+    const damageResult = handleDamageResult(
+      targetEnemy.takeDamage(hit.damage, hit.angle, 'stabber'),
+      targetEnemy,
+      {
+        explosionManager,
+        audio,
+        gameState,
+        onDeath: (e) => {
+          if (collisionSystem) {
+            collisionSystem.handleEnemyDeath(e, e.type, e.x, e.y);
+          }
+        },
+        scorePoints: 15,
+      }
     );
 
     if (damageResult === DAMAGE_RESULT.DIED) {
       console.log(`💀 ${targetEnemy.type} killed by stabber friendly fire!`);
-
-      if (collisionSystem) {
-        collisionSystem.handleEnemyDeath(
-          targetEnemy,
-          targetEnemy.type,
-          targetEnemy.x,
-          targetEnemy.y
-        );
-      }
-
-      const enemyIndex = enemies.indexOf(targetEnemy);
-      if (enemyIndex !== -1) {
-        enemies[enemyIndex].markedForRemoval = true;
-      }
-
-      if (gameState) {
-        gameState.addKill();
-        gameState.addScore(15);
-      }
     } else if (damageResult === DAMAGE_RESULT.EXPLODING) {
-      if (explosionManager) {
-        explosionManager.addExplosion(targetEnemy.x, targetEnemy.y, 'hit');
-      }
-      if (audio) {
-        audio.playHit(targetEnemy.x, targetEnemy.y);
-      }
       console.log(
         `💥 Stabber friendly fire caused ${targetEnemy.type} to explode!`
       );
     } else {
-      if (explosionManager) {
-        explosionManager.addExplosion(targetEnemy.x, targetEnemy.y, 'hit');
-      }
-      if (audio) {
-        audio.playHit(targetEnemy.x, targetEnemy.y);
-      }
       console.log(
         `🗡️ ${targetEnemy.type} damaged by stabber friendly fire, health: ${targetEnemy.health}`
       );
@@ -158,6 +137,7 @@ export function updateEnemiesAndResolveResults(context) {
     const enemy = enemies[i];
 
     if (enemy.health <= 0 || enemy.markedForRemoval) {
+      enemies.splice(i, 1);
       continue;
     }
 
@@ -188,9 +168,5 @@ export function updateEnemiesAndResolveResults(context) {
     }
 
     console.warn(`⚠️ Unknown object returned from enemy update:`, result);
-  }
-
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    if (enemies[i].markedForRemoval) enemies.splice(i, 1);
   }
 }

@@ -56,5 +56,5 @@ export function queryNearbyEnemyIndices(spatialGrid, bullet) {
     }
   }
 
-  return Array.from(uniqueIndices).sort((a, b) => b - a);
+  return Array.from(uniqueIndices);
 }

@@ -4,11 +4,10 @@
  */
 
 import { random, TWO_PI, cos, sin } from '../../mathUtils.js';
+import { ObjectPool } from '../../shared/ObjectPool.js';
 
-const MAX_FRAGMENT_POOL_SIZE = 600;
-const MAX_CENTRAL_PARTICLE_POOL_SIZE = 600;
-const fragmentPool = [];
-const centralParticlePool = [];
+const fragmentPool = new ObjectPool(600);
+const centralParticlePool = new ObjectPool(600);
 const poolStats = {
   fragmentAcquired: 0,
   fragmentReleased: 0,
@@ -20,42 +19,41 @@ const poolStats = {
 
 function acquireFragment() {
   poolStats.fragmentAcquired++;
-  return fragmentPool.pop() || {};
+  return fragmentPool.acquire();
 }
 
 function releaseFragment(fragment) {
-  if (!fragment || fragmentPool.length >= MAX_FRAGMENT_POOL_SIZE) return;
-  fragmentPool.push(fragment);
+  if (!fragment) return;
+  fragmentPool.release(fragment);
   poolStats.fragmentReleased++;
   poolStats.peakFragmentPoolSize = Math.max(
     poolStats.peakFragmentPoolSize,
-    fragmentPool.length
+    fragmentPool.size
   );
 }
 
 function acquireCentralParticle() {
   poolStats.centralAcquired++;
-  return centralParticlePool.pop() || {};
+  return centralParticlePool.acquire();
 }
 
 function releaseCentralParticle(particle) {
-  if (!particle || centralParticlePool.length >= MAX_CENTRAL_PARTICLE_POOL_SIZE)
-    return;
-  centralParticlePool.push(particle);
+  if (!particle) return;
+  centralParticlePool.release(particle);
   poolStats.centralReleased++;
   poolStats.peakCentralPoolSize = Math.max(
     poolStats.peakCentralPoolSize,
-    centralParticlePool.length
+    centralParticlePool.size
   );
 }
 
 export function getFragmentPoolStats() {
   return {
     ...poolStats,
-    fragmentPoolSize: fragmentPool.length,
-    centralPoolSize: centralParticlePool.length,
-    maxFragmentPoolSize: MAX_FRAGMENT_POOL_SIZE,
-    maxCentralPoolSize: MAX_CENTRAL_PARTICLE_POOL_SIZE,
+    fragmentPoolSize: fragmentPool.size,
+    centralPoolSize: centralParticlePool.size,
+    maxFragmentPoolSize: fragmentPool.maxSize,
+    maxCentralPoolSize: centralParticlePool.maxSize,
   };
 }
 
@@ -124,8 +122,8 @@ export class EnemyFragmentExplosion {
       fragment.gravity = 0.08;
       fragment.friction = 0.98;
       if (fragmentType === 'body') {
-        fragment.bodyOffsets = fragment.bodyOffsets || [0, 0, 0, 0, 0, 0];
-        for (let j = 0; j < fragment.bodyOffsets.length; j++) {
+        fragment.bodyOffsets = [0, 0, 0, 0, 0, 0];
+        for (let j = 0; j < 6; j++) {
           fragment.bodyOffsets[j] = random(0.4);
         }
       } else {

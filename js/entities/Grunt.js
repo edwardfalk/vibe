@@ -410,9 +410,11 @@ class Grunt extends BaseEnemy {
         }
       }
       // Set up delayed death, but don't call super.takeDamage() yet
-      this.pendingStabDeath = true;
-      this.pendingStabDeathTimer = 12; // ~200ms at 60fps
-      this._pendingStabDeathParams = { amount, bulletAngle, damageSource };
+      if (!this.pendingStabDeath) {
+        this.pendingStabDeath = true;
+        this.pendingStabDeathTimer = 12; // ~200ms at 60fps
+        this._pendingStabDeathParams = { amount, bulletAngle, damageSource };
+      }
       // FIXED: Return true if this would kill the grunt, false otherwise
       return amount >= this.health;
     }

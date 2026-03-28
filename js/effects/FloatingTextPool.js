@@ -18,9 +18,7 @@ export class FloatingTextPool {
     const text = this.pool.pop();
     if (text === undefined) {
       this.stats.created++;
-      const newText = {};
-      for (const key in newText) delete newText[key];
-      Object.assign(newText, initialState);
+      const newText = Object.assign({}, initialState);
       this.stats.inUse++;
       this.stats.peakInUse = Math.max(this.stats.peakInUse, this.stats.inUse);
       return newText;

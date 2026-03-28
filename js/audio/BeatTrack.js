@@ -21,7 +21,7 @@ export class BeatTrack {
     this.context = context;
     this.beatDuration = 60 / bpm;
     this.eighthDuration = this.beatDuration / 2;
-    this.volume = 0.25;
+    this.volume = 0.4;
 
     // Web Audio state
     this.ctx = null;
@@ -97,7 +97,7 @@ export class BeatTrack {
 
   setVolume(vol) {
     this.volume = Math.max(0, Math.min(1, vol));
-    if (this.masterGain) {
+    if (this.masterGain && this.ctx) {
       this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
     }
   }
@@ -159,6 +159,10 @@ export class BeatTrack {
     gain.connect(this.masterGain);
     osc.start(time);
     osc.stop(time + 0.35);
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
   }
 
   _playSnare(time) {
@@ -193,8 +197,17 @@ export class BeatTrack {
 
     noise.start(time);
     noise.stop(time + 0.15);
+    noise.onended = () => {
+      noise.disconnect();
+      bandpass.disconnect();
+      noiseGain.disconnect();
+    };
     body.start(time);
     body.stop(time + 0.08);
+    body.onended = () => {
+      body.disconnect();
+      bodyGain.disconnect();
+    };
   }
 
   _playHiHat(time, isOpen) {
@@ -219,6 +232,11 @@ export class BeatTrack {
 
     noise.start(time);
     noise.stop(time + decay);
+    noise.onended = () => {
+      noise.disconnect();
+      highpass.disconnect();
+      gain.disconnect();
+    };
   }
 
   _playBass(time) {
@@ -237,6 +255,10 @@ export class BeatTrack {
     gain.connect(this.masterGain);
     osc.start(time);
     osc.stop(time + sustain);
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
   }
 
   // -- Helpers ------------------------------------------------------------

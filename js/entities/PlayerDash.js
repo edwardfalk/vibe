@@ -66,6 +66,9 @@ export function tryStartDash(player) {
     dashDirY *= 0.707;
   }
 
+  // Guard: don't waste dash cooldown on a zero-velocity dash
+  if (dashDirX === 0 && dashDirY === 0) return false;
+
   player.dashVelocity = {
     x: dashDirX * player.dashSpeed,
     y: dashDirY * player.dashSpeed,
@@ -73,6 +76,10 @@ export function tryStartDash(player) {
   player.isDashing = true;
   player.dashTimerMs = 0;
   player.dashCooldownMs = player.maxDashCooldownMs;
+  const audio = player.getContextValue
+    ? player.getContextValue('audio')
+    : window.audio;
+  if (audio) audio.playSound('playerDash', player.x, player.y);
 
   console.log(
     `💨 Player dashed! Direction: (${dashDirX.toFixed(2)}, ${dashDirY.toFixed(2)})`

@@ -1,33 +1,19 @@
 import { sin, cos, random } from '../mathUtils.js';
+import { ObjectPool } from '../shared/ObjectPool.js';
 
 /**
  * Visual effects manager: particles, cosmic dust, auroras, screen effects.
  * Requires p5.js instance mode.
  */
 
-const PARTICLE_POOL_MAX = 200;
-const particlePool = [];
+const particlePool = new ObjectPool(200);
 
 function acquireParticle(props) {
-  const p = particlePool.length > 0 ? particlePool.pop() : {};
-  p.x = props.x;
-  p.y = props.y;
-  p.vx = props.vx;
-  p.vy = props.vy;
-  p.size = props.size;
-  p.life = props.life;
-  p.maxLife = props.maxLife;
-  p.color = props.color;
-  p.type = props.type;
-  p.gravity = props.gravity || 0;
-  p.fade = props.fade || 0;
-  return p;
+  return particlePool.acquire(props);
 }
 
 function releaseParticle(p) {
-  if (particlePool.length < PARTICLE_POOL_MAX) {
-    particlePool.push(p);
-  }
+  particlePool.release(p);
 }
 
 class VisualEffectsManager {
@@ -279,19 +265,21 @@ class VisualEffectsManager {
   addExplosion(x, y, count = 15, color = [255, 200, 100]) {
     const colors = [color];
     for (let i = 0; i < count; i++) {
-      this.particles.push(acquireParticle({
-        x,
-        y,
-        vx: random(-8, 8),
-        vy: random(-8, 8),
-        size: random(3, 8),
-        life: 60,
-        maxLife: 60,
-        color: random(colors),
-        type: 'explosion',
-        gravity: 0.1,
-        fade: random(0.02, 0.05),
-      }));
+      this.particles.push(
+        acquireParticle({
+          x,
+          y,
+          vx: random(-8, 8),
+          vy: random(-8, 8),
+          size: random(3, 8),
+          life: 60,
+          maxLife: 60,
+          color: random(colors),
+          type: 'explosion',
+          gravity: 0.1,
+          fade: random(0.02, 0.05),
+        })
+      );
     }
   }
 
@@ -330,20 +318,22 @@ class VisualEffectsManager {
         speedBoost = 1 + beatIntensity * 0.5;
       }
 
-      this.particles.push(acquireParticle({
-        x,
-        y,
-        vx: random(-8, 8) * speedBoost,
-        vy: random(-8, 8) * speedBoost,
-        size: random(3, 8) * (beatIntensity > 0.3 ? 1.2 : 1),
-        life: 60,
-        maxLife: 60,
-        color: random(colors),
-        type: 'explosion',
-        gravity: 0.1,
-        fade: random(0.02, 0.05),
-        beatBoost: beatIntensity,
-      }));
+      this.particles.push(
+        acquireParticle({
+          x,
+          y,
+          vx: random(-8, 8) * speedBoost,
+          vy: random(-8, 8) * speedBoost,
+          size: random(3, 8) * (beatIntensity > 0.3 ? 1.2 : 1),
+          life: 60,
+          maxLife: 60,
+          color: random(colors),
+          type: 'explosion',
+          gravity: 0.1,
+          fade: random(0.02, 0.05),
+          beatBoost: beatIntensity,
+        })
+      );
     }
 
     if (beatIntensity > 0.4) {
@@ -368,36 +358,40 @@ class VisualEffectsManager {
       const spreadAngle = angle + random(-0.3, 0.3);
       const speed = random(3, 6);
 
-      this.particles.push(acquireParticle({
-        x,
-        y,
-        vx: cos(spreadAngle) * speed,
-        vy: sin(spreadAngle) * speed,
-        size: random(2, 5),
-        life: 20,
-        maxLife: 20,
-        color: random(colors),
-        type: 'muzzle',
-        gravity: 0,
-        fade: 0.1,
-      }));
+      this.particles.push(
+        acquireParticle({
+          x,
+          y,
+          vx: cos(spreadAngle) * speed,
+          vy: sin(spreadAngle) * speed,
+          size: random(2, 5),
+          life: 20,
+          maxLife: 20,
+          color: random(colors),
+          type: 'muzzle',
+          gravity: 0,
+          fade: 0.1,
+        })
+      );
     }
   }
 
   addMotionTrail(x, y, color, size = 3) {
-    this.particles.push(acquireParticle({
-      x,
-      y,
-      vx: 0,
-      vy: 0,
-      size,
-      life: 30,
-      maxLife: 30,
-      color,
-      type: 'trail',
-      gravity: 0,
-      fade: 0.05,
-    }));
+    this.particles.push(
+      acquireParticle({
+        x,
+        y,
+        vx: 0,
+        vy: 0,
+        size,
+        life: 30,
+        maxLife: 30,
+        color,
+        type: 'trail',
+        gravity: 0,
+        fade: 0.05,
+      })
+    );
   }
 
   updateParticles() {

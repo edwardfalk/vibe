@@ -168,9 +168,39 @@ This checklist is the release gate for the aggressive refactor program.
   - [ ] `window.collisionSystem.getPerformanceSnapshot()`
   - [ ] `window.performanceDiagnostics` populated when enabled
 
+## Bug Fix & Refactor Wave (2026-03-28)
+
+- `npx vitest run`: pass (66 unit tests).
+- `npx eslint js/`: pass (0 errors after --fix).
+- 19 bugs fixed across entities, core, audio, and effects systems.
+- 5 performance improvements: spatial grid sort removal, single-pass enemy cleanup, FloatingTextManager push/pop reduction, glow layer reduction, aurora overlay caching.
+- 3 shared utilities extracted: `ObjectPool`, `ContextAccessor`, `DamageResultHandler`.
+- 26 files changed, ~500 lines net improvement.
+- `ARCHITECTURE.md` updated with new shared utilities and combat contract docs.
+
+### Bugs Fixed
+
+- PlayerDash: zero-velocity dash guard
+- Rusher: `takeDamage()` return type aligned to DAMAGE_RESULT contract
+- BaseEnemy: globalAlpha restored in try-finally; muzzleFlash decrement moved to update()
+- Stabber: knockback zeroed on stab phase entry; knockback magnitude clamped
+- Grunt: deferred stab-death params guard against overwrite
+- GameState: level progress math corrected (tracks previousLevelThreshold)
+- EnemyUpdatePipeline: dead enemies properly removed in single-pass loop
+- BombSystem: null tank guard on audio.speak()
+- CollisionSystem: tank energy ball division-by-zero guard
+- Audio.js: setVolume() AudioContext null check; voice loading race condition; activeTexts cap
+- BeatTrack.js: setVolume() ctx null check; oscillator/gain node disconnect on end
+- FloatingTextManager: duplicate accumulated text fix
+- FloatingTextPool: stale property cleanup on reuse
+- EnemyFragmentExplosion: bodyOffsets always reset fresh
+
 ## Refactor-Specific Structural Checks
 
 - [ ] No module in refactor scope hard-crashes if optional systems are absent.
 - [ ] Compatibility shims preserve legacy import paths during migration.
 - [ ] `window.*` usage reduced for migrated modules (`CollisionSystem`, `Audio`, `AreaDamageHandler`).
-- [ ] Damage/death handling goes through shared contract normalization.
+- [x] Damage/death handling goes through shared contract normalization.
+- [x] Damage result handling unified via `DamageResultHandler.js` (CollisionSystem, EnemyUpdatePipeline, AreaDamageHandler).
+- [x] Object pooling consolidated via `ObjectPool.js` (VisualEffectsManager, EffectsManager, EnemyFragmentExplosion).
+- [x] Context access pattern unified via `ContextAccessor.js` (CollisionSystem, EnemyDeathHandler, BaseEnemy).

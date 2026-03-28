@@ -17,15 +17,14 @@ import {
   buildEnemySpatialGrid,
   queryNearbyEnemyIndices,
 } from './collision/CollisionSpatialGrid.js';
-import {
-  DAMAGE_RESULT,
-  normalizeDamageResult,
-} from '../shared/contracts/DamageResult.js';
+import { DAMAGE_RESULT } from '../shared/contracts/DamageResult.js';
+import { handleDamageResult } from '../shared/DamageResultHandler.js';
 import {
   handleContactCollisions,
   handleRusherExplosionCollision,
   handleStabberAttackCollision,
 } from './combat/PlayerContactHandlers.js';
+import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { applyKillFeedback } from './combat/KillFeedback.js';
 
 export class CollisionSystem {
@@ -35,22 +34,13 @@ export class CollisionSystem {
     this.frameMetrics = createEmptyFrameMetrics();
     this.rollingMetrics = createEmptyRollingMetrics();
     this.context = context;
+    this.getContextValue = createContextAccessor(() => this.context);
     this.enemyDeathHandler = new EnemyDeathHandler(context || window);
   }
 
   setContext(context) {
     this.context = context;
     this.enemyDeathHandler.setContext(context || window);
-  }
-
-  getContextValue(key) {
-    if (this.context && typeof this.context.get === 'function') {
-      return this.context.get(key);
-    }
-    if (this.context && key in this.context) {
-      return this.context[key];
-    }
-    return window[key];
   }
 
   // Main collision detection function
@@ -106,7 +96,12 @@ export class CollisionSystem {
       const bullet = playerBullets[i];
       const candidateEnemyIndices = enemySpatialGrid
         ? queryNearbyEnemyIndices(enemySpatialGrid, bullet)
-        : enemies.map((_, index) => index).reverse();
+        : (() => {
+            const indices = [];
+            for (let idx = enemies.length - 1; idx >= 0; idx--)
+              indices.push(idx);
+            return indices;
+          })();
       this.frameMetrics.playerBulletCandidates += candidateEnemyIndices.length;
 
       for (let k = 0; k < candidateEnemyIndices.length; k++) {
@@ -164,35 +159,20 @@ export class CollisionSystem {
         `[DEBUG] Calling takeDamage on enemy: type=${enemyType}, health=${enemy.health}, bullet.damage=${bullet.damage}, bullet.angle=${bullet.angle}`
       );
     }
-    const damageResult = normalizeDamageResult(
-      enemy.takeDamage(bullet.damage, bullet.angle)
-    );
+    const rawResult = enemy.takeDamage(bullet.damage, bullet.angle);
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
       console.log(
-        `[DEBUG] takeDamage result: ${damageResult}, enemyHealthAfter=${enemy.health}`
+        `[DEBUG] takeDamage result: ${rawResult}, enemyHealthAfter=${enemy.health}`
       );
     }
 
-    if (damageResult === DAMAGE_RESULT.EXPLODING) {
-      // Rusher started exploding - create hit effect but don't remove enemy yet
-      if (explosionManager) {
-        explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
-      }
-      if (audio) {
-        audio.playHit(bullet.x, bullet.y);
-      }
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-        console.log(
-          `💥 RUSHER SHOT! Starting explosion sequence! Was already exploding: ${wasExploding}`
-        );
-      }
-    } else if (damageResult === DAMAGE_RESULT.DIED) {
-      this.handleEnemyDeath(enemy, enemyType, bullet.x, bullet.y);
-      enemy.markedForRemoval = true;
-      applyKillFeedback({
-        gameState,
-        enemy,
-        enemyType,
+    const damageResult = handleDamageResult(rawResult, enemy, {
+      explosionManager,
+      audio,
+      gameState,
+      onDeath: (e) => this.handleEnemyDeath(e, enemyType, bullet.x, bullet.y),
+      killFeedback: {
+        applyKillFeedback,
         beatClock,
         floatingText,
         visualEffectsManager,
@@ -208,27 +188,21 @@ export class CollisionSystem {
             window.hitStopFrames = value;
           }
         },
-      });
+      },
+      hitX: bullet.x,
+      hitY: bullet.y,
+      floatingText,
+      bulletDamage: bullet.damage,
+    });
 
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+      if (damageResult === DAMAGE_RESULT.EXPLODING) {
+        console.log(
+          `💥 RUSHER SHOT! Starting explosion sequence! Was already exploding: ${wasExploding}`
+        );
+      } else if (damageResult === DAMAGE_RESULT.DIED) {
         console.log(`💀 ${enemyType} killed by bullet!`);
-      }
-    } else {
-      // Enemy hit but not dead
-      if (explosionManager) {
-        explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
-      }
-      if (audio) {
-        audio.playHit(bullet.x, bullet.y);
-      }
-
-      // Floating damage number
-      if (floatingText) {
-        const size = Number(enemy.size) || 0;
-        floatingText.addDamage(enemy.x, enemy.y - size * 0.5, bullet.damage);
-      }
-
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+      } else {
         console.log(`🎯 ${enemyType} damaged, health now: ${enemy.health}`);
       }
     }
@@ -297,7 +271,12 @@ export class CollisionSystem {
       const bullet = enemyBullets[i];
       const candidateEnemyIndices = enemySpatialGrid
         ? queryNearbyEnemyIndices(enemySpatialGrid, bullet)
-        : enemies.map((_, index) => index).reverse();
+        : (() => {
+            const indices = [];
+            for (let idx = enemies.length - 1; idx >= 0; idx--)
+              indices.push(idx);
+            return indices;
+          })();
       this.frameMetrics.enemyBulletCandidates += candidateEnemyIndices.length;
 
       for (let k = 0; k < candidateEnemyIndices.length; k++) {
@@ -338,7 +317,8 @@ export class CollisionSystem {
     }
 
     // Calculate energy cost based on enemy's remaining health
-    const energyCost = (enemy.health / enemy.maxHealth) * 30;
+    const energyCost =
+      enemy.maxHealth > 0 ? (enemy.health / enemy.maxHealth) * 30 : 0;
 
     // Kill the enemy and create explosion
     this.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
@@ -391,49 +371,29 @@ export class CollisionSystem {
       bulletSource = 'tank';
     }
 
-    const damageResult = normalizeDamageResult(
-      enemy.takeDamage(bullet.damage, bullet.angle, bulletSource)
+    const damageResult = handleDamageResult(
+      enemy.takeDamage(bullet.damage, bullet.angle, bulletSource),
+      enemy,
+      {
+        explosionManager,
+        audio,
+        gameState,
+        onDeath: (e) => this.handleEnemyDeath(e, e.type, e.x, e.y),
+        deathAudio: 'playExplosion',
+        scorePoints: 8,
+        hitX: bullet.x,
+        hitY: bullet.y,
+      }
     );
 
-    if (damageResult === DAMAGE_RESULT.EXPLODING) {
-      // Rusher started exploding
-      if (explosionManager) {
-        explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
-      }
-      if (audio) {
-        audio.playHit(bullet.x, bullet.y);
-      }
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+      if (damageResult === DAMAGE_RESULT.EXPLODING) {
         console.log(`💥 FRIENDLY FIRE caused rusher to explode!`);
-      }
-    } else if (damageResult === DAMAGE_RESULT.DIED) {
-      // Enemy died from friendly fire
-      this.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
-
-      if (audio) {
-        audio.playExplosion(enemy.x, enemy.y);
-      }
-
-      enemy.markedForRemoval = true;
-      if (gameState) {
-        gameState.addKill();
-        gameState.addScore(8); // Friendly fire kills get some points
-      }
-
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+      } else if (damageResult === DAMAGE_RESULT.DIED) {
         console.log(
           `💀 ${enemy.type} killed by friendly fire from ${bulletSource}!`
         );
-      }
-    } else {
-      // Enemy damaged but not dead
-      if (explosionManager) {
-        explosionManager.addExplosion(bullet.x, bullet.y, 'hit');
-      }
-      if (audio) {
-        audio.playHit(bullet.x, bullet.y);
-      }
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
+      } else {
         console.log(
           `🎯 Friendly fire damaged ${enemy.type}, health now: ${enemy.health}`
         );

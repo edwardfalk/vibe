@@ -1,8 +1,6 @@
 import { atan2, cos, sin } from '../mathUtils.js';
-import {
-  DAMAGE_RESULT,
-  normalizeDamageResult,
-} from '../shared/contracts/DamageResult.js';
+import { DAMAGE_RESULT } from '../shared/contracts/DamageResult.js';
+import { handleDamageResult } from '../shared/DamageResultHandler.js';
 
 export function handleAreaDamageEvents(damageEvents, context) {
   const {
@@ -68,43 +66,22 @@ export function handleAreaDamageEvents(damageEvents, context) {
           `☢️ ${enemy.type} took ${event.damage} damage from area effect`
         );
 
-        const damageResult = normalizeDamageResult(
-          enemy.takeDamage(event.damage, null, 'area')
+        const damageResult = handleDamageResult(
+          enemy.takeDamage(event.damage, null, 'area'),
+          enemy,
+          {
+            explosionManager,
+            audio,
+            gameState,
+            enemyDeathHandler,
+            scorePoints: 10,
+          }
         );
 
         if (damageResult === DAMAGE_RESULT.DIED) {
           console.log(`💀 ${enemy.type} killed by area damage!`);
-
-          if (enemyDeathHandler) {
-            enemyDeathHandler.handleEnemyDeath(
-              enemy,
-              enemy.type,
-              enemy.x,
-              enemy.y
-            );
-          }
-
-          enemy.markedForRemoval = true;
-
-          if (gameState) {
-            gameState.addKill();
-            gameState.addScore(10); // Area effect kills
-          }
         } else if (damageResult === DAMAGE_RESULT.EXPLODING) {
-          if (explosionManager) {
-            explosionManager.addExplosion(enemy.x, enemy.y, 'hit');
-          }
-          if (audio) {
-            audio.playHit(enemy.x, enemy.y);
-          }
           console.log(`💥 Area damage caused ${enemy.type} to explode!`);
-        } else {
-          if (explosionManager) {
-            explosionManager.addExplosion(enemy.x, enemy.y, 'hit');
-          }
-          if (audio) {
-            audio.playHit(enemy.x, enemy.y);
-          }
         }
       }
     }

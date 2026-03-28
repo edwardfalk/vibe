@@ -9,6 +9,7 @@ export class GameState {
     this.startSpeechTimer = null;
     this.highScore = parseInt(localStorage.getItem('vibeHighScore')) || 0;
     this.level = 1;
+    this.previousLevelThreshold = 0;
     this.nextLevelThreshold = 150; // First level up at 150 points
     this.gameState = 'playing'; // 'playing', 'gameOver', 'paused'
 
@@ -25,7 +26,10 @@ export class GameState {
     this._highScoreDirty = false;
     this._highScoreDebounceTimer = null;
     this._boundFlush = () => this._flushHighScore();
-    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.addEventListener === 'function'
+    ) {
       window.addEventListener('beforeunload', this._boundFlush);
     }
   }
@@ -40,6 +44,9 @@ export class GameState {
   addKill() {
     this.totalKills++;
     this.killStreak++;
+    if (this.killStreak > 0 && this.killStreak % 5 === 0 && window.audio) {
+      window.audio.playSound('killStreak');
+    }
   }
 
   resetKillStreak() {
@@ -57,6 +64,7 @@ export class GameState {
 
       // Calculate next level threshold with increasing requirements
       const nextLevelIncrease = this.level * 150;
+      this.previousLevelThreshold = this.nextLevelThreshold;
       this.nextLevelThreshold += nextLevelIncrease;
 
       console.log(
@@ -66,6 +74,10 @@ export class GameState {
       // Trigger level up effects
       if (window.cameraSystem) {
         window.cameraSystem.addShake(15, 30);
+      }
+
+      if (window.audio) {
+        window.audio.playSound('levelUp');
       }
 
       // Level up speech
@@ -115,6 +127,10 @@ export class GameState {
       this.resetKillStreak();
       this._flushHighScore();
 
+      if (window.audio) {
+        window.audio.playSound('gameOver');
+      }
+
       // Game over speech
       if (window.audio && window.player) {
         window.audio.speakPlayerLine(window.player, 'death');
@@ -143,6 +159,7 @@ export class GameState {
     // Reset all state
     this.score = 0;
     this.level = 1;
+    this.previousLevelThreshold = 0;
     this.nextLevelThreshold = 150;
     this.killStreak = 0;
     this.totalKills = 0;
@@ -221,10 +238,9 @@ export class GameState {
   }
 
   getProgressToNextLevel() {
-    const currentLevelStart = this.nextLevelThreshold - this.level * 150;
-    const progress = this.score - currentLevelStart;
-    const required = this.nextLevelThreshold - currentLevelStart;
-    return Math.min(progress / required, 1);
+    const progress = this.score - this.previousLevelThreshold;
+    const range = this.nextLevelThreshold - this.previousLevelThreshold;
+    return range > 0 ? Math.min(1, Math.max(0, progress / range)) : 0;
   }
 
   // Auto-restart for test mode

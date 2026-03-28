@@ -213,12 +213,13 @@ Completed migration wave:
   3. update `ARCHITECTURE.md` if structure changed.
   4. append results to `docs/NO_REGRESSION_CHECKLIST.md` "Latest Refactor Validation".
 
-## Current Known Debt (2026-02-24)
+## Current Known Debt (2026-03-28)
 
 - **Phase 2 remaining**: GameLoop (~102 refs), GameState (~50 refs), InputHandlers (23 refs, input state intentionally global), residual refs in effects (`js/effects.js` — 5 `window.*` refs remaining), and smaller counts in Audio.
 - **Phase 3**: Domain path migration completed for core/entity/system runtime modules.
 - **Phase 4**: Audio consolidation (speech wrapper map, config extraction) not started.
 - **Phase 5**: Probe hardening delivered to 9-test smoke baseline.
+- **Bug fix wave (2026-03-28)**: 19 bugs fixed, 5 perf improvements, 3 shared utilities extracted (`ObjectPool`, `ContextAccessor`, `DamageResultHandler`). Inline pool/context/damage duplication eliminated. See `NO_REGRESSION_CHECKLIST.md` for full details.
 
 ## Suggested Branch Exit Criteria
 

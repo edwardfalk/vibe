@@ -9,6 +9,7 @@ import {
   drawEnemyHealthBar,
   drawEnemySpeechBubble,
 } from './BaseEnemyHelpers.js';
+import { createContextAccessor } from '../shared/ContextAccessor.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
@@ -74,15 +75,9 @@ export class BaseEnemy {
     this.p = p;
     this.audio = audio;
     this.context = config?.context ?? null;
+    this.getContextValue = createContextAccessor(() => this.context);
 
     this.initializeColors();
-  }
-
-  getContextValue(key) {
-    if (this.context && typeof this.context.get === 'function') {
-      return this.context.get(key);
-    }
-    return undefined;
   }
 
   initializeColors() {
@@ -109,6 +104,7 @@ export class BaseEnemy {
     // Decrease cooldowns using deltaTime
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.hitFlash > 0) this.hitFlash -= dt;
+    if (this.muzzleFlash > 0) this.muzzleFlash -= dt;
     if (this.speechTimer > 0) this.speechTimer -= dt;
     if (this.speechCooldown > 0) this.speechCooldown -= dt;
     if (this.speechTimer <= 0 && this.speechText) this.speechText = '';
@@ -291,28 +287,30 @@ export class BaseEnemy {
     const prevAlpha = p.drawingContext?.globalAlpha ?? 1;
     if (p.drawingContext) p.drawingContext.globalAlpha = finalAlpha;
 
-    if (this.hitFlash > 0) {
-      const hitIntensity = this.hitFlash / 8;
-      const shakeX = randomRange(-hitIntensity * 4, hitIntensity * 4);
-      const shakeY = randomRange(-hitIntensity * 3, hitIntensity * 3);
-      p.translate(shakeX, shakeY);
+    try {
+      if (this.hitFlash > 0) {
+        const hitIntensity = this.hitFlash / 8;
+        const shakeX = randomRange(-hitIntensity * 4, hitIntensity * 4);
+        const shakeY = randomRange(-hitIntensity * 3, hitIntensity * 3);
+        p.translate(shakeX, shakeY);
 
-      // Comical size distortion when hit
-      const distortion = 1 + sin(p.frameCount * 2) * hitIntensity * 0.1;
-      p.scale(distortion, 1 / distortion);
+        // Comical size distortion when hit
+        const distortion = 1 + sin(p.frameCount * 2) * hitIntensity * 0.1;
+        p.scale(distortion, 1 / distortion);
+      }
+
+      // Draw main body (subclasses implement specific shapes)
+      this.drawBody(s, p);
+
+      // Draw common elements
+      this.drawHead(s, p);
+      this.drawArms(s, p);
+      this.drawWeapon(s, p);
+    } finally {
+      p.pop();
+
+      if (p.drawingContext) p.drawingContext.globalAlpha = prevAlpha;
     }
-
-    // Draw main body (subclasses implement specific shapes)
-    this.drawBody(s, p);
-
-    // Draw common elements
-    this.drawHead(s, p);
-    this.drawArms(s, p);
-    this.drawWeapon(s, p);
-
-    p.pop();
-
-    if (p.drawingContext) p.drawingContext.globalAlpha = prevAlpha;
 
     // Draw UI elements
     this.drawHealthBar(p);
@@ -393,7 +391,6 @@ export class BaseEnemy {
     if (this.muzzleFlash > 0) {
       p.fill(255, 255, 100, this.muzzleFlash * 30);
       p.ellipse(s * 0.7, 0, s * 0.2, s * 0.1);
-      this.muzzleFlash--;
     }
   }
 

@@ -35,6 +35,13 @@ export const SOUND_METHOD_TO_KEY = {
   playBombExplosion: 'explosion',
   playRusherExplosion: 'explosion',
   playStabberAttack: 'stabAttack',
+  playStabberKnifeExtend: 'stabberKnifeExtend',
+  playStabberKnifeHit: 'stabberKnifeHit',
+  playPlayerDash: 'playerDash',
+  playLevelUp: 'levelUp',
+  playGameOver: 'gameOver',
+  playLowHealthWarning: 'lowHealthWarning',
+  playKillStreak: 'killStreak',
 };
 
 export const SOUND_CONFIG = {
@@ -93,12 +100,14 @@ export const SOUND_CONFIG = {
     waveform: 'sawtooth',
     volume: 0.8,
     duration: 5.0,
+    tremolo: true,
   },
   tankCharging: {
     frequency: 60,
     waveform: 'sawtooth',
     volume: 0.4,
     duration: 0.8,
+    tremolo: true,
   },
   tankPower: {
     frequency: 40,
@@ -121,7 +130,7 @@ export const SOUND_CONFIG = {
   gruntRetreat: {
     frequency: 350,
     waveform: 'square',
-    volume: 0.15,
+    volume: 0.25,
     duration: 0.08,
   },
   rusherCharge: {
@@ -137,12 +146,13 @@ export const SOUND_CONFIG = {
     volume: 0.4,
     duration: 0.15,
   },
-  enemyIdle: { frequency: 200, waveform: 'sine', volume: 0.1, duration: 0.8 },
+  enemyIdle: { frequency: 200, waveform: 'sine', volume: 0.2, duration: 0.8 },
   tankPowerUp: {
     frequency: 40,
     waveform: 'sawtooth',
     volume: 0.5,
     duration: 1.2,
+    tremolo: true,
   },
   stabberStalk: {
     frequency: 1600,
@@ -187,26 +197,26 @@ export const SOUND_CONFIG = {
   gruntMalfunction: {
     frequency: 180,
     waveform: 'sawtooth',
-    volume: 0.12,
+    volume: 0.25,
     duration: 0.4,
   },
   gruntBeep: {
     frequency: 800,
     waveform: 'triangle',
-    volume: 0.08,
+    volume: 0.25,
     duration: 0.15,
   },
-  gruntWhir: { frequency: 300, waveform: 'sine', volume: 0.1, duration: 0.6 },
+  gruntWhir: { frequency: 300, waveform: 'sine', volume: 0.25, duration: 0.6 },
   gruntError: {
     frequency: 220,
     waveform: 'square',
-    volume: 0.1,
+    volume: 0.25,
     duration: 0.2,
   },
   gruntGlitch: {
     frequency: 150,
     waveform: 'sawtooth',
-    volume: 0.09,
+    volume: 0.25,
     duration: 0.25,
   },
   gruntOw: {
@@ -214,5 +224,51 @@ export const SOUND_CONFIG = {
     waveform: 'triangle',
     volume: 0.25,
     duration: 0.18,
+  },
+  stabberKnifeExtend: {
+    frequency: 2800,
+    waveform: 'triangle',
+    volume: 0.3,
+    duration: 0.2,
+    sweep: { to: 3500, curve: 'linear' },
+  },
+  stabberKnifeHit: {
+    frequency: 1800,
+    waveform: 'sawtooth',
+    volume: 0.45,
+    duration: 0.08,
+  },
+  playerDash: {
+    frequency: 600,
+    waveform: 'noise',
+    volume: 0.3,
+    duration: 0.15,
+  },
+  levelUp: {
+    frequency: 440,
+    waveform: 'triangle',
+    volume: 0.5,
+    duration: 0.6,
+    sweep: { to: 880, curve: 'exponential' },
+  },
+  gameOver: {
+    frequency: 400,
+    waveform: 'sawtooth',
+    volume: 0.6,
+    duration: 1.0,
+    sweep: { to: 60, curve: 'exponential' },
+  },
+  lowHealthWarning: {
+    frequency: 200,
+    waveform: 'square',
+    volume: 0.2,
+    duration: 0.3,
+  },
+  killStreak: {
+    frequency: 660,
+    waveform: 'triangle',
+    volume: 0.35,
+    duration: 0.3,
+    sweep: { to: 990, curve: 'linear' },
   },
 };

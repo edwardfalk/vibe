@@ -4,11 +4,10 @@
  */
 
 import { max, random, sin, cos, lerp, TWO_PI } from '../mathUtils.js';
+import { ObjectPool } from '../shared/ObjectPool.js';
 
-const PARTICLE_POOL_MAX = 100;
-const TRAIL_POOL_MAX = 50;
-const particlePool = [];
-const trailPool = [];
+const particlePool = new ObjectPool(100);
+const trailPool = new ObjectPool(50);
 
 class EffectsManager {
   constructor() {
@@ -76,9 +75,7 @@ class EffectsManager {
       particle.update();
 
       if (particle.isDead()) {
-        if (particlePool.length < PARTICLE_POOL_MAX) {
-          particlePool.push(particle);
-        }
+        particlePool.release(particle);
         const last = this.particles.length - 1;
         if (i < last) {
           this.particles[i] = this.particles[last];
@@ -92,9 +89,7 @@ class EffectsManager {
       trail.update();
 
       if (trail.isDead()) {
-        if (trailPool.length < TRAIL_POOL_MAX) {
-          trailPool.push(trail);
-        }
+        trailPool.release(trail);
         const last = this.trails.length - 1;
         if (i < last) {
           this.trails[i] = this.trails[last];
@@ -174,8 +169,8 @@ class EffectsManager {
       const color = random(colors);
 
       let particle;
-      if (particlePool.length > 0) {
-        particle = particlePool.pop();
+      if (particlePool.size > 0) {
+        particle = particlePool.pool.pop();
         particle.reset(x, y, angle, speed, size, color, 60);
       } else {
         particle = new Particle(x, y, angle, speed, size, color, 60);
@@ -187,8 +182,8 @@ class EffectsManager {
   addBulletTrail(x, y, angle, type = 'player') {
     const color = type === 'player' ? [100, 200, 255] : [255, 100, 150];
     let trail;
-    if (trailPool.length > 0) {
-      trail = trailPool.pop();
+    if (trailPool.size > 0) {
+      trail = trailPool.pool.pop();
       trail.reset(x, y, angle, color, 15);
     } else {
       trail = new Trail(x, y, angle, color, 15);

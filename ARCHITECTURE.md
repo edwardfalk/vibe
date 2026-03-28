@@ -76,6 +76,9 @@ This file is the source of truth for module layout and runtime wiring.
   - `RadioactiveDebris.js`, `PlasmaCloud.js` - area damage effects.
 - `js/shared/`
   - `contracts/DamageResult.js` - normalized damage/death result contract.
+  - `DamageResultHandler.js` - unified damage result handling (replaces 3 inline implementations).
+  - `ObjectPool.js` - generic object pool with acquire/release (replaces per-system pool duplication).
+  - `ContextAccessor.js` - shared `getContextValue()` factory for GameContext/window fallback lookup.
 - `js/testing/`
   - `ai-liveness-probe.js` - browser-side liveness probe for gameplay smoke tests.
 - `tests/` - Playwright e2e probes + Vitest unit tests (see `docs/TESTING.md`).
@@ -102,6 +105,12 @@ This file is the source of truth for module layout and runtime wiring.
   - `damaged`
   - `died`
   - `exploding`
+- Unified result handler: `handleDamageResult()` in `js/shared/DamageResultHandler.js` processes normalized results with standard effects (explosions, audio, scoring, death). Used by CollisionSystem, EnemyUpdatePipeline, and AreaDamageHandler.
+
+## Shared Utilities
+
+- `ObjectPool` (`js/shared/ObjectPool.js`): Generic acquire/release pool used by VisualEffectsManager, EffectsManager, and EnemyFragmentExplosion.
+- `createContextAccessor()` (`js/shared/ContextAccessor.js`): Factory for `getContextValue(key)` functions that check GameContext.get(), direct property access, then window globals. Used by CollisionSystem, EnemyDeathHandler, and BaseEnemy.
 
 ## Migration Rules
 

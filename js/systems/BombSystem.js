@@ -55,10 +55,11 @@ export function updateBombs(context) {
       secondsLeft > 0 &&
       bomb.timer % 60 === 0 &&
       audio &&
-      audio.speak &&
-      tank
+      audio.speak
     ) {
-      audio.speak(tank, secondsLeft.toString(), 'player');
+      if (tank) {
+        audio.speak(tank, secondsLeft.toString(), 'player');
+      }
     }
 
     if (bomb.timer > 0) continue;
@@ -136,7 +137,12 @@ export function updateBombs(context) {
 
       if (damageResult === DAMAGE_RESULT.DIED) {
         if (enemyDeathHandler) {
-          enemyDeathHandler.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
+          enemyDeathHandler.handleEnemyDeath(
+            enemy,
+            enemy.type,
+            enemy.x,
+            enemy.y
+          );
         } else if (collisionSystem) {
           collisionSystem.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
         }

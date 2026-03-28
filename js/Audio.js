@@ -86,7 +86,7 @@ export class Audio {
     this.masterGain = null;
     this.initialized = false;
     this.enabled = true;
-    this.volume = 0.7;
+    this.volume = 1.0;
 
     // Effects nodes
     this.effects = {
@@ -177,6 +177,11 @@ export class Audio {
       this.createEffects();
       this.loadVoices();
 
+      // Start drum machine now that audio context is available
+      if (window.beatTrack && !window.beatTrack.isPlaying) {
+        window.beatTrack.start();
+      }
+
       this.initialized = true;
       console.log('✅ Audio system initialized');
     } catch (error) {
@@ -261,6 +266,8 @@ export class Audio {
   }
 
   loadVoices() {
+    if (this._voicesLoaded) return;
+
     const loadVoices = () => {
       const allVoices = this.speechSynthesis.getVoices();
       this.englishVoices = allVoices.filter(
@@ -268,6 +275,8 @@ export class Audio {
           voice.lang.startsWith('en-') &&
           (voice.lang.includes('US') || voice.lang.includes('GB'))
       );
+      this._voicesLoaded = true;
+      this.speechSynthesis.onvoiceschanged = null;
       console.log(`🎤 Loaded ${this.englishVoices.length} English voices`);
     };
 
@@ -574,6 +583,10 @@ export class Audio {
     const isAggressive = isAggressiveTextHelper(text);
     const isConfused = isConfusedTextHelper(text);
 
+    if (this.activeTexts.length >= 50) {
+      this.activeTexts.shift();
+    }
+
     this.activeTexts.push({
       entity: entity,
       text: text,
@@ -611,7 +624,7 @@ export class Audio {
   // Control methods
   setVolume(volume) {
     this.volume = Math.max(0, Math.min(1, volume));
-    if (this.masterGain) {
+    if (this.masterGain && this.audioContext) {
       this.masterGain.gain.setValueAtTime(
         this.volume,
         this.audioContext.currentTime
