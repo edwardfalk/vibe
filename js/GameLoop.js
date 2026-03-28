@@ -147,7 +147,7 @@ function updateGame(p) {
 
   // Update beat visualizer
   if (window.rhythmFX) {
-    window.rhythmFX.update();
+    window.rhythmFX.update(p.deltaTime);
   }
 
   // Test mode - automated movement and shooting

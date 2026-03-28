@@ -144,6 +144,7 @@ export class BeatTrack {
 
     osc.connect(gain);
     gain.connect(this.masterGain);
+    osc.onended = () => { osc.disconnect(); gain.disconnect(); };
     osc.start(time);
     osc.stop(time + 0.15);
   }

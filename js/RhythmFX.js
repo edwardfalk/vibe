@@ -40,7 +40,7 @@ export class RhythmFX {
   /**
    * Update beat visualization state
    */
-  update() {
+  update(deltaTimeMs = 16.67) {
     const beatClock = this._getBeatClock();
     if (beatClock) {
       const currentBeat = beatClock.getCurrentBeat();
@@ -65,14 +65,14 @@ export class RhythmFX {
       }
     }
 
-    // Decay telegraphs using beat-relative timing
+    // Decay telegraphs using actual deltaTime
     const beatsPerFrame = beatClock
-      ? (1000 / 60) / beatClock.beatInterval  // approximate, but beat-relative
-      : 1 / 60;
+      ? deltaTimeMs / beatClock.beatInterval
+      : deltaTimeMs / 500;  // fallback assumes 120 BPM
     for (let i = this.telegraphs.length - 1; i >= 0; i--) {
       const t = this.telegraphs[i];
       t.beatsUntil -= beatsPerFrame;
-      t.intensity *= 0.98;
+      t.intensity *= Math.pow(0.98, deltaTimeMs / 16.67);
       if (t.beatsUntil <= 0 || t.intensity < 0.01) {
         this.telegraphs.splice(i, 1);
       }

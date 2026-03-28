@@ -474,7 +474,7 @@ export class Player {
   }
 
   fireBullet() {
-    this.shootCooldownMs = 17; // At least one frame at 60fps (was 5)
+    // Cooldown is set by the caller (shoot method) after this returns
     this.muzzleFlash = 4;
 
     // Calculate bullet spawn position

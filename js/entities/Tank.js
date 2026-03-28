@@ -188,9 +188,9 @@ class Tank extends BaseEnemy {
         return this.createBullet();
       }
     } else {
-      // Start charge on beat 1, with cooldown since last fire
+      // Start charge on beat 1, within range, with cooldown since last fire
       const beatsSinceLastFire = beatClock.getTotalBeats() - this._lastTankFireBeat;
-      if (beatsSinceLastFire >= 8 && beatClock.canTankShoot()) {
+      if (distance < 400 && beatsSinceLastFire >= 8 && beatClock.canTankShoot()) {
         this.chargingShot = true;
         this.chargeStartBeat = beatClock.getTotalBeats();
         console.log('🎯 Tank starting charge sequence!');
