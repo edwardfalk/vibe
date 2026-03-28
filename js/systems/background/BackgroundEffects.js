@@ -64,17 +64,22 @@ function drawBeatPulseOverlay(p, beatClock, healthOverlayColor) {
     }
   }
 
-  // 2. Beat ring — expanding circle from screen center
-  if (phase < 0.6) {
-    const ringProgress = phase / 0.6;
-    const ringRadius = 40 + ringProgress * 350;
-    const ringAlpha = (1 - ringProgress) * (isDownbeat ? 70 : 30);
-    const ringWeight = (1 - ringProgress) * 2.5 + 0.5;
+  // 2. Beat ring — downbeat only, soft bloom
+  if (isDownbeat && phase < 0.8) {
+    const ringProgress = phase / 0.8;
+    const ringRadius = 40 + ringProgress * 300;
+    const ringAlpha = (1 - ringProgress) * 40;
+    const ringWeight = 8 - ringProgress * 6;
 
     p.noFill();
-    p.stroke(180, 140, 255, ringAlpha);
+    // Multiple concentric rings for diffuse/blurred look
+    p.stroke(200, 180, 255, ringAlpha);
     p.strokeWeight(ringWeight);
     p.ellipse(p.width / 2, p.height / 2, ringRadius * 2, ringRadius * 2);
+    p.stroke(200, 180, 255, ringAlpha * 0.5);
+    p.ellipse(p.width / 2, p.height / 2, (ringRadius + 10) * 2, (ringRadius + 10) * 2);
+    p.stroke(200, 180, 255, ringAlpha * 0.25);
+    p.ellipse(p.width / 2, p.height / 2, (ringRadius + 20) * 2, (ringRadius + 20) * 2);
   }
 
   // 3. Vignette pulse using cached graphics

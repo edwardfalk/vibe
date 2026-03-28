@@ -24,8 +24,9 @@ export function computeMediumStarVisual(
     (sinFn(measurePhase * twoPi + starPhase) * 0.5 + 0.5) * beatPulse;
   const combinedBrightness =
     star.brightness * (0.7 + timeTwinkle * 0.3 + beatTwinkle * 0.3);
-  const alpha = Math.min(255, combinedBrightness * 255);
-  const sizePulse = 1 + beatPulse * 0.2 * ((starIndex % 3) / 3);
+  const alpha = Math.min(255, combinedBrightness * 255 + beatPulse * 120);
+  const sizeBoost = 1.0 + beatPulse * 0.3;
+  const sizePulse = sizeBoost + beatPulse * 0.2 * ((starIndex % 3) / 3);
   const finalSize = star.size * sizePulse;
 
   return {

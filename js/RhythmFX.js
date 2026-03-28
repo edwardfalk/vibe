@@ -59,7 +59,7 @@ export class RhythmFX {
       const beatPhase = beatClock.getBeatPhase();
       const isDownbeat = currentBeat === 0;
       if (beatPhase < 0.15 && isDownbeat) {
-        this.edgeFlashIntensity = (1 - beatPhase / 0.15) * 0.6;
+        this.edgeFlashIntensity = (1 - beatPhase / 0.15) * 0.85;
       } else {
         this.edgeFlashIntensity *= 0.9;
       }

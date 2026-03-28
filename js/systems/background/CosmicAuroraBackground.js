@@ -63,10 +63,10 @@ export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
 
   // Global overlay for dynamic shift and beat intensity
   const timeShift = p.sin(p.frameCount * 0.005) * 8;
-  const rShift = p.constrain(timeShift * 0.5 + beatIntensity * 15, 0, 255);
-  const gShift = p.constrain(timeShift * 0.3 + beatIntensity * 10, 0, 255);
-  const bShift = p.constrain(timeShift * 0.8 + downbeatIntensity * 20, 0, 255);
-  const overlayAlpha = 20 + beatIntensity * 30 + downbeatIntensity * 40;
+  const rShift = p.constrain(timeShift * 0.5 + beatIntensity * 30, 0, 255);
+  const gShift = p.constrain(timeShift * 0.3 + beatIntensity * 20, 0, 255);
+  const bShift = p.constrain(timeShift * 0.8 + downbeatIntensity * 40, 0, 255);
+  const overlayAlpha = 25 + beatIntensity * 50 + downbeatIntensity * 60;
 
   const prevBlendMode = p.drawingContext.globalCompositeOperation;
   p.blendMode(p.BLEND);
