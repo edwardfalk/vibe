@@ -183,6 +183,9 @@ class Tank extends BaseEnemy {
         console.log('💥 Tank firing charged shot!');
         if (audioTank) {
           audioTank.speak(this, 'FIRE!', 'tank');
+          if (audioTank.duckDrone) {
+            audioTank.duckDrone(500);
+          }
         }
 
         return this.createBullet();
