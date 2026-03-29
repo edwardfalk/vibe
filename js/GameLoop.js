@@ -140,6 +140,9 @@ function updateGame(p) {
     return;
   }
 
+  // Cap frame time to prevent teleportation after lag spikes or tab switches
+  const dt = Math.min(p.deltaTime, 50);
+
   // Update BeatClock every frame for accurate rhythm timing
   if (window.beatClock && typeof window.beatClock.update === 'function') {
     window.beatClock.update();
@@ -147,18 +150,18 @@ function updateGame(p) {
 
   // Update beat visualizer
   if (window.rhythmFX) {
-    window.rhythmFX.update(p.deltaTime);
+    window.rhythmFX.update(dt);
   }
 
   // Update player
   if (player) {
-    player.update(p.deltaTime);
+    player.update(dt);
   }
 
   // Update camera for parallax effect
   if (window.cameraSystem) {
     if (typeof window.cameraSystem.update === 'function') {
-      window.cameraSystem.update(p.deltaTime);
+      window.cameraSystem.update(dt);
     } else {
       console.warn('⚠️ Camera update method not found');
     }
@@ -203,7 +206,7 @@ function updateGame(p) {
     enemies,
     enemyBullets,
     player,
-    deltaTimeMs: p.deltaTime,
+    deltaTimeMs: dt,
     collisionSystem: window.collisionSystem,
     explosionManager: window.explosionManager,
     visualEffectsManager: window.visualEffectsManager,

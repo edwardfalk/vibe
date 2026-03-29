@@ -39,7 +39,7 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
     beatClock &&
     beatClock.canStabberAttack() &&
     !stabber.stabPreparing &&
-    !stabber.stabbing &&
+    !stabber.isStabbing &&
     !stabber.stabWarning &&
     !stabber.stabRecovering &&
     random() < 0.03

@@ -28,10 +28,6 @@ export function drawGameplayWorld(context) {
     );
   }
 
-  if (visualEffectsManager) {
-    visualEffectsManager.applyScreenEffects(p);
-  }
-
   if (cameraSystem) {
     cameraSystem.applyTransform();
   }
@@ -66,5 +62,10 @@ export function drawGameplayWorld(context) {
 
   if (cameraSystem) {
     cameraSystem.removeTransform();
+  }
+
+  // Screen-space effects applied after camera transform is removed
+  if (visualEffectsManager) {
+    visualEffectsManager.applyScreenEffects(p);
   }
 }

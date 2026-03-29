@@ -122,7 +122,7 @@ export class Bullet {
       this.damage = 1;
     } else if (owner === 'enemy-tank') {
       this.size = 20;
-      this.damage = 999;
+      this.damage = 50;
       this.energy = 100;
       this.penetrating = true;
     } else {

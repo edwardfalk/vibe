@@ -425,6 +425,12 @@ export class Audio {
     // Check if this is an ambient enemy sound that should have reverb
     const isAmbientSound = AMBIENT_SOUNDS.has(soundName);
 
+    // Declare reverb-path nodes outside if-block so onended cleanup can access them
+    let reverbGainNode = null;
+    let lowPassFilter = null;
+    let distortionNode = null;
+    let dryGain = null;
+
     if (isAmbientSound && this.effects.reverb) {
       // OPTIMIZED: Simplified atmospheric effects for better performance
       const { sourceX, sourceY } = resolveSoundSourcePosition(
@@ -439,12 +445,12 @@ export class Audio {
       const normalizedDistance = Math.max(0, Math.min(distance / 600, 1)); // 0 = close, 1 = far; clamp to avoid negative
 
       // Simplified reverb processing - REDUCED intensity from 65% to 45% for less overwhelming effects
-      const reverbGain = this.audioContext.createGain();
-      const lowPassFilter = this.audioContext.createBiquadFilter();
+      reverbGainNode = this.audioContext.createGain();
+      lowPassFilter = this.audioContext.createBiquadFilter();
 
       // REDUCED: Reverb intensity from 65% to 45% for more subtle atmospheric effects
       const reverbIntensity = 0.15 + normalizedDistance * 0.15; // Further reduced from 0.25 + 0.2 to 0.15 + 0.15 (range: 15-30% instead of 25-45%)
-      reverbGain.gain.setValueAtTime(
+      reverbGainNode.gain.setValueAtTime(
         reverbIntensity,
         this.audioContext.currentTime
       );
@@ -459,19 +465,19 @@ export class Audio {
       lowPassFilter.Q.setValueAtTime(0.5, this.audioContext.currentTime); // Reduced Q for performance
 
       // REDUCED: Distortion amount from 15 to 10 for more subtle otherworldly effect
-      const distortionNode = this.audioContext.createWaveShaper();
+      distortionNode = this.audioContext.createWaveShaper();
       distortionNode.curve = this.createOrGetCurve(5); // Was this.createDistortionCurve(5)
       distortionNode.oversample = '2x';
 
       // SIMPLIFIED: Direct connection with reduced effects intensity
       panNode.connect(lowPassFilter);
       lowPassFilter.connect(distortionNode);
-      distortionNode.connect(reverbGain);
-      reverbGain.connect(this.effects.reverb);
+      distortionNode.connect(reverbGainNode);
+      reverbGainNode.connect(this.effects.reverb);
       this.effects.reverb.connect(this.masterGain);
 
       // Simplified dry signal path with more dry mix for less overwhelming effects
-      const dryGain = this.audioContext.createGain();
+      dryGain = this.audioContext.createGain();
       const dryMix = 0.9 - normalizedDistance * 0.15; // Increased dry mix from 0.85-0.2 to 0.9-0.15 to compensate for reduced reverb
       dryGain.gain.setValueAtTime(dryMix, this.audioContext.currentTime);
 
@@ -488,6 +494,22 @@ export class Audio {
       oscillator.stop(
         this.audioContext.currentTime + config.duration * durationVariation
       );
+
+      // Clean up all audio nodes when oscillator ends to prevent graph accumulation
+      oscillator.onended = () => {
+        try {
+          oscillator.disconnect();
+          tremoloGain.disconnect();
+          gainNode.disconnect();
+          panNode.disconnect();
+          if (lowPassFilter) lowPassFilter.disconnect();
+          if (distortionNode) distortionNode.disconnect();
+          if (reverbGainNode) reverbGainNode.disconnect();
+          if (dryGain) dryGain.disconnect();
+        } catch (_) {
+          // Nodes may already be disconnected
+        }
+      };
     } catch (e) {
       try {
         oscillator.disconnect();

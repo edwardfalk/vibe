@@ -205,6 +205,11 @@ export class GameState {
       window.explosionManager.radioactiveDebris = [];
     }
 
+    // Reset BeatClock so enemies sync to fresh beat positions
+    if (window.beatClock) {
+      window.beatClock.reset();
+    }
+
     // Reset BeatTrack to level 1
     if (window.beatTrack && window.beatTrack.setLevel) {
       window.beatTrack.setLevel(1);

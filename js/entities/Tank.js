@@ -393,7 +393,6 @@ class Tank extends BaseEnemy {
     if (this.muzzleFlash > 0) {
       this.p.fill(255, 255, 100, this.muzzleFlash * 30);
       this.p.ellipse(s * 1.1, 0, s * 0.4, s * 0.2);
-      this.muzzleFlash--;
     }
   }
 

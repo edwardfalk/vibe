@@ -197,8 +197,8 @@ class Grunt extends BaseEnemy {
           const lastGruntFireBeat = this.getContextValue('gruntFireBeat') ?? -1;
           const alreadyFired = lastGruntFireBeat === currentTotalBeat;
 
-          // Higher skip chance (85%) if another grunt already fired this beat
-          const skipChance = alreadyFired ? 0.85 : 0.4;
+          // Higher skip chance if another grunt already fired this beat
+          const skipChance = alreadyFired ? 0.6 : 0.2;
           if (random() < skipChance) {
             // Skipped this beat
           } else if (!this.shouldAvoidFriendlyFire()) {

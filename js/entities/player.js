@@ -227,8 +227,8 @@ export class Player {
             console.log('🎵 Queued shot fired on beat!');
           }
 
-          // Ensure cooldown doesn't expire this frame (prevents double shots)
-          this.shootCooldownMs += deltaTimeMs;
+          // Set proper cooldown to prevent double shot from shoot() later this frame
+          this.shootCooldownMs = 200;
 
           this.queuedShot = null; // Clear the queue
         }
