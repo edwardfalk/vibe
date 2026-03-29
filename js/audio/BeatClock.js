@@ -198,9 +198,19 @@ export class BeatClock {
 
   // Reset timing (for level transitions)
   reset() {
-    this.startTime = this._now();
+    const now = this._now();
+    // Snap to nearest beat boundary so the grid stays aligned
+    const elapsed = now - this.startTime;
+    const remainder = elapsed % this.beatInterval;
+    if (remainder < this.beatInterval / 2) {
+      // Closer to the previous beat — snap back
+      this.startTime = now - remainder;
+    } else {
+      // Closer to the next beat — snap forward
+      this.startTime = now + (this.beatInterval - remainder);
+    }
     this.update(true);
-    console.log('🎵 BeatClock reset');
+    console.log('🎵 BeatClock reset (beat-aligned)');
   }
 
   // Continuous beat phase: 0 = beat just hit, 1 = next beat about to hit
