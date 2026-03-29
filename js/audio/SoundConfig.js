@@ -46,6 +46,10 @@ export const SOUND_METHOD_TO_KEY = {
   playGameOver: 'gameOver',
   playLowHealthWarning: 'lowHealthWarning',
   playKillStreak: 'killStreak',
+  playGruntResponse: 'gruntResponse',
+  playTankResponse: 'tankResponse',
+  playStabberResponse: 'stabberResponse',
+  playRusherResponse: 'rusherResponse',
 };
 
 export const SOUND_CONFIG = {
@@ -315,5 +319,34 @@ export const SOUND_CONFIG = {
     volume: 0.35,
     duration: 0.3,
     sweep: { to: 990, curve: 'linear' },
+  },
+  gruntResponse: {
+    frequency: 380,
+    type: 'square',
+    waveform: 'square',
+    volume: 0.2,
+    duration: 0.1,
+  },
+  tankResponse: {
+    frequency: 70,
+    type: 'sine',
+    waveform: 'sine',
+    volume: 0.3,
+    duration: 0.3,
+  },
+  stabberResponse: {
+    frequency: 2300,
+    type: 'triangle',
+    waveform: 'triangle',
+    volume: 0.25,
+    duration: 0.06,
+  },
+  rusherResponse: {
+    frequency: 720,
+    type: 'sawtooth',
+    waveform: 'sawtooth',
+    volume: 0.25,
+    duration: 0.15,
+    sweep: { to: 500, curve: 'exponential' },
   },
 };
