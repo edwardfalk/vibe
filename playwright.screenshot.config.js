@@ -2,17 +2,14 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  testMatch: '*.test.js',
-  testIgnore: ['**/unit/**', '**/screenshot.js'],
+  testMatch: '**/screenshot.js',
   timeout: 30000,
-  retries: 1,
+  retries: 0,
   workers: 1,
-  reporter: 'line',
+  reporter: 'list',
 
   use: {
     baseURL: 'http://localhost:5500',
-    screenshot: 'only-on-failure',
-    trace: 'retain-on-failure',
   },
 
   webServer: {
