@@ -62,9 +62,7 @@ const injectRecorder = async (page) => {
  * Wait for N beats to elapse by polling beatClock.getTotalBeats().
  */
 const waitForBeats = async (page, numBeats) => {
-  const startBeat = await page.evaluate(() =>
-    window.beatClock.getTotalBeats()
-  );
+  const startBeat = await page.evaluate(() => window.beatClock.getTotalBeats());
   const targetBeat = startBeat + numBeats;
 
   await page.waitForFunction(
@@ -107,7 +105,9 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   // Pull recorded events
   const events = await page.evaluate(() => window.__beatEvents);
 
-  console.log(`\nRecorded ${events.length} beat events over ${NUM_BEATS} beats:`);
+  console.log(
+    `\nRecorded ${events.length} beat events over ${NUM_BEATS} beats:`
+  );
 
   // Group by enemy type
   const byType = {};
