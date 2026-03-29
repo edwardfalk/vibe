@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests',
   testMatch: '*.test.js',
-  testIgnore: ['**/unit/**', '**/screenshot.js'],
+  testIgnore: ['**/unit/**', '**/screenshot.js', '**/beat-assertions.js', '**/playtest.js'],
   timeout: 30000,
   retries: 1,
   workers: 1,

@@ -19,7 +19,10 @@
     "clean": "rm -rf node_modules",
     "fresh": "pnpm run clean && pnpm install",
     "screenshot": "npx playwright test tests/screenshot.js --config=playwright.screenshot.config.js --reporter=list",
-    "screenshot:level": "LEVEL=${LEVEL:-3} npx playwright test tests/screenshot.js --config=playwright.screenshot.config.js --reporter=list"
+    "screenshot:level": "LEVEL=${LEVEL:-3} npx playwright test tests/screenshot.js --config=playwright.screenshot.config.js --reporter=list",
+    "test:beats": "npx playwright test tests/beat-assertions.js --config=playwright.beat-assertions.config.js --reporter=list",
+    "playtest": "npx playwright test tests/playtest.js --config=playwright.playtest.config.js --reporter=list",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "bun": {
     "dev": {

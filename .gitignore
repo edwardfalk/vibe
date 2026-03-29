@@ -9,9 +9,10 @@ test-results/
 playwright-report/
 test-results-*/
 
-# Screenshots from automated testing
+# Screenshots and test output from automated testing
 tests/screenshots/
 tests/manual-sessions/
+tests/playtest-results.json
 
 # IDE and editor files
 .vscode/
