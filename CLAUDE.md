@@ -50,6 +50,7 @@ Score-based, not wave-based. Continuous spawning. Enemy introduction: Level 1 gr
 - ESLint: prefer-const, no-var
 - World bounds: 1150x850 (`js/config.js`)
 - 120 BPM default, 4/4 time, beat interval 500ms
+- No magic numbers
 
 ## Worktrees
 
