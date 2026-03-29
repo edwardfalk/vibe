@@ -5,9 +5,7 @@
   "type": "module",
   "main": "index.html",
   "scripts": {
-    "serve": "npx five-server --port=5500",
-    "predev": "npx kill-port 5500",
-    "dev": "pnpm run serve",
+    "dev": "npx five-server --port=5500",
     "test": "npx playwright test && pnpm run test:unit",
     "test:e2e": "npx playwright test",
     "test:e2e:headed": "npx playwright test --headed",
@@ -24,18 +22,6 @@
     "test:beats": "npx playwright test tests/beat-assertions.js --config=playwright.beat-assertions.config.js --reporter=list",
     "playtest": "npx playwright test tests/playtest.js --config=playwright.playtest.config.js --reporter=list",
     "prepare": "git config core.hooksPath .githooks"
-  },
-  "bun": {
-    "dev": {
-      "port": 5500,
-      "hot": true,
-      "watch": [
-        "js/**/*.js",
-        "index.html",
-        "*.css"
-      ]
-    },
-    "test": {}
   },
   "devDependencies": {
     "@playwright/test": "^1.52.0",

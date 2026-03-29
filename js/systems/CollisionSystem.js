@@ -17,7 +17,7 @@ import {
   buildEnemySpatialGrid,
   queryNearbyEnemyIndices,
 } from './collision/CollisionSpatialGrid.js';
-import { DAMAGE_RESULT } from '../shared/contracts/DamageResult.js';
+import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { handleDamageResult } from '../shared/DamageResultHandler.js';
 import {
   handleContactCollisions,

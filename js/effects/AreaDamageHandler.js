@@ -1,5 +1,5 @@
 import { atan2, cos, sin } from '../mathUtils.js';
-import { DAMAGE_RESULT } from '../shared/contracts/DamageResult.js';
+import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { handleDamageResult } from '../shared/DamageResultHandler.js';
 
 export function handleAreaDamageEvents(damageEvents, context) {

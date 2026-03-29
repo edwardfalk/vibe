@@ -1,7 +1,4 @@
-import {
-  DAMAGE_RESULT,
-  normalizeDamageResult,
-} from './contracts/DamageResult.js';
+import { DAMAGE_RESULT, normalizeDamageResult } from './DamageResult.js';
 
 /**
  * Handles a normalized damage result with standard effects.

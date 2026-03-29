@@ -6,6 +6,7 @@ import {
   getFragmentPoolStats,
 } from './EnemyFragmentExplosion.js';
 import { random, TWO_PI, cos, sin } from '../../mathUtils.js';
+import { createContextAccessor } from '../../shared/ContextAccessor.js';
 
 export class ExplosionManager {
   constructor(context = null) {
@@ -16,12 +17,7 @@ export class ExplosionManager {
     this.fragmentExplosions = [];
   }
 
-  getContextValue(key) {
-    if (this.context && typeof this.context.get === 'function') {
-      return this.context.get(key);
-    }
-    return window[key];
-  }
+  getContextValue = createContextAccessor(() => this.context);
 
   addExplosion(x, y, type = 'enemy') {
     const beatClock = this.getContextValue('beatClock');

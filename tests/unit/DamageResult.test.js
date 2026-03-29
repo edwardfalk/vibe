@@ -2,8 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   DAMAGE_RESULT,
   normalizeDamageResult,
-  isEnemyDeadResult,
-} from '../../js/shared/contracts/DamageResult.js';
+} from '../../js/shared/DamageResult.js';
 
 describe('DAMAGE_RESULT constants', () => {
   it('has all expected values', () => {
@@ -35,24 +34,5 @@ describe('normalizeDamageResult()', () => {
   it('maps unknown values to NONE', () => {
     expect(normalizeDamageResult(42)).toBe('none');
     expect(normalizeDamageResult('random')).toBe('none');
-  });
-});
-
-describe('isEnemyDeadResult()', () => {
-  it('returns true for true (legacy dead)', () => {
-    expect(isEnemyDeadResult(true)).toBe(true);
-  });
-
-  it('returns false for false (legacy damaged)', () => {
-    expect(isEnemyDeadResult(false)).toBe(false);
-  });
-
-  it('returns false for "exploding"', () => {
-    expect(isEnemyDeadResult('exploding')).toBe(false);
-  });
-
-  it('returns false for null/undefined', () => {
-    expect(isEnemyDeadResult(null)).toBe(false);
-    expect(isEnemyDeadResult(undefined)).toBe(false);
   });
 });

@@ -7,7 +7,7 @@ This file is the source of truth for module layout and runtime wiring.
 - Rendering/runtime: `p5.js` instance mode.
 - Entry point: `js/GameLoop.js`.
 - Primary runtime container: `GameContext` (`js/core/GameContext.js`).
-- Temporary migration mode: modules can still read `window.*` while context migration is in progress.
+- Context access: modules use `createContextAccessor()` from `js/shared/ContextAccessor.js` with `window.*` fallback.
 
 ## Domain Structure
 
@@ -47,7 +47,6 @@ This file is the source of truth for module layout and runtime wiring.
   - `combat/KillFeedback.js` - hit-stop and kill feedback application.
 - `js/audio/`
   - `SoundConfig.js` - centralized sound maps and configuration presets.
-  - `VoiceConfig.js` - centralized voice rate/pitch/volume presets.
   - `BeatClock.js` - rhythm timing and beat phase/intensity helpers.
   - `BeatTrack.js` - procedural beat backing track scheduler.
   - `AmbientSoundProfile.js` - ambient sound tags and source-position helpers.
@@ -75,7 +74,7 @@ This file is the source of truth for module layout and runtime wiring.
   - `EnemyFragmentExplosion.js` - enemy death fragment effect (extracted sub-handler).
   - `RadioactiveDebris.js`, `PlasmaCloud.js` - area damage effects.
 - `js/shared/`
-  - `contracts/DamageResult.js` - normalized damage/death result contract.
+  - `DamageResult.js` - normalized damage/death result contract.
   - `DamageResultHandler.js` - unified damage result handling (replaces 3 inline implementations).
   - `ObjectPool.js` - generic object pool with acquire/release (replaces per-system pool duplication).
   - `ContextAccessor.js` - shared `getContextValue()` factory for GameContext/window fallback lookup.
@@ -90,16 +89,16 @@ This file is the source of truth for module layout and runtime wiring.
 - Entities: `js/entities/*`
 - Systems: `js/systems/*`
 - Audio: `js/audio/`
-- Shared contracts: `js/shared/`
+- Shared: `js/shared/`
 - Testing: `js/testing/`
 - Audio/support still rooted by design: `js/Audio.js`, `js/RhythmFX.js`, `js/config.js`, `js/mathUtils.js`
-- Effects: `js/effects/` — FloatingTextPool, FloatingTextManager, EffectsManager, EnhancedExplosionManager (visual rings/particles), VisualEffectsManager, glowUtils, AreaDamageHandler, DashEffect.
+- Effects: `js/effects/` — FloatingTextPool, FloatingTextManager, VisualEffectsManager, glowUtils, AreaDamageHandler, DashEffect.
 - Explosions: `js/effects/explosions/` — ExplosionManager, Explosion, ExplosionConfig, EnemyFragmentExplosion, RadioactiveDebris, PlasmaCloud.
 
 ## Combat Contracts
 
 - Enemy `takeDamage` remains backward-compatible (legacy mixed return types).
-- New normalization layer: `normalizeDamageResult(...)` in `js/shared/contracts/DamageResult.js`.
+- Normalization layer: `normalizeDamageResult(...)` in `js/shared/DamageResult.js`.
 - Standardized result values:
   - `none`
   - `damaged`
@@ -109,8 +108,8 @@ This file is the source of truth for module layout and runtime wiring.
 
 ## Shared Utilities
 
-- `ObjectPool` (`js/shared/ObjectPool.js`): Generic acquire/release pool used by VisualEffectsManager, EffectsManager, and EnemyFragmentExplosion.
-- `createContextAccessor()` (`js/shared/ContextAccessor.js`): Factory for `getContextValue(key)` functions that check GameContext.get(), direct property access, then window globals. Used by CollisionSystem, EnemyDeathHandler, and BaseEnemy.
+- `ObjectPool` (`js/shared/ObjectPool.js`): Generic acquire/release pool used by VisualEffectsManager and EnemyFragmentExplosion.
+- `createContextAccessor()` (`js/shared/ContextAccessor.js`): Factory for `getContextValue(key)` functions that check GameContext.get(), direct property access, then window globals. Used by all entities, systems, Audio, and ExplosionManager.
 
 ## Migration Rules
 

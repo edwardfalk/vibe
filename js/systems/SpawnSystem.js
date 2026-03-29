@@ -4,6 +4,7 @@
 
 import { EnemyFactory } from '../entities/EnemyFactory.js';
 import { CONFIG } from '../config.js';
+import { createContextAccessor } from '../shared/ContextAccessor.js';
 import {
   max,
   min,
@@ -27,14 +28,7 @@ export class SpawnSystem {
     this.spawnIntervalDecreasePerLevel = 0.5; // Beats faster per level
 
     this.enemyFactory = new EnemyFactory(context);
-  }
-
-  getContextValue(key) {
-    if (this.context && typeof this.context.get === 'function') {
-      const val = this.context.get(key);
-      if (val !== undefined) return val;
-    }
-    return window[key];
+    this.getContextValue = createContextAccessor(() => this.context);
   }
 
   // Update spawning system (beat-aligned)

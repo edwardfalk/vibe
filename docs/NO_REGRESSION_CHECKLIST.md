@@ -4,7 +4,7 @@ This checklist is the release gate for the aggressive refactor program.
 
 ## Baseline Snapshot (2026-02-24)
 
-- `bun run test:mcp`: pass (`2 passed`, runtime ~9s). Immutable baseline.
+- `pnpm run test:mcp`: pass (`2 passed`, runtime ~9s). Immutable baseline.
 - Collision metrics probe (`window.collisionSystem.getPerformanceSnapshot()` after boot):
   - `frameSampleSize`: `220`
   - `latestFrame.enemiesAtFrameStart`: `2`
@@ -13,7 +13,7 @@ This checklist is the release gate for the aggressive refactor program.
 
 ## Latest Refactor Validation (2026-02-25)
 
-- `bun run test:mcp`: pass (`9 passed`, runtime ~29s).
+- `pnpm run test:mcp`: pass (`9 passed`, runtime ~29s).
 - ESLint on refactored files: pass.
 - Domain migration completed for canonical gameplay modules:
   - `js/core/GameState.js`
@@ -28,79 +28,79 @@ This checklist is the release gate for the aggressive refactor program.
 
 ## Phase 1 Quality Gate Recovery (2026-02-24)
 
-- `bun run lint`: pass (exit code 0).
-- `bun run test:mcp`: pass (`2 passed`, runtime ~10.5s).
+- `pnpm run lint`: pass (exit code 0).
+- `pnpm run test:mcp`: pass (`2 passed`, runtime ~10.5s).
 - Format + ESLint --fix applied to all listed files; no behavior changes.
 
 ## Phase 2 Runtime Decoupling Wave 1 (2026-02-24)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`2 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`2 passed`).
 - CollisionSystem: handleStabberAttack, handleRusherExplosion, hitStopFrames, testMode migrated to GameContext.
 - GameContext: added hitStopFrames, testModeManager to WINDOW_CONTEXT_KEYS.
 - CollisionSystem window.\* count: 49 → 2.
 
 ## Phase 2 Runtime Decoupling Wave 2 (2026-02-24)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`2 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`2 passed`).
 - ExplosionManager: beatClock, audio migrated to GameContext; constructor receives context.
 - ExplosionManager window.\* count: 10 → 0.
 
 ## Phase 2 Runtime Decoupling Wave 3 (2026-02-24)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`2 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`2 passed`).
 - EnemyFactory: audio resolved via context when passed from SpawnSystem.
 - SpawnSystem: receives gameContext, passes to EnemyFactory.
 
 ## Phase 2 Runtime Decoupling Wave 4 (2026-02-24)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`2 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`2 passed`).
 - SpawnSystem: all window refs replaced with getContextValue; gameContext.assign moved before restart for correct array refs.
 - SpawnSystem window.\* count: 21 → 0.
 
 ## Phase 2 Runtime Decoupling Wave 5 (2026-02-24)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`2 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`2 passed`).
 - BeatTrack: audio resolved via context; constructor receives gameContext.
 - BeatTrack window.\* count: 5 → 3 (remaining: browser AudioContext API).
 
 ## Phase 2 Runtime Decoupling Wave 6 (2026-02-24)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`2 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`2 passed`).
 - CameraSystem: player via \_getPlayer() from context; 4→1 ref.
 - BackgroundRenderer: beatClock via context; 5→4 refs.
 
 ## Phase 2 Runtime Decoupling Wave 7 (2026-02-24)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`2 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`2 passed`).
 - RhythmFX: beatClock via \_getBeatClock() from context; 4→1 ref.
 
 ## Phase 2 Runtime Decoupling Wave 8 (2026-02-24)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`2 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`2 passed`).
 - FloatingTextManager: beatClock via context; EnhancedExplosionManager: visualEffectsManager, cameraSystem via context.
 - VisualEffectsManager: beatClock via context; 4→1 ref.
 - EnemyUpdatePipeline: in-place splice on context.enemies; 2→0 refs.
 
 ## Phase 2 Runtime Decoupling Wave 9 (2026-02-24)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`5 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`5 passed`).
 - TestMode: enemies, playerBullets, gameState, audio, cameraSystem, spawnSystem via getContextValue; 31→0 refs.
 - GameContext: added spawnSystem to WINDOW_CONTEXT_KEYS.
 - GameState: fixed window.testMode → window.testModeManager?.enabled for auto-restart.
 
 ## Phase 2 Runtime Decoupling Wave 10 (2026-02-24)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`6 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`6 passed`).
 - BaseEnemy: added context param and getContextValue; EnemyFactory passes context.
 - Grunt, Rusher, Tank, Stabber: all window refs replaced with getContextValue (beatClock, audio, rhythmFX, collisionSystem, enemies, explosionManager, floatingText, cameraSystem, activeBombs, visualEffectsManager).
 - Player: context param; playerBullets, gameState, audio, beatClock via getContextValue.
@@ -112,14 +112,14 @@ This checklist is the release gate for the aggressive refactor program.
 
 ## Phase 5 Testing Hardening (2026-02-24)
 
-- `bun run test:mcp`: pass (`6 passed`, was 2).
+- `pnpm run test:mcp`: pass (`6 passed`, was 2).
 - Probes: liveness, game loop, collision API, score/health UI, game state, player input.
 - Smoke baseline expanded from 2 to 6 tests.
 
 ## Phase A Effects Migration (2026-02-25)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`9 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`9 passed`).
 - Root-level `effects.js`, `visualEffects.js`, `FloatingTextPool.js` migrated to `js/effects/`.
 - New modules: FloatingTextPool, FloatingTextManager, EffectsManager, EnhancedExplosionManager, VisualEffectsManager, glowUtils.
 - Barrel `js/effects/index.js` re-exports all.
@@ -131,16 +131,16 @@ This checklist is the release gate for the aggressive refactor program.
 
 ## Phase C Explosions Consolidation (2026-02-25)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`9 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`9 passed`).
 - `js/explosions/*` moved to `js/effects/explosions/`.
 - GameLoopSetup imports from `./effects/explosions/ExplosionManager.js`.
 - ARCHITECTURE.md Active Canonical Paths updated.
 
 ## Phase D Constants Extraction (2026-02-25)
 
-- `bun run lint`: pass.
-- `bun run test:mcp`: pass (`9 passed`).
+- `pnpm run lint`: pass.
+- `pnpm run test:mcp`: pass (`9 passed`).
 - Explosion.js: SHOCKWAVE_ALPHA_SCALE.
 - AuroraWisps.js: AURORA_WISP_BASE_SIZE, AURORA_WISP_MODULATION, AURORA_PHASE_SPEED.
 
@@ -151,14 +151,14 @@ This checklist is the release gate for the aggressive refactor program.
 - **Playwright config added**: `playwright.config.js` with auto-server, screenshots on failure, traces on failure.
 - **Vitest unit tests added**: 66 tests across 5 modules (mathUtils, BeatClock, GameState, GameContext, DamageResult).
 - **Dead files removed**: `debug.js`, `js/explosions/Explosion.js` (legacy duplicate), `.env.example`, unused deps.
-- **Test commands**: `bun run test:mcp` → `bun run test` (runs `test:e2e` + `test:unit`). Historical entries below use old `test:mcp` name.
-- `bun run test`: pass (9 e2e + 66 unit).
-- `bun run lint`: pass.
+- **Test commands**: `pnpm run test:mcp` → `pnpm run test` (runs `test:e2e` + `test:unit`). Historical entries below use old `test:mcp` name.
+- `pnpm run test`: pass (9 e2e + 66 unit).
+- `pnpm run lint`: pass.
 
 ## Mandatory Checks Per Refactor Wave
 
-- [ ] `bun run test` passes.
-- [ ] `bun run lint` passes (or only pre-existing unrelated issues remain).
+- [ ] `pnpm run test` passes.
+- [ ] `pnpm run lint` passes (or only pre-existing unrelated issues remain).
 - [ ] Canvas boot succeeds in browser (`canvas` visible within 30s).
 - [ ] Player input still works (`WASD`, shoot, arrow keys).
 - [ ] Enemy lifecycle intact (spawn, damage, death, cleanup).

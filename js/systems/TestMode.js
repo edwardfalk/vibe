@@ -6,6 +6,7 @@
 
 import { Bullet } from '../entities/bullet.js';
 import { CONFIG } from '../config.js';
+import { createContextAccessor } from '../shared/ContextAccessor.js';
 import {
   sin,
   cos,
@@ -26,6 +27,7 @@ export class TestMode {
     // Test mode state
     this.player = player;
     this.context = context;
+    this.getContextValue = createContextAccessor(() => this.context);
     this.enabled = false;
     this.timer = 0;
 
@@ -119,13 +121,6 @@ export class TestMode {
       halfSize,
       this.player.p.height - halfSize
     );
-  }
-
-  getContextValue(key) {
-    if (this.context && typeof this.context.get === 'function') {
-      return this.context.get(key);
-    }
-    return typeof window !== 'undefined' ? window[key] : undefined;
   }
 
   // Move player to corners in sequence

@@ -3,6 +3,7 @@
 import { CONFIG } from '../config.js';
 import { Bullet } from './bullet.js';
 import { max, atan2, sin } from '../mathUtils.js';
+import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import { drawPlayerDashEffect } from '../effects/DashEffect.js';
 import { updateDash, tryStartDash } from './PlayerDash.js';
@@ -61,14 +62,7 @@ export class Player {
     this.bandanaColor = this.p.color(139, 69, 19); // Brown bandana
 
     this.context = context;
-    // Speech is now handled by unified Audio system
-  }
-
-  getContextValue(key) {
-    if (this.context && typeof this.context.get === 'function') {
-      return this.context.get(key);
-    }
-    return typeof window !== 'undefined' ? window[key] : undefined;
+    this.getContextValue = createContextAccessor(() => this.context);
   }
 
   update(deltaTimeMs) {

@@ -2,7 +2,7 @@ import { sqrt, max, floor, atan2, cos, sin } from '../mathUtils.js';
 import {
   DAMAGE_RESULT,
   normalizeDamageResult,
-} from '../shared/contracts/DamageResult.js';
+} from '../shared/DamageResult.js';
 
 const BOMB_EXPLOSION_RADIUS = 250;
 const MIN_PLAYER_BOMB_DAMAGE = 10;

@@ -28,7 +28,7 @@ vi.mock('../../js/entities/BaseEnemyHelpers.js', () => ({
 }));
 
 import { Rusher } from '../../js/entities/Rusher.js';
-import { DAMAGE_RESULT } from '../../js/shared/contracts/DamageResult.js';
+import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
 
 /**
  * Create a minimal mock p5 instance.

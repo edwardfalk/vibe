@@ -51,6 +51,7 @@
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { random, randomRange, floor } from './mathUtils.js';
+import { createContextAccessor } from './shared/ContextAccessor.js';
 import { drawGlow } from './effects/glowUtils.js';
 import {
   AMBIENT_SOUNDS,
@@ -68,9 +69,8 @@ import {
   isAggressiveText as isAggressiveTextHelper,
   isConfusedText as isConfusedTextHelper,
 } from './audio/TextSemantics.js';
-import { CONFIG } from './config.js';
+import { CONFIG, VOICE_CONFIG } from './config.js';
 import { SOUND_CONFIG, SOUND_METHOD_TO_KEY } from './audio/SoundConfig.js';
-import { VOICE_CONFIG } from './audio/VoiceConfig.js';
 import { SPEECH_WRAPPER_CONFIG } from './audio/SpeechWrappers.js';
 
 export class Audio {
@@ -125,15 +125,7 @@ export class Audio {
     this.context = context;
   }
 
-  getContextValue(key) {
-    if (this.context && typeof this.context.get === 'function') {
-      return this.context.get(key);
-    }
-    if (this.context && key in this.context) {
-      return this.context[key];
-    }
-    return window[key];
-  }
+  getContextValue = createContextAccessor(() => this.context);
 
   bindConvenienceSoundMethods() {
     for (const [methodName, soundKey] of Object.entries(SOUND_METHOD_TO_KEY)) {
@@ -166,8 +158,9 @@ export class Audio {
     if (this.initialized) return;
 
     try {
-      this.audioContext = new (window.AudioContext ||
-        window.webkitAudioContext)();
+      this.audioContext = new (
+        window.AudioContext || window.webkitAudioContext
+      )();
       this.masterGain = this.audioContext.createGain();
 
       // Master limiter to prevent clipping from concurrent sounds

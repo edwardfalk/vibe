@@ -9,12 +9,12 @@
 
 ## Commands
 
-- `bun run test` — run all tests (e2e + unit).
-- `bun run test:e2e` — run Playwright gameplay probes (auto-starts dev server via `playwright.config.js` webServer).
-- `bun run test:e2e:headed` — headed Playwright run for visual debugging.
-- `bun run test:e2e:debug` — Playwright debug mode with inspector.
-- `bun run test:unit` — run Vitest unit tests.
-- `bun run test:unit:watch` — run Vitest in watch mode during development.
+- `pnpm run test` — run all tests (e2e + unit).
+- `pnpm run test:e2e` — run Playwright gameplay probes (auto-starts dev server via `playwright.config.js` webServer).
+- `pnpm run test:e2e:headed` — headed Playwright run for visual debugging.
+- `pnpm run test:e2e:debug` — Playwright debug mode with inspector.
+- `pnpm run test:unit` — run Vitest unit tests.
+- `pnpm run test:unit:watch` — run Vitest in watch mode during development.
 
 ## E2E Gameplay Probes
 
@@ -50,6 +50,6 @@
 
 After each structural refactor wave:
 
-1. `bun run test` (all tests)
-2. `bun run lint`
+1. `pnpm run test` (all tests)
+2. `pnpm run lint`
 3. Verify `docs/NO_REGRESSION_CHECKLIST.md` items.

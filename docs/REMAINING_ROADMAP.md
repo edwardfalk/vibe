@@ -9,16 +9,16 @@ It is written for the next stateless AI agent and should be treated as the worki
 ## Current Baseline (Observed)
 
 - Architecture migration is complete for core/entity/system runtime modules: canonical gameplay paths are now domain-aligned under `js/core`, `js/entities`, and `js/systems`.
-- Test gate passes: `bun run test` (9 e2e + 66 unit tests).
-- Lint gate passes: `bun run lint` (Phase 1 complete).
+- Test gate passes: `pnpm run test` (9 e2e + 66 unit tests).
+- Lint gate passes: `pnpm run lint` (Phase 1 complete).
 - Runtime global coupling reduced: CollisionSystem, ExplosionManager, EnemyFactory, SpawnSystem migrated to context; others remain.
 
 ## Definition of Done
 
 All items below are considered complete only when:
 
-1. `bun run lint` passes.
-2. `bun run test` passes.
+1. `pnpm run lint` passes.
+2. `pnpm run test` passes.
 3. No gameplay regression from `docs/NO_REGRESSION_CHECKLIST.md`.
 4. `ARCHITECTURE.md` matches actual module locations and ownership.
 5. No new module introduces direct `window.*` coupling when context injection is possible.
@@ -55,13 +55,13 @@ All items below are considered complete only when:
 
 ### Deliverables
 
-- `bun run lint` returns exit code `0`.
+- `pnpm run lint` returns exit code `0`.
 - No behavior changes while fixing formatting/`prefer-const` issues.
 
 ### Verification
 
-- `bun run lint`
-- `bun run test`
+- `pnpm run lint`
+- `pnpm run test`
 
 ### Notes
 
@@ -106,7 +106,7 @@ Target modules still showing notable global coupling (priority order):
 ### Verification
 
 - `rg "window\\." js` trend decreases after each wave.
-- `bun run test`
+- `pnpm run test`
 - Manual spot checks from `NO_REGRESSION_CHECKLIST.md` (input, enemy lifecycle, scoring, bomb flow).
 
 ---
@@ -129,8 +129,8 @@ Completed migration wave:
 
 ### Verification
 
-- `bun run test`
-- `bun run lint`
+- `pnpm run test`
+- `pnpm run lint`
 - `rg "from './"` checks in moved modules for broken relative imports.
 - Browser boot sanity check (`canvas` appears within 30s).
 
@@ -152,7 +152,7 @@ Completed migration wave:
 
 ### Verification
 
-- `bun run test`
+- `pnpm run test`
 - `bunx eslint js/Audio.js js/audio/*.js`
 - Runtime smoke of speech + positional audio behavior.
 
@@ -176,8 +176,8 @@ Completed migration wave:
 
 ### Verification
 
-- `bun run test`
-- `bun run test:playwright` (full suite)
+- `pnpm run test`
+- `pnpm run test:playwright` (full suite)
 - Artifact capture remains enabled on failure.
 
 ---
@@ -209,7 +209,7 @@ Completed migration wave:
 - Work in small waves (1-3 files or one subsystem at a time).
 - After every wave:
   1. run targeted lint for touched files.
-  2. run `bun run test`.
+  2. run `pnpm run test`.
   3. update `ARCHITECTURE.md` if structure changed.
   4. append results to `docs/NO_REGRESSION_CHECKLIST.md` "Latest Refactor Validation".
 
