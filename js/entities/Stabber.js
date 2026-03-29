@@ -359,6 +359,11 @@ class Stabber extends BaseEnemy {
       console.log(`⚡ Stabber knocked back! Knockback: ${knockbackForce}`);
     }
 
+    const audio = this.getContextValue('audio');
+    if (audio) {
+      audio.playSound('stabberHit', this.x, this.y);
+    }
+
     return super.takeDamage(actualDamage, bulletAngle, damageSource);
   }
 
