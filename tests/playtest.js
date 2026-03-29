@@ -29,16 +29,16 @@ const bootGame = async (page) => {
  * Each pattern is [keys[], durationMs].
  */
 const MOVEMENT_PATTERNS = [
-  [['d', ' '], 800],       // Move right, shoot
-  [['w', 'd', ' '], 600],  // Move up-right, shoot
-  [['w', ' '], 500],       // Move up, shoot
-  [['w', 'a', ' '], 600],  // Move up-left, shoot
-  [['a', ' '], 800],       // Move left, shoot
-  [['s', 'a', ' '], 600],  // Move down-left, shoot
-  [['s', ' '], 500],       // Move down, shoot
-  [['s', 'd', ' '], 600],  // Move down-right, shoot
-  [[' '], 400],            // Stand and shoot
-  [['d'], 300],            // Move without shooting
+  [['d', ' '], 800], // Move right, shoot
+  [['w', 'd', ' '], 600], // Move up-right, shoot
+  [['w', ' '], 500], // Move up, shoot
+  [['w', 'a', ' '], 600], // Move up-left, shoot
+  [['a', ' '], 800], // Move left, shoot
+  [['s', 'a', ' '], 600], // Move down-left, shoot
+  [['s', ' '], 500], // Move down, shoot
+  [['s', 'd', ' '], 600], // Move down-right, shoot
+  [[' '], 400], // Stand and shoot
+  [['d'], 300], // Move without shooting
 ];
 
 /**
