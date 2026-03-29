@@ -76,8 +76,22 @@ export class BeatTrack {
     this.masterGain.connect(this.ctx.destination);
 
     this.nextNoteTime = this.ctx.currentTime + 0.05;
+    this._startTime = this.nextNoteTime;
+    this._totalEighths = 0;
     this.currentEighth = 0;
     this.isPlaying = true;
+
+    // Pre-create reusable noise buffer for Level 5+ downbeat transients
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.03); // 30ms
+    this._noiseBuffer = this.ctx.createBuffer(
+      1,
+      bufferSize,
+      this.ctx.sampleRate
+    );
+    const data = this._noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
 
     this._scheduler();
     console.log('🎵 BeatTrack started');
@@ -102,6 +116,11 @@ export class BeatTrack {
     this.bpm = bpm;
     this.beatDuration = 60 / bpm;
     this.eighthDuration = this.beatDuration / 2;
+    // Reset accumulator to avoid drift across BPM changes
+    if (this.ctx) {
+      this._startTime = this.ctx.currentTime;
+      this._totalEighths = 0;
+    }
   }
 
   // -- Scheduler ----------------------------------------------------------
@@ -111,7 +130,9 @@ export class BeatTrack {
 
     while (this.nextNoteTime < this.ctx.currentTime + SCHEDULE_AHEAD_SEC) {
       this._scheduleNote(this.nextNoteTime, this.currentEighth);
-      this.nextNoteTime += this.eighthDuration;
+      this._totalEighths++;
+      this.nextNoteTime =
+        this._startTime + this._totalEighths * this.eighthDuration;
       this.currentEighth = (this.currentEighth + 1) % EIGHTH_NOTES_PER_MEASURE;
     }
 
@@ -171,20 +192,10 @@ export class BeatTrack {
       harmonicOsc.stop(time + duration);
     }
 
-    // Level 5+: Add noise transient on downbeats
-    if (this.level >= 5 && isDownbeat && this.ctx) {
-      const bufferSize = this.ctx.sampleRate * 0.03; // 30ms
-      const noiseBuffer = this.ctx.createBuffer(
-        1,
-        bufferSize,
-        this.ctx.sampleRate
-      );
-      const data = noiseBuffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
-      }
+    // Level 5+: Add noise transient on downbeats (reuses pre-created buffer)
+    if (this.level >= 5 && isDownbeat && this.ctx && this._noiseBuffer) {
       const noiseSource = this.ctx.createBufferSource();
-      noiseSource.buffer = noiseBuffer;
+      noiseSource.buffer = this._noiseBuffer;
 
       const noiseFilter = this.ctx.createBiquadFilter();
       noiseFilter.type = 'lowpass';

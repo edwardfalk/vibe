@@ -364,6 +364,12 @@ class Rusher extends BaseEnemy {
    * Override takeDamage to handle explosion trigger
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
+    // Immune during explosion sequence — committed to exploding
+    if (this.vibrating || this.exploding) {
+      this.hitFlash = 8;
+      return DAMAGE_RESULT.EXPLODING;
+    }
+
     const audio = this.getContextValue('audio');
     if (audio) {
       audio.playSound('rusherHit', this.x, this.y);

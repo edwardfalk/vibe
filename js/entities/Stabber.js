@@ -330,7 +330,7 @@ class Stabber extends BaseEnemy {
       this.stabWarningTime = 0;
       this.isStabbing = false;
       this.stabAnimationTime = 0;
-      this.stabDirection = null;
+      // stabDirection preserved for recovery slide; reset in next handlePreparingPhase
 
       // Enter recovery state after interruption
       this.stabRecovering = true;

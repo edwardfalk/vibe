@@ -123,11 +123,13 @@ export function runSetup(p, arrays, syncContext = null) {
         window.beatClock &&
         !window.beatClock.audioContext
       ) {
-        // Preserve beat position across clock source switch
-        const oldElapsed = Date.now() - window.beatClock.startTime;
+        // Preserve beat position across Date.now → AudioContext epoch switch.
+        // Capture both clocks as close together as possible to minimize drift.
+        const audioNow = this.audioContext.currentTime * 1000;
+        const dateNow = Date.now();
+        const oldElapsed = dateNow - window.beatClock.startTime;
         window.beatClock.audioContext = this.audioContext;
-        window.beatClock.startTime =
-          this.audioContext.currentTime * 1000 - oldElapsed;
+        window.beatClock.startTime = audioNow - oldElapsed;
         window.beatClock.update(true);
         console.log('🎵 BeatClock synced to AudioContext (phase preserved)');
       }

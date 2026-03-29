@@ -68,12 +68,12 @@ export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
   const bShift = p.constrain(timeShift * 0.8 + downbeatIntensity * 40, 0, 255);
   const overlayAlpha = 25 + beatIntensity * 50 + downbeatIntensity * 60;
 
-  const prevBlendMode = p.drawingContext.globalCompositeOperation;
+  p.push();
   p.blendMode(p.BLEND);
   p.fill(rShift, gShift, bShift, overlayAlpha);
   p.noStroke();
   p.rect(0, 0, p.width, p.height);
-  p.drawingContext.globalCompositeOperation = prevBlendMode;
+  p.pop();
 
   p.pop();
 }

@@ -102,7 +102,7 @@ function handleStabberAttackResult(result, context) {
     const targetEnemy = hit.enemy;
 
     const damageResult = handleDamageResult(
-      targetEnemy.takeDamage(hit.damage, hit.angle, 'stabber'),
+      targetEnemy.takeDamage(hit.damage, hit.angle, 'stabber_melee'),
       targetEnemy,
       {
         explosionManager,
@@ -134,11 +134,11 @@ function handleStabberAttackResult(result, context) {
 export function updateEnemiesAndResolveResults(context) {
   const { enemies, enemyBullets, player, deltaTimeMs } = context;
 
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    const enemy = enemies[i];
+  let write = 0;
+  for (let read = 0; read < enemies.length; read++) {
+    const enemy = enemies[read];
 
     if (enemy.markedForRemoval) {
-      enemies.splice(i, 1);
       continue;
     }
 
@@ -148,26 +148,27 @@ export function updateEnemiesAndResolveResults(context) {
       deltaTimeMs
     );
 
-    if (!result) continue;
-
-    if (result.type === 'rusher-explosion') {
-      handleRusherExplosionResult(result, enemy, context);
-      continue;
+    if (result) {
+      if (result.type === 'rusher-explosion') {
+        handleRusherExplosionResult(result, enemy, context);
+      } else if (typeof result.checkCollision === 'function') {
+        enemyBullets.push(result);
+        console.log(
+          `➕ Added enemy bullet to array: ${result.owner} at (${Math.round(result.x)}, ${Math.round(result.y)}) - Total: ${enemyBullets.length}`
+        );
+      } else if (
+        result.type === 'stabber-melee' ||
+        result.type === 'stabber-miss'
+      ) {
+        handleStabberAttackResult(result, context);
+      } else {
+        console.warn(`⚠️ Unknown object returned from enemy update:`, result);
+      }
     }
 
-    if (typeof result.checkCollision === 'function') {
-      enemyBullets.push(result);
-      console.log(
-        `➕ Added enemy bullet to array: ${result.owner} at (${Math.round(result.x)}, ${Math.round(result.y)}) - Total: ${enemyBullets.length}`
-      );
-      continue;
+    if (!enemy.markedForRemoval) {
+      enemies[write++] = enemy;
     }
-
-    if (result.type === 'stabber-melee' || result.type === 'stabber-miss') {
-      handleStabberAttackResult(result, context);
-      continue;
-    }
-
-    console.warn(`⚠️ Unknown object returned from enemy update:`, result);
   }
+  enemies.length = write;
 }

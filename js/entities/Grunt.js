@@ -204,7 +204,11 @@ class Grunt extends BaseEnemy {
           } else if (!this.shouldAvoidFriendlyFire()) {
             // Fire!
             this.muzzleFlash = 4;
-            window.gruntFireBeat = currentTotalBeat;
+            if (this.context && typeof this.context.set === 'function') {
+              this.context.set('gruntFireBeat', currentTotalBeat);
+            } else {
+              window.gruntFireBeat = currentTotalBeat;
+            }
             return this.createBullet();
           }
         }
@@ -255,11 +259,11 @@ class Grunt extends BaseEnemy {
           Math.PI * 2 - angleDifference
         );
 
-        // If other enemy is within 15 degrees of aim angle, consider avoiding
-        if (normalizedAngleDiff < Math.PI / 12) {
-          // 15 degrees
-          // 70% chance to avoid shooting (grunts try to avoid but aren't perfect)
-          if (random() < 0.7) {
+        // If other enemy is within 20 degrees of aim angle, consider avoiding
+        if (normalizedAngleDiff < Math.PI / 9) {
+          // 20 degrees
+          // 45% chance to avoid shooting (grunts try to avoid but aren't perfect)
+          if (random() < 0.45) {
             if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
               console.log(
                 `🎖️ Grunt avoiding friendly fire - ${otherEnemy.type} in line of fire`
@@ -387,6 +391,9 @@ class Grunt extends BaseEnemy {
         `[GRUNT DEBUG] takeDamage called: health(before)=${this.health}, amount=${amount}, markedForRemoval=${this.markedForRemoval}, damageSource=${damageSource}`
       );
     }
+    // Reject further damage while deferred death is pending
+    if (this.pendingStabDeath) return false;
+
     if (
       damageSource === 'stabber_melee' &&
       this.health > 0 &&
@@ -416,8 +423,8 @@ class Grunt extends BaseEnemy {
         this.pendingStabDeathTimer = 12; // ~200ms at 60fps
         this._pendingStabDeathParams = { amount, bulletAngle, damageSource };
       }
-      // FIXED: Return true if this would kill the grunt, false otherwise
-      return amount >= this.health;
+      // Signal DAMAGED (not DIED) — deferred timer handles death exclusively
+      return false;
     }
     const died = super.takeDamage(amount, bulletAngle, damageSource);
     if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {

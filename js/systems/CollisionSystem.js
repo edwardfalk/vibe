@@ -27,6 +27,15 @@ import {
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { applyKillFeedback } from './combat/KillFeedback.js';
 
+// Single-pass compaction: O(n) instead of O(n²) from repeated splice
+function compactArray(arr) {
+  let write = 0;
+  for (let read = 0; read < arr.length; read++) {
+    if (!arr[read]._remove) arr[write++] = arr[read];
+  }
+  arr.length = write;
+}
+
 export class CollisionSystem {
   constructor(context = null) {
     // Collision detection settings
@@ -51,6 +60,13 @@ export class CollisionSystem {
     this.checkPlayerBulletsVsEnemies(enemySpatialGrid);
     this.checkEnemyBulletsVsPlayer();
     this.checkEnemyBulletsVsEnemies(enemySpatialGrid);
+
+    // Compact bullet arrays after all collision checks (mark-and-compact)
+    const playerBullets = this.getContextValue('playerBullets');
+    const enemyBullets = this.getContextValue('enemyBullets');
+    if (playerBullets) compactArray(playerBullets);
+    if (enemyBullets) compactArray(enemyBullets);
+
     this.finalizeCollisionMetricsFrame();
   }
 
@@ -94,6 +110,7 @@ export class CollisionSystem {
 
     for (let i = playerBullets.length - 1; i >= 0; i--) {
       const bullet = playerBullets[i];
+      if (bullet._remove) continue;
       const candidateEnemyIndices = enemySpatialGrid
         ? queryNearbyEnemyIndices(enemySpatialGrid, bullet)
         : (() => {
@@ -212,7 +229,7 @@ export class CollisionSystem {
       console.log(`[DEBUG] Removing bullet at index ${bulletIndex} after hit`);
     }
     Bullet.release(bullet);
-    playerBullets.splice(bulletIndex, 1);
+    bullet._remove = true;
     return true;
   }
 
@@ -226,6 +243,7 @@ export class CollisionSystem {
 
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const bullet = enemyBullets[i];
+      if (bullet._remove) continue;
 
       // Check player collision
       if (bullet.checkCollision(player)) {
@@ -255,7 +273,7 @@ export class CollisionSystem {
           }
         }
         Bullet.release(bullet);
-        enemyBullets.splice(i, 1);
+        bullet._remove = true;
         break; // Exit loop since bullet hit player
       }
     }
@@ -269,6 +287,7 @@ export class CollisionSystem {
 
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const bullet = enemyBullets[i];
+      if (bullet._remove) continue;
       const candidateEnemyIndices = enemySpatialGrid
         ? queryNearbyEnemyIndices(enemySpatialGrid, bullet)
         : (() => {
@@ -347,11 +366,11 @@ export class CollisionSystem {
       bullet.energy = energy - energyCost;
       if (bullet.energy <= 0) {
         Bullet.release(bullet);
-        enemyBullets.splice(bulletIndex, 1);
+        bullet._remove = true;
       }
     } else {
       Bullet.release(bullet);
-      enemyBullets.splice(bulletIndex, 1);
+      bullet._remove = true;
     }
   }
 
@@ -407,7 +426,7 @@ export class CollisionSystem {
       );
     }
     Bullet.release(bullet);
-    enemyBullets.splice(bulletIndex, 1);
+    bullet._remove = true;
   }
 
   // Handle enemy death effects

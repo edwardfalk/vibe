@@ -254,7 +254,7 @@ export class BeatClock {
   // No-op update method for compatibility with GameLoop
   update(force = false) {
     const now = this._now();
-    if (!force && now === this.cache.timestamp) return;
+    if (!force && Math.abs(now - this.cache.timestamp) < 0.1) return;
 
     const elapsed = now - this.startTime;
     const totalBeats = Math.floor(elapsed / this.beatInterval);

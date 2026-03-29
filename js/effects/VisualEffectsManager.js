@@ -24,7 +24,9 @@ class VisualEffectsManager {
     this.auroras = [];
 
     this.bloomIntensity = 0;
+    this._bloomFramesLeft = 0;
     this.chromaticAberration = 0;
+    this._chromaticFramesLeft = 0;
     this.timeOffset = 0;
     this.initialized = false;
     this.initFailed = false;
@@ -172,13 +174,13 @@ class VisualEffectsManager {
       p.translate(parallaxX, parallaxY);
       p.rotate(aurora.angle);
       p.noStroke();
-      for (let i = 0; i < aurora.width; i += 20) {
-        for (let j = 0; j < aurora.height; j += 20) {
+      for (let i = 0; i < aurora.width; i += 40) {
+        for (let j = 0; j < aurora.height; j += 40) {
           const wave =
             sin(i * 0.01 + aurora.phase) * sin(j * 0.01 + aurora.phase);
           const alpha = p.map(wave, -1, 1, 2, aurora.intensity * 15);
           p.fill(aurora.color[0], aurora.color[1], aurora.color[2], alpha);
-          p.ellipse(i - aurora.width / 2, j - aurora.height / 2, 8, 8);
+          p.ellipse(i - aurora.width / 2, j - aurora.height / 2, 14, 14);
         }
       }
       p.pop();
@@ -419,6 +421,16 @@ class VisualEffectsManager {
     }
 
     this.timeOffset++;
+
+    // Decay frame-based screen effects
+    if (this._chromaticFramesLeft > 0) {
+      this._chromaticFramesLeft--;
+      if (this._chromaticFramesLeft <= 0) this.chromaticAberration = 0;
+    }
+    if (this._bloomFramesLeft > 0) {
+      this._bloomFramesLeft--;
+      if (this._bloomFramesLeft <= 0) this.bloomIntensity = 0;
+    }
   }
 
   drawParticles(p) {
@@ -478,26 +490,14 @@ class VisualEffectsManager {
     p.pop();
   }
 
-  triggerChromaticAberration(intensity = 0.5, duration = 30) {
-    if (this.chromaticAberrationTimer) {
-      clearTimeout(this.chromaticAberrationTimer);
-    }
+  triggerChromaticAberration(intensity = 0.5, durationFrames = 30) {
     this.chromaticAberration = intensity;
-    this.chromaticAberrationTimer = setTimeout(() => {
-      this.chromaticAberration = 0;
-      this.chromaticAberrationTimer = null;
-    }, duration * 16.67);
+    this._chromaticFramesLeft = durationFrames;
   }
 
-  triggerBloom(intensity = 0.3, duration = 20) {
-    if (this.bloomTimer) {
-      clearTimeout(this.bloomTimer);
-    }
+  triggerBloom(intensity = 0.3, durationFrames = 20) {
     this.bloomIntensity = intensity;
-    this.bloomTimer = setTimeout(() => {
-      this.bloomIntensity = 0;
-      this.bloomTimer = null;
-    }, duration * 16.67);
+    this._bloomFramesLeft = durationFrames;
   }
 }
 

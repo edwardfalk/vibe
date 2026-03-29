@@ -313,6 +313,9 @@ export function drawMediumStarsLayer(stars, p, beatClock = null) {
   const measurePhase = beatClock ? beatClock.getMeasurePhase() : 0;
 
   p.noStroke();
+  // beatPulse is constant for the entire call; set shadowBlur once before loop
+  const shadowBlurCandidate = 5 + beatPulse * 20;
+  p.drawingContext.shadowBlur = Math.max(0, shadowBlurCandidate);
   let starIndex = 0;
   for (const star of stars) {
     const { alpha, finalSize, combinedBrightness } = computeMediumStarVisual(
@@ -341,10 +344,6 @@ export function drawMediumStarsLayer(stars, p, beatClock = null) {
       }
     }
 
-    // Note: beatPulse from getBeatReactiveValues() is typically in [0,1],
-    // but we clamp shadowBlur and currentSize defensively.
-    const shadowBlurCandidate = 5 + beatPulse * 20;
-    p.drawingContext.shadowBlur = Math.max(0, shadowBlurCandidate);
     const currentSizeCandidate = finalSize + beatPulse * 2;
     const currentSize = Math.max(1, currentSizeCandidate);
     p.ellipse(star.x, star.y, currentSize, currentSize);

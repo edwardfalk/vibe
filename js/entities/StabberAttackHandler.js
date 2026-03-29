@@ -97,7 +97,7 @@ function handleRecoveryPhase(stabber, dt) {
   }
 
   // Recovery ends at next beat 3.5 (with minimum recovery time)
-  const minRecoveryFrames = 60; // ~1 second minimum
+  const minRecoveryFrames = 90; // ~1.5 second minimum
   const beatClock = stabber.getContextValue('beatClock');
   if (stabber.stabRecoveryTime >= minRecoveryFrames) {
     if (!beatClock || beatClock.canStabberAttack()) {

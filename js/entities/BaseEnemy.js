@@ -95,11 +95,11 @@ export class BaseEnemy {
    * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
    */
   update(playerX, playerY, deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
-    // Update animation frame
-    this.animFrame += 0.1;
-
     // Normalize deltaTime to 60fps baseline for frame-independent behavior
     const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
+
+    // Update animation frame (delta-aware)
+    this.animFrame += 0.1 * dt;
 
     // Decrease cooldowns using deltaTime
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
@@ -328,9 +328,8 @@ export class BaseEnemy {
       this.drawArms(s, p);
       this.drawWeapon(s, p);
     } finally {
-      p.pop();
-
       if (p.drawingContext) p.drawingContext.globalAlpha = prevAlpha;
+      p.pop();
     }
 
     // Draw UI elements
