@@ -72,7 +72,7 @@ export class RhythmFX {
     for (let i = this.telegraphs.length - 1; i >= 0; i--) {
       const t = this.telegraphs[i];
       t.beatsUntil -= beatsPerFrame;
-      t.intensity *= Math.pow(0.98, deltaTimeMs / 16.67);
+      // Telegraph intensity is now driven solely by beat-based beatsUntil decay
       if (t.beatsUntil <= 0 || t.intensity < 0.01) {
         this.telegraphs.splice(i, 1);
       }
