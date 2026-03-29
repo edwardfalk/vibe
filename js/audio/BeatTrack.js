@@ -32,6 +32,9 @@ export class BeatTrack {
 
     // Enemy count for dynamic volume scaling
     this._enemyCount = 0;
+
+    // Level tracking for pulse evolution
+    this.level = 1;
   }
 
   _getAudio() {
@@ -139,17 +142,61 @@ export class BeatTrack {
     // Scale volume: quieter when many enemies (their sounds carry the beat)
     const enemyFactor = Math.max(0.3, 1.0 - (this._enemyCount || 0) * 0.1);
     const volume = (isDownbeat ? 0.15 : 0.08) * enemyFactor;
+    const duration = 0.15;
     gain.gain.setValueAtTime(volume, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
 
     osc.connect(gain);
     gain.connect(this.masterGain);
     osc.onended = () => { osc.disconnect(); gain.disconnect(); };
     osc.start(time);
-    osc.stop(time + 0.15);
+    osc.stop(time + duration);
+
+    // Level 3+: Add octave harmonic
+    if (this.level >= 3 && this.ctx) {
+      const harmonicOsc = this.ctx.createOscillator();
+      const harmonicGain = this.ctx.createGain();
+      harmonicOsc.type = 'sine';
+      harmonicOsc.frequency.setValueAtTime(100, time);
+      harmonicGain.gain.setValueAtTime(volume * 0.3, time);
+      harmonicGain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+      harmonicOsc.connect(harmonicGain);
+      harmonicGain.connect(this.masterGain);
+      harmonicOsc.start(time);
+      harmonicOsc.stop(time + duration);
+    }
+
+    // Level 5+: Add noise transient on downbeats
+    if (this.level >= 5 && isDownbeat && this.ctx) {
+      const bufferSize = this.ctx.sampleRate * 0.03; // 30ms
+      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noiseSource = this.ctx.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
+
+      const noiseFilter = this.ctx.createBiquadFilter();
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(40, time);
+
+      const noiseGain = this.ctx.createGain();
+      noiseGain.gain.setValueAtTime(volume * 0.5, time);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(this.masterGain);
+      noiseSource.start(time);
+    }
   }
 
   setEnemyCount(count) {
     this._enemyCount = count;
+  }
+
+  setLevel(level) {
+    this.level = level;
   }
 }

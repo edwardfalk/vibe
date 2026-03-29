@@ -71,6 +71,11 @@ export class GameState {
         `🎉 LEVEL UP! Now level ${this.level}. Next level at ${this.nextLevelThreshold} points (need ${nextLevelIncrease} more)`
       );
 
+      // Notify BeatTrack of level change for pulse evolution
+      if (window.beatTrack && window.beatTrack.setLevel) {
+        window.beatTrack.setLevel(this.level);
+      }
+
       // Trigger level up effects
       if (window.cameraSystem) {
         window.cameraSystem.addShake(15, 30);
@@ -198,6 +203,11 @@ export class GameState {
       window.explosionManager.explosions = [];
       window.explosionManager.plasmaClouds = [];
       window.explosionManager.radioactiveDebris = [];
+    }
+
+    // Reset BeatTrack to level 1
+    if (window.beatTrack && window.beatTrack.setLevel) {
+      window.beatTrack.setLevel(1);
     }
 
     // Reset spawning
