@@ -161,6 +161,10 @@ export function runSetup(p, arrays, syncContext = null) {
     window.beatTrack = new BeatTrack(DEFAULT_BPM, gameContext);
   }
 
+  if (window.audio && window.audio.startDrone) {
+    window.audio.startDrone();
+  }
+
   if (window.spawnSystem) {
     window.spawnSystem.spawnEnemies(1);
   }

@@ -183,6 +183,9 @@ class Tank extends BaseEnemy {
         console.log('💥 Tank firing charged shot!');
         if (audioTank) {
           audioTank.speak(this, 'FIRE!', 'tank');
+          if (audioTank.duckDrone) {
+            audioTank.duckDrone(500);
+          }
         }
 
         return this.createBullet();
@@ -460,8 +463,10 @@ class Tank extends BaseEnemy {
    * Override takeDamage to handle armor and anger system
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
+    const audio = this.getContextValue('audio');
     if (bulletAngle === null) {
       console.log('🎯 Tank Main Body Hit (no angle info)!');
+      if (audio) audio.playSound('tankHit', this.x, this.y);
       const died = super.takeDamage(amount, bulletAngle, damageSource);
       if (died) console.log('💀 Tank Died (main health depleted).');
       return died;
@@ -478,16 +483,19 @@ class Tank extends BaseEnemy {
     if (armorResult?.overflowAmount !== undefined) {
       if (armorResult.plate) spawnArmorBreakEffect(this, armorResult.plate);
       handleAngerForDamage(this, damageSource, armorResult.overflowAmount);
-      return armorResult.overflowAmount > 0
-        ? super.takeDamage(
-            armorResult.overflowAmount,
-            bulletAngle,
-            damageSource
-          )
-        : false;
+      if (armorResult.overflowAmount > 0) {
+        if (audio) audio.playSound('tankHit', this.x, this.y);
+        return super.takeDamage(
+          armorResult.overflowAmount,
+          bulletAngle,
+          damageSource
+        );
+      }
+      return false;
     }
 
     console.log(`🎯 Tank Main Body Hit!`);
+    if (audio) audio.playSound('tankHit', this.x, this.y);
     handleAngerForDamage(this, damageSource, amount);
     const died = super.takeDamage(amount, bulletAngle, damageSource);
     if (died) console.log('💀 Tank Died (main health depleted).');

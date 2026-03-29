@@ -27,6 +27,10 @@ export const SOUND_METHOD_TO_KEY = {
   playGruntError: 'gruntError',
   playGruntGlitch: 'gruntGlitch',
   playGruntOw: 'gruntOw',
+  playGruntHit: 'gruntHit',
+  playTankHit: 'tankHit',
+  playStabberHit: 'stabberHit',
+  playRusherHit: 'rusherHit',
   playGruntPop: 'gruntPop',
   playEnemyOhNo: 'enemyOhNo',
   playStabberOhNo: 'stabberOhNo',
@@ -42,11 +46,15 @@ export const SOUND_METHOD_TO_KEY = {
   playGameOver: 'gameOver',
   playLowHealthWarning: 'lowHealthWarning',
   playKillStreak: 'killStreak',
+  playGruntResponse: 'gruntResponse',
+  playTankResponse: 'tankResponse',
+  playStabberResponse: 'stabberResponse',
+  playRusherResponse: 'rusherResponse',
 };
 
 export const SOUND_CONFIG = {
   playerShoot: {
-    frequency: 480,
+    frequency: 220,
     waveform: 'sawtooth',
     volume: 0.2,
     duration: 0.01,
@@ -72,7 +80,7 @@ export const SOUND_CONFIG = {
     duration: 0.05,
   },
   explosion: {
-    frequency: 300,
+    frequency: 180,
     waveform: 'sawtooth',
     volume: 0.7,
     duration: 0.4,
@@ -86,7 +94,7 @@ export const SOUND_CONFIG = {
     duration: 0.3,
   },
   rusherScream: {
-    frequency: 600,
+    frequency: 750,
     waveform: 'sawtooth',
     volume: 0.4,
     duration: 0.4,
@@ -145,7 +153,7 @@ export const SOUND_CONFIG = {
     duration: 0.08,
   },
   rusherCharge: {
-    frequency: 500,
+    frequency: 700,
     waveform: 'sawtooth',
     volume: 0.5,
     duration: 0.4,
@@ -238,6 +246,34 @@ export const SOUND_CONFIG = {
     volume: 0.25,
     duration: 0.18,
   },
+  gruntHit: {
+    frequency: 450,
+    type: 'square',
+    waveform: 'square',
+    volume: 0.2,
+    duration: 0.06,
+  },
+  tankHit: {
+    frequency: 55,
+    type: 'sine',
+    waveform: 'sine',
+    volume: 0.35,
+    duration: 0.2,
+  },
+  stabberHit: {
+    frequency: 2100,
+    type: 'triangle',
+    waveform: 'triangle',
+    volume: 0.3,
+    duration: 0.04,
+  },
+  rusherHit: {
+    frequency: 650,
+    type: 'sawtooth',
+    waveform: 'sawtooth',
+    volume: 0.3,
+    duration: 0.08,
+  },
   stabberKnifeExtend: {
     frequency: 1800,
     waveform: 'triangle',
@@ -252,7 +288,7 @@ export const SOUND_CONFIG = {
     duration: 0.05,
   },
   playerDash: {
-    frequency: 600,
+    frequency: 200,
     waveform: 'noise',
     volume: 0.3,
     duration: 0.15,
@@ -283,5 +319,34 @@ export const SOUND_CONFIG = {
     volume: 0.35,
     duration: 0.3,
     sweep: { to: 990, curve: 'linear' },
+  },
+  gruntResponse: {
+    frequency: 380,
+    type: 'square',
+    waveform: 'square',
+    volume: 0.2,
+    duration: 0.1,
+  },
+  tankResponse: {
+    frequency: 70,
+    type: 'sine',
+    waveform: 'sine',
+    volume: 0.3,
+    duration: 0.3,
+  },
+  stabberResponse: {
+    frequency: 2300,
+    type: 'triangle',
+    waveform: 'triangle',
+    volume: 0.25,
+    duration: 0.06,
+  },
+  rusherResponse: {
+    frequency: 720,
+    type: 'sawtooth',
+    waveform: 'sawtooth',
+    volume: 0.25,
+    duration: 0.15,
+    sweep: { to: 500, curve: 'exponential' },
   },
 };

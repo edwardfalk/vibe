@@ -486,6 +486,76 @@ export class Audio {
     }
   }
 
+  startDrone() {
+    if (this.droneOsc || !this.audioContext) return;
+
+    const ctx = this.audioContext;
+    this.droneOsc = ctx.createOscillator();
+    this.droneGain = ctx.createGain();
+    this.droneFilter = ctx.createBiquadFilter();
+
+    this.droneOsc.type = 'sine';
+    this.droneOsc.frequency.setValueAtTime(42, ctx.currentTime);
+
+    this.droneFilter.type = 'lowpass';
+    this.droneFilter.frequency.setValueAtTime(80, ctx.currentTime);
+
+    // Fade in over 2 seconds
+    this.droneGain.gain.setValueAtTime(0, ctx.currentTime);
+    this.droneGain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 2);
+
+    this.droneOsc.connect(this.droneFilter);
+    this.droneFilter.connect(this.droneGain);
+    this.droneGain.connect(this.masterGain || ctx.destination);
+
+    this.droneOsc.start();
+
+    // Slow filter sweep: oscillate cutoff 80-200Hz over ~8 measures (16s at 120 BPM)
+    this._droneFilterSweep(ctx);
+  }
+
+  _droneFilterSweep(ctx) {
+    if (!this.droneFilter || !this.droneOsc) return;
+    const sweepDuration = 16; // ~8 measures at 120 BPM
+    const now = ctx.currentTime;
+    this.droneFilter.frequency.setValueAtTime(80, now);
+    this.droneFilter.frequency.linearRampToValueAtTime(200, now + sweepDuration / 2);
+    this.droneFilter.frequency.linearRampToValueAtTime(80, now + sweepDuration);
+    // Schedule next sweep
+    this._droneSweepTimer = setTimeout(() => this._droneFilterSweep(ctx), sweepDuration * 1000);
+  }
+
+  stopDrone() {
+    if (this._droneSweepTimer) {
+      clearTimeout(this._droneSweepTimer);
+      this._droneSweepTimer = null;
+    }
+    if (this.droneOsc) {
+      try {
+        this.droneOsc.stop();
+        this.droneOsc.disconnect();
+      } catch (e) { /* already stopped */ }
+      this.droneOsc = null;
+    }
+    if (this.droneGain) {
+      this.droneGain.disconnect();
+      this.droneGain = null;
+    }
+    if (this.droneFilter) {
+      this.droneFilter.disconnect();
+      this.droneFilter = null;
+    }
+  }
+
+  duckDrone(durationMs = 500) {
+    if (!this.droneGain || !this.audioContext) return;
+    const ctx = this.audioContext;
+    const now = ctx.currentTime;
+    this.droneGain.gain.setValueAtTime(this.droneGain.gain.value, now);
+    this.droneGain.gain.linearRampToValueAtTime(0.03, now + 0.05);
+    this.droneGain.gain.linearRampToValueAtTime(0.08, now + durationMs / 1000);
+  }
+
   // ========================================================================
   // SPEECH SYSTEM (SIMPLIFIED AND RELIABLE)
   // ========================================================================

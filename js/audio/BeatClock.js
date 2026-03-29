@@ -11,13 +11,15 @@
  * This creates an emergent musical experience that players discover organically.
  */
 
+import { CONFIG } from '../config.js';
+
 export class BeatClock {
   constructor(bpm = 120, audioContext = null) {
     this.bpm = bpm;
     this.audioContext = audioContext ?? null;
     this.beatInterval = (60 / bpm) * 1000; // milliseconds per beat
     this.startTime = this._now();
-    this.tolerance = 100; // ms tolerance for "on beat" detection
+    this.tolerance = CONFIG.BEAT_TOLERANCES.ON_BEAT; // ms tolerance for "on beat" detection
 
     // Beat pattern tracking (4/4 time signature)
     this.beatsPerMeasure = 4;
@@ -95,7 +97,7 @@ export class BeatClock {
 
     // EXACT TIMING: Only return true in a very small window around the quarter-beat
     // This creates precise rhythm timing instead of loose tolerance windows
-    const exactTolerance = 16; // ~1 frame at 60fps for precise timing
+    const exactTolerance = CONFIG.BEAT_TOLERANCES.QUARTER_BEAT;
 
     return (
       timeSinceLastQuarterBeat <= exactTolerance ||
@@ -127,7 +129,7 @@ export class BeatClock {
     const elapsed = this.cache.elapsed;
     const eighthInterval = this.beatInterval / 2;
     const timeSinceLastEighth = elapsed % eighthInterval;
-    const tolerance = 20; // ~1 frame
+    const tolerance = CONFIG.BEAT_TOLERANCES.EIGHTH_NOTE;
     return timeSinceLastEighth <= tolerance || timeSinceLastEighth >= eighthInterval - tolerance;
   }
 
@@ -196,9 +198,19 @@ export class BeatClock {
 
   // Reset timing (for level transitions)
   reset() {
-    this.startTime = this._now();
+    const now = this._now();
+    // Snap to nearest beat boundary so the grid stays aligned
+    const elapsed = now - this.startTime;
+    const remainder = elapsed % this.beatInterval;
+    if (remainder < this.beatInterval / 2) {
+      // Closer to the previous beat — snap back
+      this.startTime = now - remainder;
+    } else {
+      // Closer to the next beat — snap forward
+      this.startTime = now + (this.beatInterval - remainder);
+    }
     this.update(true);
-    console.log('🎵 BeatClock reset');
+    console.log('🎵 BeatClock reset (beat-aligned)');
   }
 
   // Continuous beat phase: 0 = beat just hit, 1 = next beat about to hit

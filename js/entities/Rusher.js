@@ -364,6 +364,11 @@ class Rusher extends BaseEnemy {
    * Override takeDamage to handle explosion trigger
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
+    const audio = this.getContextValue('audio');
+    if (audio) {
+      audio.playSound('rusherHit', this.x, this.y);
+    }
+
     // Rushers enter vibrate state when shot, then explode on beat
     if (!this.exploding && !this.vibrating) {
       this.vibrating = true;

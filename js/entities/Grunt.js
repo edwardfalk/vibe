@@ -422,6 +422,9 @@ class Grunt extends BaseEnemy {
       );
     }
     const audioSurv = this.getContextValue('audio');
+    if (damageSource !== 'stabber_melee' && !died && audioSurv) {
+      audioSurv.playSound('gruntHit', this.x, this.y);
+    }
     if (
       damageSource === 'stabber_melee' &&
       !died &&

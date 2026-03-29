@@ -25,6 +25,20 @@ export class EnemyDeathHandler {
       }
       audio.playTankOhNo(x, y);
       audio.playExplosion(x, y);
+
+      // Call-and-response: notify nearby same-type enemies
+      const enemies = this.getContextValue('enemies');
+      if (enemies) {
+        let responseCount = 0;
+        for (const other of enemies) {
+          if (responseCount >= 2) break;
+          if (other === enemy || other.markedForRemoval) continue;
+          if (other.type === enemyType && other.onNearbyDeath) {
+            other.onNearbyDeath(enemy);
+            responseCount++;
+          }
+        }
+      }
       return;
     }
 
@@ -38,6 +52,20 @@ export class EnemyDeathHandler {
       audio.playRusherOhNo(x, y);
     } else {
       audio.playEnemyOhNo(x, y);
+    }
+
+    // Call-and-response: notify nearby same-type enemies
+    const enemies = this.getContextValue('enemies');
+    if (enemies) {
+      let responseCount = 0;
+      for (const other of enemies) {
+        if (responseCount >= 2) break;
+        if (other === enemy || other.markedForRemoval) continue;
+        if (other.type === enemyType && other.onNearbyDeath) {
+          other.onNearbyDeath(enemy);
+          responseCount++;
+        }
+      }
     }
   }
 }
