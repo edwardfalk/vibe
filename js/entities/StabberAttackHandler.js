@@ -197,7 +197,7 @@ function handleWarningPhase(stabber, dt) {
 
   // Transition to dash after ~half a beat (beat-relative duration)
   const beatClock = stabber.getContextValue('beatClock');
-  const warningDuration = beatClock ? beatClock.beatInterval * 0.5 / (1000 / 60) : 15;
+  const warningDuration = beatClock ? beatClock.beatInterval * 0.5 / CONFIG.GAME_SETTINGS.FRAME_TIME_MS : 15;
   if (stabber.stabWarningTime >= warningDuration) {
     stabber.stabWarning = false;
     stabber.stabWarningTime = 0;

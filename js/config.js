@@ -53,6 +53,13 @@ const CONFIG = {
     },
   },
 
+  // Beat timing tolerances (milliseconds)
+  BEAT_TOLERANCES: {
+    ON_BEAT: 100,       // General beat detection (enemy gating)
+    QUARTER_BEAT: 50,   // Player quarter-beat shooting
+    EIGHTH_NOTE: 40,    // Eighth-note detection
+  },
+
   // Speech/Chatter Settings (per enemy type, in seconds)
   SPEECH_SETTINGS: {
     DEFAULT: {
