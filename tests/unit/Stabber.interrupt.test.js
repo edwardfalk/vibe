@@ -39,9 +39,7 @@ function createMockP5() {
     TWO_PI: Math.PI * 2,
     PI: Math.PI,
     frameCount: 1,
-    dist: vi.fn(
-      (x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-    ),
+    dist: vi.fn((x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)),
     sin: Math.sin,
     cos: Math.cos,
     // Drawing stubs
