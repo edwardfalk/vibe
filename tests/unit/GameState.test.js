@@ -11,7 +11,6 @@ vi.stubGlobal('window', {
   explosionManager: null,
   spawnSystem: null,
   audio: null,
-  testModeManager: null,
   gameState: null,
 });
 vi.stubGlobal('localStorage', {

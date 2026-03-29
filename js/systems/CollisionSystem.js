@@ -265,10 +265,8 @@ export class CollisionSystem {
             gameState.setGameState('gameOver');
           }
           if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-            const testMode =
-              this.getContextValue('testModeManager')?.enabled ?? false;
             console.log(
-              `💀 PLAYER DIED! Game state changed to gameOver. Test mode: ${testMode}`
+              `💀 PLAYER DIED! Game state changed to gameOver.`
             );
           }
         }

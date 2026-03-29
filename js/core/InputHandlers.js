@@ -71,8 +71,6 @@ export function initializeInputHandlers() {
           'P',
           'm',
           'M',
-          't',
-          'T',
           'e',
           'E',
           ' ',

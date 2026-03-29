@@ -11,7 +11,6 @@ import { SpawnSystem } from './systems/SpawnSystem.js';
 import { BackgroundRenderer } from './systems/BackgroundRenderer.js';
 import { UIRenderer } from './systems/UIRenderer.js';
 import { CollisionSystem } from './systems/CollisionSystem.js';
-import { TestMode } from './systems/TestMode.js';
 import { Audio } from './Audio.js';
 import { BeatClock } from './audio/BeatClock.js';
 import { BeatTrack } from './audio/BeatTrack.js';
@@ -139,9 +138,6 @@ export function runSetup(p, arrays, syncContext = null) {
     window.rhythmFX = new RhythmFX(gameContext);
     console.log('🎵 RhythmFX initialized');
   }
-  window.testModeManager = new TestMode(window.player, gameContext);
-  console.log('🧪 Test mode manager initialized');
-
   if (!window.collisionSystem) {
     window.collisionSystem = new CollisionSystem(gameContext);
   }
@@ -164,8 +160,7 @@ export function runSetup(p, arrays, syncContext = null) {
     window.gameState,
     window.player,
     window.audio,
-    window.cameraSystem,
-    window.testModeManager
+    window.cameraSystem
   );
   console.log('🖥️ UI renderer initialized');
 

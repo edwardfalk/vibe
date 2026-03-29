@@ -19,16 +19,14 @@ import {
  * @param {Player} player - The player object (dependency injected for modularity)
  * @param {Audio} audio - The audio system (dependency injected for modularity)
  * @param {CameraSystem} cameraSystem - The camera system (dependency injected for modularity)
- * @param {TestMode} testModeManager - The test mode manager (dependency injected for modularity)
  */
 export class UIRenderer {
-  constructor(gameState, player, audio, cameraSystem, testModeManager) {
+  constructor(gameState, player, audio, cameraSystem) {
     // UI state
     this.gameState = gameState;
     this.player = player;
     this.audio = audio;
     this.cameraSystem = cameraSystem;
-    this.testModeManager = testModeManager;
     this.dashElement = null;
     // Cache DOM refs to avoid getElementById() every frame
     this._scoreEl = document.getElementById('score');
@@ -539,14 +537,6 @@ export class UIRenderer {
         document.getElementById('soundStatus').textContent = soundEnabled
           ? '🔊 Sound ON (M to toggle)'
           : '🔇 Sound OFF (M to toggle)';
-        return true;
-      }
-    }
-
-    if (key === 't' || key === 'T') {
-      // Toggle test mode using the new modular system
-      if (this.testModeManager) {
-        const enabled = this.testModeManager.toggle();
         return true;
       }
     }

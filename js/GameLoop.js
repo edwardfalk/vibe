@@ -93,7 +93,6 @@ function syncRuntimeContext(
     rhythmFX: window.rhythmFX,
     visualEffectsManager: window.visualEffectsManager,
     hitStopFrames,
-    testModeManager: window.testModeManager,
   });
 }
 
@@ -149,11 +148,6 @@ function updateGame(p) {
   // Update beat visualizer
   if (window.rhythmFX) {
     window.rhythmFX.update(p.deltaTime);
-  }
-
-  // Test mode - automated movement and shooting
-  if (window.testModeManager && window.testModeManager.enabled) {
-    window.testModeManager.update();
   }
 
   // Update player

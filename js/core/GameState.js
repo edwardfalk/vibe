@@ -248,18 +248,4 @@ export class GameState {
     return range > 0 ? Math.min(1, Math.max(0, progress / range)) : 0;
   }
 
-  // Auto-restart for test mode
-  updateGameOverTimer() {
-    if (this.gameState === 'gameOver') {
-      this.gameOverTimer++;
-
-      // Auto-restart in test mode
-      if (window.testModeManager?.enabled && this.gameOverTimer >= 60) {
-        console.log(
-          '🔄 Auto-restarting game in test mode for continuous testing'
-        );
-        this.restart();
-      }
-    }
-  }
 }

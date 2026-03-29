@@ -15,7 +15,6 @@ const WINDOW_CONTEXT_KEYS = [
   'rhythmFX',
   'visualEffectsManager',
   'hitStopFrames',
-  'testModeManager',
 ];
 
 export class GameContext {

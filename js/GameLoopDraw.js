@@ -38,19 +38,6 @@ export function runDraw(p, updateGame, drawGame) {
         break;
 
       case 'gameOver':
-        if (window.testModeManager && window.testModeManager.enabled) {
-          if (!Number.isFinite(window.gameState.gameOverTimer)) {
-            window.gameState.gameOverTimer = 0;
-          }
-          window.gameState.gameOverTimer++;
-          if (window.gameState.gameOverTimer >= 60) {
-            if (window.gameState.gameOverTimer === 60) {
-              console.log('🔄 Auto-restarting game in test mode');
-            }
-            window.gameState.gameOverTimer = 0;
-            window.gameState.restart();
-          }
-        }
         break;
     }
   }
