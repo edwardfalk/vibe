@@ -46,7 +46,7 @@ export const SOUND_METHOD_TO_KEY = {
 
 export const SOUND_CONFIG = {
   playerShoot: {
-    frequency: 480,
+    frequency: 220,
     waveform: 'sawtooth',
     volume: 0.2,
     duration: 0.01,
@@ -72,7 +72,7 @@ export const SOUND_CONFIG = {
     duration: 0.05,
   },
   explosion: {
-    frequency: 300,
+    frequency: 180,
     waveform: 'sawtooth',
     volume: 0.7,
     duration: 0.4,
@@ -86,7 +86,7 @@ export const SOUND_CONFIG = {
     duration: 0.3,
   },
   rusherScream: {
-    frequency: 600,
+    frequency: 750,
     waveform: 'sawtooth',
     volume: 0.4,
     duration: 0.4,
@@ -145,7 +145,7 @@ export const SOUND_CONFIG = {
     duration: 0.08,
   },
   rusherCharge: {
-    frequency: 500,
+    frequency: 700,
     waveform: 'sawtooth',
     volume: 0.5,
     duration: 0.4,
@@ -252,7 +252,7 @@ export const SOUND_CONFIG = {
     duration: 0.05,
   },
   playerDash: {
-    frequency: 600,
+    frequency: 200,
     waveform: 'noise',
     volume: 0.3,
     duration: 0.15,
