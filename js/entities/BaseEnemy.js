@@ -477,6 +477,34 @@ export class BaseEnemy {
     return false;
   }
 
+  onNearbyDeath(deadEnemy) {
+    if (!deadEnemy || deadEnemy.type !== this.type) return;
+    if (this.markedForRemoval || this.health <= 0) return;
+
+    const dx = this.x - deadEnemy.x;
+    const dy = this.y - deadEnemy.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance > 300) return;
+
+    const audio = this.getContextValue('audio');
+    if (!audio) return;
+
+    const responseKey = `${this.type}Response`;
+    const beatClock = this.getContextValue('beatClock');
+
+    if (beatClock) {
+      // Quantize response to next eighth-note
+      const delay = beatClock.getTimeToNextEighthNote
+        ? beatClock.getTimeToNextEighthNote()
+        : beatClock.getTimeToNextBeat() / 2;
+      setTimeout(() => {
+        audio.playSound(responseKey, this.x, this.y);
+      }, Math.max(0, delay));
+    } else {
+      audio.playSound(responseKey, this.x, this.y);
+    }
+  }
+
   /**
    * Check collision with another object
    */
