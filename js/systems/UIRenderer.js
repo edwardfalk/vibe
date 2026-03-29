@@ -4,8 +4,6 @@
 
 import { floor, ceil, max, abs, sin } from '../mathUtils.js';
 import {
-  GAME_OVER_MESSAGES,
-  FUNNY_COMMENTS,
   DASH_INDICATOR,
   LEVEL_PROGRESS,
   HEALTH_BAR,
@@ -13,6 +11,8 @@ import {
   BOMB_WARNING_SIZE,
   TOAST,
 } from './UIConstants.js';
+import { drawGameOver, drawPauseScreen } from './UIOverlays.js';
+import { handleKeyPress as handleKeyPressImpl } from './UIInputHandler.js';
 
 /**
  * @param {GameState} gameState - The game state object (dependency injected for modularity)
@@ -81,162 +81,14 @@ export class UIRenderer {
     }
   }
 
-  // Draw game over screen
+  // Draw game over screen (delegated to UIOverlays)
   drawGameOver(p) {
-    if (!this.gameState) return;
-
-    p.push();
-
-    // Semi-transparent overlay
-    p.fill(0, 0, 0, 150);
-    p.rect(0, 0, p.width, p.height);
-
-    const messageIndex =
-      GAME_OVER_MESSAGES.length > 0
-        ? floor(this.gameState.score / 50) % GAME_OVER_MESSAGES.length
-        : 0;
-    const gameOverMessage =
-      GAME_OVER_MESSAGES.length > 0
-        ? (GAME_OVER_MESSAGES[messageIndex] ?? '')
-        : '';
-    const isNewHighScore = this.gameState.score > this.gameState.highScore;
-
-    // Game over text with animation
-    p.textFont('monospace');
-    p.fill(255, 20, 147); // Hot pink
-    p.textAlign(p.CENTER, p.CENTER);
-    p.textSize(48 + p.sin(p.frameCount * 0.1) * 4);
-
-    // Additive glow for title
-    p.blendMode(p.ADD);
-    p.text(gameOverMessage, p.width / 2, p.height / 2 - 80);
-    p.blendMode(p.BLEND);
-
-    p.stroke(255, 255, 255);
-    p.strokeWeight(2);
-    p.text(gameOverMessage, p.width / 2, p.height / 2 - 80);
-    p.noStroke();
-
-    // New high score celebration
-    if (isNewHighScore) {
-      p.fill(0, 255, 255); // Cyan
-      p.textSize(20 + p.sin(p.frameCount * 0.2) * 3);
-      p.text('NEW HIGH SCORE! 🎉', p.width / 2, p.height / 2 - 50);
-    }
-
-    // Score and level
-    p.fill(255);
-    p.textSize(24);
-    p.text(
-      `FINAL SCORE: ${this.gameState.score.toLocaleString()}`,
-      p.width / 2,
-      p.height / 2 - 10
-    );
-    p.text(
-      `LEVEL REACHED: ${this.gameState.level}`,
-      p.width / 2,
-      p.height / 2 + 20
-    );
-
-    // Stats
-    p.fill(0, 255, 255); // Cyan
-    p.textSize(16);
-    p.text(
-      `ENEMIES KILLED: ${this.gameState.totalKills}`,
-      p.width / 2,
-      p.height / 2 + 45
-    );
-    const accuracy = this.gameState.getAccuracy();
-    p.text(`ACCURACY: ${accuracy}%`, p.width / 2, p.height / 2 + 65);
-
-    // High score display
-    p.fill(255, 215, 0); // Gold
-    p.textSize(18);
-    p.text(
-      `HIGH SCORE: ${this.gameState.highScore.toLocaleString()}`,
-      p.width / 2,
-      p.height / 2 + 90
-    );
-
-    // Funny comment
-    p.fill(255, 20, 147); // Pink
-    p.textSize(16);
-    const commentIndex =
-      FUNNY_COMMENTS.length > 0
-        ? floor(this.gameState.score / 30) % FUNNY_COMMENTS.length
-        : 0;
-    p.text(FUNNY_COMMENTS[commentIndex] ?? '', p.width / 2, p.height / 2 + 115);
-
-    // Restart instruction
-    p.fill(255);
-    p.textSize(16);
-    // Blinking effect
-    if (p.frameCount % 60 < 40) {
-      p.text('PRESS R TO RESTART', p.width / 2, p.height / 2 + 145);
-    }
-
-    p.pop();
+    drawGameOver(p, this.gameState);
   }
 
-  // Draw pause screen
+  // Draw pause screen (delegated to UIOverlays)
   drawPauseScreen(p) {
-    if (!this.gameState) return;
-
-    p.push();
-    p.textFont('monospace');
-
-    // Semi-transparent overlay
-    p.fill(5, 2, 15, 200); // Darker blue-purple tint
-    p.rect(0, 0, p.width, p.height);
-
-    // Pause text with synthwave style
-    p.textAlign(p.CENTER, p.CENTER);
-    p.textSize(48);
-
-    // Cyan glow layer
-    p.blendMode(p.ADD);
-    p.fill(0, 255, 255, 150);
-    p.text('PAUSED', p.width / 2, p.height / 2 - 40);
-    p.blendMode(p.BLEND);
-
-    // Sharp white core text with cyan border
-    p.stroke(0, 255, 255);
-    p.strokeWeight(2);
-    p.fill(255, 255, 255);
-    p.text('PAUSED', p.width / 2, p.height / 2 - 40);
-    p.noStroke();
-
-    // Instructions
-    p.fill(0, 255, 255);
-    p.textSize(20);
-    if (p.frameCount % 60 < 40) {
-      p.text('PRESS P TO RESUME', p.width / 2, p.height / 2 + 20);
-    }
-
-    // Current stats
-    p.fill(255, 20, 147); // Hot pink
-    p.textSize(16);
-    p.text(
-      `SCORE: ${this.gameState.score.toLocaleString()}`,
-      p.width / 2,
-      p.height / 2 + 60
-    );
-    p.text(
-      `LEVEL: ${this.gameState.level} | KILLS: ${this.gameState.totalKills}`,
-      p.width / 2,
-      p.height / 2 + 80
-    );
-
-    if (this.gameState.killStreak >= 5) {
-      p.fill(255, 215, 0); // Gold for streak
-      p.text(
-        `⚡ ${this.gameState.killStreak}X KILL STREAK! ⚡`,
-        p.width / 2,
-        p.height / 2 + 100
-      );
-    }
-
-    p.pop();
+    drawPauseScreen(p, this.gameState);
   }
 
   // Draw bomb countdown indicators
@@ -507,98 +359,14 @@ export class UIRenderer {
     }
   }
 
-  // Handle key presses for UI
+  // Handle key presses for UI (delegated to UIInputHandler)
   handleKeyPress(key) {
-    if (!this.gameState) return false;
-
-    if (key === 'r' || key === 'R') {
-      if (this.gameState.gameState === 'gameOver') {
-        this.gameState.restart();
-        return true;
-      }
-    }
-
-    if (key === 'p' || key === 'P') {
-      if (this.gameState.gameState === 'playing') {
-        this.gameState.setGameState('paused');
-        console.log('⏸️ Game paused');
-        return true;
-      } else if (this.gameState.gameState === 'paused') {
-        this.gameState.setGameState('playing');
-        console.log('▶️ Game resumed');
-        return true;
-      }
-    }
-
-    if (key === 'm' || key === 'M') {
-      if (this.audio) {
-        const soundEnabled = this.audio.toggle();
-        console.log('🎵 Sound ' + (soundEnabled ? 'enabled' : 'disabled'));
-        document.getElementById('soundStatus').textContent = soundEnabled
-          ? '🔊 Sound ON (M to toggle)'
-          : '🔇 Sound OFF (M to toggle)';
-        return true;
-      }
-    }
-
-    if (key === 'e' || key === 'E') {
-      // Dash with E
-      if (
-        this.gameState.gameState === 'playing' &&
-        this.player &&
-        this.player.dash()
-      ) {
-        console.log('💨 Player dash activated!');
-        if (this.cameraSystem) {
-          this.cameraSystem.addShake(6, 12);
-        }
-        return true;
-      }
-    }
-
-    if (key === ' ') {
-      // Shoot with spacebar
-      if (this.gameState.gameState === 'playing' && this.player) {
-        const bullet = this.player.shoot();
-        if (bullet) {
-          // Ensure playerBullets array exists before pushing new bullet
-          // Prevents shots from vanishing if array was uninitialized
-          if (!this.gameState.playerBullets) {
-            this.gameState.playerBullets = [];
-          }
-          this.gameState.playerBullets.push(bullet);
-          if (this.gameState) {
-            this.gameState.addShotFired();
-          }
-          if (this.audio) {
-            this.audio.playPlayerShoot(this.player.x, this.player.y);
-          }
-        }
-        return true;
-      }
-    }
-
-    // Arrow keys for aim direction
-    if (this.gameState.gameState === 'playing' && this.player) {
-      if (key === 'ArrowUp') {
-        this.player.aimAngle = -Math.PI / 2;
-        return true;
-      }
-      if (key === 'ArrowDown') {
-        this.player.aimAngle = Math.PI / 2;
-        return true;
-      }
-      if (key === 'ArrowLeft') {
-        this.player.aimAngle = Math.PI;
-        return true;
-      }
-      if (key === 'ArrowRight') {
-        this.player.aimAngle = 0;
-        return true;
-      }
-    }
-
-    return false;
+    return handleKeyPressImpl(key, {
+      gameState: this.gameState,
+      player: this.player,
+      audio: this.audio,
+      cameraSystem: this.cameraSystem,
+    });
   }
 
   // Reset UI renderer

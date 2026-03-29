@@ -17,15 +17,17 @@ import {
   buildEnemySpatialGrid,
   queryNearbyEnemyIndices,
 } from './collision/CollisionSpatialGrid.js';
-import { DAMAGE_RESULT } from '../shared/DamageResult.js';
-import { handleDamageResult } from '../shared/DamageResultHandler.js';
 import {
   handleContactCollisions,
   handleRusherExplosionCollision,
   handleStabberAttackCollision,
 } from './combat/PlayerContactHandlers.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
-import { applyKillFeedback } from './combat/KillFeedback.js';
+import {
+  resolveBulletEnemyHit,
+  handleTankEnergyBallHit,
+  handleRegularEnemyBulletHit,
+} from './collision/BulletCollisionResolvers.js';
 
 // Single-pass compaction: O(n) instead of O(n²) from repeated splice
 function compactArray(arr) {
@@ -50,6 +52,14 @@ export class CollisionSystem {
   setContext(context) {
     this.context = context;
     this.enemyDeathHandler.setContext(context || window);
+  }
+
+  _resolverDeps() {
+    return {
+      getContextValue: this.getContextValue,
+      handleEnemyDeath: (e, type, x, y) => this.handleEnemyDeath(e, type, x, y),
+      context: this.context,
+    };
   }
 
   // Main collision detection function
@@ -152,85 +162,7 @@ export class CollisionSystem {
   }
 
   resolveBulletEnemyHit(bullet, bulletIndex, enemy) {
-    const explosionManager = this.getContextValue('explosionManager');
-    const audio = this.getContextValue('audio');
-    const gameState = this.getContextValue('gameState');
-    const floatingText = this.getContextValue('floatingText');
-    const beatClock = this.getContextValue('beatClock');
-    const visualEffectsManager = this.getContextValue('visualEffectsManager');
-    const cameraSystem = this.getContextValue('cameraSystem');
-    const playerBullets = this.getContextValue('playerBullets');
-    if (!bullet.checkCollision(enemy)) return false;
-
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(`🎯 Bullet hit ${enemy.type} enemy! Health: ${enemy.health}`);
-    }
-
-    // Store enemy type for logging
-    const enemyType = enemy.type;
-    const wasExploding = enemy.exploding;
-
-    // Damage enemy (pass bullet angle for knockback)
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[DEBUG] Calling takeDamage on enemy: type=${enemyType}, health=${enemy.health}, bullet.damage=${bullet.damage}, bullet.angle=${bullet.angle}`
-      );
-    }
-    const rawResult = enemy.takeDamage(bullet.damage, bullet.angle);
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[DEBUG] takeDamage result: ${rawResult}, enemyHealthAfter=${enemy.health}`
-      );
-    }
-
-    const damageResult = handleDamageResult(rawResult, enemy, {
-      explosionManager,
-      audio,
-      gameState,
-      onDeath: (e) => this.handleEnemyDeath(e, enemyType, bullet.x, bullet.y),
-      killFeedback: {
-        applyKillFeedback,
-        beatClock,
-        floatingText,
-        visualEffectsManager,
-        cameraSystem,
-        getHitStopFrames: () =>
-          this.context?.get?.('hitStopFrames') ?? window.hitStopFrames ?? 0,
-        setHitStopFrames: (value) => {
-          if (this.context && typeof this.context.set === 'function') {
-            this.context.set('hitStopFrames', value);
-            return;
-          }
-          if (typeof window !== 'undefined') {
-            window.hitStopFrames = value;
-          }
-        },
-      },
-      hitX: bullet.x,
-      hitY: bullet.y,
-      floatingText,
-      bulletDamage: bullet.damage,
-    });
-
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      if (damageResult === DAMAGE_RESULT.EXPLODING) {
-        console.log(
-          `💥 RUSHER SHOT! Starting explosion sequence! Was already exploding: ${wasExploding}`
-        );
-      } else if (damageResult === DAMAGE_RESULT.DIED) {
-        console.log(`💀 ${enemyType} killed by bullet!`);
-      } else {
-        console.log(`🎯 ${enemyType} damaged, health now: ${enemy.health}`);
-      }
-    }
-
-    // Remove bullet
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(`[DEBUG] Removing bullet at index ${bulletIndex} after hit`);
-    }
-    Bullet.release(bullet);
-    bullet._remove = true;
-    return true;
+    return resolveBulletEnemyHit(bullet, enemy, this._resolverDeps());
   }
 
   // Enemy bullets vs player
@@ -265,9 +197,7 @@ export class CollisionSystem {
             gameState.setGameState('gameOver');
           }
           if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-            console.log(
-              `💀 PLAYER DIED! Game state changed to gameOver.`
-            );
+            console.log(`💀 PLAYER DIED! Game state changed to gameOver.`);
           }
         }
         Bullet.release(bullet);
@@ -314,9 +244,9 @@ export class CollisionSystem {
 
           // Handle different bullet types
           if (bullet.type === 'tankEnergy' || bullet.owner === 'enemy-tank') {
-            this.handleTankEnergyBallHit(bullet, enemy, i, j);
+            this.handleTankEnergyBallHit(bullet, enemy);
           } else {
-            this.handleRegularEnemyBulletHit(bullet, enemy, i, j);
+            this.handleRegularEnemyBulletHit(bullet, enemy);
           }
           break; // Exit inner loop since bullet hit an enemy
         }
@@ -324,107 +254,12 @@ export class CollisionSystem {
     }
   }
 
-  // Handle tank energy ball hitting enemy
-  handleTankEnergyBallHit(bullet, enemy, bulletIndex, enemyIndex) {
-    const audio = this.getContextValue('audio');
-    const gameState = this.getContextValue('gameState');
-    const enemyBullets = this.getContextValue('enemyBullets');
-    if (audio) {
-      audio.playTankEnergyBall(bullet.x, bullet.y);
-    }
-
-    // Calculate energy cost based on enemy's remaining health
-    const energyCost =
-      enemy.maxHealth > 0 ? (enemy.health / enemy.maxHealth) * 30 : 0;
-
-    // Kill the enemy and create explosion
-    this.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
-
-    if (audio) {
-      audio.playEnemyFrying(enemy.x, enemy.y);
-      audio.playExplosion(enemy.x, enemy.y);
-    }
-
-    enemy.markedForRemoval = true;
-
-    if (gameState) {
-      gameState.addKill();
-
-      // Energy ball kills get bonus points
-      let points = 12;
-      if (gameState.killStreak >= 5) points *= 2;
-      if (gameState.killStreak >= 10) points *= 1.5;
-
-      gameState.addScore(points);
-    }
-
-    // Reduce bullet energy proportionally; non-energy bullets get removed immediately
-    const energy = bullet.energy;
-    if (typeof energy === 'number' && energy > 0) {
-      bullet.energy = energy - energyCost;
-      if (bullet.energy <= 0) {
-        Bullet.release(bullet);
-        bullet._remove = true;
-      }
-    } else {
-      Bullet.release(bullet);
-      bullet._remove = true;
-    }
+  handleTankEnergyBallHit(bullet, enemy) {
+    handleTankEnergyBallHit(bullet, enemy, this._resolverDeps());
   }
 
-  // Handle regular enemy bullet hitting enemy
-  handleRegularEnemyBulletHit(bullet, enemy, bulletIndex, enemyIndex) {
-    const explosionManager = this.getContextValue('explosionManager');
-    const audio = this.getContextValue('audio');
-    const gameState = this.getContextValue('gameState');
-    const enemyBullets = this.getContextValue('enemyBullets');
-    // Determine bullet source type for tank anger tracking
-    let bulletSource = 'unknown';
-    if (bullet.type === 'grunt' || bullet.owner === 'enemy-grunt') {
-      bulletSource = 'grunt';
-    } else if (bullet.type === 'stabber' || bullet.owner === 'enemy-stabber') {
-      bulletSource = 'stabber';
-    } else if (bullet.type === 'tankEnergy' || bullet.owner === 'enemy-tank') {
-      bulletSource = 'tank';
-    }
-
-    const damageResult = handleDamageResult(
-      enemy.takeDamage(bullet.damage, bullet.angle, bulletSource),
-      enemy,
-      {
-        explosionManager,
-        audio,
-        gameState,
-        onDeath: (e) => this.handleEnemyDeath(e, e.type, e.x, e.y),
-        deathAudio: 'playExplosion',
-        scorePoints: 8,
-        hitX: bullet.x,
-        hitY: bullet.y,
-      }
-    );
-
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      if (damageResult === DAMAGE_RESULT.EXPLODING) {
-        console.log(`💥 FRIENDLY FIRE caused rusher to explode!`);
-      } else if (damageResult === DAMAGE_RESULT.DIED) {
-        console.log(
-          `💀 ${enemy.type} killed by friendly fire from ${bulletSource}!`
-        );
-      } else {
-        console.log(
-          `🎯 Friendly fire damaged ${enemy.type}, health now: ${enemy.health}`
-        );
-      }
-    }
-
-    // Remove bullet after hit
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `➖ Removing enemy bullet (hit enemy): ${bullet.owner} hit ${enemy.type} - Remaining: ${enemyBullets.length - 1}`
-      );
-    }
-    Bullet.release(bullet);
-    bullet._remove = true;
+  handleRegularEnemyBulletHit(bullet, enemy) {
+    handleRegularEnemyBulletHit(bullet, enemy, this._resolverDeps());
   }
 
   // Handle enemy death effects
