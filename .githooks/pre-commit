@@ -1,0 +1,14 @@
+#!/bin/sh
+# Pre-commit hook: lint staged .js files (warn only, never blocks)
+
+STAGED_JS=$(git diff --cached --name-only --diff-filter=ACM | grep '\.js$' || true)
+
+if [ -z "$STAGED_JS" ]; then
+  exit 0
+fi
+
+echo "🔍 Linting staged files..."
+echo "$STAGED_JS" | xargs npx eslint --no-error-on-unmatched-pattern 2>&1 || true
+
+# Always exit 0 — never block the commit
+exit 0
