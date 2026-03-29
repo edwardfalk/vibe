@@ -227,7 +227,9 @@ class Stabber extends BaseEnemy {
   drawStabWarning() {
     // Warning duration is now beat-relative (~half a beat)
     const beatClock = this.getContextValue('beatClock');
-    const warningDuration = beatClock ? beatClock.beatInterval * 0.5 / (1000 / 60) : this.maxStabWarningTime;
+    const warningDuration = beatClock
+      ? (beatClock.beatInterval * 0.5) / (1000 / 60)
+      : this.maxStabWarningTime;
     const stabPercent = Math.min(this.stabWarningTime / warningDuration, 1);
 
     // Dramatic charging animation with building energy

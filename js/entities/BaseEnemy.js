@@ -131,6 +131,9 @@ export class BaseEnemy {
     // Handle ambient speech timing
     this.updateAmbientSpeech(deltaTimeMs);
 
+    // Don't run combat behavior during spawn animation (grace period)
+    if (this.isSpawning) return null;
+
     // Subclasses should override this method for specific behavior
     return this.updateSpecificBehavior(playerX, playerY, deltaTimeMs);
   }
@@ -497,9 +500,12 @@ export class BaseEnemy {
       const delay = beatClock.getTimeToNextEighthNote
         ? beatClock.getTimeToNextEighthNote()
         : beatClock.getTimeToNextBeat() / 2;
-      setTimeout(() => {
-        audio.playSound(responseKey, this.x, this.y);
-      }, Math.max(0, delay));
+      setTimeout(
+        () => {
+          audio.playSound(responseKey, this.x, this.y);
+        },
+        Math.max(0, delay)
+      );
     } else {
       audio.playSound(responseKey, this.x, this.y);
     }

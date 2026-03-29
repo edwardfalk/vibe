@@ -163,7 +163,7 @@ function updateGame(p) {
   // Update camera for parallax effect
   if (window.cameraSystem) {
     if (typeof window.cameraSystem.update === 'function') {
-      window.cameraSystem.update();
+      window.cameraSystem.update(p.deltaTime);
     } else {
       console.warn('⚠️ Camera update method not found');
     }

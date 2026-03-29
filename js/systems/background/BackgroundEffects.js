@@ -77,9 +77,19 @@ function drawBeatPulseOverlay(p, beatClock, healthOverlayColor) {
     p.strokeWeight(ringWeight);
     p.ellipse(p.width / 2, p.height / 2, ringRadius * 2, ringRadius * 2);
     p.stroke(200, 180, 255, ringAlpha * 0.5);
-    p.ellipse(p.width / 2, p.height / 2, (ringRadius + 10) * 2, (ringRadius + 10) * 2);
+    p.ellipse(
+      p.width / 2,
+      p.height / 2,
+      (ringRadius + 10) * 2,
+      (ringRadius + 10) * 2
+    );
     p.stroke(200, 180, 255, ringAlpha * 0.25);
-    p.ellipse(p.width / 2, p.height / 2, (ringRadius + 20) * 2, (ringRadius + 20) * 2);
+    p.ellipse(
+      p.width / 2,
+      p.height / 2,
+      (ringRadius + 20) * 2,
+      (ringRadius + 20) * 2
+    );
   }
 
   // 3. Vignette pulse using cached graphics
@@ -134,7 +144,7 @@ export function drawInteractiveBackgroundEffectsLayer(
         ? Math.max(0, Math.min(1, player.health / player.maxHealth))
         : 0;
     if (healthPercent < 0.3) {
-      const dangerPulse = p.sin(p.frameCount * 0.2) * 0.5 + 0.5;
+      const dangerPulse = p.sin((p.millis() / 1000) * (0.2 * 60)) * 0.5 + 0.5;
       healthOverlayColor = {
         r: 255,
         g: 0,
@@ -157,7 +167,7 @@ export function drawInteractiveBackgroundEffectsLayer(
   if (player && player.isMoving) {
     const rippleIntensity = p.map(player.speed, 0, 5, 0, 1);
     for (let i = 0; i < 3; i++) {
-      const rippleRadius = (p.frameCount * 2 + i * 20) % 100;
+      const rippleRadius = ((p.millis() / 1000) * (2 * 60) + i * 20) % 100;
       const rippleAlpha = p.map(rippleRadius, 0, 100, 30 * rippleIntensity, 0);
       p.stroke(64, 224, 208, rippleAlpha);
       p.strokeWeight(2);
@@ -181,7 +191,7 @@ export function drawInteractiveBackgroundEffectsLayer(
 
   if (gameState && gameState.killStreak >= 5) {
     const streakIntensity = p.min(gameState.killStreak / 10, 1);
-    const borderPulse = p.sin(p.frameCount * 0.3) * 0.5 + 0.5;
+    const borderPulse = p.sin((p.millis() / 1000) * (0.3 * 60)) * 0.5 + 0.5;
     p.stroke(255, 100, 255, borderPulse * 100 * streakIntensity);
     p.strokeWeight(4);
     p.noFill();
@@ -190,7 +200,7 @@ export function drawInteractiveBackgroundEffectsLayer(
     for (let i = 0; i < gameState.killStreak && i < 15; i++) {
       const orbX = 50 + (i % 5) * 40;
       const orbY = 50 + p.floor(i / 5) * 30;
-      const orbPulse = p.sin(p.frameCount * 0.1 + i) * 0.5 + 0.5;
+      const orbPulse = p.sin((p.millis() / 1000) * (0.1 * 60) + i) * 0.5 + 0.5;
       p.fill(255, 100, 255, orbPulse * 150);
       p.noStroke();
       p.ellipse(orbX, orbY, 8 + orbPulse * 4, 8 + orbPulse * 4);
@@ -219,13 +229,13 @@ export function drawAuroraWispsLayer(wisps, p, beatClock = null) {
     const wispX = wisp.x;
     const wispY = wisp.y;
     const beatModulation =
-      p.sin(p.frameCount * 0.1 + wisp.phase) * auroraBeatPulse;
+      p.sin((p.millis() / 1000) * (0.1 * 60) + wisp.phase) * auroraBeatPulse;
     const wispSize =
       AURORA_WISP_BASE_SIZE +
-      p.cos(p.frameCount * AURORA_PHASE_SPEED + wisp.phase) *
+      p.cos((p.millis() / 1000) * (AURORA_PHASE_SPEED * 60) + wisp.phase) *
         AURORA_WISP_MODULATION +
       beatModulation;
-    const colorPhase = p.frameCount * 0.01 + wisp.phase;
+    const colorPhase = (p.millis() / 1000) * (0.01 * 60) + wisp.phase;
 
     const r = 138 + p.sin(colorPhase) * 50 + auroraBeatPulse * 0.5;
     const g = 43 + p.cos(colorPhase * 1.3) * 40 + auroraBeatPulse * 0.3;

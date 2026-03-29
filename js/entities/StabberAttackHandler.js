@@ -35,7 +35,15 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
 
   // Beat-gated stabber chant (replaces frame-based stabChantTimer)
   const beatClock = stabber.getContextValue('beatClock');
-  if (beatClock && beatClock.canStabberAttack() && !stabber.stabPreparing && !stabber.stabbing && !stabber.stabWarning && !stabber.stabRecovering && random() < 0.03) {
+  if (
+    beatClock &&
+    beatClock.canStabberAttack() &&
+    !stabber.stabPreparing &&
+    !stabber.stabbing &&
+    !stabber.stabWarning &&
+    !stabber.stabRecovering &&
+    random() < 0.03
+  ) {
     const audio = stabber.getContextValue('audio');
     if (audio) {
       audio.playSound('stabberChant', stabber.x, stabber.y);
@@ -180,8 +188,13 @@ function handleWarningPhase(stabber, dt) {
   stabber.velocity.x = 0;
   stabber.velocity.y = 0;
 
+  // Gate warning sounds to beat boundaries for rhythmic consistency
+  const beatClockWarn = stabber.getContextValue('beatClock');
+  const onBeat = beatClockWarn
+    ? beatClockWarn.canStabberAttack() || beatClockWarn.isOnBeat()
+    : true;
   const audioWarn = stabber.getContextValue('audio') || stabber.audio;
-  if (!stabber.stabWarningPlayed && audioWarn) {
+  if (!stabber.stabWarningPlayed && audioWarn && onBeat) {
     stabber.stabWarningPlayed = true;
     audioWarn.playSound('stabberStalk', stabber.x, stabber.y);
     audioWarn.playSound('stabberKnife', stabber.x, stabber.y);
@@ -197,7 +210,9 @@ function handleWarningPhase(stabber, dt) {
 
   // Transition to dash after ~half a beat (beat-relative duration)
   const beatClock = stabber.getContextValue('beatClock');
-  const warningDuration = beatClock ? beatClock.beatInterval * 0.5 / CONFIG.GAME_SETTINGS.FRAME_TIME_MS : 15;
+  const warningDuration = beatClock
+    ? (beatClock.beatInterval * 0.5) / CONFIG.GAME_SETTINGS.FRAME_TIME_MS
+    : 15;
   if (stabber.stabWarningTime >= warningDuration) {
     stabber.stabWarning = false;
     stabber.stabWarningTime = 0;
@@ -244,7 +259,11 @@ function handlePreparingPhase(stabber, dx, dy, distance, dt) {
 
   // Transition when beat 3.5 arrives (with minimum prep time)
   const minPrepFrames = 30; // ~0.5 seconds minimum
-  if (stabber.stabPreparingTime >= minPrepFrames && beatClock && beatClock.canStabberAttack()) {
+  if (
+    stabber.stabPreparingTime >= minPrepFrames &&
+    beatClock &&
+    beatClock.canStabberAttack()
+  ) {
     stabber.stabPreparing = false;
     stabber.stabPreparingTime = 0;
     stabber.stabWarning = true;

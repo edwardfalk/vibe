@@ -167,7 +167,9 @@ class Grunt extends BaseEnemy {
       }
     }
 
-    // BEAT-ALIGNED GRUNT SHOOTING: Fire on beats 2 & 4 with random skip
+    // BEAT-ALIGNED GRUNT SHOOTING: Fire on beats 2 & 4 with random skip.
+    // Uses _lastGruntBeat (beat-based) for gating, not BaseEnemy.shootCooldown
+    // (frame-based, inherited but unused by grunt fire logic).
     const beatClockShoot = this.getContextValue('beatClock');
     const rhythmFX = this.getContextValue('rhythmFX');
     if (distance < 300 && beatClockShoot) {
@@ -190,12 +192,19 @@ class Grunt extends BaseEnemy {
         } else {
           this._lastGruntBeat = beatClockShoot.getTotalBeats();
 
-          // Random skip for variety (~40%)
-          if (random() < 0.4) {
+          // Coordination: check if another grunt already fired this beat
+          const currentTotalBeat = beatClockShoot.getTotalBeats();
+          const lastGruntFireBeat = this.getContextValue('gruntFireBeat') ?? -1;
+          const alreadyFired = lastGruntFireBeat === currentTotalBeat;
+
+          // Higher skip chance (85%) if another grunt already fired this beat
+          const skipChance = alreadyFired ? 0.85 : 0.4;
+          if (random() < skipChance) {
             // Skipped this beat
           } else if (!this.shouldAvoidFriendlyFire()) {
             // Fire!
             this.muzzleFlash = 4;
+            window.gruntFireBeat = currentTotalBeat;
             return this.createBullet();
           }
         }

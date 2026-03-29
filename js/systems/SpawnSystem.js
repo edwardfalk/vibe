@@ -20,14 +20,11 @@ import {
 export class SpawnSystem {
   constructor(context = null) {
     this.context = context;
-    // Spawning timers
-    this.enemySpawnTimer = 0;
-    this.enemySpawnRate = 180; // frames - slower, more controlled spawning
-
-    // Spawn rate progression
-    this.baseSpawnRate = 180;
-    this.minSpawnRate = 60; // Fastest possible spawn rate
-    this.spawnRateDecreasePerLevel = 8; // How much faster spawning gets per level
+    // Beat-aligned spawning
+    this.lastSpawnBeat = -Infinity;
+    this.baseSpawnIntervalBeats = 8; // ~4 seconds at 120 BPM
+    this.minSpawnIntervalBeats = 4; // ~2 seconds minimum
+    this.spawnIntervalDecreasePerLevel = 0.5; // Beats faster per level
 
     this.enemyFactory = new EnemyFactory(context);
   }
@@ -40,33 +37,36 @@ export class SpawnSystem {
     return window[key];
   }
 
-  // Update spawning system
+  // Update spawning system (beat-aligned)
   update() {
     const gameState = this.getContextValue('gameState');
     if (!gameState || gameState.gameState !== 'playing') return;
 
-    // Update spawn timer
-    this.enemySpawnTimer++;
+    const beatClock = this.getContextValue('beatClock');
+    if (!beatClock) return;
 
-    // Calculate current spawn rate based on level
-    const currentSpawnRate = max(
-      this.minSpawnRate,
-      this.baseSpawnRate -
-        (gameState.level - 1) * this.spawnRateDecreasePerLevel
+    // Only spawn on downbeat (beat 1) for musical alignment
+    if (!beatClock.isOnBeat([1])) return;
+
+    const totalBeats = beatClock.getTotalBeats();
+    const currentSpawnInterval = max(
+      this.minSpawnIntervalBeats,
+      this.baseSpawnIntervalBeats -
+        (gameState.level - 1) * this.spawnIntervalDecreasePerLevel
     );
 
-    // Spawn enemies when timer reaches spawn rate
-    if (this.enemySpawnTimer >= currentSpawnRate) {
-      this.enemySpawnTimer = 0;
+    // Check if enough beats have passed since last spawn
+    if (totalBeats - this.lastSpawnBeat < currentSpawnInterval) return;
 
-      const enemies = this.getContextValue('enemies');
-      const maxEnemies = this.getMaxEnemiesForLevel(gameState.level);
-      const currentEnemyCount = enemies ? enemies.length : 0;
+    this.lastSpawnBeat = totalBeats;
 
-      if (currentEnemyCount < maxEnemies) {
-        const enemiesToSpawn = min(2, maxEnemies - currentEnemyCount);
-        this.spawnEnemies(enemiesToSpawn);
-      }
+    const enemies = this.getContextValue('enemies');
+    const maxEnemies = this.getMaxEnemiesForLevel(gameState.level);
+    const currentEnemyCount = enemies ? enemies.length : 0;
+
+    if (currentEnemyCount < maxEnemies) {
+      const enemiesToSpawn = min(2, maxEnemies - currentEnemyCount);
+      this.spawnEnemies(enemiesToSpawn);
     }
   }
 
@@ -209,8 +209,7 @@ export class SpawnSystem {
 
   // Reset spawning system
   reset() {
-    this.enemySpawnTimer = 0;
-    this.enemySpawnRate = this.baseSpawnRate;
+    this.lastSpawnBeat = -Infinity;
   }
 
   // Force spawn specific enemy type (for testing)

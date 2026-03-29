@@ -53,22 +53,22 @@ export class RhythmFX {
         this.beatJustHit = false;
       }
 
-      // Decay pulse intensity
-      this.pulseIntensity *= 0.92;
+      // Decay pulse intensity (frame-rate independent)
+      this.pulseIntensity *= Math.pow(0.92, deltaTimeMs / 16.67);
 
       const beatPhase = beatClock.getBeatPhase();
       const isDownbeat = currentBeat === 0;
       if (beatPhase < 0.15 && isDownbeat) {
         this.edgeFlashIntensity = (1 - beatPhase / 0.15) * 0.85;
       } else {
-        this.edgeFlashIntensity *= 0.9;
+        this.edgeFlashIntensity *= Math.pow(0.9, deltaTimeMs / 16.67);
       }
     }
 
     // Decay telegraphs using actual deltaTime
     const beatsPerFrame = beatClock
       ? deltaTimeMs / beatClock.beatInterval
-      : deltaTimeMs / 500;  // fallback assumes 120 BPM
+      : deltaTimeMs / 500; // fallback assumes 120 BPM
     for (let i = this.telegraphs.length - 1; i >= 0; i--) {
       const t = this.telegraphs[i];
       t.beatsUntil -= beatsPerFrame;
@@ -158,7 +158,6 @@ export class RhythmFX {
       p.fill(r, g, b, alpha * pulse);
       p.noStroke();
       p.ellipse(screenX, screenY, 6 * pulse, 6 * pulse);
-
     }
 
     p.pop();

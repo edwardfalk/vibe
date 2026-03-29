@@ -106,20 +106,30 @@ export function runSetup(p, arrays, syncContext = null) {
   console.log('👾 Spawn system initialized');
 
   if (!window.beatClock) {
-    window.beatClock = new BeatClock(DEFAULT_BPM, window.audio?.audioContext ?? null);
+    window.beatClock = new BeatClock(
+      DEFAULT_BPM,
+      window.audio?.audioContext ?? null
+    );
     console.log('🎵 BeatClock initialized and assigned to window.beatClock');
   }
 
   // Monkey-patch audio.initialize so BeatClock syncs once AudioContext is available
   const originalInit = window.audio?.initialize?.bind(window.audio);
   if (originalInit && window.audio) {
-    window.audio.initialize = function() {
+    window.audio.initialize = function () {
       originalInit();
-      if (this.audioContext && window.beatClock && !window.beatClock.audioContext) {
+      if (
+        this.audioContext &&
+        window.beatClock &&
+        !window.beatClock.audioContext
+      ) {
+        // Preserve beat position across clock source switch
+        const oldElapsed = Date.now() - window.beatClock.startTime;
         window.beatClock.audioContext = this.audioContext;
-        window.beatClock.startTime = window.beatClock._now();
+        window.beatClock.startTime =
+          this.audioContext.currentTime * 1000 - oldElapsed;
         window.beatClock.update(true);
-        console.log('🎵 BeatClock synced to AudioContext');
+        console.log('🎵 BeatClock synced to AudioContext (phase preserved)');
       }
     };
   }

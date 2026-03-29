@@ -19,7 +19,7 @@ export class BeatClock {
     this.audioContext = audioContext ?? null;
     this.beatInterval = (60 / bpm) * 1000; // milliseconds per beat
     this.startTime = this._now();
-    this.tolerance = CONFIG.BEAT_TOLERANCES.ON_BEAT; // ms tolerance for "on beat" detection
+    this._updateTolerances();
 
     // Beat pattern tracking (4/4 time signature)
     this.beatsPerMeasure = 4;
@@ -40,9 +40,20 @@ export class BeatClock {
     );
   }
 
+  // Compute ms tolerances from fractional config values
+  _updateTolerances() {
+    this.tolerance = this.beatInterval * CONFIG.BEAT_TOLERANCES.ON_BEAT;
+    this.quarterBeatTolerance =
+      (this.beatInterval / 4) * CONFIG.BEAT_TOLERANCES.QUARTER_BEAT;
+    this.eighthNoteTolerance =
+      (this.beatInterval / 2) * CONFIG.BEAT_TOLERANCES.EIGHTH_NOTE;
+  }
+
   // Internal clock source: AudioContext (seconds->ms) or Date.now fallback
   _now() {
-    return this.audioContext ? this.audioContext.currentTime * 1000 : Date.now();
+    return this.audioContext
+      ? this.audioContext.currentTime * 1000
+      : Date.now();
   }
 
   // Get current beat number (0-based, resets every measure)
@@ -63,8 +74,10 @@ export class BeatClock {
     return this.cache.timeToNextBeat;
   }
 
-  // Check if we're currently on a beat (within tolerance)
-  // Can optionally accept an array of beat numbers to check against
+  // Check if we're currently on a beat (within tolerance).
+  // Enemies poll this every frame — at typical counts (<10) the cost is
+  // negligible (~360 calls/sec of simple arithmetic). A pub/sub model
+  // would add complexity without measurable benefit.
   isOnBeat(beats = null) {
     const timeToNext = this.getTimeToNextBeat();
     const onBeat =
@@ -95,13 +108,10 @@ export class BeatClock {
     const quarterBeatInterval = this.beatInterval / 4; // 125ms at 120 BPM
     const timeSinceLastQuarterBeat = elapsed % quarterBeatInterval;
 
-    // EXACT TIMING: Only return true in a very small window around the quarter-beat
-    // This creates precise rhythm timing instead of loose tolerance windows
-    const exactTolerance = CONFIG.BEAT_TOLERANCES.QUARTER_BEAT;
-
     return (
-      timeSinceLastQuarterBeat <= exactTolerance ||
-      timeSinceLastQuarterBeat >= quarterBeatInterval - exactTolerance
+      timeSinceLastQuarterBeat <= this.quarterBeatTolerance ||
+      timeSinceLastQuarterBeat >=
+        quarterBeatInterval - this.quarterBeatTolerance
     );
   }
 
@@ -129,8 +139,10 @@ export class BeatClock {
     const elapsed = this.cache.elapsed;
     const eighthInterval = this.beatInterval / 2;
     const timeSinceLastEighth = elapsed % eighthInterval;
-    const tolerance = CONFIG.BEAT_TOLERANCES.EIGHTH_NOTE;
-    return timeSinceLastEighth <= tolerance || timeSinceLastEighth >= eighthInterval - tolerance;
+    return (
+      timeSinceLastEighth <= this.eighthNoteTolerance ||
+      timeSinceLastEighth >= eighthInterval - this.eighthNoteTolerance
+    );
   }
 
   // GRUNT TIMING: Beats 2 and 4 (snare pattern)
@@ -192,6 +204,7 @@ export class BeatClock {
   setBPM(newBPM) {
     this.bpm = newBPM;
     this.beatInterval = (60 / newBPM) * 1000;
+    this._updateTolerances();
     this.update(true);
     console.log(`🎵 Tempo changed to ${newBPM} BPM`);
   }
@@ -261,4 +274,13 @@ export class BeatClock {
   get currentBeat() {
     return this.getCurrentBeat();
   }
+}
+
+// Coordinated BPM change for both BeatClock and BeatTrack
+export function setGlobalBPM(newBPM, context) {
+  const beatClock = context?.get?.('beatClock') ?? window.beatClock;
+  const beatTrack = context?.get?.('beatTrack') ?? window.beatTrack;
+
+  if (beatClock) beatClock.setBPM(newBPM);
+  if (beatTrack) beatTrack.setBPM(newBPM);
 }

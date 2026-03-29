@@ -75,8 +75,10 @@ export function drawFlowingNebulaStreamsLayer(streams, p) {
   for (let i = 0; i < streams.length; i++) {
     const stream = streams[i];
     // Scale modulations
-    const scaleMod = 1 + p.sin(p.frameCount * 0.008 + stream.phase) * 0.3;
-    const flowOffset = p.sin(p.frameCount * 0.01 + stream.phase * 0.5) * 20;
+    const scaleMod =
+      1 + p.sin((p.millis() / 1000) * (0.008 * 60) + stream.phase) * 0.3;
+    const flowOffset =
+      p.sin((p.millis() / 1000) * (0.01 * 60) + stream.phase * 0.5) * 20;
 
     p.push();
     p.translate(stream.x + flowOffset, stream.y);
@@ -90,7 +92,7 @@ export function drawFlowingNebulaStreamsLayer(streams, p) {
 export function drawShootingStarsLayer(stars, p) {
   for (let i = 0; i < stars.length; i++) {
     const star = stars[i];
-    const starLife = (p.frameCount + star.phaseOffset) % 600;
+    const starLife = (Math.floor(p.millis() / 16.67) + star.phaseOffset) % 600;
     if (starLife >= 120) continue;
 
     const progress = starLife / 120;
@@ -121,8 +123,9 @@ export function drawShootingStarsLayer(stars, p) {
 export function drawEnhancedSparklesLayer(sparkles, p) {
   for (let i = 0; i < sparkles.length; i++) {
     const sparkle = sparkles[i];
-    const twinkle = p.sin(p.frameCount * 0.02 + sparkle.phase * 2) * 0.5 + 0.5;
-    const colorPhase = p.frameCount * 0.008 + sparkle.phase;
+    const twinkle =
+      p.sin((p.millis() / 1000) * (0.02 * 60) + sparkle.phase * 2) * 0.5 + 0.5;
+    const colorPhase = (p.millis() / 1000) * (0.008 * 60) + sparkle.phase;
 
     const colorIndex = p.floor(colorPhase) % SPARKLE_COLORS.length;
     const currentColor = SPARKLE_COLORS[colorIndex];
@@ -145,11 +148,11 @@ export function drawDistantGalaxiesLayer(galaxies, p) {
   p.imageMode(p.CENTER);
   for (let i = 0; i < galaxies.length; i++) {
     const galaxy = galaxies[i];
-    const rotation = p.frameCount * 0.002 + galaxy.phase;
+    const rotation = (p.millis() / 1000) * (0.002 * 60) + galaxy.phase;
 
     // Scale ranges roughly from 45/75 to 75/75 (0.6 to 1.0)
     const scaleMod =
-      (60 + p.sin(p.frameCount * 0.005 + galaxy.phase) * 15) / 75;
+      (60 + p.sin((p.millis() / 1000) * (0.005 * 60) + galaxy.phase) * 15) / 75;
 
     p.push();
     p.translate(galaxy.x, galaxy.y);

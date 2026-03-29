@@ -169,7 +169,29 @@ export class Audio {
       this.audioContext = new (window.AudioContext ||
         window.webkitAudioContext)();
       this.masterGain = this.audioContext.createGain();
-      this.masterGain.connect(this.audioContext.destination);
+
+      // Master limiter to prevent clipping from concurrent sounds
+      this.masterLimiter = this.audioContext.createDynamicsCompressor();
+      this.masterLimiter.threshold.setValueAtTime(
+        -6,
+        this.audioContext.currentTime
+      );
+      this.masterLimiter.knee.setValueAtTime(3, this.audioContext.currentTime);
+      this.masterLimiter.ratio.setValueAtTime(
+        12,
+        this.audioContext.currentTime
+      );
+      this.masterLimiter.attack.setValueAtTime(
+        0.003,
+        this.audioContext.currentTime
+      );
+      this.masterLimiter.release.setValueAtTime(
+        0.1,
+        this.audioContext.currentTime
+      );
+
+      this.masterGain.connect(this.masterLimiter);
+      this.masterLimiter.connect(this.audioContext.destination);
       this.masterGain.gain.setValueAtTime(
         this.volume,
         this.audioContext.currentTime
@@ -519,10 +541,16 @@ export class Audio {
     const sweepDuration = 16; // ~8 measures at 120 BPM
     const now = ctx.currentTime;
     this.droneFilter.frequency.setValueAtTime(80, now);
-    this.droneFilter.frequency.linearRampToValueAtTime(200, now + sweepDuration / 2);
+    this.droneFilter.frequency.linearRampToValueAtTime(
+      200,
+      now + sweepDuration / 2
+    );
     this.droneFilter.frequency.linearRampToValueAtTime(80, now + sweepDuration);
     // Schedule next sweep
-    this._droneSweepTimer = setTimeout(() => this._droneFilterSweep(ctx), sweepDuration * 1000);
+    this._droneSweepTimer = setTimeout(
+      () => this._droneFilterSweep(ctx),
+      sweepDuration * 1000
+    );
   }
 
   stopDrone() {
@@ -534,7 +562,9 @@ export class Audio {
       try {
         this.droneOsc.stop();
         this.droneOsc.disconnect();
-      } catch (e) { /* already stopped */ }
+      } catch (e) {
+        /* already stopped */
+      }
       this.droneOsc = null;
     }
     if (this.droneGain) {

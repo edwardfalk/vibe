@@ -16,8 +16,9 @@ export class CameraSystem {
     this.targetX = 0;
     this.targetY = 0;
 
-    // Screen shake system
+    // Screen shake system (duration in ms)
     this.screenShake = { intensity: 0, duration: 0 };
+    this.lastDeltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
 
     // Camera settings
     this.sensitivity = 0.4; // How much camera follows player movement
@@ -25,13 +26,14 @@ export class CameraSystem {
     this.interpolationSpeed = 0.15; // How fast camera catches up
   }
 
-  // Add screen shake effect
-  addShake(intensity, duration = 20) {
+  // Add screen shake effect (duration in frames, converted to ms internally)
+  addShake(intensity, durationFrames = 20) {
+    const durationMs = durationFrames * CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
     this.screenShake.intensity = Math.max(
       this.screenShake.intensity,
       intensity
     );
-    this.screenShake.duration = Math.max(this.screenShake.duration, duration);
+    this.screenShake.duration = Math.max(this.screenShake.duration, durationMs);
   }
 
   _getPlayer() {
@@ -42,7 +44,8 @@ export class CameraSystem {
   }
 
   // Update camera position based on player
-  update() {
+  update(deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
+    this.lastDeltaTimeMs = deltaTimeMs;
     const player = this._getPlayer();
     if (!player) return;
     const p = this.p;
@@ -81,11 +84,12 @@ export class CameraSystem {
     const p = this.p;
     p.push();
 
-    // Apply screen shake
+    // Apply screen shake (frame-rate independent, duration in ms)
     if (this.screenShake.duration > 0) {
-      this.screenShake.duration--;
+      this.screenShake.duration -= this.lastDeltaTimeMs;
       if (this.screenShake.duration <= 0) {
         this.screenShake.intensity = 0;
+        this.screenShake.duration = 0;
       }
       const shakeX = randomRange(
         -this.screenShake.intensity,

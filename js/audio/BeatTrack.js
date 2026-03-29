@@ -9,7 +9,9 @@
  */
 
 const EIGHTH_NOTES_PER_MEASURE = 8;
-const SCHEDULE_AHEAD_SEC = 0.1;
+// Look-ahead buffer for sample-accurate scheduling.
+// 75ms balances glitch-free playback with minimal audio-visual desync.
+const SCHEDULE_AHEAD_SEC = 0.075;
 const SCHEDULER_INTERVAL_MS = 25;
 
 export class BeatTrack {
@@ -148,7 +150,10 @@ export class BeatTrack {
 
     osc.connect(gain);
     gain.connect(this.masterGain);
-    osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
     osc.start(time);
     osc.stop(time + duration);
 
@@ -169,7 +174,11 @@ export class BeatTrack {
     // Level 5+: Add noise transient on downbeats
     if (this.level >= 5 && isDownbeat && this.ctx) {
       const bufferSize = this.ctx.sampleRate * 0.03; // 30ms
-      const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const noiseBuffer = this.ctx.createBuffer(
+        1,
+        bufferSize,
+        this.ctx.sampleRate
+      );
       const data = noiseBuffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
         data[i] = Math.random() * 2 - 1;

@@ -11,9 +11,15 @@ describe('BeatClock tolerance constants', () => {
 
   it('should expose TOLERANCE_BASE derived from config', () => {
     expect(CONFIG.BEAT_TOLERANCES).toBeDefined();
-    expect(CONFIG.BEAT_TOLERANCES.ON_BEAT).toBe(100);
-    expect(CONFIG.BEAT_TOLERANCES.QUARTER_BEAT).toBe(50);
-    expect(CONFIG.BEAT_TOLERANCES.EIGHTH_NOTE).toBe(40);
+    // Tolerances are now fractions of beat/subdivision interval
+    expect(CONFIG.BEAT_TOLERANCES.ON_BEAT).toBe(0.2);
+    expect(CONFIG.BEAT_TOLERANCES.QUARTER_BEAT).toBe(0.1);
+    expect(CONFIG.BEAT_TOLERANCES.EIGHTH_NOTE).toBe(0.08);
+
+    // At 120 BPM (500ms beat), computed ms values should match prior defaults
+    expect(clock.tolerance).toBe(100); // 0.20 * 500ms
+    expect(clock.quarterBeatTolerance).toBe(12.5); // 0.10 * 125ms
+    expect(clock.eighthNoteTolerance).toBe(20); // 0.08 * 250ms
   });
 
   it('should use QUARTER_BEAT tolerance in canPlayerShootQuarterBeat', () => {

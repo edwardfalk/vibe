@@ -165,18 +165,31 @@ class Tank extends BaseEnemy {
       }
 
       // Speech milestones based on beat progress
-      if (beatsSinceCharge >= 1 && beatsSinceCharge < 2 && audioTank && beatClock.isOnBeat([1])) {
+      if (
+        beatsSinceCharge >= 1 &&
+        beatsSinceCharge < 2 &&
+        audioTank &&
+        beatClock.isOnBeat([1])
+      ) {
         console.log('🔋 Tank starting to charge!');
         audioTank.speak(this, 'CHARGING!', 'tank');
         audioTank.playSound('tankCharging', this.x, this.y);
-      } else if (beatsSinceCharge >= 4 && beatsSinceCharge < 5 && audioTank && beatClock.isOnBeat([1])) {
+      } else if (
+        beatsSinceCharge >= 4 &&
+        beatsSinceCharge < 5 &&
+        audioTank &&
+        beatClock.isOnBeat([1])
+      ) {
         console.log('⚡ Tank 50% charged!');
         audioTank.speak(this, 'POWER UP!', 'tank');
         audioTank.playSound('tankPowerUp', this.x, this.y);
       }
 
       // Fire when charge complete AND on beat 1
-      if (beatsSinceCharge >= this.chargeDurationBeats && beatClock.canTankShoot()) {
+      if (
+        beatsSinceCharge >= this.chargeDurationBeats &&
+        beatClock.canTankShoot()
+      ) {
         this.chargingShot = false;
         this._lastTankFireBeat = beatClock.getTotalBeats();
 
@@ -192,8 +205,13 @@ class Tank extends BaseEnemy {
       }
     } else {
       // Start charge on beat 1, within range, with cooldown since last fire
-      const beatsSinceLastFire = beatClock.getTotalBeats() - this._lastTankFireBeat;
-      if (distance < 400 && beatsSinceLastFire >= 8 && beatClock.canTankShoot()) {
+      const beatsSinceLastFire =
+        beatClock.getTotalBeats() - this._lastTankFireBeat;
+      if (
+        distance < 400 &&
+        beatsSinceLastFire >= 8 &&
+        beatClock.canTankShoot()
+      ) {
         this.chargingShot = true;
         this.chargeStartBeat = beatClock.getTotalBeats();
         console.log('🎯 Tank starting charge sequence!');
@@ -405,7 +423,11 @@ class Tank extends BaseEnemy {
   drawChargingIndicator() {
     const beatClock = this.getContextValue('beatClock');
     const chargePercent = beatClock
-      ? Math.min(1, (beatClock.getTotalBeats() - this.chargeStartBeat) / this.chargeDurationBeats)
+      ? Math.min(
+          1,
+          (beatClock.getTotalBeats() - this.chargeStartBeat) /
+            this.chargeDurationBeats
+        )
       : 0;
 
     // Charging circle around tank

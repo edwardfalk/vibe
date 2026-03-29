@@ -264,7 +264,8 @@ export function drawDistantStarsLayer(stars, p, beatClock = null) {
   p.drawingContext.shadowBlur = 5 + beatPulse * 10;
   p.drawingContext.shadowColor = '#FFFFFF';
   for (const star of stars) {
-    const twinkle = p.sin(p.frameCount * star.twinkleSpeed) * 0.5 + 0.5;
+    const twinkle =
+      p.sin((p.millis() / 1000) * (star.twinkleSpeed * 60)) * 0.5 + 0.5;
     const alpha = Math.min(255, star.brightness * twinkle * 255 + beatBoost);
 
     p.fill(255, 255, 255, alpha);
@@ -284,7 +285,7 @@ export function drawNebulaCloudLayer(clouds, p, beatClock = null) {
 
   p.noStroke();
   for (const cloud of clouds) {
-    const drift = p.sin(p.frameCount * cloud.driftSpeed) * 20;
+    const drift = p.sin((p.millis() / 1000) * (cloud.driftSpeed * 60)) * 20;
     const boost = beatPulse * 0.7;
     const r = Math.min(255, cloud.color.r + boost * 60);
     const g = Math.min(255, cloud.color.g + boost * 30);
@@ -317,7 +318,7 @@ export function drawMediumStarsLayer(stars, p, beatClock = null) {
     const { alpha, finalSize, combinedBrightness } = computeMediumStarVisual(
       star,
       starIndex,
-      p.frameCount,
+      p.millis() / 16.67,
       p.TWO_PI,
       beatPulse,
       measurePhase,
@@ -408,7 +409,8 @@ export function drawForegroundSparksLayer(sparks, p) {
   p.drawingContext.shadowBlur = 15;
   p.drawingContext.shadowColor = '#00F3FF';
   for (const spark of sparks) {
-    const flicker = p.sin(p.frameCount * spark.flickerSpeed) * 0.5 + 0.5;
+    const flicker =
+      p.sin((p.millis() / 1000) * (spark.flickerSpeed * 60)) * 0.5 + 0.5;
     const alpha = spark.alpha * 255 * flicker;
     p.stroke(0, 243, 255, alpha); // Cyan motion blur
 
