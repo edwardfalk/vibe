@@ -1,6 +1,6 @@
 # Vibe: Cosmic Beat Space Shooter
 
-Vibe is a weird rhythm-driven space shooter built with `p5.js` in instance mode.
+Vibe is a weird space shooter built with `p5.js` in instance mode. It creates it's own rythm by timing the audio effects to fall on certain places in the beat.
 
 Core idea: enemy behavior follows musical timing while player action stays mostly free-form.
 
@@ -18,7 +18,6 @@ The alien enemies are different mixes of evil, psycho, big-baby-cowards, fascist
 ## Documentation
 
 - `ARCHITECTURE.md` - module structure and migration rules
-- `.cursorrules` - coding/runtime rules
 - `docs/DESIGN.md` - gameplay and beat-system design
 - `docs/TESTING.md` - testing strategy and smoke-runner behavior
 
