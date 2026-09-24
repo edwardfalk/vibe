@@ -91,6 +91,22 @@ const CONFIG = {
     },
   },
 
+  // Pacing: how fast levels come and enemies (instruments) join.
+  // Tune live by opening the game with ?tune in the URL.
+  PACING: {
+    FIRST_LEVEL_POINTS: 100, // score for level 2 (a kill is 10, more on a streak)
+    LEVEL_POINTS_PER_LEVEL: 120, // leaving level N (N >= 2) costs N x this
+    SPAWN_INTERVAL_BEATS: 6, // beats between spawn waves at level 1
+    SPAWN_INTERVAL_DROP_PER_LEVEL: 0.5, // waves come this many beats sooner per level
+    MIN_SPAWN_INTERVAL_BEATS: 4,
+    BASE_MAX_ENEMIES: 2, // on screen at level 1; +1 every second level
+    MAX_ENEMIES_CAP: 6,
+    // A taste of what's coming: once per run, a single enemy of the next
+    // new type appears when this far through the level before it
+    PREVIEW_NEW_ENEMY: true,
+    PREVIEW_AT_PROGRESS: 0.5,
+  },
+
   // Beat track: the steady kick and the sub pulse under it.
   // Tune live by opening the game with ?tune in the URL.
   BEAT_TRACK: {

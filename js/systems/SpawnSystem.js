@@ -18,14 +18,31 @@ import {
   sqrt,
 } from '../mathUtils.js';
 
+// Waves arrive on the strong beats (1 and 3). A beat-1-only grid rounded
+// every interval up to a whole bar, so 6 beats meant 8 and per-level
+// speed-ups did nothing until the interval fell to 4.
+const SPAWN_BEATS = [1, 3];
+
+// Level at which each enemy type joins the regular mix
+export const ENEMY_INTRO_LEVEL = { stabber: 2, rusher: 3, tank: 5 };
+
+// The next type to be introduced after this level, or null
+export function nextNewEnemyType(level) {
+  let next = null;
+  for (const [type, introLevel] of Object.entries(ENEMY_INTRO_LEVEL)) {
+    if (introLevel > level && (!next || introLevel < ENEMY_INTRO_LEVEL[next])) {
+      next = type;
+    }
+  }
+  return next;
+}
+
 export class SpawnSystem {
   constructor(context = null) {
     this.context = context;
-    // Beat-aligned spawning
+    // Beat-aligned spawning; intervals and caps come from CONFIG.PACING
     this.lastSpawnBeat = -Infinity;
-    this.baseSpawnIntervalBeats = 8; // ~4 seconds at 120 BPM
-    this.minSpawnIntervalBeats = 4; // ~2 seconds minimum
-    this.spawnIntervalDecreasePerLevel = 0.5; // Beats faster per level
+    this.previewed = new Set(); // types already given a one-off taste
 
     this.enemyFactory = new EnemyFactory(context);
     this.getContextValue = createContextAccessor(() => this.context);
@@ -39,20 +56,34 @@ export class SpawnSystem {
     const beatClock = this.getContextValue('beatClock');
     if (!beatClock) return;
 
-    // Only spawn on downbeat (beat 1) for musical alignment
-    if (!beatClock.isOnBeat([1])) return;
+    if (!beatClock.isOnBeat(SPAWN_BEATS)) return;
 
     const totalBeats = beatClock.getTotalBeats();
+    const pacing = CONFIG.PACING;
     const currentSpawnInterval = max(
-      this.minSpawnIntervalBeats,
-      this.baseSpawnIntervalBeats -
-        (gameState.level - 1) * this.spawnIntervalDecreasePerLevel
+      pacing.MIN_SPAWN_INTERVAL_BEATS,
+      pacing.SPAWN_INTERVAL_BEATS -
+        (gameState.level - 1) * pacing.SPAWN_INTERVAL_DROP_PER_LEVEL
     );
 
     // Check if enough beats have passed since last spawn
     if (totalBeats - this.lastSpawnBeat < currentSpawnInterval) return;
 
     this.lastSpawnBeat = totalBeats;
+
+    // A single guest of the next new type, ahead of its level (may exceed
+    // the cap by one; it's a taste, not a wave)
+    const preview = nextNewEnemyType(gameState.level);
+    if (
+      pacing.PREVIEW_NEW_ENEMY &&
+      preview &&
+      !this.previewed.has(preview) &&
+      gameState.getProgressToNextLevel() >= pacing.PREVIEW_AT_PROGRESS
+    ) {
+      this.previewed.add(preview);
+      this.spawnEnemies(1, preview);
+      return;
+    }
 
     const enemies = this.getContextValue('enemies');
     const maxEnemies = this.getMaxEnemiesForLevel(gameState.level);
@@ -66,11 +97,12 @@ export class SpawnSystem {
 
   // Get maximum enemies allowed for current level
   getMaxEnemiesForLevel(level) {
-    return min(2 + floor(level / 2), 6); // Start with 2, max 6
+    const { BASE_MAX_ENEMIES, MAX_ENEMIES_CAP } = CONFIG.PACING;
+    return min(BASE_MAX_ENEMIES + floor(level / 2), MAX_ENEMIES_CAP);
   }
 
   // Spawn enemies based on level progression
-  spawnEnemies(count) {
+  spawnEnemies(count, forcedType = null) {
     const gameState = this.getContextValue('gameState');
     const enemies = this.getContextValue('enemies');
     const player = this.getContextValue('player');
@@ -78,7 +110,7 @@ export class SpawnSystem {
     const level = gameState ? gameState.level : 1;
     const p = player && player.p;
     for (let i = 0; i < count; i++) {
-      const enemyType = this.getEnemyTypeForLevel(level);
+      const enemyType = forcedType ?? this.getEnemyTypeForLevel(level);
       const spawnPos = this.findSpawnPosition();
       const enemy = this.enemyFactory.createEnemy(
         spawnPos.x,
@@ -97,14 +129,13 @@ export class SpawnSystem {
   getEnemyTypeForLevel(level) {
     let weightedTypes = [];
 
-    if (level <= 2) {
+    if (level < ENEMY_INTRO_LEVEL.rusher) {
       // Early levels: mostly grunts
       weightedTypes = ['grunt', 'grunt', 'grunt'];
-      if (level >= 2) weightedTypes.push('stabber');
-    } else if (level <= 4) {
+      if (level >= ENEMY_INTRO_LEVEL.stabber) weightedTypes.push('stabber');
+    } else if (level < ENEMY_INTRO_LEVEL.tank) {
       // Mid levels: mix of grunt, stabber, rusher
-      weightedTypes = ['grunt', 'grunt', 'stabber', 'stabber'];
-      if (level >= 3) weightedTypes.push('rusher');
+      weightedTypes = ['grunt', 'grunt', 'stabber', 'stabber', 'rusher'];
     } else {
       // High levels: all enemy types with tanks
       weightedTypes = ['grunt', 'stabber', 'rusher', 'tank'];
@@ -204,6 +235,7 @@ export class SpawnSystem {
   // Reset spawning system
   reset() {
     this.lastSpawnBeat = -Infinity;
+    this.previewed.clear();
   }
 
   // Force spawn specific enemy type (for testing)

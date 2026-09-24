@@ -29,6 +29,7 @@ vi.stubGlobal('localStorage', {
 vi.spyOn(console, 'log').mockImplementation(() => {});
 
 const { GameState } = await import('../../js/core/GameState.js');
+const { CONFIG } = await import('../../js/config.js');
 
 describe('GameState', () => {
   let gs;
@@ -67,7 +68,7 @@ describe('GameState', () => {
   });
 
   it('level progresses at threshold', () => {
-    gs.addScore(150);
+    gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
     expect(gs.level).toBe(2);
   });
 
