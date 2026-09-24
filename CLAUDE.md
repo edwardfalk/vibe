@@ -31,7 +31,7 @@ A p5.js geometric space shooter where enemy actions sync to musical beats, creat
 
 **Entity system**: `BaseEnemy` is the abstract parent. Grunt, Rusher, Tank, Stabber extend it. Each gets `update(playerX, playerY, dt)` called per frame. Enemies access shared systems via `this.getContextValue(key)`. `EnemyFactory` creates enemies by type string. `SpawnSystem` controls when/what spawns based on level.
 
-**Beat system**: `BeatClock` (`js/audio/BeatClock.js`) is the timing engine, backed by `AudioContext.currentTime`. Enemies check methods like `canGruntShoot()`, `canTankShoot()` before acting. `BeatTrack` (`js/audio/BeatTrack.js`) plays a minimal sub-bass pulse. All enemy timing is beat-relative, not frame-based. Cooldowns use beat-skip probability, not frame counters.
+**Beat system**: `BeatClock` (`js/audio/BeatClock.js`) is the timing engine, backed by `AudioContext.currentTime`. Enemies check methods like `canGruntShoot()`, `canTankShoot()` before acting. `BeatTrack` (`js/audio/BeatTrack.js`) plays a steady kick (four on the floor by default) over a sub-bass pulse; their settings are in `CONFIG.BEAT_TRACK`, and opening the game with `?tune` shows live sliders for them (`js/dev/TunePanel.js`). All enemy timing is beat-relative, not frame-based. Cooldowns use beat-skip probability, not frame counters.
 
 **Damage flow**: `enemy.takeDamage()` returns a raw result -> `normalizeDamageResult()` (`js/shared/DamageResult.js`) -> `handleDamageResult()` (`js/shared/DamageResultHandler.js`) which triggers explosions, audio, score.
 

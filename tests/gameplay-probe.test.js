@@ -195,6 +195,25 @@ test.describe('Gameplay Probes', () => {
     );
   });
 
+  test('?tune panel clicks during play do not shoot or keep focus', async ({
+    page,
+  }) => {
+    await page.goto('/?tune');
+    await page.waitForFunction(() => window.gameState?.gameState === 'title');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => window.gameState.gameState === 'playing');
+    const slider = page.locator('#tunePanel input[type=range]').first();
+    await slider.click();
+    expect(
+      await page.evaluate(() => ({
+        shooting: window.playerIsShooting,
+        shots: window.gameState.shotsFired,
+      }))
+    ).toEqual({ shooting: false, shots: 0 });
+    // Released slider gives the keyboard back to the game
+    await expect(slider).not.toBeFocused();
+  });
+
   test('R after game over restarts straight into play', async ({ page }) => {
     await bootGame(page);
     await page.evaluate(() => window.gameState.setGameState('gameOver'));

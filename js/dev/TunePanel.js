@@ -27,9 +27,10 @@ export function createTunePanel() {
   const settings = CONFIG.BEAT_TRACK;
   const panel = document.createElement('div');
   panel.id = 'tunePanel';
-  // Clicks and keys here must not start the game, shoot or steer
+  // Clicks and key presses here must not start the game, shoot or steer.
+  // keyup still passes, so a key released over the panel can't stay stuck.
   panel.dataset.noStart = '';
-  for (const type of ['mousedown', 'pointerdown', 'keydown', 'keyup']) {
+  for (const type of ['mousedown', 'pointerdown', 'keydown']) {
     panel.addEventListener(type, (e) => e.stopPropagation());
   }
   panel.style.cssText =
@@ -77,6 +78,8 @@ export function createTunePanel() {
     input.addEventListener('change', () => {
       readout();
       showJson();
+      // Hand the keyboard back to the game, or arrows keep moving the control
+      input.blur();
     });
 
     readout();

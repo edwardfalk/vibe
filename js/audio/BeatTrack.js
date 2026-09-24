@@ -23,6 +23,8 @@ const KICK_PATTERNS = {
 // 75ms balances glitch-free playback with minimal audio-visual desync.
 const SCHEDULE_AHEAD_SEC = 0.075;
 const SCHEDULER_INTERVAL_MS = 25;
+// Exponential ramps can't reach 0; this is inaudible
+const SILENCE_GAIN = 0.001;
 
 export class BeatTrack {
   constructor(bpm = 120, context = null) {
@@ -92,7 +94,7 @@ export class BeatTrack {
     this.currentEighth = 0;
     this.isPlaying = true;
 
-    // Pre-create reusable noise buffer for Level 5+ downbeat transients
+    // Reusable noise buffer: the kick click and Level 5+ downbeat transients
     const bufferSize = Math.floor(this.ctx.sampleRate * 0.03); // 30ms
     this._noiseBuffer = this.ctx.createBuffer(
       1,
@@ -191,7 +193,7 @@ export class BeatTrack {
       time + k.PITCH_DROP_SEC
     );
     gain.gain.setValueAtTime(k.VOLUME, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + k.DECAY_SEC);
+    gain.gain.exponentialRampToValueAtTime(SILENCE_GAIN, time + k.DECAY_SEC);
     osc.connect(gain);
     gain.connect(this.masterGain);
     osc.onended = () => {
@@ -211,7 +213,7 @@ export class BeatTrack {
       filter.frequency.setValueAtTime(k.CLICK_HIGHPASS_HZ, time);
       clickGain.gain.setValueAtTime(k.VOLUME * k.CLICK_LEVEL, time);
       clickGain.gain.exponentialRampToValueAtTime(
-        0.001,
+        SILENCE_GAIN,
         time + k.CLICK_DECAY_SEC
       );
       noise.connect(filter);
