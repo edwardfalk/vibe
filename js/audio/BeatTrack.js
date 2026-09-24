@@ -25,6 +25,7 @@ const SCHEDULE_AHEAD_SEC = 0.075;
 const SCHEDULER_INTERVAL_MS = 25;
 // Exponential ramps can't reach 0; this is inaudible
 const SILENCE_GAIN = 0.001;
+const DRIVE_CURVE_SAMPLES = 1024;
 
 export class BeatTrack {
   constructor(bpm = 120, context = null) {
@@ -195,10 +196,18 @@ export class BeatTrack {
     gain.gain.setValueAtTime(k.VOLUME, time);
     gain.gain.exponentialRampToValueAtTime(SILENCE_GAIN, time + k.DECAY_SEC);
     osc.connect(gain);
-    gain.connect(this.masterGain);
+    // Drive after the envelope, so the thump distorts most as it hits
+    const shaper = k.DRIVE > 0 ? this._getDriveShaper(k.DRIVE) : null;
+    if (shaper) {
+      gain.connect(shaper);
+      shaper.connect(this.masterGain);
+    } else {
+      gain.connect(this.masterGain);
+    }
     osc.onended = () => {
       osc.disconnect();
       gain.disconnect();
+      shaper?.disconnect();
     };
     osc.start(time);
     osc.stop(time + k.DECAY_SEC);
@@ -209,8 +218,8 @@ export class BeatTrack {
       const filter = this.ctx.createBiquadFilter();
       const clickGain = this.ctx.createGain();
       noise.buffer = this._noiseBuffer;
-      filter.type = 'highpass';
-      filter.frequency.setValueAtTime(k.CLICK_HIGHPASS_HZ, time);
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(k.CLICK_FREQ_HZ, time);
       clickGain.gain.setValueAtTime(k.VOLUME * k.CLICK_LEVEL, time);
       clickGain.gain.exponentialRampToValueAtTime(
         SILENCE_GAIN,
@@ -227,6 +236,24 @@ export class BeatTrack {
       noise.start(time);
       noise.stop(time + k.CLICK_DECAY_SEC);
     }
+  }
+
+  // Soft-clipping curve tanh(drive * x), normalised so full scale stays full
+  // scale. The curve is cached per drive value; each kick gets its own node.
+  _getDriveShaper(drive) {
+    if (this._driveCurveFor !== drive) {
+      const curve = new Float32Array(DRIVE_CURVE_SAMPLES);
+      for (let i = 0; i < DRIVE_CURVE_SAMPLES; i++) {
+        const x = (i / (DRIVE_CURVE_SAMPLES - 1)) * 2 - 1;
+        curve[i] = Math.tanh(drive * x) / Math.tanh(drive);
+      }
+      this._driveCurve = curve;
+      this._driveCurveFor = drive;
+    }
+    const shaper = this.ctx.createWaveShaper();
+    shaper.curve = this._driveCurve;
+    shaper.oversample = '2x'; // less aliasing from the added overtones
+    return shaper;
   }
 
   // -- Pulse --------------------------------------------------------------

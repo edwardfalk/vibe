@@ -102,9 +102,12 @@ const CONFIG = {
       PITCH_END_HZ: 45, // body
       PITCH_DROP_SEC: 0.08, // how fast the pitch falls to the body
       DECAY_SEC: 0.3, // length of the thump
-      CLICK_LEVEL: 0.25, // noise attack, relative to VOLUME
-      CLICK_DECAY_SEC: 0.006,
-      CLICK_HIGHPASS_HZ: 2000,
+      // Saturation: adds overtones of the body, so small speakers that can't
+      // play the bass itself still let you hear it. 0 = clean sine.
+      DRIVE: 4,
+      CLICK_LEVEL: 0.5, // noise attack ("beater"), relative to VOLUME
+      CLICK_DECAY_SEC: 0.015,
+      CLICK_FREQ_HZ: 2500, // centre of the click's band; hearing peaks ~2-4 kHz
     },
     SUB_PULSE: {
       ENABLED: true,

@@ -16,9 +16,10 @@ const KNOBS = [
   ['KICK', 'PITCH_END_HZ', [30, 120, 1]],
   ['KICK', 'PITCH_DROP_SEC', [0.01, 0.3, 0.005]],
   ['KICK', 'DECAY_SEC', [0.05, 1, 0.01]],
-  ['KICK', 'CLICK_LEVEL', [0, 1, 0.01]],
+  ['KICK', 'DRIVE', [0, 20, 0.5]],
+  ['KICK', 'CLICK_LEVEL', [0, 1.5, 0.01]],
   ['KICK', 'CLICK_DECAY_SEC', [0.001, 0.03, 0.001]], // noise buffer is 30 ms
-  ['KICK', 'CLICK_HIGHPASS_HZ', [500, 8000, 50]],
+  ['KICK', 'CLICK_FREQ_HZ', [500, 8000, 50]],
   ['SUB_PULSE', 'ENABLED'],
   ['SUB_PULSE', 'VOLUME', [0, 4, 0.05]],
 ];

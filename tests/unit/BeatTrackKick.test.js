@@ -43,6 +43,19 @@ describe('BeatTrack kick', () => {
     expect(playMeasure().kicks).toEqual([0, 2]);
   });
 
+  it('drive curve soft-clips but keeps full scale, cached per drive', () => {
+    const track = new BeatTrack(120, {});
+    track.ctx = { createWaveShaper: () => ({}) };
+    const curve = track._getDriveShaper(4).curve;
+    expect(curve[0]).toBeCloseTo(-1);
+    expect(curve[curve.length - 1]).toBeCloseTo(1);
+    // A quarter of full scale in comes out well above a quarter: overtones
+    const quarter = curve[Math.round((curve.length - 1) * 0.625)];
+    expect(quarter).toBeGreaterThan(0.6);
+    expect(track._getDriveShaper(4).curve).toBe(curve);
+    expect(track._getDriveShaper(8).curve).not.toBe(curve);
+  });
+
   it('can switch the kick and the sub pulse off independently', () => {
     CONFIG.BEAT_TRACK.KICK.ENABLED = false;
     expect(playMeasure()).toEqual({ kicks: [], pulses: [0, 1, 2, 3] });
