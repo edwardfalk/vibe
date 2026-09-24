@@ -18,11 +18,6 @@ import {
   sqrt,
 } from '../mathUtils.js';
 
-// Waves arrive on the strong beats (1 and 3). A beat-1-only grid rounded
-// every interval up to a whole bar, so 6 beats meant 8 and per-level
-// speed-ups did nothing until the interval fell to 4.
-const SPAWN_BEATS = [1, 3];
-
 // Level at which each enemy type joins the regular mix
 export const ENEMY_INTRO_LEVEL = { stabber: 2, rusher: 3, tank: 5 };
 
@@ -56,7 +51,11 @@ export class SpawnSystem {
     const beatClock = this.getContextValue('beatClock');
     if (!beatClock) return;
 
-    if (!beatClock.isOnBeat(SPAWN_BEATS)) return;
+    // Waves land on any beat, so the interval counts whole beats (fractions
+    // round up). Restricting waves to beat 1 rounded every interval up to a
+    // whole bar, which cancelled the per-level speed-up. Spawns are off
+    // screen and silent, so the downbeat added nothing audible.
+    if (!beatClock.isOnBeat()) return;
 
     const totalBeats = beatClock.getTotalBeats();
     const pacing = CONFIG.PACING;

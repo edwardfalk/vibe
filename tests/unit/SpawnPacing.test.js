@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SpawnSystem, nextNewEnemyType } from '../../js/systems/SpawnSystem.js';
 import { CONFIG } from '../../js/config.js';
+import { BeatClock } from '../../js/audio/BeatClock.js';
 
 vi.spyOn(console, 'log').mockImplementation(() => {});
 const original = structuredClone(CONFIG.PACING);
@@ -60,6 +61,59 @@ describe('Spawn pacing', () => {
       'rusher',
       'regular',
     ]);
+  });
+
+  it('previews again after a restart (reset)', () => {
+    const gameState = {
+      gameState: 'playing',
+      level: 1,
+      getProgressToNextLevel: () => 0.6,
+    };
+    let beats = 0;
+    const system = new SpawnSystem({
+      gameState,
+      enemies: [],
+      beatClock: { isOnBeat: () => true, getTotalBeats: () => beats },
+    });
+    const spawned = [];
+    vi.spyOn(system, 'spawnEnemies').mockImplementation((n, type = null) => {
+      spawned.push(type ?? 'regular');
+    });
+    system.update();
+    system.reset();
+    beats += 100;
+    system.update();
+    expect(spawned).toEqual(['stabber', 'stabber']);
+  });
+
+  it('spaces waves by the configured beats, getting faster by level', () => {
+    // Real BeatClock on a fake audio clock, stepped at 60 fps for 30 s
+    function waveGaps(level) {
+      let ms = 0;
+      const beatClock = new BeatClock(120, {
+        get currentTime() {
+          return ms / 1000;
+        },
+      });
+      const system = new SpawnSystem({
+        gameState: {
+          gameState: 'playing',
+          level,
+          getProgressToNextLevel: () => 0,
+        },
+        enemies: [],
+        beatClock,
+      });
+      const waveBeats = [];
+      system.spawnEnemies = () => waveBeats.push(beatClock.getTotalBeats());
+      for (ms = 0; ms < 30000; ms += 1000 / 60) system.update();
+      return [...new Set(waveBeats.slice(1).map((b, i) => b - waveBeats[i]))];
+    }
+    // 6 beats, 0.5 sooner per level, whole beats, minimum 4
+    expect(waveGaps(1)).toEqual([6]);
+    expect(waveGaps(3)).toEqual([5]);
+    expect(waveGaps(5)).toEqual([4]);
+    expect(waveGaps(9)).toEqual([4]);
   });
 
   it('previews nothing when switched off or when every type is in', () => {

@@ -97,7 +97,9 @@ const CONFIG = {
     FIRST_LEVEL_POINTS: 100, // score for level 2 (a kill is 10, more on a streak)
     LEVEL_POINTS_PER_LEVEL: 120, // leaving level N (N >= 2) costs N x this
     SPAWN_INTERVAL_BEATS: 6, // beats between spawn waves at level 1
-    SPAWN_INTERVAL_DROP_PER_LEVEL: 0.5, // waves come this many beats sooner per level
+    // Waves come this many beats sooner per level; waves land on whole beats,
+    // so 0.5 speeds up one beat every second level (6, 6, 5, 5, 4 ...)
+    SPAWN_INTERVAL_DROP_PER_LEVEL: 0.5,
     MIN_SPAWN_INTERVAL_BEATS: 4,
     BASE_MAX_ENEMIES: 2, // on screen at level 1; +1 every second level
     MAX_ENEMIES_CAP: 6,

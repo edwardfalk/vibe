@@ -41,7 +41,7 @@ A p5.js geometric space shooter where enemy actions sync to musical beats, creat
 
 ## Level Progression
 
-Score-based, not wave-based. Continuous spawning in beat-aligned waves (on beats 1 and 3). All numbers live in `CONFIG.PACING` and are tunable live with `?tune`: level thresholds, wave interval (in beats, shrinking per level), and max enemies (`BASE_MAX_ENEMIES + floor(level/2)`, capped). Enemy introduction (`ENEMY_INTRO_LEVEL` in `SpawnSystem.js`): Level 1 grunts only, Level 2 + stabbers, Level 3 + rushers, Level 5 + tanks. Halfway through each level, one enemy of the next new type appears once per run as a preview.
+Score-based, not wave-based. Continuous spawning in beat-aligned waves (on any beat, interval in whole beats). All numbers live in `CONFIG.PACING` and are tunable live with `?tune`: level thresholds, wave interval (in beats, shrinking per level), and max enemies (`BASE_MAX_ENEMIES + floor(level/2)`, capped). Enemy introduction (`ENEMY_INTRO_LEVEL` in `SpawnSystem.js`): Level 1 grunts only, Level 2 + stabbers, Level 3 + rushers, Level 5 + tanks. Halfway through each level, one enemy of the next new type appears once per run as a preview.
 
 ## Code Style
 

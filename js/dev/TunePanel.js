@@ -1,7 +1,8 @@
 /**
  * Live tuning panel for CONFIG.BEAT_TRACK and CONFIG.PACING, shown when the
- * URL has ?tune. Changes apply from the next beat or spawn wave. To keep a
- * setting, copy the JSON at the bottom of the panel into js/config.js.
+ * URL has ?tune. Sound and spawn changes apply from the next beat or wave;
+ * level thresholds from the next level-up (the first one after a restart).
+ * To keep a setting, copy the JSON at the bottom into js/config.js.
  */
 
 import { CONFIG } from '../config.js';
