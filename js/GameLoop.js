@@ -306,21 +306,28 @@ new window.p5((p) => {
 function startFromTitle(event) {
   // Before setup finishes there is no title yet; keep listening.
   if (window.gameState?.gameState !== 'title') return;
-  // The starting key only starts the game (M must not also mute, etc.)
+  // Ignore modifiers and function keys (Alt+Tab, F11, Shift, Ctrl+zoom...)
+  if (
+    event.type === 'keydown' &&
+    (event.ctrlKey ||
+      event.altKey ||
+      event.metaKey ||
+      (event.key.length !== 1 && event.key !== 'Enter'))
+  ) {
+    return;
+  }
+  // The starting input only starts the game: M must not also mute, and
+  // preventDefault stops a click's follow-up mousedown from firing a shot.
   event.stopImmediatePropagation();
+  if (event.type === 'pointerdown') event.preventDefault();
 
   // Resume p5.js audio context if present
   if (typeof getAudioContext === 'function') {
     getAudioContext().resume();
   }
+  // Creates the AudioContext, which also starts the beat track
   if (window.audio && typeof window.audio.ensureAudioContext === 'function') {
     window.audio.ensureAudioContext();
-  }
-  // Start the procedural beat track (async - catch errors from unawaited promise)
-  if (window.beatTrack && !window.beatTrack.isPlaying) {
-    window.beatTrack.start().catch((err) => {
-      console.warn('BeatTrack start failed:', err);
-    });
   }
   document.getElementById('title')?.remove();
   window.gameState.restart();

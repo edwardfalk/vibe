@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 const bootGame = async (page) => {
   await page.goto('/');
   await page.waitForSelector('canvas', { state: 'attached' });
-  // Trigger unlockAudioAndShowCanvas (keydown also registered)
+  // Any key starts the run from the title screen
   await page.keyboard.press(' ');
   await page.waitForFunction(
     () =>
@@ -86,6 +86,9 @@ test.describe('Gameplay Probes', () => {
     );
     await expect(page.locator('#title')).toBeVisible();
     await page.waitForTimeout(700);
+    // Modifier and function keys (Alt+Tab, Shift, F11) don't start the run
+    await page.keyboard.press('Alt');
+    await page.keyboard.press('Shift');
     expect(await page.evaluate(() => window.gameState.gameState)).toBe('title');
 
     // The starting key only starts the game: M must not also mute
@@ -119,12 +122,29 @@ test.describe('Gameplay Probes', () => {
     expect(musicOn).toBeGreaterThan(0);
 
     await page.keyboard.press('m');
+    await expect(page.locator('#statusToast')).toBeVisible();
     await expect(page.locator('#statusToast')).toHaveText('Sound off');
     await expect.poll(gains).toEqual([0, 0]);
 
     await page.keyboard.press('m');
     await expect(page.locator('#statusToast')).toHaveText('Sound on');
     await expect.poll(gains).toEqual([sfxOn, musicOn]);
+  });
+
+  test('Clicking to start does not also fire a shot', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.gameState?.gameState === 'title');
+    const box = await page.locator('#defaultCanvas0').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    // Hold the button across several frames, like a real click
+    await page.mouse.down();
+    await page.waitForTimeout(250);
+    const after = await page.evaluate(() => ({
+      state: window.gameState.gameState,
+      shots: window.gameState.shotsFired,
+    }));
+    await page.mouse.up();
+    expect(after).toEqual({ state: 'playing', shots: 0 });
   });
 
   test('R after game over restarts straight into play', async ({ page }) => {
