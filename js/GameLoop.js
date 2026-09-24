@@ -9,6 +9,7 @@
  */
 
 import { initializeInputHandlers } from './core/InputHandlers.js';
+import { createTunePanel } from './dev/TunePanel.js';
 import { updateBombs as updateBombSystem } from './systems/BombSystem.js';
 import { updateEnemiesAndResolveResults } from './systems/gameplay/EnemyUpdatePipeline.js';
 import { updateBullets } from './systems/gameplay/BulletUpdatePipeline.js';
@@ -113,6 +114,7 @@ function setup(p) {
   enemyDeathHandler = state.enemyDeathHandler;
   syncRuntimeContext(window.hitStopFrames);
   window.gameState.showTitle();
+  if (new URLSearchParams(location.search).has('tune')) createTunePanel();
 }
 
 function draw(p) {
@@ -318,6 +320,8 @@ const NON_START_KEYS = [
 function startFromTitle(event) {
   // Before setup finishes there is no title yet; keep listening.
   if (window.gameState?.gameState !== 'title') return;
+  // Dev UI such as the ?tune panel doesn't start the game
+  if (event.target.closest?.('[data-no-start]')) return;
   // Ignore modifiers and function keys (Alt+Tab, F11, Shift, Ctrl+zoom...)
   if (
     event.type === 'keydown' &&

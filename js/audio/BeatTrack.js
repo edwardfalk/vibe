@@ -1,14 +1,24 @@
 /**
- * BeatTrack.js - Minimal pulse synced to BeatClock
+ * BeatTrack.js - The steady backbone synced to BeatClock
  *
- * Establishes tempo with a subtle sub-bass pulse felt more than heard.
- * Enemies and player are the real instruments now — this just keeps time.
+ * A kick drum anchors the beat (four on the floor by default) so enemy
+ * sounds have something to fall into, over a sub-bass pulse felt more than
+ * heard. Enemies and player are the instruments — this keeps time.
+ * Tunables live in CONFIG.BEAT_TRACK and are read on every note, so the
+ * ?tune panel changes them live.
  *
  * Uses a look-ahead scheduler for sample-accurate timing.
  * Shares the game's AudioContext when available.
  */
 
+import { CONFIG } from '../config.js';
+
 const EIGHTH_NOTES_PER_MEASURE = 8;
+// Which beats (0-3) the kick plays on, per CONFIG.BEAT_TRACK.KICK.PATTERN
+const KICK_PATTERNS = {
+  four: [0, 1, 2, 3],
+  oneThree: [0, 2],
+};
 // Look-ahead buffer for sample-accurate scheduling.
 // 75ms balances glitch-free playback with minimal audio-visual desync.
 const SCHEDULE_AHEAD_SEC = 0.075;
@@ -156,8 +166,65 @@ export class BeatTrack {
     // Only play on downbeats (8th notes 0, 2, 4, 6 = beats 1, 2, 3, 4)
     if (eighth % 2 !== 0) return;
     const beat = eighth / 2; // 0-3
-    const isDownbeat = beat === 0;
-    this._playPulse(time, isDownbeat);
+    const { KICK, SUB_PULSE } = CONFIG.BEAT_TRACK;
+    if (KICK.ENABLED && KICK_PATTERNS[KICK.PATTERN]?.includes(beat)) {
+      this._playKick(time);
+    }
+    if (SUB_PULSE.ENABLED) {
+      this._playPulse(time, beat === 0);
+    }
+  }
+
+  // -- Kick ---------------------------------------------------------------
+
+  _playKick(time) {
+    if (!this.ctx || !this.masterGain) return;
+    const k = CONFIG.BEAT_TRACK.KICK;
+
+    // Body: a sine whose pitch drops fast from punch to thump
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(k.PITCH_START_HZ, time);
+    osc.frequency.exponentialRampToValueAtTime(
+      k.PITCH_END_HZ,
+      time + k.PITCH_DROP_SEC
+    );
+    gain.gain.setValueAtTime(k.VOLUME, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + k.DECAY_SEC);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
+    osc.start(time);
+    osc.stop(time + k.DECAY_SEC);
+
+    // Click: a few ms of high-passed noise for the attack
+    if (k.CLICK_LEVEL > 0 && this._noiseBuffer) {
+      const noise = this.ctx.createBufferSource();
+      const filter = this.ctx.createBiquadFilter();
+      const clickGain = this.ctx.createGain();
+      noise.buffer = this._noiseBuffer;
+      filter.type = 'highpass';
+      filter.frequency.setValueAtTime(k.CLICK_HIGHPASS_HZ, time);
+      clickGain.gain.setValueAtTime(k.VOLUME * k.CLICK_LEVEL, time);
+      clickGain.gain.exponentialRampToValueAtTime(
+        0.001,
+        time + k.CLICK_DECAY_SEC
+      );
+      noise.connect(filter);
+      filter.connect(clickGain);
+      clickGain.connect(this.masterGain);
+      noise.onended = () => {
+        noise.disconnect();
+        filter.disconnect();
+        clickGain.disconnect();
+      };
+      noise.start(time);
+      noise.stop(time + k.CLICK_DECAY_SEC);
+    }
   }
 
   // -- Pulse --------------------------------------------------------------
@@ -174,7 +241,10 @@ export class BeatTrack {
 
     // Scale volume: quieter when many enemies (their sounds carry the beat)
     const enemyFactor = Math.max(0.3, 1.0 - (this._enemyCount || 0) * 0.1);
-    const volume = (isDownbeat ? 0.15 : 0.08) * enemyFactor;
+    const volume =
+      (isDownbeat ? 0.15 : 0.08) *
+      enemyFactor *
+      CONFIG.BEAT_TRACK.SUB_PULSE.VOLUME;
     const duration = 0.15;
     gain.gain.setValueAtTime(volume, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + duration);

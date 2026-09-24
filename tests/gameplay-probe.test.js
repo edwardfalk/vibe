@@ -159,6 +159,42 @@ test.describe('Gameplay Probes', () => {
     expect(after).toEqual({ state: 'playing', shots: 0 });
   });
 
+  test('Kick plays on every beat in a real AudioContext', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (err) => errors.push(err.message));
+    await bootGame(page);
+    await page.waitForFunction(() => window.beatTrack?.isPlaying);
+    await page.evaluate(() => {
+      const track = window.beatTrack;
+      const play = track._playKick.bind(track);
+      window.kickCount = 0;
+      track._playKick = (time) => {
+        window.kickCount++;
+        play(time);
+      };
+    });
+    // 120 BPM = 2 beats per second, four on the floor = 2 kicks per second
+    await page.waitForTimeout(2000);
+    const kicks = await page.evaluate(() => window.kickCount);
+    expect(kicks).toBeGreaterThanOrEqual(3);
+    expect(kicks).toBeLessThanOrEqual(5);
+    expect(errors).toEqual([]);
+  });
+
+  test('?tune panel loads and clicking it does not start the game', async ({
+    page,
+  }) => {
+    await page.goto('/?tune');
+    await page.waitForFunction(() => window.gameState?.gameState === 'title');
+    // A real click (pointer events) on a slider, then a dropdown change
+    await page.locator('#tunePanel input[type=range]').first().click();
+    await page.locator('#tunePanel select').selectOption('oneThree');
+    expect(await page.evaluate(() => window.gameState.gameState)).toBe('title');
+    await expect(page.locator('#tunePanel pre')).toContainText(
+      '"PATTERN": "oneThree"'
+    );
+  });
+
   test('R after game over restarts straight into play', async ({ page }) => {
     await bootGame(page);
     await page.evaluate(() => window.gameState.setGameState('gameOver'));
