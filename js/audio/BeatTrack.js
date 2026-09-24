@@ -26,6 +26,9 @@ const SCHEDULER_INTERVAL_MS = 25;
 // Exponential ramps can't reach 0; this is inaudible
 const SILENCE_GAIN = 0.001;
 const DRIVE_CURVE_SAMPLES = 1024;
+// Fade from SILENCE_GAIN to 0 before stopping, so drive can't turn the
+// leftover sine into an audible tick
+const TAIL_FADE_SEC = 0.005;
 
 export class BeatTrack {
   constructor(bpm = 120, context = null) {
@@ -87,7 +90,10 @@ export class BeatTrack {
 
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = this.muted ? 0 : this.volume;
-    this.masterGain.connect(this.ctx.destination);
+    // Share the game's limiter so a kick landing on a loud effect can't clip
+    const limiter =
+      audio?.audioContext === this.ctx ? audio.masterLimiter : null;
+    this.masterGain.connect(limiter ?? this.ctx.destination);
 
     this.nextNoteTime = this.ctx.currentTime + 0.05;
     this._startTime = this.nextNoteTime;
@@ -195,6 +201,7 @@ export class BeatTrack {
     );
     gain.gain.setValueAtTime(k.VOLUME, time);
     gain.gain.exponentialRampToValueAtTime(SILENCE_GAIN, time + k.DECAY_SEC);
+    gain.gain.linearRampToValueAtTime(0, time + k.DECAY_SEC + TAIL_FADE_SEC);
     osc.connect(gain);
     // Drive after the envelope, so the thump distorts most as it hits
     const shaper = k.DRIVE > 0 ? this._getDriveShaper(k.DRIVE) : null;
@@ -210,7 +217,7 @@ export class BeatTrack {
       shaper?.disconnect();
     };
     osc.start(time);
-    osc.stop(time + k.DECAY_SEC);
+    osc.stop(time + k.DECAY_SEC + TAIL_FADE_SEC);
 
     // Click: a few ms of high-passed noise for the attack
     if (k.CLICK_LEVEL > 0 && this._noiseBuffer) {

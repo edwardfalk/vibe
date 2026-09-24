@@ -47,13 +47,54 @@ describe('BeatTrack kick', () => {
     const track = new BeatTrack(120, {});
     track.ctx = { createWaveShaper: () => ({}) };
     const curve = track._getDriveShaper(4).curve;
-    expect(curve[0]).toBeCloseTo(-1);
-    expect(curve[curve.length - 1]).toBeCloseTo(1);
     // A quarter of full scale in comes out well above a quarter: overtones
     const quarter = curve[Math.round((curve.length - 1) * 0.625)];
     expect(quarter).toBeGreaterThan(0.6);
     expect(track._getDriveShaper(4).curve).toBe(curve);
     expect(track._getDriveShaper(8).curve).not.toBe(curve);
+    // Normalisation matters most at low drive: without it, 0.5 gives ±0.46
+    const gentle = track._getDriveShaper(0.5).curve;
+    expect(gentle[0]).toBeCloseTo(-1, 5);
+    expect(gentle[gentle.length - 1]).toBeCloseTo(1, 5);
+  });
+
+  it('routes the kick through the drive stage only when DRIVE > 0', () => {
+    // Fake AudioContext that records which node connects to which
+    function kickWiring() {
+      const edges = [];
+      const param = () => ({
+        setValueAtTime() {},
+        exponentialRampToValueAtTime() {},
+        linearRampToValueAtTime() {},
+      });
+      const node = (name, extra = {}) => ({
+        name,
+        connect(to) {
+          edges.push(`${name}->${to.name}`);
+        },
+        disconnect() {},
+        ...extra,
+      });
+      const track = new BeatTrack(120, {});
+      track.ctx = {
+        createOscillator: () =>
+          node('osc', { frequency: param(), start() {}, stop() {} }),
+        createGain: () => node('gain', { gain: param() }),
+        createWaveShaper: () => node('shaper'),
+      };
+      track.masterGain = node('master');
+      track._playKick(0);
+      return edges;
+    }
+
+    CONFIG.BEAT_TRACK.KICK.DRIVE = 4;
+    expect(kickWiring()).toEqual([
+      'osc->gain',
+      'gain->shaper',
+      'shaper->master',
+    ]);
+    CONFIG.BEAT_TRACK.KICK.DRIVE = 0;
+    expect(kickWiring()).toEqual(['osc->gain', 'gain->master']);
   });
 
   it('can switch the kick and the sub pulse off independently', () => {
