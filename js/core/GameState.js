@@ -252,5 +252,4 @@ export class GameState {
     const range = this.nextLevelThreshold - this.previousLevelThreshold;
     return range > 0 ? Math.min(1, Math.max(0, progress / range)) : 0;
   }
-
 }

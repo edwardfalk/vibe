@@ -4,6 +4,7 @@
   "description": "A p5.js geometric space shooter survival game with procedural graphics",
   "type": "module",
   "main": "index.html",
+  "packageManager": "pnpm@12.6.0",
   "scripts": {
     "dev": "npx five-server --port=5500",
     "test": "npx playwright test && pnpm run test:unit",
@@ -41,6 +42,6 @@
     "procedural-graphics",
     "geometric-art"
   ],
-  "author": "Vibe Game Developer",
+  "author": "Edward Falk",
   "license": "MIT"
 }
