@@ -112,6 +112,7 @@ function setup(p) {
   gameContext = state.gameContext;
   enemyDeathHandler = state.enemyDeathHandler;
   syncRuntimeContext(window.hitStopFrames);
+  window.gameState.showTitle();
 }
 
 function draw(p) {
@@ -300,13 +301,18 @@ new window.p5((p) => {
   p.draw = () => draw(p);
 });
 
-// --- Audio/Canvas Unlock Handler for Modern Browsers ---
-function unlockAudioAndShowCanvas() {
+// --- Title screen: the first click or key press starts the run ---
+// Browsers only allow audio after a user gesture, so this also unlocks audio.
+function startFromTitle(event) {
+  // Before setup finishes there is no title yet; keep listening.
+  if (window.gameState?.gameState !== 'title') return;
+  // The starting key only starts the game (M must not also mute, etc.)
+  event.stopImmediatePropagation();
+
   // Resume p5.js audio context if present
   if (typeof getAudioContext === 'function') {
     getAudioContext().resume();
   }
-  // Resume your own audio context
   if (window.audio && typeof window.audio.ensureAudioContext === 'function') {
     window.audio.ensureAudioContext();
   }
@@ -316,15 +322,12 @@ function unlockAudioAndShowCanvas() {
       console.warn('BeatTrack start failed:', err);
     });
   }
-  // Try to show the canvas if hidden
-  const canvas = document.querySelector('canvas');
-  if (canvas && canvas.style.visibility === 'hidden') {
-    canvas.style.visibility = 'visible';
-    canvas.removeAttribute('data-hidden');
-  }
-  // Remove this handler after first use
-  window.removeEventListener('pointerdown', unlockAudioAndShowCanvas);
-  window.removeEventListener('keydown', unlockAudioAndShowCanvas);
+  document.getElementById('title')?.remove();
+  window.gameState.restart();
+
+  window.removeEventListener('pointerdown', startFromTitle, true);
+  window.removeEventListener('keydown', startFromTitle, true);
 }
-window.addEventListener('pointerdown', unlockAudioAndShowCanvas);
-window.addEventListener('keydown', unlockAudioAndShowCanvas);
+// Capture phase, so it runs before (and can swallow) the game's own handlers.
+window.addEventListener('pointerdown', startFromTitle, true);
+window.addEventListener('keydown', startFromTitle, true);

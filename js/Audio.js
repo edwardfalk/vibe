@@ -769,6 +769,12 @@ export class Audio {
   toggle() {
     this.enabled = !this.enabled;
     this.speechEnabled = this.enabled;
+    // Silence what is already playing (drone, beat track), not just new sounds.
+    // Gains, not audioContext.suspend(): BeatClock runs on the context's clock.
+    if (this.masterGain) {
+      this.masterGain.gain.value = this.enabled ? this.volume : 0;
+    }
+    window.beatTrack?.setMuted(!this.enabled);
     console.log(`🔊 Audio ${this.enabled ? 'enabled' : 'disabled'}`);
     return this.enabled;
   }

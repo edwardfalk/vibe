@@ -28,9 +28,6 @@ export function runDraw(p, updateGame, drawGame) {
       case 'playing':
         updateGame(p);
         drawGame(p);
-        if (window.uiRenderer) {
-          window.uiRenderer.updateUI(p);
-        }
         break;
 
       case 'paused':

@@ -21,6 +21,7 @@ export class BeatTrack {
     this.beatDuration = 60 / bpm;
     this.eighthDuration = this.beatDuration / 2;
     this.volume = 0.4;
+    this.muted = false;
 
     // Web Audio state
     this.ctx = null;
@@ -72,7 +73,7 @@ export class BeatTrack {
     }
 
     this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = this.volume;
+    this.masterGain.gain.value = this.muted ? 0 : this.volume;
     this.masterGain.connect(this.ctx.destination);
 
     this.nextNoteTime = this.ctx.currentTime + 0.05;
@@ -107,8 +108,17 @@ export class BeatTrack {
 
   setVolume(vol) {
     this.volume = Math.max(0, Math.min(1, vol));
-    if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
+    this._applyGain();
+  }
+
+  setMuted(muted) {
+    this.muted = muted;
+    this._applyGain();
+  }
+
+  _applyGain() {
+    if (this.masterGain) {
+      this.masterGain.gain.value = this.muted ? 0 : this.volume;
     }
   }
 

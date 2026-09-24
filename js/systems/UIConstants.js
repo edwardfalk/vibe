@@ -19,10 +19,17 @@ export const FUNNY_COMMENTS = [
   'Better luck next time, earthling!',
 ];
 
-/** Dash indicator position (CSS top/left) */
-export const DASH_INDICATOR = {
-  top: 120,
-  left: 10,
+/** Score text position (top-left of canvas) */
+export const SCORE_HUD = {
+  marginLeft: 20,
+  marginTop: 16,
+  textSize: 18,
+};
+
+/** Dash status text, below the health bar */
+export const DASH_HUD = {
+  marginBottom: 12,
+  textSize: 12,
 };
 
 /** Level progress bar layout */
