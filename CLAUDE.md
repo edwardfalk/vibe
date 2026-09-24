@@ -25,7 +25,7 @@ A p5.js geometric space shooter where enemy actions sync to musical beats, creat
 
 **Entry**: `index.html` loads `js/GameLoop.js` via ES module. p5.js runs in instance mode (`p` parameter everywhere, never global).
 
-**Game loop**: `GameLoop.js` orchestrates per-frame updates. `GameLoopSetup.js` initializes all systems. `GameLoopDraw.js` dispatches to playing/paused/gameOver states.
+**Game loop**: `GameLoop.js` orchestrates per-frame updates. `GameLoopSetup.js` initializes all systems. `GameLoopDraw.js` dispatches to title/playing/paused/gameOver states. The game waits on an HTML title overlay (`index.html`) until the first click or key, which also unlocks audio (`startFromTitle` in `GameLoop.js`). The HUD is drawn entirely on the canvas (`UIRenderer`).
 
 **Shared state**: Systems are on `window.*` and mirrored in `GameContext` (DI container at `js/core/GameContext.js`). Modules use `getContextValue(key)` which checks GameContext first, falls back to window. Key globals: `player`, `enemies`, `playerBullets`, `enemyBullets`, `gameState`, `beatClock`, `audio`, `cameraSystem`, `collisionSystem`, `spawnSystem`.
 

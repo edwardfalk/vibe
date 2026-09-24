@@ -4,8 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vibe - Geometric Space Shooter</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"></script>
+    <meta
+      name="description"
+      content="A browser space shooter where every enemy attack lands on the beat."
+    />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"
+      integrity="sha384-Mhzoc5EVkjFUVtIW2M3h8BgXtFlUsUpu9lTCThPrV7+k6MN6vTi079rew0LkvgFb"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/addons/p5.sound.min.js"
+      integrity="sha384-Ozi5ax1b+B/XBCzskytbAcQlgO0fcBp6gBOgS1SNQgR55vMk33RdVPAAAvB/8kA6"
+      crossorigin="anonymous"
+    ></script>
     <style>
       body {
         margin: 0;
@@ -15,35 +27,125 @@
         justify-content: center;
         align-items: center;
         min-height: 100vh;
+        overflow: hidden;
         font-family: 'Courier New', monospace;
       }
 
-      #gameContainer {
-        border: 2px solid #333;
+      /* Scale the 800x600 canvas to fit the window; p5 sets inline px sizes.
+         p5 maps mouse coordinates back to canvas pixels, so aiming still works. */
+      #defaultCanvas0 {
+        width: min(100vw, calc(100vh * 4 / 3)) !important;
+        height: auto !important;
+        display: block;
       }
 
-      #ui {
-        position: absolute;
-        top: 20px;
-        left: 20px;
+      #title {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1.2rem;
+        padding: 16px;
+        background: rgba(5, 2, 15, 0.72);
         color: #fff;
-        font-size: 16px;
+        text-align: center;
         z-index: 100;
-        pointer-events: none;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      #title h1 {
+        margin: 0;
+        font-size: clamp(3rem, 12vw, 6rem);
+        letter-spacing: 0.3em;
+        margin-right: -0.3em; /* balance trailing letter-spacing */
+        color: #ff1493;
+        text-shadow:
+          0 0 12px #ff1493,
+          0 0 32px #ff1493;
+      }
+
+      #title .pitch {
+        margin: 0;
+        max-width: 32rem;
+        color: #0ff;
+        line-height: 1.5;
+      }
+
+      #title dl {
+        display: grid;
+        grid-template-columns: auto auto;
+        gap: 0.35rem 1.2rem;
+        margin: 0;
+        text-align: left;
+      }
+
+      #title dt {
+        color: #0ff;
+        text-align: right;
+      }
+
+      #title dd {
+        margin: 0;
+      }
+
+      #title .start {
+        margin: 0.5rem 0 0;
+        font-size: 1.2rem;
+        animation: blink 1.2s steps(2, start) infinite;
+      }
+
+      #title .touch-note {
+        display: none;
+        margin: 0;
+        max-width: 22rem;
+        color: #ffd700;
+        line-height: 1.5;
+      }
+
+      /* Phones and tablets: no keyboard or mouse to play with */
+      @media (hover: none) and (pointer: coarse) {
+        #title .touch-note {
+          display: block;
+        }
+        #title .start,
+        #title dl {
+          display: none;
+        }
+      }
+
+      @keyframes blink {
+        to {
+          visibility: hidden;
+        }
       }
     </style>
   </head>
   <body>
-    <div id="ui">
-      <div id="score">Score: 0</div>
-      <div id="health">Health: 100</div>
-      <div id="level">Level: 1</div>
-      <div style="margin-top: 10px; font-size: 12px">
-        <div id="soundStatus">🔇 Click or press M to enable sound</div>
-        <div>💥 WASD to move, Mouse to aim & shoot</div>
-        <div>💨 Press Space to dash</div>
-        <div>⏸️ Press P to pause/resume</div>
-      </div>
+    <div id="title">
+      <h1>VIBE</h1>
+      <p class="pitch">
+        A space shooter where every enemy attack lands on the beat. The longer
+        you survive, the bigger the band gets. Best with sound on.
+      </p>
+      <dl>
+        <dt>WASD</dt>
+        <dd>move</dd>
+        <dt>Mouse</dt>
+        <dd>aim</dd>
+        <dt>Click / Space</dt>
+        <dd>shoot</dd>
+        <dt>E</dt>
+        <dd>dash</dd>
+        <dt>P / M</dt>
+        <dd>pause / mute</dd>
+      </dl>
+      <p class="start">Click or press any key to start</p>
+      <p class="touch-note">
+        Vibe needs a keyboard and mouse. Open it on a computer to play.
+      </p>
     </div>
 
     <!-- Single module entrypoint; GameLoop imports all dependencies -->

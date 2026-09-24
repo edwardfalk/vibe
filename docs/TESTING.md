@@ -21,7 +21,7 @@
 1. **Liveness probe** — player alive, enemies present.
 2. **Game loop advances** — frame count increases, entities persist.
 3. **Collision diagnostics API** — `window.collisionSystem.getPerformanceSnapshot()` returns valid structure.
-4. **Score and health UI** — `#score` and `#health` elements present with expected format.
+4. **Title screen** — game holds on `#title` until a key or click (not modifiers), the starting key does nothing else, and mouse aim maps correctly on the CSS-scaled canvas.
 5. **Game state playing** — `gameState.gameState === 'playing'` after boot.
 6. **Player input** — W key moves player upward (y decreases).
 7. **Enemy lifecycle cleanup** — enemies marked for removal are cleaned from active arrays.
@@ -30,16 +30,19 @@
 10. **Bullet collision scoring** — bullet hit kills enemy, awards score and kill count.
 11. **Stabber attack handler** — stabber update loop runs 30 frames without crash.
 12. **Score + kill streak transitions** — state counters update and reset consistently.
+13. **Mute** — M zeroes both the sound-effects and beat-track gains, shows a toast, and restores them.
+14. **Click to start** — the starting click does not also fire a shot.
+15. **Restart** — R after game over goes straight back into play, not the title screen.
 
 ## Unit Tests
 
-| Module | Test file | Coverage |
-| --- | --- | --- |
-| `js/mathUtils.js` | `tests/unit/mathUtils.test.js` | random, lerp, mapRange, constrain, dist, normalizeAngle |
-| `js/audio/BeatClock.js` | `tests/unit/BeatClock.test.js` | BPM, beat phases, timing checks, tempo changes |
-| `js/core/GameState.js` | `tests/unit/GameState.test.js` | Score, kills, levels, state transitions, restart |
-| `js/core/GameContext.js` | `tests/unit/GameContext.test.js` | get/set/assign, initialization, toObject |
-| `js/shared/contracts/DamageResult.js` | `tests/unit/DamageResult.test.js` | normalizeDamageResult, isEnemyDeadResult |
+| Module                                | Test file                         | Coverage                                                |
+| ------------------------------------- | --------------------------------- | ------------------------------------------------------- |
+| `js/mathUtils.js`                     | `tests/unit/mathUtils.test.js`    | random, lerp, mapRange, constrain, dist, normalizeAngle |
+| `js/audio/BeatClock.js`               | `tests/unit/BeatClock.test.js`    | BPM, beat phases, timing checks, tempo changes          |
+| `js/core/GameState.js`                | `tests/unit/GameState.test.js`    | Score, kills, levels, state transitions, restart        |
+| `js/core/GameContext.js`              | `tests/unit/GameContext.test.js`  | get/set/assign, initialization, toObject                |
+| `js/shared/contracts/DamageResult.js` | `tests/unit/DamageResult.test.js` | normalizeDamageResult, isEnemyDeadResult                |
 
 ## Configuration
 

@@ -2,17 +2,17 @@ import { test, expect } from '@playwright/test';
 
 /**
  * Boot the game and wait for core systems to be available.
- * Canvas is hidden (data-hidden) until first user interaction (autoplay policy).
- * Wait for canvas to be attached, then trigger unlock via keydown.
+ * The game holds on the title screen until the first key press or click,
+ * which also unlocks audio (autoplay policy).
  */
 const bootGame = async (page) => {
   await page.goto('/');
   await page.waitForSelector('canvas', { state: 'attached' });
-  // Trigger unlockAudioAndShowCanvas (keydown also registered)
+  // Any key starts the run from the title screen
   await page.keyboard.press(' ');
   await page.waitForFunction(
     () =>
-      window.gameState &&
+      window.gameState?.gameState === 'playing' &&
       window.player &&
       window.collisionSystem &&
       Array.isArray(window.enemies) &&
@@ -75,14 +75,96 @@ test.describe('Gameplay Probes', () => {
     expect(snapshot).toHaveProperty('averages');
   });
 
-  test('Score and health UI elements present', async ({ page }) => {
+  test('Title screen waits for input, then starts the run', async ({
+    page,
+  }) => {
+    // Window shorter than 4:3 so the canvas is CSS-scaled (not 800x600)
+    await page.setViewportSize({ width: 1400, height: 700 });
+    await page.goto('/');
+    await page.waitForFunction(
+      () => window.gameState?.gameState === 'title' && window.frameCount > 0
+    );
+    await expect(page.locator('#title')).toBeVisible();
+    await page.waitForTimeout(700);
+    // Modifier and function keys (Alt+Tab, Shift, F11) don't start the run
+    await page.keyboard.press('Alt');
+    await page.keyboard.press('Shift');
+    await page.keyboard.press('F2');
+    expect(await page.evaluate(() => window.gameState.gameState)).toBe('title');
+
+    // The starting key only starts the game: M must not also mute
+    await page.keyboard.press('m');
+    await page.waitForFunction(() => window.gameState.gameState === 'playing');
+    await expect(page.locator('#title')).toHaveCount(0);
+    expect(await page.evaluate(() => window.audio.enabled)).toBe(true);
+
+    // Mouse aim maps back to canvas pixels on the scaled canvas
+    const box = await page.locator('#defaultCanvas0').boundingBox();
+    expect(box.width).toBeGreaterThan(900);
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 4);
+    const mouse = await page.evaluate(() => ({
+      x: window.player.p.mouseX,
+      y: window.player.p.mouseY,
+    }));
+    expect(mouse.x).toBeCloseTo(400, -1);
+    expect(mouse.y).toBeCloseTo(150, -1);
+  });
+
+  test('M mutes sound effects and music, and says so', async ({ page }) => {
     await bootGame(page);
+    await page.waitForFunction(() => window.beatTrack?.masterGain);
+    const gains = () =>
+      page.evaluate(() => [
+        window.audio.masterGain.gain.value,
+        window.beatTrack.masterGain.gain.value,
+      ]);
+    const [sfxOn, musicOn] = await gains();
+    expect(sfxOn).toBeGreaterThan(0);
+    expect(musicOn).toBeGreaterThan(0);
 
-    const scoreEl = await page.locator('#score').textContent();
-    const healthEl = await page.locator('#health').textContent();
+    await page.keyboard.press('m');
+    await expect(page.locator('#statusToast')).toBeVisible();
+    await expect(page.locator('#statusToast')).toHaveText('Sound off');
+    await expect.poll(gains).toEqual([0, 0]);
 
-    expect(scoreEl).toMatch(/Score:\s*\d+/);
-    expect(healthEl).toMatch(/Health:\s*\d+/);
+    await page.keyboard.press('m');
+    await expect(page.locator('#statusToast')).toHaveText('Sound on');
+    await expect.poll(gains).toEqual([sfxOn, musicOn]);
+  });
+
+  test('Named keys like arrows and Escape start the run', async ({ page }) => {
+    for (const key of ['ArrowUp', 'Escape']) {
+      await page.goto('/');
+      await page.waitForFunction(() => window.gameState?.gameState === 'title');
+      await page.keyboard.press(key);
+      await page.waitForFunction(
+        () => window.gameState.gameState === 'playing'
+      );
+    }
+  });
+
+  test('Clicking to start does not also fire a shot', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.gameState?.gameState === 'title');
+    const box = await page.locator('#defaultCanvas0').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    // Hold the button across several frames, like a real click
+    await page.mouse.down();
+    await page.waitForTimeout(250);
+    const after = await page.evaluate(() => ({
+      state: window.gameState.gameState,
+      shots: window.gameState.shotsFired,
+    }));
+    await page.mouse.up();
+    expect(after).toEqual({ state: 'playing', shots: 0 });
+  });
+
+  test('R after game over restarts straight into play', async ({ page }) => {
+    await bootGame(page);
+    await page.evaluate(() => window.gameState.setGameState('gameOver'));
+    await page.keyboard.press('r');
+    await page.waitForFunction(() => window.gameState.gameState === 'playing');
+    await expect(page.locator('#title')).toHaveCount(0);
   });
 
   test('Game state is playing after boot', async ({ page }) => {

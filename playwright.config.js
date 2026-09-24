@@ -21,7 +21,7 @@ export default defineConfig({
   },
 
   webServer: {
-    command: 'bunx five-server --port=5500',
+    command: 'node_modules/.bin/five-server --port=5500 --open=false',
     port: 5500,
     reuseExistingServer: !process.env.CI,
     timeout: 15000,

@@ -11,7 +11,7 @@ export class GameState {
     this.level = 1;
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = 150; // First level up at 150 points
-    this.gameState = 'playing'; // 'playing', 'gameOver', 'paused'
+    this.gameState = 'playing'; // 'title', 'playing', 'gameOver', 'paused'
 
     // Combat statistics
     this.killStreak = 0;
@@ -152,6 +152,15 @@ export class GameState {
     }
   }
 
+  // Hold on the title screen until the first user gesture; restart() starts the run.
+  showTitle() {
+    this.gameState = 'title';
+    if (this.startSpeechTimer) {
+      clearTimeout(this.startSpeechTimer);
+      this.startSpeechTimer = null;
+    }
+  }
+
   // Game restart
   restart() {
     console.log('🔄 Restarting game...');
@@ -252,5 +261,4 @@ export class GameState {
     const range = this.nextLevelThreshold - this.previousLevelThreshold;
     return range > 0 ? Math.min(1, Math.max(0, progress / range)) : 0;
   }
-
 }

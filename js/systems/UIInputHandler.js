@@ -5,7 +5,7 @@
 
 export function handleKeyPress(
   key,
-  { gameState, player, audio, cameraSystem }
+  { gameState, player, audio, cameraSystem, showToast }
 ) {
   if (!gameState) return false;
 
@@ -32,9 +32,7 @@ export function handleKeyPress(
     if (audio) {
       const soundEnabled = audio.toggle();
       console.log('🎵 Sound ' + (soundEnabled ? 'enabled' : 'disabled'));
-      document.getElementById('soundStatus').textContent = soundEnabled
-        ? '🔊 Sound ON (M to toggle)'
-        : '🔇 Sound OFF (M to toggle)';
+      showToast?.(soundEnabled ? 'Sound on' : 'Sound off');
       return true;
     }
   }

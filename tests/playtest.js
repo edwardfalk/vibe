@@ -14,7 +14,7 @@ const bootGame = async (page) => {
   await page.keyboard.press(' ');
   await page.waitForFunction(
     () =>
-      window.gameState &&
+      window.gameState?.gameState === 'playing' &&
       window.player &&
       window.collisionSystem &&
       Array.isArray(window.enemies) &&

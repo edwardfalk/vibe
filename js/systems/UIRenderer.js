@@ -4,7 +4,8 @@
 
 import { floor, ceil, max, abs, sin } from '../mathUtils.js';
 import {
-  DASH_INDICATOR,
+  SCORE_HUD,
+  DASH_HUD,
   LEVEL_PROGRESS,
   HEALTH_BAR,
   KILL_STREAK_Y,
@@ -27,58 +28,51 @@ export class UIRenderer {
     this.player = player;
     this.audio = audio;
     this.cameraSystem = cameraSystem;
-    this.dashElement = null;
-    // Cache DOM refs to avoid getElementById() every frame
-    this._scoreEl = document.getElementById('score');
-    this._healthEl = document.getElementById('health');
-    this._levelEl = document.getElementById('level');
     this._createToast(); // Add toast/banner for confirmations
   }
 
-  // Update HTML UI elements
-  updateUI() {
-    if (!this.gameState || !this.player) return;
-
-    // Update main UI elements with enhanced formatting
-    const scoreText =
-      this.gameState.killStreak >= 5
-        ? `Score: ${this.gameState.score.toLocaleString()} (${this.gameState.killStreak}x STREAK!)`
-        : `Score: ${this.gameState.score.toLocaleString()}`;
-
-    if (this._scoreEl) this._scoreEl.textContent = scoreText;
-    if (this._healthEl)
-      this._healthEl.textContent = `Health: ${this.player?.health ?? 0}`;
-    if (this._levelEl)
-      this._levelEl.textContent = `Level: ${this.gameState?.level ?? 1}`;
-
-    // Add dash cooldown indicator
-    this.updateDashIndicator();
-
-    // Update audio system
-    if (this.audio && typeof this.audio.updateTexts === 'function') {
-      this.audio.updateTexts();
-    }
+  // Draw score (top-left); the kill streak has its own indicator
+  drawScore(p) {
+    if (!this.gameState) return;
+    p.push();
+    p.textFont('monospace');
+    p.fill(255, 255, 255);
+    p.noStroke();
+    p.textAlign(p.LEFT, p.TOP);
+    p.textSize(SCORE_HUD.textSize);
+    p.text(
+      `SCORE ${this.gameState.score.toLocaleString()}`,
+      SCORE_HUD.marginLeft,
+      SCORE_HUD.marginTop
+    );
+    p.pop();
   }
 
-  // Update dash cooldown indicator
-  updateDashIndicator() {
+  // Draw dash cooldown status under the health bar
+  drawDashStatus(p) {
     if (!this.player) return;
-    if (!this.dashElement) {
-      this.dashElement = document.createElement('div');
-      this.dashElement.id = 'dash';
-      this.dashElement.style.cssText = `position: absolute; top: ${DASH_INDICATOR.top}px; left: ${DASH_INDICATOR.left}px; color: white; font-family: monospace; font-size: 14px; text-shadow: 0 0 5px currentColor;`;
-      document.body.appendChild(this.dashElement);
-    }
-
+    p.push();
+    p.textFont('monospace');
+    p.noStroke();
+    p.textAlign(p.LEFT, p.BOTTOM);
+    p.textSize(DASH_HUD.textSize);
     if (this.player.dashCooldownMs > 0) {
       const cooldownSeconds = (this.player.dashCooldownMs / 1000).toFixed(1);
-      this.dashElement.textContent = `DASH RECHARGING: ${cooldownSeconds}S`;
-      this.dashElement.style.color = '#ff1493'; // Hot pink
+      p.fill(255, 20, 147); // Hot pink
+      p.text(
+        `DASH RECHARGING ${cooldownSeconds}S`,
+        HEALTH_BAR.marginLeft,
+        p.height - DASH_HUD.marginBottom
+      );
     } else {
-      this.dashElement.textContent =
-        'DASH: READY [E] | SHOOT: [SPACE] OR MOUSE';
-      this.dashElement.style.color = '#00ffff'; // Cyan
+      p.fill(0, 255, 255); // Cyan
+      p.text(
+        'DASH READY [E]',
+        HEALTH_BAR.marginLeft,
+        p.height - DASH_HUD.marginBottom
+      );
     }
+    p.pop();
   }
 
   // Draw game over screen (delegated to UIOverlays)
@@ -340,10 +334,15 @@ export class UIRenderer {
 
   // Draw all UI elements
   drawUI(p) {
+    // The title screen is an HTML overlay; no HUD behind it
+    if (this.gameState?.gameState === 'title') return;
+
     // Draw in-game UI elements
+    this.drawScore(p);
     this.drawLevelProgress(p);
     this.drawKillStreakIndicator(p);
     this.drawHealthBar(p);
+    this.drawDashStatus(p);
     this.drawBombs(p);
 
     // Draw overlays based on game state
@@ -366,15 +365,12 @@ export class UIRenderer {
       player: this.player,
       audio: this.audio,
       cameraSystem: this.cameraSystem,
+      showToast: (msg) => this._showToast(msg),
     });
   }
 
   // Reset UI renderer
   reset() {
-    if (this.dashElement) {
-      this.dashElement.remove();
-      this.dashElement = null;
-    }
     this.animatedHealth = undefined;
   }
 

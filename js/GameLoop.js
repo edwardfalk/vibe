@@ -112,6 +112,7 @@ function setup(p) {
   gameContext = state.gameContext;
   enemyDeathHandler = state.enemyDeathHandler;
   syncRuntimeContext(window.hitStopFrames);
+  window.gameState.showTitle();
 }
 
 function draw(p) {
@@ -300,31 +301,53 @@ new window.p5((p) => {
   p.draw = () => draw(p);
 });
 
-// --- Audio/Canvas Unlock Handler for Modern Browsers ---
-function unlockAudioAndShowCanvas() {
+// Keys that don't count as "press any key": modifiers, plus F1-F24 (below)
+const NON_START_KEYS = [
+  'Shift',
+  'Control',
+  'Alt',
+  'AltGraph',
+  'Meta',
+  'CapsLock',
+  'Tab',
+  'ContextMenu',
+];
+
+// --- Title screen: the first click or key press starts the run ---
+// Browsers only allow audio after a user gesture, so this also unlocks audio.
+function startFromTitle(event) {
+  // Before setup finishes there is no title yet; keep listening.
+  if (window.gameState?.gameState !== 'title') return;
+  // Ignore modifiers and function keys (Alt+Tab, F11, Shift, Ctrl+zoom...)
+  if (
+    event.type === 'keydown' &&
+    (event.ctrlKey ||
+      event.altKey ||
+      event.metaKey ||
+      NON_START_KEYS.includes(event.key) ||
+      /^F\d+$/.test(event.key))
+  ) {
+    return;
+  }
+  // The starting input only starts the game: M must not also mute, and
+  // preventDefault stops a click's follow-up mousedown from firing a shot.
+  event.stopImmediatePropagation();
+  if (event.type === 'pointerdown') event.preventDefault();
+
   // Resume p5.js audio context if present
   if (typeof getAudioContext === 'function') {
     getAudioContext().resume();
   }
-  // Resume your own audio context
+  // Creates the AudioContext, which also starts the beat track
   if (window.audio && typeof window.audio.ensureAudioContext === 'function') {
     window.audio.ensureAudioContext();
   }
-  // Start the procedural beat track (async - catch errors from unawaited promise)
-  if (window.beatTrack && !window.beatTrack.isPlaying) {
-    window.beatTrack.start().catch((err) => {
-      console.warn('BeatTrack start failed:', err);
-    });
-  }
-  // Try to show the canvas if hidden
-  const canvas = document.querySelector('canvas');
-  if (canvas && canvas.style.visibility === 'hidden') {
-    canvas.style.visibility = 'visible';
-    canvas.removeAttribute('data-hidden');
-  }
-  // Remove this handler after first use
-  window.removeEventListener('pointerdown', unlockAudioAndShowCanvas);
-  window.removeEventListener('keydown', unlockAudioAndShowCanvas);
+  document.getElementById('title')?.remove();
+  window.gameState.restart();
+
+  window.removeEventListener('pointerdown', startFromTitle, true);
+  window.removeEventListener('keydown', startFromTitle, true);
 }
-window.addEventListener('pointerdown', unlockAudioAndShowCanvas);
-window.addEventListener('keydown', unlockAudioAndShowCanvas);
+// Capture phase, so it runs before (and can swallow) the game's own handlers.
+window.addEventListener('pointerdown', startFromTitle, true);
+window.addEventListener('keydown', startFromTitle, true);
