@@ -91,6 +91,30 @@ const CONFIG = {
     },
   },
 
+  // Beat track: the steady kick and the sub pulse under it.
+  // Tune live by opening the game with ?tune in the URL.
+  BEAT_TRACK: {
+    KICK: {
+      ENABLED: true,
+      PATTERN: 'four', // 'four' = every beat, 'oneThree' = beats 1 and 3
+      VOLUME: 0.6, // peak gain, before the beat track's master volume
+      PITCH_START_HZ: 150, // punch; laptop speakers need energy up here
+      PITCH_END_HZ: 45, // body
+      PITCH_DROP_SEC: 0.08, // how fast the pitch falls to the body
+      DECAY_SEC: 0.3, // length of the thump
+      // Saturation: adds overtones of the body, so small speakers that can't
+      // play the bass itself still let you hear it. 0 = clean sine.
+      DRIVE: 4,
+      CLICK_LEVEL: 0.5, // noise attack ("beater"), relative to VOLUME
+      CLICK_DECAY_SEC: 0.015,
+      CLICK_FREQ_HZ: 2500, // centre of the click's band; hearing peaks ~2-4 kHz
+    },
+    SUB_PULSE: {
+      ENABLED: true,
+      VOLUME: 1, // multiplier on the original sub-bass pulse
+    },
+  },
+
   // Stabber-specific tunable parameters
   STABBER_SETTINGS: {
     MIN_STAB_DISTANCE: 200, // Minimum distance to initiate stab
