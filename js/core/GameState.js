@@ -2,6 +2,8 @@
  * GameState.js - Manages all game state including score, level, health, and game state transitions
  */
 
+import { CONFIG } from '../config.js';
+
 export class GameState {
   constructor() {
     // Core game state
@@ -10,7 +12,7 @@ export class GameState {
     this.highScore = parseInt(localStorage.getItem('vibeHighScore')) || 0;
     this.level = 1;
     this.previousLevelThreshold = 0;
-    this.nextLevelThreshold = 150; // First level up at 150 points
+    this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
     this.gameState = 'playing'; // 'title', 'playing', 'gameOver', 'paused'
 
     // Combat statistics
@@ -63,7 +65,8 @@ export class GameState {
       this.level++;
 
       // Calculate next level threshold with increasing requirements
-      const nextLevelIncrease = this.level * 150;
+      const nextLevelIncrease =
+        this.level * CONFIG.PACING.LEVEL_POINTS_PER_LEVEL;
       this.previousLevelThreshold = this.nextLevelThreshold;
       this.nextLevelThreshold += nextLevelIncrease;
 
@@ -169,7 +172,7 @@ export class GameState {
     this.score = 0;
     this.level = 1;
     this.previousLevelThreshold = 0;
-    this.nextLevelThreshold = 150;
+    this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
     this.killStreak = 0;
     this.totalKills = 0;
     this.shotsFired = 0;
