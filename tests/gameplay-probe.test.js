@@ -89,6 +89,7 @@ test.describe('Gameplay Probes', () => {
     // Modifier and function keys (Alt+Tab, Shift, F11) don't start the run
     await page.keyboard.press('Alt');
     await page.keyboard.press('Shift');
+    await page.keyboard.press('F2');
     expect(await page.evaluate(() => window.gameState.gameState)).toBe('title');
 
     // The starting key only starts the game: M must not also mute
@@ -129,6 +130,17 @@ test.describe('Gameplay Probes', () => {
     await page.keyboard.press('m');
     await expect(page.locator('#statusToast')).toHaveText('Sound on');
     await expect.poll(gains).toEqual([sfxOn, musicOn]);
+  });
+
+  test('Named keys like arrows and Escape start the run', async ({ page }) => {
+    for (const key of ['ArrowUp', 'Escape']) {
+      await page.goto('/');
+      await page.waitForFunction(() => window.gameState?.gameState === 'title');
+      await page.keyboard.press(key);
+      await page.waitForFunction(
+        () => window.gameState.gameState === 'playing'
+      );
+    }
   });
 
   test('Clicking to start does not also fire a shot', async ({ page }) => {

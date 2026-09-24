@@ -301,6 +301,18 @@ new window.p5((p) => {
   p.draw = () => draw(p);
 });
 
+// Keys that don't count as "press any key": modifiers, plus F1-F24 (below)
+const NON_START_KEYS = [
+  'Shift',
+  'Control',
+  'Alt',
+  'AltGraph',
+  'Meta',
+  'CapsLock',
+  'Tab',
+  'ContextMenu',
+];
+
 // --- Title screen: the first click or key press starts the run ---
 // Browsers only allow audio after a user gesture, so this also unlocks audio.
 function startFromTitle(event) {
@@ -312,7 +324,8 @@ function startFromTitle(event) {
     (event.ctrlKey ||
       event.altKey ||
       event.metaKey ||
-      (event.key.length !== 1 && event.key !== 'Enter'))
+      NON_START_KEYS.includes(event.key) ||
+      /^F\d+$/.test(event.key))
   ) {
     return;
   }
