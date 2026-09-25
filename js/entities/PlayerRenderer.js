@@ -38,6 +38,8 @@ export function drawPlayer(p, player) {
   p.push();
   p.translate(player.x, player.y);
   p.rotate(player.aimAngle);
+  // Aiming left, mirror him so he stays head-up instead of upside down
+  if (Math.cos(player.aimAngle) < 0) p.scale(1, -1);
 
   const s = player.size;
   const walkBob = player.isMoving ? sin(player.animFrame) * 2 : 0;
@@ -109,29 +111,43 @@ export function drawPlayer(p, player) {
     p.pop();
   }
 
-  // Draw head
+  // Head: bare, in space. Buzz cut and shades are all the protection he needs
+  const headY = -s * 0.26;
+  const headD = s * 0.36;
   p.fill(player.skinColor);
-  p.ellipse(0, -s * 0.25, s * 0.3);
+  p.ellipse(0, headY, headD);
 
-  // Draw bandana
-  p.fill(player.bandanaColor);
-  p.rect(-s * 0.15, -s * 0.35, s * 0.3, s * 0.08);
+  // Buzz cut: a thin cap of hair over the crown
+  p.fill(60, 40, 25);
+  p.arc(0, headY, headD, headD, p.PI + 0.35, p.TWO_PI - 0.35, p.CHORD);
 
-  // Bandana tails
-  p.rect(-s * 0.12, -s * 0.27, s * 0.04, s * 0.15);
-  p.rect(s * 0.08, -s * 0.25, s * 0.04, s * 0.12);
+  // Shades: two dark lenses on a bridge, wider than the face, each with a
+  // neon glint (the HUD cyan)
+  const lensW = headD * 0.46;
+  const lensH = s * 0.09;
+  const lensY = headY - s * 0.01;
+  p.fill(5, 5, 12);
+  p.rect(
+    -lensW - s * 0.01,
+    lensY,
+    lensW,
+    lensH,
+    s * 0.02,
+    s * 0.02,
+    s * 0.04,
+    s * 0.04
+  );
+  p.rect(s * 0.01, lensY, lensW, lensH, s * 0.02, s * 0.02, s * 0.04, s * 0.04);
+  p.rect(-s * 0.02, lensY + s * 0.01, s * 0.04, s * 0.02); // bridge
+  p.fill(0, 255, 255, 220);
+  p.rect(-lensW + s * 0.01, lensY + s * 0.015, lensW * 0.35, s * 0.018);
+  p.rect(s * 0.03, lensY + s * 0.015, lensW * 0.35, s * 0.018);
 
-  // Mysterious eyes
-  p.fill(0);
-  const eyeOffset = s * 0.07;
-  const eyeSize = s * 0.06;
-  p.ellipse(-eyeOffset, -s * 0.25, eyeSize);
-  p.ellipse(eyeOffset, -s * 0.25, eyeSize);
-
-  // Small cosmic horns for flair
-  p.fill(128, 0, 128);
-  p.triangle(-s * 0.12, -s * 0.35, -s * 0.05, -s * 0.55, -s * 0.01, -s * 0.35);
-  p.triangle(s * 0.12, -s * 0.35, s * 0.05, -s * 0.55, s * 0.01, -s * 0.35);
+  // A smirk
+  p.stroke(120, 60, 50);
+  p.strokeWeight(1);
+  p.line(-s * 0.02, headY + s * 0.11, s * 0.06, headY + s * 0.09);
+  p.noStroke();
 
   drawPlayerDashEffect(p, s, {
     isDashing: player.isDashing,

@@ -58,7 +58,6 @@ export class Player {
     this.pantsColor = this.p.color(25, 25, 112); // Midnight blue pants
     this.skinColor = this.p.color(255, 219, 172); // Peach skin
     this.gunColor = this.p.color(169, 169, 169); // Dark gray gun
-    this.bandanaColor = this.p.color(139, 69, 19); // Brown bandana
 
     this.context = context;
     this.getContextValue = createContextAccessor(() => this.context);
