@@ -324,10 +324,6 @@ function startFromTitle(event) {
   event.stopImmediatePropagation();
   if (event.type === 'pointerdown') event.preventDefault();
 
-  // Resume p5.js audio context if present
-  if (typeof getAudioContext === 'function') {
-    getAudioContext().resume();
-  }
   // Creates the AudioContext, which also starts the beat track
   if (window.audio && typeof window.audio.ensureAudioContext === 'function') {
     window.audio.ensureAudioContext();
