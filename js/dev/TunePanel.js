@@ -1,8 +1,9 @@
 /**
- * Live tuning panel for CONFIG.BEAT_TRACK, PACING, MIX, RUSHER, TANK_ARMOR,
- * HITBOX and the stabber's knockback, shown when the URL has ?tune. Sound and spawn changes apply from the next
- * beat or wave; level thresholds from the next level-up (the first one after a
- * restart); rusher changes at once; armour on tanks spawned after the change.
+ * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK, PACING,
+ * MIX, RUSHER, TANK_ARMOR, HITBOX, the stabber's knockback and the hero's
+ * shield and healing. Sound and spawn changes apply from the next beat or
+ * wave; level thresholds from the next level-up (the first one after a
+ * restart); armour on tanks spawned after the change; the rest at once.
  * To keep a setting, copy the JSON at the bottom into js/config.js.
  */
 
@@ -59,6 +60,9 @@ const KNOBS = [
   [HITBOX, 'tank', [20, 70, 1]],
   ['STABBER_SETTINGS', 'KNOCKBACK_FORCE', [0, 20, 0.5]],
   ['STABBER_SETTINGS', 'MAX_KNOCKBACK', [0, 40, 1]],
+  ['PLAYER', 'SHIELD_RECHARGE_MS', [1000, 20000, 500]],
+  ['PLAYER', 'REGEN_DELAY_MS', [0, 10000, 250]],
+  ['PLAYER', 'REGEN_PER_SEC', [0, 10, 0.5]],
 ];
 
 const resolve = (path) => path.split('.').reduce((obj, k) => obj[k], CONFIG);
@@ -101,6 +105,7 @@ export function createTunePanel() {
       TANK_ARMOR,
       HITBOX: hitbox,
       STABBER_SETTINGS,
+      PLAYER,
     } = CONFIG;
     json.textContent = JSON.stringify(
       {
@@ -111,6 +116,7 @@ export function createTunePanel() {
         TANK_ARMOR,
         HITBOX: hitbox,
         STABBER_SETTINGS,
+        PLAYER,
       },
       null,
       2

@@ -101,13 +101,6 @@ export function updateBombs(context) {
           )
         );
 
-        if (audio) {
-          audio.playPlayerHit();
-        }
-        if (gameState) {
-          gameState.resetKillStreak();
-        }
-
         if (player.takeDamage(damage, 'tank-bomb')) {
           if (gameState) {
             gameState.setGameState('gameOver');

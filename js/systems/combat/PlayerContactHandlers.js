@@ -30,8 +30,6 @@ export function handleContactCollisions({
     }
 
     if (damage > 0) {
-      audio?.playPlayerHit?.();
-      gameState?.resetKillStreak?.();
       if (player.takeDamage(damage, `${enemy.type}-contact`)) {
         gameState?.setGameState?.('gameOver');
         return true;
@@ -61,9 +59,7 @@ export function handleRusherExplosionCollision({
   );
   if (distance > explosion.radius) return;
 
-  audio?.playPlayerHit?.();
   audio?.playRusherExplosion?.(explosion.x, explosion.y);
-  gameState?.resetKillStreak?.();
 
   if (player.takeDamage(explosion.damage, 'rusher-explosion')) {
     gameState?.setGameState?.('gameOver');

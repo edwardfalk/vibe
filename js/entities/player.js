@@ -58,13 +58,41 @@ export class Player {
     this.pantsColor = this.p.color(25, 25, 112); // Midnight blue pants
     this.skinColor = this.p.color(255, 219, 172); // Peach skin
     this.gunColor = this.p.color(169, 169, 169); // Dark gray gun
-    this.bandanaColor = this.p.color(139, 69, 19); // Brown bandana
+
+    // Shield: takes one real hit, then recharges (CONFIG.PLAYER)
+    this.shieldUp = true;
+    this.shieldDownMs = 0;
+    this.msSinceHit = 0;
 
     this.context = context;
     this.getContextValue = createContextAccessor(() => this.context);
   }
 
   update(deltaTimeMs) {
+    // The shield recharges, then comes back on the beat
+    if (!this.shieldUp) {
+      this.shieldDownMs += deltaTimeMs;
+      const beatClock = this.getContextValue('beatClock');
+      if (
+        this.shieldDownMs >= CONFIG.PLAYER.SHIELD_RECHARGE_MS &&
+        // Any beat, but only once it has landed: never ahead of the kick
+        (!beatClock || beatClock.isOnBeat([1, 2, 3, 4]))
+      ) {
+        this.shieldUp = true;
+        this.getContextValue('audio')?.playSound('shieldUp', this.x, this.y);
+      }
+    }
+
+    // Slow healing once he has gone REGEN_DELAY_MS without a hit
+    this.msSinceHit += deltaTimeMs;
+    const { REGEN_DELAY_MS, REGEN_PER_SEC } = CONFIG.PLAYER;
+    if (this.health > 0 && this.msSinceHit > REGEN_DELAY_MS) {
+      this.health = Math.min(
+        this.maxHealth,
+        this.health + (REGEN_PER_SEC * deltaTimeMs) / 1000
+      );
+    }
+
     // Handle movement (check both keyboard and testing keys)
     this.velocity.x = 0;
     this.velocity.y = 0;
@@ -295,11 +323,23 @@ export class Player {
   }
 
   takeDamage(amount, damageSource = 'unknown') {
-    const prevHealth = this.health;
-    this.health -= amount;
-
     const gameState = this.getContextValue('gameState');
     const audio = this.getContextValue('audio');
+    this.msSinceHit = 0;
+
+    // The shield takes a real hit whole; contact ticks (1 per frame) go
+    // straight through and leave it up
+    if (this.shieldUp && !damageSource.endsWith('-contact')) {
+      this.shieldUp = false;
+      this.shieldDownMs = 0;
+      audio?.playSound('shieldBreak', this.x, this.y);
+      return false;
+    }
+    audio?.playPlayerHit?.();
+    gameState?.resetKillStreak?.();
+
+    const prevHealth = this.health;
+    this.health -= amount;
 
     // Play low health warning sound when crossing the 30% threshold
     if (

@@ -20,14 +20,6 @@ export function handleAreaDamageEvents(damageEvents, context) {
       const playerDistSq = dx * dx + dy * dy;
       const radiusSq = event.radius * event.radius;
       if (playerDistSq < radiusSq) {
-        if (audio) {
-          audio.playPlayerHit();
-        }
-
-        if (gameState) {
-          gameState.resetKillStreak(); // Reset kill streak on taking damage
-        }
-
         if (player.takeDamage(event.damage, 'area-effect')) {
           if (gameState) {
             gameState.setGameState('gameOver');
@@ -47,26 +39,37 @@ export function handleAreaDamageEvents(damageEvents, context) {
       }
     }
 
-    // Check enemy damage
-    for (let i = enemies.length - 1; i >= 0; i--) {
-      const enemy = enemies[i];
-      const dx = event.x - enemy.x;
-      const dy = event.y - enemy.y;
-      const enemyDistSq = dx * dx + dy * dy;
-      const radiusSq = event.radius * event.radius;
-      if (enemyDistSq < radiusSq) {
-        handleDamageResult(
-          enemy.takeDamage(event.damage, null, 'area'),
-          enemy,
-          {
-            explosionManager,
-            audio,
-            gameState,
-            enemyDeathHandler,
-            scorePoints: 10,
-          }
-        );
-      }
-    }
+    damageEnemiesInRadius(
+      event,
+      enemies,
+      {
+        explosionManager,
+        audio,
+        gameState,
+        enemyDeathHandler,
+        scorePoints: 10,
+      },
+      'area'
+    );
+  }
+}
+
+/**
+ * Damage every live enemy the circle touches; an enemy counts when its hit
+ * radius reaches inside, not only its centre. ctx goes to handleDamageResult.
+ */
+export function damageEnemiesInRadius(event, enemies, ctx, source) {
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const enemy = enemies[i];
+    if (enemy.markedForRemoval) continue;
+    const reach = event.radius + (enemy.hitRadius ?? enemy.size / 2);
+    const dx = event.x - enemy.x;
+    const dy = event.y - enemy.y;
+    if (dx * dx + dy * dy > reach * reach) continue;
+    handleDamageResult(
+      enemy.takeDamage(event.damage, null, source),
+      enemy,
+      ctx
+    );
   }
 }

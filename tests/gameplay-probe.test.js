@@ -500,6 +500,7 @@ test.describe('Gameplay Probes', () => {
         return false;
       }
       window.player.health = 1;
+      window.player.shieldUp = false; // this test is about unshielded damage
       window.collisionSystem.handleRusherExplosion(
         {
           x: window.player.x,

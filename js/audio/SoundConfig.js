@@ -91,6 +91,20 @@ export const SOUND_CONFIG = {
     sweep: { to: 60, curve: 'exponential' },
   },
   hit: { frequency: 1200, waveform: 'triangle', duration: 0.05, volume: 0.4 },
+  shieldBreak: {
+    frequency: 1800,
+    waveform: 'square',
+    volume: 0.35,
+    duration: 0.25,
+    sweep: { to: 300, curve: 'exponential' },
+  },
+  shieldUp: {
+    frequency: 400,
+    waveform: 'triangle',
+    volume: 0.3,
+    duration: 0.3,
+    sweep: { to: 1600, curve: 'exponential' },
+  },
   playerHit: {
     frequency: 250,
     waveform: 'sawtooth',

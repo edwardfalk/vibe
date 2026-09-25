@@ -2,7 +2,7 @@
  * UIRenderer.js - Handles all UI drawing including HUD, game over screen, pause screen, and bomb indicators
  */
 
-import { floor, ceil, max, abs, sin } from '../mathUtils.js';
+import { ceil, max, abs, sin } from '../mathUtils.js';
 import {
   SCORE_HUD,
   DASH_HUD,
@@ -312,7 +312,7 @@ export class UIRenderer {
 
     // Health text (no heart icon, more sci-fi)
     p.text(
-      `SYS.INTEGRITY [${floor(this.player.health)}/${this.player.maxHealth}]`,
+      `SYS.INTEGRITY [${ceil(this.player.health)}/${this.player.maxHealth}]`,
       barX,
       barY - 5
     );
