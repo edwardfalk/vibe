@@ -3,6 +3,9 @@ import { floor, random, sin, cos, ceil, max } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { updateStabberBehavior } from './StabberAttackHandler.js';
 
+// Per attempt once the speech timer is up (= today's effective rate)
+const STABBER_SPEECH_CHANCE = 0.05;
+
 const STABBER_LINES = [
   'STAB!',
   'SLICE!',
@@ -84,8 +87,8 @@ class Stabber extends BaseEnemy {
   getAmbientSpeechConfig() {
     return {
       lines: STABBER_LINES,
-      shouldSpeak: (beatClock) =>
-        beatClock?.canStabberAttack() && random() < 0.2,
+      gate: (beatClock) => !!beatClock?.canStabberAttack(),
+      chance: STABBER_SPEECH_CHANCE,
     };
   }
 

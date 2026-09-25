@@ -15,6 +15,8 @@ import {
 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 
+const STABBER_CHANT_CHANCE = 0.35; // per off-beat window
+
 /** Update stabber attack behavior; returns hit result or null. */
 const MAX_DELTA_MS = 100;
 
@@ -37,12 +39,12 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
   const beatClock = stabber.getContextValue('beatClock');
   if (
     beatClock &&
-    beatClock.canStabberAttack() &&
+    stabber.onBeatOnce(beatClock, 'chant', beatClock.canStabberAttack()) &&
     !stabber.stabPreparing &&
     !stabber.isStabbing &&
     !stabber.stabWarning &&
     !stabber.stabRecovering &&
-    random() < 0.03
+    random() < STABBER_CHANT_CHANCE
   ) {
     const audio = stabber.getContextValue('audio');
     if (audio) {
@@ -257,12 +259,12 @@ function handlePreparingPhase(stabber, dx, dy, distance, dt) {
     stabber.velocity.y = 0;
   }
 
-  // Transition when beat 3.5 arrives (with minimum prep time)
+  // Warn on beat 3; the dash follows half a beat later, on 3.5
   const minPrepFrames = 30; // ~0.5 seconds minimum
   if (
     stabber.stabPreparingTime >= minPrepFrames &&
     beatClock &&
-    beatClock.canStabberAttack()
+    beatClock.isOnBeat([3])
   ) {
     stabber.stabPreparing = false;
     stabber.stabPreparingTime = 0;
@@ -303,15 +305,11 @@ function handleNormalMovement(stabber, dx, dy, distance) {
     if (beatClockAtk) {
       const currentBeat = beatClockAtk.getCurrentBeat();
       const beatPhase = beatClockAtk.getBeatPhase();
-      let beatsUntilStab = null;
+      // Beats until the next dash at 3.5 (beat index 2, halfway)
+      let beatsUntilStab = 2.5 - (currentBeat + beatPhase);
+      if (beatsUntilStab <= 0) beatsUntilStab += 4;
 
-      if (currentBeat === 2) {
-        if (beatPhase < 0.75) beatsUntilStab = 0.75 - beatPhase;
-      } else if (currentBeat === 3) {
-        if (beatPhase > 0.25) beatsUntilStab = 3.75 - beatPhase;
-      }
-
-      if (beatsUntilStab !== null && beatsUntilStab < 1.5 && rhythmFX) {
+      if (beatsUntilStab < 1.5 && rhythmFX) {
         rhythmFX.addAttackTelegraph(
           stabber.x,
           stabber.y,

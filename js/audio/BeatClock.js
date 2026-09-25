@@ -89,11 +89,12 @@ export class BeatClock {
       return onBeat;
     }
 
-    // If specific beats requested, check if current beat is in the array
-    if (!onBeat) return false;
-
-    const currentBeat = this.getCurrentBeat() + 1; // Convert to 1-indexed for comparison
-    return beats.includes(currentBeat);
+    // Specific beats: the window opens when that beat lands and lasts
+    // `tolerance` ms, never before it, so no enemy acts ahead of the kick and
+    // getTotalBeats() can't change inside a window
+    const sinceBeat = this.beatInterval - timeToNext;
+    if (sinceBeat > this.tolerance) return false;
+    return beats.includes(this.getCurrentBeat() + 1); // 1-indexed
   }
 
   // PLAYER TIMING: Free shooting (not restricted, but creates natural hi-hat feel)
@@ -147,35 +148,22 @@ export class BeatClock {
 
   // GRUNT TIMING: Beats 2 and 4 (snare pattern)
   canGruntShoot() {
-    if (!this.isOnBeat()) return false;
-    const currentBeat = this.getCurrentBeat();
-    return currentBeat === 1 || currentBeat === 3; // Beats 2 and 4 (0-indexed)
+    return this.isOnBeat([2, 4]);
   }
 
   // TANK TIMING: Beat 1 only (bass drum pattern)
   canTankShoot() {
-    if (!this.isOnBeat()) return false;
-    const currentBeat = this.getCurrentBeat();
-    return currentBeat === 0; // Beat 1 (0-indexed)
+    return this.isOnBeat([1]);
   }
 
-  // STABBER TIMING: Off-beat (syncopated, creates tension)
+  // STABBER TIMING: the off-beat 3.5 (syncopated, creates tension).
+  // Opens halfway through beat 3 and lasts `tolerance`, like the other gates.
   canStabberAttack() {
     this.update();
-    const elapsed = this.cache.elapsed;
-    const beatPosition = (elapsed % this.beatInterval) / this.beatInterval;
-
-    // Attack on beat 3.5 (75% through beat 3, or 25% through beat 4)
-    const currentBeat = this.getCurrentBeat();
-    if (currentBeat === 2) {
-      // Beat 3 (0-indexed)
-      return beatPosition >= 0.75; // Last quarter of beat 3
-    }
-    if (currentBeat === 3) {
-      // Beat 4 (0-indexed)
-      return beatPosition <= 0.25; // First quarter of beat 4
-    }
-    return false;
+    if (this.cache.currentBeat !== 2) return false; // beat 3 (0-indexed)
+    const sinceHalf =
+      this.beatInterval - this.cache.timeToNextBeat - this.beatInterval / 2;
+    return sinceHalf >= 0 && sinceHalf <= this.tolerance;
   }
 
   // RUSHER TIMING: Can charge on any beat, but explode on strong beats (1 or 3)
@@ -184,9 +172,7 @@ export class BeatClock {
   }
 
   canRusherExplode() {
-    if (!this.isOnBeat()) return false;
-    const currentBeat = this.getCurrentBeat();
-    return currentBeat === 0 || currentBeat === 2; // Beats 1 and 3 (0-indexed)
+    return this.isOnBeat([1, 3]);
   }
 
   // Get beat info for debugging

@@ -3,6 +3,9 @@ import { floor, random, sqrt, sin, cos, ceil } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
+// Per attempt once the speech timer is up (= today's effective rate)
+const RUSHER_SPEECH_CHANCE = 0.03;
+
 const RUSHER_LINES = [
   'KAMIKAZE TIME!',
   'SUICIDE RUN!',
@@ -91,7 +94,7 @@ class Rusher extends BaseEnemy {
         this.vibrating = false;
         this.exploding = true;
         this.explosionTimer = 0;
-        this.maxExplosionTime = 5; // Near-instant after beat hit
+        this.maxExplosionTime = 0; // explode on the frame after the beat, not 5 frames later
       }
 
       // Safety: explode if vibrated too long or no beatClock
@@ -211,8 +214,8 @@ class Rusher extends BaseEnemy {
   getAmbientSpeechConfig() {
     return {
       lines: RUSHER_LINES,
-      shouldSpeak: (beatClock) =>
-        beatClock && beatClock.canRusherExplode() && random() < 0.15,
+      gate: (beatClock) => !!beatClock?.canRusherExplode(),
+      chance: RUSHER_SPEECH_CHANCE,
     };
   }
 
