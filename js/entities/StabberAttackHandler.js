@@ -64,7 +64,8 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
 function handleRecoveryPhase(stabber, dt) {
   stabber.stabRecoveryTime += dt;
   const penetrationFrames = 5;
-  const penetrationSpeedFactor = 0.5;
+  // 23.6 px of slide over 5 frames, as when this ran twice per frame
+  const penetrationSpeedFactor = 1.125;
 
   if (
     stabber.stabRecoveryTime <= penetrationFrames &&
