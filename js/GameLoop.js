@@ -44,10 +44,9 @@ window.enemyBullets = enemyBullets;
 window.activeBombs = activeBombs;
 window.explosionManager = null;
 window.audio = null;
-window.speechManager = null;
 window.performanceDiagnostics = null;
 
-// Add at the top, after global system references
+// Input state, written by core/InputHandlers.js
 window.playerIsShooting = false;
 window.arrowUpPressed = false;
 window.arrowDownPressed = false;
