@@ -281,6 +281,71 @@ test.describe('Gameplay Probes', () => {
     for (const o of sustained) expect(o).toBeLessThanOrEqual(tol + 17); // + one frame
   });
 
+  test("Kick locks to the enemies' beat, including after a restart", async ({
+    page,
+  }) => {
+    await bootGame(page);
+    await page.waitForFunction(() => window.beatTrack?.isPlaying);
+    const record = () =>
+      page.evaluate(async () => {
+        const track = window.beatTrack;
+        const clock = window.beatClock;
+        const audio = window.audio;
+        // Bring a grunt within firing range (grunts fire only within 300 px)
+        const grunt = window.enemies.find((e) => e.type === 'grunt');
+        if (grunt) {
+          grunt.x = window.player.x + 200;
+          grunt.y = window.player.y;
+        }
+        const schedule = track._scheduleNote.bind(track);
+        const playSound = audio.playSound.bind(audio);
+        const kicks = [];
+        const shotOffsets = [];
+        track._scheduleNote = (time, eighth) => {
+          if (eighth % 2 === 0) {
+            const rel = time * 1000 - clock.startTime;
+            const beat = Math.round(rel / clock.beatInterval);
+            kicks.push({
+              off: Math.abs(rel - beat * clock.beatInterval),
+              beatInMeasure: ((beat % 4) + 4) % 4,
+              eighth,
+            });
+          }
+          schedule(time, eighth);
+        };
+        audio.playSound = (name, ...rest) => {
+          if (name === 'alienShoot') {
+            const t = clock._now() - clock.startTime;
+            shotOffsets.push(
+              t - Math.floor(t / clock.beatInterval) * clock.beatInterval
+            );
+          }
+          return playSound(name, ...rest);
+        };
+        await new Promise((r) => setTimeout(r, 3000));
+        track._scheduleNote = schedule;
+        audio.playSound = playSound;
+        return { kicks, shotOffsets, tolerance: clock.tolerance };
+      });
+    const check = ({ kicks, shotOffsets, tolerance }) => {
+      expect(kicks.length).toBeGreaterThanOrEqual(3);
+      for (const k of kicks) {
+        expect(k.off).toBeLessThan(2); // on BeatClock's beat
+        expect(k.eighth / 2).toBe(k.beatInMeasure); // accent on the clock's beat 1
+      }
+      // Grunt shots come after their beat lands; a pre-beat shot would read
+      // as ~400-500 ms (the end of the previous beat)
+      expect(shotOffsets.length).toBeGreaterThan(0);
+      for (const o of shotOffsets)
+        expect(o).toBeLessThanOrEqual(tolerance + 20);
+    };
+    check(await record());
+    await page.evaluate(() => window.gameState.setGameState('gameOver'));
+    await page.keyboard.press('r');
+    await page.waitForFunction(() => window.gameState.gameState === 'playing');
+    check(await record());
+  });
+
   test('R after game over restarts straight into play', async ({ page }) => {
     await bootGame(page);
     await page.evaluate(() => window.gameState.setGameState('gameOver'));

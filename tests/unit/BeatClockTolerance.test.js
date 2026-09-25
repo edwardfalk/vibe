@@ -54,11 +54,17 @@ describe('BeatClock reset with beat alignment', () => {
     const oldBeatPhase = (clock._now() - clock.startTime) % clock.beatInterval;
     expect(oldBeatPhase).toBeGreaterThan(200); // Confirm we're mid-beat
 
+    const oldStart = clock.startTime;
     clock.reset();
 
-    // After reset, startTime should snap to nearest beat boundary
-    const newElapsed = clock._now() - clock.startTime;
-    const newRemainder = newElapsed % clock.beatInterval;
-    expect(newRemainder).toBeLessThan(5);
+    // The grid moves by whole beats (beat times unchanged, bar renumbered),
+    // and elapsed time stays non-negative. (This used to pass on a negative
+    // remainder: a future origin that made isOnBeat() fire early.)
+    const shift = clock.startTime - oldStart;
+    const offGrid = Math.abs(
+      shift - Math.round(shift / clock.beatInterval) * clock.beatInterval
+    );
+    expect(offGrid).toBeLessThan(1);
+    expect(clock._now() - clock.startTime).toBeGreaterThanOrEqual(0);
   });
 });

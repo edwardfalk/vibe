@@ -258,4 +258,14 @@ describe('BeatClock', () => {
       expect(clock.getMeasurePhase()).toBeCloseTo(0.5, 5);
     });
   });
+
+  it('a reset that snaps forward does not report the next beat early', () => {
+    const ctx = { currentTime: 0 };
+    const clock = new BeatClock(120, ctx);
+    ctx.currentTime = 0.3; // 300 ms in: the next beat is 200 ms away
+    clock.reset();
+    expect(clock.getTimeToNextBeat()).toBeCloseTo(200, 0);
+    expect(clock.isOnBeat()).toBe(false); // 200 ms early is outside ±100 ms
+    expect(clock.getCurrentBeat()).toBeGreaterThanOrEqual(0);
+  });
 });

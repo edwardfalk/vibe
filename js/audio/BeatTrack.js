@@ -12,6 +12,7 @@
  */
 
 import { CONFIG } from '../config.js';
+import { createContextAccessor } from '../shared/ContextAccessor.js';
 
 const EIGHTH_NOTES_PER_MEASURE = 8;
 // Which beats (0-3) the kick plays on, per CONFIG.BEAT_TRACK.KICK.PATTERN
@@ -31,11 +32,10 @@ const DRIVE_CURVE_SAMPLES = 1024;
 const TAIL_FADE_SEC = 0.005;
 
 export class BeatTrack {
+  // bpm is kept for the call signature; tempo now comes from BeatClock
   constructor(bpm = 120, context = null) {
-    this.bpm = bpm;
     this.context = context;
-    this.beatDuration = 60 / bpm;
-    this.eighthDuration = this.beatDuration / 2;
+    this.getContextValue = createContextAccessor(context);
     this.volume = 0.4;
     this.muted = false;
 
@@ -45,8 +45,6 @@ export class BeatTrack {
     this.isPlaying = false;
 
     // Scheduler state
-    this.nextNoteTime = 0;
-    this.currentEighth = 0;
     this.schedulerTimer = null;
 
     // Enemy count for dynamic volume scaling
@@ -56,17 +54,10 @@ export class BeatTrack {
     this.level = 1;
   }
 
-  _getAudio() {
-    if (this.context && typeof this.context.get === 'function') {
-      return this.context.get('audio');
-    }
-    return window.audio;
-  }
-
   async start() {
     if (this.isPlaying) return;
 
-    const audio = this._getAudio();
+    const audio = this.getContextValue('audio');
     if (audio && audio.audioContext) {
       this.ctx = audio.audioContext;
     } else {
@@ -95,10 +86,6 @@ export class BeatTrack {
       audio?.audioContext === this.ctx ? audio.masterLimiter : null;
     this.masterGain.connect(limiter ?? this.ctx.destination);
 
-    this.nextNoteTime = this.ctx.currentTime + 0.05;
-    this._startTime = this.nextNoteTime;
-    this._totalEighths = 0;
-    this.currentEighth = 0;
     this.isPlaying = true;
 
     // Reusable noise buffer: the kick click and Level 5+ downbeat transients
@@ -141,28 +128,30 @@ export class BeatTrack {
     }
   }
 
-  setBPM(bpm) {
-    this.bpm = bpm;
-    this.beatDuration = 60 / bpm;
-    this.eighthDuration = this.beatDuration / 2;
-    // Reset accumulator to avoid drift across BPM changes
-    if (this.ctx) {
-      this._startTime = this.ctx.currentTime;
-      this._totalEighths = 0;
-    }
-  }
-
   // -- Scheduler ----------------------------------------------------------
 
   _scheduler() {
     if (!this.isPlaying || !this.ctx) return;
 
-    while (this.nextNoteTime < this.ctx.currentTime + SCHEDULE_AHEAD_SEC) {
-      this._scheduleNote(this.nextNoteTime, this.currentEighth);
-      this._totalEighths++;
-      this.nextNoteTime =
-        this._startTime + this._totalEighths * this.eighthDuration;
-      this.currentEighth = (this.currentEighth + 1) % EIGHTH_NOTES_PER_MEASURE;
+    const clock = this.getContextValue('beatClock');
+    // Silent until BeatClock runs on this AudioContext (the first moments
+    // after start); from then on the kick uses the enemies' grid exactly
+    if (clock?.audioContext === this.ctx) {
+      const now = this.ctx.currentTime;
+      const origin = clock.startTime / 1000;
+      const eighth = clock.beatInterval / 2000;
+      const n8 = EIGHTH_NOTES_PER_MEASURE;
+      // From now (skips missed notes after a hidden tab), and never at or
+      // before a note already handed to Web Audio (a restart moves the grid)
+      const from = Math.max(now, (this._lastNoteSec ?? -Infinity) + eighth / 2);
+      for (
+        let n = Math.ceil((from - origin) / eighth);
+        origin + n * eighth < now + SCHEDULE_AHEAD_SEC;
+        n++
+      ) {
+        this._lastNoteSec = origin + n * eighth;
+        this._scheduleNote(this._lastNoteSec, ((n % n8) + n8) % n8);
+      }
     }
 
     this.schedulerTimer = setTimeout(

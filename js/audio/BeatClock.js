@@ -220,7 +220,12 @@ export class BeatClock {
       this.startTime = now - remainder;
     } else {
       // Closer to the next beat — snap forward
-      this.startTime = now + (this.beatInterval - remainder);
+      // Same grid and bar numbering, one bar earlier, so elapsed time is
+      // never negative (a future origin made isOnBeat() fire 200 ms early)
+      this.startTime =
+        now +
+        (this.beatInterval - remainder) -
+        this.beatInterval * this.beatsPerMeasure;
     }
     this.update(true);
     console.log('🎵 BeatClock reset (beat-aligned)');
@@ -274,13 +279,4 @@ export class BeatClock {
   get currentBeat() {
     return this.getCurrentBeat();
   }
-}
-
-// Coordinated BPM change for both BeatClock and BeatTrack
-export function setGlobalBPM(newBPM, context) {
-  const beatClock = context?.get?.('beatClock') ?? window.beatClock;
-  const beatTrack = context?.get?.('beatTrack') ?? window.beatTrack;
-
-  if (beatClock) beatClock.setBPM(newBPM);
-  if (beatTrack) beatTrack.setBPM(newBPM);
 }
