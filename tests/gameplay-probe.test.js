@@ -243,6 +243,17 @@ test.describe('Gameplay Probes', () => {
     await after([['keyup', { code: 'KeyW', shiftKey: false }]]);
   });
 
+  test("Space's first shot is a real bullet", async ({ page }) => {
+    await bootGame(page);
+    await page.evaluate(() => (window.playerBullets.length = 0));
+    await page.keyboard.down('Space');
+    // Well inside the 200 ms cooldown a swallowed first shot would start
+    await page.waitForTimeout(100);
+    const bullets = await page.evaluate(() => window.playerBullets.length);
+    await page.keyboard.up('Space');
+    expect(bullets).toBeGreaterThanOrEqual(1);
+  });
+
   test('Held keyboard fire lands on eighth notes', async ({ page }) => {
     await bootGame(page);
     const offsets = await page.evaluate(async () => {

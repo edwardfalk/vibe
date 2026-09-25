@@ -96,7 +96,7 @@ export function initializeInputHandlers() {
   if (!window.uiKeyListenersAdded) {
     window.addEventListener('keydown', (event) => {
       if (!event.repeat) {
-        const singleActionKeys = ['r', 'R', 'p', 'P', 'm', 'M', 'e', 'E', ' '];
+        const singleActionKeys = ['r', 'R', 'p', 'P', 'm', 'M', 'e', 'E'];
         if (singleActionKeys.includes(event.key) && window.uiRenderer) {
           window.uiRenderer.handleKeyPress(event.key);
         }
