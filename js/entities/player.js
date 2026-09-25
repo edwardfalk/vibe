@@ -270,6 +270,7 @@ export class Player {
   fireBullet() {
     // Cooldown is set by the caller (shoot method) after this returns
     this.muzzleFlash = 4;
+    this.queuedShot = null; // any shot replaces a pending one, or both fire
 
     // Calculate bullet spawn position
     const bulletDistance = this.size * 0.8;
