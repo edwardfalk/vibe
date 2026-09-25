@@ -170,6 +170,14 @@ export class BaseEnemy {
     }
   }
 
+  /**
+   * Shift (local y, px) that centres an off-centre sprite on its hit circle.
+   * Subclasses whose art leans to one side override it.
+   */
+  get artOffsetY() {
+    return 0;
+  }
+
   /** Collision radius for bullets; the sprite is wider than size/2 */
   get hitRadius() {
     return CONFIG.HITBOX[this.type] ?? this.size / 2;
@@ -313,8 +321,8 @@ export class BaseEnemy {
     bobble += animationMods.bobble;
     waddle += animationMods.waddle;
 
-    // Apply animation offsets
-    p.translate(waddle, bobble);
+    // Apply animation offsets, and the art's own offset (see artOffsetY)
+    p.translate(waddle, bobble + this.artOffsetY);
 
     // Compose spawn alpha with hit-flash alpha; p.tint doesn't affect shape primitives, use globalAlpha
     const hitAlpha = this.hitFlash > 0 ? 100 : 255;
