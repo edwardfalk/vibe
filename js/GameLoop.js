@@ -47,18 +47,6 @@ window.audio = null;
 window.speechManager = null;
 window.performanceDiagnostics = null;
 
-// Keys system for testing
-window.keys = {
-  W: false,
-  w: false,
-  A: false,
-  a: false,
-  S: false,
-  s: false,
-  D: false,
-  d: false,
-};
-
 // Add at the top, after global system references
 window.playerIsShooting = false;
 window.arrowUpPressed = false;
