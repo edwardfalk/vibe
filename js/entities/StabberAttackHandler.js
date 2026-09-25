@@ -29,12 +29,6 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
   const dt = clampedDeltaMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
   if (stabber.stabCooldown > 0) stabber.stabCooldown -= dt;
 
-  stabber.motionTrailTimer += deltaTimeMs;
-  if (stabber.motionTrailTimer >= stabber.motionTrailInterval) {
-    stabber.drawMotionTrail();
-    stabber.motionTrailTimer = 0;
-  }
-
   // Beat-gated stabber chant (replaces frame-based stabChantTimer)
   const beatClock = stabber.getContextValue('beatClock');
   if (
@@ -140,25 +134,6 @@ function handleStabbingPhase(stabber, playerX, playerY, dt) {
       console.log(
         `🗡️ Stabber HIT during dash (frame ${stabber.stabAnimationTime}). Target: ${hitResult.playerHit ? 'Player' : 'Enemy'}. Recovering.`
       );
-
-      const visualEffectsManager = stabber.getContextValue(
-        'visualEffectsManager'
-      );
-      if (visualEffectsManager && stabber.stabDirection !== null) {
-        const impactX =
-          stabber.x + cos(stabber.stabDirection) * (stabber.meleeReach * 0.9);
-        const impactY =
-          stabber.y + sin(stabber.stabDirection) * (stabber.meleeReach * 0.9);
-        visualEffectsManager.addExplosion(
-          impactX,
-          impactY,
-          20,
-          [255, 255, 100],
-          0.5,
-          5,
-          8
-        );
-      }
 
       stabber.isStabbing = false;
       stabber.stabAnimationTime = 0;
@@ -347,7 +322,6 @@ function handleNormalMovement(stabber, dx, dy, distance) {
 
 /** Check if stab hit player or other enemies during dash. */
 export function checkStabHit(stabber, playerX, playerY) {
-  const visualEffectsManager = stabber.getContextValue('visualEffectsManager');
   const audioHit = stabber.getContextValue('audio');
   const enemies = stabber.getContextValue('enemies') ?? [];
 
@@ -397,26 +371,6 @@ export function checkStabHit(stabber, playerX, playerY) {
     result.reach = stabReach;
     result.stabAngle = stabber.stabDirection;
     result.hitType = 'player';
-    if (visualEffectsManager) {
-      visualEffectsManager.addExplosion(
-        tipX,
-        tipY,
-        10,
-        [255, 255, 180],
-        0.7,
-        3,
-        8
-      );
-      visualEffectsManager.addExplosion(
-        tipX,
-        tipY,
-        14,
-        [255, 40, 40],
-        0.5,
-        2,
-        10
-      );
-    }
     if (audioHit) {
       audioHit.playSound('stabberKnifeHit', tipX, tipY);
     }
@@ -443,26 +397,6 @@ export function checkStabHit(stabber, playerX, playerY) {
       }
     }
     if (result.enemiesHit.length > 0) {
-      if (visualEffectsManager) {
-        visualEffectsManager.addExplosion(
-          tipX,
-          tipY,
-          10,
-          [255, 255, 180],
-          0.7,
-          3,
-          8
-        );
-        visualEffectsManager.addExplosion(
-          tipX,
-          tipY,
-          14,
-          [255, 40, 40],
-          0.5,
-          2,
-          10
-        );
-      }
       if (audioHit) {
         audioHit.playSound('stabberKnifeHit', tipX, tipY);
       }
@@ -470,19 +404,6 @@ export function checkStabHit(stabber, playerX, playerY) {
   }
 
   if (result.type === 'stabber-miss') {
-    if (visualEffectsManager) {
-      try {
-        visualEffectsManager.addExplosion(
-          stabber.x,
-          stabber.y,
-          15,
-          [255, 215, 0],
-          0.8
-        );
-      } catch (error) {
-        console.log('⚠️ Stabber miss explosion error:', error);
-      }
-    }
     result.reason =
       playerDistance > stabReach ? 'out_of_reach' : 'wrong_direction';
     result.distance = playerDistance;

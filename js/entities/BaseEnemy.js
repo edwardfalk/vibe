@@ -292,7 +292,6 @@ export class BaseEnemy {
     }
 
     this.drawEnemyGlow(p);
-    this.drawMotionTrail();
 
     p.push();
     p.translate(this.x, this.y);
@@ -361,13 +360,6 @@ export class BaseEnemy {
    */
   getAnimationModifications() {
     return { bobble: 0, waddle: 0 };
-  }
-
-  /**
-   * Draw motion trail - can be overridden by subclasses
-   */
-  drawMotionTrail() {
-    // Base implementation does nothing - subclasses can override
   }
 
   /**

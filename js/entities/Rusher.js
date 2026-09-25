@@ -52,10 +52,6 @@ class Rusher extends BaseEnemy {
     // Vibrate state - hold between proximity trigger and beat-aligned explosion
     this.vibrating = false;
     this.vibrateStartTime = 0;
-
-    // deltaTime-based timing for motion trail
-    this.motionTrailTimer = 0;
-    this.motionTrailInterval = 66.67; // ~4 frames at 60fps (4 * 16.67ms)
   }
 
   get effectiveExplosionTime() {
@@ -77,13 +73,6 @@ class Rusher extends BaseEnemy {
 
     // Update deltaTime-based timers
     const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS; // Normalize to 60fps baseline
-
-    // Update motion trail timer
-    this.motionTrailTimer += deltaTimeMs;
-    if (this.isCharging && this.motionTrailTimer >= this.motionTrailInterval) {
-      this.drawMotionTrail();
-      this.motionTrailTimer = 0;
-    }
 
     // Vibrate state handler - waiting for beat to explode
     if (this.vibrating) {
@@ -260,22 +249,6 @@ class Rusher extends BaseEnemy {
     }
 
     return { bobble, waddle };
-  }
-
-  /**
-   * Draw motion trail for charging rushers
-   * Note: This is now called from updateSpecificBehavior based on deltaTime timer
-   */
-  drawMotionTrail() {
-    const visualEffectsManager = this.getContextValue('visualEffectsManager');
-    if (visualEffectsManager) {
-      try {
-        const trailColor = [255, 100, 100];
-        visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
-      } catch (error) {
-        console.log('⚠️ Rusher trail error:', error);
-      }
-    }
   }
 
   /**
