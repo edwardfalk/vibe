@@ -135,4 +135,19 @@ describe('rusher blast vs enemies', () => {
     expect(lit.fuseMs).toBe(500);
     expect(gs.addKill).not.toHaveBeenCalled();
   });
+
+  it('skips an enemy killed earlier in the same frame (no second kill or score)', () => {
+    const victim = stub(50, 0, true);
+    // Updated after the victim was kept, then kills it (as a stab does)
+    const killer = {
+      ...stub(-50, 0),
+      update: () => {
+        victim.markedForRemoval = true;
+        return null;
+      },
+    };
+    const gs = run([victim, killer, exploding(0, 0)]);
+    expect(victim.takeDamage).not.toHaveBeenCalled();
+    expect(gs.addKill).not.toHaveBeenCalled();
+  });
 });
