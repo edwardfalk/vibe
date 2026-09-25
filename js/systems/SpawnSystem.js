@@ -118,9 +118,6 @@ export class SpawnSystem {
         p
       );
       enemies.push(enemy);
-      console.log(
-        `👾 Spawned ${enemyType} at level ${level} (${enemies.length}/${this.getMaxEnemiesForLevel(level)} enemies)`
-      );
     }
   }
 
@@ -219,10 +216,6 @@ export class SpawnSystem {
       spawnY = player.y + sin(angle) * 600;
     }
 
-    console.log(
-      `📍 Spawning enemy OFF-SCREEN at (${round(spawnX)}, ${round(spawnY)}) - distance from player: ${round(this.getDistance(spawnX, spawnY, player.x, player.y))}px`
-    );
-
     return { x: spawnX, y: spawnY };
   }
 
@@ -247,7 +240,6 @@ export class SpawnSystem {
     if (!enemy) return null;
     enemies.push(enemy);
 
-    console.log(`🎯 Force spawned ${enemyType} at (${x}, ${y})`);
     return enemy;
   }
 }

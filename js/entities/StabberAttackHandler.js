@@ -100,7 +100,6 @@ function handleRecoveryPhase(stabber, dt) {
       stabber.stabRecovering = false;
       stabber.stabRecoveryTime = 0;
       stabber.stabCooldown = 0;
-      console.log(`⚡ Stabber recovered from attack on beat`);
     }
   }
   return null;
@@ -131,10 +130,6 @@ function handleStabbingPhase(stabber, playerX, playerY, dt) {
       (hitResult.playerHit ||
         (hitResult.enemiesHit && hitResult.enemiesHit.length > 0))
     ) {
-      console.log(
-        `🗡️ Stabber HIT during dash (frame ${stabber.stabAnimationTime}). Target: ${hitResult.playerHit ? 'Player' : 'Enemy'}. Recovering.`
-      );
-
       stabber.isStabbing = false;
       stabber.stabAnimationTime = 0;
       stabber.stabRecovering = true;
@@ -146,9 +141,6 @@ function handleStabbingPhase(stabber, playerX, playerY, dt) {
   }
 
   if (stabber.stabAnimationTime >= stabber.maxStabAnimationTime) {
-    console.log(
-      `🗡️ Stabber completed full dash (frame ${stabber.stabAnimationTime}) without a decisive hit. Recovering.`
-    );
     stabber.isStabbing = false;
     stabber.stabAnimationTime = 0;
     stabber.stabRecovering = true;
@@ -201,7 +193,6 @@ function handleWarningPhase(stabber, dt) {
     if (audioDash) {
       audioDash.playSound('stabberDash', stabber.x, stabber.y);
     }
-    console.log(`🚀 Stabber starting explosive dash attack!`);
   }
   return null;
 }
@@ -247,9 +238,6 @@ function handlePreparingPhase(stabber, dx, dy, distance, dt) {
     stabber.stabWarningTime = 0;
     stabber.stabWarningPlayed = false;
     stabber.stabDirection = stabber.aimAngle;
-    console.log(
-      `⚠️ Stabber entering warning phase, direction locked at ${((stabber.stabDirection * 180) / Math.PI).toFixed(1)}°`
-    );
   }
   return null;
 }
@@ -266,11 +254,6 @@ function handleNormalMovement(stabber, dx, dy, distance) {
   if (distance < stabber.minStabDistance) {
     stabber.velocity.x = -unitX * stabber.speed * 1.2;
     stabber.velocity.y = -unitY * stabber.speed * 1.2;
-    if (CONFIG.DEBUG) {
-      console.log(
-        `🎯 Stabber TOO CLOSE (dist: ${distance.toFixed(0)}px), falling back.`
-      );
-    }
     return null;
   }
 
@@ -297,19 +280,9 @@ function handleNormalMovement(stabber, dx, dy, distance) {
         stabber.stabPreparing = true;
         stabber.stabPreparingTime = 0;
         stabber.knockbackVelocity = { x: 0, y: 0 };
-        if (CONFIG.DEBUG) {
-          console.log(
-            `🎯 Stabber starting attack (dist: ${distance.toFixed(0)}px) on beat.`
-          );
-        }
       } else {
         stabber.velocity.x = unitX * stabber.speed * 0.8;
         stabber.velocity.y = unitY * stabber.speed * 0.8;
-        if (CONFIG.DEBUG) {
-          console.log(
-            `🎯 Stabber in range (dist: ${distance.toFixed(0)}px), creeping slowly off-beat.`
-          );
-        }
       }
     }
     return null;

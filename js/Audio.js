@@ -124,8 +124,6 @@ export class Audio {
 
     this.bindConvenienceSoundMethods();
     this.bindConvenienceSpeechMethods();
-
-    console.log('🎵 Optimized Audio System ready');
   }
 
   setContext(context) {
@@ -213,7 +211,6 @@ export class Audio {
       }
 
       this.initialized = true;
-      console.log('✅ Audio system initialized');
     } catch (error) {
       console.error('❌ Audio initialization failed:', error);
       this.enabled = false;
@@ -308,7 +305,6 @@ export class Audio {
       );
       this._voicesLoaded = true;
       this.speechSynthesis.onvoiceschanged = null;
-      console.log(`🎤 Loaded ${this.englishVoices.length} English voices`);
     };
 
     if (this.speechSynthesis.getVoices().length === 0) {
@@ -636,7 +632,6 @@ export class Audio {
     this.ensureAudioContext();
 
     const displayText = text.toUpperCase();
-    console.log(`💬 ${entity.type || 'Entity'} speaking: "${displayText}"`);
 
     // Create and configure utterance
     const utterance = new SpeechSynthesisUtterance(text);
@@ -820,7 +815,6 @@ export class Audio {
     }
     window.beatTrack?.setMuted(!this.enabled);
     if (!this.enabled) this.speechSynthesis?.cancel();
-    console.log(`🔊 Audio ${this.enabled ? 'enabled' : 'disabled'}`);
     return this.enabled;
   }
 

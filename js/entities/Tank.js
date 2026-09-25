@@ -63,10 +63,6 @@ class Tank extends BaseEnemy {
     this.rightArmorHP = 80;
     this.leftArmorDestroyed = false;
     this.rightArmorDestroyed = false;
-
-    console.log(
-      '🛡️ Tank created with charging system, anger tracking, and multi-part armor initialized'
-    );
   }
 
   /**
@@ -87,7 +83,6 @@ class Tank extends BaseEnemy {
       if (this.angerCooldown <= 0) {
         this.isAngry = false;
         this.angerTarget = null;
-        console.log(`😌 Tank calmed down, returning to normal behavior`);
 
         // Tank speaks about calming down (beat-gated)
         const audio = this.getContextValue('audio');
@@ -128,11 +123,6 @@ class Tank extends BaseEnemy {
       if (nearestAngryTarget) {
         targetX = nearestAngryTarget.x;
         targetY = nearestAngryTarget.y;
-        if (CONFIG?.GAME_SETTINGS?.DEBUG_COLLISIONS) {
-          console.log(
-            `😡 Tank targeting angry enemy: ${this.angerTarget} at distance ${nearestDistance.toFixed(0)}`
-          );
-        }
       }
     }
 
@@ -178,7 +168,6 @@ class Tank extends BaseEnemy {
         audioTank &&
         this.onBeatOnce(beatClock, 'chargeMilestone', beatClock.isOnBeat([1]))
       ) {
-        console.log('🔋 Tank starting to charge!');
         audioTank.speak(this, 'CHARGING!', 'tank');
         audioTank.playSound('tankCharging', this.x, this.y);
       } else if (
@@ -187,7 +176,6 @@ class Tank extends BaseEnemy {
         audioTank &&
         this.onBeatOnce(beatClock, 'chargeMilestone', beatClock.isOnBeat([1]))
       ) {
-        console.log('⚡ Tank 50% charged!');
         audioTank.speak(this, 'POWER UP!', 'tank');
         audioTank.playSound('tankPowerUp', this.x, this.y);
       }
@@ -200,7 +188,6 @@ class Tank extends BaseEnemy {
         this.chargingShot = false;
         this._lastTankFireBeat = beatClock.getTotalBeats();
 
-        console.log('💥 Tank firing charged shot!');
         if (audioTank) {
           audioTank.speak(this, 'FIRE!', 'tank');
           if (audioTank.duckDrone) {
@@ -221,7 +208,6 @@ class Tank extends BaseEnemy {
       ) {
         this.chargingShot = true;
         this.chargeStartBeat = beatClock.getTotalBeats();
-        console.log('🎯 Tank starting charge sequence!');
 
         // Telegraph the upcoming fire
         if (rhythmFX) {
@@ -493,10 +479,8 @@ class Tank extends BaseEnemy {
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     const audio = this.getContextValue('audio');
     if (bulletAngle === null) {
-      console.log('🎯 Tank Main Body Hit (no angle info)!');
       if (audio) audio.playSound('tankHit', this.x, this.y);
       const died = super.takeDamage(amount, bulletAngle, damageSource);
-      if (died) console.log('💀 Tank Died (main health depleted).');
       return died;
     }
 
@@ -522,11 +506,9 @@ class Tank extends BaseEnemy {
       return false;
     }
 
-    console.log(`🎯 Tank Main Body Hit!`);
     if (audio) audio.playSound('tankHit', this.x, this.y);
     handleAngerForDamage(this, damageSource, amount);
     const died = super.takeDamage(amount, bulletAngle, damageSource);
-    if (died) console.log('💀 Tank Died (main health depleted).');
     return died;
   }
 }

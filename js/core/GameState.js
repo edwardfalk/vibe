@@ -71,10 +71,6 @@ export class GameState {
       this.previousLevelThreshold = this.nextLevelThreshold;
       this.nextLevelThreshold += nextLevelIncrease;
 
-      console.log(
-        `🎉 LEVEL UP! Now level ${this.level}. Next level at ${this.nextLevelThreshold} points (need ${nextLevelIncrease} more)`
-      );
-
       // Notify BeatTrack of level change for pulse evolution
       if (window.beatTrack && window.beatTrack.setLevel) {
         window.beatTrack.setLevel(this.level);
@@ -131,7 +127,6 @@ export class GameState {
       this.pauseStartTime = Date.now();
     } else if (newState === 'playing' && oldState === 'paused') {
       // Resume from pause
-      console.log('🎮 Game resumed');
     } else if (newState === 'gameOver') {
       this.gameOverTimer = 0;
       this.resetKillStreak();
@@ -144,15 +139,6 @@ export class GameState {
       // Game over speech
       if (window.audio && window.player) {
         window.audio.speakPlayerLine(window.player, 'death');
-      }
-
-      console.log(
-        `💀 Game Over! Final Score: ${this.score}, Level: ${this.level}, Kills: ${this.totalKills}`
-      );
-      if (window.player) {
-        console.log(
-          `[DEBUG] setGameState('gameOver'): playerHealth=${window.player.health}, playerPos=(${window.player.x},${window.player.y})`
-        );
       }
     }
   }
@@ -168,8 +154,6 @@ export class GameState {
 
   // Game restart
   restart() {
-    console.log('🔄 Restarting game...');
-
     // Reset all state
     this.score = 0;
     this.level = 1;
@@ -194,9 +178,6 @@ export class GameState {
       window.player.y = p.height / 2;
       window.player.health = window.player.maxHealth;
       window.player.velocity = { x: 0, y: 0 };
-      console.log(
-        `[DEBUG] restart(): playerHealth=${window.player.health}, playerPos=(${window.player.x},${window.player.y})`
-      );
     }
 
     // Clear all game objects
@@ -251,8 +232,6 @@ export class GameState {
         window.audio.speakPlayerLine(window.player, 'start');
       }
     }, 500);
-
-    console.log('✅ Game restarted successfully');
   }
 
   // Getters for computed values

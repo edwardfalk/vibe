@@ -43,6 +43,7 @@ export function updatePerformanceDiagnostics(context) {
     },
   };
 
+  // eslint-disable-next-line no-console -- opt-in: CONFIG.GAME_SETTINGS.PERF_DIAGNOSTICS
   console.log('🎮 PerfDiagnostics', {
     frameCount,
     collisionAverages: collisionStats?.averages,

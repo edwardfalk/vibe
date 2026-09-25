@@ -35,9 +35,6 @@ export class BeatClock {
     this.update(true);
 
     const clockSource = this.audioContext ? 'AudioContext' : 'Date.now';
-    console.log(
-      `🎵 BeatClock initialized: ${bpm} BPM (${this.beatInterval}ms per beat) [${clockSource}]`
-    );
   }
 
   // Compute ms tolerances from fractional config values
@@ -192,7 +189,6 @@ export class BeatClock {
     this.beatInterval = (60 / newBPM) * 1000;
     this._updateTolerances();
     this.update(true);
-    console.log(`🎵 Tempo changed to ${newBPM} BPM`);
   }
 
   // Reset timing (for level transitions)
@@ -214,7 +210,6 @@ export class BeatClock {
         this.beatInterval * this.beatsPerMeasure;
     }
     this.update(true);
-    console.log('🎵 BeatClock reset (beat-aligned)');
   }
 
   // Continuous beat phase: 0 = beat just hit, 1 = next beat about to hit

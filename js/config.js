@@ -32,7 +32,7 @@ const CONFIG = {
     // Enable verbose collision debug logging (per-frame/per-entity)
     DEBUG_COLLISIONS: false,
     // Enable periodic performance diagnostics logs and snapshots
-    PERF_DIAGNOSTICS: false,
+    PERF_DIAGNOSTICS: false, // true logs a frame-time report to the console
     // Frames between performance diagnostics reports
     PERF_LOG_INTERVAL_FRAMES: 300,
 

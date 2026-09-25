@@ -23,7 +23,6 @@ export function updateDash(player, deltaTimeMs) {
   if (player.dashTimerMs >= player.maxDashTimeMs) {
     player.isDashing = false;
     player.dashTimerMs = 0;
-    console.log('💨 Dash completed!');
   }
 }
 
@@ -82,8 +81,5 @@ export function tryStartDash(player) {
     : window.audio;
   if (audio) audio.playSound('playerDash', player.x, player.y);
 
-  console.log(
-    `💨 Player dashed! Direction: (${dashDirX.toFixed(2)}, ${dashDirY.toFixed(2)})`
-  );
   return true;
 }

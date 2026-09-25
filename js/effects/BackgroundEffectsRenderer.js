@@ -40,9 +40,8 @@ export class BackgroundEffectsRenderer {
       this.initCosmicDust(p);
       this.initAuroras(p);
       this.initialized = true;
-      console.log('✨ Visual effects fully initialized');
     } catch (error) {
-      console.log('⚠️ Visual effects initialization failed:', error);
+      console.warn('⚠️ Visual effects initialization failed:', error);
       this.initFailed = true;
     }
   }

@@ -185,7 +185,7 @@ export class Bullet {
         );
       }
     } catch (error) {
-      console.log('⚠️ Bullet glow error:', error);
+      console.warn('⚠️ Bullet glow error:', error);
     }
 
     // Draw trail

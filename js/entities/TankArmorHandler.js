@@ -85,7 +85,6 @@ export function processArmorHit(tank, amount, bulletAngle, damageSource) {
       const leftover = -tank.frontArmorHP;
       tank.frontArmorDestroyed = true;
       tank.frontArmorHP = 0;
-      console.log('💥 Tank Front Armor Destroyed!');
       if (audioHit) audioHit.playSound('explosion', tank.x, tank.y);
       tank.hitFlash = 8;
       return { absorbed: false, overflowAmount: leftover, plate: 'front' };
@@ -106,7 +105,6 @@ export function processArmorHit(tank, amount, bulletAngle, damageSource) {
       const leftover = -tank.leftArmorHP;
       tank.leftArmorDestroyed = true;
       tank.leftArmorHP = 0;
-      console.log('💥 Tank Left Armor Destroyed!');
       if (audioLeft) audioLeft.playSound('explosion', tank.x, tank.y);
       tank.hitFlash = 8;
       return { absorbed: false, overflowAmount: leftover, plate: 'left' };
@@ -127,7 +125,6 @@ export function processArmorHit(tank, amount, bulletAngle, damageSource) {
       const leftover = -tank.rightArmorHP;
       tank.rightArmorDestroyed = true;
       tank.rightArmorHP = 0;
-      console.log('💥 Tank Right Armor Destroyed!');
       if (audioRight) audioRight.playSound('explosion', tank.x, tank.y);
       tank.hitFlash = 8;
       return { absorbed: false, overflowAmount: leftover, plate: 'right' };

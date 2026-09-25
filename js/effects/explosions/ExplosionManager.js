@@ -63,9 +63,6 @@ export class ExplosionManager {
     }
     const audio = this.getContextValue('audio');
     if (audio) audio.playPlasmaCloud(centerX, centerY);
-    console.log(
-      `☢️ Created radioactive debris field with ${count} contamination zones`
-    );
   }
 
   // Add kill effects for different enemy types and kill methods
@@ -123,9 +120,6 @@ export class ExplosionManager {
     }
 
     const effectName = `${enemyType}-${killMethod}-kill`;
-    console.log(
-      `💥 ${enemyType} killed by ${killMethod} - created ${effectName} effect`
-    );
   }
 
   addFragmentExplosion(x, y, enemy) {

@@ -23,9 +23,6 @@ export function drawGameplayWorld(context) {
       ? { x: cameraSystem.x, y: cameraSystem.y }
       : { x: 0, y: 0 };
     const safeEnemies = enemies ?? [];
-    console.log(
-      `🎮 [DRAW GAME] camera=(${cam.x},${cam.y}) enemies=${safeEnemies.length}`
-    );
   }
 
   if (cameraSystem) {

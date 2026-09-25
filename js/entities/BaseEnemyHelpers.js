@@ -68,12 +68,6 @@ export function drawEnemyHealthBar(p, enemy) {
   const barHeight = 4;
   const barY = enemy.y - enemy.size * 0.8;
 
-  if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-    console.log(
-      `[ENEMY DEBUG] drawHealthBar: type=${enemy.type} health=${enemy.health} maxHealth=${enemy.maxHealth} at (${enemy.x.toFixed(1)},${enemy.y.toFixed(1)})`
-    );
-  }
-
   p.fill(100, 100, 100);
   p.rect(enemy.x - barWidth / 2, barY, barWidth, barHeight);
 

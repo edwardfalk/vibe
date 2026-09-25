@@ -52,19 +52,11 @@ export class BackgroundRenderer {
   createParallaxBackground(p = this.p) {
     if (this.parallaxInitialized) return;
 
-    console.log('🌌 Creating parallax background layers...');
-
     this.parallaxLayers = createParallaxLayerConfig();
 
     // Generate elements for each layer
     this.generateLayerElements(p);
     this.parallaxInitialized = true;
-
-    console.log(
-      '✅ Parallax background created with',
-      this.parallaxLayers.length,
-      'layers'
-    );
   }
 
   // Generate elements for parallax layers

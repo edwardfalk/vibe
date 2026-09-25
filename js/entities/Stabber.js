@@ -295,17 +295,10 @@ class Stabber extends BaseEnemy {
     let actualDamage = amount;
     if (this.armor) {
       actualDamage = max(1, amount - this.armor); // Minimum 1 damage
-      console.log(
-        `🛡️ Stabber armor reduced damage: ${amount} -> ${actualDamage}`
-      );
     }
 
     // INTERRUPT ATTACK when taking damage - prevents phantom hits after knockback
     if (this.stabPreparing || this.stabWarning) {
-      console.log(
-        `🚫 Stabber attack interrupted by damage! Was in: ${this.stabPreparing ? 'preparing' : 'warning'} phase`
-      );
-
       // Reset all attack states
       this.stabPreparing = false;
       this.stabPreparingTime = 0;
@@ -340,8 +333,6 @@ class Stabber extends BaseEnemy {
         this.knockbackVelocity.y =
           (this.knockbackVelocity.y / kbMag) * maxKnockback;
       }
-
-      console.log(`⚡ Stabber knocked back! Knockback: ${knockbackForce}`);
     }
 
     const audio = this.getContextValue('audio');

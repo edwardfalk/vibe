@@ -153,16 +153,6 @@ export class Player {
       if (window.arrowRightPressed) dx += 1;
       if (dx !== 0 || dy !== 0) {
         this.aimAngle = atan2(dy, dx);
-        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-          console.log(
-            '[AIM] Arrow keys: dx=' +
-              dx +
-              ', dy=' +
-              dy +
-              ', angle=' +
-              ((this.aimAngle * 180) / Math.PI).toFixed(1)
-          );
-        }
       }
     } else if (this.cameraSystem) {
       // FIXED: Proper camera-aware mouse aiming
@@ -171,25 +161,9 @@ export class Player {
         this.p.mouseY
       );
       this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
-      if (
-        CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
-        this.p.frameCount % 60 === 0
-      ) {
-        console.log(
-          `[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
-        );
-      }
     } else {
       // Fallback for when camera system is not available
       this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
-      if (
-        CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
-        this.p.frameCount % 60 === 0
-      ) {
-        console.log(
-          `[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
-        );
-      }
     }
 
     // Update animation
@@ -223,8 +197,6 @@ export class Player {
             if (audio) {
               audio.playPlayerShoot(this.x, this.y);
             }
-
-            console.log('🎵 Queued shot fired on beat!');
           }
 
           // Set proper cooldown to prevent double shot from shoot() later this frame
@@ -334,10 +306,6 @@ export class Player {
   }
 
   takeDamage(amount, damageSource = 'unknown') {
-    console.log(
-      `🩸 PLAYER DAMAGE: ${amount} HP from ${damageSource} (Health: ${this.health} → ${this.health - amount})`
-    );
-
     const prevHealth = this.health;
     this.health -= amount;
 
@@ -361,14 +329,11 @@ export class Player {
           : this.health < this.maxHealth * 0.3
             ? 'lowHealth'
             : 'damage';
-      if (audio.speakPlayerLine(this, context)) {
-        console.log(`🎤 Player damage reaction triggered`);
-      }
+      audio.speakPlayerLine(this, context);
     }
 
     if (this.health <= 0) {
       this.health = 0;
-      console.log(`💀 PLAYER KILLED by ${damageSource}!`);
       return true; // Player died
     }
     return false;

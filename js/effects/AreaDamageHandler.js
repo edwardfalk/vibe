@@ -22,10 +22,6 @@ export function handleAreaDamageEvents(damageEvents, context) {
       const playerDistSq = dx * dx + dy * dy;
       const radiusSq = event.radius * event.radius;
       if (playerDistSq < radiusSq) {
-        console.log(
-          `☢️ Player took ${event.damage} damage from area effect at (${event.x}, ${event.y})`
-        );
-
         if (audio) {
           audio.playPlayerHit();
         }
@@ -38,7 +34,6 @@ export function handleAreaDamageEvents(damageEvents, context) {
           if (gameState) {
             gameState.setGameState('gameOver');
           }
-          console.log('💀 PLAYER KILLED BY AREA DAMAGE!');
           continue;
         }
 
@@ -62,10 +57,6 @@ export function handleAreaDamageEvents(damageEvents, context) {
       const enemyDistSq = dx * dx + dy * dy;
       const radiusSq = event.radius * event.radius;
       if (enemyDistSq < radiusSq) {
-        console.log(
-          `☢️ ${enemy.type} took ${event.damage} damage from area effect`
-        );
-
         const damageResult = handleDamageResult(
           enemy.takeDamage(event.damage, null, 'area'),
           enemy,
@@ -77,12 +68,6 @@ export function handleAreaDamageEvents(damageEvents, context) {
             scorePoints: 10,
           }
         );
-
-        if (damageResult === DAMAGE_RESULT.DIED) {
-          console.log(`💀 ${enemy.type} killed by area damage!`);
-        } else if (damageResult === DAMAGE_RESULT.EXPLODING) {
-          console.log(`💥 Area damage caused ${enemy.type} to explode!`);
-        }
       }
     }
   }

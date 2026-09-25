@@ -100,9 +100,6 @@ class EnemyFactory {
     };
     const enemy = new EnemyClass(x, y, type, enrichedConfig, p, resolvedAudio);
 
-    console.log(
-      `🏭 EnemyFactory created ${type} at (${x.toFixed(0)}, ${y.toFixed(0)})`
-    );
     return enemy;
   }
 

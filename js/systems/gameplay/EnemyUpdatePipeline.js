@@ -25,7 +25,7 @@ function handleRusherExplosionResult(result, enemy, context) {
       visualEffectsManager.triggerChromaticAberration(0.8, 45);
       visualEffectsManager.triggerBloom(0.5, 30);
     } catch (error) {
-      console.log('⚠️ Explosion effects error:', error);
+      console.warn('⚠️ Explosion effects error:', error);
     }
   }
 
@@ -37,7 +37,6 @@ function handleRusherExplosionResult(result, enemy, context) {
     cameraSystem.addShake(18, 30);
   }
 
-  console.log(`💥 RUSHER EXPLOSION at (${result.x}, ${result.y})!`);
   if (enemy) enemy.markedForRemoval = true;
 }
 
@@ -52,15 +51,7 @@ function handleStabberAttackResult(result, context) {
     collisionSystem,
   } = context;
 
-  console.log(
-    `🗡️ Stabber attack result: ${result.type} at (${Math.round(result.x)}, ${Math.round(result.y)})`
-  );
-
   if (result.type === 'stabber-melee' && result.playerHit && player) {
-    console.log(
-      `⚔️ STABBER HIT! Player took ${result.damage} damage from stab attack`
-    );
-
     if (audio) {
       audio.playPlayerHit();
     }
@@ -73,7 +64,6 @@ function handleStabberAttackResult(result, context) {
       if (gameState) {
         gameState.setGameState('gameOver');
       }
-      console.log('💀 PLAYER KILLED BY STABBER ATTACK!');
     } else {
       const knockbackAngle = atan2(player.y - result.y, player.x - result.x);
       const knockbackForce = 8;
@@ -111,18 +101,6 @@ function handleStabberAttackResult(result, context) {
         scorePoints: 15,
       }
     );
-
-    if (damageResult === DAMAGE_RESULT.DIED) {
-      console.log(`💀 ${targetEnemy.type} killed by stabber friendly fire!`);
-    } else if (damageResult === DAMAGE_RESULT.EXPLODING) {
-      console.log(
-        `💥 Stabber friendly fire caused ${targetEnemy.type} to explode!`
-      );
-    } else {
-      console.log(
-        `🗡️ ${targetEnemy.type} damaged by stabber friendly fire, health: ${targetEnemy.health}`
-      );
-    }
   }
 }
 
@@ -148,9 +126,6 @@ export function updateEnemiesAndResolveResults(context) {
         handleRusherExplosionResult(result, enemy, context);
       } else if (typeof result.checkCollision === 'function') {
         enemyBullets.push(result);
-        console.log(
-          `➕ Added enemy bullet to array: ${result.owner} at (${Math.round(result.x)}, ${Math.round(result.y)}) - Total: ${enemyBullets.length}`
-        );
       } else if (
         result.type === 'stabber-melee' ||
         result.type === 'stabber-miss'
