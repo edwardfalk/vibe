@@ -61,3 +61,5 @@ backups/
 *.psd
 *.ai
 *.sketch 
+# Plans and review reports stay local (not published)
+docs/superpowers/
