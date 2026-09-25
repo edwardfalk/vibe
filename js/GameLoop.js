@@ -17,7 +17,6 @@ import { drawGameplayWorld } from './systems/gameplay/RenderPipeline.js';
 import { updatePerformanceDiagnostics } from './systems/gameplay/PerformanceDiagnostics.js';
 import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
 import { Bullet } from './entities/bullet.js';
-import { VisualEffectsManager, FloatingTextManager } from './effects/index.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
 import { CONFIG } from './config.js';
 import { runSetup } from './GameLoopSetup.js';

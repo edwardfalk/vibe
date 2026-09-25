@@ -16,7 +16,8 @@ import { BeatClock } from './audio/BeatClock.js';
 import { BeatTrack } from './audio/BeatTrack.js';
 import { RhythmFX } from './RhythmFX.js';
 import { GameContext, createWindowBackedContext } from './core/GameContext.js';
-import { VisualEffectsManager, FloatingTextManager } from './effects/index.js';
+import VisualEffectsManager from './effects/VisualEffectsManager.js';
+import { FloatingTextManager } from './effects/FloatingTextManager.js';
 import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
 
 const CANVAS_WIDTH = 800;
