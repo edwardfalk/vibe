@@ -1,11 +1,12 @@
 /**
  * GameLoop.js - Core game loop and coordination between all systems
  *
- * Musical combat system where all actions sync to beats:
- * - Player = Hi-hat (every beat)
- * - Grunts = Snare (beats 2 & 4)
- * - Tanks = Bass drum (beat 1)
- * - Stabbers = Off-beat accent (beat 3.5)
+ * Musical combat: enemies act on the beat (BeatClock), over a steady kick:
+ * - Player = hi-hat (held fire snaps to eighth notes)
+ * - Grunts = snare (beats 2 & 4)
+ * - Tanks = beat 1
+ * - Stabbers = off-beat accent (3.5)
+ * - Rushers = crash (beats 1 & 3)
  */
 
 import { initializeInputHandlers } from './core/InputHandlers.js';

@@ -60,7 +60,7 @@ test('capture game screenshot', async ({ page }) => {
 
   await page.screenshot({ path: OUTPUT_PATH, fullPage: true });
 
-  // Print results for Claude to read
+  // Print a summary for whoever ran the script
   console.log(`\n📸 Screenshot saved: ${OUTPUT_PATH}`);
   console.log(
     `   Level: ${info.level} | Score: ${info.score} | Enemies: ${info.enemyCount} | Health: ${info.playerHealth} | Frame: ${info.frameCount}`

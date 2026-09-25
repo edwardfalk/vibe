@@ -1,52 +1,11 @@
 /**
- * Clean and Reliable Audio System for Vibe Game
+ * Audio: synthesized sound effects (SoundConfig.js) and enemy/player speech.
  *
- * Features:
- * ✅ Simplified Web Audio API sound effects
- * ✅ Reliable TTS with proper synchronization
- * ✅ Clean, manageable code structure
- * ✅ Optimized performance and speech flow
- *
- * =============================================================================
- * 🎛️ AUDIO CONFIGURATION GUIDE
- * =============================================================================
- *
- * 🔊 SOUND EFFECTS CONFIGURATION (lines ~32-62):
- * Each sound has these properties:
- * - frequency: Pitch in Hz (lower = deeper, higher = sharper)
- * - waveform: 'sine', 'sawtooth', 'square', 'triangle' (affects tone quality)
- * - volume: 0.0-1.0 (loudness relative to master volume)
- * - duration: seconds (how long the sound plays)
- *
- * Example - Plasma Ball Configuration:
- * plasmaCloud: {
- *   frequency: 80,        // Deep bass rumble (increase for higher pitch)
- *   waveform: 'sine',     // Smooth tone (try 'sawtooth' for harsher)
- *   volume: 0.6,          // Loud effect (reduce to 0.4 for quieter)
- *   duration: 4.0         // 4 second duration (reduce to 2.0 for shorter)
- * }
- *
- * 🎤 SPEECH CONFIGURATION (lines ~65-71):
- * Each character voice has:
- * - rate: 0.1-2.0 (speech speed, 1.0 = normal)
- * - pitch: 0.0-2.0 (voice pitch, 1.0 = normal)
- * - volume: 0.0-1.0 (speech volume - NOW REDUCED for background effect)
- *
- * 🌊 DISTANCE EFFECTS (lines ~240-280):
- * Ambient sounds get enhanced effects based on distance:
- * - reverbIntensity: How much reverb (echo) to add
- * - distortionAmount: How much to distort the sound
- * - delayTime: Echo delay in seconds
- * - lowpassFreq: High frequency cutoff (lower = more muffled)
- *
- * 🎚️ QUICK ADJUSTMENTS:
- * - Make plasma ball louder: Increase plasmaCloud volume from 0.6 to 0.8
- * - Make plasma ball deeper: Decrease plasmaCloud frequency from 80 to 60
- * - Make speech quieter: Reduce all voiceConfig volume values
- * - More reverb on distant enemies: Increase reverbIntensity calculation
- * - More distortion: Increase distortionAmount in ambient sound processing
- *
- * =============================================================================
+ * Signal flow (one AudioContext, shared with BeatTrack):
+ *   effects    -> masterGain (mute) -> duckGain     -> masterLimiter -> out
+ *   beat track -> its masterGain    -> beatDuckGain -> masterLimiter
+ *   speech     -> speechSynthesis, outside Web Audio; syncDuck() dips the two
+ *                 duck gains while it speaks. Levels live in CONFIG.MIX.
  */
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
@@ -106,14 +65,14 @@ export class Audio {
     this.distortionCurves = new Map();
     this.maxCurveCache = 32; // Limit cache size to 32 entries
 
-    // TTS system - OPTIMIZED
+    // Speech
     this.speechSynthesis = window.speechSynthesis;
     this.speechEnabled = true;
     this.englishVoices = [];
     this.lastSpeechTime = 0;
     this.speechCooldown = 2500; // 2.5 seconds - reasonable cooldown to prevent excessive chatter
 
-    // Text display system - IMPROVED
+    // Speech bubbles and floating text
     this.activeTexts = [];
     this.showBeatIndicator = false;
     this.beatX = 0;
@@ -350,7 +309,7 @@ export class Audio {
       this.audioContext.currentTime
     );
 
-    // NEW: Add frequency sweep support for "oh no!" effects
+    // Optional pitch sweep (e.g. the falling "oh no!" sounds)
     if (config.sweep) {
       const endFreq = config.sweep.to * frequencyVariation;
       const sweepDuration = config.duration * durationVariation;
@@ -442,7 +401,7 @@ export class Audio {
     let dryGain = null;
 
     if (isAmbientSound && this.effects.reverb) {
-      // OPTIMIZED: Simplified atmospheric effects for better performance
+      // Distance-based reverb, lowpass and light distortion for ambient enemy sounds
       const { sourceX, sourceY } = resolveSoundSourcePosition(
         x,
         y,
@@ -454,41 +413,40 @@ export class Audio {
       );
       const normalizedDistance = Math.max(0, Math.min(distance / 600, 1)); // 0 = close, 1 = far; clamp to avoid negative
 
-      // Simplified reverb processing - REDUCED intensity from 65% to 45% for less overwhelming effects
       reverbGainNode = this.audioContext.createGain();
       lowPassFilter = this.audioContext.createBiquadFilter();
 
-      // REDUCED: Reverb intensity from 65% to 45% for more subtle atmospheric effects
-      const reverbIntensity = 0.15 + normalizedDistance * 0.15; // Further reduced from 0.25 + 0.2 to 0.15 + 0.15 (range: 15-30% instead of 25-45%)
+      // Reverb 15% close to 30% far
+      const reverbIntensity = 0.15 + normalizedDistance * 0.15;
       reverbGainNode.gain.setValueAtTime(
         reverbIntensity,
         this.audioContext.currentTime
       );
 
-      // Simplified lowpass filtering
-      const lowpassFreq = 1400 - normalizedDistance * 600; // Less dramatic range
+      // Farther sounds are more muffled: 1400 Hz close to 800 Hz far
+      const lowpassFreq = 1400 - normalizedDistance * 600;
       lowPassFilter.type = 'lowpass';
       lowPassFilter.frequency.setValueAtTime(
         lowpassFreq,
         this.audioContext.currentTime
       );
-      lowPassFilter.Q.setValueAtTime(0.5, this.audioContext.currentTime); // Reduced Q for performance
+      lowPassFilter.Q.setValueAtTime(0.5, this.audioContext.currentTime);
 
-      // REDUCED: Distortion amount from 15 to 10 for more subtle otherworldly effect
+      // A light otherworldly distortion
       distortionNode = this.audioContext.createWaveShaper();
-      distortionNode.curve = this.createOrGetCurve(5); // Was this.createDistortionCurve(5)
+      distortionNode.curve = this.createOrGetCurve(5);
       distortionNode.oversample = '2x';
 
-      // SIMPLIFIED: Direct connection with reduced effects intensity
+      // Wet path: pan -> lowpass -> distortion -> reverb -> master
       panNode.connect(lowPassFilter);
       lowPassFilter.connect(distortionNode);
       distortionNode.connect(reverbGainNode);
       reverbGainNode.connect(this.effects.reverb);
       this.effects.reverb.connect(this.masterGain);
 
-      // Simplified dry signal path with more dry mix for less overwhelming effects
+      // Dry path: 90% close to 75% far, so the reverb stays subtle
       dryGain = this.audioContext.createGain();
-      const dryMix = 0.9 - normalizedDistance * 0.15; // Increased dry mix from 0.85-0.2 to 0.9-0.15 to compensate for reduced reverb
+      const dryMix = 0.9 - normalizedDistance * 0.15;
       dryGain.gain.setValueAtTime(dryMix, this.audioContext.currentTime);
 
       panNode.connect(dryGain);
@@ -534,7 +492,7 @@ export class Audio {
   }
 
   // ========================================================================
-  // SPEECH SYSTEM (SIMPLIFIED AND RELIABLE)
+  // SPEECH
   // ========================================================================
 
   speak(entity, text, voiceType = 'player', force = false) {
@@ -612,7 +570,7 @@ export class Audio {
       randomRange
     );
 
-    // IMPROVED text-speech synchronization
+    // Show the text for as long as the line takes to say
     const estimatedDuration = this.calculateSpeechDuration(
       text,
       utterance.rate
@@ -630,7 +588,7 @@ export class Audio {
     return true; // Successfully started speech
   }
 
-  // IMPROVED speech duration calculation
+  // Estimated time to say `text` at `rate`
   calculateSpeechDuration(text, rate) {
     // Base calculation: ~150 words per minute at rate 1.0
     const wordsPerMinute = 150 * rate;

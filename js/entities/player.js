@@ -40,7 +40,7 @@ export class Player {
     this.queuedShot = null;
     this.wantsToContinueShooting = false;
 
-    // NEW: Improved shooting system state
+    // Burst state: the first shot is immediate, held fire snaps to eighth notes
     this.isCurrentlyShooting = false;
     this.firstShotFired = false;
 
@@ -143,7 +143,7 @@ export class Player {
         this.aimAngle = atan2(dy, dx);
       }
     } else if (this.cameraSystem) {
-      // FIXED: Proper camera-aware mouse aiming
+      // Aim at the mouse in world coordinates (the camera moves)
       const worldMouse = this.cameraSystem.screenToWorld(
         this.p.mouseX,
         this.p.mouseY
