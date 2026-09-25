@@ -75,7 +75,8 @@ export class Player {
       const beatClock = this.getContextValue('beatClock');
       if (
         this.shieldDownMs >= CONFIG.PLAYER.SHIELD_RECHARGE_MS &&
-        (!beatClock || beatClock.isOnBeat())
+        // Any beat, but only once it has landed: never ahead of the kick
+        (!beatClock || beatClock.isOnBeat([1, 2, 3, 4]))
       ) {
         this.shieldUp = true;
         this.getContextValue('audio')?.playSound('shieldUp', this.x, this.y);

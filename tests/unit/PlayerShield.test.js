@@ -14,6 +14,7 @@ vi.spyOn(console, 'log').mockImplementation(() => {});
 const { Player } = await import('../../js/entities/player.js');
 const { GameState } = await import('../../js/core/GameState.js');
 const { CONFIG } = await import('../../js/config.js');
+const { BeatClock } = await import('../../js/audio/BeatClock.js');
 
 const p = {
   color: () => ({}),
@@ -93,6 +94,29 @@ describe('Player shield', () => {
     onBeat = true;
     player.update(16);
     expect(player.shieldUp).toBe(true);
+  });
+
+  it('returns on the beat, never ahead of it (real BeatClock)', () => {
+    const ctx = { currentTime: 0 };
+    const clock = new BeatClock(120, ctx);
+    const { player } = makePlayer(clock);
+    for (const breakAt of [130, 377, 3210, 4999]) {
+      let ms = breakAt;
+      ctx.currentTime = ms / 1000;
+      clock.update(true);
+      player.shieldUp = true;
+      player.takeDamage(10, 'test');
+      while (!player.shieldUp) {
+        ms += 16;
+        ctx.currentTime = ms / 1000;
+        clock.update(true);
+        player.update(16);
+      }
+      const sinceBeat = (ms - clock.startTime) % clock.beatInterval;
+      expect(sinceBeat, `broke at ${breakAt}`).toBeLessThanOrEqual(
+        clock.tolerance
+      );
+    }
   });
 
   it('restart brings the shield back and zeroes the timers', () => {
