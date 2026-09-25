@@ -12,6 +12,7 @@ import { CONFIG } from '../config.js';
 // booleans get a checkbox.
 const KICK = 'BEAT_TRACK.KICK';
 const PACING = 'PACING';
+const MIX = 'MIX';
 const KNOBS = [
   [KICK, 'ENABLED'],
   [KICK, 'PATTERN', ['four', 'oneThree']],
@@ -35,6 +36,13 @@ const KNOBS = [
   [PACING, 'MAX_ENEMIES_CAP', [2, 12, 1]],
   [PACING, 'PREVIEW_NEW_ENEMY'],
   [PACING, 'PREVIEW_AT_PROGRESS', [0, 1, 0.05]],
+  [MIX, 'SFX_VOLUME', [0, 1, 0.01]],
+  [MIX, 'BEAT_TRACK_VOLUME', [0, 1, 0.01]],
+  [MIX, 'SPEECH_VOLUME', [0, 1, 0.05]],
+  [MIX, 'SPEECH_DISTANCE_FLOOR', [0, 1, 0.05]],
+  [MIX, 'DUCK_SFX_DB', [-24, 0, 1]],
+  [MIX, 'DUCK_BEAT_DB', [-24, 0, 1]],
+  [MIX, 'DUCK_RELEASE_SEC', [0.05, 1.5, 0.05]],
 ];
 
 const resolve = (path) => path.split('.').reduce((obj, k) => obj[k], CONFIG);
@@ -68,8 +76,12 @@ export function createTunePanel() {
   const json = document.createElement('pre');
   json.style.cssText = 'white-space:pre-wrap;color:#0ff;margin:8px 0 0;';
   const showJson = () => {
-    const { BEAT_TRACK, PACING: pacing } = CONFIG;
-    json.textContent = JSON.stringify({ BEAT_TRACK, PACING: pacing }, null, 2);
+    const { BEAT_TRACK, PACING: pacing, MIX: mix } = CONFIG;
+    json.textContent = JSON.stringify(
+      { BEAT_TRACK, PACING: pacing, MIX: mix },
+      null,
+      2
+    );
   };
 
   for (const [path, key, options] of KNOBS) {
@@ -104,10 +116,12 @@ export function createTunePanel() {
     input.addEventListener('input', () => {
       readout();
       showJson();
+      window.audio?.applyMix?.();
     });
     input.addEventListener('change', () => {
       readout();
       showJson();
+      window.audio?.applyMix?.();
       // Hand the keyboard back to the game, or arrows keep moving the control
       input.blur();
     });

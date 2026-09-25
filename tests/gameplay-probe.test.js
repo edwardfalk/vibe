@@ -346,6 +346,63 @@ test.describe('Gameplay Probes', () => {
     check(await record());
   });
 
+  test('Game dips while speech plays and always recovers', async ({ page }) => {
+    await bootGame(page);
+    await page.waitForFunction(() => window.audio?.duckGain);
+    // Stand in for the speech engine: `speaking` with no events at all
+    await page.evaluate(() => {
+      window.__speaking = false;
+      Object.defineProperty(window.audio, 'speechSynthesis', {
+        value: {
+          get speaking() {
+            return window.__speaking;
+          },
+          speak() {},
+          cancel() {},
+          getVoices: () => [],
+        },
+        configurable: true,
+      });
+    });
+    const speak = (on) =>
+      page.evaluate((v) => {
+        window.__speaking = v;
+        if (v) window.audio.lastSpeechTime = Date.now();
+      }, on);
+    const ducked = () =>
+      page.waitForFunction(
+        () =>
+          window.audio._ducked &&
+          window.audio.duckGain.gain.value < 0.6 &&
+          window.audio.beatDuckGain.gain.value < 0.8
+      );
+    const released = () =>
+      page.waitForFunction(
+        () =>
+          !window.audio._ducked &&
+          window.audio.duckGain.gain.value > 0.95 &&
+          window.audio.beatDuckGain.gain.value > 0.95
+      );
+
+    await speak(true);
+    await ducked();
+    await speak(false); // ends with no event
+    await released();
+
+    await speak(true); // muting mid-speech releases the duck
+    await ducked();
+    await page.keyboard.press('m');
+    await released();
+    await page.keyboard.press('m');
+
+    // A stalled engine (`speaking` stuck true) is released after the cap
+    await page.evaluate(() => {
+      window.__speaking = true;
+      window.audio.lastSpeechTime = Date.now() - 6000;
+    });
+    await released();
+  });
+
   test('R after game over restarts straight into play', async ({ page }) => {
     await bootGame(page);
     await page.evaluate(() => window.gameState.setGameState('gameOver'));

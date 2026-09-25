@@ -36,7 +36,7 @@ export class BeatTrack {
   constructor(bpm = 120, context = null) {
     this.context = context;
     this.getContextValue = createContextAccessor(context);
-    this.volume = 0.4;
+    this.volume = CONFIG.MIX.BEAT_TRACK_VOLUME;
     this.muted = false;
 
     // Web Audio state
@@ -81,10 +81,12 @@ export class BeatTrack {
 
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = this.muted ? 0 : this.volume;
-    // Share the game's limiter so a kick landing on a loud effect can't clip
-    const limiter =
-      audio?.audioContext === this.ctx ? audio.masterLimiter : null;
-    this.masterGain.connect(limiter ?? this.ctx.destination);
+    // The beat's own duck gain (→ limiter): speech dips it by DUCK_BEAT_DB
+    const bus =
+      audio?.audioContext === this.ctx
+        ? (audio.beatDuckGain ?? audio.masterLimiter)
+        : null;
+    this.masterGain.connect(bus ?? this.ctx.destination);
 
     this.isPlaying = true;
 

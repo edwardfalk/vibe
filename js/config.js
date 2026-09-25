@@ -18,9 +18,6 @@ const CONFIG = {
     // Set to false to use browser's built-in Web Speech API
     USE_CLOUD_TTS: false,
 
-    // Volume multiplier for all TTS (0.0 to 1.0)
-    TTS_VOLUME: 0.6,
-
     // Enable audio effects (reverb, distortion, etc.)
     ENABLE_AUDIO_EFFECTS: true,
 
@@ -109,6 +106,20 @@ const CONFIG = {
     PREVIEW_AT_PROGRESS: 0.5,
   },
 
+  // Mix. Speech runs outside Web Audio and can't go above full volume, so it
+  // sits on top by keeping the beat lower and dipping the game while anyone
+  // speaks. Tune live with ?tune.
+  MIX: {
+    SFX_VOLUME: 1, // game sound effects master
+    BEAT_TRACK_VOLUME: 0.22, // kick + sub pulse, after the drive (was 0.4)
+    SPEECH_VOLUME: 1, // multiplies every voice's volume
+    SPEECH_DISTANCE_FLOOR: 0.7, // far-off enemies still this loud (was 0.4)
+    DUCK_SFX_DB: -6, // effects dip while someone speaks
+    DUCK_BEAT_DB: -3, // the kick dips less: it keeps time
+    DUCK_RELEASE_SEC: 0.3,
+    DUCK_MAX_HOLD_MS: 5000, // never stay ducked longer than this after a line starts
+  },
+
   // Beat track: the steady kick and the sub pulse under it.
   // Tune live by opening the game with ?tune in the URL.
   BEAT_TRACK: {
@@ -143,11 +154,11 @@ const CONFIG = {
 };
 
 export const VOICE_CONFIG = {
-  player: { rate: 0.85, pitch: 0.15, volume: 0.5 },
-  grunt: { rate: 0.85, pitch: 1.8, volume: 0.3 },
-  rusher: { rate: 1.4, pitch: 1.5, volume: 0.35 },
-  tank: { rate: 0.5, pitch: 0.2, volume: 0.4 },
-  stabber: { rate: 0.8, pitch: 2.0, volume: 0.4 },
+  player: { rate: 0.85, pitch: 0.15, volume: 1 },
+  grunt: { rate: 0.85, pitch: 1.8, volume: 0.8 },
+  rusher: { rate: 1.4, pitch: 1.5, volume: 0.8 },
+  tank: { rate: 0.5, pitch: 0.2, volume: 0.9 },
+  stabber: { rate: 0.8, pitch: 2.0, volume: 0.8 },
 };
 
 // Export for use in other files

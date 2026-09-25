@@ -77,6 +77,9 @@ import {
 } from './audio/SoundConfig.js';
 import { SPEECH_WRAPPER_CONFIG } from './audio/SpeechWrappers.js';
 
+// How fast the game dips when speech starts (the release is in CONFIG.MIX)
+const DUCK_ATTACK_SEC = 0.05;
+
 export class Audio {
   /**
    * @param {p5} p - The p5 instance
@@ -187,12 +190,17 @@ export class Audio {
         this.audioContext.currentTime
       );
 
-      this.masterGain.connect(this.masterLimiter);
+      // Duck gains in front of the limiter: effects and beat dip separately
+      // while speech plays (see syncDuck). Mute stays on the gains before these.
+      this.duckGain = this.audioContext.createGain();
+      this.duckGain.connect(this.masterLimiter);
+      this.beatDuckGain = this.audioContext.createGain();
+      this.beatDuckGain.connect(this.masterLimiter);
+      this._ducked = false;
+
+      this.masterGain.connect(this.duckGain);
       this.masterLimiter.connect(this.audioContext.destination);
-      this.masterGain.gain.setValueAtTime(
-        this.volume,
-        this.audioContext.currentTime
-      );
+      this.applyMix();
 
       this.createEffects();
       this.loadVoices();
@@ -654,12 +662,15 @@ export class Audio {
       entity && typeof entity.y === 'number' && !isNaN(entity.y)
         ? entity.y
         : 300;
-    // Ensure TTS volume respects master volume, per-voice config, and distance attenuation
+    // Speech is outside Web Audio and capped at 1: keep it near full and let
+    // syncDuck dip the game while it plays
+    const distance = Math.max(
+      CONFIG.MIX.SPEECH_DISTANCE_FLOOR,
+      calculateVolumeForPosition(ex, ey, playerX, playerY)
+    );
     utterance.volume = Math.min(
       1,
-      config.volume *
-        calculateVolumeForPosition(ex, ey, playerX, playerY) *
-        this.volume
+      config.volume * distance * CONFIG.MIX.SPEECH_VOLUME
     );
 
     // Enhanced voice selection with effects
@@ -762,12 +773,39 @@ export class Audio {
   // Speech methods bound via bindConvenienceSpeechMethods() from SPEECH_WRAPPER_CONFIG.
 
   // Control methods
-  setVolume(volume) {
-    this.volume = Math.max(0, Math.min(1, volume));
-    if (this.masterGain && this.audioContext) {
-      this.masterGain.gain.setValueAtTime(
-        this.volume,
-        this.audioContext.currentTime
+  // Apply CONFIG.MIX levels (at init and from the ?tune sliders)
+  applyMix() {
+    this.volume = CONFIG.MIX.SFX_VOLUME;
+    if (this.masterGain) {
+      this.masterGain.gain.value = this.enabled ? this.volume : 0;
+    }
+    window.beatTrack?.setVolume(CONFIG.MIX.BEAT_TRACK_VOLUME);
+  }
+
+  // Dip the game while the speech engine speaks. Reads the engine's own state
+  // every frame, so a lost or late end event can't leave it ducked; capped in
+  // case the engine stalls and reports speaking forever.
+  syncDuck() {
+    if (!this.duckGain) return;
+    const { MIX } = CONFIG;
+    const speaking =
+      this.enabled &&
+      !!this.speechSynthesis?.speaking &&
+      Date.now() - this.lastSpeechTime < MIX.DUCK_MAX_HOLD_MS;
+    if (speaking === this._ducked) return;
+    this._ducked = speaking;
+    const t = this.audioContext.currentTime;
+    const timeConstant =
+      (speaking ? DUCK_ATTACK_SEC : MIX.DUCK_RELEASE_SEC) / 3;
+    for (const [node, db] of [
+      [this.duckGain, MIX.DUCK_SFX_DB],
+      [this.beatDuckGain, MIX.DUCK_BEAT_DB],
+    ]) {
+      node.gain.cancelScheduledValues(t);
+      node.gain.setTargetAtTime(
+        speaking ? 10 ** (db / 20) : 1,
+        t,
+        timeConstant
       );
     }
   }
