@@ -70,7 +70,11 @@ import {
   isConfusedText as isConfusedTextHelper,
 } from './audio/TextSemantics.js';
 import { CONFIG, VOICE_CONFIG } from './config.js';
-import { SOUND_CONFIG, SOUND_METHOD_TO_KEY } from './audio/SoundConfig.js';
+import {
+  SOUND_CONFIG,
+  SOUND_METHOD_TO_KEY,
+  TONE_ATTACK_SEC,
+} from './audio/SoundConfig.js';
 import { SPEECH_WRAPPER_CONFIG } from './audio/SpeechWrappers.js';
 
 export class Audio {
@@ -398,7 +402,7 @@ export class Audio {
     gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
     gainNode.gain.linearRampToValueAtTime(
       volume,
-      this.audioContext.currentTime + 0.01
+      this.audioContext.currentTime + TONE_ATTACK_SEC
     );
     gainNode.gain.exponentialRampToValueAtTime(
       0.001,

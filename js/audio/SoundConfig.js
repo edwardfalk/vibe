@@ -52,19 +52,23 @@ export const SOUND_METHOD_TO_KEY = {
   playRusherResponse: 'rusherResponse',
 };
 
+// playTone's fade-in. Every tone must be comfortably longer than this, or the
+// decay's end lands before the attack's and the tone is silent or clicks.
+export const TONE_ATTACK_SEC = 0.01;
+
 export const SOUND_CONFIG = {
   playerShoot: {
     frequency: 220,
     waveform: 'sawtooth',
     volume: 0.2,
-    duration: 0.01,
+    duration: 0.04,
   },
   alienShoot: {
     frequency: 950,
     waveform: 'square',
     volume: 0.25,
     duration: 0.08,
-    frequencyVariationRange: 0.25,
+    frequencyVariationRange: 0.06,
   },
   tankEnergy: {
     frequency: 90,
@@ -86,7 +90,7 @@ export const SOUND_CONFIG = {
     duration: 0.4,
     sweep: { to: 60, curve: 'exponential' },
   },
-  hit: { frequency: 1200, waveform: 'triangle', duration: 0.05, volume: 0.2 },
+  hit: { frequency: 1200, waveform: 'triangle', duration: 0.05, volume: 0.4 },
   playerHit: {
     frequency: 250,
     waveform: 'sawtooth',
