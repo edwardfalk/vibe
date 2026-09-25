@@ -58,14 +58,18 @@ Speech can't be routed through Web Audio or raised above full volume, so it stay
 
 `enemy.takeDamage()` returns a raw result. [`normalizeDamageResult()`](js/shared/DamageResult.js) turns it into one of `none`, `damaged`, `died` or `exploding`. Then [`handleDamageResult()`](js/shared/DamageResultHandler.js) plays the explosions and sounds and adds the score. Bullet hits, enemy updates (such as a rusher exploding) and area damage all go through this one path.
 
+- **Hit radius.** A bullet hits an enemy within `bullet.size / 2 + enemy.hitRadius`. The radius per type is in `CONFIG.HITBOX`, because sprites are wider than `size / 2`. The player keeps `size / 2`.
+- **Blasts and area damage.** A rusher's blast, plasma clouds and debris damage enemies through [`damageEnemiesInRadius()`](js/effects/AreaDamageHandler.js). An enemy counts when its hit radius reaches into the circle; enemies already killed this frame are skipped. Blasts land after the enemy loop has compacted the array, so an enemy is hit once and what they kill is gone before bullets run.
+- **The player.** [`Player.takeDamage()`](js/entities/player.js) owns the shield, the wound sound and the kill-streak reset. The shield takes one real hit whole (contact ticks go through it), recharges in `CONFIG.PLAYER.SHIELD_RECHARGE_MS` and returns on the beat. Callers only act on its `true` (died) return.
+
 ## Dev tools
 
-| Tool       | Command                                                      | What it does                                                                   |
-| ---------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `?tune`    | open the game with `?tune`                                   | live sliders for the kick, mix, pacing, rushers and tank armour, plus Level +1 |
-| Playtest   | `pnpm run playtest`                                          | a bot plays for a while (aiming at enemies) and reports frame rate and pacing  |
-| Screenshot | `pnpm run screenshot` (`screenshot:level` for a later level) | saves screenshots of a running game                                            |
-| Beat check | `pnpm run test:beats`                                        | records when enemies act and checks that each lands on its beat                |
+| Tool       | Command                                                      | What it does                                                                                                                                 |
+| ---------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `?tune`    | open the game with `?tune`                                   | live sliders for the kick, mix, pacing, rushers, tank armour, hit radii, stabber knockback, and the hero's shield and healing, plus Level +1 |
+| Playtest   | `pnpm run playtest`                                          | a bot plays for a while (aiming at enemies) and reports frame rate and pacing                                                                |
+| Screenshot | `pnpm run screenshot` (`screenshot:level` for a later level) | saves screenshots of a running game                                                                                                          |
+| Beat check | `pnpm run test:beats`                                        | records when enemies act and checks that each lands on its beat                                                                              |
 
 ## Known debt
 
