@@ -162,7 +162,9 @@ class Tank extends BaseEnemy {
       }
 
       // Power-up tone four beats into the charge. No line here: "CHARGING!"
-      // and "FIRE!" 4 s apart both clear the shared speech cooldown
+      // and "FIRE!" 4 s apart both clear the 2.5 s cooldown all voices share.
+      // With several tanks, some of their lines are still dropped; the tones
+      // carry the attack either way
       if (
         beatsSinceCharge >= 4 &&
         beatsSinceCharge < 5 &&

@@ -1,8 +1,8 @@
 /**
- * Live tuning panel for CONFIG.BEAT_TRACK, PACING, MIX and RUSHER, shown when
- * the URL has ?tune. Sound and spawn changes apply from the next beat or wave;
- * level thresholds from the next level-up (the first one after a restart);
- * rusher changes at once.
+ * Live tuning panel for CONFIG.BEAT_TRACK, PACING, MIX, RUSHER and TANK_ARMOR,
+ * shown when the URL has ?tune. Sound and spawn changes apply from the next
+ * beat or wave; level thresholds from the next level-up (the first one after a
+ * restart); rusher changes at once; armour on tanks spawned after the change.
  * To keep a setting, copy the JSON at the bottom into js/config.js.
  */
 

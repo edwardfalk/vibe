@@ -157,25 +157,29 @@ describe('Beat-gated entity behaviour', () => {
     expect(cfg.chance).toBeCloseTo((250 / 2000) * 0.2, 5);
   });
 
-  it('tank says CHARGING! when a charge starts on beat 1, and FIRE! 8 beats later', () => {
+  it('tank says CHARGING! at charge start and FIRE! 8 beats later, both clear of the speech cooldown', () => {
     const { audio, context, at } = world();
+    // Record when each line is said: every tank line must clear the 2.5 s
+    // cooldown all voices share (Audio.js), or the next one is dropped
+    let now = 0;
+    const said = [];
+    audio.speak.mockImplementation(
+      (_e, line) => (said.push({ line, now }), true)
+    );
     const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
     t.isSpawning = false;
     t.spawnTimer = t.spawnDuration;
     t._lastTankFireBeat = -100;
-    at(4000); // beat 1 of bar 3
-    t.updateSpecificBehavior(300, 100, 16);
-    expect(t.chargingShot).toBe(true);
-    expect(audio.speak).toHaveBeenCalledWith(t, 'CHARGING!', 'tank');
+    for (now = 4000; now <= 8000; now += 1000) {
+      at(now); // beat 1 of bar 3 (charge starts), then every beat 1 and 3
+      t.updateSpecificBehavior(300, 100, 16);
+    }
+    expect(said.map((s) => s.line)).toEqual(['CHARGING!', 'FIRE!']);
     expect(audio.playSound).toHaveBeenCalledWith('tankCharging', 100, 100);
-    at(6000); // beat 1, four beats in: the tone, not the line
-    t.updateSpecificBehavior(300, 100, 16);
-    expect(
-      audio.speak.mock.calls.some(([, line]) => line === 'POWER UP!')
-    ).toBe(false);
-    at(8000); // beat 1, two bars in: the charge is done
-    t.updateSpecificBehavior(300, 100, 16);
-    expect(audio.speak).toHaveBeenCalledWith(t, 'FIRE!', 'tank');
+    expect(audio.playSound).toHaveBeenCalledWith('tankPowerUp', 100, 100);
+    for (let i = 1; i < said.length; i++) {
+      expect(said[i].now - said[i - 1].now).toBeGreaterThanOrEqual(2500);
+    }
   });
 
   it("tank's shot has a sound", () => {
