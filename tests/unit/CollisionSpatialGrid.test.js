@@ -132,3 +132,14 @@ describe('queryNearbyEnemyIndices', () => {
     expect(indices).toContain(0);
   });
 });
+
+describe('grid padding follows hit radius', () => {
+  it('finds an enemy whose (tuned) hit radius reaches the bullet across a cell edge', () => {
+    // Grunt at x=110 (cell 0), radius tuned up to 50; bullet at x=158
+    // (cell 1) is 48 px away: inside 50 + bullet 8/2, beyond size-based padding
+    const grunt = { x: 110, y: 60, size: 26, hitRadius: 50 };
+    const grid = buildEnemySpatialGrid([grunt]);
+    const bullet = makeBullet(158, 60, 8);
+    expect(queryNearbyEnemyIndices(grid, bullet)).toContain(0);
+  });
+});
