@@ -14,6 +14,7 @@ export class GameState {
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
     this.gameState = 'playing'; // 'title', 'playing', 'gameOver', 'paused'
+    this.practiceRun = false; // set by ?tune jumps: no high score this run
 
     // Combat statistics
     this.killStreak = 0;
@@ -97,6 +98,7 @@ export class GameState {
 
   // High score management
   updateHighScore() {
+    if (this.practiceRun) return;
     if (this.score > this.highScore) {
       this.highScore = this.score;
       this._highScoreDirty = true;
@@ -181,6 +183,7 @@ export class GameState {
     this._flushHighScore();
 
     // Reset game state
+    this.practiceRun = false;
     this.gameState = 'playing';
 
     // Reset player

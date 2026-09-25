@@ -11,6 +11,9 @@
  */
 export function runDraw(p, updateGame, drawGame) {
   window.frameCount = p.frameCount;
+  // Before the state switch, so speech on the game-over screen can't stick.
+  // (Pauses in a hidden tab with the draw loop; the 5 s cap still applies.)
+  window.audio?.syncDuck?.();
 
   if (window.backgroundRenderer) {
     window.backgroundRenderer.drawCosmicAuroraBackground(p);

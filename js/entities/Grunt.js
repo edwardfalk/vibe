@@ -2,6 +2,12 @@ import { BaseEnemy } from './BaseEnemy.js';
 import { floor, random, sqrt, atan2, min, max } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 
+// Per-beat chances for beat-gated grunt sounds (rolled once per beat)
+const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
+const GRUNT_MOVE_SOUND_CHANCE = 0.5;
+// Per attempt once the speech timer is up (= today's effective rate)
+const GRUNT_SPEECH_CHANCE = 0.18;
+
 const GRUNT_LINES = [
   'KILL HUMAN!',
   'DESTROY TARGET!',
@@ -114,7 +120,10 @@ class Grunt extends BaseEnemy {
 
     // Handle grunt weird noise (beat-gated)
     const beatClock = this.getContextValue('beatClock');
-    if (beatClock && beatClock.isOnBeat([2, 4]) && random() < 0.02) {
+    if (
+      this.onBeatOnce(beatClock, 'weirdNoise', beatClock?.isOnBeat([2, 4])) &&
+      random() < GRUNT_WEIRD_NOISE_CHANCE
+    ) {
       this.makeGruntWeirdNoise();
     }
 
@@ -144,10 +153,16 @@ class Grunt extends BaseEnemy {
         }
 
         // Play grunt retreat sound if beatClock available
-        if (beatClock && beatClock.isOnBeat([2, 4]) && audio) {
-          if (random() < 0.3) {
-            audio.playSound('gruntRetreat', this.x, this.y);
-          }
+        if (
+          audio &&
+          this.onBeatOnce(
+            beatClock,
+            'moveSound',
+            beatClock?.isOnBeat([2, 4])
+          ) &&
+          random() < GRUNT_MOVE_SOUND_CHANCE
+        ) {
+          audio.playSound('gruntRetreat', this.x, this.y);
         }
       } else if (distance > tooFar) {
         // Too far - advance but maintain tactical spacing
@@ -155,10 +170,16 @@ class Grunt extends BaseEnemy {
         this.velocity.y = unitY * this.speed * 0.6;
 
         // Play grunt advance sound if beatClock available
-        if (beatClock && beatClock.isOnBeat([2, 4]) && audio) {
-          if (random() < 0.25) {
-            audio.playSound('gruntAdvance', this.x, this.y);
-          }
+        if (
+          audio &&
+          this.onBeatOnce(
+            beatClock,
+            'moveSound',
+            beatClock?.isOnBeat([2, 4])
+          ) &&
+          random() < GRUNT_MOVE_SOUND_CHANCE
+        ) {
+          audio.playSound('gruntAdvance', this.x, this.y);
         }
       } else {
         // At ideal distance - maintain position with small movements
@@ -310,8 +331,8 @@ class Grunt extends BaseEnemy {
   getAmbientSpeechConfig() {
     return {
       lines: GRUNT_LINES,
-      shouldSpeak: (beatClock) =>
-        beatClock && beatClock.isOnBeat([2, 4]) && random() < 0.9,
+      gate: (beatClock) => !!beatClock?.isOnBeat([2, 4]),
+      chance: GRUNT_SPEECH_CHANCE,
     };
   }
 

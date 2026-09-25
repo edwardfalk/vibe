@@ -67,6 +67,14 @@ describe('GameState', () => {
     expect(gs.totalKills).toBe(2);
   });
 
+  it('a practice run (tune panel jumps) never sets a high score', () => {
+    gs.practiceRun = true;
+    gs.addScore(100000);
+    expect(gs.highScore).toBe(0);
+    gs.restart();
+    expect(gs.practiceRun).toBe(false);
+  });
+
   it('level progresses at threshold', () => {
     gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
     expect(gs.level).toBe(2);

@@ -240,8 +240,9 @@ export class Player {
     const wasShooting = this.isCurrentlyShooting;
     this.wantsToContinueShooting = false;
 
-    // If mouse is not pressed and player was shooting, reset shooting state
-    if (wasShooting && !this.p.mouseIsPressed) {
+    // The burst ends when no fire input is held (mouse or keys), so held
+    // keyboard fire is quantised to eighth notes like the mouse
+    if (wasShooting && !window.playerIsShooting) {
       this.isCurrentlyShooting = false;
       this.firstShotFired = false;
     }

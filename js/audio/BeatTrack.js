@@ -12,6 +12,7 @@
  */
 
 import { CONFIG } from '../config.js';
+import { createContextAccessor } from '../shared/ContextAccessor.js';
 
 const EIGHTH_NOTES_PER_MEASURE = 8;
 // Which beats (0-3) the kick plays on, per CONFIG.BEAT_TRACK.KICK.PATTERN
@@ -23,6 +24,9 @@ const KICK_PATTERNS = {
 // 75ms balances glitch-free playback with minimal audio-visual desync.
 const SCHEDULE_AHEAD_SEC = 0.075;
 const SCHEDULER_INTERVAL_MS = 25;
+// A note this late (a short main-thread stall) still plays, a little late;
+// anything later (a hidden tab) is skipped rather than played in a burst
+const LATE_GRACE_SEC = 0.05;
 // Exponential ramps can't reach 0; this is inaudible
 const SILENCE_GAIN = 0.001;
 const DRIVE_CURVE_SAMPLES = 1024;
@@ -31,12 +35,11 @@ const DRIVE_CURVE_SAMPLES = 1024;
 const TAIL_FADE_SEC = 0.005;
 
 export class BeatTrack {
+  // bpm is kept for the call signature; tempo now comes from BeatClock
   constructor(bpm = 120, context = null) {
-    this.bpm = bpm;
     this.context = context;
-    this.beatDuration = 60 / bpm;
-    this.eighthDuration = this.beatDuration / 2;
-    this.volume = 0.4;
+    this.getContextValue = createContextAccessor(context);
+    this.volume = CONFIG.MIX.BEAT_TRACK_VOLUME;
     this.muted = false;
 
     // Web Audio state
@@ -45,8 +48,6 @@ export class BeatTrack {
     this.isPlaying = false;
 
     // Scheduler state
-    this.nextNoteTime = 0;
-    this.currentEighth = 0;
     this.schedulerTimer = null;
 
     // Enemy count for dynamic volume scaling
@@ -56,17 +57,10 @@ export class BeatTrack {
     this.level = 1;
   }
 
-  _getAudio() {
-    if (this.context && typeof this.context.get === 'function') {
-      return this.context.get('audio');
-    }
-    return window.audio;
-  }
-
   async start() {
     if (this.isPlaying) return;
 
-    const audio = this._getAudio();
+    const audio = this.getContextValue('audio');
     if (audio && audio.audioContext) {
       this.ctx = audio.audioContext;
     } else {
@@ -90,15 +84,13 @@ export class BeatTrack {
 
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = this.muted ? 0 : this.volume;
-    // Share the game's limiter so a kick landing on a loud effect can't clip
-    const limiter =
-      audio?.audioContext === this.ctx ? audio.masterLimiter : null;
-    this.masterGain.connect(limiter ?? this.ctx.destination);
+    // The beat's own duck gain (→ limiter): speech dips it by DUCK_BEAT_DB
+    const bus =
+      audio?.audioContext === this.ctx
+        ? (audio.beatDuckGain ?? audio.masterLimiter)
+        : null;
+    this.masterGain.connect(bus ?? this.ctx.destination);
 
-    this.nextNoteTime = this.ctx.currentTime + 0.05;
-    this._startTime = this.nextNoteTime;
-    this._totalEighths = 0;
-    this.currentEighth = 0;
     this.isPlaying = true;
 
     // Reusable noise buffer: the kick click and Level 5+ downbeat transients
@@ -141,28 +133,34 @@ export class BeatTrack {
     }
   }
 
-  setBPM(bpm) {
-    this.bpm = bpm;
-    this.beatDuration = 60 / bpm;
-    this.eighthDuration = this.beatDuration / 2;
-    // Reset accumulator to avoid drift across BPM changes
-    if (this.ctx) {
-      this._startTime = this.ctx.currentTime;
-      this._totalEighths = 0;
-    }
-  }
-
   // -- Scheduler ----------------------------------------------------------
 
   _scheduler() {
     if (!this.isPlaying || !this.ctx) return;
 
-    while (this.nextNoteTime < this.ctx.currentTime + SCHEDULE_AHEAD_SEC) {
-      this._scheduleNote(this.nextNoteTime, this.currentEighth);
-      this._totalEighths++;
-      this.nextNoteTime =
-        this._startTime + this._totalEighths * this.eighthDuration;
-      this.currentEighth = (this.currentEighth + 1) % EIGHTH_NOTES_PER_MEASURE;
+    const clock = this.getContextValue('beatClock');
+    // Silent until BeatClock runs on this AudioContext (the first moments
+    // after start); from then on the kick uses the enemies' grid exactly
+    if (clock?.audioContext === this.ctx) {
+      const now = this.ctx.currentTime;
+      const origin = clock.startTime / 1000;
+      const eighth = clock.beatInterval / 2000;
+      const n8 = EIGHTH_NOTES_PER_MEASURE;
+      // From just before now (skips missed notes after a hidden tab, keeps
+      // ones a short stall made late), and never at or before a note already
+      // handed to Web Audio (a restart moves the grid)
+      const from = Math.max(
+        now - LATE_GRACE_SEC,
+        (this._lastNoteSec ?? -Infinity) + eighth / 2
+      );
+      for (
+        let n = Math.ceil((from - origin) / eighth);
+        origin + n * eighth < now + SCHEDULE_AHEAD_SEC;
+        n++
+      ) {
+        this._lastNoteSec = origin + n * eighth;
+        this._scheduleNote(this._lastNoteSec, ((n % n8) + n8) % n8);
+      }
     }
 
     this.schedulerTimer = setTimeout(

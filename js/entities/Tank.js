@@ -8,6 +8,10 @@ import {
 } from './TankArmorHandler.js';
 import { CONFIG } from '../config.js';
 
+const TANK_POWER_SOUND_CHANCE = 0.5; // per beat 1 while charging
+// Per attempt once the speech timer is up (= today's effective rate)
+const TANK_SPEECH_CHANCE = 0.025;
+
 const TANK_LINES = [
   'HEAVY ARTILLERY!',
   'SIEGE MODE!',
@@ -160,7 +164,10 @@ class Tank extends BaseEnemy {
       const beatsSinceCharge = beatClock.getTotalBeats() - this.chargeStartBeat;
 
       // Charge-up sound on beat 1 during charge
-      if (beatClock.isOnBeat([1]) && random() < 0.25) {
+      if (
+        this.onBeatOnce(beatClock, 'powerSound', beatClock.isOnBeat([1])) &&
+        random() < TANK_POWER_SOUND_CHANCE
+      ) {
         if (audioTank) audioTank.playSound('tankPower', this.x, this.y);
       }
 
@@ -169,7 +176,7 @@ class Tank extends BaseEnemy {
         beatsSinceCharge >= 1 &&
         beatsSinceCharge < 2 &&
         audioTank &&
-        beatClock.isOnBeat([1])
+        this.onBeatOnce(beatClock, 'chargeMilestone', beatClock.isOnBeat([1]))
       ) {
         console.log('🔋 Tank starting to charge!');
         audioTank.speak(this, 'CHARGING!', 'tank');
@@ -178,7 +185,7 @@ class Tank extends BaseEnemy {
         beatsSinceCharge >= 4 &&
         beatsSinceCharge < 5 &&
         audioTank &&
-        beatClock.isOnBeat([1])
+        this.onBeatOnce(beatClock, 'chargeMilestone', beatClock.isOnBeat([1]))
       ) {
         console.log('⚡ Tank 50% charged!');
         audioTank.speak(this, 'POWER UP!', 'tank');
@@ -235,8 +242,8 @@ class Tank extends BaseEnemy {
   getAmbientSpeechConfig() {
     return {
       lines: TANK_LINES,
-      shouldSpeak: (beatClock) =>
-        beatClock && beatClock.isOnBeat([1]) && random() < 0.25,
+      gate: (beatClock) => !!beatClock?.isOnBeat([1]),
+      chance: TANK_SPEECH_CHANCE,
     };
   }
 

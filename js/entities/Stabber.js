@@ -3,6 +3,9 @@ import { floor, random, sin, cos, ceil, max } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { updateStabberBehavior } from './StabberAttackHandler.js';
 
+// Per attempt once the speech timer is up (= today's effective rate)
+const STABBER_SPEECH_CHANCE = 0.025;
+
 const STABBER_LINES = [
   'STAB!',
   'SLICE!',
@@ -47,10 +50,6 @@ class Stabber extends BaseEnemy {
     this.maxStabWarningTime = CONFIG.STABBER_SETTINGS.MAX_WARNING_TIME; // Warning phase duration
     this.hasYelledStab = false;
 
-    // deltaTime-based timing for motion trail
-    this.motionTrailTimer = 0;
-    this.motionTrailInterval = 66.67; // ~4 frames at 60fps (4 * 16.67ms)
-
     // Stabber chant is now beat-gated (no timer needed)
     this.isStabbing = false;
     this.stabAnimationTime = 0;
@@ -84,8 +83,8 @@ class Stabber extends BaseEnemy {
   getAmbientSpeechConfig() {
     return {
       lines: STABBER_LINES,
-      shouldSpeak: (beatClock) =>
-        beatClock?.canStabberAttack() && random() < 0.2,
+      gate: (beatClock) => !!beatClock?.canStabberAttack(),
+      chance: STABBER_SPEECH_CHANCE,
     };
   }
 
@@ -105,22 +104,6 @@ class Stabber extends BaseEnemy {
     }
 
     return { bobble: 0, waddle: 0 };
-  }
-
-  /**
-   * Draw motion trail for stabbers
-   * Note: This is now called from updateSpecificBehavior based on deltaTime timer
-   */
-  drawMotionTrail() {
-    const visualEffectsManager = this.getContextValue('visualEffectsManager');
-    if (visualEffectsManager) {
-      try {
-        const trailColor = [255, 140, 0];
-        visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
-      } catch (error) {
-        console.log('⚠️ Stabber trail error:', error);
-      }
-    }
   }
 
   /**

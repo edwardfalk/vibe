@@ -22,11 +22,6 @@ function handleRusherExplosionResult(result, enemy, context) {
 
   if (visualEffectsManager) {
     try {
-      visualEffectsManager.addExplosionParticles(
-        result.x,
-        result.y,
-        'rusher-explosion'
-      );
       visualEffectsManager.triggerChromaticAberration(0.8, 45);
       visualEffectsManager.triggerBloom(0.5, 30);
     } catch (error) {

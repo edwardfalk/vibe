@@ -152,8 +152,12 @@ export class BaseEnemy {
     }
 
     if (this.ambientSpeechTimer <= 0 && this.speechCooldown <= 0) {
-      // Trigger ambient speech
-      this.triggerAmbientSpeech();
+      // Wait for this enemy's beat gate, then roll once. Trying on a single
+      // frame would skip most turns now that gates are narrow.
+      const config = this.getAmbientSpeechConfig();
+      const beatClock = this.getContextValue('beatClock');
+      if (config && !config.gate(beatClock)) return;
+      if (config && random() < config.chance) this.triggerAmbientSpeech();
 
       // Reset timer for next speech using config
       const speechConfig =
@@ -177,9 +181,6 @@ export class BaseEnemy {
     const audio = this.getContextValue('audio');
     if (!audio || this.speechCooldown > 0) return;
 
-    const beatClock = this.getContextValue('beatClock');
-    if (!config.shouldSpeak(beatClock)) return;
-
     const line = random(config.lines);
     if (audio.speak(this, line, this.type)) {
       this.speechCooldown = this.maxSpeechCooldown;
@@ -188,10 +189,25 @@ export class BaseEnemy {
 
   /**
    * Override in subclasses to provide ambient speech configuration.
-   * Return { lines: string[], shouldSpeak: (beatClock) => boolean } or null.
+   * Return { lines: string[], gate: (beatClock) => boolean, chance: number }
+   * or null. The gate is when this enemy may speak; chance is per attempt.
    */
   getAmbientSpeechConfig() {
     return null;
+  }
+
+  /**
+   * True the first time `open` is true within a beat (per key), then false
+   * until the next beat. Beat-gated sounds use it so they play once per beat
+   * instead of on every frame of the window.
+   */
+  onBeatOnce(beatClock, key, open) {
+    if (!open || !beatClock) return false;
+    const beat = beatClock.getTotalBeats();
+    this._beatOnce ??= {};
+    if (this._beatOnce[key] === beat) return false;
+    this._beatOnce[key] = beat;
+    return true;
   }
 
   /**
@@ -276,7 +292,6 @@ export class BaseEnemy {
     }
 
     this.drawEnemyGlow(p);
-    this.drawMotionTrail();
 
     p.push();
     p.translate(this.x, this.y);
@@ -345,13 +360,6 @@ export class BaseEnemy {
    */
   getAnimationModifications() {
     return { bobble: 0, waddle: 0 };
-  }
-
-  /**
-   * Draw motion trail - can be overridden by subclasses
-   */
-  drawMotionTrail() {
-    // Base implementation does nothing - subclasses can override
   }
 
   /**

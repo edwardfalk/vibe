@@ -214,6 +214,221 @@ test.describe('Gameplay Probes', () => {
     await expect(slider).not.toBeFocused();
   });
 
+  test('Either Shift fires; releasing one fire input keeps the others firing', async ({
+    page,
+  }) => {
+    await bootGame(page);
+    const shots = () => page.evaluate(() => window.gameState.shotsFired);
+    const stillFiring = async () => {
+      const before = await shots();
+      await page.waitForTimeout(600);
+      return (await shots()) > before;
+    };
+
+    await page.keyboard.down('ShiftRight');
+    expect(await stillFiring()).toBe(true);
+
+    // mouse + Shift: let go of the mouse first
+    const box = await page.locator('#defaultCanvas0').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 4);
+    await page.mouse.down();
+    await page.mouse.up();
+    expect(await stillFiring()).toBe(true);
+
+    // Space + Shift, released in the other order
+    await page.keyboard.down('Space');
+    await page.keyboard.up('ShiftRight');
+    expect(await stillFiring()).toBe(true);
+    await page.keyboard.down('ShiftLeft');
+    await page.keyboard.up('Space');
+    expect(await stillFiring()).toBe(true);
+
+    await page.keyboard.up('ShiftLeft');
+    await page.waitForTimeout(100);
+    expect(await page.evaluate(() => window.playerIsShooting)).toBe(false);
+
+    // A right-click never starts firing
+    await page.mouse.down({ button: 'right' });
+    expect(await page.evaluate(() => window.playerIsShooting)).toBe(false);
+    await page.mouse.up({ button: 'right' });
+  });
+
+  test('A lost Shift keyup or a window blur never leaves the gun firing', async ({
+    page,
+  }) => {
+    await bootGame(page);
+    const after = (evs) =>
+      page.evaluate((evs) => {
+        for (const [type, init] of evs) {
+          if (type === 'blur') window.dispatchEvent(new Event('blur'));
+          else window.dispatchEvent(new KeyboardEvent(type, init));
+        }
+        return window.playerIsShooting;
+      }, evs);
+    const shiftDown = ['keydown', { code: 'ShiftLeft', shiftKey: true }];
+    expect(await after([shiftDown])).toBe(true);
+    expect(await after([['blur', {}]])).toBe(false);
+    // Shift's keyup is lost; the next key event reports Shift up
+    await after([shiftDown]);
+    expect(await after([['keydown', { code: 'KeyW', shiftKey: false }]])).toBe(
+      false
+    );
+    await after([['keyup', { code: 'KeyW', shiftKey: false }]]);
+  });
+
+  test('Held keyboard fire lands on eighth notes', async ({ page }) => {
+    await bootGame(page);
+    const offsets = await page.evaluate(async () => {
+      const p = window.player;
+      const clock = window.beatClock;
+      const fire = p.fireBullet.bind(p);
+      const out = [];
+      p.fireBullet = (...a) => {
+        const eighth = clock.beatInterval / 2;
+        const t = clock._now() - clock.startTime;
+        out.push(Math.min(t % eighth, eighth - (t % eighth)));
+        return fire(...a);
+      };
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { code: 'ShiftLeft', shiftKey: true })
+      );
+      await new Promise((r) => setTimeout(r, 2000));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ShiftLeft' }));
+      p.fireBullet = fire;
+      return out;
+    });
+    // The first shot is immediate; every later one is on an eighth note
+    const sustained = offsets.slice(1);
+    expect(sustained.length).toBeGreaterThanOrEqual(4);
+    const tol = await page.evaluate(() => window.beatClock.eighthNoteTolerance);
+    for (const o of sustained) expect(o).toBeLessThanOrEqual(tol + 17); // + one frame
+  });
+
+  test("Kick locks to the enemies' beat, including after a restart", async ({
+    page,
+  }) => {
+    await bootGame(page);
+    await page.waitForFunction(() => window.beatTrack?.isPlaying);
+    const record = () =>
+      page.evaluate(async () => {
+        const track = window.beatTrack;
+        const clock = window.beatClock;
+        const audio = window.audio;
+        // Bring a grunt within firing range (grunts fire only within 300 px)
+        const grunt = window.enemies.find((e) => e.type === 'grunt');
+        if (grunt) {
+          grunt.x = window.player.x + 200;
+          grunt.y = window.player.y;
+        }
+        const schedule = track._scheduleNote.bind(track);
+        const playSound = audio.playSound.bind(audio);
+        const kicks = [];
+        const shotOffsets = [];
+        track._scheduleNote = (time, eighth) => {
+          if (eighth % 2 === 0) {
+            const rel = time * 1000 - clock.startTime;
+            const beat = Math.round(rel / clock.beatInterval);
+            kicks.push({
+              off: Math.abs(rel - beat * clock.beatInterval),
+              beatInMeasure: ((beat % 4) + 4) % 4,
+              eighth,
+            });
+          }
+          schedule(time, eighth);
+        };
+        audio.playSound = (name, ...rest) => {
+          if (name === 'alienShoot') {
+            const t = clock._now() - clock.startTime;
+            shotOffsets.push(
+              t - Math.floor(t / clock.beatInterval) * clock.beatInterval
+            );
+          }
+          return playSound(name, ...rest);
+        };
+        await new Promise((r) => setTimeout(r, 3000));
+        track._scheduleNote = schedule;
+        audio.playSound = playSound;
+        return { kicks, shotOffsets, tolerance: clock.tolerance };
+      });
+    const check = ({ kicks, shotOffsets, tolerance }) => {
+      expect(kicks.length).toBeGreaterThanOrEqual(3);
+      for (const k of kicks) {
+        expect(k.off).toBeLessThan(2); // on BeatClock's beat
+        expect(k.eighth / 2).toBe(k.beatInMeasure); // accent on the clock's beat 1
+      }
+      // Grunt shots come after their beat lands; a pre-beat shot would read
+      // as ~400-500 ms (the end of the previous beat)
+      expect(shotOffsets.length).toBeGreaterThan(0);
+      for (const o of shotOffsets)
+        expect(o).toBeLessThanOrEqual(tolerance + 20);
+    };
+    check(await record());
+    await page.evaluate(() => window.gameState.setGameState('gameOver'));
+    await page.keyboard.press('r');
+    await page.waitForFunction(() => window.gameState.gameState === 'playing');
+    check(await record());
+  });
+
+  test('Game dips while speech plays and always recovers', async ({ page }) => {
+    await bootGame(page);
+    await page.waitForFunction(() => window.audio?.duckGain);
+    // Stand in for the speech engine: `speaking` with no events at all
+    await page.evaluate(() => {
+      window.__speaking = false;
+      Object.defineProperty(window.audio, 'speechSynthesis', {
+        value: {
+          get speaking() {
+            return window.__speaking;
+          },
+          speak() {},
+          cancel() {},
+          getVoices: () => [],
+        },
+        configurable: true,
+      });
+    });
+    const speak = (on) =>
+      page.evaluate((v) => {
+        window.__speaking = v;
+        if (v) window.audio.lastSpeechTime = Date.now();
+      }, on);
+    const ducked = () =>
+      page.waitForFunction(
+        () =>
+          window.audio._ducked &&
+          window.audio.duckGain.gain.value < 0.6 &&
+          window.audio.beatDuckGain.gain.value < 0.8
+      );
+    // Well under the 5 s cap, so a release that only comes from the cap fails
+    const released = () =>
+      page.waitForFunction(
+        () =>
+          !window.audio._ducked &&
+          window.audio.duckGain.gain.value > 0.95 &&
+          window.audio.beatDuckGain.gain.value > 0.95,
+        null,
+        { timeout: 2000 }
+      );
+
+    await speak(true);
+    await ducked();
+    await speak(false); // ends with no event
+    await released();
+
+    await speak(true); // muting mid-speech releases the duck
+    await ducked();
+    await page.keyboard.press('m');
+    await released();
+    await page.keyboard.press('m');
+
+    // A stalled engine (`speaking` stuck true) is released after the cap
+    await page.evaluate(() => {
+      window.__speaking = true;
+      window.audio.lastSpeechTime = Date.now() - 6000;
+    });
+    await released();
+  });
+
   test('R after game over restarts straight into play', async ({ page }) => {
     await bootGame(page);
     await page.evaluate(() => window.gameState.setGameState('gameOver'));

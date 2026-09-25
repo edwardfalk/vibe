@@ -3,6 +3,9 @@ import { floor, random, sqrt, sin, cos, ceil } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
+// Per attempt once the speech timer is up (= today's effective rate)
+const RUSHER_SPEECH_CHANCE = 0.03;
+
 const RUSHER_LINES = [
   'KAMIKAZE TIME!',
   'SUICIDE RUN!',
@@ -49,10 +52,6 @@ class Rusher extends BaseEnemy {
     // Vibrate state - hold between proximity trigger and beat-aligned explosion
     this.vibrating = false;
     this.vibrateStartTime = 0;
-
-    // deltaTime-based timing for motion trail
-    this.motionTrailTimer = 0;
-    this.motionTrailInterval = 66.67; // ~4 frames at 60fps (4 * 16.67ms)
   }
 
   get effectiveExplosionTime() {
@@ -75,13 +74,6 @@ class Rusher extends BaseEnemy {
     // Update deltaTime-based timers
     const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS; // Normalize to 60fps baseline
 
-    // Update motion trail timer
-    this.motionTrailTimer += deltaTimeMs;
-    if (this.isCharging && this.motionTrailTimer >= this.motionTrailInterval) {
-      this.drawMotionTrail();
-      this.motionTrailTimer = 0;
-    }
-
     // Vibrate state handler - waiting for beat to explode
     if (this.vibrating) {
       this.vibrateStartTime += deltaTimeMs;
@@ -91,7 +83,7 @@ class Rusher extends BaseEnemy {
         this.vibrating = false;
         this.exploding = true;
         this.explosionTimer = 0;
-        this.maxExplosionTime = 5; // Near-instant after beat hit
+        this.maxExplosionTime = 0; // explode on the frame after the beat, not 5 frames later
       }
 
       // Safety: explode if vibrated too long or no beatClock
@@ -211,8 +203,8 @@ class Rusher extends BaseEnemy {
   getAmbientSpeechConfig() {
     return {
       lines: RUSHER_LINES,
-      shouldSpeak: (beatClock) =>
-        beatClock && beatClock.canRusherExplode() && random() < 0.15,
+      gate: (beatClock) => !!beatClock?.canRusherExplode(),
+      chance: RUSHER_SPEECH_CHANCE,
     };
   }
 
@@ -257,22 +249,6 @@ class Rusher extends BaseEnemy {
     }
 
     return { bobble, waddle };
-  }
-
-  /**
-   * Draw motion trail for charging rushers
-   * Note: This is now called from updateSpecificBehavior based on deltaTime timer
-   */
-  drawMotionTrail() {
-    const visualEffectsManager = this.getContextValue('visualEffectsManager');
-    if (visualEffectsManager) {
-      try {
-        const trailColor = [255, 100, 100];
-        visualEffectsManager.addMotionTrail(this.x, this.y, trailColor, 3);
-      } catch (error) {
-        console.log('⚠️ Rusher trail error:', error);
-      }
-    }
   }
 
   /**
