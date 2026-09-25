@@ -14,7 +14,7 @@ At 120 BPM in 4/4 time (a beat every 500 ms):
 | Stabber | lunges on beat 3.5        | off-beat accent |
 | Rusher  | explodes on beats 1 and 3 | crash           |
 
-The attacks are also pitched apart so they don't mask each other: tank shots low (about 90 Hz), grunt shots in the middle (about 950 Hz) and stabber attacks high (about 2.2 kHz). The tank's tones are square waves: laptop speakers can't play 90 Hz itself, but they do play its overtones. The presets are in `js/audio/SoundConfig.js`.
+The attacks are also pitched apart so they don't mask each other: tank shots low (about 90 Hz), grunt shots in the middle (about 950 Hz) and stabber attacks high (about 2.2 kHz). The tank's tones are square waves: laptop speakers can't play 90 Hz itself, but they do play its overtones. Its shot adds a short electric zap that falls from 1.2 kHz, below the stabbers. The presets are in `js/audio/SoundConfig.js`.
 
 A steady kick (four on the floor by default) and a sub-bass pulse keep time under everything. Without them, enemy hits are just sounds. With them, you can hear that the hits land on the beat. The kick's sound and pattern are in `CONFIG.BEAT_TRACK`.
 

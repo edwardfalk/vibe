@@ -70,12 +70,31 @@ export const SOUND_CONFIG = {
     duration: 0.08,
     frequencyVariationRange: 0.06,
   },
+  // The tank's shot: a nuclear boom (reverb tail via AMBIENT_SOUNDS) plus
+  // two zaps 3% apart, whose beating is the electric buzz. The zaps start at
+  // 1.2 kHz, below the stabbers' band, and fall fast
   tankEnergy: {
     frequency: 90,
     waveform: 'square',
-    volume: 0.7,
-    duration: 0.3,
-    sweep: { to: 40, curve: 'exponential' },
+    volume: 0.8,
+    duration: 0.7,
+    sweep: { to: 32, curve: 'exponential' },
+  },
+  tankZap: {
+    frequency: 1200,
+    waveform: 'sawtooth',
+    volume: 0.3,
+    duration: 0.45,
+    sweep: { to: 90, curve: 'exponential' },
+    frequencyVariationRange: 0.02, // keep the 3% detune against tankArc
+  },
+  tankArc: {
+    frequency: 1236,
+    waveform: 'square',
+    volume: 0.2,
+    duration: 0.4,
+    sweep: { to: 110, curve: 'exponential' },
+    frequencyVariationRange: 0.02,
   },
   stabAttack: {
     frequency: 2200,

@@ -107,7 +107,7 @@ export class Bullet {
       this.size = 5;
       this.damage = 1;
     } else if (owner === 'enemy-tank') {
-      this.size = 20;
+      this.size = 26;
       this.damage = 50;
       this.energy = 100;
       this.penetrating = true;
@@ -227,6 +227,23 @@ export class Bullet {
         );
       }
       p.endShape(p.CLOSE);
+
+      // Lightning bolts crackling out of the core, new each frame
+      p.blendMode(p.ADD);
+      p.noFill();
+      p.stroke(190, 140, 255, 230);
+      p.strokeWeight(1.5);
+      for (let bolt = 0; bolt < 4; bolt++) {
+        const ang = Math.random() * PI * 2;
+        const along = { x: cos(ang), y: sin(ang) };
+        p.beginShape();
+        for (let k = 0; k <= 5; k++) {
+          const r = this.size * (0.9 + k * 0.2);
+          const jag = k === 0 ? 0 : (Math.random() - 0.5) * this.size * 0.5;
+          p.vertex(along.x * r - along.y * jag, along.y * r + along.x * jag);
+        }
+        p.endShape();
+      }
     } else {
       // Standard enemy bullet - neon green line
       p.stroke(0, 255, 0, 200);

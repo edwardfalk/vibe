@@ -9,6 +9,7 @@ export const AMBIENT_SOUNDS = new Set([
   'gruntWhir',
   'gruntError',
   'gruntGlitch',
+  'tankEnergy', // the tank shot's boom: reverb and grit make it nuclear
 ]);
 
 export function resolveSoundSourcePosition(x, y, playerX, playerY) {

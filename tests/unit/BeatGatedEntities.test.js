@@ -182,11 +182,15 @@ describe('Beat-gated entity behaviour', () => {
     }
   });
 
-  it("tank's shot has a sound", () => {
+  it("tank's shot layers a nuclear boom and an electric zap", async () => {
+    const { AMBIENT_SOUNDS } =
+      await import('../../js/audio/AmbientSoundProfile.js');
     const { audio, context } = world();
     const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
     t.createBullet();
-    expect(audio.playSound).toHaveBeenCalledWith('tankEnergy', 100, 100);
+    const played = audio.playSound.mock.calls.map(([name]) => name);
+    expect(played).toEqual(['tankEnergy', 'tankZap', 'tankArc']);
+    expect(AMBIENT_SOUNDS.has('tankEnergy')).toBe(true); // reverb tail
   });
 
   it('tank tones are not pure sines (inaudible on laptop speakers)', async () => {
