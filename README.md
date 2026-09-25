@@ -8,8 +8,6 @@ Enemies attack on the beat, and each type plays a different part of the drum kit
 
 ![Vibe gameplay](docs/media/demo.gif)
 
-<!-- CLIP: "Watch with sound" link goes here once the clip is uploaded -->
-
 ## Controls
 
 | Key                   | Action                  |
