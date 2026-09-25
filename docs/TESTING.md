@@ -1,58 +1,49 @@
 # Testing
 
-## Test Strategy
+## Suites
 
-- **Unit tests** (Vitest): fast, isolated tests for pure logic modules (math, beat clock, game state, contracts).
-- **E2E tests** (Playwright): probe-driven smoke tests against real runtime behavior in a headless browser.
-- Keep gameplay tests integrated (no mocked canvas/game loop for the e2e path).
-- Use `test-results/` artifacts on failure (screenshots + traces).
+| Suite                | Command              | What it covers                                                                                                                                         |
+| -------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Unit (Vitest)        | `pnpm run test:unit` | logic such as the beat clock, spawning and pacing, damage results, the bullet pool, beat-gated sounds, player fire                                     |
+| Browser (Playwright) | `pnpm run test:e2e`  | the real game in headless Chromium: title screen, input, combat, scoring, game over, mute, restart, and that the kick and enemy shots land on the beat |
+| Everything           | `pnpm run test`      | browser tests, then unit tests; this is what CI runs, after lint                                                                                       |
 
-## Commands
+Useful variants:
 
-- `pnpm run test` — run all tests (e2e + unit).
-- `pnpm run test:e2e` — run Playwright gameplay probes (auto-starts dev server via `playwright.config.js` webServer).
-- `pnpm run test:e2e:headed` — headed Playwright run for visual debugging.
-- `pnpm run test:e2e:debug` — Playwright debug mode with inspector.
-- `pnpm run test:unit` — run Vitest unit tests.
-- `pnpm run test:unit:watch` — run Vitest in watch mode during development.
+- `pnpm run test:unit:watch` reruns unit tests as you edit.
+- `pnpm run test:e2e:headed` shows the browser; `pnpm run test:e2e:debug` opens the Playwright inspector.
+- `npx vitest run tests/unit/BeatClock.test.js` runs one unit file.
 
-## E2E Gameplay Probes
+The browser tests start their own server on port 5500, or reuse a dev server that's already running there. The first time, install the browser with `npx playwright install chromium`.
 
-1. **Liveness probe** — player alive, enemies present.
-2. **Game loop advances** — frame count increases, entities persist.
-3. **Collision diagnostics API** — `window.collisionSystem.getPerformanceSnapshot()` returns valid structure.
-4. **Title screen** — game holds on `#title` until a key or click (not modifiers), the starting key does nothing else, and mouse aim maps correctly on the CSS-scaled canvas.
-5. **Game state playing** — `gameState.gameState === 'playing'` after boot.
-6. **Player input** — W key moves player upward (y decreases).
-7. **Enemy lifecycle cleanup** — enemies marked for removal are cleaned from active arrays.
-8. **Game-over flow** — explosion damage can transition runtime to `gameOver`.
-9. **All enemy types combat** — spawn, damage, and kill grunt/rusher/tank/stabber; draw loop survives.
-10. **Bullet collision scoring** — bullet hit kills enemy, awards score and kill count.
-11. **Stabber attack handler** — stabber update loop runs 30 frames without crash.
-12. **Score + kill streak transitions** — state counters update and reset consistently.
-13. **Mute** — M zeroes both the sound-effects and beat-track gains, shows a toast, and restores them.
-14. **Click to start** — the starting click does not also fire a shot.
-15. **Restart** — R after game over goes straight back into play, not the title screen.
+## Dev tools
 
-## Unit Tests
+These run through Playwright too. They're for measuring and looking, so CI doesn't run them:
 
-| Module                                | Test file                         | Coverage                                                |
-| ------------------------------------- | --------------------------------- | ------------------------------------------------------- |
-| `js/mathUtils.js`                     | `tests/unit/mathUtils.test.js`    | random, lerp, mapRange, constrain, dist, normalizeAngle |
-| `js/audio/BeatClock.js`               | `tests/unit/BeatClock.test.js`    | BPM, beat phases, timing checks, tempo changes          |
-| `js/core/GameState.js`                | `tests/unit/GameState.test.js`    | Score, kills, levels, state transitions, restart        |
-| `js/core/GameContext.js`              | `tests/unit/GameContext.test.js`  | get/set/assign, initialization, toObject                |
-| `js/shared/contracts/DamageResult.js` | `tests/unit/DamageResult.test.js` | normalizeDamageResult, isEnemyDeadResult                |
+- `pnpm run playtest`: a bot plays and reports frame rate and pacing.
+- `pnpm run screenshot`: screenshots of a running game.
+- `pnpm run test:beats`: records when enemies act and checks each lands on its beat.
 
-## Configuration
+The Playwright config has four projects (`e2e`, `playtest`, `screenshot`, `beats`). The scripts always pick one. A bare `npx playwright test` runs all four.
 
-- **Playwright**: `playwright.config.js` — webServer auto-start, screenshots on failure, trace on failure.
-- **Vitest**: `vitest.config.js` — scoped to `tests/unit/`.
+## Listing the tests
 
-## Refactor Regression Gate
+Rather than a copied list that goes stale:
 
-After each structural refactor wave:
+```bash
+npx playwright test --list --project=e2e
+ls tests/unit
+```
 
-1. `pnpm run test` (all tests)
-2. `pnpm run lint`
-3. Verify `docs/NO_REGRESSION_CHECKLIST.md` items.
+## Manual checklist
+
+Before merging a larger change, also check by hand:
+
+- [ ] `pnpm run test` passes.
+- [ ] `pnpm run lint` passes.
+- [ ] The game boots in a browser.
+- [ ] Player input works: WASD, shooting, arrow-key aim.
+- [ ] Enemies spawn, take damage, die and are cleaned up.
+- [ ] Score and kill streak update on kills and when you take damage.
+- [ ] Bombs and area damage still knock back and can end the game.
+- [ ] `window.collisionSystem.getPerformanceSnapshot()` still returns data.

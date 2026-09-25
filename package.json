@@ -1,7 +1,7 @@
 {
   "name": "vibe-game",
   "version": "2.0.0",
-  "description": "A p5.js geometric space shooter survival game with procedural graphics",
+  "description": "Browser space shooter where every enemy is an instrument — the soundtrack is the fight",
   "type": "module",
   "packageManager": "pnpm@12.6.0",
   "scripts": {
