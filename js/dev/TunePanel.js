@@ -67,6 +67,7 @@ export function createTunePanel() {
   levelUp.onclick = () => {
     const gs = window.gameState;
     if (gs?.gameState === 'playing') {
+      gs.practiceRun = true; // fake points must not become a high score
       gs.addScore(gs.nextLevelThreshold - gs.score);
     }
     levelUp.blur();
