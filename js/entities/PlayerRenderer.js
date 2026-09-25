@@ -112,9 +112,11 @@ export function drawPlayer(p, player) {
     p.pop();
   }
 
-  // Head: bare, in space. Buzz cut and shades are all the protection he needs
-  const headY = -s * 0.26;
-  const headD = s * 0.36;
+  // Head: bare, in space. Buzz cut and black shades are all the protection
+  // he needs. Drawn big so the look reads in play; features scale with it.
+  const headD = s * 0.5;
+  const headY = -s * 0.33;
+  const u = headD / 10; // one tenth of the head
   p.fill(player.skinColor);
   p.ellipse(0, headY, headD);
 
@@ -122,32 +124,23 @@ export function drawPlayer(p, player) {
   p.fill(60, 40, 25);
   p.arc(0, headY, headD, headD, p.PI + 0.35, p.TWO_PI - 0.35, p.CHORD);
 
-  // Shades: two dark lenses on a bridge, wider than the face, each with a
-  // neon glint (the HUD cyan)
-  const lensW = headD * 0.46;
-  const lensH = s * 0.09;
-  const lensY = headY - s * 0.01;
-  p.fill(5, 5, 12);
-  p.rect(
-    -lensW - s * 0.01,
-    lensY,
-    lensW,
-    lensH,
-    s * 0.02,
-    s * 0.02,
-    s * 0.04,
-    s * 0.04
-  );
-  p.rect(s * 0.01, lensY, lensW, lensH, s * 0.02, s * 0.02, s * 0.04, s * 0.04);
-  p.rect(-s * 0.02, lensY + s * 0.01, s * 0.04, s * 0.02); // bridge
-  p.fill(0, 255, 255, 220);
-  p.rect(-lensW + s * 0.01, lensY + s * 0.015, lensW * 0.35, s * 0.018);
-  p.rect(s * 0.03, lensY + s * 0.015, lensW * 0.35, s * 0.018);
+  // Black shades: two lenses on a bridge, wider than the face
+  const lensW = 4.6 * u;
+  const lensH = 2.4 * u;
+  const lensY = headY - 0.6 * u;
+  p.fill(0);
+  p.rect(-lensW - 0.3 * u, lensY, lensW, lensH, 0.6 * u, 0.6 * u, u, u);
+  p.rect(0.3 * u, lensY, lensW, lensH, 0.6 * u, 0.6 * u, u, u);
+  p.rect(-0.6 * u, lensY + 0.3 * u, 1.2 * u, 0.6 * u); // bridge
+  // A small white highlight on each lens
+  p.fill(255, 255, 255, 190);
+  p.rect(-lensW + 0.5 * u, lensY + 0.4 * u, 1.4 * u, 0.5 * u);
+  p.rect(1.1 * u, lensY + 0.4 * u, 1.4 * u, 0.5 * u);
 
   // A smirk
   p.stroke(120, 60, 50);
   p.strokeWeight(1);
-  p.line(-s * 0.02, headY + s * 0.11, s * 0.06, headY + s * 0.09);
+  p.line(-0.6 * u, headY + 2.8 * u, 1.8 * u, headY + 2.3 * u);
   p.noStroke();
 
   drawPlayerDashEffect(p, s, {
