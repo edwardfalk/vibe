@@ -156,4 +156,46 @@ describe('Beat-gated entity behaviour', () => {
     const cfg = Object.create(Stabber.prototype).getAmbientSpeechConfig();
     expect(cfg.chance).toBeCloseTo((250 / 2000) * 0.2, 5);
   });
+
+  it('tank says CHARGING! when a charge starts on beat 1, and FIRE! 8 beats later', () => {
+    const { audio, context, at } = world();
+    const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
+    t.isSpawning = false;
+    t.spawnTimer = t.spawnDuration;
+    t._lastTankFireBeat = -100;
+    at(4000); // beat 1 of bar 3
+    t.updateSpecificBehavior(300, 100, 16);
+    expect(t.chargingShot).toBe(true);
+    expect(audio.speak).toHaveBeenCalledWith(t, 'CHARGING!', 'tank');
+    expect(audio.playSound).toHaveBeenCalledWith('tankCharging', 100, 100);
+    at(6000); // beat 1, four beats in: the tone, not the line
+    t.updateSpecificBehavior(300, 100, 16);
+    expect(
+      audio.speak.mock.calls.some(([, line]) => line === 'POWER UP!')
+    ).toBe(false);
+    at(8000); // beat 1, two bars in: the charge is done
+    t.updateSpecificBehavior(300, 100, 16);
+    expect(audio.speak).toHaveBeenCalledWith(t, 'FIRE!', 'tank');
+  });
+
+  it("tank's shot has a sound", () => {
+    const { audio, context } = world();
+    const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
+    t.createBullet();
+    expect(audio.playSound).toHaveBeenCalledWith('tankEnergy', 100, 100);
+  });
+
+  it('tank tones are not pure sines (inaudible on laptop speakers)', async () => {
+    const { SOUND_CONFIG } = await import('../../js/audio/SoundConfig.js');
+    for (const name of [
+      'tankEnergy',
+      'tankCharging',
+      'tankPower',
+      'tankPowerUp',
+      'tankHit',
+      'tankResponse',
+    ]) {
+      expect(SOUND_CONFIG[name].waveform, name).not.toBe('sine');
+    }
+  });
 });

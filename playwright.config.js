@@ -1,5 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
+// PORT=5502 pnpm run test:e2e keeps clear of a dev server on 5500
+const PORT = process.env.PORT || 5500;
+
 const TOOL = { retries: 0, use: { trace: 'off', screenshot: 'off' } };
 
 // One config, four projects: the E2E suite (CI) and three dev tools.
@@ -12,7 +15,7 @@ export default defineConfig({
   reporter: 'list',
 
   use: {
-    baseURL: 'http://localhost:5500',
+    baseURL: `http://localhost:${PORT}`,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },
@@ -36,8 +39,8 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'node_modules/.bin/five-server --port=5500 --open=false',
-    port: 5500,
+    command: `node_modules/.bin/five-server --port=${PORT} --open=false`,
+    port: Number(PORT),
     reuseExistingServer: !process.env.CI,
     timeout: 15000,
   },

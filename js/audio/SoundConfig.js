@@ -72,7 +72,7 @@ export const SOUND_CONFIG = {
   },
   tankEnergy: {
     frequency: 90,
-    waveform: 'sine',
+    waveform: 'square',
     volume: 0.7,
     duration: 0.3,
     sweep: { to: 40, curve: 'exponential' },
@@ -125,7 +125,7 @@ export const SOUND_CONFIG = {
   },
   tankCharging: {
     frequency: 70,
-    waveform: 'sine',
+    waveform: 'square',
     volume: 0.4,
     duration: 0.8,
     tremolo: true,
@@ -133,7 +133,7 @@ export const SOUND_CONFIG = {
   },
   tankPower: {
     frequency: 80,
-    waveform: 'sine',
+    waveform: 'square',
     volume: 0.5,
     duration: 0.3,
     sweep: { to: 35, curve: 'exponential' },
@@ -173,7 +173,7 @@ export const SOUND_CONFIG = {
   enemyIdle: { frequency: 200, waveform: 'sine', volume: 0.2, duration: 0.8 },
   tankPowerUp: {
     frequency: 60,
-    waveform: 'sine',
+    waveform: 'square',
     volume: 0.5,
     duration: 0.4,
     tremolo: true,
@@ -259,8 +259,7 @@ export const SOUND_CONFIG = {
   },
   tankHit: {
     frequency: 55,
-    type: 'sine',
-    waveform: 'sine',
+    waveform: 'square',
     volume: 0.35,
     duration: 0.2,
   },
@@ -333,8 +332,7 @@ export const SOUND_CONFIG = {
   },
   tankResponse: {
     frequency: 70,
-    type: 'sine',
-    waveform: 'sine',
+    waveform: 'square',
     volume: 0.3,
     duration: 0.3,
   },

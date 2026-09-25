@@ -161,22 +161,14 @@ class Tank extends BaseEnemy {
         if (audioTank) audioTank.playSound('tankPower', this.x, this.y);
       }
 
-      // Speech milestones based on beat progress
+      // Power-up tone four beats into the charge. No line here: "CHARGING!"
+      // and "FIRE!" 4 s apart both clear the shared speech cooldown
       if (
-        beatsSinceCharge >= 1 &&
-        beatsSinceCharge < 2 &&
-        audioTank &&
-        this.onBeatOnce(beatClock, 'chargeMilestone', beatClock.isOnBeat([1]))
-      ) {
-        audioTank.speak(this, 'CHARGING!', 'tank');
-        audioTank.playSound('tankCharging', this.x, this.y);
-      } else if (
         beatsSinceCharge >= 4 &&
         beatsSinceCharge < 5 &&
         audioTank &&
         this.onBeatOnce(beatClock, 'chargeMilestone', beatClock.isOnBeat([1]))
       ) {
-        audioTank.speak(this, 'POWER UP!', 'tank');
         audioTank.playSound('tankPowerUp', this.x, this.y);
       }
 
@@ -205,6 +197,10 @@ class Tank extends BaseEnemy {
       ) {
         this.chargingShot = true;
         this.chargeStartBeat = beatClock.getTotalBeats();
+        if (audioTank) {
+          audioTank.speak(this, 'CHARGING!', 'tank');
+          audioTank.playSound('tankCharging', this.x, this.y);
+        }
 
         // Telegraph the upcoming fire
         if (rhythmFX) {
@@ -466,6 +462,8 @@ class Tank extends BaseEnemy {
       'enemy-tank'
     );
     if (!bullet) return null;
+    const audio = this.getContextValue('audio');
+    if (audio) audio.playSound('tankEnergy', this.x, this.y);
     bullet.ownerId = this.id; // Track which tank fired this
     return bullet;
   }
