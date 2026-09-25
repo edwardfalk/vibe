@@ -79,16 +79,9 @@ export function runSetup(p, arrays, syncContext = null) {
     );
   }
   window.backgroundRenderer.createParallaxBackground(p);
-  const backgroundLayers = window.backgroundRenderer.parallaxLayers ?? [];
 
   if (!window.visualEffectsManager) {
-    window.visualEffectsManager = new VisualEffectsManager(
-      backgroundLayers,
-      gameContext
-    );
-  } else {
-    window.visualEffectsManager.backgroundLayers = backgroundLayers;
-    window.visualEffectsManager.context = gameContext;
+    window.visualEffectsManager = new VisualEffectsManager();
   }
 
   if (!window.audio) {

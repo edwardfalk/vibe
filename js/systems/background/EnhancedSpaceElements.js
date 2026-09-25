@@ -7,7 +7,7 @@ const SPARKLE_COLORS = [
 let cachedGalaxy = null;
 let cachedStream = null;
 
-export function initEnhancedCaches(p) {
+function initEnhancedCaches(p) {
   if (!cachedGalaxy) {
     const maxSize = 75;
     const canvasSize = maxSize * 2;

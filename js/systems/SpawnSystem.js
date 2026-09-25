@@ -229,17 +229,4 @@ export class SpawnSystem {
     this.lastSpawnBeat = -Infinity;
     this.previewed.clear();
   }
-
-  // Force spawn specific enemy type (for testing)
-  forceSpawn(enemyType, x, y) {
-    const enemies = this.getContextValue('enemies');
-    if (!enemies) return null;
-
-    const p = this.getContextValue('p') ?? this.context?.get?.('p');
-    const enemy = this.enemyFactory.createEnemy(x, y, enemyType, p);
-    if (!enemy) return null;
-    enemies.push(enemy);
-
-    return enemy;
-  }
 }

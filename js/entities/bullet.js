@@ -299,11 +299,6 @@ export class Bullet {
     return distance < threshold;
   }
 
-  destroy() {
-    this.active = false;
-    Bullet.release(this);
-  }
-
   // Check if bullet is off screen
   isOffScreen() {
     // Use centralized world bounds check

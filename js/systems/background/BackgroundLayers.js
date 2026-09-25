@@ -8,7 +8,7 @@ import { floor, random, randomRange } from '../../mathUtils.js';
 
 // ─── BeatReactiveBackground ───────────────────────────────────────────────────
 
-export function computeMediumStarVisual(
+function computeMediumStarVisual(
   star,
   starIndex,
   frameCount,

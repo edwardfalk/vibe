@@ -818,14 +818,6 @@ export class Audio {
     return this.enabled;
   }
 
-  // Compatibility methods
-  updateSpeechBubbles() {
-    this.updateTexts();
-  }
-  drawSpeechBubbles() {
-    this.drawTexts(this.p);
-  }
-
   // ========================================================================
   // UPDATE METHOD - Called every frame
   // ========================================================================

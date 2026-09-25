@@ -46,43 +46,6 @@ export function handleContactCollisions({
   return false;
 }
 
-export function handleStabberAttackCollision({
-  attack,
-  stabber,
-  player,
-  audio,
-  gameState,
-  cameraSystem,
-  explosionManager,
-}) {
-  if (!player) return;
-
-  const distance = sqrt(
-    (player.x - stabber.x) ** 2 + (player.y - stabber.y) ** 2
-  );
-
-  if (distance > attack.range + 10) {
-    return;
-  }
-
-  audio?.playPlayerHit?.();
-  audio?.playStabberAttack?.(stabber.x, stabber.y);
-  gameState?.resetKillStreak?.();
-
-  if (player.takeDamage(attack.damage, 'stabber-legacy')) {
-    gameState?.setGameState?.('gameOver');
-    return;
-  }
-
-  const knockbackAngle = atan2(player.y - stabber.y, player.x - stabber.x);
-  const knockbackForce = 8;
-  player.velocity.x += cos(knockbackAngle) * knockbackForce;
-  player.velocity.y += sin(knockbackAngle) * knockbackForce;
-
-  cameraSystem?.addShake?.(10, 20);
-  explosionManager?.addExplosion?.(player.x, player.y, 'hit');
-}
-
 export function handleRusherExplosionCollision({
   explosion,
   rusherEnemy,

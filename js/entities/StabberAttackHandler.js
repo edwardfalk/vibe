@@ -294,7 +294,7 @@ function handleNormalMovement(stabber, dx, dy, distance) {
 }
 
 /** Check if stab hit player or other enemies during dash. */
-export function checkStabHit(stabber, playerX, playerY) {
+function checkStabHit(stabber, playerX, playerY) {
   const audioHit = stabber.getContextValue('audio');
   const enemies = stabber.getContextValue('enemies') ?? [];
 

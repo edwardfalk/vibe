@@ -20,7 +20,6 @@ import {
 import {
   handleContactCollisions,
   handleRusherExplosionCollision,
-  handleStabberAttackCollision,
 } from './combat/PlayerContactHandlers.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import {
@@ -247,19 +246,6 @@ export class CollisionSystem {
   // Handle enemy death effects
   handleEnemyDeath(enemy, enemyType, x, y) {
     this.enemyDeathHandler.handleEnemyDeath(enemy, enemyType, x, y);
-  }
-
-  // Handle stabber attack collision
-  handleStabberAttack(attack, stabber) {
-    handleStabberAttackCollision({
-      attack,
-      stabber,
-      player: this.getContextValue('player'),
-      audio: this.getContextValue('audio'),
-      gameState: this.getContextValue('gameState'),
-      cameraSystem: this.getContextValue('cameraSystem'),
-      explosionManager: this.getContextValue('explosionManager'),
-    });
   }
 
   // Handle rusher explosion collision
