@@ -1,10 +1,14 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { random, sqrt, sin, cos, ceil } from '../mathUtils.js';
+import { random, sqrt, sin, min } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 // Per attempt once the speech timer is up (= today's effective rate)
 const RUSHER_SPEECH_CHANCE = 0.03;
+
+// A lit rusher blows this long after its minimum fuse even if no beat 1 or 3
+// comes (a bar at 120 BPM, which has two)
+const FUSE_MAX_BEAT_WAIT_MS = 2000;
 
 const RUSHER_LINES = [
   'KAMIKAZE TIME!',
@@ -21,7 +25,8 @@ const RUSHER_LINES = [
 
 /**
  * Rusher class - Suicide bomber mechanics
- * Two-stage system: battle cry at distance, explosion when close, enhanced explosion effects
+ * Battle cry and charge when near; shot or at point-blank, it brakes to a stop
+ * and explodes on beat 1 or 3 once the fuse has burnt (CONFIG.RUSHER)
  */
 class Rusher extends BaseEnemy {
   constructor(x, y, type, config, p, audio) {
@@ -37,27 +42,59 @@ class Rusher extends BaseEnemy {
     this.p = p;
     this.audio = audio;
 
-    // Rusher explosion system
-    this.exploding = false;
-    this.explosionTimer = 0;
-    this.maxExplosionTime = 90; // 1.5 second warning at 60fps
-    this.explosionRadius = 120; // INCREASED: Bigger explosion radius for more mayhem
-    this.maxExplosionRadius = 120; // ADD: Maximum explosion radius for termination check
     this.hasScreamed = false;
-    this.shotTriggered = false; // Track if explosion was triggered by being shot
     this.chargeDistance = 150; // Distance to start battle cry and charge
-    this.explodeDistance = 50; // Distance to actually explode
-    this.isCharging = false; // Track if currently charging
+    this.explodeDistance = 50; // Distance that lights the fuse unshot
 
-    // Vibrate state - hold between proximity trigger and beat-aligned explosion
+    // Lit fuse: shot or close enough, the rusher brakes and waits for the
+    // blast (CONFIG.RUSHER)
     this.vibrating = false;
-    this.vibrateStartTime = 0;
+    this.fuseMs = 0;
   }
 
-  get effectiveExplosionTime() {
-    return this.shotTriggered
-      ? this.maxExplosionTime * 0.5
-      : this.maxExplosionTime;
+  /** 0 when lit, 1 once FUSE_MIN_MS has burnt (it then waits for the beat) */
+  get fuseProgress() {
+    const { FUSE_MIN_MS } = CONFIG.RUSHER;
+    return FUSE_MIN_MS > 0 ? min(this.fuseMs / FUSE_MIN_MS, 1) : 1;
+  }
+
+  lightFuse() {
+    this.vibrating = true;
+    this.fuseMs = 0;
+
+    const rhythmFX = this.getContextValue('rhythmFX');
+    if (rhythmFX) {
+      rhythmFX.addAttackTelegraph(this.x, this.y, 'rusher', 0.5);
+    }
+  }
+
+  /**
+   * Brake to a stop, then explode on the first beat 1 or 3 after the
+   * minimum fuse
+   */
+  burnFuse(deltaTimeMs) {
+    const { FUSE_MIN_MS, BRAKE, EXPLOSION_RADIUS, EXPLOSION_DAMAGE } =
+      CONFIG.RUSHER;
+    this.fuseMs += deltaTimeMs;
+
+    const keep = BRAKE ** (deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS);
+    this.velocity.x *= keep;
+    this.velocity.y *= keep;
+
+    if (this.fuseMs < FUSE_MIN_MS) return null;
+    const beatClock = this.getContextValue('beatClock');
+    const onBeat = !beatClock || beatClock.canRusherExplode();
+    if (!onBeat && this.fuseMs < FUSE_MIN_MS + FUSE_MAX_BEAT_WAIT_MS) {
+      return null;
+    }
+
+    return {
+      type: 'rusher-explosion',
+      x: this.x,
+      y: this.y,
+      radius: EXPLOSION_RADIUS,
+      damage: EXPLOSION_DAMAGE,
+    };
   }
 
   /**
@@ -67,126 +104,58 @@ class Rusher extends BaseEnemy {
    * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
    */
   updateSpecificBehavior(playerX, playerY, deltaTimeMs) {
+    if (this.vibrating) return this.burnFuse(deltaTimeMs);
+
     const dx = playerX - this.x;
     const dy = playerY - this.y;
     const distance = sqrt(dx * dx + dy * dy);
 
-    // Update deltaTime-based timers
-    const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS; // Normalize to 60fps baseline
-
-    // Vibrate state handler - waiting for beat to explode
-    if (this.vibrating) {
-      this.vibrateStartTime += deltaTimeMs;
-
-      const beatClock = this.getContextValue('beatClock');
-      if (beatClock && beatClock.canRusherExplode()) {
-        this.vibrating = false;
-        this.exploding = true;
-        this.explosionTimer = 0;
-        this.maxExplosionTime = 0; // explode on the frame after the beat, not 5 frames later
-      }
-
-      // Safety: explode if vibrated too long or no beatClock
-      if (this.vibrating && (!beatClock || this.vibrateStartTime > 2000)) {
-        this.vibrating = false;
-        this.exploding = true;
-        this.explosionTimer = 0;
-        this.maxExplosionTime = 5;
-      }
-
+    if (distance <= this.explodeDistance) {
+      this.lightFuse();
+      const audio = this.getContextValue('audio') || this.audio;
+      if (audio) audio.playRusherCharge(this.x, this.y);
       return null;
     }
 
-    if (this.exploding) {
-      // Explosion countdown using deltaTime
-      this.explosionTimer += dt;
+    const unitX = dx / distance;
+    const unitY = dy / distance;
 
-      // Check if explosion should occur
-      if (this.explosionTimer >= this.effectiveExplosionTime) {
-        // Create explosion
-        return {
-          type: 'rusher-explosion',
-          x: this.x,
-          y: this.y,
-          radius: this.explosionRadius,
-          damage: 35,
-        };
-      }
+    if (distance <= this.chargeDistance) {
+      // Battle cry and charge sequence
+      if (!this.hasScreamed) {
+        this.hasScreamed = true;
 
-      // Continue moving toward player while exploding (slightly slower)
-      if (distance > 0) {
-        const unitX = dx / distance;
-        const unitY = dy / distance;
-        this.velocity.x = unitX * this.speed * 0.3; // Much slower while exploding
-        this.velocity.y = unitY * this.speed * 0.3;
-      }
-    } else {
-      // Normal movement behavior
-      this.velocity.x = 0;
-      this.velocity.y = 0;
+        // Rusher scream with audio
+        const audio = this.getContextValue('audio') || this.audio;
+        const beatClock = this.getContextValue('beatClock');
+        if (audio) {
+          const battleCries = [
+            'INCOMING!',
+            'BOOM!',
+            'KAMIKAZE!',
+            'WHEEE!',
+            'YOLO!',
+            "CAN'T STOP!",
+            'EXPLOSIVE DIARRHEA!',
+            'LEEROY JENKINS!',
+            'KAMIKAZE PIZZA PARTY!',
+          ];
+          const battleCry = random(battleCries);
+          audio.speak(this, battleCry, 'rusher');
 
-      if (distance > 0) {
-        const unitX = dx / distance;
-        const unitY = dy / distance;
-
-        if (distance <= this.explodeDistance) {
-          // Close enough - enter vibrate state, wait for beat to explode
-          this.vibrating = true;
-          this.vibrateStartTime = 0;
-          this.speed = 0; // Stop moving
-
-          const audio = this.getContextValue('audio') || this.audio;
-          if (audio) audio.playRusherCharge(this.x, this.y);
-
-          // Register explosion telegraph
-          const rhythmFX = this.getContextValue('rhythmFX');
-          if (rhythmFX) {
-            rhythmFX.addAttackTelegraph(
-              this.x,
-              this.y,
-              'rusher',
-              0.2 // About to explode very soon
-            );
+          if (!beatClock || beatClock.canRusherCharge()) {
+            audio.playRusherCharge(this.x, this.y);
           }
-        } else if (distance <= this.chargeDistance) {
-          // Battle cry and charge sequence
-          if (!this.hasScreamed) {
-            this.hasScreamed = true;
-            this.isCharging = true;
-
-            // Rusher scream with audio
-            const audio = this.getContextValue('audio') || this.audio;
-            const beatClock = this.getContextValue('beatClock');
-            if (audio) {
-              const battleCries = [
-                'INCOMING!',
-                'BOOM!',
-                'KAMIKAZE!',
-                'WHEEE!',
-                'YOLO!',
-                "CAN'T STOP!",
-                'EXPLOSIVE DIARRHEA!',
-                'LEEROY JENKINS!',
-                'KAMIKAZE PIZZA PARTY!',
-              ];
-              const battleCry = random(battleCries);
-              audio.speak(this, battleCry, 'rusher');
-
-              if (!beatClock || beatClock.canRusherCharge()) {
-                audio.playRusherCharge(this.x, this.y);
-              }
-            }
-          }
-
-          // Charge at 50% speed boost
-          this.velocity.x = unitX * this.speed * 1.5;
-          this.velocity.y = unitY * this.speed * 1.5;
-        } else {
-          // Normal approach
-          this.velocity.x = unitX * this.speed;
-          this.velocity.y = unitY * this.speed;
         }
       }
+
+      // Charge at 50% speed boost
+      this.velocity.x = unitX * this.speed * 1.5;
+      this.velocity.y = unitY * this.speed * 1.5;
+    } else {
+      // Normal approach
+      this.velocity.x = unitX * this.speed;
+      this.velocity.y = unitY * this.speed;
     }
 
     return null;
@@ -209,10 +178,6 @@ class Rusher extends BaseEnemy {
       const pulse = this.p.sin(this.p.frameCount * 0.3) * 0.5 + 0.5;
       return this.p.color(255, 80 + pulse * 80, 50);
     }
-    if (this.exploding) {
-      const pulse = this.p.sin(this.p.frameCount * 0.5) * 0.5 + 0.5;
-      return this.p.color(255, 50 + pulse * 100, 50 + pulse * 100);
-    }
     return isSpeaking
       ? this.p.color(255, 150, 200)
       : this.p.color(255, 100, 150);
@@ -226,19 +191,11 @@ class Rusher extends BaseEnemy {
     let bobble = 0;
     let waddle = 0;
 
-    // Vibrating rusher — increasing intensity while waiting for beat
+    // Lit rusher shakes harder as the fuse burns down
     if (this.vibrating) {
-      const intensity = Math.min(this.vibrateStartTime / 1000, 1); // 0 to 1 over 1s
-      const shake = (2 + intensity * 4) * (Math.random() - 0.5);
+      const shake = (2 + this.fuseProgress * 6) * (Math.random() - 0.5);
       bobble += shake;
       waddle += shake * 0.7;
-    }
-
-    // Intense vibration for exploding rushers
-    if (this.exploding) {
-      const intensity = (this.explosionTimer / this.effectiveExplosionTime) * 8;
-      bobble += sin(this.p.frameCount * 0.8) * intensity;
-      waddle += cos(this.p.frameCount * 1.2) * intensity;
     }
 
     return { bobble, waddle };
@@ -289,103 +246,46 @@ class Rusher extends BaseEnemy {
    * Draw type-specific indicators
    */
   drawSpecificIndicators() {
-    if (this.vibrating || this.exploding) {
+    if (this.vibrating) {
       this.drawExplosionWarning();
     }
   }
 
   /**
-   * Draw explosion warning
+   * The blast's full reach, blinking faster and filling in as the fuse
+   * burns, so the player sees how far to run
    */
   drawExplosionWarning() {
-    const explosionPercent = this.explosionTimer / this.effectiveExplosionTime;
-    const pulse = sin(this.p.frameCount * 1.5) * 0.5 + 0.5;
-    const warningRadius = this.explosionRadius * (0.3 + explosionPercent * 0.7);
+    const radius = CONFIG.RUSHER.EXPLOSION_RADIUS;
+    const progress = this.fuseProgress;
+    const pulse = sin(this.fuseMs * (0.01 + progress * 0.03)) * 0.5 + 0.5;
 
-    // Outer warning circle - more intense if shot
-    const intensity = this.shotTriggered ? 150 : 100;
-    this.p.fill(255, 0, 0, 50 + pulse * intensity);
+    this.p.noFill();
+    this.p.stroke(255, 40, 40, 120 + pulse * 135);
+    this.p.strokeWeight(2);
+    this.p.ellipse(this.x, this.y, radius * 2);
+
     this.p.noStroke();
-    this.p.ellipse(this.x, this.y, warningRadius * 2);
-
-    // Inner danger zone
-    this.p.fill(255, 100, 0, 30 + pulse * 80);
-    this.p.ellipse(this.x, this.y, warningRadius * 1.2);
-
-    // Countdown text
-    this.p.fill(255, 255, 255);
-    this.p.textAlign(this.p.CENTER, this.p.CENTER);
-    this.p.textSize(12);
-    const countdown = ceil(
-      (this.effectiveExplosionTime - this.explosionTimer) / 60
-    );
-    this.p.text(countdown, this.x, this.y - this.size - 20);
-
-    // Add "SHOT!" text if triggered by shooting
-    if (this.shotTriggered) {
-      this.p.fill(255, 255, 0);
-      this.p.textSize(10);
-      this.p.text('SHOT!', this.x, this.y - this.size - 35);
-    }
+    this.p.fill(255, 60, 0, 25 + pulse * 50);
+    this.p.ellipse(this.x, this.y, radius * 2 * progress);
   }
 
   /**
    * Override takeDamage to handle explosion trigger
    */
-  takeDamage(amount, bulletAngle = null, damageSource = null) {
-    // Immune during explosion sequence — committed to exploding
-    if (this.vibrating || this.exploding) {
-      this.hitFlash = 8;
-      return DAMAGE_RESULT.EXPLODING;
-    }
+  takeDamage() {
+    this.hitFlash = 8;
+    // Lit, it is committed to exploding and ignores further hits
+    if (this.vibrating) return DAMAGE_RESULT.EXPLODING;
 
     const audio = this.getContextValue('audio');
     if (audio) {
       audio.playSound('rusherHit', this.x, this.y);
     }
 
-    // Rushers enter vibrate state when shot, then explode on beat
-    if (!this.exploding && !this.vibrating) {
-      this.vibrating = true;
-      this.vibrateStartTime = 0;
-      this.shotTriggered = true; // Mark as shot-triggered
-      this.speed = 0; // Stop moving
-
-      // Just set hit flash for visual feedback, don't apply damage yet
-      // The rusher will be removed when explosion timer completes
-      this.hitFlash = 8;
-
-      // Register explosion telegraph when shot
-      const rhythmFX = this.getContextValue('rhythmFX');
-      if (rhythmFX) {
-        rhythmFX.addAttackTelegraph(
-          this.x,
-          this.y,
-          'rusher',
-          0.5 // Exploding very soon (shot-triggered is faster)
-        );
-      }
-
-      // Return special flag so pipeline keeps entity for explosion
-      return DAMAGE_RESULT.EXPLODING;
-    }
-
-    // Apply normal damage
-    return super.takeDamage(amount, bulletAngle, damageSource);
-  }
-
-  /**
-   * Override update to pass deltaTimeMs to specific behavior
-   */
-  update(playerX, playerY, deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
-    // Call specific behavior first, then parent update
-    const behaviorResult = this.updateSpecificBehavior(
-      playerX,
-      playerY,
-      deltaTimeMs
-    );
-    const baseUpdateResult = super.update(playerX, playerY, deltaTimeMs);
-    return behaviorResult != null ? behaviorResult : baseUpdateResult;
+    // Shot: light the fuse; the pipeline keeps it until the blast
+    this.lightFuse();
+    return DAMAGE_RESULT.EXPLODING;
   }
 
   /**

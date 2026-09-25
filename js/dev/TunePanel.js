@@ -1,7 +1,8 @@
 /**
- * Live tuning panel for CONFIG.BEAT_TRACK and CONFIG.PACING, shown when the
- * URL has ?tune. Sound and spawn changes apply from the next beat or wave;
- * level thresholds from the next level-up (the first one after a restart).
+ * Live tuning panel for CONFIG.BEAT_TRACK, PACING, MIX and RUSHER, shown when
+ * the URL has ?tune. Sound and spawn changes apply from the next beat or wave;
+ * level thresholds from the next level-up (the first one after a restart);
+ * rusher changes at once.
  * To keep a setting, copy the JSON at the bottom into js/config.js.
  */
 
@@ -13,6 +14,7 @@ import { CONFIG } from '../config.js';
 const KICK = 'BEAT_TRACK.KICK';
 const PACING = 'PACING';
 const MIX = 'MIX';
+const RUSHER = 'RUSHER';
 const KNOBS = [
   [KICK, 'ENABLED'],
   [KICK, 'PATTERN', ['four', 'oneThree']],
@@ -43,6 +45,10 @@ const KNOBS = [
   [MIX, 'DUCK_SFX_DB', [-24, 0, 1]],
   [MIX, 'DUCK_BEAT_DB', [-24, 0, 1]],
   [MIX, 'DUCK_RELEASE_SEC', [0.05, 1.5, 0.05]],
+  [RUSHER, 'FUSE_MIN_MS', [0, 3000, 100]],
+  [RUSHER, 'BRAKE', [0, 0.99, 0.01]],
+  [RUSHER, 'EXPLOSION_RADIUS', [60, 300, 10]],
+  [RUSHER, 'EXPLOSION_DAMAGE', [5, 100, 5]],
 ];
 
 const resolve = (path) => path.split('.').reduce((obj, k) => obj[k], CONFIG);
@@ -77,9 +83,9 @@ export function createTunePanel() {
   const json = document.createElement('pre');
   json.style.cssText = 'white-space:pre-wrap;color:#0ff;margin:8px 0 0;';
   const showJson = () => {
-    const { BEAT_TRACK, PACING: pacing, MIX: mix } = CONFIG;
+    const { BEAT_TRACK, PACING: pacing, MIX: mix, RUSHER: rusher } = CONFIG;
     json.textContent = JSON.stringify(
-      { BEAT_TRACK, PACING: pacing, MIX: mix },
+      { BEAT_TRACK, PACING: pacing, MIX: mix, RUSHER: rusher },
       null,
       2
     );

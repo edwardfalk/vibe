@@ -4,8 +4,9 @@
  */
 
 import { random } from '../../mathUtils.js';
+import { CONFIG } from '../../config.js';
 
-/** @typedef {{ particleCount: number, flashIntensity: number, maxTimer: number, hasShockwave: boolean, maxShockwaveRadius: number, hasArmorFragments: boolean, hasEnergyRings: boolean, hasEnergyDischarge: boolean }} ExplosionTypeConfig */
+/** @typedef {{ particleCount: number, flashIntensity: number, maxTimer: number, hasShockwave: boolean, maxShockwaveRadius: number, fireballRadius: number, hasArmorFragments: boolean, hasEnergyRings: boolean, hasEnergyDischarge: boolean }} ExplosionTypeConfig */
 /** @typedef {{ vxRange: [number, number], vyRange: [number, number], sizeRange: [number, number], lifeRange: [number, number] }} ParticleParams */
 
 const DEFAULT_PARTICLE_PARAMS = {
@@ -23,8 +24,8 @@ const PARTICLE_PARAMS_BY_TYPE = {
     lifeRange: [50, 70],
   },
   'rusher-explosion': {
-    vxRange: [-8, 8],
-    vyRange: [-8, 8],
+    vxRange: [-10, 10],
+    vyRange: [-10, 10],
     sizeRange: [6, 18],
     lifeRange: [40, 80],
   },
@@ -170,7 +171,12 @@ export function getExplosionConfig(type) {
     type === 'rusher-explosion' ||
     type === 'tank-plasma' ||
     type === 'tank-plasma-kill';
-  const maxShockwaveRadius = type === 'rusher-explosion' ? 120 : 60;
+  const isRusherBlast = type === 'rusher-explosion';
+  // The rusher's shockwave and fireball show exactly how far it hurts
+  const maxShockwaveRadius = isRusherBlast
+    ? CONFIG.RUSHER.EXPLOSION_RADIUS
+    : 60;
+  const fireballRadius = isRusherBlast ? CONFIG.RUSHER.EXPLOSION_RADIUS : 0;
 
   let particleCount = 3;
   let flashIntensity = 0;
@@ -184,10 +190,10 @@ export function getExplosionConfig(type) {
     particleCount = 15;
     flashIntensity = 0.3;
     maxTimer = 50;
-  } else if (type === 'rusher-explosion') {
-    particleCount = 25;
+  } else if (isRusherBlast) {
+    particleCount = 60;
     flashIntensity = 0.4;
-    maxTimer = 50;
+    maxTimer = 60;
   } else if (type === 'grunt-bullet-kill') {
     particleCount = 3;
   } else if (type === 'grunt-plasma-kill') {
@@ -226,6 +232,7 @@ export function getExplosionConfig(type) {
     maxTimer,
     hasShockwave,
     maxShockwaveRadius,
+    fireballRadius,
     hasArmorFragments,
     hasEnergyRings,
     hasEnergyDischarge,

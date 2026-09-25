@@ -33,7 +33,7 @@ function handleRusherExplosionResult(result, enemy, context) {
   }
 
   if (cameraSystem) {
-    cameraSystem.addShake(18, 30);
+    cameraSystem.addShake(28, 40);
   }
 
   if (enemy) enemy.markedForRemoval = true;
