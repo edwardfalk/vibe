@@ -181,4 +181,28 @@ describe('Rusher fuse', () => {
     strongBeat = true;
     expect(runFrames(1).result?.type).toBe('rusher-explosion');
   });
+
+  it('a second shot does not restart the fuse', () => {
+    rusher.takeDamage(1, 0, 'player_bullet');
+    runFrames(30);
+    const burnt = rusher.fuseMs;
+
+    rusher.takeDamage(1, 0, 'player_bullet');
+    expect(rusher.fuseMs).toBe(burnt);
+  });
+
+  it('lights its own fuse at point-blank, unshot', () => {
+    rusher.update(rusher.x + 30, rusher.y, FRAME_MS);
+
+    expect(rusher.vibrating).toBe(true);
+    expect(mockAudio.playRusherCharge).toHaveBeenCalled();
+  });
+
+  it('explodes anyway if no beat 1 or 3 ever comes', () => {
+    beatClock = { canRusherExplode: () => false };
+    rusher.takeDamage(1, 0, 'player_bullet');
+
+    const limitFrames = (CONFIG.RUSHER.FUSE_MIN_MS + 2000) / FRAME_MS;
+    expect(runFrames(limitFrames + 2).result?.type).toBe('rusher-explosion');
+  });
 });

@@ -172,7 +172,7 @@ export function getExplosionConfig(type) {
     type === 'tank-plasma' ||
     type === 'tank-plasma-kill';
   const isRusherBlast = type === 'rusher-explosion';
-  // The rusher's shockwave and fireball show exactly how far it hurts
+  // Sized to the rusher's blast; the fireball shows how far it hurts
   const maxShockwaveRadius = isRusherBlast
     ? CONFIG.RUSHER.EXPLOSION_RADIUS
     : 60;

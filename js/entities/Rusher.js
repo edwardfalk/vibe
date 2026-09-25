@@ -63,8 +63,11 @@ class Rusher extends BaseEnemy {
     this.fuseMs = 0;
 
     const rhythmFX = this.getContextValue('rhythmFX');
-    if (rhythmFX) {
-      rhythmFX.addAttackTelegraph(this.x, this.y, 'rusher', 0.5);
+    const beatClock = this.getContextValue('beatClock');
+    if (rhythmFX && beatClock) {
+      // The blast comes on the strong beat after the minimum fuse
+      const beatsUntil = CONFIG.RUSHER.FUSE_MIN_MS / beatClock.beatInterval + 1;
+      rhythmFX.addAttackTelegraph(this.x, this.y, 'rusher', beatsUntil);
     }
   }
 
