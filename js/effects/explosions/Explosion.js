@@ -11,6 +11,8 @@ import {
 
 /** Max alpha for shockwave stroke fade (100 = full opacity at center) */
 const SHOCKWAVE_ALPHA_SCALE = 100;
+/** Frames the fireball takes to flash out and fade */
+const FIREBALL_FRAMES = 18;
 
 export class Explosion {
   constructor(x, y, type = 'enemy') {
@@ -31,6 +33,7 @@ export class Explosion {
     this.hasShockwave = config.hasShockwave;
     this.shockwaveRadius = 0;
     this.maxShockwaveRadius = config.maxShockwaveRadius;
+    this.fireballRadius = config.fireballRadius;
 
     this.hasElectricalArcs = false;
     this.hasSpeedTrails = false;
@@ -166,6 +169,16 @@ export class Explosion {
   draw(p) {
     p.push();
 
+    // Fireball: a white-hot flash over the whole blast that cools to orange
+    if (this.fireballRadius > 0 && this.timer < FIREBALL_FRAMES) {
+      const heat = 1 - this.timer / FIREBALL_FRAMES;
+      p.noStroke();
+      p.fill(255, 120 + heat * 100, heat * 180, 200 * heat);
+      p.ellipse(this.x, this.y, this.fireballRadius * 2 * (0.6 + 0.4 * heat));
+      p.fill(255, 255, 230, 255 * heat);
+      p.ellipse(this.x, this.y, this.fireballRadius * heat);
+    }
+
     if (this.hasShockwave && this.shockwaveRadius > 0) {
       p.stroke(
         255,
@@ -174,7 +187,7 @@ export class Explosion {
         SHOCKWAVE_ALPHA_SCALE *
           (1 - this.shockwaveRadius / this.maxShockwaveRadius)
       );
-      p.strokeWeight(3);
+      p.strokeWeight(this.fireballRadius > 0 ? 6 : 3);
       p.noFill();
       p.ellipse(this.x, this.y, this.shockwaveRadius * 2);
     }

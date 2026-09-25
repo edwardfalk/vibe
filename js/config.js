@@ -110,6 +110,16 @@ const CONFIG = {
     },
   },
 
+  // Rusher fuse and blast. Shot (or close enough), a rusher brakes to a stop
+  // and blows on the first beat 1 or 3 after FUSE_MIN_MS, so a player who
+  // runs gets away. Tune live with ?tune.
+  RUSHER: {
+    FUSE_MIN_MS: 1000, // shortest fuse; the blast waits for beat 1 or 3 after it
+    BRAKE: 0.85, // share of speed kept per frame while lit (0 = instant stop)
+    EXPLOSION_RADIUS: 150,
+    EXPLOSION_DAMAGE: 35,
+  },
+
   // Stabber-specific tunable parameters
   STABBER_SETTINGS: {
     MIN_STAB_DISTANCE: 200, // Minimum distance to initiate stab
