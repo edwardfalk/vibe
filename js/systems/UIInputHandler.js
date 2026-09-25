@@ -1,6 +1,6 @@
 /**
  * Input handling extracted from UIRenderer.
- * Dispatches key presses to game actions (restart, pause, sound, dash, shoot, aim).
+ * Dispatches key presses to game actions (restart, pause, sound, dash, aim).
  */
 
 export function handleKeyPress(
@@ -39,28 +39,6 @@ export function handleKeyPress(
     if (gameState.gameState === 'playing' && player && player.dash()) {
       if (cameraSystem) {
         cameraSystem.addShake(6, 12);
-      }
-      return true;
-    }
-  }
-
-  if (key === ' ') {
-    // Shoot with spacebar
-    if (gameState.gameState === 'playing' && player) {
-      const bullet = player.shoot();
-      if (bullet) {
-        // Ensure playerBullets array exists before pushing new bullet
-        // Prevents shots from vanishing if array was uninitialized
-        if (!gameState.playerBullets) {
-          gameState.playerBullets = [];
-        }
-        gameState.playerBullets.push(bullet);
-        if (gameState) {
-          gameState.addShotFired();
-        }
-        if (audio) {
-          audio.playPlayerShoot(player.x, player.y);
-        }
       }
       return true;
     }
