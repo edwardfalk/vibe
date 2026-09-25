@@ -295,20 +295,19 @@ class Stabber extends BaseEnemy {
 
     // Apply knockback when hit
     if (bulletAngle !== null) {
-      const knockbackForce = 8; // Strong knockback for armored stabbers
-      this.knockbackVelocity.x += cos(bulletAngle) * knockbackForce;
-      this.knockbackVelocity.y += sin(bulletAngle) * knockbackForce;
+      const { KNOCKBACK_FORCE, MAX_KNOCKBACK } = CONFIG.STABBER_SETTINGS;
+      this.knockbackVelocity.x += cos(bulletAngle) * KNOCKBACK_FORCE;
+      this.knockbackVelocity.y += sin(bulletAngle) * KNOCKBACK_FORCE;
 
       // Clamp total knockback velocity magnitude to prevent runaway accumulation
-      const maxKnockback = 20;
       const kbMag = Math.sqrt(
         this.knockbackVelocity.x ** 2 + this.knockbackVelocity.y ** 2
       );
-      if (kbMag > maxKnockback) {
+      if (kbMag > MAX_KNOCKBACK) {
         this.knockbackVelocity.x =
-          (this.knockbackVelocity.x / kbMag) * maxKnockback;
+          (this.knockbackVelocity.x / kbMag) * MAX_KNOCKBACK;
         this.knockbackVelocity.y =
-          (this.knockbackVelocity.y / kbMag) * maxKnockback;
+          (this.knockbackVelocity.y / kbMag) * MAX_KNOCKBACK;
       }
     }
 

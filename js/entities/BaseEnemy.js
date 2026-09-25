@@ -170,6 +170,11 @@ export class BaseEnemy {
     }
   }
 
+  /** Collision radius for bullets; the sprite is wider than size/2 */
+  get hitRadius() {
+    return CONFIG.HITBOX[this.type] ?? this.size / 2;
+  }
+
   /**
    * Trigger ambient speech using subclass-provided config.
    * Subclasses override getAmbientSpeechConfig() to provide lines and conditions.
@@ -343,6 +348,15 @@ export class BaseEnemy {
 
     // Draw UI elements
     this.drawHealthBar(p);
+
+    if (CONFIG.HITBOX.SHOW) {
+      p.push();
+      p.noFill();
+      p.stroke(0, 255, 0);
+      p.strokeWeight(1);
+      p.ellipse(this.x, this.y, this.hitRadius * 2);
+      p.pop();
+    }
     this.drawSpeechBubble(p);
 
     // Draw type-specific indicators

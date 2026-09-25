@@ -120,6 +120,17 @@ const CONFIG = {
     EXPLOSION_DAMAGE: 35,
   },
 
+  // Hit radius per enemy type (px from centre), so shots that visibly touch
+  // an enemy count; sprites reach well past size/2. Tune live with ?tune;
+  // SHOW draws the circles.
+  HITBOX: {
+    SHOW: false,
+    grunt: 22,
+    rusher: 14,
+    stabber: 18,
+    tank: 42,
+  },
+
   // Tank armour plates (hits to break). Applies to tanks spawned after a
   // change. Front 45 / sides 30: about 25 s of held fire to kill one
   // head-on, as before the double-shot fix. Tune live with ?tune.
@@ -134,6 +145,8 @@ const CONFIG = {
     MAX_STAB_DISTANCE: 350, // Maximum distance to initiate stab
     MAX_PREPARE_TIME: 45, // Frames for preparation phase
     MAX_WARNING_TIME: 40, // Frames for warning phase
+    KNOCKBACK_FORCE: 8, // px/frame per hit; about 53 px in total
+    MAX_KNOCKBACK: 20, // px/frame cap under steady fire
   },
 };
 

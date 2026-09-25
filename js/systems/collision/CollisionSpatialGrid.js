@@ -36,7 +36,13 @@ export function buildEnemySpatialGrid(enemies) {
       _grid.set(key, bucket);
     }
     bucket.push(i);
-    maxEnemySize = Math.max(maxEnemySize, enemy.size || 0);
+    // Padding must reach bullet.size / 2 + hitRadius, even for radii tuned
+    // live on ?tune
+    maxEnemySize = Math.max(
+      maxEnemySize,
+      enemy.size || 0,
+      2 * (enemy.hitRadius || 0)
+    );
   }
 
   _spatialResult.maxEnemySize = maxEnemySize;

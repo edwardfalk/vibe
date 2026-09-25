@@ -272,7 +272,7 @@ export class Bullet {
     if (!this.active) return false;
     if (!target || typeof target.size !== 'number') return false;
 
-    const threshold = (this.size + target.size) * 0.5;
+    const threshold = this.size / 2 + (target.hitRadius ?? target.size / 2);
     const distance = this._pointSegmentDistance(
       target.x,
       target.y,
