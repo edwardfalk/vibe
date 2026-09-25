@@ -24,6 +24,9 @@ const KICK_PATTERNS = {
 // 75ms balances glitch-free playback with minimal audio-visual desync.
 const SCHEDULE_AHEAD_SEC = 0.075;
 const SCHEDULER_INTERVAL_MS = 25;
+// A note this late (a short main-thread stall) still plays, a little late;
+// anything later (a hidden tab) is skipped rather than played in a burst
+const LATE_GRACE_SEC = 0.05;
 // Exponential ramps can't reach 0; this is inaudible
 const SILENCE_GAIN = 0.001;
 const DRIVE_CURVE_SAMPLES = 1024;
@@ -143,9 +146,13 @@ export class BeatTrack {
       const origin = clock.startTime / 1000;
       const eighth = clock.beatInterval / 2000;
       const n8 = EIGHTH_NOTES_PER_MEASURE;
-      // From now (skips missed notes after a hidden tab), and never at or
-      // before a note already handed to Web Audio (a restart moves the grid)
-      const from = Math.max(now, (this._lastNoteSec ?? -Infinity) + eighth / 2);
+      // From just before now (skips missed notes after a hidden tab, keeps
+      // ones a short stall made late), and never at or before a note already
+      // handed to Web Audio (a restart moves the grid)
+      const from = Math.max(
+        now - LATE_GRACE_SEC,
+        (this._lastNoteSec ?? -Infinity) + eighth / 2
+      );
       for (
         let n = Math.ceil((from - origin) / eighth);
         origin + n * eighth < now + SCHEDULE_AHEAD_SEC;

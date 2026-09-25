@@ -253,6 +253,29 @@ test.describe('Gameplay Probes', () => {
     await page.mouse.up({ button: 'right' });
   });
 
+  test('A lost Shift keyup or a window blur never leaves the gun firing', async ({
+    page,
+  }) => {
+    await bootGame(page);
+    const after = (evs) =>
+      page.evaluate((evs) => {
+        for (const [type, init] of evs) {
+          if (type === 'blur') window.dispatchEvent(new Event('blur'));
+          else window.dispatchEvent(new KeyboardEvent(type, init));
+        }
+        return window.playerIsShooting;
+      }, evs);
+    const shiftDown = ['keydown', { code: 'ShiftLeft', shiftKey: true }];
+    expect(await after([shiftDown])).toBe(true);
+    expect(await after([['blur', {}]])).toBe(false);
+    // Shift's keyup is lost; the next key event reports Shift up
+    await after([shiftDown]);
+    expect(await after([['keydown', { code: 'KeyW', shiftKey: false }]])).toBe(
+      false
+    );
+    await after([['keyup', { code: 'KeyW', shiftKey: false }]]);
+  });
+
   test('Held keyboard fire lands on eighth notes', async ({ page }) => {
     await bootGame(page);
     const offsets = await page.evaluate(async () => {
@@ -376,12 +399,15 @@ test.describe('Gameplay Probes', () => {
           window.audio.duckGain.gain.value < 0.6 &&
           window.audio.beatDuckGain.gain.value < 0.8
       );
+    // Well under the 5 s cap, so a release that only comes from the cap fails
     const released = () =>
       page.waitForFunction(
         () =>
           !window.audio._ducked &&
           window.audio.duckGain.gain.value > 0.95 &&
-          window.audio.beatDuckGain.gain.value > 0.95
+          window.audio.beatDuckGain.gain.value > 0.95,
+        null,
+        { timeout: 2000 }
       );
 
     await speak(true);

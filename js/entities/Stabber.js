@@ -4,7 +4,7 @@ import { CONFIG } from '../config.js';
 import { updateStabberBehavior } from './StabberAttackHandler.js';
 
 // Per attempt once the speech timer is up (= today's effective rate)
-const STABBER_SPEECH_CHANCE = 0.05;
+const STABBER_SPEECH_CHANCE = 0.025;
 
 const STABBER_LINES = [
   'STAB!',

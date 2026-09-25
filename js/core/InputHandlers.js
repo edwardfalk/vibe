@@ -12,6 +12,7 @@ function fireKey(e, down) {
   if (!e.shiftKey) {
     held.delete('ShiftLeft');
     held.delete('ShiftRight');
+    syncShooting();
   }
   if (!FIRE_KEYS.includes(e.code)) return false;
   if (down) held.add(e.code);

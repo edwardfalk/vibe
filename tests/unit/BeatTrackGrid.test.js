@@ -46,6 +46,15 @@ describe('BeatTrack grid', () => {
     expect(notes).toEqual([[10.484, 1]]);
   });
 
+  it('still plays a note that a short main-thread stall made slightly late', () => {
+    const { track, ctx, notes } = setup({ now: 10.2, clockStartMs: 1234 });
+    track._scheduler(); // queues 10.234
+    ctx.currentTime = 10.51; // a stall: 10.484 is now 26 ms in the past
+    notes.length = 0;
+    track._scheduler();
+    expect(notes).toEqual([[10.484, 5]]); // played (slightly late), not dropped
+  });
+
   it('skips missed notes after a hidden tab instead of bursting', () => {
     const { track, ctx, notes } = setup({ now: 10.2, clockStartMs: 1234 });
     track._scheduler();
