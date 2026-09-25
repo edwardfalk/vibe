@@ -15,6 +15,7 @@ const KICK = 'BEAT_TRACK.KICK';
 const PACING = 'PACING';
 const MIX = 'MIX';
 const RUSHER = 'RUSHER';
+const HITBOX = 'HITBOX';
 const KNOBS = [
   [KICK, 'ENABLED'],
   [KICK, 'PATTERN', ['four', 'oneThree']],
@@ -51,6 +52,11 @@ const KNOBS = [
   [RUSHER, 'EXPLOSION_DAMAGE', [5, 100, 5]],
   ['TANK_ARMOR', 'FRONT', [0, 200, 5]],
   ['TANK_ARMOR', 'SIDE', [0, 150, 5]],
+  [HITBOX, 'SHOW'],
+  [HITBOX, 'grunt', [8, 50, 1]],
+  [HITBOX, 'rusher', [8, 50, 1]],
+  [HITBOX, 'stabber', [8, 50, 1]],
+  [HITBOX, 'tank', [20, 70, 1]],
 ];
 
 const resolve = (path) => path.split('.').reduce((obj, k) => obj[k], CONFIG);
@@ -91,9 +97,17 @@ export function createTunePanel() {
       MIX: mix,
       RUSHER: rusher,
       TANK_ARMOR,
+      HITBOX: hitbox,
     } = CONFIG;
     json.textContent = JSON.stringify(
-      { BEAT_TRACK, PACING: pacing, MIX: mix, RUSHER: rusher, TANK_ARMOR },
+      {
+        BEAT_TRACK,
+        PACING: pacing,
+        MIX: mix,
+        RUSHER: rusher,
+        TANK_ARMOR,
+        HITBOX: hitbox,
+      },
       null,
       2
     );
