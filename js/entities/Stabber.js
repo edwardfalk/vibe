@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sin, cos, ceil, max } from '../mathUtils.js';
+import { sin, cos, ceil, max } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { updateStabberBehavior } from './StabberAttackHandler.js';
 
@@ -153,7 +153,6 @@ class Stabber extends BaseEnemy {
    */
   drawWeapon(s) {
     // Base knife dimensions
-    const knifeLength = s * 0.6; // Base length
     const knifeWidth = s * 0.2; // Base width
     let extensionFactor = 1.0; // Default (retracted)
     const extendedFactor = 2.0; // New fixed extension (about half of old max)

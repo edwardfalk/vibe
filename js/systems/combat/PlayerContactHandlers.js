@@ -1,5 +1,4 @@
-import { round, sqrt, atan2, cos, sin } from '../../mathUtils.js';
-import { CONFIG } from '../../config.js';
+import { sqrt, atan2, cos, sin } from '../../mathUtils.js';
 import { tryPlaceTankBomb } from '../BombSystem.js';
 
 export function handleContactCollisions({

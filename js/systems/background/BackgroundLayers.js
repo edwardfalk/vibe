@@ -4,7 +4,7 @@
  *   MediumStarRenderer.js, NearFieldParallax.js, BeatReactiveBackground.js
  */
 
-import { floor, random, randomRange } from '../../mathUtils.js';
+import { random, randomRange } from '../../mathUtils.js';
 
 // ─── BeatReactiveBackground ───────────────────────────────────────────────────
 
@@ -318,7 +318,7 @@ export function drawMediumStarsLayer(stars, p, beatClock = null) {
   p.drawingContext.shadowBlur = Math.max(0, shadowBlurCandidate);
   let starIndex = 0;
   for (const star of stars) {
-    const { alpha, finalSize, combinedBrightness } = computeMediumStarVisual(
+    const { alpha, finalSize } = computeMediumStarVisual(
       star,
       starIndex,
       p.millis() / 16.67,

@@ -1,5 +1,4 @@
 import { atan2, cos, sin } from '../mathUtils.js';
-import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { handleDamageResult } from '../shared/DamageResultHandler.js';
 
 export function handleAreaDamageEvents(damageEvents, context) {
@@ -9,7 +8,6 @@ export function handleAreaDamageEvents(damageEvents, context) {
     audio,
     gameState,
     cameraSystem,
-    collisionSystem,
     explosionManager,
     enemyDeathHandler,
   } = context;
@@ -57,7 +55,7 @@ export function handleAreaDamageEvents(damageEvents, context) {
       const enemyDistSq = dx * dx + dy * dy;
       const radiusSq = event.radius * event.radius;
       if (enemyDistSq < radiusSq) {
-        const damageResult = handleDamageResult(
+        handleDamageResult(
           enemy.takeDamage(event.damage, null, 'area'),
           enemy,
           {

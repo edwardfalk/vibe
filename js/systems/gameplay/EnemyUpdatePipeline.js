@@ -1,6 +1,5 @@
 import { atan2, cos, sin } from '../../mathUtils.js';
 import { CONFIG } from '../../config.js';
-import { DAMAGE_RESULT } from '../../shared/DamageResult.js';
 import { handleDamageResult } from '../../shared/DamageResultHandler.js';
 
 function handleRusherExplosionResult(result, enemy, context) {
@@ -42,7 +41,6 @@ function handleRusherExplosionResult(result, enemy, context) {
 
 function handleStabberAttackResult(result, context) {
   const {
-    enemies,
     player,
     gameState,
     audio,
@@ -86,7 +84,7 @@ function handleStabberAttackResult(result, context) {
     const hit = result.enemiesHit[k];
     const targetEnemy = hit.enemy;
 
-    const damageResult = handleDamageResult(
+    handleDamageResult(
       targetEnemy.takeDamage(hit.damage, hit.angle, 'stabber_melee'),
       targetEnemy,
       {

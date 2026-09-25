@@ -2,7 +2,7 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { CONFIG } from '../config.js';
 import { Bullet } from './bullet.js';
-import { max, atan2, sin } from '../mathUtils.js';
+import { max, atan2 } from '../mathUtils.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { updateDash, tryStartDash } from './PlayerDash.js';
 import { drawPlayer } from './PlayerRenderer.js';

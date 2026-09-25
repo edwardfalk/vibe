@@ -3,7 +3,7 @@
  * Extracted from Tank.js for file-size split (~500 line guideline).
  */
 
-import { cos, sin, PI, normalizeAngle, floor, random } from '../mathUtils.js';
+import { cos, sin, PI, normalizeAngle, random } from '../mathUtils.js';
 
 const PI_4 = PI / 4;
 const THREE_PI_4 = (3 * PI) / 4;

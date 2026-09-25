@@ -5,7 +5,6 @@ import {
   EnemyFragmentExplosion,
   getFragmentPoolStats,
 } from './EnemyFragmentExplosion.js';
-import { random, TWO_PI, cos, sin } from '../../mathUtils.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
 
 export class ExplosionManager {

@@ -1,5 +1,3 @@
-import { CONFIG } from '../../config.js';
-
 export function drawGameplayWorld(context) {
   const {
     p,

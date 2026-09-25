@@ -2,8 +2,6 @@
  * CollisionSystem.js - Handles all collision detection between bullets, enemies, and player
  */
 
-import { dist } from '../mathUtils.js';
-import { CONFIG } from '../config.js';
 import { Bullet } from '../entities/bullet.js';
 import { EnemyDeathHandler } from './combat/EnemyDeathHandler.js';
 import {
@@ -141,10 +139,6 @@ export class CollisionSystem {
         if (this.resolveBulletEnemyHit(bullet, i, enemy)) {
           this.frameMetrics.playerBulletHits++;
           break;
-        }
-
-        if (enemy.type === 'grunt' && bullet.owner === 'player') {
-          const distance = dist(bullet.x, bullet.y, enemy.x, enemy.y);
         }
       }
     }

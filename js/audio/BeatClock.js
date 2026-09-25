@@ -33,8 +33,6 @@ export class BeatClock {
       measurePhase: 0,
     };
     this.update(true);
-
-    const clockSource = this.audioContext ? 'AudioContext' : 'Date.now';
   }
 
   // Compute ms tolerances from fractional config values

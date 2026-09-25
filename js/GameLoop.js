@@ -15,7 +15,6 @@ import { updateEnemiesAndResolveResults } from './systems/gameplay/EnemyUpdatePi
 import { updateBullets } from './systems/gameplay/BulletUpdatePipeline.js';
 import { drawGameplayWorld } from './systems/gameplay/RenderPipeline.js';
 import { updatePerformanceDiagnostics } from './systems/gameplay/PerformanceDiagnostics.js';
-import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
 import { Bullet } from './entities/bullet.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
 import { CONFIG } from './config.js';
@@ -31,7 +30,6 @@ const activeBombs = [];
 
 // Systems
 let explosionManager;
-let audio;
 let gameContext;
 let enemyDeathHandler;
 

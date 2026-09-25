@@ -5,18 +5,7 @@
 import { EnemyFactory } from '../entities/EnemyFactory.js';
 import { CONFIG } from '../config.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
-import {
-  max,
-  min,
-  floor,
-  ceil,
-  round,
-  random,
-  sin,
-  cos,
-  atan2,
-  sqrt,
-} from '../mathUtils.js';
+import { max, min, floor, random, sin, cos, sqrt } from '../mathUtils.js';
 
 // Level at which each enemy type joins the regular mix
 export const ENEMY_INTRO_LEVEL = { stabber: 2, rusher: 3, tank: 5 };

@@ -4,15 +4,7 @@
  * Extracted from Stabber.js for file-size split (~500 line guideline).
  */
 
-import {
-  floor,
-  random,
-  sqrt,
-  sin,
-  cos,
-  atan2,
-  normalizeAngle,
-} from '../mathUtils.js';
+import { random, sqrt, sin, cos, atan2, normalizeAngle } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 
 const STABBER_CHANT_CHANCE = 0.35; // per off-beat window

@@ -3,9 +3,7 @@
  * Each function resolves what happens when a bullet hits a target.
  */
 
-import { CONFIG } from '../../config.js';
 import { Bullet } from '../../entities/bullet.js';
-import { DAMAGE_RESULT } from '../../shared/DamageResult.js';
 import { handleDamageResult } from '../../shared/DamageResultHandler.js';
 import { applyKillFeedback } from '../combat/KillFeedback.js';
 
@@ -27,12 +25,11 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
 
   // Store enemy type for logging
   const enemyType = enemy.type;
-  const wasExploding = enemy.exploding;
 
   // Damage enemy (pass bullet angle for knockback)
   const rawResult = enemy.takeDamage(bullet.damage, bullet.angle);
 
-  const damageResult = handleDamageResult(rawResult, enemy, {
+  handleDamageResult(rawResult, enemy, {
     explosionManager,
     audio,
     gameState,
@@ -137,7 +134,7 @@ export function handleRegularEnemyBulletHit(bullet, enemy, deps) {
     bulletSource = 'tank';
   }
 
-  const damageResult = handleDamageResult(
+  handleDamageResult(
     enemy.takeDamage(bullet.damage, bullet.angle, bulletSource),
     enemy,
     {

@@ -3,8 +3,6 @@
  * Extracted from BaseEnemy.js for file-size split (~500 line guideline).
  */
 
-import { CONFIG } from '../config.js';
-
 /** Get enemy colors by type. Returns { skinColor, helmetColor, weaponColor, eyeColor }. */
 export function getEnemyColors(type, p) {
   if (type === 'rusher') {

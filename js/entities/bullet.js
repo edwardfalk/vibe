@@ -1,20 +1,5 @@
 import { CONFIG } from '../config.js';
-import {
-  max,
-  min,
-  floor,
-  ceil,
-  round,
-  random,
-  sin,
-  cos,
-  atan2,
-  sqrt,
-  PI,
-  TWO_PI,
-  normalizeAngle,
-  dist,
-} from '../mathUtils.js';
+import { sin, cos, PI, dist } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)

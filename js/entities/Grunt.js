@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, atan2, min, max } from '../mathUtils.js';
+import { random, sqrt, atan2 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 
 // Per-beat chances for beat-gated grunt sounds (rolled once per beat)
@@ -118,7 +118,6 @@ class Grunt extends BaseEnemy {
     }
 
     // Grunts maintain tactical distance (150-250 pixels)
-    const idealDistance = 200;
     const tooClose = 150;
     const tooFar = 250;
 
