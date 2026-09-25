@@ -106,3 +106,35 @@ describe('Player shield', () => {
     expect(player.msSinceHit).toBe(0);
   });
 });
+
+describe('Player healing', () => {
+  let player;
+  beforeEach(() => {
+    globalThis.window = { playerIsShooting: false };
+    ({ player } = makePlayer());
+    player.shieldUp = false; // let hits land
+    player.shieldDownMs = -1e9; // and keep it down for these tests
+  });
+
+  it('starts REGEN_DELAY_MS after the last hit, at REGEN_PER_SEC', () => {
+    player.update(CONFIG.PLAYER.REGEN_DELAY_MS * 2); // time passes before the hit
+    player.takeDamage(50, 'test');
+    player.update(CONFIG.PLAYER.REGEN_DELAY_MS - 500);
+    expect(player.health).toBe(50);
+    player.update(500); // the delay is over
+    player.update(1000); // one second of healing
+    expect(player.health).toBeCloseTo(50 + CONFIG.PLAYER.REGEN_PER_SEC, 5);
+  });
+
+  it('never overheals', () => {
+    player.takeDamage(1, 'test');
+    player.update(60000);
+    expect(player.health).toBe(player.maxHealth);
+  });
+
+  it('never revives', () => {
+    player.takeDamage(1000, 'test');
+    player.update(60000);
+    expect(player.health).toBe(0);
+  });
+});

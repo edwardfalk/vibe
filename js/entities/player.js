@@ -82,6 +82,16 @@ export class Player {
       }
     }
 
+    // Slow healing once he has gone REGEN_DELAY_MS without a hit
+    this.msSinceHit += deltaTimeMs;
+    const { REGEN_DELAY_MS, REGEN_PER_SEC } = CONFIG.PLAYER;
+    if (this.health > 0 && this.msSinceHit > REGEN_DELAY_MS) {
+      this.health = Math.min(
+        this.maxHealth,
+        this.health + (REGEN_PER_SEC * deltaTimeMs) / 1000
+      );
+    }
+
     // Handle movement (check both keyboard and testing keys)
     this.velocity.x = 0;
     this.velocity.y = 0;
