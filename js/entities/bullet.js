@@ -238,8 +238,11 @@ export class Bullet {
         const along = { x: cos(ang), y: sin(ang) };
         p.beginShape();
         for (let k = 0; k <= 5; k++) {
-          const r = this.size * (0.9 + k * 0.2);
-          const jag = k === 0 ? 0 : (Math.random() - 0.5) * this.size * 0.5;
+          const r = this.size * energyPercent * (0.9 + k * 0.2);
+          const jag =
+            k === 0
+              ? 0
+              : (Math.random() - 0.5) * this.size * energyPercent * 0.5;
           p.vertex(along.x * r - along.y * jag, along.y * r + along.x * jag);
         }
         p.endShape();

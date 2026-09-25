@@ -29,6 +29,7 @@ vi.mock('../../js/entities/BaseEnemyHelpers.js', () => ({
 
 import { Grunt } from '../../js/entities/Grunt.js';
 import { CONFIG } from '../../js/config.js';
+import { Bullet } from '../../js/entities/bullet.js';
 
 /**
  * Create a minimal mock p5 instance with the methods BaseEnemy/Grunt need.
@@ -175,5 +176,19 @@ describe('Grunt deferred stabber death', () => {
       grunt.x,
       grunt.y
     );
+  });
+});
+
+describe('Grunt shot', () => {
+  it('leaves from the drawn gun, which sits artOffsetY off the hit axis', () => {
+    const context = { get: () => undefined, set() {} };
+    const g = new Grunt(100, 100, 'grunt', { context }, createMockP5(), null);
+    g.aimAngle = 0; // aiming +x, so the art's local +y is world +y
+    Bullet.acquire.mockClear();
+    g.createBullet();
+    const [x, y] = Bullet.acquire.mock.calls[0];
+    expect(x).toBeCloseTo(100 + g.size * 0.9, 5);
+    expect(y).toBeCloseTo(100 + g.artOffsetY, 5);
+    expect(g.artOffsetY).toBeGreaterThan(0);
   });
 });

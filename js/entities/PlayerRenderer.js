@@ -124,7 +124,7 @@ export function drawPlayer(p, player) {
   p.fill(60, 40, 25);
   p.arc(0, headY, headD, headD, p.PI + 0.35, p.TWO_PI - 0.35, p.CHORD);
 
-  // Black shades: two lenses on a bridge, wider than the face
+  // Black shades: two lenses on a bridge, across the whole face
   const lensW = 4.6 * u;
   const lensH = 2.4 * u;
   const lensY = headY - 0.6 * u;

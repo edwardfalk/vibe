@@ -457,9 +457,16 @@ export class BaseEnemy {
    * Create bullet - should be overridden by subclasses
    */
   createBullet() {
+    // From the drawn gun: along the aim, then artOffsetY across it
     const bulletDistance = this.size * 0.9;
-    const bulletX = this.x + cos(this.aimAngle) * bulletDistance;
-    const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
+    const bulletX =
+      this.x +
+      cos(this.aimAngle) * bulletDistance -
+      sin(this.aimAngle) * this.artOffsetY;
+    const bulletY =
+      this.y +
+      sin(this.aimAngle) * bulletDistance +
+      cos(this.aimAngle) * this.artOffsetY;
 
     // Create bullet with enemy type information
     const bullet = Bullet.acquire(
