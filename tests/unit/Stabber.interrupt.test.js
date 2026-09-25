@@ -28,6 +28,7 @@ vi.mock('../../js/entities/BaseEnemyHelpers.js', () => ({
 }));
 
 import { Stabber } from '../../js/entities/Stabber.js';
+import { CONFIG } from '../../js/config.js';
 
 /**
  * Create a minimal mock p5 instance.
@@ -171,5 +172,45 @@ describe('Stabber interrupt preserves stabDirection', () => {
     // Warning should be cleared
     expect(stabber.stabWarning).toBe(false);
     expect(stabber.stabWarningTime).toBe(0);
+  });
+});
+
+describe('Stabber timing', () => {
+  const FRAME_MS = CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
+  let stabber;
+
+  beforeEach(() => {
+    const mockAudio = createMockAudio();
+    const context = {
+      get: vi.fn((key) => (key === 'audio' ? mockAudio : null)),
+      set: vi.fn(),
+    };
+    stabber = new Stabber(
+      100,
+      100,
+      'stabber',
+      { context },
+      createMockP5(),
+      mockAudio
+    );
+    stabber.isSpawning = false;
+    stabber.spawnTimer = stabber.spawnDuration;
+  });
+
+  it('runs its behaviour once per frame', () => {
+    const spy = vi.spyOn(stabber, 'updateSpecificBehavior');
+    stabber.update(1000, 100, FRAME_MS);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('a dash lasts one second', () => {
+    stabber.isStabbing = true;
+    stabber.stabDirection = Math.PI; // away from the player: no hit
+    let frames = 0;
+    while (stabber.isStabbing && frames < 500) {
+      stabber.update(1000, 100, FRAME_MS);
+      frames++;
+    }
+    expect(frames).toBe(60);
   });
 });
