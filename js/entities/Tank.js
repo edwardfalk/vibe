@@ -57,10 +57,10 @@ class Tank extends BaseEnemy {
     this.maxAngerCooldown = 600; // 10 seconds of anger
 
     // Destructible Armor Pieces
-    this.frontArmorHP = 120;
+    this.frontArmorHP = CONFIG.TANK_ARMOR.FRONT;
     this.frontArmorDestroyed = false;
-    this.leftArmorHP = 80;
-    this.rightArmorHP = 80;
+    this.leftArmorHP = CONFIG.TANK_ARMOR.SIDE;
+    this.rightArmorHP = CONFIG.TANK_ARMOR.SIDE;
     this.leftArmorDestroyed = false;
     this.rightArmorDestroyed = false;
   }

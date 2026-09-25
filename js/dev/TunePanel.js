@@ -49,6 +49,8 @@ const KNOBS = [
   [RUSHER, 'BRAKE', [0, 0.99, 0.01]],
   [RUSHER, 'EXPLOSION_RADIUS', [60, 300, 10]],
   [RUSHER, 'EXPLOSION_DAMAGE', [5, 100, 5]],
+  ['TANK_ARMOR', 'FRONT', [0, 200, 5]],
+  ['TANK_ARMOR', 'SIDE', [0, 150, 5]],
 ];
 
 const resolve = (path) => path.split('.').reduce((obj, k) => obj[k], CONFIG);
@@ -83,9 +85,15 @@ export function createTunePanel() {
   const json = document.createElement('pre');
   json.style.cssText = 'white-space:pre-wrap;color:#0ff;margin:8px 0 0;';
   const showJson = () => {
-    const { BEAT_TRACK, PACING: pacing, MIX: mix, RUSHER: rusher } = CONFIG;
+    const {
+      BEAT_TRACK,
+      PACING: pacing,
+      MIX: mix,
+      RUSHER: rusher,
+      TANK_ARMOR,
+    } = CONFIG;
     json.textContent = JSON.stringify(
-      { BEAT_TRACK, PACING: pacing, MIX: mix, RUSHER: rusher },
+      { BEAT_TRACK, PACING: pacing, MIX: mix, RUSHER: rusher, TANK_ARMOR },
       null,
       2
     );

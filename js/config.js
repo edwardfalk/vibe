@@ -120,6 +120,14 @@ const CONFIG = {
     EXPLOSION_DAMAGE: 35,
   },
 
+  // Tank armour plates (hits to break). Applies to tanks spawned after a
+  // change. Front 45 / sides 30: about 25 s of held fire to kill one
+  // head-on, as before the double-shot fix. Tune live with ?tune.
+  TANK_ARMOR: {
+    FRONT: 45,
+    SIDE: 30,
+  },
+
   // Stabber-specific tunable parameters
   STABBER_SETTINGS: {
     MIN_STAB_DISTANCE: 200, // Minimum distance to initiate stab

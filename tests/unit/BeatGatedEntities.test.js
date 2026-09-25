@@ -198,4 +198,19 @@ describe('Beat-gated entity behaviour', () => {
       expect(SOUND_CONFIG[name].waveform, name).not.toBe('sine');
     }
   });
+
+  it('tank armour comes from CONFIG.TANK_ARMOR (tunable live)', async () => {
+    const { CONFIG } = await import('../../js/config.js');
+    const saved = { ...CONFIG.TANK_ARMOR };
+    CONFIG.TANK_ARMOR = { FRONT: 7, SIDE: 3 };
+    try {
+      const { audio, context } = world();
+      const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
+      expect([t.frontArmorHP, t.leftArmorHP, t.rightArmorHP]).toEqual([
+        7, 3, 3,
+      ]);
+    } finally {
+      CONFIG.TANK_ARMOR = saved;
+    }
+  });
 });
