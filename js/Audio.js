@@ -1,52 +1,11 @@
 /**
- * Clean and Reliable Audio System for Vibe Game
+ * Audio: synthesized sound effects (SoundConfig.js) and enemy/player speech.
  *
- * Features:
- * ✅ Simplified Web Audio API sound effects
- * ✅ Reliable TTS with proper synchronization
- * ✅ Clean, manageable code structure
- * ✅ Optimized performance and speech flow
- *
- * =============================================================================
- * 🎛️ AUDIO CONFIGURATION GUIDE
- * =============================================================================
- *
- * 🔊 SOUND EFFECTS CONFIGURATION (lines ~32-62):
- * Each sound has these properties:
- * - frequency: Pitch in Hz (lower = deeper, higher = sharper)
- * - waveform: 'sine', 'sawtooth', 'square', 'triangle' (affects tone quality)
- * - volume: 0.0-1.0 (loudness relative to master volume)
- * - duration: seconds (how long the sound plays)
- *
- * Example - Plasma Ball Configuration:
- * plasmaCloud: {
- *   frequency: 80,        // Deep bass rumble (increase for higher pitch)
- *   waveform: 'sine',     // Smooth tone (try 'sawtooth' for harsher)
- *   volume: 0.6,          // Loud effect (reduce to 0.4 for quieter)
- *   duration: 4.0         // 4 second duration (reduce to 2.0 for shorter)
- * }
- *
- * 🎤 SPEECH CONFIGURATION (lines ~65-71):
- * Each character voice has:
- * - rate: 0.1-2.0 (speech speed, 1.0 = normal)
- * - pitch: 0.0-2.0 (voice pitch, 1.0 = normal)
- * - volume: 0.0-1.0 (speech volume - NOW REDUCED for background effect)
- *
- * 🌊 DISTANCE EFFECTS (lines ~240-280):
- * Ambient sounds get enhanced effects based on distance:
- * - reverbIntensity: How much reverb (echo) to add
- * - distortionAmount: How much to distort the sound
- * - delayTime: Echo delay in seconds
- * - lowpassFreq: High frequency cutoff (lower = more muffled)
- *
- * 🎚️ QUICK ADJUSTMENTS:
- * - Make plasma ball louder: Increase plasmaCloud volume from 0.6 to 0.8
- * - Make plasma ball deeper: Decrease plasmaCloud frequency from 80 to 60
- * - Make speech quieter: Reduce all voiceConfig volume values
- * - More reverb on distant enemies: Increase reverbIntensity calculation
- * - More distortion: Increase distortionAmount in ambient sound processing
- *
- * =============================================================================
+ * Signal flow (one AudioContext, shared with BeatTrack):
+ *   effects    -> masterGain (mute) -> duckGain     -> masterLimiter -> out
+ *   beat track -> its masterGain    -> beatDuckGain -> masterLimiter
+ *   speech     -> speechSynthesis, outside Web Audio; syncDuck() dips the two
+ *                 duck gains while it speaks. Levels live in CONFIG.MIX.
  */
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
@@ -106,14 +65,14 @@ export class Audio {
     this.distortionCurves = new Map();
     this.maxCurveCache = 32; // Limit cache size to 32 entries
 
-    // TTS system - OPTIMIZED
+    // Speech
     this.speechSynthesis = window.speechSynthesis;
     this.speechEnabled = true;
     this.englishVoices = [];
     this.lastSpeechTime = 0;
     this.speechCooldown = 2500; // 2.5 seconds - reasonable cooldown to prevent excessive chatter
 
-    // Text display system - IMPROVED
+    // Speech bubbles and floating text
     this.activeTexts = [];
     this.showBeatIndicator = false;
     this.beatX = 0;
@@ -124,8 +83,6 @@ export class Audio {
 
     this.bindConvenienceSoundMethods();
     this.bindConvenienceSpeechMethods();
-
-    console.log('🎵 Optimized Audio System ready');
   }
 
   setContext(context) {
@@ -213,7 +170,6 @@ export class Audio {
       }
 
       this.initialized = true;
-      console.log('✅ Audio system initialized');
     } catch (error) {
       console.error('❌ Audio initialization failed:', error);
       this.enabled = false;
@@ -308,7 +264,6 @@ export class Audio {
       );
       this._voicesLoaded = true;
       this.speechSynthesis.onvoiceschanged = null;
-      console.log(`🎤 Loaded ${this.englishVoices.length} English voices`);
     };
 
     if (this.speechSynthesis.getVoices().length === 0) {
@@ -354,7 +309,7 @@ export class Audio {
       this.audioContext.currentTime
     );
 
-    // NEW: Add frequency sweep support for "oh no!" effects
+    // Optional pitch sweep (e.g. the falling "oh no!" sounds)
     if (config.sweep) {
       const endFreq = config.sweep.to * frequencyVariation;
       const sweepDuration = config.duration * durationVariation;
@@ -446,7 +401,7 @@ export class Audio {
     let dryGain = null;
 
     if (isAmbientSound && this.effects.reverb) {
-      // OPTIMIZED: Simplified atmospheric effects for better performance
+      // Distance-based reverb, lowpass and light distortion for ambient enemy sounds
       const { sourceX, sourceY } = resolveSoundSourcePosition(
         x,
         y,
@@ -458,41 +413,40 @@ export class Audio {
       );
       const normalizedDistance = Math.max(0, Math.min(distance / 600, 1)); // 0 = close, 1 = far; clamp to avoid negative
 
-      // Simplified reverb processing - REDUCED intensity from 65% to 45% for less overwhelming effects
       reverbGainNode = this.audioContext.createGain();
       lowPassFilter = this.audioContext.createBiquadFilter();
 
-      // REDUCED: Reverb intensity from 65% to 45% for more subtle atmospheric effects
-      const reverbIntensity = 0.15 + normalizedDistance * 0.15; // Further reduced from 0.25 + 0.2 to 0.15 + 0.15 (range: 15-30% instead of 25-45%)
+      // Reverb 15% close to 30% far
+      const reverbIntensity = 0.15 + normalizedDistance * 0.15;
       reverbGainNode.gain.setValueAtTime(
         reverbIntensity,
         this.audioContext.currentTime
       );
 
-      // Simplified lowpass filtering
-      const lowpassFreq = 1400 - normalizedDistance * 600; // Less dramatic range
+      // Farther sounds are more muffled: 1400 Hz close to 800 Hz far
+      const lowpassFreq = 1400 - normalizedDistance * 600;
       lowPassFilter.type = 'lowpass';
       lowPassFilter.frequency.setValueAtTime(
         lowpassFreq,
         this.audioContext.currentTime
       );
-      lowPassFilter.Q.setValueAtTime(0.5, this.audioContext.currentTime); // Reduced Q for performance
+      lowPassFilter.Q.setValueAtTime(0.5, this.audioContext.currentTime);
 
-      // REDUCED: Distortion amount from 15 to 10 for more subtle otherworldly effect
+      // A light otherworldly distortion
       distortionNode = this.audioContext.createWaveShaper();
-      distortionNode.curve = this.createOrGetCurve(5); // Was this.createDistortionCurve(5)
+      distortionNode.curve = this.createOrGetCurve(5);
       distortionNode.oversample = '2x';
 
-      // SIMPLIFIED: Direct connection with reduced effects intensity
+      // Wet path: pan -> lowpass -> distortion -> reverb -> master
       panNode.connect(lowPassFilter);
       lowPassFilter.connect(distortionNode);
       distortionNode.connect(reverbGainNode);
       reverbGainNode.connect(this.effects.reverb);
       this.effects.reverb.connect(this.masterGain);
 
-      // Simplified dry signal path with more dry mix for less overwhelming effects
+      // Dry path: 90% close to 75% far, so the reverb stays subtle
       dryGain = this.audioContext.createGain();
-      const dryMix = 0.9 - normalizedDistance * 0.15; // Increased dry mix from 0.85-0.2 to 0.9-0.15 to compensate for reduced reverb
+      const dryMix = 0.9 - normalizedDistance * 0.15;
       dryGain.gain.setValueAtTime(dryMix, this.audioContext.currentTime);
 
       panNode.connect(dryGain);
@@ -537,86 +491,8 @@ export class Audio {
     }
   }
 
-  startDrone() {
-    if (this.droneOsc || !this.audioContext) return;
-
-    const ctx = this.audioContext;
-    this.droneOsc = ctx.createOscillator();
-    this.droneGain = ctx.createGain();
-    this.droneFilter = ctx.createBiquadFilter();
-
-    this.droneOsc.type = 'sine';
-    this.droneOsc.frequency.setValueAtTime(42, ctx.currentTime);
-
-    this.droneFilter.type = 'lowpass';
-    this.droneFilter.frequency.setValueAtTime(80, ctx.currentTime);
-
-    // Fade in over 2 seconds
-    this.droneGain.gain.setValueAtTime(0, ctx.currentTime);
-    this.droneGain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 2);
-
-    this.droneOsc.connect(this.droneFilter);
-    this.droneFilter.connect(this.droneGain);
-    this.droneGain.connect(this.masterGain || ctx.destination);
-
-    this.droneOsc.start();
-
-    // Slow filter sweep: oscillate cutoff 80-200Hz over ~8 measures (16s at 120 BPM)
-    this._droneFilterSweep(ctx);
-  }
-
-  _droneFilterSweep(ctx) {
-    if (!this.droneFilter || !this.droneOsc) return;
-    const sweepDuration = 16; // ~8 measures at 120 BPM
-    const now = ctx.currentTime;
-    this.droneFilter.frequency.setValueAtTime(80, now);
-    this.droneFilter.frequency.linearRampToValueAtTime(
-      200,
-      now + sweepDuration / 2
-    );
-    this.droneFilter.frequency.linearRampToValueAtTime(80, now + sweepDuration);
-    // Schedule next sweep
-    this._droneSweepTimer = setTimeout(
-      () => this._droneFilterSweep(ctx),
-      sweepDuration * 1000
-    );
-  }
-
-  stopDrone() {
-    if (this._droneSweepTimer) {
-      clearTimeout(this._droneSweepTimer);
-      this._droneSweepTimer = null;
-    }
-    if (this.droneOsc) {
-      try {
-        this.droneOsc.stop();
-        this.droneOsc.disconnect();
-      } catch (e) {
-        /* already stopped */
-      }
-      this.droneOsc = null;
-    }
-    if (this.droneGain) {
-      this.droneGain.disconnect();
-      this.droneGain = null;
-    }
-    if (this.droneFilter) {
-      this.droneFilter.disconnect();
-      this.droneFilter = null;
-    }
-  }
-
-  duckDrone(durationMs = 500) {
-    if (!this.droneGain || !this.audioContext) return;
-    const ctx = this.audioContext;
-    const now = ctx.currentTime;
-    this.droneGain.gain.setValueAtTime(this.droneGain.gain.value, now);
-    this.droneGain.gain.linearRampToValueAtTime(0.03, now + 0.05);
-    this.droneGain.gain.linearRampToValueAtTime(0.08, now + durationMs / 1000);
-  }
-
   // ========================================================================
-  // SPEECH SYSTEM (SIMPLIFIED AND RELIABLE)
+  // SPEECH
   // ========================================================================
 
   speak(entity, text, voiceType = 'player', force = false) {
@@ -636,7 +512,6 @@ export class Audio {
     this.ensureAudioContext();
 
     const displayText = text.toUpperCase();
-    console.log(`💬 ${entity.type || 'Entity'} speaking: "${displayText}"`);
 
     // Create and configure utterance
     const utterance = new SpeechSynthesisUtterance(text);
@@ -695,7 +570,7 @@ export class Audio {
       randomRange
     );
 
-    // IMPROVED text-speech synchronization
+    // Show the text for as long as the line takes to say
     const estimatedDuration = this.calculateSpeechDuration(
       text,
       utterance.rate
@@ -713,7 +588,7 @@ export class Audio {
     return true; // Successfully started speech
   }
 
-  // IMPROVED speech duration calculation
+  // Estimated time to say `text` at `rate`
   calculateSpeechDuration(text, rate) {
     // Base calculation: ~150 words per minute at rate 1.0
     const wordsPerMinute = 150 * rate;
@@ -820,16 +695,7 @@ export class Audio {
     }
     window.beatTrack?.setMuted(!this.enabled);
     if (!this.enabled) this.speechSynthesis?.cancel();
-    console.log(`🔊 Audio ${this.enabled ? 'enabled' : 'disabled'}`);
     return this.enabled;
-  }
-
-  // Compatibility methods
-  updateSpeechBubbles() {
-    this.updateTexts();
-  }
-  drawSpeechBubbles() {
-    this.drawTexts(this.p);
   }
 
   // ========================================================================

@@ -8,52 +8,6 @@ function getUsPreferredVoices(englishVoices = []) {
   return usVoices.length > 0 ? usVoices : englishVoices;
 }
 
-export function selectBasicVoice(
-  englishVoices = [],
-  voiceType = 'player',
-  randomFn = Math.random,
-  floorFn = Math.floor
-) {
-  if (englishVoices.length === 0) return null;
-  const availableVoices = getUsPreferredVoices(englishVoices);
-
-  if (voiceType === 'player') {
-    const maleVoices = availableVoices.filter((voice) => {
-      const name = voice.name.toLowerCase();
-      return (
-        name.includes('male') ||
-        name.includes('david') ||
-        name.includes('alex') ||
-        name.includes('james') ||
-        name.includes('john') ||
-        name.includes('michael') ||
-        name.includes('mark') ||
-        name.includes('paul') ||
-        name.includes('daniel') ||
-        name.includes('deep') ||
-        name.includes('bass') ||
-        name.includes('rich')
-      );
-    });
-
-    const deepVoices = maleVoices.filter((voice) => {
-      const name = voice.name.toLowerCase();
-      return (
-        name.includes('deep') ||
-        name.includes('bass') ||
-        name.includes('rich') ||
-        name.includes('low')
-      );
-    });
-
-    if (deepVoices.length > 0) return deepVoices[0];
-    if (maleVoices.length > 0) return maleVoices[0];
-    return availableVoices[0];
-  }
-
-  return pickVoice(availableVoices, randomFn, floorFn);
-}
-
 export function selectVoiceWithEffects(
   englishVoices = [],
   voiceType = 'player',

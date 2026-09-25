@@ -33,18 +33,11 @@ export class BeatClock {
       measurePhase: 0,
     };
     this.update(true);
-
-    const clockSource = this.audioContext ? 'AudioContext' : 'Date.now';
-    console.log(
-      `🎵 BeatClock initialized: ${bpm} BPM (${this.beatInterval}ms per beat) [${clockSource}]`
-    );
   }
 
   // Compute ms tolerances from fractional config values
   _updateTolerances() {
     this.tolerance = this.beatInterval * CONFIG.BEAT_TOLERANCES.ON_BEAT;
-    this.quarterBeatTolerance =
-      (this.beatInterval / 4) * CONFIG.BEAT_TOLERANCES.QUARTER_BEAT;
     this.eighthNoteTolerance =
       (this.beatInterval / 2) * CONFIG.BEAT_TOLERANCES.EIGHTH_NOTE;
   }
@@ -97,34 +90,6 @@ export class BeatClock {
     return beats.includes(this.getCurrentBeat() + 1); // 1-indexed
   }
 
-  // PLAYER TIMING: Free shooting (not restricted, but creates natural hi-hat feel)
-  canPlayerShoot() {
-    return this.isOnBeat(); // Available for audio timing, but player shooting is unrestricted
-  }
-
-  // NEW: PLAYER QUARTER-BEAT SHOOTING - Exact timing, no tolerance windows
-  canPlayerShootQuarterBeat() {
-    this.update();
-    const elapsed = this.cache.elapsed;
-    const quarterBeatInterval = this.beatInterval / 4; // 125ms at 120 BPM
-    const timeSinceLastQuarterBeat = elapsed % quarterBeatInterval;
-
-    return (
-      timeSinceLastQuarterBeat <= this.quarterBeatTolerance ||
-      timeSinceLastQuarterBeat >=
-        quarterBeatInterval - this.quarterBeatTolerance
-    );
-  }
-
-  // Get time until next quarter beat for queuing
-  getTimeToNextQuarterBeat() {
-    this.update();
-    const elapsed = this.cache.elapsed;
-    const quarterBeatInterval = this.beatInterval / 4;
-    const timeSinceLastQuarterBeat = elapsed % quarterBeatInterval;
-    return quarterBeatInterval - timeSinceLastQuarterBeat;
-  }
-
   // Get time to next 8th note (for player sustained fire)
   getTimeToNextEighthNote() {
     this.update();
@@ -175,24 +140,12 @@ export class BeatClock {
     return this.isOnBeat([1, 3]);
   }
 
-  // Get beat info for debugging
-  getBeatInfo() {
-    return {
-      currentBeat: this.getCurrentBeat() + 1, // 1-indexed for display
-      totalBeats: this.getTotalBeats(),
-      timeToNext: Math.round(this.getTimeToNextBeat()),
-      onBeat: this.isOnBeat(),
-      bpm: this.bpm,
-    };
-  }
-
   // Adjust tempo (for dynamic music)
   setBPM(newBPM) {
     this.bpm = newBPM;
     this.beatInterval = (60 / newBPM) * 1000;
     this._updateTolerances();
     this.update(true);
-    console.log(`🎵 Tempo changed to ${newBPM} BPM`);
   }
 
   // Reset timing (for level transitions)
@@ -214,7 +167,6 @@ export class BeatClock {
         this.beatInterval * this.beatsPerMeasure;
     }
     this.update(true);
-    console.log('🎵 BeatClock reset (beat-aligned)');
   }
 
   // Continuous beat phase: 0 = beat just hit, 1 = next beat about to hit

@@ -1,35 +1,15 @@
-import { BackgroundEffectsRenderer } from './BackgroundEffectsRenderer.js';
-
 /**
  * Visual effects manager: screen effects (bloom, chromatic aberration).
- * Background rendering is delegated to BackgroundEffectsRenderer.
  */
 
 class VisualEffectsManager {
-  constructor(backgroundLayers, context = null) {
-    this.context = context;
-
+  constructor() {
     this.bloomIntensity = 0;
     this._bloomFramesLeft = 0;
     this.chromaticAberration = 0;
     this._chromaticFramesLeft = 0;
-
-    this._background = new BackgroundEffectsRenderer(backgroundLayers);
   }
 
-  // Expose background state for external readers
-  get initialized() {
-    return this._background.initialized;
-  }
-  get initFailed() {
-    return this._background.initFailed;
-  }
-
-  drawEnhancedBackground(p, camera) {
-    this._background.drawEnhancedBackground(p, camera);
-  }
-
-  /** Stabber-compatible API: addExplosion(x, y, count, color, intensity?, size?, life?) */
   applyScreenEffects(p) {
     if (this.chromaticAberration > 0) {
       this.drawChromaticAberration(p);

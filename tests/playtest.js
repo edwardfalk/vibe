@@ -1,45 +1,52 @@
 import { test } from '@playwright/test';
 import { writeFileSync } from 'fs';
+import { bootGame } from './helpers/boot.js';
 
 const DURATION_MS = parseInt(process.env.DURATION) || 30000;
 const SAMPLE_INTERVAL = 500;
+// The bot re-aims at the nearest enemy this often, holding the mouse to fire
+const AIM_INTERVAL = 50;
 const OUTPUT_PATH = 'tests/playtest-results.json';
 
 /**
- * Boot the game: navigate, unlock audio, wait for core systems.
- */
-const bootGame = async (page) => {
-  await page.goto('/');
-  await page.waitForSelector('canvas', { state: 'attached' });
-  await page.keyboard.press(' ');
-  await page.waitForFunction(
-    () =>
-      window.gameState?.gameState === 'playing' &&
-      window.player &&
-      window.collisionSystem &&
-      Array.isArray(window.enemies) &&
-      window.enemies.filter((e) => !e.markedForRemoval).length > 0 &&
-      typeof window.frameCount === 'number' &&
-      window.frameCount > 0
-  );
-};
-
-/**
- * Movement patterns to cycle through for realistic gameplay simulation.
- * Each pattern is [keys[], durationMs].
+ * Movement patterns to cycle through so the bot isn't a sitting duck.
+ * Each pattern is [keys[], durationMs]. Firing is the held mouse button.
  */
 const MOVEMENT_PATTERNS = [
-  [['d', ' '], 800], // Move right, shoot
-  [['w', 'd', ' '], 600], // Move up-right, shoot
-  [['w', ' '], 500], // Move up, shoot
-  [['w', 'a', ' '], 600], // Move up-left, shoot
-  [['a', ' '], 800], // Move left, shoot
-  [['s', 'a', ' '], 600], // Move down-left, shoot
-  [['s', ' '], 500], // Move down, shoot
-  [['s', 'd', ' '], 600], // Move down-right, shoot
-  [[' '], 400], // Stand and shoot
-  [['d'], 300], // Move without shooting
+  [['d'], 800],
+  [['w', 'd'], 600],
+  [['w'], 500],
+  [['w', 'a'], 600],
+  [['a'], 800],
+  [['s', 'a'], 600],
+  [['s'], 500],
+  [['s', 'd'], 600],
+  [[], 400], // stand still
 ];
+
+/**
+ * Point the mouse at the nearest live enemy (the canvas is CSS-scaled, so
+ * canvas pixels are converted to page pixels).
+ */
+const aimAtNearestEnemy = async (page, box) => {
+  const target = await page.evaluate(() => {
+    const p = window.player;
+    let best = null;
+    let bestDist = Infinity;
+    for (const e of window.enemies ?? []) {
+      if (e.markedForRemoval) continue;
+      const d = Math.hypot(e.x - p.x, e.y - p.y);
+      if (d < bestDist) {
+        bestDist = d;
+        best = e;
+      }
+    }
+    return best ? window.cameraSystem.worldToScreen(best.x, best.y) : null;
+  });
+  if (!target) return;
+  const scale = box.width / 800;
+  await page.mouse.move(box.x + target.x * scale, box.y + target.y * scale);
+};
 
 /**
  * Sample game state for metrics.
@@ -86,13 +93,36 @@ const computeFpsStats = (samples) => {
 };
 
 test('playtest session', async ({ page }) => {
-  // Collect console errors
+  // Collect console errors and uncaught page errors
   const errors = [];
   page.on('console', (msg) => {
     if (msg.type() === 'error') errors.push(msg.text());
   });
+  page.on('pageerror', (err) => errors.push(err.message));
 
   await bootGame(page);
+
+  // Record when each level arrives and when each enemy type first shows up
+  await page.evaluate(() => {
+    const t0 = performance.now();
+    const secs = () => Math.round((performance.now() - t0) / 1000);
+    window.__pacing = { levelUps: [], firstSeen: {} };
+    let lastLevel = window.gameState.level;
+    setInterval(() => {
+      const { level } = window.gameState;
+      if (level !== lastLevel) {
+        lastLevel = level;
+        window.__pacing.levelUps.push([level, secs()]);
+      }
+      for (const e of window.enemies) {
+        if (!(e.type in window.__pacing.firstSeen)) {
+          window.__pacing.firstSeen[e.type] = secs();
+        }
+      }
+    }, 100);
+  });
+  const box = await page.locator('canvas').first().boundingBox();
+  await page.mouse.down();
 
   const samples = [];
   const startTime = Date.now();
@@ -100,8 +130,17 @@ test('playtest session', async ({ page }) => {
   let patternEndTime = 0;
   let activeKeys = [];
 
-  // Main loop: sample state and cycle movement patterns
+  let nextSampleTime = 0;
+
+  // Main loop: aim, sample state and cycle movement patterns
   while (Date.now() - startTime < DURATION_MS) {
+    await aimAtNearestEnemy(page, box);
+    if (Date.now() < nextSampleTime) {
+      await page.waitForTimeout(AIM_INTERVAL);
+      continue;
+    }
+    nextSampleTime = Date.now() + SAMPLE_INTERVAL;
+
     // Check if game ended
     const currentState = await sampleGameState(page);
     samples.push(currentState);
@@ -131,8 +170,11 @@ test('playtest session', async ({ page }) => {
       }
     }
 
-    await page.waitForTimeout(SAMPLE_INTERVAL);
+    await page.waitForTimeout(AIM_INTERVAL);
   }
+
+  await page.mouse.up();
+  const pacing = await page.evaluate(() => window.__pacing);
 
   // Release all keys
   for (const key of activeKeys) {
@@ -158,6 +200,8 @@ test('playtest session', async ({ page }) => {
     finalHealth: lastSample.playerHealth,
     consoleErrors: errors.length,
     sampleCount: samples.length,
+    levelUps: pacing.levelUps,
+    firstSeen: pacing.firstSeen,
   };
 
   // Print summary
@@ -168,6 +212,9 @@ test('playtest session', async ({ page }) => {
     `   Final: Level ${lastSample.level} | Score ${lastSample.score} | Health ${lastSample.playerHealth}`
   );
   console.log(`   Survived: ${survived ? 'yes' : 'no'}`);
+  console.log(
+    `   Level-ups [level, s]: ${JSON.stringify(pacing.levelUps)} | first seen (s): ${JSON.stringify(pacing.firstSeen)}`
+  );
   if (errors.length > 0) {
     console.log(`   ⚠️ Console errors: ${errors.length}`);
     errors.slice(0, 5).forEach((e) => console.log(`     - ${e}`));

@@ -1,11 +1,12 @@
 /**
  * GameLoop.js - Core game loop and coordination between all systems
  *
- * Musical combat system where all actions sync to beats:
- * - Player = Hi-hat (every beat)
- * - Grunts = Snare (beats 2 & 4)
- * - Tanks = Bass drum (beat 1)
- * - Stabbers = Off-beat accent (beat 3.5)
+ * Musical combat: enemies act on the beat (BeatClock), over a steady kick:
+ * - Player = hi-hat (held fire snaps to eighth notes)
+ * - Grunts = snare (beats 2 & 4)
+ * - Tanks = beat 1
+ * - Stabbers = off-beat accent (3.5)
+ * - Rushers = crash (beats 1 & 3)
  */
 
 import { initializeInputHandlers } from './core/InputHandlers.js';
@@ -15,9 +16,7 @@ import { updateEnemiesAndResolveResults } from './systems/gameplay/EnemyUpdatePi
 import { updateBullets } from './systems/gameplay/BulletUpdatePipeline.js';
 import { drawGameplayWorld } from './systems/gameplay/RenderPipeline.js';
 import { updatePerformanceDiagnostics } from './systems/gameplay/PerformanceDiagnostics.js';
-import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
 import { Bullet } from './entities/bullet.js';
-import { VisualEffectsManager, FloatingTextManager } from './effects/index.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
 import { CONFIG } from './config.js';
 import { runSetup } from './GameLoopSetup.js';
@@ -32,7 +31,6 @@ const activeBombs = [];
 
 // Systems
 let explosionManager;
-let audio;
 let gameContext;
 let enemyDeathHandler;
 
@@ -44,22 +42,9 @@ window.enemyBullets = enemyBullets;
 window.activeBombs = activeBombs;
 window.explosionManager = null;
 window.audio = null;
-window.speechManager = null;
 window.performanceDiagnostics = null;
 
-// Keys system for testing
-window.keys = {
-  W: false,
-  w: false,
-  A: false,
-  a: false,
-  S: false,
-  s: false,
-  D: false,
-  d: false,
-};
-
-// Add at the top, after global system references
+// Input state, written by core/InputHandlers.js
 window.playerIsShooting = false;
 window.arrowUpPressed = false;
 window.arrowDownPressed = false;
@@ -338,10 +323,6 @@ function startFromTitle(event) {
   event.stopImmediatePropagation();
   if (event.type === 'pointerdown') event.preventDefault();
 
-  // Resume p5.js audio context if present
-  if (typeof getAudioContext === 'function') {
-    getAudioContext().resume();
-  }
   // Creates the AudioContext, which also starts the beat track
   if (window.audio && typeof window.audio.ensureAudioContext === 'function') {
     window.audio.ensureAudioContext();

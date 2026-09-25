@@ -3,9 +3,7 @@
  * Each function resolves what happens when a bullet hits a target.
  */
 
-import { CONFIG } from '../../config.js';
 import { Bullet } from '../../entities/bullet.js';
-import { DAMAGE_RESULT } from '../../shared/DamageResult.js';
 import { handleDamageResult } from '../../shared/DamageResultHandler.js';
 import { applyKillFeedback } from '../combat/KillFeedback.js';
 
@@ -25,28 +23,13 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
   const cameraSystem = getContextValue('cameraSystem');
   if (!bullet.checkCollision(enemy)) return false;
 
-  if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-    console.log(`🎯 Bullet hit ${enemy.type} enemy! Health: ${enemy.health}`);
-  }
-
-  // Store enemy type for logging
+  // Read before damage is applied
   const enemyType = enemy.type;
-  const wasExploding = enemy.exploding;
 
   // Damage enemy (pass bullet angle for knockback)
-  if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-    console.log(
-      `[DEBUG] Calling takeDamage on enemy: type=${enemyType}, health=${enemy.health}, bullet.damage=${bullet.damage}, bullet.angle=${bullet.angle}`
-    );
-  }
   const rawResult = enemy.takeDamage(bullet.damage, bullet.angle);
-  if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-    console.log(
-      `[DEBUG] takeDamage result: ${rawResult}, enemyHealthAfter=${enemy.health}`
-    );
-  }
 
-  const damageResult = handleDamageResult(rawResult, enemy, {
+  handleDamageResult(rawResult, enemy, {
     explosionManager,
     audio,
     gameState,
@@ -74,18 +57,6 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
     floatingText,
     bulletDamage: bullet.damage,
   });
-
-  if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-    if (damageResult === DAMAGE_RESULT.EXPLODING) {
-      console.log(
-        `💥 RUSHER SHOT! Starting explosion sequence! Was already exploding: ${wasExploding}`
-      );
-    } else if (damageResult === DAMAGE_RESULT.DIED) {
-      console.log(`💀 ${enemyType} killed by bullet!`);
-    } else {
-      console.log(`🎯 ${enemyType} damaged, health now: ${enemy.health}`);
-    }
-  }
 
   // Remove bullet
   Bullet.release(bullet);
@@ -163,7 +134,7 @@ export function handleRegularEnemyBulletHit(bullet, enemy, deps) {
     bulletSource = 'tank';
   }
 
-  const damageResult = handleDamageResult(
+  handleDamageResult(
     enemy.takeDamage(bullet.damage, bullet.angle, bulletSource),
     enemy,
     {
@@ -178,26 +149,6 @@ export function handleRegularEnemyBulletHit(bullet, enemy, deps) {
     }
   );
 
-  if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-    if (damageResult === DAMAGE_RESULT.EXPLODING) {
-      console.log(`💥 FRIENDLY FIRE caused rusher to explode!`);
-    } else if (damageResult === DAMAGE_RESULT.DIED) {
-      console.log(
-        `💀 ${enemy.type} killed by friendly fire from ${bulletSource}!`
-      );
-    } else {
-      console.log(
-        `🎯 Friendly fire damaged ${enemy.type}, health now: ${enemy.health}`
-      );
-    }
-  }
-
-  if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-    const enemyBullets = getContextValue('enemyBullets');
-    console.log(
-      `➖ Removing enemy bullet (hit enemy): ${bullet.owner} hit ${enemy.type} - Remaining: ${enemyBullets.length - 1}`
-    );
-  }
   Bullet.release(bullet);
   bullet._remove = true;
 }

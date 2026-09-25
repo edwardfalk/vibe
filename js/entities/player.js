@@ -2,7 +2,7 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { CONFIG } from '../config.js';
 import { Bullet } from './bullet.js';
-import { max, atan2, sin } from '../mathUtils.js';
+import { max, atan2 } from '../mathUtils.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { updateDash, tryStartDash } from './PlayerDash.js';
 import { drawPlayer } from './PlayerRenderer.js';
@@ -40,7 +40,7 @@ export class Player {
     this.queuedShot = null;
     this.wantsToContinueShooting = false;
 
-    // NEW: Improved shooting system state
+    // Burst state: the first shot is immediate, held fire snaps to eighth notes
     this.isCurrentlyShooting = false;
     this.firstShotFired = false;
 
@@ -71,34 +71,22 @@ export class Player {
     this.isMoving = false;
 
     // Check for W key (up movement)
-    if (
-      this.p.keyIsDown(87) ||
-      (window.keys && (window.keys.W || window.keys.w))
-    ) {
+    if (this.p.keyIsDown(87)) {
       this.velocity.y = -this.speed;
       this.isMoving = true;
     }
     // Check for S key (down movement)
-    if (
-      this.p.keyIsDown(83) ||
-      (window.keys && (window.keys.S || window.keys.s))
-    ) {
+    if (this.p.keyIsDown(83)) {
       this.velocity.y = this.speed;
       this.isMoving = true;
     }
     // Check for A key (left movement)
-    if (
-      this.p.keyIsDown(65) ||
-      (window.keys && (window.keys.A || window.keys.a))
-    ) {
+    if (this.p.keyIsDown(65)) {
       this.velocity.x = -this.speed;
       this.isMoving = true;
     }
     // Check for D key (right movement)
-    if (
-      this.p.keyIsDown(68) ||
-      (window.keys && (window.keys.D || window.keys.d))
-    ) {
+    if (this.p.keyIsDown(68)) {
       this.velocity.x = this.speed;
       this.isMoving = true;
     }
@@ -153,43 +141,17 @@ export class Player {
       if (window.arrowRightPressed) dx += 1;
       if (dx !== 0 || dy !== 0) {
         this.aimAngle = atan2(dy, dx);
-        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-          console.log(
-            '[AIM] Arrow keys: dx=' +
-              dx +
-              ', dy=' +
-              dy +
-              ', angle=' +
-              ((this.aimAngle * 180) / Math.PI).toFixed(1)
-          );
-        }
       }
     } else if (this.cameraSystem) {
-      // FIXED: Proper camera-aware mouse aiming
+      // Aim at the mouse in world coordinates (the camera moves)
       const worldMouse = this.cameraSystem.screenToWorld(
         this.p.mouseX,
         this.p.mouseY
       );
       this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
-      if (
-        CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
-        this.p.frameCount % 60 === 0
-      ) {
-        console.log(
-          `[AIM] Mouse: screen(${this.p.mouseX}, ${this.p.mouseY}) world(${worldMouse.x.toFixed(1)}, ${worldMouse.y.toFixed(1)}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
-        );
-      }
     } else {
       // Fallback for when camera system is not available
       this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
-      if (
-        CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS &&
-        this.p.frameCount % 60 === 0
-      ) {
-        console.log(
-          `[AIM] Fallback: mouse(${this.p.mouseX}, ${this.p.mouseY}) player(${this.x.toFixed(1)}, ${this.y.toFixed(1)}) angle=${((this.aimAngle * 180) / Math.PI).toFixed(1)}°`
-        );
-      }
     }
 
     // Update animation
@@ -223,8 +185,6 @@ export class Player {
             if (audio) {
               audio.playPlayerShoot(this.x, this.y);
             }
-
-            console.log('🎵 Queued shot fired on beat!');
           }
 
           // Set proper cooldown to prevent double shot from shoot() later this frame
@@ -334,10 +294,6 @@ export class Player {
   }
 
   takeDamage(amount, damageSource = 'unknown') {
-    console.log(
-      `🩸 PLAYER DAMAGE: ${amount} HP from ${damageSource} (Health: ${this.health} → ${this.health - amount})`
-    );
-
     const prevHealth = this.health;
     this.health -= amount;
 
@@ -361,14 +317,11 @@ export class Player {
           : this.health < this.maxHealth * 0.3
             ? 'lowHealth'
             : 'damage';
-      if (audio.speakPlayerLine(this, context)) {
-        console.log(`🎤 Player damage reaction triggered`);
-      }
+      audio.speakPlayerLine(this, context);
     }
 
     if (this.health <= 0) {
       this.health = 0;
-      console.log(`💀 PLAYER KILLED by ${damageSource}!`);
       return true; // Player died
     }
     return false;
@@ -377,66 +330,5 @@ export class Player {
   checkCollision(other) {
     const distance = this.p.dist(this.x, this.y, other.x, other.y);
     return distance < (this.size + other.size) * 0.5;
-  }
-
-  /**
-   * Handle input for testing purposes
-   * @param {Object} keys - Key state object
-   */
-  handleInput(keys) {
-    // This method is used by the testing system to simulate input
-    // The actual input handling is done in the update() method
-    if (keys) {
-      // Store previous position for testing
-      const prevX = this.x;
-      const prevY = this.y;
-
-      // Reset velocity
-      this.velocity.x = 0;
-      this.velocity.y = 0;
-
-      // Apply movement based on key states
-      if (keys.W || keys.w) this.velocity.y = -this.speed;
-      if (keys.S || keys.s) this.velocity.y = this.speed;
-      if (keys.A || keys.a) this.velocity.x = -this.speed;
-      if (keys.D || keys.d) this.velocity.x = this.speed;
-
-      // Normalize diagonal movement
-      if (this.velocity.x !== 0 && this.velocity.y !== 0) {
-        this.velocity.x *= 0.707;
-        this.velocity.y *= 0.707;
-      }
-
-      // Apply movement
-      this.x += this.velocity.x;
-      this.y += this.velocity.y;
-
-      // Apply world bounds
-      const halfSize = this.size / 2;
-      const margin = 5;
-      const worldBounds = {
-        left: -WORLD_WIDTH / 2 + margin,
-        right: WORLD_WIDTH / 2 - margin,
-        top: -WORLD_HEIGHT / 2 + margin,
-        bottom: WORLD_HEIGHT / 2 - margin,
-      };
-      this.x = this.p.constrain(
-        this.x,
-        worldBounds.left + halfSize,
-        worldBounds.right - halfSize
-      );
-      this.y = this.p.constrain(
-        this.y,
-        worldBounds.top + halfSize,
-        worldBounds.bottom - halfSize
-      );
-
-      return {
-        moved: Math.abs(this.x - prevX) > 0.1 || Math.abs(this.y - prevY) > 0.1,
-        prevPos: { x: prevX, y: prevY },
-        newPos: { x: this.x, y: this.y },
-      };
-    }
-    return { moved: false };
   }
 }

@@ -19,11 +19,9 @@ export function handleKeyPress(
   if (key === 'p' || key === 'P') {
     if (gameState.gameState === 'playing') {
       gameState.setGameState('paused');
-      console.log('⏸️ Game paused');
       return true;
     } else if (gameState.gameState === 'paused') {
       gameState.setGameState('playing');
-      console.log('▶️ Game resumed');
       return true;
     }
   }
@@ -31,7 +29,6 @@ export function handleKeyPress(
   if (key === 'm' || key === 'M') {
     if (audio) {
       const soundEnabled = audio.toggle();
-      console.log('🎵 Sound ' + (soundEnabled ? 'enabled' : 'disabled'));
       showToast?.(soundEnabled ? 'Sound on' : 'Sound off');
       return true;
     }
@@ -40,7 +37,6 @@ export function handleKeyPress(
   if (key === 'e' || key === 'E') {
     // Dash with E
     if (gameState.gameState === 'playing' && player && player.dash()) {
-      console.log('💨 Player dash activated!');
       if (cameraSystem) {
         cameraSystem.addShake(6, 12);
       }

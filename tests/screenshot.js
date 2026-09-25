@@ -1,4 +1,5 @@
 import { test } from '@playwright/test';
+import { bootGame, jumpToLevel } from './helpers/boot.js';
 
 // Parse CLI args from environment (Playwright doesn't pass process.argv easily)
 // Usage: LEVEL=3 WAIT=5000 npx playwright test tests/screenshot.js
@@ -6,53 +7,10 @@ const TARGET_LEVEL = parseInt(process.env.LEVEL) || 0;
 const WAIT_MS = parseInt(process.env.WAIT) || 2000;
 const OUTPUT_PATH = 'tests/screenshots/game-screenshot.png';
 
-/**
- * Boot the game: navigate, unlock audio, wait for core systems.
- * Same pattern as gameplay-probe.test.js bootGame().
- */
-const bootGame = async (page) => {
-  await page.goto('/');
-  await page.waitForSelector('canvas', { state: 'attached' });
-  await page.keyboard.press(' ');
-  await page.waitForFunction(
-    () =>
-      window.gameState?.gameState === 'playing' &&
-      window.player &&
-      window.collisionSystem &&
-      Array.isArray(window.enemies) &&
-      window.enemies.filter((e) => !e.markedForRemoval).length > 0 &&
-      typeof window.frameCount === 'number' &&
-      window.frameCount > 0
-  );
-};
-
-/**
- * Fast-forward to target level by injecting score.
- * Level thresholds: L2=150, L3=450, L4=900, L5=1500, L6=2250
- */
+// Jump to the target level, then give its new enemy types time to spawn
 const fastForwardToLevel = async (page, level) => {
   if (level < 2) return;
-
-  // Compute score needed: sum of (n * 150) for n=1..level-1, plus a small buffer
-  await page.evaluate((targetLevel) => {
-    const gs = window.gameState;
-    // Calculate exact threshold for target level
-    let threshold = 0;
-    for (let n = 1; n < targetLevel; n++) {
-      threshold += n * 150;
-    }
-    gs.score = threshold + 10; // Small buffer past threshold
-    gs.checkLevelProgression();
-  }, level);
-
-  // Verify level reached
-  await page.waitForFunction(
-    (target) => window.gameState.level >= target,
-    level,
-    { timeout: 5000 }
-  );
-
-  // Wait for new enemy types to spawn at this level
+  await jumpToLevel(page, level);
   await page.waitForTimeout(1500);
 };
 
@@ -102,7 +60,7 @@ test('capture game screenshot', async ({ page }) => {
 
   await page.screenshot({ path: OUTPUT_PATH, fullPage: true });
 
-  // Print results for Claude to read
+  // Print a summary for whoever ran the script
   console.log(`\n📸 Screenshot saved: ${OUTPUT_PATH}`);
   console.log(
     `   Level: ${info.level} | Score: ${info.score} | Enemies: ${info.enemyCount} | Health: ${info.playerHealth} | Frame: ${info.frameCount}`

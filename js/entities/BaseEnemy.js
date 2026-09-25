@@ -251,7 +251,7 @@ export class BaseEnemy {
         }
       }
     } catch (error) {
-      console.log('⚠️ Enemy glow error:', error);
+      console.warn('⚠️ Enemy glow error:', error);
     }
   }
 
@@ -267,12 +267,6 @@ export class BaseEnemy {
    * Draw method - handles common rendering and calls specific draw methods
    */
   draw(p = this.p) {
-    if (p.frameCount % 30 === 0 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[ENEMY DRAW] type=${this.type} x=${this.x.toFixed(1)} y=${this.y.toFixed(1)} health=${this.health}`
-      );
-    }
-
     const spawnProgress = this.isSpawning
       ? this.spawnTimer / this.spawnDuration
       : 1;
@@ -460,13 +454,6 @@ export class BaseEnemy {
       this.audio.playAlienShoot(this.x, this.y);
     }
 
-    // DEBUG: Log bullet creation only if collision debug is enabled
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `🔫 ${this.type} created bullet at (${Math.round(bulletX)}, ${Math.round(bulletY)}) angle=${Math.round((this.aimAngle * 180) / Math.PI)}° owner="${bullet.owner}" ownerId="${bullet.ownerId}"`
-      );
-    }
-
     return bullet;
   }
 
@@ -474,11 +461,6 @@ export class BaseEnemy {
    * Take damage - handles basic damage logic
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[DEBUG] ${this.type || this.constructor.name} takeDamage called: health=${this.health} markedForRemoval=${this.markedForRemoval}`
-      );
-    }
     this.health -= amount;
     this.hitFlash = Math.max(this.hitFlash, 8);
     if (this.health <= 0) {

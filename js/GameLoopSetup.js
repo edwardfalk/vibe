@@ -16,7 +16,8 @@ import { BeatClock } from './audio/BeatClock.js';
 import { BeatTrack } from './audio/BeatTrack.js';
 import { RhythmFX } from './RhythmFX.js';
 import { GameContext, createWindowBackedContext } from './core/GameContext.js';
-import { VisualEffectsManager, FloatingTextManager } from './effects/index.js';
+import VisualEffectsManager from './effects/VisualEffectsManager.js';
+import { FloatingTextManager } from './effects/FloatingTextManager.js';
 import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
 
 const CANVAS_WIDTH = 800;
@@ -79,37 +80,24 @@ export function runSetup(p, arrays, syncContext = null) {
     );
   }
   window.backgroundRenderer.createParallaxBackground(p);
-  const backgroundLayers = window.backgroundRenderer.parallaxLayers ?? [];
 
   if (!window.visualEffectsManager) {
-    window.visualEffectsManager = new VisualEffectsManager(
-      backgroundLayers,
-      gameContext
-    );
-  } else {
-    window.visualEffectsManager.backgroundLayers = backgroundLayers;
-    window.visualEffectsManager.context = gameContext;
+    window.visualEffectsManager = new VisualEffectsManager();
   }
-  console.log('🎮 Visual effects manager initialized');
 
   if (!window.audio) {
     window.audio = new Audio(p, window.player, gameContext);
   }
-  console.log('🎵 Unified audio system initialized');
-
-  console.log('📷 Camera system initialized');
 
   if (!window.spawnSystem) {
     window.spawnSystem = new SpawnSystem(gameContext);
   }
-  console.log('👾 Spawn system initialized');
 
   if (!window.beatClock) {
     window.beatClock = new BeatClock(
       DEFAULT_BPM,
       window.audio?.audioContext ?? null
     );
-    console.log('🎵 BeatClock initialized and assigned to window.beatClock');
   }
 
   // Monkey-patch audio.initialize so BeatClock syncs once AudioContext is available
@@ -130,27 +118,21 @@ export function runSetup(p, arrays, syncContext = null) {
         window.beatClock.audioContext = this.audioContext;
         window.beatClock.startTime = audioNow - oldElapsed;
         window.beatClock.update(true);
-        console.log('🎵 BeatClock synced to AudioContext (phase preserved)');
       }
     };
   }
   if (!window.rhythmFX) {
     window.rhythmFX = new RhythmFX(gameContext);
-    console.log('🎵 RhythmFX initialized');
   }
   if (!window.collisionSystem) {
     window.collisionSystem = new CollisionSystem(gameContext);
   }
-  console.log('💥 Collision system initialized');
 
   // Sync context BEFORE restart so spawnEnemies() can resolve player/p5 instance
   if (typeof syncContext === 'function') {
     syncContext(gameContext);
   }
   window.gameState.restart();
-  console.log('🎮 GameState system initialized');
-
-  console.log('🌌 Background renderer initialized');
 
   const enemyDeathHandler =
     window.enemyDeathHandler ?? new EnemyDeathHandler(gameContext);
@@ -162,21 +144,14 @@ export function runSetup(p, arrays, syncContext = null) {
     window.audio,
     window.cameraSystem
   );
-  console.log('🖥️ UI renderer initialized');
 
   if (!window.beatTrack) {
     window.beatTrack = new BeatTrack(DEFAULT_BPM, gameContext);
   }
 
-  if (window.audio && window.audio.startDrone) {
-    window.audio.startDrone();
-  }
-
   if (window.spawnSystem) {
     window.spawnSystem.spawnEnemies(1);
   }
-
-  console.log('🎮 Game setup complete - all systems initialized');
 
   return {
     player,

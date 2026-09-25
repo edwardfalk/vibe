@@ -5,7 +5,6 @@ import {
   EnemyFragmentExplosion,
   getFragmentPoolStats,
 } from './EnemyFragmentExplosion.js';
-import { random, TWO_PI, cos, sin } from '../../mathUtils.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
 
 export class ExplosionManager {
@@ -50,82 +49,6 @@ export class ExplosionManager {
       const audio = this.getContextValue('audio');
       if (audio) audio.playPlasmaCloud(x, y);
     }
-  }
-
-  // Create multiple radioactive debris clouds around a bomb explosion
-  addBombDebrisField(centerX, centerY, count = 5) {
-    for (let i = 0; i < count; i++) {
-      const angle = (i / count) * TWO_PI + random(-0.5, 0.5);
-      const distance = random(80, 150);
-      const debrisX = centerX + cos(angle) * distance;
-      const debrisY = centerY + sin(angle) * distance;
-      this.addRadioactiveDebris(debrisX, debrisY, false);
-    }
-    const audio = this.getContextValue('audio');
-    if (audio) audio.playPlasmaCloud(centerX, centerY);
-    console.log(
-      `☢️ Created radioactive debris field with ${count} contamination zones`
-    );
-  }
-
-  // Add kill effects for different enemy types and kill methods
-  addKillEffect(x, y, enemyType, killMethod = 'bullet') {
-    if (enemyType === 'grunt') {
-      if (killMethod === 'bullet') {
-        // Electrical malfunction - green sparks with white electrical discharge
-        this.explosions.push(new Explosion(x, y, 'grunt-bullet-kill'));
-      } else if (killMethod === 'plasma') {
-        // Green energy meltdown - deeper greens with plasma burn
-        this.explosions.push(new Explosion(x, y, 'grunt-plasma-kill'));
-      } else {
-        // Fallback to generic grunt death
-        this.explosions.push(new Explosion(x, y, 'grunt-death'));
-      }
-    } else if (enemyType === 'rusher') {
-      if (killMethod === 'bullet') {
-        // Speed explosion - hot pink with momentum trails
-        this.explosions.push(new Explosion(x, y, 'rusher-bullet-kill'));
-      } else if (killMethod === 'plasma') {
-        // Pink plasma burn - intense plasma overload
-        this.explosions.push(new Explosion(x, y, 'rusher-plasma-kill'));
-      } else {
-        // Fallback - rushers already have their explosion system
-        this.explosions.push(new Explosion(x, y, 'rusher-explosion'));
-      }
-    } else if (enemyType === 'tank') {
-      if (killMethod === 'bullet') {
-        // Armor fragments - blue violet metal debris
-        this.explosions.push(new Explosion(x, y, 'tank-bullet-kill'));
-      } else if (killMethod === 'plasma') {
-        // Massive energy discharge - blue plasma chain reaction
-        this.explosions.push(new Explosion(x, y, 'tank-plasma-kill'));
-        // Tanks also create plasma clouds when killed by plasma
-        this.addPlasmaCloud(x, y);
-      } else {
-        // Fallback to tank plasma explosion
-        this.explosions.push(new Explosion(x, y, 'tank-plasma'));
-        this.addPlasmaCloud(x, y);
-      }
-    } else if (enemyType === 'stabber') {
-      if (killMethod === 'bullet') {
-        // Blade fragments - golden precision cuts
-        this.explosions.push(new Explosion(x, y, 'stabber-bullet-kill'));
-      } else if (killMethod === 'plasma') {
-        // Energy sword discharge - gold plasma blade effects
-        this.explosions.push(new Explosion(x, y, 'stabber-plasma-kill'));
-      } else {
-        // Fallback to generic stabber death
-        this.explosions.push(new Explosion(x, y, 'stabber-death'));
-      }
-    } else {
-      // Generic enemy explosion for unknown types
-      this.explosions.push(new Explosion(x, y, 'enemy'));
-    }
-
-    const effectName = `${enemyType}-${killMethod}-kill`;
-    console.log(
-      `💥 ${enemyType} killed by ${killMethod} - created ${effectName} effect`
-    );
   }
 
   addFragmentExplosion(x, y, enemy) {

@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sin, cos, ceil, max } from '../mathUtils.js';
+import { sin, cos, ceil, max } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { updateStabberBehavior } from './StabberAttackHandler.js';
 
@@ -153,7 +153,6 @@ class Stabber extends BaseEnemy {
    */
   drawWeapon(s) {
     // Base knife dimensions
-    const knifeLength = s * 0.6; // Base length
     const knifeWidth = s * 0.2; // Base width
     let extensionFactor = 1.0; // Default (retracted)
     const extendedFactor = 2.0; // New fixed extension (about half of old max)
@@ -295,17 +294,10 @@ class Stabber extends BaseEnemy {
     let actualDamage = amount;
     if (this.armor) {
       actualDamage = max(1, amount - this.armor); // Minimum 1 damage
-      console.log(
-        `🛡️ Stabber armor reduced damage: ${amount} -> ${actualDamage}`
-      );
     }
 
     // INTERRUPT ATTACK when taking damage - prevents phantom hits after knockback
     if (this.stabPreparing || this.stabWarning) {
-      console.log(
-        `🚫 Stabber attack interrupted by damage! Was in: ${this.stabPreparing ? 'preparing' : 'warning'} phase`
-      );
-
       // Reset all attack states
       this.stabPreparing = false;
       this.stabPreparingTime = 0;
@@ -340,8 +332,6 @@ class Stabber extends BaseEnemy {
         this.knockbackVelocity.y =
           (this.knockbackVelocity.y / kbMag) * maxKnockback;
       }
-
-      console.log(`⚡ Stabber knocked back! Knockback: ${knockbackForce}`);
     }
 
     const audio = this.getContextValue('audio');

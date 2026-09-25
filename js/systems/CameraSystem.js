@@ -129,34 +129,6 @@ export class CameraSystem {
     };
   }
 
-  // Check if a world position is visible on screen
-  isVisible(worldX, worldY, margin = 50) {
-    const p = this.p;
-    const screen = this.worldToScreen(worldX, worldY);
-    return (
-      screen.x >= -margin &&
-      screen.x <= p.width + margin &&
-      screen.y >= -margin &&
-      screen.y <= p.height + margin
-    );
-  }
-
-  // Get camera bounds in world coordinates
-  getBounds() {
-    const p = this.p;
-    const topLeft = this.screenToWorld(0, 0);
-    const bottomRight = this.screenToWorld(p.width, p.height);
-
-    return {
-      left: topLeft.x,
-      top: topLeft.y,
-      right: bottomRight.x,
-      bottom: bottomRight.y,
-      width: bottomRight.x - topLeft.x,
-      height: bottomRight.y - topLeft.y,
-    };
-  }
-
   // Reset camera to center
   reset() {
     this.x = 0;

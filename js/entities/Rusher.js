@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, sin, cos, ceil } from '../mathUtils.js';
+import { random, sqrt, sin, cos, ceil } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
@@ -134,9 +134,6 @@ class Rusher extends BaseEnemy {
           this.vibrating = true;
           this.vibrateStartTime = 0;
           this.speed = 0; // Stop moving
-          console.log(
-            `💥 RUSHER VIBRATING! Distance: ${distance.toFixed(0)}px`
-          );
 
           const audio = this.getContextValue('audio') || this.audio;
           if (audio) audio.playRusherCharge(this.x, this.y);
@@ -156,10 +153,6 @@ class Rusher extends BaseEnemy {
           if (!this.hasScreamed) {
             this.hasScreamed = true;
             this.isCharging = true;
-
-            console.log(
-              `🗣️ RUSHER BATTLE CRY! Starting charge at distance: ${distance.toFixed(0)}px`
-            );
 
             // Rusher scream with audio
             const audio = this.getContextValue('audio') || this.audio;
@@ -357,7 +350,6 @@ class Rusher extends BaseEnemy {
       this.vibrateStartTime = 0;
       this.shotTriggered = true; // Mark as shot-triggered
       this.speed = 0; // Stop moving
-      console.log(`💥 RUSHER SHOT: Vibrating! Health: ${this.health}`);
 
       // Just set hit flash for visual feedback, don't apply damage yet
       // The rusher will be removed when explosion timer completes

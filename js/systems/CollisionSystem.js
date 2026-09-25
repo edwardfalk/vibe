@@ -2,8 +2,6 @@
  * CollisionSystem.js - Handles all collision detection between bullets, enemies, and player
  */
 
-import { dist } from '../mathUtils.js';
-import { CONFIG } from '../config.js';
 import { Bullet } from '../entities/bullet.js';
 import { EnemyDeathHandler } from './combat/EnemyDeathHandler.js';
 import {
@@ -20,7 +18,6 @@ import {
 import {
   handleContactCollisions,
   handleRusherExplosionCollision,
-  handleStabberAttackCollision,
 } from './combat/PlayerContactHandlers.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import {
@@ -136,26 +133,10 @@ export class CollisionSystem {
         const enemy = enemies[j];
         if (!enemy) continue;
 
-        // Log positions and health before collision check
-        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-          console.log(
-            `[DEBUG] Checking bullet vs enemy: bullet=(${bullet.x.toFixed(1)},${bullet.y.toFixed(1)}) enemy=(${enemy.x.toFixed(1)},${enemy.y.toFixed(1)}) enemyHealth=${enemy.health}`
-          );
-        }
-
         this.frameMetrics.playerBulletChecks++;
         if (this.resolveBulletEnemyHit(bullet, i, enemy)) {
           this.frameMetrics.playerBulletHits++;
           break;
-        }
-
-        if (enemy.type === 'grunt' && bullet.owner === 'player') {
-          const distance = dist(bullet.x, bullet.y, enemy.x, enemy.y);
-          if (distance < 50 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-            console.log(
-              `[DEBUG] Bullet near grunt: bullet=(${bullet.x.toFixed(1)},${bullet.y.toFixed(1)}) enemy=(${enemy.x.toFixed(1)},${enemy.y.toFixed(1)}) dist=${distance.toFixed(1)} health=${enemy.health} markedForRemoval=${enemy.markedForRemoval}`
-            );
-          }
         }
       }
     }
@@ -196,9 +177,6 @@ export class CollisionSystem {
           if (gameState) {
             gameState.setGameState('gameOver');
           }
-          if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-            console.log(`💀 PLAYER DIED! Game state changed to gameOver.`);
-          }
         }
         Bullet.release(bullet);
         bullet._remove = true;
@@ -236,11 +214,6 @@ export class CollisionSystem {
         this.frameMetrics.enemyBulletChecks++;
         if (bullet.checkCollision(enemy)) {
           this.frameMetrics.enemyBulletHits++;
-          if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-            console.log(
-              `🔥 FRIENDLY FIRE! ${bullet.type || 'Enemy'} bullet hit ${enemy.type} enemy!`
-            );
-          }
 
           // Handle different bullet types
           if (bullet.type === 'tankEnergy' || bullet.owner === 'enemy-tank') {
@@ -265,19 +238,6 @@ export class CollisionSystem {
   // Handle enemy death effects
   handleEnemyDeath(enemy, enemyType, x, y) {
     this.enemyDeathHandler.handleEnemyDeath(enemy, enemyType, x, y);
-  }
-
-  // Handle stabber attack collision
-  handleStabberAttack(attack, stabber) {
-    handleStabberAttackCollision({
-      attack,
-      stabber,
-      player: this.getContextValue('player'),
-      audio: this.getContextValue('audio'),
-      gameState: this.getContextValue('gameState'),
-      cameraSystem: this.getContextValue('cameraSystem'),
-      explosionManager: this.getContextValue('explosionManager'),
-    });
   }
 
   // Handle rusher explosion collision

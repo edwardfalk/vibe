@@ -5,18 +5,7 @@
 import { EnemyFactory } from '../entities/EnemyFactory.js';
 import { CONFIG } from '../config.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
-import {
-  max,
-  min,
-  floor,
-  ceil,
-  round,
-  random,
-  sin,
-  cos,
-  atan2,
-  sqrt,
-} from '../mathUtils.js';
+import { max, min, floor, random, sin, cos, sqrt } from '../mathUtils.js';
 
 // Level at which each enemy type joins the regular mix
 export const ENEMY_INTRO_LEVEL = { stabber: 2, rusher: 3, tank: 5 };
@@ -118,9 +107,6 @@ export class SpawnSystem {
         p
       );
       enemies.push(enemy);
-      console.log(
-        `👾 Spawned ${enemyType} at level ${level} (${enemies.length}/${this.getMaxEnemiesForLevel(level)} enemies)`
-      );
     }
   }
 
@@ -219,10 +205,6 @@ export class SpawnSystem {
       spawnY = player.y + sin(angle) * 600;
     }
 
-    console.log(
-      `📍 Spawning enemy OFF-SCREEN at (${round(spawnX)}, ${round(spawnY)}) - distance from player: ${round(this.getDistance(spawnX, spawnY, player.x, player.y))}px`
-    );
-
     return { x: spawnX, y: spawnY };
   }
 
@@ -235,19 +217,5 @@ export class SpawnSystem {
   reset() {
     this.lastSpawnBeat = -Infinity;
     this.previewed.clear();
-  }
-
-  // Force spawn specific enemy type (for testing)
-  forceSpawn(enemyType, x, y) {
-    const enemies = this.getContextValue('enemies');
-    if (!enemies) return null;
-
-    const p = this.getContextValue('p') ?? this.context?.get?.('p');
-    const enemy = this.enemyFactory.createEnemy(x, y, enemyType, p);
-    if (!enemy) return null;
-    enemies.push(enemy);
-
-    console.log(`🎯 Force spawned ${enemyType} at (${x}, ${y})`);
-    return enemy;
   }
 }

@@ -106,7 +106,6 @@ export class BeatTrack {
     }
 
     this._scheduler();
-    console.log('🎵 BeatTrack started');
   }
 
   stop() {

@@ -179,28 +179,6 @@ export class FloatingTextManager {
     }
   }
 
-  addScorePopup(x, y, score, isCombo = false) {
-    const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
-    const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
-
-    const t = this.acquireText({
-      x,
-      y,
-      text: `+${score}`,
-      color: isCombo ? [255, 215, 0] : [100, 255, 100],
-      size: isCombo ? 20 : 16,
-      vy: -2.2,
-      vx: Math.random() - 0.5,
-      life: 50,
-      maxLife: 50,
-      scale: 0.8 + beatPulse * 0.2,
-      targetScale: 1.0,
-      momentum: 0.96,
-      isScore: true,
-    });
-    if (t) this.texts.push(t);
-  }
-
   addText(x, y, text, color = [255, 255, 255], size = 14) {
     const t = this.acquireText({
       x,

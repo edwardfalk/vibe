@@ -1,5 +1,3 @@
-import { CONFIG } from '../../config.js';
-
 export function drawGameplayWorld(context) {
   const {
     p,
@@ -13,20 +11,6 @@ export function drawGameplayWorld(context) {
     cameraSystem,
     visualEffectsManager,
   } = context;
-
-  if (
-    CONFIG?.GAME_SETTINGS?.DEBUG_COLLISIONS &&
-    typeof p.frameCount !== 'undefined' &&
-    p.frameCount % 30 === 0
-  ) {
-    const cam = cameraSystem
-      ? { x: cameraSystem.x, y: cameraSystem.y }
-      : { x: 0, y: 0 };
-    const safeEnemies = enemies ?? [];
-    console.log(
-      `🎮 [DRAW GAME] camera=(${cam.x},${cam.y}) enemies=${safeEnemies.length}`
-    );
-  }
 
   if (cameraSystem) {
     cameraSystem.applyTransform();

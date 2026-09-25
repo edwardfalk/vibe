@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { floor, random, sqrt, atan2, min, max } from '../mathUtils.js';
+import { random, sqrt, atan2 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 
 // Per-beat chances for beat-gated grunt sounds (rolled once per beat)
@@ -60,11 +60,6 @@ class Grunt extends BaseEnemy {
     this._pendingStabDeathParams = null;
 
     // Grunt weird noises are now beat-gated (no timer needed)
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[GRUNT DEBUG] Spawned Grunt at (${this.x.toFixed(1)},${this.y.toFixed(1)}) with health=${this.health}`
-      );
-    }
   }
 
   /**
@@ -78,11 +73,6 @@ class Grunt extends BaseEnemy {
     playerY,
     deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS
   ) {
-    if (this.p.frameCount % 30 === 0 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[GRUNT AI] updateSpecificBehavior called for Grunt at (${this.x.toFixed(1)},${this.y.toFixed(1)})`
-      );
-    }
     // Handle delayed death if stabbed
     const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS; // Normalize to 60fps baseline
     if (this.pendingStabDeath) {
@@ -128,7 +118,6 @@ class Grunt extends BaseEnemy {
     }
 
     // Grunts maintain tactical distance (150-250 pixels)
-    const idealDistance = 200;
     const tooClose = 150;
     const tooFar = 250;
 
@@ -237,11 +226,6 @@ class Grunt extends BaseEnemy {
     }
 
     // After movement logic
-    if (this.p.frameCount % 30 === 0 && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[GRUNT AI] velocity after logic: x=${this.velocity.x} y=${this.velocity.y}`
-      );
-    }
 
     return null;
   }
@@ -285,18 +269,8 @@ class Grunt extends BaseEnemy {
           // 20 degrees
           // 45% chance to avoid shooting (grunts try to avoid but aren't perfect)
           if (random() < 0.45) {
-            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-              console.log(
-                `🎖️ Grunt avoiding friendly fire - ${otherEnemy.type} in line of fire`
-              );
-            }
             return true;
           } else {
-            if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-              console.log(
-                `🎖️ Grunt shooting anyway - ${otherEnemy.type} in the way but mission priority!`
-              );
-            }
             return false;
           }
         }
@@ -321,9 +295,6 @@ class Grunt extends BaseEnemy {
       ];
       const randomSound = random(weirdSounds);
       audio.playSound(randomSound, this.x, this.y);
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-        console.log(`🤖 Grunt making weird noise: ${randomSound}`);
-      }
     }
   }
 
@@ -406,12 +377,6 @@ class Grunt extends BaseEnemy {
    * This pattern is unique to Grunt and not used for other enemies unless they require similar dramatic or audio effects.
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
-    // Debug: Log all takeDamage events for Grunt only if collision debug is enabled
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[GRUNT DEBUG] takeDamage called: health(before)=${this.health}, amount=${amount}, markedForRemoval=${this.markedForRemoval}, damageSource=${damageSource}`
-      );
-    }
     // Reject further damage while deferred death is pending
     if (this.pendingStabDeath) return false;
 
@@ -424,18 +389,8 @@ class Grunt extends BaseEnemy {
       const audio = this.getContextValue('audio');
       if (audio) {
         const ttsSuccess = audio.speak(this, 'ow', 'grunt', true); // force = true
-        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-          console.log(
-            '💬 Grunt stabbed: trying to say "ow" (TTS success:',
-            ttsSuccess,
-            ')'
-          );
-        }
         if (!ttsSuccess && audio.playSound) {
           audio.playSound('gruntOw', this.x, this.y);
-          if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-            console.log('🔊 Fallback gruntOw sound played.');
-          }
         }
       }
       // Set up delayed death, but don't call super.takeDamage() yet
@@ -448,16 +403,6 @@ class Grunt extends BaseEnemy {
       return false;
     }
     const died = super.takeDamage(amount, bulletAngle, damageSource);
-    if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[GRUNT DEBUG] takeDamage after super: health(after)=${this.health}, died=${died}, markedForRemoval=${this.markedForRemoval}`
-      );
-    }
-    if (died && CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-      console.log(
-        `[GRUNT DEBUG] Grunt at (${this.x.toFixed(1)},${this.y.toFixed(1)}) died and should be removed.`
-      );
-    }
     const audioSurv = this.getContextValue('audio');
     if (damageSource !== 'stabber_melee' && !died && audioSurv) {
       audioSurv.playSound('gruntHit', this.x, this.y);
@@ -469,18 +414,8 @@ class Grunt extends BaseEnemy {
       this.speechCooldown <= 0
     ) {
       const ttsSuccess = audioSurv.speak(this, 'ow', 'grunt', true); // force = true
-      if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-        console.log(
-          '💬 Grunt stabbed (survived): trying to say "ow" (TTS success:',
-          ttsSuccess,
-          ')'
-        );
-      }
       if (!ttsSuccess && audioSurv.playSound) {
         audioSurv.playSound('gruntOw', this.x, this.y);
-        if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-          console.log('🔊 Fallback gruntOw sound played.');
-        }
       }
       this.speechCooldown = 60; // 1s cooldown to avoid spam
     }

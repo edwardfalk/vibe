@@ -38,16 +38,6 @@ export class GameContext {
   toObject() {
     return { ...this.state };
   }
-
-  static fromWindow() {
-    const initial = {};
-    for (const key of WINDOW_CONTEXT_KEYS) {
-      if (typeof window !== 'undefined' && window[key] !== undefined) {
-        initial[key] = window[key];
-      }
-    }
-    return new GameContext(initial);
-  }
 }
 
 export function createWindowBackedContext(baseContext = new GameContext()) {
