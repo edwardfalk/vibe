@@ -89,26 +89,6 @@ describe('BeatClock', () => {
     expect(typeof result).toBe('boolean');
   });
 
-  it('canPlayerShootQuarterBeat returns boolean', () => {
-    expect(typeof clock.canPlayerShootQuarterBeat()).toBe('boolean');
-  });
-
-  it('getTimeToNextQuarterBeat is positive', () => {
-    const t = clock.getTimeToNextQuarterBeat();
-    expect(t).toBeGreaterThan(0);
-  });
-
-  it('getBeatInfo returns structured object', () => {
-    const info = clock.getBeatInfo();
-    expect(info).toHaveProperty('currentBeat');
-    expect(info).toHaveProperty('totalBeats');
-    expect(info).toHaveProperty('timeToNext');
-    expect(info).toHaveProperty('onBeat');
-    expect(info).toHaveProperty('bpm');
-    expect(info.currentBeat).toBeGreaterThanOrEqual(1);
-    expect(info.currentBeat).toBeLessThanOrEqual(4);
-  });
-
   it('currentBeat getter matches getCurrentBeat()', () => {
     expect(clock.currentBeat).toBe(clock.getCurrentBeat());
   });

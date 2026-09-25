@@ -53,7 +53,6 @@ const CONFIG = {
   // Beat timing tolerances (fraction of beat/subdivision interval)
   BEAT_TOLERANCES: {
     ON_BEAT: 0.2, // 20% of beat interval (100ms at 120 BPM)
-    QUARTER_BEAT: 0.1, // 10% of quarter-beat interval (50ms at 120 BPM)
     EIGHTH_NOTE: 0.08, // 8% of eighth-note interval (40ms at 120 BPM)
   },
 
