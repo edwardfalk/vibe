@@ -53,10 +53,10 @@ class Stabber extends BaseEnemy {
     // Stabber chant is now beat-gated (no timer needed)
     this.isStabbing = false;
     this.stabAnimationTime = 0;
-    this.maxStabAnimationTime = 120; // 2 second stab animation (dash) - CONTINUOUS HIT WINDOW
+    this.maxStabAnimationTime = 60; // 1 second dash - CONTINUOUS HIT WINDOW
     this.stabRecovering = false;
     this.stabRecoveryTime = 0;
-    this.maxStabRecoveryTime = 120; // 2 seconds stuck after attack
+    this.maxStabRecoveryTime = 60; // scale of the STUCK indicator (1 second)
 
     // Knockback system for armored stabbers
     this.knockbackVelocity = { x: 0, y: 0 };
@@ -104,28 +104,6 @@ class Stabber extends BaseEnemy {
     }
 
     return { bobble: 0, waddle: 0 };
-  }
-
-  /**
-   * Override aim angle update to lock during attack phases
-   *
-   * --- Update order refactor ---
-   * We run updateSpecificBehavior() first to set velocity and state,
-   * then call super.update() to apply velocity to position.
-   * This ensures all velocity changes take effect in the same frame,
-   * preventing frame delays and making the update logic robust.
-   */
-  update(playerX, playerY, deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
-    // 1. Run Stabber-specific logic first (sets velocity, handles state)
-    const behaviorResult = this.updateSpecificBehavior(
-      playerX,
-      playerY,
-      deltaTimeMs
-    );
-    // 2. Then call parent update to apply velocity to position, handle common logic
-    const baseUpdateResult = super.update(playerX, playerY, deltaTimeMs);
-    // Only return behaviorResult if it is neither null nor undefined; otherwise, return baseUpdateResult
-    return behaviorResult != null ? behaviorResult : baseUpdateResult;
   }
 
   /**

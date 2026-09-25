@@ -63,7 +63,7 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
 
 function handleRecoveryPhase(stabber, dt) {
   stabber.stabRecoveryTime += dt;
-  const penetrationFrames = 10;
+  const penetrationFrames = 5;
   const penetrationSpeedFactor = 0.5;
 
   if (
@@ -85,7 +85,7 @@ function handleRecoveryPhase(stabber, dt) {
   }
 
   // Recovery ends at next beat 3.5 (with minimum recovery time)
-  const minRecoveryFrames = 90; // ~1.5 second minimum
+  const minRecoveryFrames = 45; // 0.75 second minimum
   const beatClock = stabber.getContextValue('beatClock');
   if (stabber.stabRecoveryTime >= minRecoveryFrames) {
     if (!beatClock || beatClock.canStabberAttack()) {
@@ -218,7 +218,7 @@ function handlePreparingPhase(stabber, dx, dy, distance, dt) {
   }
 
   // Warn on beat 3; the dash follows half a beat later, on 3.5
-  const minPrepFrames = 30; // ~0.5 seconds minimum
+  const minPrepFrames = 15; // 0.25 seconds minimum
   if (
     stabber.stabPreparingTime >= minPrepFrames &&
     beatClock &&
