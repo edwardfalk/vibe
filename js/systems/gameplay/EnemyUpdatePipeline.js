@@ -1,8 +1,9 @@
 import { atan2, cos, sin } from '../../mathUtils.js';
 import { CONFIG } from '../../config.js';
 import { handleDamageResult } from '../../shared/DamageResultHandler.js';
+import { damageEnemiesInRadius } from '../../effects/AreaDamageHandler.js';
 
-function handleRusherExplosionResult(result, enemy, context) {
+function handleRusherExplosionResult(result, enemy, context, blasts) {
   const {
     collisionSystem,
     explosionManager,
@@ -37,6 +38,7 @@ function handleRusherExplosionResult(result, enemy, context) {
   }
 
   if (enemy) enemy.markedForRemoval = true;
+  blasts.push(result);
 }
 
 function handleStabberAttackResult(result, context) {
@@ -105,6 +107,7 @@ function handleStabberAttackResult(result, context) {
 export function updateEnemiesAndResolveResults(context) {
   const { enemies, enemyBullets, player, deltaTimeMs } = context;
 
+  const blasts = [];
   let write = 0;
   for (let read = 0; read < enemies.length; read++) {
     const enemy = enemies[read];
@@ -121,7 +124,7 @@ export function updateEnemiesAndResolveResults(context) {
 
     if (result) {
       if (result.type === 'rusher-explosion') {
-        handleRusherExplosionResult(result, enemy, context);
+        handleRusherExplosionResult(result, enemy, context, blasts);
       } else if (typeof result.checkCollision === 'function') {
         enemyBullets.push(result);
       } else if (
@@ -137,6 +140,38 @@ export function updateEnemiesAndResolveResults(context) {
     if (!enemy.markedForRemoval) {
       enemies[write++] = enemy;
     }
+  }
+  enemies.length = write;
+
+  if (blasts.length > 0) damageEnemiesInBlasts(blasts, context);
+}
+
+/**
+ * Blasts land after compaction, so each enemy is in the array once, and
+ * what they kill leaves it before bullets run. A rusher caught in a blast
+ * lights its own fuse and blows on its own beat.
+ */
+function damageEnemiesInBlasts(blasts, context) {
+  const { enemies, gameState, collisionSystem } = context;
+  // The exploded rushers are already out of the array
+  for (const result of blasts) {
+    damageEnemiesInRadius(
+      result,
+      enemies,
+      {
+        explosionManager: context.explosionManager,
+        audio: context.audio,
+        // The blast that ended the game scores nothing more
+        gameState: gameState?.gameState === 'playing' ? gameState : null,
+        onDeath: (e) => collisionSystem?.handleEnemyDeath(e, e.type, e.x, e.y),
+        scorePoints: 10,
+      },
+      'rusher-blast'
+    );
+  }
+  let write = 0;
+  for (const enemy of enemies) {
+    if (!enemy.markedForRemoval) enemies[write++] = enemy;
   }
   enemies.length = write;
 }
