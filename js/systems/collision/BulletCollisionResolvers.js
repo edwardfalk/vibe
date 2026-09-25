@@ -152,9 +152,6 @@ export function handleRegularEnemyBulletHit(bullet, enemy, deps) {
     }
   );
 
-  if (CONFIG.GAME_SETTINGS.DEBUG_COLLISIONS) {
-    const enemyBullets = getContextValue('enemyBullets');
-  }
   Bullet.release(bullet);
   bullet._remove = true;
 }

@@ -1,36 +1,11 @@
 /**
- * Configuration file for Vibe game
- * Set your API keys and settings here
+ * Game settings. Values marked for tuning can also be changed live by opening
+ * the game with ?tune in the URL (js/dev/TunePanel.js).
  */
 
 const CONFIG = {
-  // Google Cloud Text-to-Speech API Key (loaded from environment variable)
-  // Create a `.env` file with `GOOGLE_CLOUD_TTS_API_KEY=your-key`
-  GOOGLE_CLOUD_TTS_API_KEY:
-    (typeof process !== 'undefined' &&
-      process.env &&
-      process.env.GOOGLE_CLOUD_TTS_API_KEY) ||
-    '',
-
-  // TTS Settings
-  TTS_SETTINGS: {
-    // Set to true to use Google Cloud TTS (requires API key)
-    // Set to false to use browser's built-in Web Speech API
-    USE_CLOUD_TTS: false,
-
-    // Enable audio effects (reverb, distortion, etc.)
-    ENABLE_AUDIO_EFFECTS: true,
-
-    // Cache TTS audio to improve performance
-    ENABLE_AUDIO_CACHE: true,
-  },
-
   // Game Settings
   GAME_SETTINGS: {
-    // Enable verbose logging for debugging
-    DEBUG_MODE: false,
-    // Enable verbose collision debug logging (per-frame/per-entity)
-    DEBUG_COLLISIONS: false,
     // Enable periodic performance diagnostics logs and snapshots
     PERF_DIAGNOSTICS: false, // true logs a frame-time report to the console
     // Frames between performance diagnostics reports
@@ -42,12 +17,6 @@ const CONFIG = {
     // Canonical world dimensions for all systems
     WORLD_WIDTH: 1150,
     WORLD_HEIGHT: 850,
-
-    // Speech frequency (seconds between ambient speech)
-    SPEECH_FREQUENCY: {
-      MIN: 5,
-      MAX: 15,
-    },
   },
 
   // Beat timing tolerances (fraction of beat/subdivision interval)
@@ -82,8 +51,6 @@ const CONFIG = {
       AMBIENT_MIN: 6,
       AMBIENT_MAX: 14,
       COOLDOWN: 8,
-      CHANT_MIN: 3, // seconds between chants
-      CHANT_MAX: 6,
     },
   },
 

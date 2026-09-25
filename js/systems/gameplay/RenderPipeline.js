@@ -14,17 +14,6 @@ export function drawGameplayWorld(context) {
     visualEffectsManager,
   } = context;
 
-  if (
-    CONFIG?.GAME_SETTINGS?.DEBUG_COLLISIONS &&
-    typeof p.frameCount !== 'undefined' &&
-    p.frameCount % 30 === 0
-  ) {
-    const cam = cameraSystem
-      ? { x: cameraSystem.x, y: cameraSystem.y }
-      : { x: 0, y: 0 };
-    const safeEnemies = enemies ?? [];
-  }
-
   if (cameraSystem) {
     cameraSystem.applyTransform();
   }
