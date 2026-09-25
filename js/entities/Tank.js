@@ -190,9 +190,6 @@ class Tank extends BaseEnemy {
 
         if (audioTank) {
           audioTank.speak(this, 'FIRE!', 'tank');
-          if (audioTank.duckDrone) {
-            audioTank.duckDrone(500);
-          }
         }
 
         return this.createBullet();
