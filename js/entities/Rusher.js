@@ -208,6 +208,10 @@ class Rusher extends BaseEnemy {
    * Draw rusher-specific body shape - sharp arrow/dart design
    */
   drawBody(s) {
+    // The dart is drawn nose-up (-y); a quarter turn points it along +x,
+    // where the enemy's frame aims, so it flies nose first
+    this.p.push();
+    this.p.rotate(this.p.HALF_PI);
     this.p.strokeJoin(this.p.MITER);
 
     // Hot pink outline
@@ -243,6 +247,7 @@ class Rusher extends BaseEnemy {
       0,
       s * 0.6 + random() * s * 0.3
     );
+    this.p.pop();
   }
 
   /**
