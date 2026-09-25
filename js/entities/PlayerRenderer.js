@@ -8,19 +8,10 @@ import { drawPlayerDashEffect } from '../effects/DashEffect.js';
  */
 
 export function drawPlayer(p, player) {
-  // Health-based glow
+  // Low-health pulse, and the shield's blue field while it is up
   try {
     const healthPercent = player.health / player.maxHealth;
-    if (healthPercent > 0.7) {
-      drawGlow(
-        p,
-        player.x,
-        player.y,
-        player.size * 2,
-        p.color(100, 200, 255),
-        0.6
-      );
-    } else if (healthPercent < 0.3) {
+    if (healthPercent < 0.3) {
       const pulse = sin(p.frameCount * 0.3) * 0.5 + 0.5;
       drawGlow(
         p,
@@ -29,6 +20,16 @@ export function drawPlayer(p, player) {
         player.size * 2.5,
         p.color(255, 100, 100),
         pulse * 0.8
+      );
+    }
+    if (player.shieldUp) {
+      drawGlow(
+        p,
+        player.x,
+        player.y,
+        player.size * 2,
+        p.color(100, 200, 255),
+        0.6
       );
     }
   } catch (error) {

@@ -20,14 +20,6 @@ export function handleAreaDamageEvents(damageEvents, context) {
       const playerDistSq = dx * dx + dy * dy;
       const radiusSq = event.radius * event.radius;
       if (playerDistSq < radiusSq) {
-        if (audio) {
-          audio.playPlayerHit();
-        }
-
-        if (gameState) {
-          gameState.resetKillStreak(); // Reset kill streak on taking damage
-        }
-
         if (player.takeDamage(event.damage, 'area-effect')) {
           if (gameState) {
             gameState.setGameState('gameOver');

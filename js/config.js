@@ -131,6 +131,15 @@ const CONFIG = {
     tank: 42,
   },
 
+  // The hero: a shield that takes one real hit whole, then recharges and
+  // returns on the beat; slow healing once he's gone a while unhit.
+  // Contact ticks (1 per frame) bypass the shield. Tune live with ?tune.
+  PLAYER: {
+    SHIELD_RECHARGE_MS: 8000,
+    REGEN_DELAY_MS: 3000, // healing starts this long after the last hit
+    REGEN_PER_SEC: 2, // health points per second
+  },
+
   // Tank armour plates (hits to break). Applies to tanks spawned after a
   // change. Front 45 / sides 30: about 25 s of held fire to kill one
   // head-on, as before the double-shot fix. Tune live with ?tune.

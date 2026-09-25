@@ -150,7 +150,6 @@ export class CollisionSystem {
   checkEnemyBulletsVsPlayer() {
     const enemyBullets = this.getContextValue('enemyBullets');
     const player = this.getContextValue('player');
-    const audio = this.getContextValue('audio');
     const gameState = this.getContextValue('gameState');
     if (!enemyBullets || !player) return;
 
@@ -160,14 +159,6 @@ export class CollisionSystem {
 
       // Check player collision
       if (bullet.checkCollision(player)) {
-        if (audio) {
-          audio.playPlayerHit();
-        }
-
-        if (gameState) {
-          gameState.resetKillStreak(); // Reset kill streak on taking damage
-        }
-
         if (
           player.takeDamage(
             bullet.damage,

@@ -52,14 +52,6 @@ function handleStabberAttackResult(result, context) {
   } = context;
 
   if (result.type === 'stabber-melee' && result.playerHit && player) {
-    if (audio) {
-      audio.playPlayerHit();
-    }
-
-    if (gameState) {
-      gameState.resetKillStreak();
-    }
-
     if (player.takeDamage(result.damage, 'stabber-melee')) {
       if (gameState) {
         gameState.setGameState('gameOver');

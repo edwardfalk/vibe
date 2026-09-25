@@ -1,0 +1,108 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+vi.stubGlobal('localStorage', {
+  _store: {},
+  getItem(key) {
+    return this._store[key] ?? null;
+  },
+  setItem(key, value) {
+    this._store[key] = String(value);
+  },
+});
+vi.spyOn(console, 'log').mockImplementation(() => {});
+
+const { Player } = await import('../../js/entities/player.js');
+const { GameState } = await import('../../js/core/GameState.js');
+const { CONFIG } = await import('../../js/config.js');
+
+const p = {
+  color: () => ({}),
+  keyIsDown: () => false,
+  constrain: (v, lo, hi) => Math.min(hi, Math.max(lo, v)),
+  cos: Math.cos,
+  sin: Math.sin,
+  mouseX: 0,
+  mouseY: 0,
+  width: 800,
+  height: 600,
+};
+
+function makePlayer(beatClock) {
+  const audio = {
+    playSound: vi.fn(),
+    playPlayerHit: vi.fn(),
+    speakPlayerLine: vi.fn(),
+  };
+  const gameState = { gameState: 'playing', resetKillStreak: vi.fn() };
+  const context = { playerBullets: [], audio, gameState, beatClock };
+  const player = new Player(p, 100, 100, null, context);
+  return { player, audio, gameState };
+}
+
+describe('Player shield', () => {
+  beforeEach(() => {
+    globalThis.window = { playerIsShooting: false };
+  });
+
+  it('absorbs the first hit: no health, no wound sound, streak kept', () => {
+    const { player, audio, gameState } = makePlayer();
+    expect(player.takeDamage(99, 'rusher-explosion')).toBe(false);
+    expect(player.health).toBe(100);
+    expect(player.shieldUp).toBe(false);
+    expect(audio.playSound).toHaveBeenCalledWith('shieldBreak', 100, 100);
+    expect(audio.playPlayerHit).not.toHaveBeenCalled();
+    expect(gameState.resetKillStreak).not.toHaveBeenCalled();
+  });
+
+  it('the next hit lands, with the wound sound and a streak reset', () => {
+    const { player, audio, gameState } = makePlayer();
+    player.takeDamage(10, 'test');
+    player.takeDamage(10, 'test');
+    expect(player.health).toBe(90);
+    expect(audio.playPlayerHit).toHaveBeenCalledTimes(1);
+    expect(gameState.resetKillStreak).toHaveBeenCalledTimes(1);
+  });
+
+  it('contact ticks bypass the shield and leave it up', () => {
+    const { player } = makePlayer();
+    player.takeDamage(1, 'grunt-contact');
+    expect(player.health).toBe(99);
+    expect(player.shieldUp).toBe(true);
+  });
+
+  it('comes back after SHIELD_RECHARGE_MS (no beat clock: at once), not before', () => {
+    const { player, audio } = makePlayer();
+    player.takeDamage(10, 'test');
+    player.update(CONFIG.PLAYER.SHIELD_RECHARGE_MS - 20);
+    expect(player.shieldUp).toBe(false);
+    player.update(40);
+    expect(player.shieldUp).toBe(true);
+    expect(audio.playSound).toHaveBeenCalledWith(
+      'shieldUp',
+      player.x,
+      player.y
+    );
+  });
+
+  it('with a beat clock, waits for the beat', () => {
+    let onBeat = false;
+    const { player } = makePlayer({ isOnBeat: () => onBeat });
+    player.takeDamage(10, 'test');
+    player.update(CONFIG.PLAYER.SHIELD_RECHARGE_MS + 100);
+    expect(player.shieldUp).toBe(false);
+    onBeat = true;
+    player.update(16);
+    expect(player.shieldUp).toBe(true);
+  });
+
+  it('restart brings the shield back and zeroes the timers', () => {
+    const { player } = makePlayer();
+    globalThis.window.player = player;
+    player.takeDamage(10, 'test');
+    player.update(500);
+    new GameState().restart();
+    expect(player.shieldUp).toBe(true);
+    expect(player.shieldDownMs).toBe(0);
+    expect(player.msSinceHit).toBe(0);
+  });
+});
