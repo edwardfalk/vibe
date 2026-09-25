@@ -377,7 +377,6 @@ class Grunt extends BaseEnemy {
    * This pattern is unique to Grunt and not used for other enemies unless they require similar dramatic or audio effects.
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
-    // Debug: Log all takeDamage events for Grunt only if collision debug is enabled
     // Reject further damage while deferred death is pending
     if (this.pendingStabDeath) return false;
 

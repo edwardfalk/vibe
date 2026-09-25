@@ -1,5 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
+const TOOL = { retries: 0, use: { trace: 'off', screenshot: 'off' } };
+
 // One config, four projects: the E2E suite (CI) and three dev tools.
 // Always pick one with --project; package.json scripts do.
 export default defineConfig({
@@ -21,14 +23,16 @@ export default defineConfig({
       testMatch: '*.test.js',
       testIgnore: ['**/unit/**', '**/helpers/**'],
     },
-    { name: 'screenshot', testMatch: '**/screenshot.js', retries: 0 },
+    // Dev tools measure the game, so no trace recording: it costs enough CPU
+    // to cut the playtest's FPS by about a third
+    { name: 'screenshot', testMatch: '**/screenshot.js', ...TOOL },
     {
       name: 'playtest',
       testMatch: '**/playtest.js',
       timeout: 120000,
-      retries: 0,
+      ...TOOL,
     },
-    { name: 'beats', testMatch: '**/beat-assertions.js', retries: 0 },
+    { name: 'beats', testMatch: '**/beat-assertions.js', ...TOOL },
   ],
 
   webServer: {

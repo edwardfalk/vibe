@@ -454,8 +454,6 @@ export class BaseEnemy {
       this.audio.playAlienShoot(this.x, this.y);
     }
 
-    // DEBUG: Log bullet creation only if collision debug is enabled
-
     return bullet;
   }
 

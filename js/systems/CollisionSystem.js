@@ -133,8 +133,6 @@ export class CollisionSystem {
         const enemy = enemies[j];
         if (!enemy) continue;
 
-        // Log positions and health before collision check
-
         this.frameMetrics.playerBulletChecks++;
         if (this.resolveBulletEnemyHit(bullet, i, enemy)) {
           this.frameMetrics.playerBulletHits++;

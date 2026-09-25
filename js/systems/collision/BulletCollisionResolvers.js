@@ -23,7 +23,7 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
   const cameraSystem = getContextValue('cameraSystem');
   if (!bullet.checkCollision(enemy)) return false;
 
-  // Store enemy type for logging
+  // Read before damage is applied
   const enemyType = enemy.type;
 
   // Damage enemy (pass bullet angle for knockback)
