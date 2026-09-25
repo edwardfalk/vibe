@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { BeatClock } from '../../js/audio/BeatClock.js';
 import { CONFIG } from '../../js/config.js';
 

@@ -1,30 +1,12 @@
 import { test } from '@playwright/test';
 import { writeFileSync } from 'fs';
+import { bootGame } from './helpers/boot.js';
 
 const DURATION_MS = parseInt(process.env.DURATION) || 30000;
 const SAMPLE_INTERVAL = 500;
 // The bot re-aims at the nearest enemy this often, holding the mouse to fire
 const AIM_INTERVAL = 50;
 const OUTPUT_PATH = 'tests/playtest-results.json';
-
-/**
- * Boot the game: navigate, unlock audio, wait for core systems.
- */
-const bootGame = async (page) => {
-  await page.goto('/');
-  await page.waitForSelector('canvas', { state: 'attached' });
-  await page.keyboard.press(' ');
-  await page.waitForFunction(
-    () =>
-      window.gameState?.gameState === 'playing' &&
-      window.player &&
-      window.collisionSystem &&
-      Array.isArray(window.enemies) &&
-      window.enemies.filter((e) => !e.markedForRemoval).length > 0 &&
-      typeof window.frameCount === 'number' &&
-      window.frameCount > 0
-  );
-};
 
 /**
  * Movement patterns to cycle through so the bot isn't a sitting duck.

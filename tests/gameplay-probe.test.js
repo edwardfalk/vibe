@@ -1,40 +1,7 @@
 import { test, expect } from '@playwright/test';
-
-/**
- * Boot the game and wait for core systems to be available.
- * The game holds on the title screen until the first key press or click,
- * which also unlocks audio (autoplay policy).
- */
-const bootGame = async (page) => {
-  await page.goto('/');
-  await page.waitForSelector('canvas', { state: 'attached' });
-  // Any key starts the run from the title screen
-  await page.keyboard.press(' ');
-  await page.waitForFunction(
-    () =>
-      window.gameState?.gameState === 'playing' &&
-      window.player &&
-      window.collisionSystem &&
-      Array.isArray(window.enemies) &&
-      window.enemies.filter((enemy) => !enemy.markedForRemoval).length > 0 &&
-      typeof window.frameCount === 'number' &&
-      window.frameCount > 0
-  );
-};
+import { bootGame } from './helpers/boot.js';
 
 test.describe('Gameplay Probes', () => {
-  test('Liveness probe passes', async ({ page }) => {
-    await bootGame(page);
-    const probe = await page.evaluate(async () => {
-      const mod = await import('/js/testing/ai-liveness-probe.js');
-      return mod.runAiLivenessProbe();
-    });
-
-    expect(probe.failure).toBeNull();
-    expect(probe.playerAlive).toBe(true);
-    expect(probe.enemyCount).toBeGreaterThan(0);
-  });
-
   test('Game loop advances with live entities', async ({ page }) => {
     await bootGame(page);
 

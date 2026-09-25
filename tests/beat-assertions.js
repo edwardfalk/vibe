@@ -1,25 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { bootGame, jumpToLevel } from './helpers/boot.js';
 
 const NUM_BEATS = parseInt(process.env.BEATS) || 8;
-
-/**
- * Boot the game: navigate, unlock audio, wait for core systems.
- */
-const bootGame = async (page) => {
-  await page.goto('/');
-  await page.waitForSelector('canvas', { state: 'attached' });
-  await page.keyboard.press(' ');
-  await page.waitForFunction(
-    () =>
-      window.gameState?.gameState === 'playing' &&
-      window.player &&
-      window.collisionSystem &&
-      Array.isArray(window.enemies) &&
-      window.enemies.filter((e) => !e.markedForRemoval).length > 0 &&
-      typeof window.frameCount === 'number' &&
-      window.frameCount > 0
-  );
-};
 
 /**
  * Inject beat event recorder that wraps BeatClock gate methods.
@@ -76,15 +58,7 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   await bootGame(page);
 
   // Fast-forward to level 5 so all enemy types are present
-  await page.evaluate(() => {
-    const gs = window.gameState;
-    // Level 5 threshold: sum(n*150 for n=1..4) = 150+300+450+600 = 1500
-    gs.score = 1510;
-    gs.checkLevelProgression();
-  });
-  await page.waitForFunction(() => window.gameState.level >= 5, null, {
-    timeout: 5000,
-  });
+  await jumpToLevel(page, 5);
 
   // Wait for enemies to spawn at the new level
   await page.waitForTimeout(2000);
