@@ -107,6 +107,7 @@ export class Bullet {
     this.energy = undefined;
     this.penetrating = false;
     this._inPool = false;
+    this._remove = false; // a hit marks it; a recycled bullet starts clean
 
     this.velocity = {
       x: cos(angle) * speed,
