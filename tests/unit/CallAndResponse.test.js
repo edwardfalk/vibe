@@ -12,7 +12,7 @@ describe('Call-and-response sound configs', () => {
   it('tankResponse should be a low acknowledgment at 70Hz', () => {
     expect(SOUND_CONFIG.tankResponse).toBeDefined();
     expect(SOUND_CONFIG.tankResponse.frequency).toBe(70);
-    expect(SOUND_CONFIG.tankResponse.type).toBe('sine');
+    expect(SOUND_CONFIG.tankResponse.waveform).toBe('square');
     expect(SOUND_CONFIG.tankResponse.duration).toBe(0.3);
   });
 

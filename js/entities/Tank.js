@@ -57,10 +57,10 @@ class Tank extends BaseEnemy {
     this.maxAngerCooldown = 600; // 10 seconds of anger
 
     // Destructible Armor Pieces
-    this.frontArmorHP = 120;
+    this.frontArmorHP = CONFIG.TANK_ARMOR.FRONT;
     this.frontArmorDestroyed = false;
-    this.leftArmorHP = 80;
-    this.rightArmorHP = 80;
+    this.leftArmorHP = CONFIG.TANK_ARMOR.SIDE;
+    this.rightArmorHP = CONFIG.TANK_ARMOR.SIDE;
     this.leftArmorDestroyed = false;
     this.rightArmorDestroyed = false;
   }
@@ -161,22 +161,16 @@ class Tank extends BaseEnemy {
         if (audioTank) audioTank.playSound('tankPower', this.x, this.y);
       }
 
-      // Speech milestones based on beat progress
+      // Power-up tone four beats into the charge. No line here: "CHARGING!"
+      // and "FIRE!" 4 s apart both clear the 2.5 s cooldown all voices share.
+      // With several tanks, some of their lines are still dropped; the tones
+      // carry the attack either way
       if (
-        beatsSinceCharge >= 1 &&
-        beatsSinceCharge < 2 &&
-        audioTank &&
-        this.onBeatOnce(beatClock, 'chargeMilestone', beatClock.isOnBeat([1]))
-      ) {
-        audioTank.speak(this, 'CHARGING!', 'tank');
-        audioTank.playSound('tankCharging', this.x, this.y);
-      } else if (
         beatsSinceCharge >= 4 &&
         beatsSinceCharge < 5 &&
         audioTank &&
         this.onBeatOnce(beatClock, 'chargeMilestone', beatClock.isOnBeat([1]))
       ) {
-        audioTank.speak(this, 'POWER UP!', 'tank');
         audioTank.playSound('tankPowerUp', this.x, this.y);
       }
 
@@ -205,6 +199,10 @@ class Tank extends BaseEnemy {
       ) {
         this.chargingShot = true;
         this.chargeStartBeat = beatClock.getTotalBeats();
+        if (audioTank) {
+          audioTank.speak(this, 'CHARGING!', 'tank');
+          audioTank.playSound('tankCharging', this.x, this.y);
+        }
 
         // Telegraph the upcoming fire
         if (rhythmFX) {
@@ -466,6 +464,8 @@ class Tank extends BaseEnemy {
       'enemy-tank'
     );
     if (!bullet) return null;
+    const audio = this.getContextValue('audio');
+    if (audio) audio.playSound('tankEnergy', this.x, this.y);
     bullet.ownerId = this.id; // Track which tank fired this
     return bullet;
   }

@@ -5,7 +5,7 @@ describe('Enemy hit reaction sounds', () => {
   it('tankHit should be a deep thud at 55Hz', () => {
     expect(SOUND_CONFIG.tankHit).toBeDefined();
     expect(SOUND_CONFIG.tankHit.frequency).toBe(55);
-    expect(SOUND_CONFIG.tankHit.type).toBe('sine');
+    expect(SOUND_CONFIG.tankHit.waveform).toBe('square');
     expect(SOUND_CONFIG.tankHit.duration).toBe(0.2);
   });
 

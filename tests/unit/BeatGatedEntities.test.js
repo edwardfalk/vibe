@@ -156,4 +156,65 @@ describe('Beat-gated entity behaviour', () => {
     const cfg = Object.create(Stabber.prototype).getAmbientSpeechConfig();
     expect(cfg.chance).toBeCloseTo((250 / 2000) * 0.2, 5);
   });
+
+  it('tank says CHARGING! at charge start and FIRE! 8 beats later, both clear of the speech cooldown', () => {
+    const { audio, context, at } = world();
+    // Record when each line is said: every tank line must clear the 2.5 s
+    // cooldown all voices share (Audio.js), or the next one is dropped
+    let now = 0;
+    const said = [];
+    audio.speak.mockImplementation(
+      (_e, line) => (said.push({ line, now }), true)
+    );
+    const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
+    t.isSpawning = false;
+    t.spawnTimer = t.spawnDuration;
+    t._lastTankFireBeat = -100;
+    for (now = 4000; now <= 8000; now += 1000) {
+      at(now); // beat 1 of bar 3 (charge starts), then every beat 1 and 3
+      t.updateSpecificBehavior(300, 100, 16);
+    }
+    expect(said.map((s) => s.line)).toEqual(['CHARGING!', 'FIRE!']);
+    expect(audio.playSound).toHaveBeenCalledWith('tankCharging', 100, 100);
+    expect(audio.playSound).toHaveBeenCalledWith('tankPowerUp', 100, 100);
+    for (let i = 1; i < said.length; i++) {
+      expect(said[i].now - said[i - 1].now).toBeGreaterThanOrEqual(2500);
+    }
+  });
+
+  it("tank's shot has a sound", () => {
+    const { audio, context } = world();
+    const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
+    t.createBullet();
+    expect(audio.playSound).toHaveBeenCalledWith('tankEnergy', 100, 100);
+  });
+
+  it('tank tones are not pure sines (inaudible on laptop speakers)', async () => {
+    const { SOUND_CONFIG } = await import('../../js/audio/SoundConfig.js');
+    for (const name of [
+      'tankEnergy',
+      'tankCharging',
+      'tankPower',
+      'tankPowerUp',
+      'tankHit',
+      'tankResponse',
+    ]) {
+      expect(SOUND_CONFIG[name].waveform, name).not.toBe('sine');
+    }
+  });
+
+  it('tank armour comes from CONFIG.TANK_ARMOR (tunable live)', async () => {
+    const { CONFIG } = await import('../../js/config.js');
+    const saved = { ...CONFIG.TANK_ARMOR };
+    CONFIG.TANK_ARMOR = { FRONT: 7, SIDE: 3 };
+    try {
+      const { audio, context } = world();
+      const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
+      expect([t.frontArmorHP, t.leftArmorHP, t.rightArmorHP]).toEqual([
+        7, 3, 3,
+      ]);
+    } finally {
+      CONFIG.TANK_ARMOR = saved;
+    }
+  });
 });
