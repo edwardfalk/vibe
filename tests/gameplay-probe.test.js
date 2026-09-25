@@ -214,6 +214,73 @@ test.describe('Gameplay Probes', () => {
     await expect(slider).not.toBeFocused();
   });
 
+  test('Either Shift fires; releasing one fire input keeps the others firing', async ({
+    page,
+  }) => {
+    await bootGame(page);
+    const shots = () => page.evaluate(() => window.gameState.shotsFired);
+    const stillFiring = async () => {
+      const before = await shots();
+      await page.waitForTimeout(600);
+      return (await shots()) > before;
+    };
+
+    await page.keyboard.down('ShiftRight');
+    expect(await stillFiring()).toBe(true);
+
+    // mouse + Shift: let go of the mouse first
+    const box = await page.locator('#defaultCanvas0').boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 4);
+    await page.mouse.down();
+    await page.mouse.up();
+    expect(await stillFiring()).toBe(true);
+
+    // Space + Shift, released in the other order
+    await page.keyboard.down('Space');
+    await page.keyboard.up('ShiftRight');
+    expect(await stillFiring()).toBe(true);
+    await page.keyboard.down('ShiftLeft');
+    await page.keyboard.up('Space');
+    expect(await stillFiring()).toBe(true);
+
+    await page.keyboard.up('ShiftLeft');
+    await page.waitForTimeout(100);
+    expect(await page.evaluate(() => window.playerIsShooting)).toBe(false);
+
+    // A right-click never starts firing
+    await page.mouse.down({ button: 'right' });
+    expect(await page.evaluate(() => window.playerIsShooting)).toBe(false);
+    await page.mouse.up({ button: 'right' });
+  });
+
+  test('Held keyboard fire lands on eighth notes', async ({ page }) => {
+    await bootGame(page);
+    const offsets = await page.evaluate(async () => {
+      const p = window.player;
+      const clock = window.beatClock;
+      const fire = p.fireBullet.bind(p);
+      const out = [];
+      p.fireBullet = (...a) => {
+        const eighth = clock.beatInterval / 2;
+        const t = clock._now() - clock.startTime;
+        out.push(Math.min(t % eighth, eighth - (t % eighth)));
+        return fire(...a);
+      };
+      window.dispatchEvent(
+        new KeyboardEvent('keydown', { code: 'ShiftLeft', shiftKey: true })
+      );
+      await new Promise((r) => setTimeout(r, 2000));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ShiftLeft' }));
+      p.fireBullet = fire;
+      return out;
+    });
+    // The first shot is immediate; every later one is on an eighth note
+    const sustained = offsets.slice(1);
+    expect(sustained.length).toBeGreaterThanOrEqual(4);
+    const tol = await page.evaluate(() => window.beatClock.eighthNoteTolerance);
+    for (const o of sustained) expect(o).toBeLessThanOrEqual(tol + 17); // + one frame
+  });
+
   test('R after game over restarts straight into play', async ({ page }) => {
     await bootGame(page);
     await page.evaluate(() => window.gameState.setGameState('gameOver'));
