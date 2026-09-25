@@ -213,4 +213,14 @@ describe('Stabber timing', () => {
     }
     expect(frames).toBe(60);
   });
+
+  it('a hit knocks the stabber back tens of pixels', () => {
+    const x0 = stabber.x;
+    stabber.takeDamage(1, 0, 'player_bullet'); // bullet flying +x
+    // Player straight above: walking is along y, the push along x
+    for (let i = 0; i < 60; i++) {
+      stabber.update(stabber.x, stabber.y - 1000, FRAME_MS);
+    }
+    expect(stabber.x - x0).toBeGreaterThan(30);
+  });
 });

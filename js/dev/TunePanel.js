@@ -1,6 +1,6 @@
 /**
- * Live tuning panel for CONFIG.BEAT_TRACK, PACING, MIX, RUSHER and TANK_ARMOR,
- * shown when the URL has ?tune. Sound and spawn changes apply from the next
+ * Live tuning panel for CONFIG.BEAT_TRACK, PACING, MIX, RUSHER, TANK_ARMOR,
+ * HITBOX and the stabber's knockback, shown when the URL has ?tune. Sound and spawn changes apply from the next
  * beat or wave; level thresholds from the next level-up (the first one after a
  * restart); rusher changes at once; armour on tanks spawned after the change.
  * To keep a setting, copy the JSON at the bottom into js/config.js.
@@ -57,6 +57,8 @@ const KNOBS = [
   [HITBOX, 'rusher', [8, 50, 1]],
   [HITBOX, 'stabber', [8, 50, 1]],
   [HITBOX, 'tank', [20, 70, 1]],
+  ['STABBER_SETTINGS', 'KNOCKBACK_FORCE', [0, 20, 0.5]],
+  ['STABBER_SETTINGS', 'MAX_KNOCKBACK', [0, 40, 1]],
 ];
 
 const resolve = (path) => path.split('.').reduce((obj, k) => obj[k], CONFIG);
@@ -98,6 +100,7 @@ export function createTunePanel() {
       RUSHER: rusher,
       TANK_ARMOR,
       HITBOX: hitbox,
+      STABBER_SETTINGS,
     } = CONFIG;
     json.textContent = JSON.stringify(
       {
@@ -107,6 +110,7 @@ export function createTunePanel() {
         RUSHER: rusher,
         TANK_ARMOR,
         HITBOX: hitbox,
+        STABBER_SETTINGS,
       },
       null,
       2

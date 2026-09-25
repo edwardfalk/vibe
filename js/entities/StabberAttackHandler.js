@@ -38,9 +38,9 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
     }
   }
 
-  const dtSeconds = clampedDeltaMs / 1000;
-  stabber.x += stabber.knockbackVelocity.x * dtSeconds;
-  stabber.y += stabber.knockbackVelocity.y * dtSeconds;
+  // knockbackVelocity is in px per frame
+  stabber.x += stabber.knockbackVelocity.x * dt;
+  stabber.y += stabber.knockbackVelocity.y * dt;
   const decayFactor = Math.pow(stabber.knockbackDecay, dt);
   stabber.knockbackVelocity.x *= decayFactor;
   stabber.knockbackVelocity.y *= decayFactor;
