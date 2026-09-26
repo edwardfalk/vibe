@@ -147,6 +147,7 @@ export class SpawnSystem {
     }
     const p = player.p;
     let attempts = 0;
+    let found = false;
     let spawnX, spawnY;
     do {
       // Spawn OFF-SCREEN at edges, then enemies move toward player
@@ -201,11 +202,12 @@ export class SpawnSystem {
       }
 
       // If we get here, position is good
+      found = true;
       break;
     } while (attempts < 50);
 
     // Fallback if no good position found after many attempts
-    if (attempts >= 50) {
+    if (!found) {
       console.warn('⚠️ Could not find good spawn position, using fallback');
       // Spawn far off-screen in random direction
       const angle = random(0, Math.PI * 2);

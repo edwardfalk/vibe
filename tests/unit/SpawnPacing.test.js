@@ -129,3 +129,26 @@ describe('Spawn pacing', () => {
     ]);
   });
 });
+
+describe('spawn position', () => {
+  it('keeps a good spot found on the last attempt', () => {
+    const player = { x: 400, y: 300, p: { width: 800, height: 600 } };
+    // Every spot is next to an enemy until the 50th attempt
+    let lookups = 0;
+    const crowd = [{ x: 0, y: 0 }];
+    const system = new SpawnSystem(null);
+    system.getContextValue = (key) => {
+      if (key === 'player') return player;
+      lookups++;
+      return lookups < 50 ? crowd : [];
+    };
+    system.getDistance = (x1, y1, x2, y2) => (x2 === player.x ? 1000 : 0);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    system.findSpawnPosition();
+
+    expect(lookups).toBe(50);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
