@@ -5,10 +5,6 @@
 import { Bullet } from '../entities/bullet.js';
 import { EnemyDeathHandler } from './combat/EnemyDeathHandler.js';
 import {
-  buildEnemySpatialGrid,
-  queryNearbyEnemyIndices,
-} from './collision/CollisionSpatialGrid.js';
-import {
   handleContactCollisions,
   handleRusherExplosionCollision,
 } from './combat/PlayerContactHandlers.js';
@@ -35,6 +31,12 @@ export class CollisionSystem {
     this.context = context;
     this.getContextValue = createContextAccessor(() => this.context);
     this.enemyDeathHandler = new EnemyDeathHandler(context || window);
+    // Accessors, not values: setContext() may swap the context later
+    this.resolverDeps = {
+      getContextValue: this.getContextValue,
+      handleEnemyDeath: (e, type, x, y) => this.handleEnemyDeath(e, type, x, y),
+      getContext: () => this.context,
+    };
   }
 
   setContext(context) {
@@ -42,23 +44,17 @@ export class CollisionSystem {
     this.enemyDeathHandler.setContext(context || window);
   }
 
-  _resolverDeps() {
-    return {
-      getContextValue: this.getContextValue,
-      handleEnemyDeath: (e, type, x, y) => this.handleEnemyDeath(e, type, x, y),
-      context: this.context,
-    };
-  }
-
   // Main collision detection function
   checkBulletCollisions() {
-    const enemies = this.getContextValue('enemies');
-    const enemySpatialGrid = buildEnemySpatialGrid(enemies);
-    this.checkPlayerBulletsVsEnemies(enemySpatialGrid);
+    this.checkPlayerBulletsVsEnemies();
     this.checkEnemyBulletsVsPlayer();
-    this.checkEnemyBulletsVsEnemies(enemySpatialGrid);
+    this.checkEnemyBulletsVsEnemies();
 
-    // Compact bullet arrays after all collision checks (mark-and-compact)
+    // Compact bullet arrays after all collision checks (mark-and-compact).
+    // A hit releases its bullet to the pool but leaves it in the array until
+    // here, so nothing may acquire a bullet between the first Bullet.release
+    // this frame and this compaction: reset() would clear _remove and the
+    // array would keep a live duplicate.
     const playerBullets = this.getContextValue('playerBullets');
     const enemyBullets = this.getContextValue('enemyBullets');
     if (playerBullets) compactArray(playerBullets);
@@ -79,7 +75,7 @@ export class CollisionSystem {
   }
 
   // Player bullets vs enemies
-  checkPlayerBulletsVsEnemies(enemySpatialGrid = null) {
+  checkPlayerBulletsVsEnemies() {
     const playerBullets = this.getContextValue('playerBullets');
     const enemies = this.getContextValue('enemies');
     if (!playerBullets || !enemies) return;
@@ -87,21 +83,9 @@ export class CollisionSystem {
     for (let i = playerBullets.length - 1; i >= 0; i--) {
       const bullet = playerBullets[i];
       if (bullet._remove) continue;
-      const candidateEnemyIndices = enemySpatialGrid
-        ? queryNearbyEnemyIndices(enemySpatialGrid, bullet)
-        : (() => {
-            const indices = [];
-            for (let idx = enemies.length - 1; idx >= 0; idx--)
-              indices.push(idx);
-            return indices;
-          })();
 
-      for (let k = 0; k < candidateEnemyIndices.length; k++) {
-        const j = candidateEnemyIndices[k];
-        const enemy = enemies[j];
-        if (!enemy) continue;
-
-        if (this.resolveBulletEnemyHit(bullet, i, enemy)) {
+      for (let j = 0; j < enemies.length; j++) {
+        if (this.resolveBulletEnemyHit(bullet, i, enemies[j])) {
           break;
         }
       }
@@ -109,7 +93,7 @@ export class CollisionSystem {
   }
 
   resolveBulletEnemyHit(bullet, bulletIndex, enemy) {
-    return resolveBulletEnemyHit(bullet, enemy, this._resolverDeps());
+    return resolveBulletEnemyHit(bullet, enemy, this.resolverDeps);
   }
 
   // Enemy bullets vs player
@@ -143,7 +127,7 @@ export class CollisionSystem {
   }
 
   // Enemy bullets vs enemies (friendly fire)
-  checkEnemyBulletsVsEnemies(enemySpatialGrid = null) {
+  checkEnemyBulletsVsEnemies() {
     const enemyBullets = this.getContextValue('enemyBullets');
     const enemies = this.getContextValue('enemies');
     if (!this.friendlyFireEnabled || !enemyBullets || !enemies) return;
@@ -151,19 +135,9 @@ export class CollisionSystem {
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const bullet = enemyBullets[i];
       if (bullet._remove) continue;
-      const candidateEnemyIndices = enemySpatialGrid
-        ? queryNearbyEnemyIndices(enemySpatialGrid, bullet)
-        : (() => {
-            const indices = [];
-            for (let idx = enemies.length - 1; idx >= 0; idx--)
-              indices.push(idx);
-            return indices;
-          })();
 
-      for (let k = 0; k < candidateEnemyIndices.length; k++) {
-        const j = candidateEnemyIndices[k];
+      for (let j = 0; j < enemies.length; j++) {
         const enemy = enemies[j];
-        if (!enemy) continue;
         if (bullet.ownerId === enemy.id) continue;
 
         // Check if bullet hits enemy (but not the one that fired it)
@@ -181,11 +155,11 @@ export class CollisionSystem {
   }
 
   handleTankEnergyBallHit(bullet, enemy) {
-    handleTankEnergyBallHit(bullet, enemy, this._resolverDeps());
+    handleTankEnergyBallHit(bullet, enemy, this.resolverDeps);
   }
 
   handleRegularEnemyBulletHit(bullet, enemy) {
-    handleRegularEnemyBulletHit(bullet, enemy, this._resolverDeps());
+    handleRegularEnemyBulletHit(bullet, enemy, this.resolverDeps);
   }
 
   // Handle enemy death effects

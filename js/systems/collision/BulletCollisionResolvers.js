@@ -12,8 +12,10 @@ import { applyKillFeedback } from '../combat/KillFeedback.js';
  * @returns {boolean} true if bullet hit
  */
 export function resolveBulletEnemyHit(bullet, enemy, deps) {
-  const { getContextValue, handleEnemyDeath, context } = deps;
+  const { getContextValue, handleEnemyDeath, getContext } = deps;
+  if (!bullet.checkCollision(enemy)) return false;
 
+  const context = getContext();
   const explosionManager = getContextValue('explosionManager');
   const audio = getContextValue('audio');
   const gameState = getContextValue('gameState');
@@ -21,7 +23,6 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
   const beatClock = getContextValue('beatClock');
   const visualEffectsManager = getContextValue('visualEffectsManager');
   const cameraSystem = getContextValue('cameraSystem');
-  if (!bullet.checkCollision(enemy)) return false;
 
   // Read before damage is applied
   const enemyType = enemy.type;
