@@ -40,7 +40,8 @@ export function handleAreaDamageEvents(damageEvents, context) {
       {
         explosionManager,
         audio,
-        gameState,
+        // No scoring once the player has died, this frame or earlier
+        gameState: gameState?.gameState === 'playing' ? gameState : null,
         onDeath: (e) =>
           enemyDeathHandler?.handleEnemyDeath(e, e.type, e.x, e.y),
         scorePoints: 10,
