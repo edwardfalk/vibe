@@ -49,9 +49,6 @@ class Grunt extends BaseEnemy {
     };
     super(x, y, 'grunt', gruntConfig, p, audio);
 
-    // --- Beat-aligned shooting state ----------------------------
-    this._lastGruntBeat = -1; // Track last beat fired to prevent double-firing
-
     // --- Deferred-death state ---------------------------------
     this.pendingStabDeath = false; // true while "ow" delay active
     this.pendingStabDeathTimer = 0; // frames remaining
@@ -108,6 +105,7 @@ class Grunt extends BaseEnemy {
 
     // Handle grunt weird noise (beat-gated)
     const beatClock = this.getContextValue('beatClock');
+    const audio = this.getContextValue('audio');
     if (
       this.onBeatOnce(beatClock, 'weirdNoise', beatClock?.isOnBeat([2, 4])) &&
       random() < GRUNT_WEIRD_NOISE_CHANCE
@@ -122,11 +120,10 @@ class Grunt extends BaseEnemy {
     this.velocity.x = 0;
     this.velocity.y = 0;
 
+    let moveSound = null;
     if (distance > 0) {
       const unitX = dx / distance;
       const unitY = dy / distance;
-      const beatClock = this.getContextValue('beatClock');
-      const audio = this.getContextValue('audio');
 
       if (distance < tooClose) {
         // Too close - retreat while maintaining line of sight
@@ -138,92 +135,62 @@ class Grunt extends BaseEnemy {
           this.velocity.x += random(-0.5, 0.5);
           this.velocity.y += random(-0.5, 0.5);
         }
-
-        // Play grunt retreat sound if beatClock available
-        if (
-          audio &&
-          this.onBeatOnce(
-            beatClock,
-            'moveSound',
-            beatClock?.isOnBeat([2, 4])
-          ) &&
-          random() < GRUNT_MOVE_SOUND_CHANCE
-        ) {
-          audio.playSound('gruntRetreat', this.x, this.y);
-        }
+        moveSound = 'gruntRetreat';
       } else if (distance > tooFar) {
         // Too far - advance but maintain tactical spacing
         this.velocity.x = unitX * this.speed * 0.6;
         this.velocity.y = unitY * this.speed * 0.6;
-
-        // Play grunt advance sound if beatClock available
-        if (
-          audio &&
-          this.onBeatOnce(
-            beatClock,
-            'moveSound',
-            beatClock?.isOnBeat([2, 4])
-          ) &&
-          random() < GRUNT_MOVE_SOUND_CHANCE
-        ) {
-          audio.playSound('gruntAdvance', this.x, this.y);
-        }
+        moveSound = 'gruntAdvance';
       } else {
         // At ideal distance - maintain position with small movements
         this.velocity.x = random(-0.3, 0.3);
         this.velocity.y = random(-0.3, 0.3);
       }
     }
+    if (
+      moveSound &&
+      audio &&
+      this.onBeatOnce(beatClock, 'moveSound', beatClock?.isOnBeat([2, 4])) &&
+      random() < GRUNT_MOVE_SOUND_CHANCE
+    ) {
+      audio.playSound(moveSound, this.x, this.y);
+    }
 
-    // BEAT-ALIGNED GRUNT SHOOTING: Fire on beats 2 & 4 with random skip.
-    // Uses _lastGruntBeat (beat-based) for gating, not BaseEnemy.shootCooldown
-    // (frame-based, inherited but unused by grunt fire logic).
-    const beatClockShoot = this.getContextValue('beatClock');
+    // BEAT-ALIGNED GRUNT SHOOTING: once per beat 2 or 4, with random skip
     const rhythmFX = this.getContextValue('rhythmFX');
-    if (distance < 300 && beatClockShoot) {
-      const timeToNextAttack = beatClockShoot.getTimeToNextBeat();
-      const beatInterval = beatClockShoot.beatInterval;
+    if (distance < 300 && beatClock) {
+      const timeToNextAttack = beatClock.getTimeToNextBeat();
+      const beatInterval = beatClock.beatInterval;
       const safeScale =
         beatInterval && Number.isFinite(beatInterval)
           ? timeToNextAttack / beatInterval
           : 0;
-      if (timeToNextAttack < 500 && beatClockShoot.isOnBeat([2, 4])) {
+      if (timeToNextAttack < 500 && beatClock.isOnBeat([2, 4])) {
         if (rhythmFX && safeScale >= 0) {
           rhythmFX.addAttackTelegraph(this.x, this.y, 'grunt', safeScale);
         }
       }
 
-      if (beatClockShoot.canGruntShoot()) {
-        // Already fired this beat? Skip to prevent double-firing
-        if (this._lastGruntBeat === beatClockShoot.getTotalBeats()) {
-          // Do not fire again on the same beat
-        } else {
-          this._lastGruntBeat = beatClockShoot.getTotalBeats();
+      if (this.onBeatOnce(beatClock, 'fire', beatClock.canGruntShoot())) {
+        // Coordination: check if another grunt already fired this beat
+        const currentTotalBeat = beatClock.getTotalBeats();
+        const lastGruntFireBeat = this.getContextValue('gruntFireBeat') ?? -1;
+        const alreadyFired = lastGruntFireBeat === currentTotalBeat;
 
-          // Coordination: check if another grunt already fired this beat
-          const currentTotalBeat = beatClockShoot.getTotalBeats();
-          const lastGruntFireBeat = this.getContextValue('gruntFireBeat') ?? -1;
-          const alreadyFired = lastGruntFireBeat === currentTotalBeat;
-
-          // Higher skip chance if another grunt already fired this beat
-          const skipChance = alreadyFired ? 0.6 : 0.2;
-          if (random() < skipChance) {
-            // Skipped this beat
-          } else if (!this.shouldAvoidFriendlyFire()) {
-            // Fire!
-            this.muzzleFlash = 4;
-            if (this.context && typeof this.context.set === 'function') {
-              this.context.set('gruntFireBeat', currentTotalBeat);
-            } else {
-              window.gruntFireBeat = currentTotalBeat;
-            }
-            return this.createBullet();
+        // Higher skip chance if another grunt already fired this beat
+        const skipChance = alreadyFired ? 0.6 : 0.2;
+        if (random() >= skipChance && !this.shouldAvoidFriendlyFire()) {
+          // Fire!
+          this.muzzleFlash = 4;
+          if (this.context && typeof this.context.set === 'function') {
+            this.context.set('gruntFireBeat', currentTotalBeat);
+          } else {
+            window.gruntFireBeat = currentTotalBeat;
           }
+          return this.createBullet();
         }
       }
     }
-
-    // After movement logic
 
     return null;
   }
@@ -394,12 +361,7 @@ class Grunt extends BaseEnemy {
     ) {
       // About to die from stabber: play 'ow', delay death
       const audio = this.getContextValue('audio');
-      if (audio) {
-        const ttsSuccess = audio.speak(this, 'ow', 'grunt', true); // force = true
-        if (!ttsSuccess && audio.playSound) {
-          audio.playSound('gruntOw', this.x, this.y);
-        }
-      }
+      if (audio) this.sayOw(audio);
       // Set up delayed death, but don't call super.takeDamage() yet
       if (!this.pendingStabDeath) {
         this.pendingStabDeath = true;
@@ -420,13 +382,17 @@ class Grunt extends BaseEnemy {
       audioSurv &&
       this.speechCooldown <= 0
     ) {
-      const ttsSuccess = audioSurv.speak(this, 'ow', 'grunt', true); // force = true
-      if (!ttsSuccess && audioSurv.playSound) {
-        audioSurv.playSound('gruntOw', this.x, this.y);
-      }
+      this.sayOw(audioSurv);
       this.speechCooldown = 60; // 1s cooldown to avoid spam
     }
     return died;
+  }
+
+  /** "Ow": spoken (forced past the voice cooldown), else the sound */
+  sayOw(audio) {
+    if (!audio.speak(this, 'ow', 'grunt', true)) {
+      audio.playSound('gruntOw', this.x, this.y);
+    }
   }
 }
 
