@@ -1,4 +1,5 @@
-import { sqrt, max, floor, atan2, cos, sin } from '../mathUtils.js';
+import { sqrt, max, floor } from '../mathUtils.js';
+import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 const BOMB_EXPLOSION_RADIUS = 250;
@@ -98,11 +99,8 @@ export function updateBombs(context) {
           )
         );
 
-        if (!player.hurt(damage, 'tank-bomb') && player.velocity) {
-          const knockbackAngle = atan2(player.y - bomb.y, player.x - bomb.x);
-          const knockbackForce = 15;
-          player.velocity.x += cos(knockbackAngle) * knockbackForce;
-          player.velocity.y += sin(knockbackAngle) * knockbackForce;
+        if (!player.hurt(damage, 'tank-bomb')) {
+          player.knockBack(bomb.x, bomb.y, CONFIG.PLAYER.KNOCKBACK_BOMB);
         }
       }
     }

@@ -152,6 +152,13 @@ const CONFIG = {
     SHIELD_RECHARGE_MS: 8000,
     REGEN_DELAY_MS: 3000, // healing starts this long after the last hit
     REGEN_PER_SEC: 2, // health points per second
+    // Knockback: a push of this many px/frame that fades by KNOCKBACK_DECAY
+    // (share kept per frame), so it carries him about force x 6.7 px in all
+    KNOCKBACK_DECAY: 0.85,
+    KNOCKBACK_STAB: 8,
+    KNOCKBACK_RUSHER_BLAST: 12,
+    KNOCKBACK_AREA: 6, // hazard clouds
+    KNOCKBACK_BOMB: 15,
   },
 
   // Tank armour plates (hits to break). Applies to tanks spawned after a

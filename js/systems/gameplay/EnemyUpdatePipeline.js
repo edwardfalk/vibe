@@ -1,4 +1,3 @@
-import { atan2, cos, sin } from '../../mathUtils.js';
 import { CONFIG } from '../../config.js';
 import {
   handleDamageResult,
@@ -56,10 +55,7 @@ function handleStabberAttackResult(result, context) {
 
   if (result.type === 'stabber-melee' && result.playerHit && player) {
     if (!player.hurt(result.damage, 'stabber-melee')) {
-      const knockbackAngle = atan2(player.y - result.y, player.x - result.x);
-      const knockbackForce = 8;
-      player.velocity.x += cos(knockbackAngle) * knockbackForce;
-      player.velocity.y += sin(knockbackAngle) * knockbackForce;
+      player.knockBack(result.x, result.y, CONFIG.PLAYER.KNOCKBACK_STAB);
 
       if (cameraSystem) {
         cameraSystem.addShake(10, 20);

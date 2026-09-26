@@ -1,9 +1,9 @@
 /**
  * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK, PACING,
  * MIX, RUSHER, TANK_ARMOR, HITBOX, the stabber's knockback and the hero's
- * shield and healing. Sound and spawn changes apply from the next beat or
- * wave; level thresholds from the next level-up (the first one after a
- * restart); armour on tanks spawned after the change; the rest at once.
+ * shield, healing and knockback. Sound and spawn changes apply from the next
+ * beat or wave; level thresholds from the next level-up (the first one after
+ * a restart); armour on tanks spawned after the change; the rest at once.
  * To keep a setting, copy the JSON at the bottom into js/config.js.
  */
 
@@ -63,6 +63,11 @@ const KNOBS = [
   ['PLAYER', 'SHIELD_RECHARGE_MS', [1000, 20000, 500]],
   ['PLAYER', 'REGEN_DELAY_MS', [0, 10000, 250]],
   ['PLAYER', 'REGEN_PER_SEC', [0, 10, 0.5]],
+  ['PLAYER', 'KNOCKBACK_DECAY', [0, 0.98, 0.01]],
+  ['PLAYER', 'KNOCKBACK_STAB', [0, 30, 0.5]],
+  ['PLAYER', 'KNOCKBACK_RUSHER_BLAST', [0, 30, 0.5]],
+  ['PLAYER', 'KNOCKBACK_AREA', [0, 30, 0.5]],
+  ['PLAYER', 'KNOCKBACK_BOMB', [0, 30, 0.5]],
 ];
 
 // The top-level CONFIG groups the knobs live in, in order: the JSON to copy

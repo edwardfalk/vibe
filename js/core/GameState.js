@@ -169,6 +169,7 @@ export class GameState {
       window.player.y = p.height / 2;
       window.player.health = window.player.maxHealth;
       window.player.velocity = { x: 0, y: 0 };
+      window.player.knockback = { x: 0, y: 0 };
       window.player.shieldUp = true;
       window.player.shieldDownMs = 0;
       window.player.msSinceHit = 0;
