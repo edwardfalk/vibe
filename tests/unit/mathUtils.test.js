@@ -6,7 +6,6 @@ import {
   constrain,
   dist,
   normalizeAngle,
-  randomRange,
   PI,
   TWO_PI,
 } from '../../js/mathUtils.js';
@@ -109,23 +108,5 @@ describe('normalizeAngle()', () => {
   it('wraps large positive angles', () => {
     const result = normalizeAngle(TWO_PI + 1);
     expect(result).toBeCloseTo(1, 10);
-  });
-});
-
-describe('randomRange()', () => {
-  it('returns values in specified range', () => {
-    for (let i = 0; i < 50; i++) {
-      const v = randomRange(5, 10);
-      expect(v).toBeGreaterThanOrEqual(5);
-      expect(v).toBeLessThan(10);
-    }
-  });
-
-  it('treats single arg as max (min=0)', () => {
-    for (let i = 0; i < 50; i++) {
-      const v = randomRange(10);
-      expect(v).toBeGreaterThanOrEqual(0);
-      expect(v).toBeLessThan(10);
-    }
   });
 });

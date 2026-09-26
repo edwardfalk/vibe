@@ -1,4 +1,4 @@
-import { randomRange } from '../mathUtils.js';
+import { random } from '../mathUtils.js';
 
 const FADE_OUT_DURATION_FRAMES = 30;
 
@@ -56,8 +56,8 @@ export function drawActiveTexts(
     let screenY = textObj.y;
 
     if (textObj.shakeTimer > 0) {
-      screenX += randomRange(-2, 2);
-      screenY += randomRange(-1, 1);
+      screenX += random(-2, 2);
+      screenY += random(-1, 1);
     }
 
     if (textObj.wobbleTimer > 0) {

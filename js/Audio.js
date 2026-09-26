@@ -9,7 +9,7 @@
  */
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
-import { random, randomRange, floor } from './mathUtils.js';
+import { random, floor } from './mathUtils.js';
 import { createContextAccessor } from './shared/ContextAccessor.js';
 import { drawGlow } from './effects/glowUtils.js';
 import {
@@ -512,13 +512,7 @@ export class Audio {
     }
 
     // Apply dynamic voice effects based on content
-    applyVoiceEffectsHelper(
-      utterance,
-      voiceType,
-      text,
-      this.voiceConfig,
-      randomRange
-    );
+    applyVoiceEffectsHelper(utterance, voiceType, text, this.voiceConfig);
 
     // Show the text for as long as the line takes to say
     const estimatedDuration = this.calculateSpeechDuration(

@@ -1,6 +1,6 @@
 import { Bullet } from './bullet.js';
 import { CONFIG } from '../config.js';
-import { random, randomRange, sin, cos, atan2 } from '../mathUtils.js';
+import { random, sin, cos, atan2 } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import {
   getEnemyColors,
@@ -41,7 +41,7 @@ export class BaseEnemy {
     // Movement and animation
     this.velocity = { x: 0, y: 0 };
     this.aimAngle = 0;
-    this.animFrame = randomRange(0, p.TWO_PI);
+    this.animFrame = random(0, p.TWO_PI);
 
     // Combat
     this.shootCooldown = 0;
@@ -57,7 +57,7 @@ export class BaseEnemy {
     this.speechCooldown = 0;
     this.maxSpeechCooldown = speechConfig.COOLDOWN * 60; // seconds to frames
     // Random speech timer for ambient chatter
-    this.ambientSpeechTimer = randomRange(
+    this.ambientSpeechTimer = random(
       speechConfig.AMBIENT_MIN * 60,
       speechConfig.AMBIENT_MAX * 60
     ); // seconds to frames
@@ -156,7 +156,7 @@ export class BaseEnemy {
       const speechConfig =
         CONFIG.SPEECH_SETTINGS[this.type.toUpperCase()] ||
         CONFIG.SPEECH_SETTINGS.DEFAULT;
-      this.ambientSpeechTimer = randomRange(
+      this.ambientSpeechTimer = random(
         speechConfig.AMBIENT_MIN * 60,
         speechConfig.AMBIENT_MAX * 60
       ); // seconds to frames
@@ -301,8 +301,8 @@ export class BaseEnemy {
     try {
       if (this.hitFlash > 0) {
         const hitIntensity = this.hitFlash / 8;
-        const shakeX = randomRange(-hitIntensity * 4, hitIntensity * 4);
-        const shakeY = randomRange(-hitIntensity * 3, hitIntensity * 3);
+        const shakeX = random(-hitIntensity * 4, hitIntensity * 4);
+        const shakeY = random(-hitIntensity * 3, hitIntensity * 3);
         p.translate(shakeX, shakeY);
 
         // Comical size distortion when hit

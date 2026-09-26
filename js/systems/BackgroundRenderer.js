@@ -3,7 +3,6 @@
  * BackgroundRenderer.js - Handles all background drawing including parallax, cosmic effects, and space elements
  */
 
-import { randomRange } from '../mathUtils.js';
 import { createParallaxLayers } from './background/BackgroundLayers.js';
 import { drawCosmicAuroraBackgroundLayer } from './background/CosmicAuroraBackground.js';
 import { drawInteractiveBackgroundEffectsLayer } from './background/BackgroundEffects.js';
@@ -59,8 +58,7 @@ export class BackgroundRenderer {
       p,
       this.player,
       this.gameState,
-      beatClock,
-      randomRange
+      beatClock
     );
     p.pop();
   }

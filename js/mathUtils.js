@@ -5,7 +5,6 @@ export const min = Math.min;
 export const abs = Math.abs;
 export const floor = Math.floor;
 export const ceil = Math.ceil;
-export const round = Math.round;
 export const sin = Math.sin;
 export const cos = Math.cos;
 export const atan2 = Math.atan2;
@@ -73,15 +72,4 @@ export function normalizeAngle(angle) {
   while (angle > PI) angle -= TWO_PI;
   while (angle < -PI) angle += TWO_PI;
   return angle;
-}
-
-/**
- * Alias for random(min, max). Kept for backward compat.
- */
-export function randomRange(a, b) {
-  if (b === undefined) {
-    b = a;
-    a = 0;
-  }
-  return random(a, b);
 }
