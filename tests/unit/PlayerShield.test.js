@@ -60,7 +60,10 @@ describe('Player shield', () => {
     expect(player.health).toBe(100);
     expect(player.shieldUp).toBe(false);
     expect(audio.playSound).toHaveBeenCalledWith('shieldBreak', 100, 100);
-    expect(audio.playSound).not.toHaveBeenCalledWith('playerHit');
+    // Match on the key alone, so the check still holds if the call gains a position
+    expect(
+      audio.playSound.mock.calls.some(([key]) => key === 'playerHit')
+    ).toBe(false);
     expect(gameState.resetKillStreak).not.toHaveBeenCalled();
   });
 

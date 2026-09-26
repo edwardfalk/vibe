@@ -19,8 +19,8 @@ The states are `title → playing ⇄ paused → gameOver → playing`. The titl
 | `js/`          | the loop files above, [`config.js`](js/config.js) (every tunable number), [`Audio.js`](js/Audio.js) (sound effects and speech), `RhythmFX.js` (attack telegraphs and beat pulses) |
 | `js/core/`     | [`GameContext.js`](js/core/GameContext.js) (the shared-state container), `GameState.js` (score, level, state machine), `InputHandlers.js`                                         |
 | `js/audio/`    | [`BeatClock.js`](js/audio/BeatClock.js) (the one timing grid), [`BeatTrack.js`](js/audio/BeatTrack.js) (kick and sub pulse), sound presets, voices and dialogue                   |
-| `js/entities/` | the player, `BaseEnemy` and the four enemy types, `EnemyFactory`, bullets                                                                                                         |
-| `js/systems/`  | spawning, collisions, camera, bombs, HUD, background, and the per-frame pipelines                                                                                                 |
+| `js/entities/` | the player, `BaseEnemy` and the four enemy types, bullets                                                                                                                         |
+| `js/systems/`  | spawning, collisions, camera, bombs, HUD, background, and the enemy update pipeline                                                                                               |
 | `js/effects/`  | explosions, floating text, dash and glow effects, area damage                                                                                                                     |
 | `js/shared/`   | small cross-cutting pieces: the damage-result values and handler, the context accessor                                                                                            |
 | `js/dev/`      | [`TunePanel.js`](js/dev/TunePanel.js), the `?tune` sliders                                                                                                                        |
@@ -28,7 +28,7 @@ The states are `title → playing ⇄ paused → gameOver → playing`. The titl
 
 ## Shared state
 
-`runSetup` creates each system (`player`, `enemies`, `beatClock`, `audio` and so on) once. It puts each on `window.*`, where the browser tests read them, and at the end fills a [`GameContext`](js/core/GameContext.js) with the same objects. Nothing is swapped out after setup, so the two never drift. Modules read the context through `getContextValue(key)`, made by [`createContextAccessor`](js/shared/ContextAccessor.js). The one value that changes every frame, `hitStopFrames`, lives only in the context.
+`runSetup` creates each system (`player`, `enemies`, `beatClock`, `audio` and so on) once. It puts each on `window.*`, where the browser tests read them, and at the end fills a [`GameContext`](js/core/GameContext.js) with the same objects. Nothing is swapped out after setup, so the two never drift. Modules read the context through `getContextValue(key)`, made by [`createContextAccessor`](js/shared/ContextAccessor.js). Two values that change during play, `hitStopFrames` and `gruntFireBeat`, live only in the context.
 
 When a module was given a `GameContext`, the accessor returns `context.get(key)` and does not fall back to `window`. Only a module without a context (or with a plain object that lacks the key) reads `window`.
 
@@ -73,7 +73,7 @@ Speech can't be routed through Web Audio or raised above full volume, so it stay
 
 ## Known debt
 
-- **`window.*` still has readers.** Game code should read the context, but `GameState` still reads about 48 globals (`window.audio`, `window.player` and others) instead of being handed what it needs; `Audio` reaches `window.beatTrack`, and `player.js` reads the input flags that `InputHandlers` writes to `window`.
+- **`window.*` still has readers.** Game code should read the context, but `GameState` still reads 11 globals (`window.audio`, `window.player` and others) instead of being handed what it needs; `Audio` reaches `window.beatTrack`, and `player.js` reads the input flags that `InputHandlers` writes to `window`.
 - **The game is frame-locked.** Enemies and the player move by frame time, but bullets move a fixed step per frame and bomb fuses count frames, so on a 120 Hz screen those run twice as fast.
 - **Some files are long:** `Audio.js` is about 650 lines, and `Tank.js` and `BaseEnemy.js` are about 500 each.
 
@@ -82,12 +82,13 @@ Speech can't be routed through Web Audio or raised above full volume, so it stay
 A new enemy touches these places:
 
 1. A class extending [`BaseEnemy`](js/entities/BaseEnemy.js) in `js/entities/`. `takeDamage()` returns a `DAMAGE_RESULT` value.
-2. An entry in `ENEMY_CLASSES` and `ENEMY_INTRO_LEVEL` in [`SpawnSystem.js`](js/systems/SpawnSystem.js).
-3. A beat gate in `BeatClock` (like `canGruntShoot()`), used through `onBeatOnce()` so the action fires once per beat.
-4. Its sounds in [`SoundConfig.js`](js/audio/SoundConfig.js), including a `<type>Response` entry for the call-and-response on deaths, played with `audio.playSound(key, x, y)`.
-5. Its numbers in `CONFIG` (and a `CONFIG.HITBOX` radius), with knobs in `KNOBS` in [`TunePanel.js`](js/dev/TunePanel.js) for anything to tune by ear.
-6. Its glow colour in `GLOW_RGB` in [`BaseEnemyHelpers.js`](js/entities/BaseEnemyHelpers.js).
-7. Its beats in `expectedBeats` in [`tests/beat-assertions.js`](tests/beat-assertions.js), and a unit test that a non-fatal hit returns `damaged` and plays its hit sound.
+2. An entry in `ENEMY_CLASSES` and `ENEMY_INTRO_LEVEL` in [`SpawnSystem.js`](js/systems/SpawnSystem.js), and its weight in `getEnemyTypeForLevel()` there: the type lists are written out per level range, so a type missing from them never spawns.
+3. What touching it does to the player, in the switch in [`PlayerContactHandlers.js`](js/systems/combat/PlayerContactHandlers.js). An unlisted type does nothing on contact.
+4. A beat gate in `BeatClock` (like `canGruntShoot()`), used through `onBeatOnce()` so the action fires once per beat.
+5. Its sounds in [`SoundConfig.js`](js/audio/SoundConfig.js), including a `<type>Response` entry for the call-and-response on deaths, played with `audio.playSound(key, x, y)`.
+6. Its numbers in `CONFIG` (and a `CONFIG.HITBOX` radius), with knobs in `KNOBS` in [`TunePanel.js`](js/dev/TunePanel.js) for anything to tune by ear.
+7. Its glow colour in `GLOW_RGB` in [`BaseEnemyHelpers.js`](js/entities/BaseEnemyHelpers.js).
+8. Its beats in `expectedBeats` in [`tests/beat-assertions.js`](tests/beat-assertions.js), and a unit test that a non-fatal hit returns `damaged` and plays its hit sound.
 
 ## Conventions
 
