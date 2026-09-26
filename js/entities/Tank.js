@@ -22,7 +22,8 @@ const THREE_PI_4 = (3 * PI) / 4;
 // The armour plates. `hits` is the impact-angle range a plate takes (0 is a
 // shot at the nose), `side` the direction it breaks off in, and `rect` where
 // it is drawn (plate thickness, plate length, chassis side y, chassis front
-// x). The left and right hit ranges are each other's drawn plates; kept as is
+// x). The impact angle is where the shot came from, and y points down, so the
+// left plate (drawn at -y) takes the negative angles
 const ARMOR_PLATES = [
   {
     name: 'front',
@@ -34,7 +35,7 @@ const ARMOR_PLATES = [
   },
   {
     name: 'left',
-    hits: (a) => a > PI_4 && a < THREE_PI_4,
+    hits: (a) => a < -PI_4 && a > -THREE_PI_4,
     side: -PI / 2,
     fill: [100, 100, 120],
     stroke: [50, 50, 60],
@@ -42,7 +43,7 @@ const ARMOR_PLATES = [
   },
   {
     name: 'right',
-    hits: (a) => a < -PI_4 && a > -THREE_PI_4,
+    hits: (a) => a > PI_4 && a < THREE_PI_4,
     side: PI / 2,
     fill: [100, 100, 120],
     stroke: [50, 50, 60],
