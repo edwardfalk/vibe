@@ -15,33 +15,20 @@ const SHOCKWAVE_ALPHA_SCALE = 100;
 const FIREBALL_FRAMES = 18;
 
 export class Explosion {
-  constructor(x, y, type = 'enemy') {
+  constructor(x, y, type) {
     this.x = x;
     this.y = y;
-    this.type = type;
     this.particles = [];
     this.active = true;
     this.timer = 0;
 
     const config = getExplosionConfig(type);
     this.maxTimer = config.maxTimer;
-    this.screenShake = 0;
-    this.flashIntensity = config.flashIntensity;
-    this.sparkles = [];
-    this.trails = [];
 
     this.hasShockwave = config.hasShockwave;
     this.shockwaveRadius = 0;
     this.maxShockwaveRadius = config.maxShockwaveRadius;
     this.fireballRadius = config.fireballRadius;
-
-    this.hasElectricalArcs = false;
-    this.hasSpeedTrails = false;
-    this.hasArmorFragments = config.hasArmorFragments;
-    this.hasBladeFragments = false;
-    this.hasEnergyDischarge = config.hasEnergyDischarge;
-    this.hasEnergyRings = config.hasEnergyRings;
-    this.hasEnergyBlades = false;
 
     const params = getParticleParams(type);
     const { vxRange, vyRange, sizeRange, lifeRange } = params;
@@ -64,54 +51,6 @@ export class Explosion {
         friction: random(0.99, 0.998),
         glow: random(0.2, 0.5),
         sparkle: random() < 0.1,
-        isArmor: false,
-      });
-    }
-
-    if (config.hasArmorFragments) {
-      this.createArmorFragments();
-    }
-    if (config.hasEnergyRings) {
-      this.createEnergyRings();
-    }
-  }
-
-  createArmorFragments() {
-    for (let i = 0; i < 5; i++) {
-      this.particles.push({
-        x: this.x + random(-10, 10),
-        y: this.y + random(-10, 10),
-        vx: random(-3, 3),
-        vy: random(-2, 4),
-        size: random(8, 16),
-        color: [100, 100, 120],
-        life: random(60, 90),
-        maxLife: random(60, 90),
-        rotation: random(TWO_PI),
-        rotationSpeed: random(-0.2, 0.2),
-        trail: [],
-        gravity: 0.15,
-        friction: 0.95,
-        glow: 0.2,
-        sparkle: false,
-        isArmor: true,
-      });
-    }
-  }
-
-  createEnergyRings() {
-    for (let i = 0; i < 3; i++) {
-      const life = random(40, 60);
-      this.sparkles.push({
-        x: this.x,
-        y: this.y,
-        radius: 10 + i * 15,
-        maxRadius: 80 + i * 20,
-        life,
-        maxLife: life,
-        intensity: random(0.6, 0.9),
-        type: 'energyRing',
-        ringIndex: i,
       });
     }
   }
@@ -137,30 +76,19 @@ export class Explosion {
       p.life--;
 
       if (p.trail.length > 5) p.trail.shift();
-      p.trail.push({ x: p.x, y: p.y, alpha: p.life / p.maxLife });
+      p.trail.push({ x: p.x, y: p.y });
 
       if (p.life <= 0) this.particles.splice(i, 1);
-    }
-
-    for (let i = this.sparkles.length - 1; i >= 0; i--) {
-      const s = this.sparkles[i];
-      s.life--;
-      if (s.type === 'energyRing') {
-        s.radius += (s.maxRadius - s.radius) * 0.1;
-        if (s.radius >= s.maxRadius) s.radius = s.maxRadius;
-      }
-      if (s.life <= 0) this.sparkles.splice(i, 1);
     }
 
     const shockwaveFinished =
       !this.hasShockwave || this.shockwaveRadius >= this.maxShockwaveRadius;
     const timerExpired = this.timer >= this.maxTimer;
     const noParticles = this.particles.length === 0;
-    const noSparkles = this.sparkles.length === 0;
 
     if (
-      (timerExpired && noParticles && noSparkles) ||
-      (shockwaveFinished && noParticles && noSparkles && this.timer > 20)
+      (timerExpired && noParticles) ||
+      (shockwaveFinished && noParticles && this.timer > 20)
     ) {
       this.active = false;
     }
@@ -192,27 +120,9 @@ export class Explosion {
       p.ellipse(this.x, this.y, this.shockwaveRadius * 2);
     }
 
-    for (const s of this.sparkles) {
-      if (s.type === 'energyRing') {
-        const alpha = (s.life / s.maxLife) * s.intensity * 255;
-        p.stroke(138, 43, 226, alpha);
-        p.strokeWeight(2 + s.ringIndex);
-        p.noFill();
-        p.ellipse(s.x, s.y, s.radius * 2);
-      }
-    }
-
     for (const particle of this.particles) {
       const alpha = (particle.life / particle.maxLife) * 255;
-      const r = Array.isArray(particle.color)
-        ? particle.color[0]
-        : p.red(particle.color);
-      const g = Array.isArray(particle.color)
-        ? particle.color[1]
-        : p.green(particle.color);
-      const b = Array.isArray(particle.color)
-        ? particle.color[2]
-        : p.blue(particle.color);
+      const [r, g, b] = particle.color;
 
       if (particle.glow > 0) {
         p.fill(r, g, b, alpha * particle.glow * 0.3);
@@ -223,18 +133,7 @@ export class Explosion {
       p.fill(r, g, b, alpha);
       p.noStroke();
 
-      if (particle.isArmor) {
-        p.push();
-        p.translate(particle.x, particle.y);
-        p.rotate(particle.rotation);
-        p.rect(
-          -particle.size / 2,
-          -particle.size / 2,
-          particle.size,
-          particle.size
-        );
-        p.pop();
-      } else if (particle.sparkle) {
+      if (particle.sparkle) {
         p.push();
         p.translate(particle.x, particle.y);
         p.rotate(particle.rotation);

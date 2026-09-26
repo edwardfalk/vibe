@@ -15,23 +15,8 @@ export class ExplosionManager {
 
   getContextValue = createContextAccessor(() => this.context);
 
-  addExplosion(x, y, type = 'enemy') {
-    const beatClock = this.getContextValue('beatClock');
-    const beatIntensity = beatClock ? beatClock.getBeatIntensity(6) : 0;
-    const isDownbeat = beatClock ? beatClock.getCurrentBeat() === 0 : false;
-
-    // Create explosion with beat-enhanced properties
-    const explosion = new Explosion(x, y, type);
-
-    // Enhance explosion on strong beats
-    if (beatIntensity > 0.3) {
-      explosion.beatBoost = beatIntensity;
-      explosion.sizeMultiplier = isDownbeat ? 1.3 : 1.15;
-      explosion.particleMultiplier = isDownbeat ? 1.5 : 1.2;
-      explosion.glowMultiplier = isDownbeat ? 1.4 : 1.2;
-    }
-
-    this.explosions.push(explosion);
+  addExplosion(x, y, type) {
+    this.explosions.push(new Explosion(x, y, type));
   }
 
   addPlasmaCloud(x, y) {
@@ -57,7 +42,6 @@ export class ExplosionManager {
       fragmentExplosion.fragments.forEach((f) => {
         f.vx *= 1 + beatIntensity * 0.3;
         f.vy *= 1 + beatIntensity * 0.3;
-        f.glow += beatIntensity * 0.3;
       });
     }
 
