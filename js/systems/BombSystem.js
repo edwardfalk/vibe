@@ -98,17 +98,11 @@ export function updateBombs(context) {
           )
         );
 
-        if (player.takeDamage(damage, 'tank-bomb')) {
-          if (gameState) {
-            gameState.setGameState('gameOver');
-          }
-        } else {
-          if (player.velocity) {
-            const knockbackAngle = atan2(player.y - bomb.y, player.x - bomb.x);
-            const knockbackForce = 15;
-            player.velocity.x += cos(knockbackAngle) * knockbackForce;
-            player.velocity.y += sin(knockbackAngle) * knockbackForce;
-          }
+        if (!player.hurt(damage, 'tank-bomb') && player.velocity) {
+          const knockbackAngle = atan2(player.y - bomb.y, player.x - bomb.x);
+          const knockbackForce = 15;
+          player.velocity.x += cos(knockbackAngle) * knockbackForce;
+          player.velocity.y += sin(knockbackAngle) * knockbackForce;
         }
       }
     }

@@ -433,6 +433,13 @@ export class Player {
     return false;
   }
 
+  // Take a hit; a fatal one ends the run. Returns true if the player died.
+  hurt(amount, damageSource) {
+    if (!this.takeDamage(amount, damageSource)) return false;
+    this.getContextValue('gameState')?.setGameState('gameOver');
+    return true;
+  }
+
   checkCollision(other) {
     const distance = this.p.dist(this.x, this.y, other.x, other.y);
     return distance < (this.size + other.size) * 0.5;

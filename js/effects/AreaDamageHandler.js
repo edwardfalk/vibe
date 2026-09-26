@@ -20,12 +20,7 @@ export function handleAreaDamageEvents(damageEvents, context) {
       const playerDistSq = dx * dx + dy * dy;
       const radiusSq = event.radius * event.radius;
       if (playerDistSq < radiusSq) {
-        if (player.takeDamage(event.damage, 'area-effect')) {
-          if (gameState) {
-            gameState.setGameState('gameOver');
-          }
-          continue;
-        }
+        if (player.hurt(event.damage, 'area-effect')) continue;
 
         // Apply knockback
         const knockbackAngle = atan2(player.y - event.y, player.x - event.x);

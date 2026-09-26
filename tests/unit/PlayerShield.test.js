@@ -44,6 +44,16 @@ describe('Player shield', () => {
     globalThis.window = { playerIsShooting: false };
   });
 
+  it('hurt ends the run only on a fatal hit', () => {
+    const { player, gameState } = makePlayer();
+    gameState.setGameState = vi.fn();
+    expect(player.hurt(10, 'test')).toBe(false); // the shield takes it
+    expect(player.hurt(10, 'test')).toBe(false);
+    expect(gameState.setGameState).not.toHaveBeenCalled();
+    expect(player.hurt(500, 'test')).toBe(true);
+    expect(gameState.setGameState).toHaveBeenCalledWith('gameOver');
+  });
+
   it('absorbs the first hit: no health, no wound sound, streak kept', () => {
     const { player, audio, gameState } = makePlayer();
     expect(player.takeDamage(99, 'rusher-explosion')).toBe(false);

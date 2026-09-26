@@ -53,16 +53,12 @@ export class CollisionSystem {
   }
 
   checkContactCollisions() {
-    const playerDied = handleContactCollisions({
+    handleContactCollisions({
       player: this.getContextValue('player'),
       enemies: this.getContextValue('enemies'),
       audio: this.getContextValue('audio'),
-      gameState: this.getContextValue('gameState'),
       activeBombs: this.getContextValue('activeBombs'),
     });
-    if (playerDied) {
-      return;
-    }
   }
 
   // Player bullets vs enemies
@@ -91,7 +87,6 @@ export class CollisionSystem {
   checkEnemyBulletsVsPlayer() {
     const enemyBullets = this.getContextValue('enemyBullets');
     const player = this.getContextValue('player');
-    const gameState = this.getContextValue('gameState');
     if (!enemyBullets || !player) return;
 
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
@@ -100,11 +95,7 @@ export class CollisionSystem {
 
       // Check player collision
       if (bullet.checkCollision(player)) {
-        if (player.takeDamage(bullet.damage, `${bullet.owner}-bullet`)) {
-          if (gameState) {
-            gameState.setGameState('gameOver');
-          }
-        }
+        player.hurt(bullet.damage, `${bullet.owner}-bullet`);
         Bullet.release(bullet);
         bullet._remove = true;
         break; // Exit loop since bullet hit player
@@ -160,7 +151,6 @@ export class CollisionSystem {
       rusherEnemy,
       player: this.getContextValue('player'),
       audio: this.getContextValue('audio'),
-      gameState: this.getContextValue('gameState'),
       cameraSystem: this.getContextValue('cameraSystem'),
       explosionManager: this.getContextValue('explosionManager'),
     });

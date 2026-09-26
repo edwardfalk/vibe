@@ -5,7 +5,6 @@ export function handleContactCollisions({
   player,
   enemies,
   audio,
-  gameState,
   activeBombs,
 }) {
   if (!player || !enemies) return false;
@@ -29,11 +28,8 @@ export function handleContactCollisions({
         break;
     }
 
-    if (damage > 0) {
-      if (player.takeDamage(damage, `${enemy.type}-contact`)) {
-        gameState?.setGameState?.('gameOver');
-        return true;
-      }
+    if (damage > 0 && player.hurt(damage, `${enemy.type}-contact`)) {
+      return true;
     }
 
     if (!shouldPlaceBomb || !activeBombs) continue;
@@ -48,7 +44,6 @@ export function handleRusherExplosionCollision({
   rusherEnemy,
   player,
   audio,
-  gameState,
   cameraSystem,
   explosionManager,
 }) {
@@ -61,10 +56,7 @@ export function handleRusherExplosionCollision({
 
   audio?.playSound('explosion', explosion.x, explosion.y);
 
-  if (player.takeDamage(explosion.damage, 'rusher-explosion')) {
-    gameState?.setGameState?.('gameOver');
-    return;
-  }
+  if (player.hurt(explosion.damage, 'rusher-explosion')) return;
 
   const knockbackAngle = atan2(player.y - explosion.y, player.x - explosion.x);
   const knockbackForce = 12;
