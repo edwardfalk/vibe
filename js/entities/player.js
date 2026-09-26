@@ -2,13 +2,15 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { CONFIG } from '../config.js';
 import { Bullet } from './bullet.js';
-import { max, atan2 } from '../mathUtils.js';
+import { max, atan2, cos, sin } from '../mathUtils.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
-import { updateDash, tryStartDash } from './PlayerDash.js';
 import { drawPlayer } from './PlayerRenderer.js';
 
 const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
+// A dash step clamps the frame time to this range
+const MIN_DASH_DELTA_MS = 1;
+const MAX_DASH_DELTA_MS = 100;
 
 export class Player {
   /**
@@ -126,7 +128,19 @@ export class Player {
     }
 
     if (this.isDashing) {
-      updateDash(this, deltaTimeMs);
+      const clampedDelta = Math.max(
+        MIN_DASH_DELTA_MS,
+        Math.min(deltaTimeMs, MAX_DASH_DELTA_MS)
+      );
+      const dt = clampedDelta / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
+      this.x += this.dashVelocity.x * dt;
+      this.y += this.dashVelocity.y * dt;
+
+      this.dashTimerMs += clampedDelta;
+      if (this.dashTimerMs >= this.maxDashTimeMs) {
+        this.isDashing = false;
+        this.dashTimerMs = 0;
+      }
     } else {
       // Apply normal movement
       const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS; // 60 fps baseline
@@ -318,8 +332,59 @@ export class Player {
     }
   }
 
+  /** Try to start a dash (keys, else toward the mouse). True if it started. */
   dash() {
-    return tryStartDash(this);
+    if (this.dashCooldownMs > 0 || this.isDashing) return false;
+
+    let dashDirX = 0;
+    let dashDirY = 0;
+    let dashFromKeyboard = false;
+
+    if (this.p.keyIsDown(87)) {
+      dashDirY = -1;
+      dashFromKeyboard = true;
+    }
+    if (this.p.keyIsDown(83)) {
+      dashDirY = 1;
+      dashFromKeyboard = true;
+    }
+    if (this.p.keyIsDown(65)) {
+      dashDirX = -1;
+      dashFromKeyboard = true;
+    }
+    if (this.p.keyIsDown(68)) {
+      dashDirX = 1;
+      dashFromKeyboard = true;
+    }
+
+    if (dashDirX === 0 && dashDirY === 0 && this.cameraSystem) {
+      const worldMouse = this.cameraSystem.screenToWorld(
+        this.p.mouseX,
+        this.p.mouseY
+      );
+      const mouseAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
+      dashDirX = cos(mouseAngle);
+      dashDirY = sin(mouseAngle);
+    }
+
+    if (dashFromKeyboard && dashDirX !== 0 && dashDirY !== 0) {
+      dashDirX *= 0.707;
+      dashDirY *= 0.707;
+    }
+
+    // Guard: don't waste dash cooldown on a zero-velocity dash
+    if (dashDirX === 0 && dashDirY === 0) return false;
+
+    this.dashVelocity = {
+      x: dashDirX * this.dashSpeed,
+      y: dashDirY * this.dashSpeed,
+    };
+    this.isDashing = true;
+    this.dashTimerMs = 0;
+    this.dashCooldownMs = this.maxDashCooldownMs;
+    this.getContextValue('audio')?.playSound('playerDash', this.x, this.y);
+
+    return true;
   }
 
   takeDamage(amount, damageSource = 'unknown') {
