@@ -22,19 +22,19 @@ The states are `title → playing ⇄ paused → gameOver → playing`. The titl
 | `js/entities/` | the player, `BaseEnemy` and the four enemy types, `EnemyFactory`, bullets                                                                                                         |
 | `js/systems/`  | spawning, collisions, camera, bombs, HUD, background, and the per-frame pipelines                                                                                                 |
 | `js/effects/`  | explosions, floating text, dash and glow effects, area damage                                                                                                                     |
-| `js/shared/`   | small cross-cutting pieces: the damage-result contract, the context accessor, the object pool                                                                                     |
+| `js/shared/`   | small cross-cutting pieces: the damage-result values and handler, the context accessor                                                                                            |
 | `js/dev/`      | [`TunePanel.js`](js/dev/TunePanel.js), the `?tune` sliders                                                                                                                        |
 | `tests/`       | Playwright browser tests and dev tools; `tests/unit/` holds the Vitest tests                                                                                                      |
 
 ## Shared state
 
-Systems (`player`, `enemies`, `beatClock`, `audio` and so on) are put on `window.*` and mirrored into a `GameContext`. Modules read them through `getContextValue(key)`, made by [`createContextAccessor`](js/shared/ContextAccessor.js).
+`runSetup` creates each system (`player`, `enemies`, `beatClock`, `audio` and so on) once. It puts each on `window.*`, where the browser tests read them, and at the end fills a [`GameContext`](js/core/GameContext.js) with the same objects. Nothing is swapped out after setup, so the two never drift. Modules read the context through `getContextValue(key)`, made by [`createContextAccessor`](js/shared/ContextAccessor.js). The one value that changes every frame, `hitStopFrames`, lives only in the context.
 
 When a module was given a `GameContext`, the accessor returns `context.get(key)` and does not fall back to `window`. Only a module without a context (or with a plain object that lacks the key) reads `window`.
 
 ## Beat system
 
-[`BeatClock`](js/audio/BeatClock.js) is the only timing grid. It runs on `AudioContext.currentTime` once audio has started (on `Date.now()` before that), so it can't drift from the audio.
+[`BeatClock`](js/audio/BeatClock.js) is the only timing grid. It runs on `AudioContext.currentTime` once audio has started (on `Date.now()` before that), so it can't drift from the audio. `Audio.initialize` makes the switch with `beatClock.useAudioClock()`, which keeps the beat position across it.
 
 - Enemies ask it before they act: `canGruntShoot()` (beats 2 and 4), `canTankShoot()` (1), `canStabberAttack()` (3.5), `canRusherExplode()` (1 and 3).
 - A beat's window opens when the beat lands, not before it, and each beat-gated sound plays at most once per beat.
@@ -56,11 +56,11 @@ Speech can't be routed through Web Audio or raised above full volume, so it stay
 
 ## Damage flow
 
-`enemy.takeDamage()` returns a raw result. [`normalizeDamageResult()`](js/shared/DamageResult.js) turns it into one of `none`, `damaged`, `died` or `exploding`. Then [`handleDamageResult()`](js/shared/DamageResultHandler.js) plays the explosions and sounds and adds the score. Bullet hits, enemy updates (such as a rusher exploding) and area damage all go through this one path.
+`enemy.takeDamage()` returns one of the [`DAMAGE_RESULT`](js/shared/DamageResult.js) values: `damaged`, `died` or `exploding` (any hit lights a rusher's fuse, so it returns `exploding`). Compare with `=== DAMAGE_RESULT.DIED`, never by truthiness: every value is a non-empty string. Then [`handleDamageResult()`](js/shared/DamageResultHandler.js) plays the explosions and sounds and adds the score. Bullet hits, enemy updates (such as a rusher exploding) and area damage all go through this one path.
 
 - **Hit radius.** A bullet hits an enemy within `bullet.size / 2 + enemy.hitRadius`. The radius per type is in `CONFIG.HITBOX`, because sprites are wider than `size / 2`. The player keeps `size / 2`.
-- **Blasts and area damage.** A rusher's blast, plasma clouds and debris damage enemies through [`damageEnemiesInRadius()`](js/effects/AreaDamageHandler.js). An enemy counts when its hit radius reaches into the circle; enemies already killed this frame are skipped. Blasts land after the enemy loop has compacted the array, so an enemy is hit once and what they kill is gone before bullets run.
-- **The player.** [`Player.takeDamage()`](js/entities/player.js) owns the shield, the wound sound and the kill-streak reset. The shield takes one real hit whole (contact ticks go through it), recharges in `CONFIG.PLAYER.SHIELD_RECHARGE_MS` and returns on the beat. Callers only act on its `true` (died) return.
+- **Blasts and area damage.** A rusher's blast and the hazard clouds (plasma and radioactive debris, one [`HazardCloud`](js/effects/explosions/HazardCloud.js) class with two configs) damage enemies through [`damageEnemiesInRadius()`](js/effects/AreaDamageHandler.js). An enemy counts when its hit radius reaches into the circle; enemies already killed this frame are skipped. Blasts land after the enemy loop has compacted the array, so an enemy is hit once and what they kill is gone before bullets run.
+- **The player.** [`Player.takeDamage()`](js/entities/player.js) owns the shield, the wound sound and the kill-streak reset. The shield takes one real hit whole (contact ticks go through it), recharges in `CONFIG.PLAYER.SHIELD_RECHARGE_MS` and returns on the beat. Callers hurt the player with `player.hurt(amount, source)`, which also ends the run on a fatal hit and returns `true` if the player died.
 
 ## Dev tools
 
@@ -73,11 +73,21 @@ Speech can't be routed through Web Audio or raised above full volume, so it stay
 
 ## Known debt
 
-- **State lives in two places.** Systems are on `window.*` and mirrored into `GameContext`. New code should use the context, but the mirroring stays until every reader has moved.
-- **`GameState` reaches into globals** (`window.audio`, `window.player` and others) instead of being handed what it needs.
-- **Setup monkey-patches `audio.initialize`** in `GameLoopSetup.js`, so that BeatClock switches from `Date.now()` to the audio clock once audio starts.
-- **The `DamageResult` normaliser is a shim.** Enemy `takeDamage()` methods still return mixed types, and the normaliser papers over them.
-- **Some files are long:** `Audio.js` is about 700 lines, and `Tank.js` and `BaseEnemy.js` are about 500 each.
+- **`window.*` still has readers.** Game code should read the context, but `GameState` still reads about 48 globals (`window.audio`, `window.player` and others) instead of being handed what it needs; `Audio` reaches `window.beatTrack`, and `player.js` reads the input flags that `InputHandlers` writes to `window`.
+- **The game is frame-locked.** Enemies and the player move by frame time, but bullets move a fixed step per frame and bomb fuses count frames, so on a 120 Hz screen those run twice as fast.
+- **Some files are long:** `Audio.js` is about 650 lines, and `Tank.js` and `BaseEnemy.js` are about 500 each.
+
+## Adding an enemy-instrument
+
+A new enemy touches these places:
+
+1. A class extending [`BaseEnemy`](js/entities/BaseEnemy.js) in `js/entities/`. `takeDamage()` returns a `DAMAGE_RESULT` value.
+2. An entry in `ENEMY_CLASSES` and `ENEMY_INTRO_LEVEL` in [`SpawnSystem.js`](js/systems/SpawnSystem.js).
+3. A beat gate in `BeatClock` (like `canGruntShoot()`), used through `onBeatOnce()` so the action fires once per beat.
+4. Its sounds in [`SoundConfig.js`](js/audio/SoundConfig.js), including a `<type>Response` entry for the call-and-response on deaths, played with `audio.playSound(key, x, y)`.
+5. Its numbers in `CONFIG` (and a `CONFIG.HITBOX` radius), with knobs in `KNOBS` in [`TunePanel.js`](js/dev/TunePanel.js) for anything to tune by ear.
+6. Its glow colour in `GLOW_RGB` in [`BaseEnemyHelpers.js`](js/entities/BaseEnemyHelpers.js).
+7. Its beats in `expectedBeats` in [`tests/beat-assertions.js`](tests/beat-assertions.js), and a unit test that a non-fatal hit returns `damaged` and plays its hit sound.
 
 ## Conventions
 
