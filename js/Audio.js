@@ -54,12 +54,9 @@ export class Audio {
     // Effects nodes
     this.effects = {
       reverb: null,
-      distortion: null,
     };
-
-    // Distortion curve cache
-    this.distortionCurves = new Map();
-    this.maxCurveCache = 32; // Limit cache size to 32 entries
+    // Waveshaper curve for the ambient sounds' wet path (made in createEffects)
+    this.ambientDistortionCurve = null;
 
     // Speech
     this.speechSynthesis = window.speechSynthesis;
@@ -168,11 +165,11 @@ export class Audio {
     this.effects.reverb = this.audioContext.createConvolver();
     this.effects.reverb.buffer = this.createReverbImpulse(3.5, 0.5); // Longer, more atmospheric reverb
 
-    // Simple distortion
-    this.effects.distortion = this.audioContext.createWaveShaper();
-    // Reuse cached curve for identical amount / sample-rate pairs
-    this.effects.distortion.curve = this.createOrGetCurve(30);
-    this.effects.distortion.oversample = '2x';
+    // One curve shared by every ambient sound's light distortion
+    this.ambientDistortionCurve = this.createDistortionCurve(
+      5,
+      this.audioContext.sampleRate
+    );
   }
 
   createReverbImpulse(duration, decay) {
@@ -200,25 +197,6 @@ export class Audio {
       curve[i] =
         ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
     }
-    return curve;
-  }
-
-  // Distortion curve cache helper with proper FIFO eviction and duplicate check
-  createOrGetCurve(amount) {
-    const sampleRate = this.audioContext ? this.audioContext.sampleRate : 44100;
-    const key = `${amount}_${sampleRate}`;
-    // If the key already exists, return it immediately (no reinsertion)
-    if (this.distortionCurves.has(key)) {
-      return this.distortionCurves.get(key);
-    }
-    // If adding a new key and the cache is full, evict the oldest
-    if (this.distortionCurves.size >= this.maxCurveCache) {
-      const oldestKey = this.distortionCurves.keys().next().value;
-      this.distortionCurves.delete(oldestKey);
-    }
-    // Add the new curve
-    const curve = this.createDistortionCurve(amount, sampleRate);
-    this.distortionCurves.set(key, curve);
     return curve;
   }
 
@@ -404,7 +382,7 @@ export class Audio {
 
       // A light otherworldly distortion
       distortionNode = this.audioContext.createWaveShaper();
-      distortionNode.curve = this.createOrGetCurve(5);
+      distortionNode.curve = this.ambientDistortionCurve;
       distortionNode.oversample = '2x';
 
       // Wet path: pan -> lowpass -> distortion -> reverb -> master
