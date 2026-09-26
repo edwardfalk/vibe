@@ -1,6 +1,9 @@
 import { atan2, cos, sin } from '../../mathUtils.js';
 import { CONFIG } from '../../config.js';
-import { handleDamageResult } from '../../shared/DamageResultHandler.js';
+import {
+  handleDamageResult,
+  STABBER_KILL_POINTS,
+} from '../../shared/DamageResultHandler.js';
 import { damageEnemiesInRadius } from '../../effects/AreaDamageHandler.js';
 
 function handleRusherExplosionResult(result, enemy, context, blasts) {
@@ -86,7 +89,7 @@ function handleStabberAttackResult(result, context) {
             collisionSystem.handleEnemyDeath(e, e.type, e.x, e.y);
           }
         },
-        scorePoints: 15,
+        scorePoints: STABBER_KILL_POINTS,
       }
     );
   }

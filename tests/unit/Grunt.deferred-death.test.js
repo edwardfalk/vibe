@@ -4,14 +4,17 @@ import { Grunt } from '../../js/entities/Grunt.js';
 import { CONFIG } from '../../js/config.js';
 import { Bullet } from '../../js/entities/bullet.js';
 import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
+import { STABBER_KILL_POINTS } from '../../js/shared/DamageResultHandler.js';
 
 describe('Grunt deferred stabber death', () => {
   let grunt;
   let mockP5;
   let mockAudio;
   let mockCollisionSystem;
+  let mockGameState;
 
   beforeEach(() => {
+    mockGameState = { addKill: vi.fn(), addScore: vi.fn() };
     mockP5 = createMockP5();
     mockAudio = createMockAudio();
     mockCollisionSystem = { handleEnemyDeath: vi.fn() };
@@ -20,6 +23,7 @@ describe('Grunt deferred stabber death', () => {
       get: vi.fn((key) => {
         if (key === 'audio') return mockAudio;
         if (key === 'collisionSystem') return mockCollisionSystem;
+        if (key === 'gameState') return mockGameState;
         if (key === 'beatClock') return null;
         if (key === 'enemies') return [];
         return undefined;
@@ -95,6 +99,19 @@ describe('Grunt deferred stabber death', () => {
       grunt.x,
       grunt.y
     );
+  });
+
+  it('scores the kill when the delayed death lands, like any stabber kill', () => {
+    grunt.takeDamage(5, null, 'stabber_melee');
+    for (let i = 0; i < 12; i++) {
+      grunt.updateSpecificBehavior(
+        200,
+        200,
+        CONFIG.GAME_SETTINGS.FRAME_TIME_MS
+      );
+    }
+    expect(mockGameState.addKill).toHaveBeenCalledTimes(1);
+    expect(mockGameState.addScore).toHaveBeenCalledWith(STABBER_KILL_POINTS);
   });
 });
 

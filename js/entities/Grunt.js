@@ -2,6 +2,10 @@ import { BaseEnemy } from './BaseEnemy.js';
 import { random, sqrt, atan2 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
+import {
+  handleDamageResult,
+  STABBER_KILL_POINTS,
+} from '../shared/DamageResultHandler.js';
 
 // Per-beat chances for beat-gated grunt sounds (rolled once per beat)
 const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
@@ -75,19 +79,23 @@ class Grunt extends BaseEnemy {
       this.pendingStabDeathTimer -= dt;
       if (this.pendingStabDeathTimer <= 0) {
         this.pendingStabDeath = false;
-        // Actually die now, call super.takeDamage() once
-        if (this._pendingStabDeathParams) {
-          super.takeDamage(
-            this._pendingStabDeathParams.amount,
-            this._pendingStabDeathParams.bulletAngle,
-            this._pendingStabDeathParams.damageSource
-          );
-          this._pendingStabDeathParams = null;
-        }
+        // Actually die now, through the same path (and score) as any stab kill
+        const { amount, bulletAngle, damageSource } =
+          this._pendingStabDeathParams;
+        this._pendingStabDeathParams = null;
         const collisionSystem = this.getContextValue('collisionSystem');
-        if (collisionSystem) {
-          collisionSystem.handleEnemyDeath(this, this.type, this.x, this.y);
-        }
+        handleDamageResult(
+          super.takeDamage(amount, bulletAngle, damageSource),
+          this,
+          {
+            explosionManager: this.getContextValue('explosionManager'),
+            audio: this.getContextValue('audio'),
+            gameState: this.getContextValue('gameState'),
+            onDeath: (e) =>
+              collisionSystem?.handleEnemyDeath(e, e.type, e.x, e.y),
+            scorePoints: STABBER_KILL_POINTS,
+          }
+        );
         // Mark for removal instead of splicing the array
         this.markedForRemoval = true;
         this.velocity.x = 0; // Ensure Grunt stops moving during delayed death

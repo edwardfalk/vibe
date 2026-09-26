@@ -1,5 +1,8 @@
 import { DAMAGE_RESULT } from './DamageResult.js';
 
+// What an enemy killed by a stabber's stab is worth
+export const STABBER_KILL_POINTS = 15;
+
 /**
  * Handles an enemy's takeDamage result (DAMAGE_RESULT) with standard effects.
  *
