@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SpawnSystem, nextNewEnemyType } from '../../js/systems/SpawnSystem.js';
 import { CONFIG } from '../../js/config.js';
 import { BeatClock } from '../../js/audio/BeatClock.js';
+import { CameraSystem } from '../../js/systems/CameraSystem.js';
 
 vi.spyOn(console, 'log').mockImplementation(() => {});
 const original = structuredClone(CONFIG.PACING);
@@ -131,14 +132,50 @@ describe('Spawn pacing', () => {
 });
 
 describe('spawn position', () => {
+  const p = { width: 800, height: 600 };
+
+  it('is just outside the camera view and inside the world', () => {
+    const halfW = CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2;
+    const halfH = CONFIG.GAME_SETTINGS.WORLD_HEIGHT / 2;
+    // Centred, and pushed as far as the camera goes, where the view's
+    // right and bottom edges are the world's
+    for (const [camX, camY] of [
+      [0, 0],
+      [halfW - p.width / 2, halfH - p.height / 2],
+    ]) {
+      const cameraSystem = new CameraSystem(p);
+      cameraSystem.x = camX;
+      cameraSystem.y = camY;
+      const values = { player: { x: camX, y: camY, p }, cameraSystem };
+      const system = new SpawnSystem(null);
+      system.getContextValue = (key) => values[key];
+      const view = {
+        left: camX - p.width / 2,
+        right: camX + p.width / 2,
+        top: camY - p.height / 2,
+        bottom: camY + p.height / 2,
+      };
+      for (let i = 0; i < 200; i++) {
+        const { x, y } = system.findSpawnPosition();
+        const outside =
+          x < view.left || x > view.right || y < view.top || y > view.bottom;
+        expect(outside).toBe(true);
+        expect(Math.abs(x)).toBeLessThanOrEqual(halfW);
+        expect(Math.abs(y)).toBeLessThanOrEqual(halfH);
+      }
+    }
+  });
+
   it('keeps a good spot found on the last attempt', () => {
-    const player = { x: 400, y: 300, p: { width: 800, height: 600 } };
+    const player = { x: 0, y: 0, p };
+    const cameraSystem = new CameraSystem(p);
     // Every spot is next to an enemy until the 50th attempt
     let lookups = 0;
-    const crowd = [{ x: 0, y: 0 }];
+    const crowd = [{ x: 999, y: 0 }];
     const system = new SpawnSystem(null);
     system.getContextValue = (key) => {
       if (key === 'player') return player;
+      if (key === 'cameraSystem') return cameraSystem;
       lookups++;
       return lookups < 50 ? crowd : [];
     };

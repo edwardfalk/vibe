@@ -8,7 +8,7 @@ import { Tank } from '../entities/Tank.js';
 import { Stabber } from '../entities/Stabber.js';
 import { CONFIG } from '../config.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
-import { max, min, floor, random, sin, cos, sqrt } from '../mathUtils.js';
+import { max, min, floor, random, sqrt } from '../mathUtils.js';
 
 // Level at which each enemy type joins the regular mix
 const ENEMY_CLASSES = {
@@ -146,31 +146,35 @@ export class SpawnSystem {
       return { x: random(100, w - 100), y: random(100, h - 100) };
     }
     const p = player.p;
+    // The view in world coordinates, and the world's edges
+    const camera = this.getContextValue('cameraSystem');
+    const topLeft = camera.screenToWorld(0, 0);
+    const bottomRight = camera.screenToWorld(p.width, p.height);
+    const halfW = CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2;
+    const halfH = CONFIG.GAME_SETTINGS.WORLD_HEIGHT / 2;
+    const margin = CONFIG.PACING.SPAWN_MARGIN;
+    // `margin` past each view edge with that much world beyond it, anywhere
+    // along the edge (within the world)
+    const alongX = () =>
+      random(max(topLeft.x, -halfW), min(bottomRight.x, halfW));
+    const alongY = () =>
+      random(max(topLeft.y, -halfH), min(bottomRight.y, halfH));
+    const top = topLeft.y - margin;
+    const right = bottomRight.x + margin;
+    const bottom = bottomRight.y + margin;
+    const left = topLeft.x - margin;
+    const sides = [
+      top >= -halfH && (() => [alongX(), top]),
+      right <= halfW && (() => [right, alongY()]),
+      bottom <= halfH && (() => [alongX(), bottom]),
+      left >= -halfW && (() => [left, alongY()]),
+    ].filter(Boolean);
     let attempts = 0;
     let found = false;
     let spawnX, spawnY;
     do {
-      // Spawn OFF-SCREEN at edges, then enemies move toward player
-      const margin = 50; // Distance beyond screen edge
-      const side = floor(random(4)); // 0=top, 1=right, 2=bottom, 3=left
-      switch (side) {
-        case 0: // Top
-          spawnX = random(0, p.width);
-          spawnY = -margin;
-          break;
-        case 1: // Right
-          spawnX = p.width + margin;
-          spawnY = random(0, p.height);
-          break;
-        case 2: // Bottom
-          spawnX = random(0, p.width);
-          spawnY = p.height + margin;
-          break;
-        case 3: // Left
-          spawnX = -margin;
-          spawnY = random(0, p.height);
-          break;
-      }
+      // Spawn out of view, then enemies move toward player
+      [spawnX, spawnY] = random(sides)();
 
       // Check minimum distance from player (should be far since off-screen)
       const distanceFromPlayer = this.getDistance(
@@ -206,13 +210,9 @@ export class SpawnSystem {
       break;
     } while (attempts < 50);
 
-    // Fallback if no good position found after many attempts
+    // No spot kept its distance: the last one is still out of view
     if (!found) {
       console.warn('⚠️ Could not find good spawn position, using fallback');
-      // Spawn far off-screen in random direction
-      const angle = random(0, Math.PI * 2);
-      spawnX = player.x + cos(angle) * 600;
-      spawnY = player.y + sin(angle) * 600;
     }
 
     return { x: spawnX, y: spawnY };

@@ -65,6 +65,10 @@ const CONFIG = {
     // new type appears when this far through the level before it
     PREVIEW_NEW_ENEMY: true,
     PREVIEW_AT_PROGRESS: 0.5,
+    // Enemies appear this far (px) past an edge of the view. At most 175:
+    // with the view centred, only the left and right edges have that much
+    // world beyond them
+    SPAWN_MARGIN: 50,
   },
 
   // Mix. Speech runs outside Web Audio and can't go above full volume, so it
