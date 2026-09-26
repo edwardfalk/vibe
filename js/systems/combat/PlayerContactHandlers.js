@@ -11,7 +11,7 @@ export function handleContactCollisions({
 
   for (let i = enemies.length - 1; i >= 0; i--) {
     const enemy = enemies[i];
-    if (!enemy.checkCollision(player)) continue;
+    if (enemy.markedForRemoval || !enemy.checkCollision(player)) continue;
 
     let damage = 0;
     let shouldPlaceBomb = false;
