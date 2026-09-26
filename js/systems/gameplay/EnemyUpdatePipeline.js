@@ -30,7 +30,7 @@ function handleRusherExplosionResult(result, enemy, context, blasts) {
   }
 
   if (audio) {
-    audio.playExplosion(result.x, result.y);
+    audio.playSound('explosion', result.x, result.y);
   }
 
   if (cameraSystem) {

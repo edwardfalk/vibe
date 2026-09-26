@@ -116,7 +116,7 @@ class Rusher extends BaseEnemy {
     if (distance <= this.explodeDistance) {
       this.lightFuse();
       const audio = this.getContextValue('audio') || this.audio;
-      if (audio) audio.playRusherCharge(this.x, this.y);
+      if (audio) audio.playSound('rusherCharge', this.x, this.y);
       return null;
     }
 
@@ -147,7 +147,7 @@ class Rusher extends BaseEnemy {
           audio.speak(this, battleCry, 'rusher');
 
           if (!beatClock || beatClock.canRusherCharge()) {
-            audio.playRusherCharge(this.x, this.y);
+            audio.playSound('rusherCharge', this.x, this.y);
           }
         }
       }

@@ -79,7 +79,6 @@ function createMockAudio() {
   return {
     speak: vi.fn(() => true),
     playSound: vi.fn(),
-    playAlienShoot: vi.fn(),
   };
 }
 

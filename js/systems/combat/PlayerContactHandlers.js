@@ -59,7 +59,7 @@ export function handleRusherExplosionCollision({
   );
   if (distance > explosion.radius) return;
 
-  audio?.playRusherExplosion?.(explosion.x, explosion.y);
+  audio?.playSound('explosion', explosion.x, explosion.y);
 
   if (player.takeDamage(explosion.damage, 'rusher-explosion')) {
     gameState?.setGameState?.('gameOver');

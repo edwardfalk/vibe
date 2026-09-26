@@ -82,8 +82,6 @@ function createMockAudio() {
   return {
     speak: vi.fn(() => true),
     playSound: vi.fn(),
-    playRusherCharge: vi.fn(),
-    playAlienShoot: vi.fn(),
   };
 }
 
@@ -195,7 +193,11 @@ describe('Rusher fuse', () => {
     rusher.update(rusher.x + 30, rusher.y, FRAME_MS);
 
     expect(rusher.vibrating).toBe(true);
-    expect(mockAudio.playRusherCharge).toHaveBeenCalled();
+    expect(mockAudio.playSound).toHaveBeenCalledWith(
+      'rusherCharge',
+      rusher.x,
+      rusher.y
+    );
   });
 
   it('explodes anyway if no beat 1 or 3 ever comes', () => {

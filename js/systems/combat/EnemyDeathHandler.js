@@ -23,8 +23,8 @@ export class EnemyDeathHandler {
       if (cameraSystem) {
         cameraSystem.addShake(8, 15);
       }
-      audio.playTankOhNo(x, y);
-      audio.playExplosion(x, y);
+      audio.playSound('tankOhNo', x, y);
+      audio.playSound('explosion', x, y);
 
       // Call-and-response: notify nearby same-type enemies
       const enemies = this.getContextValue('enemies');
@@ -45,13 +45,13 @@ export class EnemyDeathHandler {
     explosionManager.addFragmentExplosion(x, y, enemy);
 
     if (enemyType === 'grunt') {
-      audio.playGruntPop(x, y);
+      audio.playSound('gruntPop', x, y);
     } else if (enemyType === 'stabber') {
-      audio.playStabberOhNo(x, y);
+      audio.playSound('stabberOhNo', x, y);
     } else if (enemyType === 'rusher') {
-      audio.playRusherOhNo(x, y);
+      audio.playSound('rusherOhNo', x, y);
     } else {
-      audio.playEnemyOhNo(x, y);
+      audio.playSound('enemyOhNo', x, y);
     }
 
     // Call-and-response: notify nearby same-type enemies

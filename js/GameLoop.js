@@ -161,7 +161,7 @@ function updateGame(p) {
         window.gameState.addShotFired();
       }
       if (window.audio) {
-        window.audio.playPlayerShoot(player.x, player.y);
+        window.audio.playSound('playerShoot', player.x, player.y);
       }
     }
   }

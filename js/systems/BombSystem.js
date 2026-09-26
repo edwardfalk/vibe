@@ -78,7 +78,7 @@ export function updateBombs(context) {
     }
 
     if (audio) {
-      audio.playBombExplosion(bomb.x, bomb.y);
+      audio.playSound('explosion', bomb.x, bomb.y);
     }
 
     if (cameraSystem) {

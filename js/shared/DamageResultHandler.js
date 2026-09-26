@@ -45,8 +45,8 @@ export function handleDamageResult(rawResult, enemy, ctx) {
     }
 
     // Extra audio on death (e.g. friendly-fire explosion sound)
-    if (ctx.deathAudio && ctx.audio) {
-      ctx.audio[ctx.deathAudio](enemy.x, enemy.y);
+    if (ctx.deathSound && ctx.audio) {
+      ctx.audio.playSound(ctx.deathSound, enemy.x, enemy.y);
     }
 
     enemy.markedForRemoval = true;
@@ -92,6 +92,6 @@ function addHitEffect(ctx, x, y) {
     ctx.explosionManager.addExplosion(x, y, 'hit');
   }
   if (ctx.audio) {
-    ctx.audio.playHit(x, y);
+    ctx.audio.playSound('hit', x, y);
   }
 }

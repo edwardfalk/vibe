@@ -21,13 +21,13 @@ export class ExplosionManager {
   addPlasmaCloud(x, y) {
     this.plasmaClouds.push(new HazardCloud(x, y, 'PLASMA'));
     const audio = this.getContextValue('audio');
-    if (audio) audio.playPlasmaCloud(x, y);
+    if (audio) audio.playSound('plasmaCloud', x, y);
   }
 
   addRadioactiveDebris(x, y) {
     this.radioactiveDebris.push(new HazardCloud(x, y, 'DEBRIS'));
     const audio = this.getContextValue('audio');
-    if (audio) audio.playPlasmaCloud(x, y);
+    if (audio) audio.playSound('plasmaCloud', x, y);
   }
 
   addFragmentExplosion(x, y, enemy) {

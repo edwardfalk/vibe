@@ -74,7 +74,7 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
   const gameState = getContextValue('gameState');
 
   if (audio) {
-    audio.playTankEnergyBall(bullet.x, bullet.y);
+    audio.playSound('tankBallKill', bullet.x, bullet.y);
   }
 
   // Calculate energy cost based on enemy's remaining health
@@ -85,8 +85,8 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
   handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
 
   if (audio) {
-    audio.playEnemyFrying(enemy.x, enemy.y);
-    audio.playExplosion(enemy.x, enemy.y);
+    audio.playSound('enemyFrying', enemy.x, enemy.y);
+    audio.playSound('explosion', enemy.x, enemy.y);
   }
 
   enemy.markedForRemoval = true;
@@ -143,7 +143,7 @@ export function handleRegularEnemyBulletHit(bullet, enemy, deps) {
       audio,
       gameState,
       onDeath: (e) => handleEnemyDeath(e, e.type, e.x, e.y),
-      deathAudio: 'playExplosion',
+      deathSound: 'explosion',
       scorePoints: 8,
       hitX: bullet.x,
       hitY: bullet.y,

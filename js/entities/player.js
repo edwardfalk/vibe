@@ -211,7 +211,7 @@ export class Player {
             }
 
             if (audio) {
-              audio.playPlayerShoot(this.x, this.y);
+              audio.playSound('playerShoot', this.x, this.y);
             }
           }
 
@@ -335,7 +335,7 @@ export class Player {
       audio?.playSound('shieldBreak', this.x, this.y);
       return false;
     }
-    audio?.playPlayerHit?.();
+    audio?.playSound('playerHit');
     gameState?.resetKillStreak?.();
 
     const prevHealth = this.health;

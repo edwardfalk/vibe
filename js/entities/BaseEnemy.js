@@ -480,7 +480,7 @@ export class BaseEnemy {
 
     // Play alien shooting sound
     if (this.audio) {
-      this.audio.playAlienShoot(this.x, this.y);
+      this.audio.playSound('alienShoot', this.x, this.y);
     }
 
     return bullet;

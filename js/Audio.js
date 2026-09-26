@@ -29,11 +29,7 @@ import {
   isConfusedText as isConfusedTextHelper,
 } from './audio/TextSemantics.js';
 import { CONFIG, VOICE_CONFIG } from './config.js';
-import {
-  SOUND_CONFIG,
-  SOUND_METHOD_TO_KEY,
-  TONE_ATTACK_SEC,
-} from './audio/SoundConfig.js';
+import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
 import { SPEECH_WRAPPER_CONFIG } from './audio/SpeechWrappers.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
@@ -81,7 +77,6 @@ export class Audio {
     this.sounds = { ...SOUND_CONFIG };
     this.voiceConfig = { ...VOICE_CONFIG };
 
-    this.bindConvenienceSoundMethods();
     this.bindConvenienceSpeechMethods();
   }
 
@@ -90,12 +85,6 @@ export class Audio {
   }
 
   getContextValue = createContextAccessor(() => this.context);
-
-  bindConvenienceSoundMethods() {
-    for (const [methodName, soundKey] of Object.entries(SOUND_METHOD_TO_KEY)) {
-      this[methodName] = (...args) => this.playSound(soundKey, ...args);
-    }
-  }
 
   bindConvenienceSpeechMethods() {
     for (const [methodName, { getLine, voiceType }] of Object.entries(
