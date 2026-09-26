@@ -212,7 +212,7 @@ describe('Beat-gated entity behaviour', () => {
     try {
       const { audio, context } = world();
       const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
-      expect([t.frontArmorHP, t.leftArmorHP, t.rightArmorHP]).toEqual([
+      expect([t.plates.front.hp, t.plates.left.hp, t.plates.right.hp]).toEqual([
         7, 3, 3,
       ]);
     } finally {

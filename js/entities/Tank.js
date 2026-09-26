@@ -1,16 +1,61 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { Bullet } from './bullet.js';
-import { floor, random, sqrt, sin, cos } from '../mathUtils.js';
 import {
-  spawnArmorBreakEffect,
-  handleAngerForDamage,
-  processArmorHit,
-} from './TankArmorHandler.js';
+  floor,
+  random,
+  sqrt,
+  sin,
+  cos,
+  PI,
+  normalizeAngle,
+} from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 
 const TANK_POWER_SOUND_CHANCE = 0.5; // per beat 1 while charging
 // Per attempt once the speech timer is up (= today's effective rate)
 const TANK_SPEECH_CHANCE = 0.025;
+
+const PI_4 = PI / 4;
+const THREE_PI_4 = (3 * PI) / 4;
+
+// The armour plates. `hits` is the impact-angle range a plate takes (0 is a
+// shot at the nose), `side` the direction it breaks off in, and `rect` where
+// it is drawn (plate thickness, plate length, chassis side y, chassis front
+// x). The left and right hit ranges are each other's drawn plates; kept as is
+const ARMOR_PLATES = [
+  {
+    name: 'front',
+    hits: (a) => a >= -PI_4 && a <= PI_4,
+    side: 0,
+    fill: [120, 120, 140],
+    stroke: [60, 60, 70],
+    rect: (t, len, sideY, frontX) => [frontX, -len * 0.4, t * 1.5, len * 0.8],
+  },
+  {
+    name: 'left',
+    hits: (a) => a > PI_4 && a < THREE_PI_4,
+    side: -PI / 2,
+    fill: [100, 100, 120],
+    stroke: [50, 50, 60],
+    rect: (t, len, sideY) => [-len / 2, -sideY - t, len, t],
+  },
+  {
+    name: 'right',
+    hits: (a) => a < -PI_4 && a > -THREE_PI_4,
+    side: PI / 2,
+    fill: [100, 100, 120],
+    stroke: [50, 50, 60],
+    rect: (t, len, sideY) => [-len / 2, sideY, len, t],
+  },
+];
+
+const ANGER_LINES = [
+  'ENOUGH! YOU DIE FIRST!',
+  'TARGETING TRAITORS!',
+  'FRIENDLY FIRE? NOT ANYMORE!',
+  'YOU MADE ME MAD!',
+  'TURNING GUNS ON YOU!',
+];
 
 const TANK_LINES = [
   'HEAVY ARTILLERY!',
@@ -54,13 +99,13 @@ class Tank extends BaseEnemy {
     this.angerCooldown = 0; // Cooldown before returning to normal behavior
     this.maxAngerCooldown = 600; // 10 seconds of anger
 
-    // Destructible Armor Pieces
-    this.frontArmorHP = CONFIG.TANK_ARMOR.FRONT;
-    this.frontArmorDestroyed = false;
-    this.leftArmorHP = CONFIG.TANK_ARMOR.SIDE;
-    this.rightArmorHP = CONFIG.TANK_ARMOR.SIDE;
-    this.leftArmorDestroyed = false;
-    this.rightArmorDestroyed = false;
+    // Destructible armour plates (see ARMOR_PLATES)
+    const { FRONT, SIDE } = CONFIG.TANK_ARMOR;
+    this.plates = {
+      front: { hp: FRONT, destroyed: false },
+      left: { hp: SIDE, destroyed: false },
+      right: { hp: SIDE, destroyed: false },
+    };
   }
 
   /**
@@ -264,98 +309,31 @@ class Tank extends BaseEnemy {
 
   drawArmorPlates(s) {
     // Synthwave style armor plates - geometric with neon outlines
-    const armorPlateThickness = s * 0.2;
     const armorColor = this.p.color(20, 15, 35);
     const outlineColor = this.p.color(138, 43, 226);
-
     this.p.stroke(outlineColor);
     this.p.strokeWeight(2);
-    this.p.fill(armorColor); // Thickness of the side armor plates
-    const armorPlateLength = s * 1.0; // Length of the side armor plates
-    const chassisSideY = s * 0.6; // Y-coordinate of the edge of the main chassis' side.
-    const chassisFrontX = s * 0.5; // X-coordinate of the front of the main chassis.
+    this.p.fill(armorColor);
 
-    // Front Armor (Tank's local +X side - its nose)
-    this.p.push();
-    if (!this.frontArmorDestroyed) {
-      this.p.fill(120, 120, 140);
-      this.p.stroke(60, 60, 70);
-      this.p.strokeWeight(2);
-      // rect(x_top_left, y_top_left, width, height)
-      // x_top_left is chassisFrontX (places it on the front edge of the chassis)
-      // y_top_left is -armorPlateLength / 2 + s * 0.1 (to align with cannon visually, slightly narrower than side armor)
-      // width is armorPlateThickness (it extends along X-axis)
-      // height is armorPlateLength * 0.8 (making it slightly shorter than side plates for visual distinction)
+    const thickness = s * 0.2;
+    const length = s * 1.0;
+    const chassisSideY = s * 0.6;
+    const chassisFrontX = s * 0.5;
+    for (const plate of ARMOR_PLATES) {
+      this.p.push();
+      if (!this.plates[plate.name].destroyed) {
+        this.p.fill(...plate.fill);
+        this.p.stroke(...plate.stroke);
+        this.p.strokeWeight(2);
+      } else {
+        this.p.fill(50, 50, 50, 150);
+        this.p.noStroke();
+      }
       this.p.rect(
-        chassisFrontX,
-        -armorPlateLength * 0.4,
-        armorPlateThickness * 1.5,
-        armorPlateLength * 0.8
+        ...plate.rect(thickness, length, chassisSideY, chassisFrontX)
       );
-    } else {
-      this.p.fill(50, 50, 50, 150);
-      this.p.noStroke();
-      this.p.rect(
-        chassisFrontX,
-        -armorPlateLength * 0.4,
-        armorPlateThickness * 1.5,
-        armorPlateLength * 0.8
-      );
+      this.p.pop();
     }
-    this.p.pop();
-
-    // Left Armor (Tank's local -Y side)
-    this.p.push();
-    if (!this.leftArmorDestroyed) {
-      this.p.fill(100, 100, 120);
-      this.p.stroke(50, 50, 60);
-      this.p.strokeWeight(2);
-      // rect(x_top_left, y_top_left, width, height)
-      // x_top_left is -armorPlateLength / 2 to center it along the tank's X-axis.
-      // y_top_left is -chassisSideY - armorPlateThickness (places it outside the chassis on the -Y side).
-      this.p.rect(
-        -armorPlateLength / 2,
-        -chassisSideY - armorPlateThickness,
-        armorPlateLength,
-        armorPlateThickness
-      );
-    } else {
-      this.p.fill(50, 50, 50, 150);
-      this.p.noStroke();
-      this.p.rect(
-        -armorPlateLength / 2,
-        -chassisSideY - armorPlateThickness,
-        armorPlateLength,
-        armorPlateThickness
-      );
-    }
-    this.p.pop();
-
-    // Right Armor (Tank's local +Y side)
-    this.p.push();
-    if (!this.rightArmorDestroyed) {
-      this.p.fill(100, 100, 120);
-      this.p.stroke(50, 50, 60);
-      this.p.strokeWeight(2);
-      // x_top_left is -armorPlateLength / 2.
-      // y_top_left is +chassisSideY (places it outside the chassis on the +Y side).
-      this.p.rect(
-        -armorPlateLength / 2,
-        chassisSideY,
-        armorPlateLength,
-        armorPlateThickness
-      );
-    } else {
-      this.p.fill(50, 50, 50, 150);
-      this.p.noStroke();
-      this.p.rect(
-        -armorPlateLength / 2,
-        chassisSideY,
-        armorPlateLength,
-        armorPlateThickness
-      );
-    }
-    this.p.pop();
   }
 
   /**
@@ -481,36 +459,73 @@ class Tank extends BaseEnemy {
     const audio = this.getContextValue('audio');
     if (bulletAngle === null) {
       if (audio) audio.playSound('tankHit', this.x, this.y);
-      const died = super.takeDamage(amount, bulletAngle, damageSource);
-      return died;
+      return super.takeDamage(amount, bulletAngle, damageSource);
     }
 
-    const armorResult = processArmorHit(
-      this,
-      amount,
-      bulletAngle,
-      damageSource
+    const impactAngle = normalizeAngle(bulletAngle - this.aimAngle + PI);
+    const plate = ARMOR_PLATES.find(
+      (pl) => !this.plates[pl.name].destroyed && pl.hits(impactAngle)
     );
-    if (armorResult?.absorbed) return false;
+    if (plate) {
+      const armor = this.plates[plate.name];
+      armor.hp -= amount;
+      if (audio) audio.playSound('hit', this.x, this.y);
+      this.hitFlash = 8;
+      if (armor.hp > 0) return false; // the plate took it all
 
-    if (armorResult?.overflowAmount !== undefined) {
-      if (armorResult.plate) spawnArmorBreakEffect(this, armorResult.plate);
-      handleAngerForDamage(this, damageSource, armorResult.overflowAmount);
-      if (armorResult.overflowAmount > 0) {
-        if (audio) audio.playSound('tankHit', this.x, this.y);
-        return super.takeDamage(
-          armorResult.overflowAmount,
-          bulletAngle,
-          damageSource
-        );
-      }
-      return false;
+      const overflow = -armor.hp;
+      armor.hp = 0;
+      armor.destroyed = true;
+      if (audio) audio.playSound('explosion', this.x, this.y);
+      this.breakArmor(plate);
+      this.trackAnger(damageSource);
+      if (overflow <= 0) return false;
+      if (audio) audio.playSound('tankHit', this.x, this.y);
+      return super.takeDamage(overflow, bulletAngle, damageSource);
     }
 
     if (audio) audio.playSound('tankHit', this.x, this.y);
-    handleAngerForDamage(this, damageSource, amount);
-    const died = super.takeDamage(amount, bulletAngle, damageSource);
-    return died;
+    this.trackAnger(damageSource);
+    return super.takeDamage(amount, bulletAngle, damageSource);
+  }
+
+  /** Debris, a label and a shake where an armour plate broke off */
+  breakArmor(plate) {
+    const ox = cos(this.aimAngle + plate.side) * this.size * 0.6;
+    const oy = sin(this.aimAngle + plate.side) * this.size * 0.6;
+
+    const explosionManager = this.getContextValue('explosionManager');
+    const floatingText = this.getContextValue('floatingText');
+    const cameraSystem = this.getContextValue('cameraSystem');
+    if (explosionManager) {
+      explosionManager.addExplosion(this.x + ox, this.y + oy, 'armor-break');
+    }
+    if (floatingText) {
+      floatingText.addText(
+        this.x + ox,
+        this.y + oy - 15,
+        'ARMOR BREAK!',
+        [150, 150, 200],
+        12
+      );
+    }
+    if (cameraSystem) {
+      cameraSystem.addShake(12, 15);
+    }
+  }
+
+  /** Hits from other enemies make the tank angry at their type */
+  trackAnger(damageSource) {
+    if (!damageSource || damageSource === 'player') return;
+    const count = (this.damageTracker.get(damageSource) || 0) + 1;
+    this.damageTracker.set(damageSource, count);
+    if (count >= this.angerThreshold && !this.isAngry) {
+      this.isAngry = true;
+      this.angerTarget = damageSource;
+      this.angerCooldown = this.maxAngerCooldown;
+      const audio = this.getContextValue('audio');
+      if (audio) audio.speak(this, random(ANGER_LINES), 'tank');
+    }
   }
 }
 
