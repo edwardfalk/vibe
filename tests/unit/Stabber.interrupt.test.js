@@ -145,9 +145,6 @@ describe('Stabber interrupt preserves stabDirection', () => {
     // Should be in recovery state
     expect(stabber.stabRecovering).toBe(true);
     expect(stabber.stabRecoveryTime).toBe(0);
-
-    // Should have a cooldown to prevent immediate re-attack
-    expect(stabber.stabCooldown).toBe(60);
   });
 
   it('enters recovery state after interrupt during stabWarning', () => {

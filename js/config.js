@@ -166,7 +166,6 @@ const CONFIG = {
   STABBER_SETTINGS: {
     MIN_STAB_DISTANCE: 200, // Minimum distance to initiate stab
     MAX_STAB_DISTANCE: 350, // Maximum distance to initiate stab
-    MAX_PREPARE_TIME: 45, // Frames for preparation phase
     MAX_WARNING_TIME: 40, // Frames for warning phase
     KNOCKBACK_FORCE: 8, // px/frame per hit; about 53 px in total
     MAX_KNOCKBACK: 20, // px/frame cap under steady fire

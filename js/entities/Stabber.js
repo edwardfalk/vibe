@@ -38,15 +38,12 @@ class Stabber extends BaseEnemy {
     // Tunable parameters are now config-driven for easier balancing
     this.minStabDistance = CONFIG.STABBER_SETTINGS.MIN_STAB_DISTANCE; // Minimum distance to initiate stab
     this.maxStabDistance = CONFIG.STABBER_SETTINGS.MAX_STAB_DISTANCE; // Maximum distance to initiate stab
-    this.stabCooldown = 0;
     this.stabPreparing = false;
     this.stabPreparingTime = 0;
-    this.maxStabPreparingTime = CONFIG.STABBER_SETTINGS.MAX_PREPARE_TIME; // Preparation phase duration
     this.stabWarning = false;
     this.stabWarningTime = 0;
     this.stabWarningPlayed = false;
     this.maxStabWarningTime = CONFIG.STABBER_SETTINGS.MAX_WARNING_TIME; // Warning phase duration
-    this.hasYelledStab = false;
 
     // Stabber chant is now beat-gated (no timer needed)
     this.isStabbing = false;
@@ -65,8 +62,18 @@ class Stabber extends BaseEnemy {
 
     // Armor properties
     this.armor = 2; // Reduces incoming damage
-    // Update meleeReach to match new knife length (s * 0.6 * 2.0 + s * 0.15)
-    this.meleeReach = 38; // For s=28, matches visual tip
+  }
+
+  /** End any attack phase and stand stuck until the next beat 3.5 */
+  enterRecovery() {
+    this.stabPreparing = false;
+    this.stabPreparingTime = 0;
+    this.stabWarning = false;
+    this.stabWarningTime = 0;
+    this.isStabbing = false;
+    this.stabAnimationTime = 0;
+    this.stabRecovering = true;
+    this.stabRecoveryTime = 0;
   }
 
   /**
@@ -84,24 +91,6 @@ class Stabber extends BaseEnemy {
       gate: (beatClock) => !!beatClock?.canStabberAttack(),
       chance: STABBER_SPEECH_CHANCE,
     };
-  }
-
-  /**
-   * Get animation modifications for attack phases
-   */
-  getAnimationModifications() {
-    // No rotation during attack phases
-    if (
-      this.stabPreparing ||
-      this.stabWarning ||
-      this.isStabbing ||
-      this.stabRecovering
-    ) {
-      // Additional animation modifications could go here
-      return { bobble: 0, waddle: 0 };
-    }
-
-    return { bobble: 0, waddle: 0 };
   }
 
   /**
@@ -274,21 +263,8 @@ class Stabber extends BaseEnemy {
 
     // INTERRUPT ATTACK when taking damage - prevents phantom hits after knockback
     if (this.stabPreparing || this.stabWarning) {
-      // Reset all attack states
-      this.stabPreparing = false;
-      this.stabPreparingTime = 0;
-      this.stabWarning = false;
-      this.stabWarningTime = 0;
-      this.isStabbing = false;
-      this.stabAnimationTime = 0;
-      // stabDirection preserved for recovery slide; reset in next handlePreparingPhase
-
-      // Enter recovery state after interruption
-      this.stabRecovering = true;
-      this.stabRecoveryTime = 0;
-
-      // Add cooldown to prevent immediate re-attack
-      this.stabCooldown = 60; // 1 second cooldown after interruption
+      // stabDirection is kept for the recovery slide (null if still preparing)
+      this.enterRecovery();
     }
 
     // Apply knockback when hit
