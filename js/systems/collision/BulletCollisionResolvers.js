@@ -41,17 +41,8 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
       floatingText,
       visualEffectsManager,
       cameraSystem,
-      getHitStopFrames: () =>
-        context?.get?.('hitStopFrames') ?? window.hitStopFrames ?? 0,
-      setHitStopFrames: (value) => {
-        if (context && typeof context.set === 'function') {
-          context.set('hitStopFrames', value);
-          return;
-        }
-        if (typeof window !== 'undefined') {
-          window.hitStopFrames = value;
-        }
-      },
+      getHitStopFrames: () => context.get('hitStopFrames') ?? 0,
+      setHitStopFrames: (value) => context.set('hitStopFrames', value),
     },
     hitX: bullet.x,
     hitY: bullet.y,

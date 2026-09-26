@@ -51,50 +51,17 @@ window.gruntFireBeat = -1;
 
 initializeInputHandlers();
 
-function syncRuntimeContext(
-  hitStopFramesOverride = null,
-  targetContext = null
-) {
-  const ctx = targetContext ?? gameContext;
-  if (!ctx) return;
-  const hitStopFrames = hitStopFramesOverride ?? ctx.get('hitStopFrames') ?? 0;
-
-  ctx.assign({
-    player: window.player,
-    enemies: window.enemies,
-    playerBullets: window.playerBullets,
-    enemyBullets: window.enemyBullets,
-    activeBombs: window.activeBombs,
-    audio: window.audio,
-    gameState: window.gameState,
-    cameraSystem: window.cameraSystem,
-    collisionSystem: window.collisionSystem,
-    spawnSystem: window.spawnSystem,
-    explosionManager: window.explosionManager,
-    floatingText: window.floatingText,
-    beatClock: window.beatClock,
-    rhythmFX: window.rhythmFX,
-    visualEffectsManager: window.visualEffectsManager,
-    hitStopFrames,
-  });
-}
-
 function setup(p) {
-  const state = runSetup(
-    p,
-    {
-      enemies,
-      playerBullets,
-      enemyBullets,
-      activeBombs,
-    },
-    (ctx) => syncRuntimeContext(window.hitStopFrames, ctx)
-  );
+  const state = runSetup(p, {
+    enemies,
+    playerBullets,
+    enemyBullets,
+    activeBombs,
+  });
   player = state.player;
   explosionManager = state.explosionManager;
   gameContext = state.gameContext;
   enemyDeathHandler = state.enemyDeathHandler;
-  syncRuntimeContext(window.hitStopFrames);
   window.gameState.showTitle();
   if (new URLSearchParams(location.search).has('tune')) createTunePanel();
 }
@@ -104,14 +71,11 @@ function draw(p) {
 }
 
 function updateGame(p) {
-  syncRuntimeContext();
-
   // Hitstop: freeze game updates for a few frames on impactful kills
   const hitStopFrames = gameContext?.get?.('hitStopFrames') ?? 0;
   if (hitStopFrames > 0) {
     const next = hitStopFrames - 1;
     gameContext.set('hitStopFrames', next);
-    window.hitStopFrames = next;
     // Still update floating text during hitstop so they don't freeze
     if (window.floatingText) window.floatingText.update();
 
