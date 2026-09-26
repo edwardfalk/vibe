@@ -126,7 +126,8 @@ export function drawInteractiveBackgroundEffectsLayer(
   p,
   player,
   gameState,
-  beatClock
+  beatClock,
+  cameraSystem
 ) {
   p.push();
 
@@ -159,6 +160,10 @@ export function drawInteractiveBackgroundEffectsLayer(
   drawBeatPulseOverlay(p, beatClock, healthOverlayColor);
 
   if (player && player.isMoving) {
+    // Drawn in screen space, before the camera transform
+    const { x: rippleX, y: rippleY } = cameraSystem
+      ? cameraSystem.worldToScreen(player.x, player.y)
+      : player;
     const rippleIntensity = p.map(player.speed, 0, 5, 0, 1);
     for (let i = 0; i < 3; i++) {
       const rippleRadius = ((p.millis() / 1000) * (2 * 60) + i * 20) % 100;
@@ -166,7 +171,7 @@ export function drawInteractiveBackgroundEffectsLayer(
       p.stroke(64, 224, 208, rippleAlpha);
       p.strokeWeight(2);
       p.noFill();
-      p.ellipse(player.x, player.y, rippleRadius, rippleRadius);
+      p.ellipse(rippleX, rippleY, rippleRadius, rippleRadius);
     }
   }
 

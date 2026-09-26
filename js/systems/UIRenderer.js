@@ -129,8 +129,9 @@ export class UIRenderer {
     p.push();
 
     for (const bomb of this.gameState.activeBombs) {
-      const screenX = bomb.x - (this.cameraSystem ? this.cameraSystem.x : 0);
-      const screenY = bomb.y - (this.cameraSystem ? this.cameraSystem.y : 0);
+      const { x: screenX, y: screenY } = this.cameraSystem
+        ? this.cameraSystem.worldToScreen(bomb.x, bomb.y)
+        : bomb;
 
       // Calculate countdown
       const secondsLeft = ceil(bomb.timer / 60);

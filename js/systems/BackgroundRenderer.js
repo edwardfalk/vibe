@@ -58,7 +58,8 @@ export class BackgroundRenderer {
       p,
       this.player,
       this.gameState,
-      beatClock
+      beatClock,
+      this.cameraSystem
     );
     p.pop();
   }
