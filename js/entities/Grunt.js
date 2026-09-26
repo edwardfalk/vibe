@@ -308,6 +308,15 @@ class Grunt extends BaseEnemy {
   }
 
   /**
+   * The head and antennae lean the art about 6 px toward local -y (measured
+   * -25..+13 px across a bullet's path); this puts it back on the hit circle.
+   * @override
+   */
+  get artOffsetY() {
+    return this.size * 0.23;
+  }
+
+  /**
    * Draw grunt-specific body shape with round, bumbling baby-like features
    */
   drawBody(s) {

@@ -464,8 +464,14 @@ class Tank extends BaseEnemy {
       'enemy-tank'
     );
     if (!bullet) return null;
+    // Three layers: a deep boom with a reverb tail, and two detuned zaps
+    // whose beating makes the electric buzz
     const audio = this.getContextValue('audio');
-    if (audio) audio.playSound('tankEnergy', this.x, this.y);
+    if (audio) {
+      for (const name of ['tankEnergy', 'tankZap', 'tankArc']) {
+        audio.playSound(name, this.x, this.y);
+      }
+    }
     bullet.ownerId = this.id; // Track which tank fired this
     return bullet;
   }
