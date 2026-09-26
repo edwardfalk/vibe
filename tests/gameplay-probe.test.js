@@ -515,12 +515,12 @@ test.describe('Gameplay Probes', () => {
 
     const results = await page.evaluate(() => {
       const p = window.player.p;
-      const factory = window.spawnSystem.enemyFactory;
+      const spawnSystem = window.spawnSystem;
       const out = {};
 
       for (const type of ['grunt', 'rusher', 'tank', 'stabber']) {
         try {
-          const enemy = factory.createEnemy(
+          const enemy = spawnSystem.createEnemy(
             window.player.x + 150,
             window.player.y + 150,
             type,
@@ -559,13 +559,13 @@ test.describe('Gameplay Probes', () => {
 
     const result = await page.evaluate(() => {
       const p = window.player.p;
-      const factory = window.spawnSystem.enemyFactory;
+      const spawnSystem = window.spawnSystem;
       const gs = window.gameState;
 
       const scoreBefore = gs.score;
       const killsBefore = gs.totalKills;
 
-      const grunt = factory.createEnemy(
+      const grunt = spawnSystem.createEnemy(
         window.player.x + 30,
         window.player.y,
         'grunt',
@@ -604,9 +604,9 @@ test.describe('Gameplay Probes', () => {
 
     const result = await page.evaluate(() => {
       const p = window.player.p;
-      const factory = window.spawnSystem.enemyFactory;
+      const spawnSystem = window.spawnSystem;
 
-      const stabber = factory.createEnemy(
+      const stabber = spawnSystem.createEnemy(
         window.player.x + 250,
         window.player.y,
         'stabber',
