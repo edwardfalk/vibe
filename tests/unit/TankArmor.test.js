@@ -53,3 +53,38 @@ describe('Tank armour', () => {
     expect(broken[0].y).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe('Tank anger at stabbers', () => {
+  const FROM_BEHIND = 0; // flying +x into a tank facing +x: no plate there
+  function tankAmong(enemies) {
+    const values = { audio: createMockAudio(), enemies };
+    const context = { get: (key) => values[key] };
+    const p = { color: () => ({ levels: [0, 0, 0, 255] }), TWO_PI: 7 };
+    return new Tank(0, 0, 'tank', { context }, p, values.audio);
+  }
+
+  it('three stabs make it head for the nearest stabber', () => {
+    const stabber = { type: 'stabber', x: 0, y: 200 };
+    const tank = tankAmong([stabber]);
+    for (let i = 0; i < tank.angerThreshold; i++) {
+      tank.takeDamage(1, FROM_BEHIND, 'stabber_melee');
+    }
+    expect(tank.isAngry).toBe(true);
+    tank.updateSpecificBehavior(500, 0); // the player is off to the right
+    expect(tank.velocity.x).toBeCloseTo(0);
+    expect(tank.velocity.y).toBeGreaterThan(0);
+  });
+
+  it('once its anger wears off, the next stab does not re-anger it', () => {
+    const tank = tankAmong([]);
+    for (let i = 0; i < tank.angerThreshold; i++) {
+      tank.takeDamage(1, FROM_BEHIND, 'stabber_melee');
+    }
+    expect(tank.isAngry).toBe(true);
+    tank.angerCooldown = 0;
+    tank.updateSpecificBehavior(500, 0);
+    expect(tank.isAngry).toBe(false);
+    tank.takeDamage(1, FROM_BEHIND, 'stabber_melee');
+    expect(tank.isAngry).toBe(false);
+  });
+});

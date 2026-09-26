@@ -51,6 +51,9 @@ const ARMOR_PLATES = [
   },
 ];
 
+// Damage sources named for the attack rather than the enemy type
+const ANGER_SOURCE_TYPE = { stabber_melee: 'stabber' };
+
 const ANGER_LINES = [
   'ENOUGH! YOU DIE FIRST!',
   'TARGETING TRAITORS!',
@@ -136,6 +139,7 @@ class Tank extends BaseEnemy {
       if (this.angerCooldown <= 0) {
         this.isAngry = false;
         this.angerTarget = null;
+        this.damageTracker.clear(); // a fresh count for the next grudge
         this.calmLinePending = true; // said on the next beat 1
       }
     }
@@ -522,8 +526,10 @@ class Tank extends BaseEnemy {
   }
 
   /** Hits from other enemies make the tank angry at their type */
-  trackAnger(damageSource) {
-    if (!damageSource || damageSource === 'player') return;
+  trackAnger(source) {
+    if (!source || source === 'player') return;
+    // A stab is named for the attack; the grudge is against the stabber
+    const damageSource = ANGER_SOURCE_TYPE[source] ?? source;
     const count = (this.damageTracker.get(damageSource) || 0) + 1;
     this.damageTracker.set(damageSource, count);
     if (count >= this.angerThreshold && !this.isAngry) {
