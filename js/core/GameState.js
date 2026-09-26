@@ -36,13 +36,17 @@ export class GameState {
   }
 
   // Score management
+  // A run that is over earns nothing more: the frame the hero dies in keeps
+  // running, and bombs, blasts and friendly fire can still kill enemies in it
   addScore(points) {
+    if (this.gameState === 'gameOver') return;
     this.score += points;
     this.checkLevelProgression();
     this.updateHighScore();
   }
 
   addKill() {
+    if (this.gameState === 'gameOver') return;
     this.totalKills++;
     this.killStreak++;
     if (this.killStreak > 0 && this.killStreak % 5 === 0 && window.audio) {
@@ -195,6 +199,7 @@ export class GameState {
     if (window.audio) window.audio.activeTexts = [];
     if (window.rhythmFX) window.rhythmFX.telegraphs = [];
     this.gameContext?.set('hitStopFrames', 0);
+    window.visualEffectsManager?.reset();
 
     // Reset BeatClock so enemies sync to fresh beat positions
     if (window.beatClock) {

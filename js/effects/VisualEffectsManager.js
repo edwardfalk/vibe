@@ -4,6 +4,10 @@
 
 class VisualEffectsManager {
   constructor() {
+    this.reset();
+  }
+
+  reset() {
     this.bloomIntensity = 0;
     this._bloomFramesLeft = 0;
     this._bloomPeak = 0;
@@ -59,7 +63,9 @@ class VisualEffectsManager {
     p.pop();
   }
 
+  // A weaker trigger doesn't cut short a stronger flash that's still showing
   triggerChromaticAberration(intensity = 0.5, durationFrames = 30) {
+    if (intensity < this.chromaticAberration) return;
     this.chromaticAberration = intensity;
     this._chromaticPeak = intensity;
     this._chromaticFramesLeft = durationFrames;

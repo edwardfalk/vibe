@@ -69,6 +69,10 @@ describe('Beat-gated entity behaviour', () => {
       at(ms); // from between beats on through beat 2's window
       r.updateSpecificBehavior(100, 0, 10); // within charge distance
     }
+    // Closing in lights the fuse: no second charge sound
+    at(700);
+    r.updateSpecificBehavior(r.x + r.explodeDistance - 1, r.y, 10);
+    expect(r.vibrating).toBe(true);
     const charge = audio.playSound.mock.calls.filter(
       ([n]) => n === 'rusherCharge'
     );

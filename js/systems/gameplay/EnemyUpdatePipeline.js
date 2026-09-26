@@ -149,7 +149,7 @@ function damageEnemiesInBlasts(blasts, context) {
         explosionManager: context.explosionManager,
         audio: context.audio,
         // No scoring from blasts in the frame the game ended
-        gameState: gameState?.gameState === 'playing' ? gameState : null,
+        gameState,
         onDeath: (e) => collisionSystem?.handleEnemyDeath(e, e.type, e.x, e.y),
         scorePoints: 10,
       },

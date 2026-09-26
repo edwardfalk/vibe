@@ -114,8 +114,13 @@ class Rusher extends BaseEnemy {
 
     if (distance <= this.explodeDistance) {
       this.lightFuse();
-      const audio = this.getContextValue('audio') || this.audio;
-      if (audio) audio.playSound('rusherCharge', this.x, this.y);
+      // The charge sound plays once: on the beat after the battle cry, or
+      // here if the rusher closed in before that beat came
+      if (this.chargeSoundPending || !this.hasScreamed) {
+        this.chargeSoundPending = false;
+        const audio = this.getContextValue('audio') || this.audio;
+        if (audio) audio.playSound('rusherCharge', this.x, this.y);
+      }
       return null;
     }
 

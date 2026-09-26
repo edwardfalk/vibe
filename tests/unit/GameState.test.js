@@ -52,6 +52,14 @@ describe('GameState', () => {
     expect(gs.score).toBe(100);
   });
 
+  it('a run that is over earns no more score or kills', () => {
+    gs.gameState = 'gameOver';
+    gs.addScore(100);
+    gs.addKill();
+    expect(gs.score).toBe(0);
+    expect(gs.totalKills).toBe(0);
+  });
+
   it('addKill increments kills and streak', () => {
     gs.addKill();
     gs.addKill();
