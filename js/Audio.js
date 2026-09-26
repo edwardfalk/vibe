@@ -30,7 +30,7 @@ import {
 } from './audio/TextSemantics.js';
 import { CONFIG, VOICE_CONFIG } from './config.js';
 import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
-import { SPEECH_WRAPPER_CONFIG } from './audio/SpeechWrappers.js';
+import { getPlayerDialogueLine } from './audio/DialogueLines.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
 const DUCK_ATTACK_SEC = 0.05;
@@ -76,8 +76,6 @@ export class Audio {
 
     this.sounds = { ...SOUND_CONFIG };
     this.voiceConfig = { ...VOICE_CONFIG };
-
-    this.bindConvenienceSpeechMethods();
   }
 
   setContext(context) {
@@ -85,23 +83,6 @@ export class Audio {
   }
 
   getContextValue = createContextAccessor(() => this.context);
-
-  bindConvenienceSpeechMethods() {
-    for (const [methodName, { getLine, voiceType }] of Object.entries(
-      SPEECH_WRAPPER_CONFIG
-    )) {
-      this[methodName] = (entity, lineContext) => {
-        let text;
-        try {
-          text = getLine(entity, lineContext);
-        } catch (err) {
-          console.warn('⚠️ Speech getLine error:', err);
-          text = null;
-        }
-        if (text) this.speak(entity, text, voiceType);
-      };
-    }
-  }
 
   // ========================================================================
   // INITIALIZATION - CENTRALIZED AUDIO CONTEXT MANAGEMENT
@@ -577,6 +558,15 @@ export class Audio {
     return true; // Successfully started speech
   }
 
+  // A random player line for `lineContext` ('start', 'damage', 'lowHealth', 'death')
+  speakPlayerLine(entity, lineContext) {
+    this.speak(
+      entity,
+      getPlayerDialogueLine(lineContext, random, floor),
+      'player'
+    );
+  }
+
   // Estimated time to say `text` at `rate`
   calculateSpeechDuration(text, rate) {
     // Base calculation: ~150 words per minute at rate 1.0
@@ -630,11 +620,6 @@ export class Audio {
       drawGlow
     );
   }
-
-  // ========================================================================
-  // CONVENIENCE METHODS
-  // ========================================================================
-  // Speech methods bound via bindConvenienceSpeechMethods() from SPEECH_WRAPPER_CONFIG.
 
   // Control methods
   // Apply CONFIG.MIX levels (at init and from the ?tune sliders)
