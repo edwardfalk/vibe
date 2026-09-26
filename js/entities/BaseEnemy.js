@@ -7,7 +7,6 @@ import {
   getGlowColorForType,
   getGlowSizeForType,
   drawEnemyHealthBar,
-  drawEnemySpeechBubble,
 } from './BaseEnemyHelpers.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 
@@ -48,11 +47,6 @@ export class BaseEnemy {
     this.muzzleFlash = 0;
     this.hitFlash = 0;
     this.markedForRemoval = false;
-
-    // Speech bubble system
-    this.speechText = '';
-    this.speechTimer = 0;
-    this.maxSpeechTime = 180; // 3 seconds - better sync with TTS
 
     // Get per-type speech config
     const speechConfig =
@@ -105,9 +99,7 @@ export class BaseEnemy {
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.hitFlash > 0) this.hitFlash -= dt;
     if (this.muzzleFlash > 0) this.muzzleFlash -= dt;
-    if (this.speechTimer > 0) this.speechTimer -= dt;
     if (this.speechCooldown > 0) this.speechCooldown -= dt;
-    if (this.speechTimer <= 0 && this.speechText) this.speechText = '';
 
     // Spawn animation (frame-rate independent)
     if (this.isSpawning) {
@@ -234,42 +226,17 @@ export class BaseEnemy {
     return null;
   }
 
-  /**
-   * Enhanced glow effects with speech indicators
-   */
   drawEnemyGlow(p) {
     try {
-      const isSpeaking = this.speechTimer > 0;
-      const speechGlowIntensity = isSpeaking ? 0.8 : 0.3;
-      const speechGlowSize = isSpeaking ? 1.3 : 1.0;
-
-      const glowColor = this.getGlowColor(isSpeaking);
-      const glowSize = this.getGlowSize() * speechGlowSize;
-
-      drawGlow(p, this.x, this.y, glowSize, glowColor, speechGlowIntensity);
-
-      if (isSpeaking && this.audio) {
-        const activeTexts = this.audio.activeTexts || [];
-        const myText = activeTexts.find((text) => text.entity === this);
-        if (myText && myText.isAggressive) {
-          const aggressivePulse = sin(p.frameCount * 0.8) * 0.3 + 0.5;
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 2,
-            p.color(255, 0, 0),
-            aggressivePulse * 0.6
-          );
-        }
-      }
+      const glowColor = this.getGlowColor();
+      drawGlow(p, this.x, this.y, this.getGlowSize(), glowColor, 0.3);
     } catch (error) {
       console.warn('⚠️ Enemy glow error:', error);
     }
   }
 
-  getGlowColor(isSpeaking) {
-    return getGlowColorForType(this.type, this.p, isSpeaking);
+  getGlowColor() {
+    return getGlowColorForType(this.type, this.p);
   }
 
   getGlowSize() {
@@ -365,7 +332,6 @@ export class BaseEnemy {
       p.ellipse(this.x, this.y, this.hitRadius * 2);
       p.pop();
     }
-    this.drawSpeechBubble(p);
 
     // Draw type-specific indicators
     this.drawSpecificIndicators(p);
@@ -440,10 +406,6 @@ export class BaseEnemy {
 
   drawHealthBar(p) {
     drawEnemyHealthBar(p, this);
-  }
-
-  drawSpeechBubble(p) {
-    drawEnemySpeechBubble(p, this);
   }
 
   /**

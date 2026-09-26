@@ -38,17 +38,11 @@ export function getEnemyColors(type, p) {
 }
 
 /** Get glow color for enemy type. */
-export function getGlowColorForType(type, p, isSpeaking) {
-  if (type === 'tank') {
-    return isSpeaking ? p.color(150, 100, 255) : p.color(100, 50, 200);
-  }
-  if (type === 'rusher') {
-    return isSpeaking ? p.color(255, 150, 200) : p.color(255, 100, 150);
-  }
-  if (type === 'stabber') {
-    return isSpeaking ? p.color(255, 200, 50) : p.color(255, 140, 0);
-  }
-  return isSpeaking ? p.color(100, 255, 100) : p.color(50, 200, 50);
+export function getGlowColorForType(type, p) {
+  if (type === 'tank') return p.color(100, 50, 200);
+  if (type === 'rusher') return p.color(255, 100, 150);
+  if (type === 'stabber') return p.color(255, 140, 0);
+  return p.color(50, 200, 50);
 }
 
 /** Get glow size for enemy type. */
@@ -99,17 +93,4 @@ export function drawEnemyHealthBar(p, enemy) {
     );
     p.noStroke();
   }
-}
-
-/** Draw enemy speech bubble. */
-export function drawEnemySpeechBubble(p, enemy) {
-  if (!enemy.speechText || enemy.speechTimer <= 0) return;
-
-  p.fill(255, 255, 255);
-  p.stroke(0, 0, 0);
-  p.strokeWeight(1);
-  p.textAlign(p.CENTER, p.CENTER);
-  p.textSize(10);
-  p.text(enemy.speechText, enemy.x, enemy.y - enemy.size - 15);
-  p.noStroke();
 }

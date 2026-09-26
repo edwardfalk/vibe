@@ -39,8 +39,6 @@ class Tank extends BaseEnemy {
     };
 
     super(x, y, 'tank', tankConfig, p, audio);
-    this.p = p;
-    this.audio = audio;
 
     // Tank special charging system (beat-aligned)
     this.chargingShot = false;

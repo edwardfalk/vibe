@@ -48,8 +48,6 @@ class Grunt extends BaseEnemy {
       color: p.color(50, 205, 50), // Lime green
     };
     super(x, y, 'grunt', gruntConfig, p, audio);
-    this.p = p;
-    this.audio = audio;
 
     // --- Beat-aligned shooting state ----------------------------
     this._lastGruntBeat = -1; // Track last beat fired to prevent double-firing

@@ -33,8 +33,6 @@ class Stabber extends BaseEnemy {
     };
 
     super(x, y, 'stabber', stabberConfig, p, audio);
-    this.p = p;
-    this.audio = audio;
 
     // Stabber melee system - heavily armored close combat specialist
     // Tunable parameters are now config-driven for easier balancing

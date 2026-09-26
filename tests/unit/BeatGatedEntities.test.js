@@ -24,7 +24,6 @@ vi.mock('../../js/entities/BaseEnemyHelpers.js', () => ({
   getGlowColorForType: vi.fn(),
   getGlowSizeForType: vi.fn(() => 10),
   drawEnemyHealthBar: vi.fn(),
-  drawEnemySpeechBubble: vi.fn(),
 }));
 
 import { Tank } from '../../js/entities/Tank.js';

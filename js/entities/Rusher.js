@@ -39,8 +39,6 @@ class Rusher extends BaseEnemy {
     };
 
     super(x, y, 'rusher', rusherConfig, p, audio);
-    this.p = p;
-    this.audio = audio;
 
     this.hasScreamed = false;
     this.chargeDistance = 150; // Distance to start battle cry and charge
@@ -176,14 +174,12 @@ class Rusher extends BaseEnemy {
   /**
    * Enhanced glow effects for rushers
    */
-  getGlowColor(isSpeaking) {
+  getGlowColor() {
     if (this.vibrating) {
       const pulse = this.p.sin(this.p.frameCount * 0.3) * 0.5 + 0.5;
       return this.p.color(255, 80 + pulse * 80, 50);
     }
-    return isSpeaking
-      ? this.p.color(255, 150, 200)
-      : this.p.color(255, 100, 150);
+    return this.p.color(255, 100, 150);
   }
 
   /**
