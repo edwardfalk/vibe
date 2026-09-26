@@ -280,8 +280,9 @@ export class Audio {
     }
 
     // Get player position for relative audio positioning
-    let playerX = 400,
-      playerY = 300; // Default screen center
+    // The world is centred on 0,0, which is where the hero starts
+    let playerX = 0,
+      playerY = 0;
     if (
       this.player &&
       Number.isFinite(this.player.x) &&
@@ -472,21 +473,15 @@ export class Audio {
     utterance.pitch = config.pitch;
 
     // Get player position for relative audio positioning
-    let playerX = CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2,
-      playerY = CONFIG.GAME_SETTINGS.WORLD_HEIGHT / 2;
+    let playerX = 0,
+      playerY = 0;
     if (typeof this.player !== 'undefined' && this.player) {
       playerX = this.player.x;
       playerY = this.player.y;
     }
-    // Ensure entity.x and entity.y are valid numbers
-    const ex =
-      entity && typeof entity.x === 'number' && !isNaN(entity.x)
-        ? entity.x
-        : 400;
-    const ey =
-      entity && typeof entity.y === 'number' && !isNaN(entity.y)
-        ? entity.y
-        : 300;
+    // A speaker without a position speaks from where the hero is
+    const ex = Number.isFinite(entity?.x) ? entity.x : playerX;
+    const ey = Number.isFinite(entity?.y) ? entity.y : playerY;
     // Speech is outside Web Audio and capped at 1: keep it near full and let
     // syncDuck dip the game while it plays
     const distance = Math.max(
