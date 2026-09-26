@@ -6,7 +6,7 @@
   "packageManager": "pnpm@12.6.0",
   "scripts": {
     "dev": "npx five-server --port=5500",
-    "test": "pnpm run test:e2e && pnpm run test:unit",
+    "test": "pnpm run test:unit && pnpm run test:e2e",
     "test:e2e": "playwright test --project=e2e",
     "test:e2e:headed": "playwright test --project=e2e --headed",
     "test:e2e:debug": "playwright test --project=e2e --debug",
@@ -15,8 +15,6 @@
     "test:coverage": "npx vitest run --coverage",
     "lint": "npx eslint \"**/*.js\"",
     "format": "npx prettier --write \"**/*.{js,md,json}\"",
-    "clean": "rm -rf node_modules",
-    "fresh": "pnpm run clean && pnpm install",
     "screenshot": "playwright test --project=screenshot",
     "screenshot:level": "LEVEL=${LEVEL:-3} playwright test --project=screenshot",
     "test:beats": "playwright test --project=beats",
@@ -25,7 +23,6 @@
   "devDependencies": {
     "@playwright/test": "^1.52.0",
     "eslint": "^9.28.0",
-    "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
     "five-server": "^0.4.4",
     "prettier": "^3.5.3",
