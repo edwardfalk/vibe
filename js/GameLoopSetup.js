@@ -146,7 +146,7 @@ export function runSetup(p, arrays, syncContext = null) {
   );
 
   if (!window.beatTrack) {
-    window.beatTrack = new BeatTrack(DEFAULT_BPM, gameContext);
+    window.beatTrack = new BeatTrack(gameContext);
   }
 
   if (window.spawnSystem) {

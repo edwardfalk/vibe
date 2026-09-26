@@ -9,7 +9,7 @@ function setup({ now, clockStartMs, beatMs = 500 }) {
     startTime: clockStartMs,
     beatInterval: beatMs,
   };
-  const track = new BeatTrack(120, {
+  const track = new BeatTrack({
     get: (k) => (k === 'beatClock' ? clock : undefined),
   });
   track.ctx = ctx;

@@ -7,13 +7,13 @@ describe('BeatTrack evolution', () => {
   });
 
   it('should track current level', () => {
-    const track = new BeatTrack(120, {});
+    const track = new BeatTrack({});
     track.setLevel(3);
     expect(track.level).toBe(3);
   });
 
   it('should track level for layer decisions', () => {
-    const track = new BeatTrack(120, {});
+    const track = new BeatTrack({});
     track.setLevel(1);
     expect(track.level).toBe(1);
     track.setLevel(5);
