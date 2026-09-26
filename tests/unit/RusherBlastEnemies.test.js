@@ -1,31 +1,4 @@
 import { describe, it, expect, vi } from 'vitest';
-
-// Suppress console.log noise from entity constructors and game logic
-vi.spyOn(console, 'log').mockImplementation(() => {});
-
-// Mock the Bullet module (imported by BaseEnemy)
-vi.mock('../../js/entities/bullet.js', () => ({
-  Bullet: { acquire: vi.fn(() => ({ ownerId: null })) },
-}));
-
-// Mock glowUtils (imported by BaseEnemy)
-vi.mock('../../js/effects/glowUtils.js', () => ({
-  drawGlow: vi.fn(),
-}));
-
-// Mock BaseEnemyHelpers (imported by BaseEnemy)
-vi.mock('../../js/entities/BaseEnemyHelpers.js', () => ({
-  getEnemyColors: () => ({
-    skinColor: {},
-    helmetColor: {},
-    weaponColor: {},
-    eyeColor: {},
-  }),
-  getGlowColorForType: vi.fn(),
-  getGlowSizeForType: vi.fn(() => 10),
-  drawEnemyHealthBar: vi.fn(),
-}));
-
 import { Rusher } from '../../js/entities/Rusher.js';
 import { updateEnemiesAndResolveResults } from '../../js/systems/gameplay/EnemyUpdatePipeline.js';
 import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
