@@ -69,7 +69,7 @@ function draw(p) {
 
 function updateGame(p) {
   // Hitstop: freeze game updates for a few frames on impactful kills
-  const hitStopFrames = gameContext?.get?.('hitStopFrames') ?? 0;
+  const hitStopFrames = gameContext.get('hitStopFrames');
   if (hitStopFrames > 0) {
     const next = hitStopFrames - 1;
     gameContext.set('hitStopFrames', next);
@@ -181,21 +181,12 @@ function updateGame(p) {
     // Process area damage events from plasma clouds and radioactive debris
     if (damageEvents && damageEvents.length > 0) {
       handleAreaDamageEvents(damageEvents, {
-        player: gameContext ? gameContext.get('player') : window.player,
-        enemies: gameContext ? gameContext.get('enemies') : enemies,
-        audio: gameContext ? gameContext.get('audio') : window.audio,
-        gameState: gameContext
-          ? gameContext.get('gameState')
-          : window.gameState,
-        cameraSystem: gameContext
-          ? gameContext.get('cameraSystem')
-          : window.cameraSystem,
-        collisionSystem: gameContext
-          ? gameContext.get('collisionSystem')
-          : window.collisionSystem,
-        explosionManager: gameContext
-          ? gameContext.get('explosionManager')
-          : window.explosionManager,
+        player,
+        enemies,
+        audio: window.audio,
+        gameState: window.gameState,
+        cameraSystem: window.cameraSystem,
+        explosionManager,
         enemyDeathHandler,
       });
     }
