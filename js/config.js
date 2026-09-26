@@ -115,6 +115,25 @@ const CONFIG = {
     EXPLOSION_DAMAGE: 35,
   },
 
+  // Hazard clouds. A tank's death leaves plasma; its bomb leaves plasma and
+  // longer-lasting debris. Anything within RADIUS takes DAMAGE every
+  // DAMAGE_INTERVAL frames for DURATION frames; MAX_RADIUS is how far the
+  // cloud is drawn.
+  PLASMA: {
+    RADIUS: 80,
+    MAX_RADIUS: 120,
+    DURATION: 300,
+    DAMAGE_INTERVAL: 30,
+    DAMAGE: 15,
+  },
+  DEBRIS: {
+    RADIUS: 60,
+    MAX_RADIUS: 90,
+    DURATION: 900,
+    DAMAGE_INTERVAL: 45,
+    DAMAGE: 8,
+  },
+
   // Hit radius per enemy type (px from centre), so shots that visibly touch
   // an enemy count; sprites reach well past size/2. Tune live with ?tune;
   // SHOW draws the circles.

@@ -1,6 +1,5 @@
 import { Explosion } from './Explosion.js';
-import { RadioactiveDebris } from './RadioactiveDebris.js';
-import { PlasmaCloud } from './PlasmaCloud.js';
+import { HazardCloud } from './HazardCloud.js';
 import { EnemyFragmentExplosion } from './EnemyFragmentExplosion.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
 
@@ -20,17 +19,15 @@ export class ExplosionManager {
   }
 
   addPlasmaCloud(x, y) {
-    this.plasmaClouds.push(new PlasmaCloud(x, y));
+    this.plasmaClouds.push(new HazardCloud(x, y, 'PLASMA'));
     const audio = this.getContextValue('audio');
     if (audio) audio.playPlasmaCloud(x, y);
   }
 
-  addRadioactiveDebris(x, y, playAudio = true) {
-    this.radioactiveDebris.push(new RadioactiveDebris(x, y));
-    if (playAudio) {
-      const audio = this.getContextValue('audio');
-      if (audio) audio.playPlasmaCloud(x, y);
-    }
+  addRadioactiveDebris(x, y) {
+    this.radioactiveDebris.push(new HazardCloud(x, y, 'DEBRIS'));
+    const audio = this.getContextValue('audio');
+    if (audio) audio.playPlasmaCloud(x, y);
   }
 
   addFragmentExplosion(x, y, enemy) {
