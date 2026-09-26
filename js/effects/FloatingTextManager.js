@@ -4,35 +4,18 @@
  * Enhanced with momentum physics, merging, and beat-synced effects.
  */
 
-import { FloatingTextPool } from './FloatingTextPool.js';
-
-const FLOATING_TEXT_POOL_SIZE = 200;
 const DAMAGE_MERGE_RADIUS = 60;
 
 export class FloatingTextManager {
   constructor(context = null) {
     this.context = context;
     this.texts = [];
-    this.textPool = new FloatingTextPool(FLOATING_TEXT_POOL_SIZE);
     this.damageMergeRadius = DAMAGE_MERGE_RADIUS;
     this.lastDamageTime = 0;
     this.damageAccumulator = 0;
     this.accumulatorPos = { x: 0, y: 0 };
     this.accumulatorTimer = 0;
     this.accumulatedTextRef = null;
-  }
-
-  acquireText(initialState) {
-    const t = this.textPool.acquire(initialState);
-    if (!t) {
-      console.warn('⚠️ FloatingTextPool exhausted, dropping text');
-      return null;
-    }
-    return t;
-  }
-
-  releaseText(text) {
-    this.textPool.release(text);
   }
 
   addDamage(x, y, amount) {
@@ -61,7 +44,7 @@ export class FloatingTextManager {
         this.accumulatedTextRef.x = this.accumulatorPos.x;
         this.accumulatedTextRef.y = this.accumulatorPos.y;
       } else {
-        const t = this.acquireText({
+        const t = {
           x: this.accumulatorPos.x,
           y: this.accumulatorPos.y,
           text: `-${this.damageAccumulator}`,
@@ -73,11 +56,9 @@ export class FloatingTextManager {
           vx: 0,
           isAccumulated: true,
           momentum: 1.0,
-        });
-        if (t) {
-          this.accumulatedTextRef = t;
-          this.texts.push(t);
-        }
+        };
+        this.accumulatedTextRef = t;
+        this.texts.push(t);
       }
     } else {
       this.damageAccumulator = amount;
@@ -88,7 +69,7 @@ export class FloatingTextManager {
       const beatPulse = beatClock ? beatClock.getBeatIntensity(8) : 0;
       const isOnBeat = beatPulse > 0.5;
 
-      const t = this.acquireText({
+      const t = {
         x,
         y,
         text: `-${amount}`,
@@ -100,11 +81,9 @@ export class FloatingTextManager {
         maxLife: 40,
         isAccumulated: true,
         momentum: 1.0,
-      });
-      if (t) {
-        this.accumulatedTextRef = t;
-        this.texts.push(t);
-      }
+      };
+      this.accumulatedTextRef = t;
+      this.texts.push(t);
     }
 
     this.lastDamageTime = now;
@@ -123,7 +102,7 @@ export class FloatingTextManager {
     const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
     const sizeBonus = streak >= 5 ? 4 : streak >= 3 ? 2 : 0;
 
-    const killText = this.acquireText({
+    const killText = {
       x,
       y: y - 10,
       text: 'KILL!',
@@ -137,11 +116,11 @@ export class FloatingTextManager {
       targetScale: 1.0,
       isKill: true,
       momentum: 0.95,
-    });
-    if (killText) this.texts.push(killText);
+    };
+    this.texts.push(killText);
 
     if (streak >= 3) {
-      const streakText = this.acquireText({
+      const streakText = {
         x,
         y: y - 35,
         text: `${streak}x STREAK!`,
@@ -155,11 +134,11 @@ export class FloatingTextManager {
         targetScale: 1.2,
         isStreak: true,
         momentum: 0.92,
-      });
-      if (streakText) this.texts.push(streakText);
+      };
+      this.texts.push(streakText);
 
       if (streak >= 5) {
-        const starText = this.acquireText({
+        const starText = {
           x: x + 30,
           y: y - 35,
           text: '✦',
@@ -173,14 +152,14 @@ export class FloatingTextManager {
           momentum: 0.9,
           rotate: true,
           rotation: 0,
-        });
-        if (starText) this.texts.push(starText);
+        };
+        this.texts.push(starText);
       }
     }
   }
 
   addText(x, y, text, color = [255, 255, 255], size = 14) {
-    const t = this.acquireText({
+    const t = {
       x,
       y,
       text,
@@ -192,8 +171,8 @@ export class FloatingTextManager {
       maxLife: 45,
       scale: 1,
       momentum: 0.98,
-    });
-    if (t) this.texts.push(t);
+    };
+    this.texts.push(t);
   }
 
   update() {
@@ -232,7 +211,6 @@ export class FloatingTextManager {
           this.accumulatedTextRef = null;
         }
         const lastIndex = this.texts.length - 1;
-        this.releaseText(t);
         if (i !== lastIndex) {
           this.texts[i] = this.texts[lastIndex];
         }

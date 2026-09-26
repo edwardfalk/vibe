@@ -4,28 +4,6 @@
  */
 
 import { random, TWO_PI, cos, sin } from '../../mathUtils.js';
-import { ObjectPool } from '../../shared/ObjectPool.js';
-
-const fragmentPool = new ObjectPool(600);
-const centralParticlePool = new ObjectPool(600);
-
-function acquireFragment() {
-  return fragmentPool.acquire();
-}
-
-function releaseFragment(fragment) {
-  if (!fragment) return;
-  fragmentPool.release(fragment);
-}
-
-function acquireCentralParticle() {
-  return centralParticlePool.acquire();
-}
-
-function releaseCentralParticle(particle) {
-  if (!particle) return;
-  centralParticlePool.release(particle);
-}
 
 export class EnemyFragmentExplosion {
   constructor(x, y, enemy) {
@@ -76,7 +54,7 @@ export class EnemyFragmentExplosion {
         fragmentType = 'weapon';
       }
 
-      const fragment = acquireFragment();
+      const fragment = {};
       fragment.x = this.x + random(-size * 0.3, size * 0.3);
       fragment.y = this.y + random(-size * 0.3, size * 0.3);
       fragment.vx = cos(angle) * speed;
@@ -117,7 +95,7 @@ export class EnemyFragmentExplosion {
       const angle = (i / particleCount) * TWO_PI + random(-0.3, 0.3);
       const speed = random(3, 10);
 
-      const particle = acquireCentralParticle();
+      const particle = {};
       particle.x = this.x;
       particle.y = this.y;
       particle.vx = cos(angle) * speed;
@@ -147,7 +125,6 @@ export class EnemyFragmentExplosion {
 
       if (fragment.life <= 0) {
         const lastIndex = this.fragments.length - 1;
-        releaseFragment(fragment);
         if (i !== lastIndex) this.fragments[i] = this.fragments[lastIndex];
         this.fragments.pop();
       }
@@ -164,7 +141,6 @@ export class EnemyFragmentExplosion {
 
       if (particle.life <= 0) {
         const lastIndex = this.centralExplosion.particles.length - 1;
-        releaseCentralParticle(particle);
         if (i !== lastIndex) {
           this.centralExplosion.particles[i] =
             this.centralExplosion.particles[lastIndex];
