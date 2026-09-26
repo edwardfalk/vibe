@@ -183,11 +183,7 @@ class Grunt extends BaseEnemy {
         if (random() >= skipChance && !this.shouldAvoidFriendlyFire()) {
           // Fire!
           this.muzzleFlash = 4;
-          if (this.context && typeof this.context.set === 'function') {
-            this.context.set('gruntFireBeat', currentTotalBeat);
-          } else {
-            window.gruntFireBeat = currentTotalBeat;
-          }
+          this.context.set('gruntFireBeat', currentTotalBeat);
           return this.createBullet();
         }
       }

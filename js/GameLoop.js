@@ -45,7 +45,6 @@ window.arrowUpPressed = false;
 window.arrowDownPressed = false;
 window.arrowLeftPressed = false;
 window.arrowRightPressed = false;
-window.gruntFireBeat = -1;
 
 initializeInputHandlers();
 

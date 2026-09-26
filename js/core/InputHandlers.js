@@ -22,86 +22,49 @@ function fireKey(e, down) {
   return true;
 }
 
-function onKeyDown(e) {
-  if (fireKey(e, true)) return;
-  switch (e.code) {
-    case 'ArrowUp':
-      window.arrowUpPressed = true;
-      e.preventDefault();
-      break;
-    case 'ArrowDown':
-      window.arrowDownPressed = true;
-      e.preventDefault();
-      break;
-    case 'ArrowLeft':
-      window.arrowLeftPressed = true;
-      e.preventDefault();
-      break;
-    case 'ArrowRight':
-      window.arrowRightPressed = true;
-      e.preventDefault();
-      break;
-  }
-}
+// Arrow keys set these window flags, which the player reads
+const ARROW_FLAGS = new Map([
+  ['ArrowUp', 'arrowUpPressed'],
+  ['ArrowDown', 'arrowDownPressed'],
+  ['ArrowLeft', 'arrowLeftPressed'],
+  ['ArrowRight', 'arrowRightPressed'],
+]);
 
-function onKeyUp(e) {
-  if (fireKey(e, false)) return;
-  switch (e.code) {
-    case 'ArrowUp':
-      window.arrowUpPressed = false;
-      e.preventDefault();
-      break;
-    case 'ArrowDown':
-      window.arrowDownPressed = false;
-      e.preventDefault();
-      break;
-    case 'ArrowLeft':
-      window.arrowLeftPressed = false;
-      e.preventDefault();
-      break;
-    case 'ArrowRight':
-      window.arrowRightPressed = false;
-      e.preventDefault();
-      break;
-  }
+function onKey(e, down) {
+  if (fireKey(e, down)) return;
+  const flag = ARROW_FLAGS.get(e.code);
+  if (!flag) return;
+  window[flag] = down;
+  e.preventDefault();
 }
 
 export function initializeInputHandlers() {
-  if (!window.inputListenersAdded) {
-    // Only the left button fires (a right-click's menu can swallow mouseup)
-    window.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
-      held.add('mouse');
-      syncShooting();
-    });
-    window.addEventListener('mouseup', (e) => {
-      if (e.button !== 0) return;
-      held.delete('mouse');
-      syncShooting();
-    });
-    // Keyups that happen while the window is unfocused never arrive
-    window.addEventListener('blur', () => {
-      held.clear();
-      syncShooting();
-      window.arrowUpPressed = false;
-      window.arrowDownPressed = false;
-      window.arrowLeftPressed = false;
-      window.arrowRightPressed = false;
-    });
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
-    window.inputListenersAdded = true;
-  }
+  // Only the left button fires (a right-click's menu can swallow mouseup)
+  window.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    held.add('mouse');
+    syncShooting();
+  });
+  window.addEventListener('mouseup', (e) => {
+    if (e.button !== 0) return;
+    held.delete('mouse');
+    syncShooting();
+  });
+  // Keyups that happen while the window is unfocused never arrive
+  window.addEventListener('blur', () => {
+    held.clear();
+    syncShooting();
+    for (const flag of ARROW_FLAGS.values()) window[flag] = false;
+  });
+  window.addEventListener('keydown', (e) => onKey(e, true));
+  window.addEventListener('keyup', (e) => onKey(e, false));
 
-  if (!window.uiKeyListenersAdded) {
-    window.addEventListener('keydown', (event) => {
-      if (!event.repeat) {
-        const singleActionKeys = ['r', 'R', 'p', 'P', 'm', 'M', 'e', 'E'];
-        if (singleActionKeys.includes(event.key) && window.uiRenderer) {
-          window.uiRenderer.handleKeyPress(event.key);
-        }
+  window.addEventListener('keydown', (event) => {
+    if (!event.repeat) {
+      const singleActionKeys = ['r', 'R', 'p', 'P', 'm', 'M', 'e', 'E'];
+      if (singleActionKeys.includes(event.key) && window.uiRenderer) {
+        window.uiRenderer.handleKeyPress(event.key);
       }
-    });
-    window.uiKeyListenersAdded = true;
-  }
+    }
+  });
 }

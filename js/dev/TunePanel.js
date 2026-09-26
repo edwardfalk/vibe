@@ -65,6 +65,9 @@ const KNOBS = [
   ['PLAYER', 'REGEN_PER_SEC', [0, 10, 0.5]],
 ];
 
+// The top-level CONFIG groups the knobs live in, in order: the JSON to copy
+const JSON_GROUPS = [...new Set(KNOBS.map(([path]) => path.split('.')[0]))];
+
 const resolve = (path) => path.split('.').reduce((obj, k) => obj[k], CONFIG);
 
 export function createTunePanel() {
@@ -97,30 +100,8 @@ export function createTunePanel() {
   const json = document.createElement('pre');
   json.style.cssText = 'white-space:pre-wrap;color:#0ff;margin:8px 0 0;';
   const showJson = () => {
-    const {
-      BEAT_TRACK,
-      PACING: pacing,
-      MIX: mix,
-      RUSHER: rusher,
-      TANK_ARMOR,
-      HITBOX: hitbox,
-      STABBER_SETTINGS,
-      PLAYER,
-    } = CONFIG;
-    json.textContent = JSON.stringify(
-      {
-        BEAT_TRACK,
-        PACING: pacing,
-        MIX: mix,
-        RUSHER: rusher,
-        TANK_ARMOR,
-        HITBOX: hitbox,
-        STABBER_SETTINGS,
-        PLAYER,
-      },
-      null,
-      2
-    );
+    const groups = Object.fromEntries(JSON_GROUPS.map((g) => [g, CONFIG[g]]));
+    json.textContent = JSON.stringify(groups, null, 2);
   };
 
   for (const [path, key, options] of KNOBS) {
