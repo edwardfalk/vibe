@@ -128,3 +128,50 @@ describe('GameState', () => {
     expect(gs.shotsFired).toBe(2);
   });
 });
+
+const { drawGameOver } = await import('../../js/systems/UIOverlays.js');
+
+describe('game over screen', () => {
+  function textsDrawn(gs) {
+    const texts = [];
+    const p = new Proxy(
+      { width: 800, height: 600, frameCount: 0, sin: Math.sin },
+      {
+        get: (target, key) =>
+          key in target
+            ? target[key]
+            : key === 'text'
+              ? (s) => texts.push(s)
+              : () => {},
+      }
+    );
+    drawGameOver(p, gs);
+    return texts;
+  }
+
+  beforeEach(() => localStorage.clear());
+
+  it('says NEW HIGH SCORE when the run beat the old one', () => {
+    localStorage.setItem('vibeHighScore', '100');
+    const gs = new GameState();
+    gs.restart();
+    gs.addScore(150);
+    expect(textsDrawn(gs)).toContain('NEW HIGH SCORE! 🎉');
+  });
+
+  it('stays quiet when the run did not beat it', () => {
+    localStorage.setItem('vibeHighScore', '100');
+    const gs = new GameState();
+    gs.restart();
+    gs.addScore(50);
+    expect(textsDrawn(gs)).not.toContain('NEW HIGH SCORE! 🎉');
+  });
+
+  it('stays quiet on a practice run', () => {
+    const gs = new GameState();
+    gs.restart();
+    gs.practiceRun = true;
+    gs.addScore(100000);
+    expect(textsDrawn(gs)).not.toContain('NEW HIGH SCORE! 🎉');
+  });
+});

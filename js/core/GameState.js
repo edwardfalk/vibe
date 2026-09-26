@@ -10,6 +10,8 @@ export class GameState {
     this.score = 0;
     this.startSpeechTimer = null;
     this.highScore = parseInt(localStorage.getItem('vibeHighScore')) || 0;
+    // What this run has to beat; highScore itself follows the score up
+    this.highScoreAtRunStart = this.highScore;
     this.level = 1;
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
@@ -153,6 +155,7 @@ export class GameState {
     this.totalKills = 0;
     this.shotsFired = 0;
     this._flushHighScore();
+    this.highScoreAtRunStart = this.highScore;
 
     // Reset game state
     this.practiceRun = false;
