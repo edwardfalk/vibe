@@ -59,6 +59,13 @@ const ANGER_LINES = [
   'TURNING GUNS ON YOU!',
 ];
 
+const CALM_LINES = [
+  'BACK TO NORMAL TARGETS',
+  'ANGER SUBSIDING',
+  'RETURNING TO MISSION',
+  'FOCUS ON HUMAN AGAIN',
+];
+
 const TANK_LINES = [
   'HEAVY ARTILLERY!',
   'SIEGE MODE!',
@@ -100,6 +107,7 @@ class Tank extends BaseEnemy {
     this.angerTarget = null; // Which enemy type to target when angry
     this.angerCooldown = 0; // Cooldown before returning to normal behavior
     this.maxAngerCooldown = 600; // 10 seconds of anger
+    this.calmLinePending = false;
 
     // Destructible armour plates (see ARMOR_PLATES)
     const { FRONT, SIDE } = CONFIG.TANK_ARMOR;
@@ -128,20 +136,19 @@ class Tank extends BaseEnemy {
       if (this.angerCooldown <= 0) {
         this.isAngry = false;
         this.angerTarget = null;
+        this.calmLinePending = true; // said on the next beat 1
+      }
+    }
 
-        // Tank speaks about calming down (beat-gated)
-        const audio = this.getContextValue('audio');
-        const beatClock = this.getContextValue('beatClock');
-        if (audio && (!beatClock || beatClock.isOnBeat([1]))) {
-          const calmLines = [
-            'BACK TO NORMAL TARGETS',
-            'ANGER SUBSIDING',
-            'RETURNING TO MISSION',
-            'FOCUS ON HUMAN AGAIN',
-          ];
-          const calmLine = random(calmLines);
-          audio.speak(this, calmLine, 'tank');
-        }
+    if (this.calmLinePending) {
+      const audio = this.getContextValue('audio');
+      const beatClock = this.getContextValue('beatClock');
+      if (
+        !beatClock ||
+        this.onBeatOnce(beatClock, 'calmLine', beatClock.isOnBeat([1]))
+      ) {
+        this.calmLinePending = false;
+        if (audio) audio.speak(this, random(CALM_LINES), 'tank');
       }
     }
 
@@ -521,6 +528,7 @@ class Tank extends BaseEnemy {
     this.damageTracker.set(damageSource, count);
     if (count >= this.angerThreshold && !this.isAngry) {
       this.isAngry = true;
+      this.calmLinePending = false;
       this.angerTarget = damageSource;
       this.angerCooldown = this.maxAngerCooldown;
       const audio = this.getContextValue('audio');
