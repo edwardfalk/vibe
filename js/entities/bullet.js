@@ -51,7 +51,6 @@ export class Bullet {
     this.speed = speed;
     this.owner = owner; // 'player' or 'enemy'
     this.ownerId = undefined;
-    this.type = undefined;
     this.energy = undefined;
     this._inPool = false;
     this._remove = false; // a hit marks it; a recycled bullet starts clean

@@ -77,10 +77,9 @@ export function runSetup(p, arrays) {
   // Runs on Date.now() until Audio.initialize() moves it to the audio clock
   window.beatClock = new BeatClock(DEFAULT_BPM);
   window.rhythmFX = new RhythmFX(gameContext);
-  window.collisionSystem = new CollisionSystem(gameContext);
-
   const enemyDeathHandler = new EnemyDeathHandler(gameContext);
   window.enemyDeathHandler = enemyDeathHandler;
+  window.collisionSystem = new CollisionSystem(gameContext, enemyDeathHandler);
 
   window.uiRenderer = new UIRenderer(
     window.gameState,

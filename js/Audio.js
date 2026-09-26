@@ -75,10 +75,6 @@ export class Audio {
     this.voiceConfig = { ...VOICE_CONFIG };
   }
 
-  setContext(context) {
-    this.context = context;
-  }
-
   getContextValue = createContextAccessor(() => this.context);
 
   // ========================================================================

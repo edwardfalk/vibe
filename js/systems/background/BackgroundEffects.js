@@ -7,13 +7,6 @@
 
 let cachedVignette = null;
 
-export function resetBeatPulseCache() {
-  if (cachedVignette) {
-    cachedVignette.remove();
-    cachedVignette = null;
-  }
-}
-
 function drawBeatPulseOverlay(p, beatClock, healthOverlayColor) {
   if (!beatClock) return;
 

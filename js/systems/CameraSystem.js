@@ -22,7 +22,6 @@ export class CameraSystem {
 
     // Camera settings
     this.sensitivity = 0.4; // How much camera follows player movement
-    this.maxOffset = 400; // Maximum camera offset from center
     this.interpolationSpeed = 0.15; // How fast camera catches up
   }
 

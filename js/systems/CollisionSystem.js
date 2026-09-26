@@ -3,7 +3,6 @@
  */
 
 import { Bullet } from '../entities/bullet.js';
-import { EnemyDeathHandler } from './combat/EnemyDeathHandler.js';
 import {
   handleContactCollisions,
   handleRusherExplosionCollision,
@@ -25,23 +24,15 @@ function compactArray(arr) {
 }
 
 export class CollisionSystem {
-  constructor(context = null) {
-    // Collision detection settings
-    this.friendlyFireEnabled = true;
+  constructor(context, enemyDeathHandler) {
     this.context = context;
     this.getContextValue = createContextAccessor(() => this.context);
-    this.enemyDeathHandler = new EnemyDeathHandler(context || window);
-    // Accessors, not values: setContext() may swap the context later
+    this.enemyDeathHandler = enemyDeathHandler;
     this.resolverDeps = {
       getContextValue: this.getContextValue,
       handleEnemyDeath: (e, type, x, y) => this.handleEnemyDeath(e, type, x, y),
       getContext: () => this.context,
     };
-  }
-
-  setContext(context) {
-    this.context = context;
-    this.enemyDeathHandler.setContext(context || window);
   }
 
   // Main collision detection function
@@ -109,12 +100,7 @@ export class CollisionSystem {
 
       // Check player collision
       if (bullet.checkCollision(player)) {
-        if (
-          player.takeDamage(
-            bullet.damage,
-            `${bullet.owner || bullet.type}-bullet`
-          )
-        ) {
+        if (player.takeDamage(bullet.damage, `${bullet.owner}-bullet`)) {
           if (gameState) {
             gameState.setGameState('gameOver');
           }
@@ -130,7 +116,7 @@ export class CollisionSystem {
   checkEnemyBulletsVsEnemies() {
     const enemyBullets = this.getContextValue('enemyBullets');
     const enemies = this.getContextValue('enemies');
-    if (!this.friendlyFireEnabled || !enemyBullets || !enemies) return;
+    if (!enemyBullets || !enemies) return;
 
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const bullet = enemyBullets[i];
@@ -143,7 +129,7 @@ export class CollisionSystem {
         // Check if bullet hits enemy (but not the one that fired it)
         if (bullet.checkCollision(enemy)) {
           // Handle different bullet types
-          if (bullet.type === 'tankEnergy' || bullet.owner === 'enemy-tank') {
+          if (bullet.owner === 'enemy-tank') {
             this.handleTankEnergyBallHit(bullet, enemy);
           } else {
             this.handleRegularEnemyBulletHit(bullet, enemy);

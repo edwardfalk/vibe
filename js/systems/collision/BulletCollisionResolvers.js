@@ -118,11 +118,11 @@ export function handleRegularEnemyBulletHit(bullet, enemy, deps) {
 
   // Determine bullet source type for tank anger tracking
   let bulletSource = 'unknown';
-  if (bullet.type === 'grunt' || bullet.owner === 'enemy-grunt') {
+  if (bullet.owner === 'enemy-grunt') {
     bulletSource = 'grunt';
-  } else if (bullet.type === 'stabber' || bullet.owner === 'enemy-stabber') {
+  } else if (bullet.owner === 'enemy-stabber') {
     bulletSource = 'stabber';
-  } else if (bullet.type === 'tankEnergy' || bullet.owner === 'enemy-tank') {
+  } else if (bullet.owner === 'enemy-tank') {
     bulletSource = 'tank';
   }
 

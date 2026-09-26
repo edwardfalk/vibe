@@ -13,21 +13,16 @@ import {
   createParallaxLayerConfig,
   generateParallaxLayerElements,
 } from './background/BackgroundLayers.js';
-import {
-  drawCosmicAuroraBackgroundLayer,
-  resetCosmicAuroraCache,
-} from './background/CosmicAuroraBackground.js';
+import { drawCosmicAuroraBackgroundLayer } from './background/CosmicAuroraBackground.js';
 import {
   drawAuroraWispsLayer,
   drawInteractiveBackgroundEffectsLayer,
-  resetBeatPulseCache,
 } from './background/BackgroundEffects.js';
 import {
   drawDistantGalaxiesLayer,
   drawFlowingNebulaStreamsLayer,
   drawShootingStarsLayer,
   drawEnhancedSparklesLayer,
-  resetEnhancedSpaceElementsCache,
 } from './background/EnhancedSpaceElements.js';
 
 /**
@@ -143,14 +138,5 @@ export class BackgroundRenderer {
       randomRange
     );
     p.pop();
-  }
-
-  // Reset background renderer
-  reset() {
-    this.parallaxLayers = [];
-    this.parallaxInitialized = false;
-    resetCosmicAuroraCache();
-    resetEnhancedSpaceElementsCache();
-    resetBeatPulseCache();
   }
 }

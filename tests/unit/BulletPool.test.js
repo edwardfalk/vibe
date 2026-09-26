@@ -17,7 +17,6 @@ describe('Bullet pool', () => {
   it('a recycled tank bullet equals a fresh player bullet', () => {
     const tank = Bullet.acquire(100, 100, 1, 4, 'enemy-tank');
     tank.ownerId = 7;
-    tank.type = 'tankEnergy';
     tank.energy = 40;
     tank.update();
     tank.update();

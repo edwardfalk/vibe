@@ -77,7 +77,3 @@ export function drawCosmicAuroraBackgroundLayer(p, beatClock = null) {
 
   p.pop();
 }
-
-export function resetCosmicAuroraCache() {
-  // WeakMap handles garbage collection based on p5 instance lifecycle
-}

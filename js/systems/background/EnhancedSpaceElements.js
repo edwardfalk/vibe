@@ -57,17 +57,6 @@ function initEnhancedCaches(p) {
   }
 }
 
-export function resetEnhancedSpaceElementsCache() {
-  if (cachedGalaxy) {
-    cachedGalaxy.remove();
-    cachedGalaxy = null;
-  }
-  if (cachedStream) {
-    cachedStream.remove();
-    cachedStream = null;
-  }
-}
-
 export function drawFlowingNebulaStreamsLayer(streams, p) {
   initEnhancedCaches(p);
   p.push();

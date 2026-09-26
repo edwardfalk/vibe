@@ -401,11 +401,6 @@ export class UIRenderer {
     });
   }
 
-  // Reset UI renderer
-  reset() {
-    this.animatedHealth = undefined;
-  }
-
   // Toast/banner for confirmations
   _createToast() {
     if (document.getElementById('statusToast')) return;
