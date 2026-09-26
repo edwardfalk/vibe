@@ -8,53 +8,23 @@ import { ObjectPool } from '../../shared/ObjectPool.js';
 
 const fragmentPool = new ObjectPool(600);
 const centralParticlePool = new ObjectPool(600);
-const poolStats = {
-  fragmentAcquired: 0,
-  fragmentReleased: 0,
-  centralAcquired: 0,
-  centralReleased: 0,
-  peakFragmentPoolSize: 0,
-  peakCentralPoolSize: 0,
-};
 
 function acquireFragment() {
-  poolStats.fragmentAcquired++;
   return fragmentPool.acquire();
 }
 
 function releaseFragment(fragment) {
   if (!fragment) return;
   fragmentPool.release(fragment);
-  poolStats.fragmentReleased++;
-  poolStats.peakFragmentPoolSize = Math.max(
-    poolStats.peakFragmentPoolSize,
-    fragmentPool.size
-  );
 }
 
 function acquireCentralParticle() {
-  poolStats.centralAcquired++;
   return centralParticlePool.acquire();
 }
 
 function releaseCentralParticle(particle) {
   if (!particle) return;
   centralParticlePool.release(particle);
-  poolStats.centralReleased++;
-  poolStats.peakCentralPoolSize = Math.max(
-    poolStats.peakCentralPoolSize,
-    centralParticlePool.size
-  );
-}
-
-export function getFragmentPoolStats() {
-  return {
-    ...poolStats,
-    fragmentPoolSize: fragmentPool.size,
-    centralPoolSize: centralParticlePool.size,
-    maxFragmentPoolSize: fragmentPool.maxSize,
-    maxCentralPoolSize: centralParticlePool.maxSize,
-  };
 }
 
 export class EnemyFragmentExplosion {

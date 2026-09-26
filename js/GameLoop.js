@@ -15,10 +15,8 @@ import { updateBombs as updateBombSystem } from './systems/BombSystem.js';
 import { updateEnemiesAndResolveResults } from './systems/gameplay/EnemyUpdatePipeline.js';
 import { updateBullets } from './systems/gameplay/BulletUpdatePipeline.js';
 import { drawGameplayWorld } from './systems/gameplay/RenderPipeline.js';
-import { updatePerformanceDiagnostics } from './systems/gameplay/PerformanceDiagnostics.js';
 import { Bullet } from './entities/bullet.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
-import { CONFIG } from './config.js';
 import { runSetup } from './GameLoopSetup.js';
 import { runDraw } from './GameLoopDraw.js';
 
@@ -42,7 +40,6 @@ window.enemyBullets = enemyBullets;
 window.activeBombs = activeBombs;
 window.explosionManager = null;
 window.audio = null;
-window.performanceDiagnostics = null;
 
 // Input state, written by core/InputHandlers.js
 window.playerIsShooting = false;
@@ -255,15 +252,6 @@ function updateGame(p) {
   if (window.floatingText) {
     window.floatingText.update();
   }
-
-  updatePerformanceDiagnostics({
-    frameCount: p.frameCount,
-    config: CONFIG,
-    collisionSystem: window.collisionSystem,
-    bulletClass: Bullet,
-    floatingText: window.floatingText,
-    explosionManager: window.explosionManager,
-  });
 }
 
 function drawGame(p) {

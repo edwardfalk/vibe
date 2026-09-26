@@ -5,13 +5,6 @@
 import { Bullet } from '../entities/bullet.js';
 import { EnemyDeathHandler } from './combat/EnemyDeathHandler.js';
 import {
-  beginMetricsFrame,
-  buildPerformanceSnapshot,
-  createEmptyFrameMetrics,
-  createEmptyRollingMetrics,
-  finalizeMetricsFrame,
-} from './collision/CollisionMetrics.js';
-import {
   buildEnemySpatialGrid,
   queryNearbyEnemyIndices,
 } from './collision/CollisionSpatialGrid.js';
@@ -39,8 +32,6 @@ export class CollisionSystem {
   constructor(context = null) {
     // Collision detection settings
     this.friendlyFireEnabled = true;
-    this.frameMetrics = createEmptyFrameMetrics();
-    this.rollingMetrics = createEmptyRollingMetrics();
     this.context = context;
     this.getContextValue = createContextAccessor(() => this.context);
     this.enemyDeathHandler = new EnemyDeathHandler(context || window);
@@ -61,7 +52,6 @@ export class CollisionSystem {
 
   // Main collision detection function
   checkBulletCollisions() {
-    this.beginCollisionMetricsFrame();
     const enemies = this.getContextValue('enemies');
     const enemySpatialGrid = buildEnemySpatialGrid(enemies);
     this.checkPlayerBulletsVsEnemies(enemySpatialGrid);
@@ -73,27 +63,6 @@ export class CollisionSystem {
     const enemyBullets = this.getContextValue('enemyBullets');
     if (playerBullets) compactArray(playerBullets);
     if (enemyBullets) compactArray(enemyBullets);
-
-    this.finalizeCollisionMetricsFrame();
-  }
-
-  beginCollisionMetricsFrame() {
-    const enemies = this.getContextValue('enemies');
-    const playerBullets = this.getContextValue('playerBullets');
-    const enemyBullets = this.getContextValue('enemyBullets');
-    this.frameMetrics = beginMetricsFrame({
-      enemiesLength: enemies?.length || 0,
-      playerBulletsLength: playerBullets?.length || 0,
-      enemyBulletsLength: enemyBullets?.length || 0,
-    });
-  }
-
-  finalizeCollisionMetricsFrame() {
-    finalizeMetricsFrame(this.rollingMetrics, this.frameMetrics);
-  }
-
-  getPerformanceSnapshot() {
-    return buildPerformanceSnapshot(this.rollingMetrics, this.frameMetrics);
   }
 
   checkContactCollisions() {
@@ -126,16 +95,13 @@ export class CollisionSystem {
               indices.push(idx);
             return indices;
           })();
-      this.frameMetrics.playerBulletCandidates += candidateEnemyIndices.length;
 
       for (let k = 0; k < candidateEnemyIndices.length; k++) {
         const j = candidateEnemyIndices[k];
         const enemy = enemies[j];
         if (!enemy) continue;
 
-        this.frameMetrics.playerBulletChecks++;
         if (this.resolveBulletEnemyHit(bullet, i, enemy)) {
-          this.frameMetrics.playerBulletHits++;
           break;
         }
       }
@@ -193,7 +159,6 @@ export class CollisionSystem {
               indices.push(idx);
             return indices;
           })();
-      this.frameMetrics.enemyBulletCandidates += candidateEnemyIndices.length;
 
       for (let k = 0; k < candidateEnemyIndices.length; k++) {
         const j = candidateEnemyIndices[k];
@@ -202,10 +167,7 @@ export class CollisionSystem {
         if (bullet.ownerId === enemy.id) continue;
 
         // Check if bullet hits enemy (but not the one that fired it)
-        this.frameMetrics.enemyBulletChecks++;
         if (bullet.checkCollision(enemy)) {
-          this.frameMetrics.enemyBulletHits++;
-
           // Handle different bullet types
           if (bullet.type === 'tankEnergy' || bullet.owner === 'enemy-tank') {
             this.handleTankEnergyBallHit(bullet, enemy);

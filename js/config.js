@@ -6,11 +6,6 @@
 const CONFIG = {
   // Game Settings
   GAME_SETTINGS: {
-    // Enable periodic performance diagnostics logs and snapshots
-    PERF_DIAGNOSTICS: false, // true logs a frame-time report to the console
-    // Frames between performance diagnostics reports
-    PERF_LOG_INTERVAL_FRAMES: 300,
-
     // Frame time at 60fps baseline, used to normalize deltaTimeMs
     FRAME_TIME_MS: 16.6667,
 

@@ -1,10 +1,7 @@
 import { Explosion } from './Explosion.js';
 import { RadioactiveDebris } from './RadioactiveDebris.js';
 import { PlasmaCloud } from './PlasmaCloud.js';
-import {
-  EnemyFragmentExplosion,
-  getFragmentPoolStats,
-} from './EnemyFragmentExplosion.js';
+import { EnemyFragmentExplosion } from './EnemyFragmentExplosion.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
 
 export class ExplosionManager {
@@ -135,9 +132,5 @@ export class ExplosionManager {
     for (const debris of this.radioactiveDebris) {
       debris.draw(p);
     }
-  }
-
-  getPoolStats() {
-    return getFragmentPoolStats();
   }
 }

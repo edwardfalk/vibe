@@ -33,50 +33,25 @@ export class Bullet {
 
   /** Returns a bullet from pool or creates new; never returns null. Callers should still guard for null for defensive robustness. */
   static acquire(x, y, angle, speed, owner) {
-    Bullet.poolStats.acquired++;
     let bullet;
     if (Bullet.pool.length > 0) {
       bullet = Bullet.pool.pop();
       bullet._inPool = false;
       bullet.reset(x, y, angle, speed, owner);
-      Bullet.poolStats.reused++;
     } else {
       bullet = new Bullet(x, y, angle, speed, owner);
-      Bullet.poolStats.created++;
     }
-    Bullet.poolStats.inUse++;
-    Bullet.poolStats.peakInUse = Math.max(
-      Bullet.poolStats.peakInUse,
-      Bullet.poolStats.inUse
-    );
     return bullet;
   }
 
   static release(bullet) {
     if (!bullet || bullet._inPool) return;
-    if (Bullet.pool.length >= MAX_BULLET_POOL_SIZE) {
-      Bullet.poolStats.inUse = Math.max(0, Bullet.poolStats.inUse - 1);
-      return;
-    }
+    if (Bullet.pool.length >= MAX_BULLET_POOL_SIZE) return;
     bullet._inPool = true;
     bullet.active = false;
     bullet._trailHead = 0;
     bullet._trailCount = 0;
     Bullet.pool.push(bullet);
-    Bullet.poolStats.released++;
-    Bullet.poolStats.inUse = Math.max(0, Bullet.poolStats.inUse - 1);
-    Bullet.poolStats.peakPoolSize = Math.max(
-      Bullet.poolStats.peakPoolSize,
-      Bullet.pool.length
-    );
-  }
-
-  static getPoolStats() {
-    return {
-      ...Bullet.poolStats,
-      poolSize: Bullet.pool.length,
-      maxPoolSize: MAX_BULLET_POOL_SIZE,
-    };
   }
 
   reset(x, y, angle, speed, owner) {
@@ -341,12 +316,3 @@ export class Bullet {
 }
 
 Bullet.pool = [];
-Bullet.poolStats = {
-  acquired: 0,
-  released: 0,
-  created: 0,
-  reused: 0,
-  inUse: 0,
-  peakInUse: 0,
-  peakPoolSize: 0,
-};

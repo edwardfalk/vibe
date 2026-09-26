@@ -28,20 +28,6 @@ test.describe('Gameplay Probes', () => {
     expect(after.playerAlive).toBe(true);
   });
 
-  test('Collision diagnostics API available', async ({ page }) => {
-    await bootGame(page);
-
-    const snapshot = await page.evaluate(() => {
-      if (!window.collisionSystem?.getPerformanceSnapshot) return null;
-      return window.collisionSystem.getPerformanceSnapshot();
-    });
-
-    expect(snapshot).not.toBeNull();
-    expect(snapshot).toHaveProperty('frameSampleSize');
-    expect(snapshot).toHaveProperty('latestFrame');
-    expect(snapshot).toHaveProperty('averages');
-  });
-
   test('Title screen waits for input, then starts the run', async ({
     page,
   }) => {
