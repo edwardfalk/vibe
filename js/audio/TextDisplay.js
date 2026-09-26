@@ -1,4 +1,4 @@
-import { randomRange } from '../mathUtils.js';
+import { random } from '../mathUtils.js';
 
 const FADE_OUT_DURATION_FRAMES = 30;
 
@@ -56,8 +56,8 @@ export function drawActiveTexts(
     let screenY = textObj.y;
 
     if (textObj.shakeTimer > 0) {
-      screenX += randomRange(-2, 2);
-      screenY += randomRange(-1, 1);
+      screenX += random(-2, 2);
+      screenY += random(-1, 1);
     }
 
     if (textObj.wobbleTimer > 0) {
@@ -73,7 +73,7 @@ export function drawActiveTexts(
   }
 
   if (showBeatIndicator && typeof drawGlowFn === 'function') {
-    drawGlowFn(p, beatX, beatY, 40, p.color(255, 255, 100), 0.5);
+    drawGlowFn(p, beatX, beatY, 40, [255, 255, 100], 0.5);
   }
 
   p.pop();

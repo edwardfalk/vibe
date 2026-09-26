@@ -1,90 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-// Suppress console.log noise from entity constructors
-vi.spyOn(console, 'log').mockImplementation(() => {});
-
-// Mock the Bullet module (imported by BaseEnemy)
-vi.mock('../../js/entities/bullet.js', () => ({
-  Bullet: { acquire: vi.fn(() => ({ ownerId: null })) },
-}));
-
-// Mock glowUtils (imported by BaseEnemy)
-vi.mock('../../js/effects/glowUtils.js', () => ({
-  drawGlow: vi.fn(),
-}));
-
-// Mock BaseEnemyHelpers (imported by BaseEnemy)
-vi.mock('../../js/entities/BaseEnemyHelpers.js', () => ({
-  getEnemyColors: () => ({
-    skinColor: {},
-    helmetColor: {},
-    weaponColor: {},
-    eyeColor: {},
-  }),
-  getGlowColorForType: vi.fn(),
-  getGlowSizeForType: vi.fn(() => 10),
-  drawEnemyHealthBar: vi.fn(),
-  drawEnemySpeechBubble: vi.fn(),
-}));
-
+import { createMockP5, createMockAudio } from './helpers/enemyMocks.js';
 import { Grunt } from '../../js/entities/Grunt.js';
 import { CONFIG } from '../../js/config.js';
 import { Bullet } from '../../js/entities/bullet.js';
-
-/**
- * Create a minimal mock p5 instance with the methods BaseEnemy/Grunt need.
- */
-function createMockP5() {
-  const colorObj = { levels: [100, 200, 100, 255] };
-  return {
-    color: vi.fn(() => colorObj),
-    TWO_PI: Math.PI * 2,
-    PI: Math.PI,
-    frameCount: 1,
-    dist: vi.fn((x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)),
-    // Drawing stubs (not needed for logic tests but may be called)
-    fill: vi.fn(),
-    noFill: vi.fn(),
-    stroke: vi.fn(),
-    noStroke: vi.fn(),
-    ellipse: vi.fn(),
-    rect: vi.fn(),
-    arc: vi.fn(),
-    triangle: vi.fn(),
-    line: vi.fn(),
-    strokeWeight: vi.fn(),
-    push: vi.fn(),
-    pop: vi.fn(),
-    translate: vi.fn(),
-    rotate: vi.fn(),
-    scale: vi.fn(),
-    beginShape: vi.fn(),
-    endShape: vi.fn(),
-    vertex: vi.fn(),
-    textAlign: vi.fn(),
-    textSize: vi.fn(),
-    text: vi.fn(),
-    red: vi.fn(() => 100),
-    green: vi.fn(() => 200),
-    blue: vi.fn(() => 100),
-    sin: Math.sin,
-    cos: Math.cos,
-    MITER: 'miter',
-    CLOSE: 'close',
-    CENTER: 'center',
-  };
-}
-
-/**
- * Create a minimal mock audio system.
- */
-function createMockAudio() {
-  return {
-    speak: vi.fn(() => true),
-    playSound: vi.fn(),
-    playAlienShoot: vi.fn(),
-  };
-}
+import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
 
 describe('Grunt deferred stabber death', () => {
   let grunt;
@@ -114,12 +33,12 @@ describe('Grunt deferred stabber death', () => {
     grunt.spawnTimer = grunt.spawnDuration;
   });
 
-  it('returns false (DAMAGED, not DIED) when taking fatal stabber_melee damage', () => {
+  it('returns DAMAGED (not DIED) when taking fatal stabber_melee damage', () => {
     // Grunt has 2 health. Dealing 2+ damage from stabber_melee should trigger deferred death.
     const result = grunt.takeDamage(5, null, 'stabber_melee');
 
-    // Should return false (deferred), NOT true (died immediately)
-    expect(result).toBe(false);
+    // Deferred: DAMAGED, not DIED
+    expect(result).toBe(DAMAGE_RESULT.DAMAGED);
     // Should NOT be marked for removal yet
     expect(grunt.markedForRemoval).toBe(false);
     // Should have pending death flag set
@@ -129,16 +48,16 @@ describe('Grunt deferred stabber death', () => {
   it('rejects further damage while pendingStabDeath is true', () => {
     // First fatal hit from stabber
     const firstResult = grunt.takeDamage(5, null, 'stabber_melee');
-    expect(firstResult).toBe(false);
+    expect(firstResult).toBe(DAMAGE_RESULT.DAMAGED);
     expect(grunt.pendingStabDeath).toBe(true);
 
-    // Second hit while pending death should also return false
+    // Second hit while pending death is DAMAGED too
     const secondResult = grunt.takeDamage(5, null, 'stabber_melee');
-    expect(secondResult).toBe(false);
+    expect(secondResult).toBe(DAMAGE_RESULT.DAMAGED);
 
     // Third hit from a non-stabber source should also be rejected
     const thirdResult = grunt.takeDamage(1, 0, 'player_bullet');
-    expect(thirdResult).toBe(false);
+    expect(thirdResult).toBe(DAMAGE_RESULT.DAMAGED);
 
     // Still not removed yet
     expect(grunt.markedForRemoval).toBe(false);
@@ -184,9 +103,9 @@ describe('Grunt shot', () => {
     const context = { get: () => undefined, set() {} };
     const g = new Grunt(100, 100, 'grunt', { context }, createMockP5(), null);
     g.aimAngle = 0; // aiming +x, so the art's local +y is world +y
-    Bullet.acquire.mockClear();
+    const acquire = vi.spyOn(Bullet, 'acquire');
     g.createBullet();
-    const [x, y] = Bullet.acquire.mock.calls[0];
+    const [x, y] = acquire.mock.calls[0];
     expect(x).toBeCloseTo(100 + g.size * 0.9, 5);
     expect(y).toBeCloseTo(100 + g.artOffsetY, 5);
     expect(g.artOffsetY).toBeGreaterThan(0);

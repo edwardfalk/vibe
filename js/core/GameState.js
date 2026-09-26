@@ -21,10 +21,6 @@ export class GameState {
     this.totalKills = 0;
     this.shotsFired = 0;
 
-    // Timers
-    this.gameOverTimer = 0;
-    this.pauseStartTime = 0;
-
     // High score write debounce
     this._highScoreDirty = false;
     this._highScoreDebounceTimer = null;
@@ -120,15 +116,9 @@ export class GameState {
 
   // Game state transitions
   setGameState(newState) {
-    const oldState = this.gameState;
     this.gameState = newState;
 
-    if (newState === 'paused' && oldState === 'playing') {
-      this.pauseStartTime = Date.now();
-    } else if (newState === 'playing' && oldState === 'paused') {
-      // Resume from pause
-    } else if (newState === 'gameOver') {
-      this.gameOverTimer = 0;
+    if (newState === 'gameOver') {
       this.resetKillStreak();
       this._flushHighScore();
 
@@ -162,8 +152,6 @@ export class GameState {
     this.killStreak = 0;
     this.totalKills = 0;
     this.shotsFired = 0;
-    this.gameOverTimer = 0;
-    this.pauseStartTime = 0;
     this._flushHighScore();
 
     // Reset game state

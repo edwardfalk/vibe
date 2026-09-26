@@ -31,7 +31,6 @@ const p = {
 function makePlayer(beatClock) {
   const audio = {
     playSound: vi.fn(),
-    playPlayerHit: vi.fn(),
     speakPlayerLine: vi.fn(),
   };
   const gameState = { gameState: 'playing', resetKillStreak: vi.fn() };
@@ -45,13 +44,26 @@ describe('Player shield', () => {
     globalThis.window = { playerIsShooting: false };
   });
 
+  it('hurt ends the run only on a fatal hit', () => {
+    const { player, gameState } = makePlayer();
+    gameState.setGameState = vi.fn();
+    expect(player.hurt(10, 'test')).toBe(false); // the shield takes it
+    expect(player.hurt(10, 'test')).toBe(false);
+    expect(gameState.setGameState).not.toHaveBeenCalled();
+    expect(player.hurt(500, 'test')).toBe(true);
+    expect(gameState.setGameState).toHaveBeenCalledWith('gameOver');
+  });
+
   it('absorbs the first hit: no health, no wound sound, streak kept', () => {
     const { player, audio, gameState } = makePlayer();
     expect(player.takeDamage(99, 'rusher-explosion')).toBe(false);
     expect(player.health).toBe(100);
     expect(player.shieldUp).toBe(false);
     expect(audio.playSound).toHaveBeenCalledWith('shieldBreak', 100, 100);
-    expect(audio.playPlayerHit).not.toHaveBeenCalled();
+    // Match on the key alone, so the check still holds if the call gains a position
+    expect(
+      audio.playSound.mock.calls.some(([key]) => key === 'playerHit')
+    ).toBe(false);
     expect(gameState.resetKillStreak).not.toHaveBeenCalled();
   });
 
@@ -60,7 +72,9 @@ describe('Player shield', () => {
     player.takeDamage(10, 'test');
     player.takeDamage(10, 'test');
     expect(player.health).toBe(90);
-    expect(audio.playPlayerHit).toHaveBeenCalledTimes(1);
+    expect(
+      audio.playSound.mock.calls.filter(([name]) => name === 'playerHit')
+    ).toHaveLength(1);
     expect(gameState.resetKillStreak).toHaveBeenCalledTimes(1);
   });
 

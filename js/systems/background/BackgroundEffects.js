@@ -3,16 +3,11 @@
  *   BeatPulseOverlay.js, InteractiveBackgroundEffects.js, AuroraWisps.js
  */
 
+import { random } from '../../mathUtils.js';
+
 // ─── BeatPulseOverlay (module-private) ───────────────────────────────────────
 
 let cachedVignette = null;
-
-export function resetBeatPulseCache() {
-  if (cachedVignette) {
-    cachedVignette.remove();
-    cachedVignette = null;
-  }
-}
 
 function drawBeatPulseOverlay(p, beatClock, healthOverlayColor) {
   if (!beatClock) return;
@@ -131,8 +126,7 @@ export function drawInteractiveBackgroundEffectsLayer(
   p,
   player,
   gameState,
-  beatClock,
-  randomRangeFn
+  beatClock
 ) {
   p.push();
 
@@ -179,10 +173,10 @@ export function drawInteractiveBackgroundEffectsLayer(
   if (gameState && gameState.score > 0) {
     const energyLevel = p.min(gameState.score / 1000, 1);
     for (let i = 0; i < 5; i++) {
-      const energyX = randomRangeFn(p.width);
-      const energyY = randomRangeFn(p.height);
-      const energySize = randomRangeFn(10, 30) * energyLevel;
-      const energyAlpha = randomRangeFn(5, 15) * energyLevel;
+      const energyX = random(p.width);
+      const energyY = random(p.height);
+      const energySize = random(10, 30) * energyLevel;
+      const energyAlpha = random(5, 15) * energyLevel;
       p.fill(255, 215, 0, energyAlpha);
       p.noStroke();
       p.ellipse(energyX, energyY, energySize, energySize);

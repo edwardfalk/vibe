@@ -1,13 +1,15 @@
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
 
+const DEATH_SOUND = {
+  grunt: 'gruntPop',
+  stabber: 'stabberOhNo',
+  rusher: 'rusherOhNo',
+};
+
 export class EnemyDeathHandler {
   constructor(context = {}) {
     this.context = context;
     this.getContextValue = createContextAccessor(() => this.context);
-  }
-
-  setContext(context) {
-    this.context = context;
   }
 
   handleEnemyDeath(enemy, enemyType, x, y) {
@@ -17,41 +19,16 @@ export class EnemyDeathHandler {
 
     if (!explosionManager || !audio) return;
 
+    explosionManager.addFragmentExplosion(x, y, enemy);
     if (enemyType === 'tank') {
-      explosionManager.addFragmentExplosion(x, y, enemy);
       explosionManager.addPlasmaCloud(x, y);
       if (cameraSystem) {
         cameraSystem.addShake(8, 15);
       }
-      audio.playTankOhNo(x, y);
-      audio.playExplosion(x, y);
-
-      // Call-and-response: notify nearby same-type enemies
-      const enemies = this.getContextValue('enemies');
-      if (enemies) {
-        let responseCount = 0;
-        for (const other of enemies) {
-          if (responseCount >= 2) break;
-          if (other === enemy || other.markedForRemoval) continue;
-          if (other.type === enemyType && other.onNearbyDeath) {
-            other.onNearbyDeath(enemy);
-            responseCount++;
-          }
-        }
-      }
-      return;
-    }
-
-    explosionManager.addFragmentExplosion(x, y, enemy);
-
-    if (enemyType === 'grunt') {
-      audio.playGruntPop(x, y);
-    } else if (enemyType === 'stabber') {
-      audio.playStabberOhNo(x, y);
-    } else if (enemyType === 'rusher') {
-      audio.playRusherOhNo(x, y);
+      audio.playSound('tankOhNo', x, y);
+      audio.playSound('explosion', x, y);
     } else {
-      audio.playEnemyOhNo(x, y);
+      audio.playSound(DEATH_SOUND[enemyType] ?? 'enemyOhNo', x, y);
     }
 
     // Call-and-response: notify nearby same-type enemies

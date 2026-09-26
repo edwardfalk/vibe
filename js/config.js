@@ -6,11 +6,6 @@
 const CONFIG = {
   // Game Settings
   GAME_SETTINGS: {
-    // Enable periodic performance diagnostics logs and snapshots
-    PERF_DIAGNOSTICS: false, // true logs a frame-time report to the console
-    // Frames between performance diagnostics reports
-    PERF_LOG_INTERVAL_FRAMES: 300,
-
     // Frame time at 60fps baseline, used to normalize deltaTimeMs
     FRAME_TIME_MS: 16.6667,
 
@@ -120,6 +115,25 @@ const CONFIG = {
     EXPLOSION_DAMAGE: 35,
   },
 
+  // Hazard clouds. A tank's death leaves plasma; its bomb leaves plasma and
+  // longer-lasting debris. Anything within RADIUS takes DAMAGE every
+  // DAMAGE_INTERVAL frames for DURATION frames; MAX_RADIUS is how far the
+  // cloud is drawn.
+  PLASMA: {
+    RADIUS: 80,
+    MAX_RADIUS: 120,
+    DURATION: 300,
+    DAMAGE_INTERVAL: 30,
+    DAMAGE: 15,
+  },
+  DEBRIS: {
+    RADIUS: 60,
+    MAX_RADIUS: 90,
+    DURATION: 900,
+    DAMAGE_INTERVAL: 45,
+    DAMAGE: 8,
+  },
+
   // Hit radius per enemy type (px from centre), so shots that visibly touch
   // an enemy count; sprites reach well past size/2. Tune live with ?tune;
   // SHOW draws the circles.
@@ -152,7 +166,6 @@ const CONFIG = {
   STABBER_SETTINGS: {
     MIN_STAB_DISTANCE: 200, // Minimum distance to initiate stab
     MAX_STAB_DISTANCE: 350, // Maximum distance to initiate stab
-    MAX_PREPARE_TIME: 45, // Frames for preparation phase
     MAX_WARNING_TIME: 40, // Frames for warning phase
     KNOCKBACK_FORCE: 8, // px/frame per hit; about 53 px in total
     MAX_KNOCKBACK: 20, // px/frame cap under steady fire

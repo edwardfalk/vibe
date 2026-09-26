@@ -1,8 +1,5 @@
 import { sqrt, max, floor, atan2, cos, sin } from '../mathUtils.js';
-import {
-  DAMAGE_RESULT,
-  normalizeDamageResult,
-} from '../shared/DamageResult.js';
+import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 const BOMB_EXPLOSION_RADIUS = 250;
 const MIN_PLAYER_BOMB_DAMAGE = 10;
@@ -78,7 +75,7 @@ export function updateBombs(context) {
     }
 
     if (audio) {
-      audio.playBombExplosion(bomb.x, bomb.y);
+      audio.playSound('explosion', bomb.x, bomb.y);
     }
 
     if (cameraSystem) {
@@ -101,17 +98,11 @@ export function updateBombs(context) {
           )
         );
 
-        if (player.takeDamage(damage, 'tank-bomb')) {
-          if (gameState) {
-            gameState.setGameState('gameOver');
-          }
-        } else {
-          if (player.velocity) {
-            const knockbackAngle = atan2(player.y - bomb.y, player.x - bomb.x);
-            const knockbackForce = 15;
-            player.velocity.x += cos(knockbackAngle) * knockbackForce;
-            player.velocity.y += sin(knockbackAngle) * knockbackForce;
-          }
+        if (!player.hurt(damage, 'tank-bomb') && player.velocity) {
+          const knockbackAngle = atan2(player.y - bomb.y, player.x - bomb.x);
+          const knockbackForce = 15;
+          player.velocity.x += cos(knockbackAngle) * knockbackForce;
+          player.velocity.y += sin(knockbackAngle) * knockbackForce;
         }
       }
     }
@@ -131,9 +122,7 @@ export function updateBombs(context) {
           MAX_ENEMY_BOMB_DAMAGE * (1 - enemyDistance / BOMB_EXPLOSION_RADIUS)
         )
       );
-      const damageResult = normalizeDamageResult(
-        enemy.takeDamage(damage, null, 'bomb')
-      );
+      const damageResult = enemy.takeDamage(damage, null, 'bomb');
 
       if (damageResult === DAMAGE_RESULT.DAMAGED) {
         if (floatingText) {

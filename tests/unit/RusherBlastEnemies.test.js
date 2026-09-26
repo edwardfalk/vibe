@@ -1,34 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
-
-// Suppress console.log noise from entity constructors and game logic
-vi.spyOn(console, 'log').mockImplementation(() => {});
-
-// Mock the Bullet module (imported by BaseEnemy)
-vi.mock('../../js/entities/bullet.js', () => ({
-  Bullet: { acquire: vi.fn(() => ({ ownerId: null })) },
-}));
-
-// Mock glowUtils (imported by BaseEnemy)
-vi.mock('../../js/effects/glowUtils.js', () => ({
-  drawGlow: vi.fn(),
-}));
-
-// Mock BaseEnemyHelpers (imported by BaseEnemy)
-vi.mock('../../js/entities/BaseEnemyHelpers.js', () => ({
-  getEnemyColors: () => ({
-    skinColor: {},
-    helmetColor: {},
-    weaponColor: {},
-    eyeColor: {},
-  }),
-  getGlowColorForType: vi.fn(),
-  getGlowSizeForType: vi.fn(() => 10),
-  drawEnemyHealthBar: vi.fn(),
-  drawEnemySpeechBubble: vi.fn(),
-}));
-
 import { Rusher } from '../../js/entities/Rusher.js';
 import { updateEnemiesAndResolveResults } from '../../js/systems/gameplay/EnemyUpdatePipeline.js';
+import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
 
 const mockP5 = {
   color: () => ({ levels: [255, 20, 147, 255] }),
@@ -52,7 +25,9 @@ function stub(x, y, died = false) {
     size: 50,
     markedForRemoval: false,
     update: () => null,
-    takeDamage: vi.fn(() => died),
+    takeDamage: vi.fn(() =>
+      died ? DAMAGE_RESULT.DIED : DAMAGE_RESULT.DAMAGED
+    ),
   };
 }
 

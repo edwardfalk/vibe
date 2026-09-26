@@ -3,17 +3,49 @@
  */
 
 import { ceil, max, abs, sin } from '../mathUtils.js';
-import {
-  SCORE_HUD,
-  DASH_HUD,
-  LEVEL_PROGRESS,
-  HEALTH_BAR,
-  KILL_STREAK_Y,
-  BOMB_WARNING_SIZE,
-  TOAST,
-} from './UIConstants.js';
 import { drawGameOver, drawPauseScreen } from './UIOverlays.js';
 import { handleKeyPress as handleKeyPressImpl } from './UIInputHandler.js';
+
+/** Score text position (top-left of canvas) */
+const SCORE_HUD = {
+  marginLeft: 20,
+  marginTop: 16,
+  textSize: 18,
+};
+
+/** Dash status text, below the health bar */
+const DASH_HUD = {
+  marginBottom: 12,
+  textSize: 12,
+};
+
+/** Level progress bar layout */
+const LEVEL_PROGRESS = {
+  barWidth: 200,
+  barHeight: 8,
+  marginRight: 20,
+  marginTop: 20,
+};
+
+/** Health bar layout */
+const HEALTH_BAR = {
+  barWidth: 150,
+  barHeight: 12,
+  marginLeft: 20,
+  marginBottom: 40,
+};
+
+/** Kill streak indicator position (y from top) */
+const KILL_STREAK_Y = 80;
+
+/** Bomb warning circle base size */
+const BOMB_WARNING_SIZE = 60;
+
+/** Toast position and timing */
+const TOAST = {
+  bottom: 32,
+  durationMs: 2200,
+};
 
 /**
  * @param {GameState} gameState - The game state object (dependency injected for modularity)
@@ -367,11 +399,6 @@ export class UIRenderer {
       cameraSystem: this.cameraSystem,
       showToast: (msg) => this._showToast(msg),
     });
-  }
-
-  // Reset UI renderer
-  reset() {
-    this.animatedHealth = undefined;
   }
 
   // Toast/banner for confirmations

@@ -1,89 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-
-// Suppress console.log noise from entity constructors and game logic
-vi.spyOn(console, 'log').mockImplementation(() => {});
-
-// Mock the Bullet module (imported by BaseEnemy)
-vi.mock('../../js/entities/bullet.js', () => ({
-  Bullet: { acquire: vi.fn(() => ({ ownerId: null })) },
-}));
-
-// Mock glowUtils (imported by BaseEnemy)
-vi.mock('../../js/effects/glowUtils.js', () => ({
-  drawGlow: vi.fn(),
-}));
-
-// Mock BaseEnemyHelpers (imported by BaseEnemy)
-vi.mock('../../js/entities/BaseEnemyHelpers.js', () => ({
-  getEnemyColors: () => ({
-    skinColor: {},
-    helmetColor: {},
-    weaponColor: {},
-    eyeColor: {},
-  }),
-  getGlowColorForType: vi.fn(),
-  getGlowSizeForType: vi.fn(() => 10),
-  drawEnemyHealthBar: vi.fn(),
-  drawEnemySpeechBubble: vi.fn(),
-}));
-
+import { createMockP5, createMockAudio } from './helpers/enemyMocks.js';
 import { Tank } from '../../js/entities/Tank.js';
 import { Stabber } from '../../js/entities/Stabber.js';
 import { BeatClock } from '../../js/audio/BeatClock.js';
 import { updateStabberBehavior } from '../../js/entities/StabberAttackHandler.js';
-
-/**
- * Create a minimal mock p5 instance.
- */
-function createMockP5() {
-  const colorObj = { levels: [255, 215, 0, 255] };
-  return {
-    color: vi.fn(() => colorObj),
-    TWO_PI: Math.PI * 2,
-    PI: Math.PI,
-    frameCount: 1,
-    dist: vi.fn((x1, y1, x2, y2) => Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)),
-    sin: Math.sin,
-    cos: Math.cos,
-    // Drawing stubs
-    fill: vi.fn(),
-    noFill: vi.fn(),
-    stroke: vi.fn(),
-    noStroke: vi.fn(),
-    ellipse: vi.fn(),
-    rect: vi.fn(),
-    arc: vi.fn(),
-    triangle: vi.fn(),
-    line: vi.fn(),
-    strokeWeight: vi.fn(),
-    strokeJoin: vi.fn(),
-    push: vi.fn(),
-    pop: vi.fn(),
-    translate: vi.fn(),
-    rotate: vi.fn(),
-    scale: vi.fn(),
-    beginShape: vi.fn(),
-    endShape: vi.fn(),
-    vertex: vi.fn(),
-    textAlign: vi.fn(),
-    textSize: vi.fn(),
-    text: vi.fn(),
-    MITER: 'miter',
-    CLOSE: 'close',
-    CENTER: 'center',
-  };
-}
-
-/**
- * Create a minimal mock audio system.
- */
-function createMockAudio() {
-  return {
-    speak: vi.fn(() => true),
-    playSound: vi.fn(),
-    playAlienShoot: vi.fn(),
-  };
-}
 
 // A real BeatClock on a fake audio clock, plus a context the entities read
 function world() {
@@ -214,7 +134,7 @@ describe('Beat-gated entity behaviour', () => {
     try {
       const { audio, context } = world();
       const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
-      expect([t.frontArmorHP, t.leftArmorHP, t.rightArmorHP]).toEqual([
+      expect([t.plates.front.hp, t.plates.left.hp, t.plates.right.hp]).toEqual([
         7, 3, 3,
       ]);
     } finally {

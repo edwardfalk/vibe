@@ -1,10 +1,6 @@
 import { Explosion } from './Explosion.js';
-import { RadioactiveDebris } from './RadioactiveDebris.js';
-import { PlasmaCloud } from './PlasmaCloud.js';
-import {
-  EnemyFragmentExplosion,
-  getFragmentPoolStats,
-} from './EnemyFragmentExplosion.js';
+import { HazardCloud } from './HazardCloud.js';
+import { EnemyFragmentExplosion } from './EnemyFragmentExplosion.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
 
 export class ExplosionManager {
@@ -18,37 +14,20 @@ export class ExplosionManager {
 
   getContextValue = createContextAccessor(() => this.context);
 
-  addExplosion(x, y, type = 'enemy') {
-    const beatClock = this.getContextValue('beatClock');
-    const beatIntensity = beatClock ? beatClock.getBeatIntensity(6) : 0;
-    const isDownbeat = beatClock ? beatClock.getCurrentBeat() === 0 : false;
-
-    // Create explosion with beat-enhanced properties
-    const explosion = new Explosion(x, y, type);
-
-    // Enhance explosion on strong beats
-    if (beatIntensity > 0.3) {
-      explosion.beatBoost = beatIntensity;
-      explosion.sizeMultiplier = isDownbeat ? 1.3 : 1.15;
-      explosion.particleMultiplier = isDownbeat ? 1.5 : 1.2;
-      explosion.glowMultiplier = isDownbeat ? 1.4 : 1.2;
-    }
-
-    this.explosions.push(explosion);
+  addExplosion(x, y, type) {
+    this.explosions.push(new Explosion(x, y, type));
   }
 
   addPlasmaCloud(x, y) {
-    this.plasmaClouds.push(new PlasmaCloud(x, y));
+    this.plasmaClouds.push(new HazardCloud(x, y, 'PLASMA'));
     const audio = this.getContextValue('audio');
-    if (audio) audio.playPlasmaCloud(x, y);
+    if (audio) audio.playSound('plasmaCloud', x, y);
   }
 
-  addRadioactiveDebris(x, y, playAudio = true) {
-    this.radioactiveDebris.push(new RadioactiveDebris(x, y));
-    if (playAudio) {
-      const audio = this.getContextValue('audio');
-      if (audio) audio.playPlasmaCloud(x, y);
-    }
+  addRadioactiveDebris(x, y) {
+    this.radioactiveDebris.push(new HazardCloud(x, y, 'DEBRIS'));
+    const audio = this.getContextValue('audio');
+    if (audio) audio.playSound('plasmaCloud', x, y);
   }
 
   addFragmentExplosion(x, y, enemy) {
@@ -60,7 +39,6 @@ export class ExplosionManager {
       fragmentExplosion.fragments.forEach((f) => {
         f.vx *= 1 + beatIntensity * 0.3;
         f.vy *= 1 + beatIntensity * 0.3;
-        f.glow += beatIntensity * 0.3;
       });
     }
 
@@ -135,9 +113,5 @@ export class ExplosionManager {
     for (const debris of this.radioactiveDebris) {
       debris.draw(p);
     }
-  }
-
-  getPoolStats() {
-    return getFragmentPoolStats();
   }
 }

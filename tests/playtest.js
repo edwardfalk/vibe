@@ -102,6 +102,19 @@ test('playtest session', async ({ page }) => {
 
   await bootGame(page);
 
+  // Time each animation frame's work: fps is capped at 60, so it can't show
+  // whether a change made frames cheaper.
+  await page.evaluate(() => {
+    window.__frameMs = [];
+    const raf = window.requestAnimationFrame.bind(window);
+    window.requestAnimationFrame = (cb) =>
+      raf((t) => {
+        const start = performance.now();
+        cb(t);
+        window.__frameMs.push(performance.now() - start);
+      });
+  });
+
   // Record when each level arrives and when each enemy type first shows up
   await page.evaluate(() => {
     const t0 = performance.now();
@@ -175,6 +188,12 @@ test('playtest session', async ({ page }) => {
 
   await page.mouse.up();
   const pacing = await page.evaluate(() => window.__pacing);
+  const frameMs = await page.evaluate(() => {
+    const ms = window.__frameMs.toSorted((a, b) => a - b);
+    const at = (q) => +ms[Math.floor(ms.length * q)].toFixed(2);
+    const avg = ms.reduce((a, b) => a + b, 0) / ms.length;
+    return { avg: +avg.toFixed(2), p50: at(0.5), p95: at(0.95) };
+  });
 
   // Release all keys
   for (const key of activeKeys) {
@@ -193,6 +212,7 @@ test('playtest session', async ({ page }) => {
   const summary = {
     duration: `${durationActual}s`,
     fps,
+    frameMs,
     peakEnemies,
     finalScore: lastSample.score,
     finalLevel: lastSample.level,
@@ -207,6 +227,9 @@ test('playtest session', async ({ page }) => {
   // Print summary
   console.log(`\n🎮 Playtest Results (${durationActual}s):`);
   console.log(`   FPS: min=${fps.min} avg=${fps.avg} p95=${fps.p95}`);
+  console.log(
+    `   Frame work (ms): avg=${frameMs.avg} p50=${frameMs.p50} p95=${frameMs.p95}`
+  );
   console.log(`   Peak enemies: ${peakEnemies}`);
   console.log(
     `   Final: Level ${lastSample.level} | Score ${lastSample.score} | Health ${lastSample.playerHealth}`

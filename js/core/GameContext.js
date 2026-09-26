@@ -1,22 +1,3 @@
-const WINDOW_CONTEXT_KEYS = [
-  'player',
-  'enemies',
-  'playerBullets',
-  'enemyBullets',
-  'activeBombs',
-  'audio',
-  'gameState',
-  'cameraSystem',
-  'collisionSystem',
-  'spawnSystem',
-  'explosionManager',
-  'floatingText',
-  'beatClock',
-  'rhythmFX',
-  'visualEffectsManager',
-  'hitStopFrames',
-];
-
 export class GameContext {
   constructor(initial = {}) {
     this.state = { ...initial };
@@ -38,13 +19,4 @@ export class GameContext {
   toObject() {
     return { ...this.state };
   }
-}
-
-export function createWindowBackedContext(baseContext = new GameContext()) {
-  for (const key of WINDOW_CONTEXT_KEYS) {
-    if (window[key] !== undefined && baseContext.get(key) === undefined) {
-      baseContext.set(key, window[key]);
-    }
-  }
-  return baseContext;
 }

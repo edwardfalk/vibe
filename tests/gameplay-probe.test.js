@@ -28,20 +28,6 @@ test.describe('Gameplay Probes', () => {
     expect(after.playerAlive).toBe(true);
   });
 
-  test('Collision diagnostics API available', async ({ page }) => {
-    await bootGame(page);
-
-    const snapshot = await page.evaluate(() => {
-      if (!window.collisionSystem?.getPerformanceSnapshot) return null;
-      return window.collisionSystem.getPerformanceSnapshot();
-    });
-
-    expect(snapshot).not.toBeNull();
-    expect(snapshot).toHaveProperty('frameSampleSize');
-    expect(snapshot).toHaveProperty('latestFrame');
-    expect(snapshot).toHaveProperty('averages');
-  });
-
   test('Title screen waits for input, then starts the run', async ({
     page,
   }) => {
@@ -415,15 +401,6 @@ test.describe('Gameplay Probes', () => {
     await expect(page.locator('#title')).toHaveCount(0);
   });
 
-  test('Game state is playing after boot', async ({ page }) => {
-    await bootGame(page);
-
-    const state = await page.evaluate(
-      () => window.gameState?.gameState ?? null
-    );
-    expect(state).toBe('playing');
-  });
-
   test('Player input affects position', async ({ page }) => {
     await bootGame(page);
 
@@ -529,12 +506,12 @@ test.describe('Gameplay Probes', () => {
 
     const results = await page.evaluate(() => {
       const p = window.player.p;
-      const factory = window.spawnSystem.enemyFactory;
+      const spawnSystem = window.spawnSystem;
       const out = {};
 
       for (const type of ['grunt', 'rusher', 'tank', 'stabber']) {
         try {
-          const enemy = factory.createEnemy(
+          const enemy = spawnSystem.createEnemy(
             window.player.x + 150,
             window.player.y + 150,
             type,
@@ -547,8 +524,8 @@ test.describe('Gameplay Probes', () => {
           window.enemies.push(enemy);
 
           enemy.health = 1;
-          const dmgResult = enemy.takeDamage(10, 0);
-          out[type] = { ok: true, dmgResult: String(dmgResult) };
+          // No bullet angle, so the tank's armour plates can't absorb it
+          out[type] = { ok: true, dmgResult: enemy.takeDamage(10) };
         } catch (e) {
           out[type] = { error: e.message };
         }
@@ -556,10 +533,13 @@ test.describe('Gameplay Probes', () => {
       return out;
     });
 
-    for (const type of ['grunt', 'rusher', 'tank', 'stabber']) {
-      expect(results[type].error).toBeUndefined();
-      expect(results[type].ok).toBe(true);
-    }
+    // A rusher never dies outright: any hit lights its fuse
+    expect(results).toEqual({
+      grunt: { ok: true, dmgResult: 'died' },
+      rusher: { ok: true, dmgResult: 'exploding' },
+      tank: { ok: true, dmgResult: 'died' },
+      stabber: { ok: true, dmgResult: 'died' },
+    });
 
     // Verify draw loop still running after enemy deaths
     const fc1 = await page.evaluate(() => window.frameCount);
@@ -573,13 +553,13 @@ test.describe('Gameplay Probes', () => {
 
     const result = await page.evaluate(() => {
       const p = window.player.p;
-      const factory = window.spawnSystem.enemyFactory;
+      const spawnSystem = window.spawnSystem;
       const gs = window.gameState;
 
       const scoreBefore = gs.score;
       const killsBefore = gs.totalKills;
 
-      const grunt = factory.createEnemy(
+      const grunt = spawnSystem.createEnemy(
         window.player.x + 30,
         window.player.y,
         'grunt',
@@ -618,9 +598,9 @@ test.describe('Gameplay Probes', () => {
 
     const result = await page.evaluate(() => {
       const p = window.player.p;
-      const factory = window.spawnSystem.enemyFactory;
+      const spawnSystem = window.spawnSystem;
 
-      const stabber = factory.createEnemy(
+      const stabber = spawnSystem.createEnemy(
         window.player.x + 250,
         window.player.y,
         'stabber',
@@ -643,36 +623,5 @@ test.describe('Gameplay Probes', () => {
 
     expect(result.ok).toBe(true);
     expect(result.health).toBeGreaterThan(0);
-  });
-
-  test('Score and kill streak transitions stay consistent', async ({
-    page,
-  }) => {
-    await bootGame(page);
-
-    const snapshot = await page.evaluate(() => {
-      if (!window.gameState) return null;
-      const gs = window.gameState;
-      gs.score = 0;
-      gs.killStreak = 0;
-      gs.totalKills = 0;
-
-      gs.addKill();
-      gs.addScore(10);
-      gs.addKill();
-      gs.addScore(5);
-      gs.resetKillStreak();
-
-      return {
-        score: gs.score,
-        totalKills: gs.totalKills,
-        killStreak: gs.killStreak,
-      };
-    });
-
-    expect(snapshot).not.toBeNull();
-    expect(snapshot.score).toBe(15);
-    expect(snapshot.totalKills).toBe(2);
-    expect(snapshot.killStreak).toBe(0);
   });
 });

@@ -3,18 +3,6 @@
  */
 
 import { Bullet } from '../entities/bullet.js';
-import { EnemyDeathHandler } from './combat/EnemyDeathHandler.js';
-import {
-  beginMetricsFrame,
-  buildPerformanceSnapshot,
-  createEmptyFrameMetrics,
-  createEmptyRollingMetrics,
-  finalizeMetricsFrame,
-} from './collision/CollisionMetrics.js';
-import {
-  buildEnemySpatialGrid,
-  queryNearbyEnemyIndices,
-} from './collision/CollisionSpatialGrid.js';
 import {
   handleContactCollisions,
   handleRusherExplosionCollision,
@@ -36,81 +24,45 @@ function compactArray(arr) {
 }
 
 export class CollisionSystem {
-  constructor(context = null) {
-    // Collision detection settings
-    this.friendlyFireEnabled = true;
-    this.frameMetrics = createEmptyFrameMetrics();
-    this.rollingMetrics = createEmptyRollingMetrics();
+  constructor(context, enemyDeathHandler) {
     this.context = context;
     this.getContextValue = createContextAccessor(() => this.context);
-    this.enemyDeathHandler = new EnemyDeathHandler(context || window);
-  }
-
-  setContext(context) {
-    this.context = context;
-    this.enemyDeathHandler.setContext(context || window);
-  }
-
-  _resolverDeps() {
-    return {
+    this.enemyDeathHandler = enemyDeathHandler;
+    this.resolverDeps = {
       getContextValue: this.getContextValue,
       handleEnemyDeath: (e, type, x, y) => this.handleEnemyDeath(e, type, x, y),
-      context: this.context,
+      getContext: () => this.context,
     };
   }
 
   // Main collision detection function
   checkBulletCollisions() {
-    this.beginCollisionMetricsFrame();
-    const enemies = this.getContextValue('enemies');
-    const enemySpatialGrid = buildEnemySpatialGrid(enemies);
-    this.checkPlayerBulletsVsEnemies(enemySpatialGrid);
+    this.checkPlayerBulletsVsEnemies();
     this.checkEnemyBulletsVsPlayer();
-    this.checkEnemyBulletsVsEnemies(enemySpatialGrid);
+    this.checkEnemyBulletsVsEnemies();
 
-    // Compact bullet arrays after all collision checks (mark-and-compact)
+    // Compact bullet arrays after all collision checks (mark-and-compact).
+    // A hit releases its bullet to the pool but leaves it in the array until
+    // here, so nothing may acquire a bullet between the first Bullet.release
+    // this frame and this compaction: reset() would clear _remove and the
+    // array would keep a live duplicate.
     const playerBullets = this.getContextValue('playerBullets');
     const enemyBullets = this.getContextValue('enemyBullets');
     if (playerBullets) compactArray(playerBullets);
     if (enemyBullets) compactArray(enemyBullets);
-
-    this.finalizeCollisionMetricsFrame();
-  }
-
-  beginCollisionMetricsFrame() {
-    const enemies = this.getContextValue('enemies');
-    const playerBullets = this.getContextValue('playerBullets');
-    const enemyBullets = this.getContextValue('enemyBullets');
-    this.frameMetrics = beginMetricsFrame({
-      enemiesLength: enemies?.length || 0,
-      playerBulletsLength: playerBullets?.length || 0,
-      enemyBulletsLength: enemyBullets?.length || 0,
-    });
-  }
-
-  finalizeCollisionMetricsFrame() {
-    finalizeMetricsFrame(this.rollingMetrics, this.frameMetrics);
-  }
-
-  getPerformanceSnapshot() {
-    return buildPerformanceSnapshot(this.rollingMetrics, this.frameMetrics);
   }
 
   checkContactCollisions() {
-    const playerDied = handleContactCollisions({
+    handleContactCollisions({
       player: this.getContextValue('player'),
       enemies: this.getContextValue('enemies'),
       audio: this.getContextValue('audio'),
-      gameState: this.getContextValue('gameState'),
       activeBombs: this.getContextValue('activeBombs'),
     });
-    if (playerDied) {
-      return;
-    }
   }
 
   // Player bullets vs enemies
-  checkPlayerBulletsVsEnemies(enemySpatialGrid = null) {
+  checkPlayerBulletsVsEnemies() {
     const playerBullets = this.getContextValue('playerBullets');
     const enemies = this.getContextValue('enemies');
     if (!playerBullets || !enemies) return;
@@ -118,24 +70,9 @@ export class CollisionSystem {
     for (let i = playerBullets.length - 1; i >= 0; i--) {
       const bullet = playerBullets[i];
       if (bullet._remove) continue;
-      const candidateEnemyIndices = enemySpatialGrid
-        ? queryNearbyEnemyIndices(enemySpatialGrid, bullet)
-        : (() => {
-            const indices = [];
-            for (let idx = enemies.length - 1; idx >= 0; idx--)
-              indices.push(idx);
-            return indices;
-          })();
-      this.frameMetrics.playerBulletCandidates += candidateEnemyIndices.length;
 
-      for (let k = 0; k < candidateEnemyIndices.length; k++) {
-        const j = candidateEnemyIndices[k];
-        const enemy = enemies[j];
-        if (!enemy) continue;
-
-        this.frameMetrics.playerBulletChecks++;
-        if (this.resolveBulletEnemyHit(bullet, i, enemy)) {
-          this.frameMetrics.playerBulletHits++;
+      for (let j = 0; j < enemies.length; j++) {
+        if (this.resolveBulletEnemyHit(bullet, i, enemies[j])) {
           break;
         }
       }
@@ -143,14 +80,13 @@ export class CollisionSystem {
   }
 
   resolveBulletEnemyHit(bullet, bulletIndex, enemy) {
-    return resolveBulletEnemyHit(bullet, enemy, this._resolverDeps());
+    return resolveBulletEnemyHit(bullet, enemy, this.resolverDeps);
   }
 
   // Enemy bullets vs player
   checkEnemyBulletsVsPlayer() {
     const enemyBullets = this.getContextValue('enemyBullets');
     const player = this.getContextValue('player');
-    const gameState = this.getContextValue('gameState');
     if (!enemyBullets || !player) return;
 
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
@@ -159,16 +95,7 @@ export class CollisionSystem {
 
       // Check player collision
       if (bullet.checkCollision(player)) {
-        if (
-          player.takeDamage(
-            bullet.damage,
-            `${bullet.owner || bullet.type}-bullet`
-          )
-        ) {
-          if (gameState) {
-            gameState.setGameState('gameOver');
-          }
-        }
+        player.hurt(bullet.damage, `${bullet.owner}-bullet`);
         Bullet.release(bullet);
         bullet._remove = true;
         break; // Exit loop since bullet hit player
@@ -177,37 +104,23 @@ export class CollisionSystem {
   }
 
   // Enemy bullets vs enemies (friendly fire)
-  checkEnemyBulletsVsEnemies(enemySpatialGrid = null) {
+  checkEnemyBulletsVsEnemies() {
     const enemyBullets = this.getContextValue('enemyBullets');
     const enemies = this.getContextValue('enemies');
-    if (!this.friendlyFireEnabled || !enemyBullets || !enemies) return;
+    if (!enemyBullets || !enemies) return;
 
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const bullet = enemyBullets[i];
       if (bullet._remove) continue;
-      const candidateEnemyIndices = enemySpatialGrid
-        ? queryNearbyEnemyIndices(enemySpatialGrid, bullet)
-        : (() => {
-            const indices = [];
-            for (let idx = enemies.length - 1; idx >= 0; idx--)
-              indices.push(idx);
-            return indices;
-          })();
-      this.frameMetrics.enemyBulletCandidates += candidateEnemyIndices.length;
 
-      for (let k = 0; k < candidateEnemyIndices.length; k++) {
-        const j = candidateEnemyIndices[k];
+      for (let j = 0; j < enemies.length; j++) {
         const enemy = enemies[j];
-        if (!enemy) continue;
         if (bullet.ownerId === enemy.id) continue;
 
         // Check if bullet hits enemy (but not the one that fired it)
-        this.frameMetrics.enemyBulletChecks++;
         if (bullet.checkCollision(enemy)) {
-          this.frameMetrics.enemyBulletHits++;
-
           // Handle different bullet types
-          if (bullet.type === 'tankEnergy' || bullet.owner === 'enemy-tank') {
+          if (bullet.owner === 'enemy-tank') {
             this.handleTankEnergyBallHit(bullet, enemy);
           } else {
             this.handleRegularEnemyBulletHit(bullet, enemy);
@@ -219,11 +132,11 @@ export class CollisionSystem {
   }
 
   handleTankEnergyBallHit(bullet, enemy) {
-    handleTankEnergyBallHit(bullet, enemy, this._resolverDeps());
+    handleTankEnergyBallHit(bullet, enemy, this.resolverDeps);
   }
 
   handleRegularEnemyBulletHit(bullet, enemy) {
-    handleRegularEnemyBulletHit(bullet, enemy, this._resolverDeps());
+    handleRegularEnemyBulletHit(bullet, enemy, this.resolverDeps);
   }
 
   // Handle enemy death effects
@@ -238,7 +151,6 @@ export class CollisionSystem {
       rusherEnemy,
       player: this.getContextValue('player'),
       audio: this.getContextValue('audio'),
-      gameState: this.getContextValue('gameState'),
       cameraSystem: this.getContextValue('cameraSystem'),
       explosionManager: this.getContextValue('explosionManager'),
     });

@@ -9,7 +9,7 @@
  */
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
-import { random, randomRange, floor } from './mathUtils.js';
+import { random, floor } from './mathUtils.js';
 import { createContextAccessor } from './shared/ContextAccessor.js';
 import { drawGlow } from './effects/glowUtils.js';
 import {
@@ -29,12 +29,8 @@ import {
   isConfusedText as isConfusedTextHelper,
 } from './audio/TextSemantics.js';
 import { CONFIG, VOICE_CONFIG } from './config.js';
-import {
-  SOUND_CONFIG,
-  SOUND_METHOD_TO_KEY,
-  TONE_ATTACK_SEC,
-} from './audio/SoundConfig.js';
-import { SPEECH_WRAPPER_CONFIG } from './audio/SpeechWrappers.js';
+import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
+import { getPlayerDialogueLine } from './audio/DialogueLines.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
 const DUCK_ATTACK_SEC = 0.05;
@@ -58,12 +54,9 @@ export class Audio {
     // Effects nodes
     this.effects = {
       reverb: null,
-      distortion: null,
     };
-
-    // Distortion curve cache
-    this.distortionCurves = new Map();
-    this.maxCurveCache = 32; // Limit cache size to 32 entries
+    // Waveshaper curve for the ambient sounds' wet path (made in createEffects)
+    this.ambientDistortionCurve = null;
 
     // Speech
     this.speechSynthesis = window.speechSynthesis;
@@ -80,39 +73,9 @@ export class Audio {
 
     this.sounds = { ...SOUND_CONFIG };
     this.voiceConfig = { ...VOICE_CONFIG };
-
-    this.bindConvenienceSoundMethods();
-    this.bindConvenienceSpeechMethods();
-  }
-
-  setContext(context) {
-    this.context = context;
   }
 
   getContextValue = createContextAccessor(() => this.context);
-
-  bindConvenienceSoundMethods() {
-    for (const [methodName, soundKey] of Object.entries(SOUND_METHOD_TO_KEY)) {
-      this[methodName] = (...args) => this.playSound(soundKey, ...args);
-    }
-  }
-
-  bindConvenienceSpeechMethods() {
-    for (const [methodName, { getLine, voiceType }] of Object.entries(
-      SPEECH_WRAPPER_CONFIG
-    )) {
-      this[methodName] = (entity, lineContext) => {
-        let text;
-        try {
-          text = getLine(entity, lineContext);
-        } catch (err) {
-          console.warn('⚠️ Speech getLine error:', err);
-          text = null;
-        }
-        if (text) this.speak(entity, text, voiceType);
-      };
-    }
-  }
 
   // ========================================================================
   // INITIALIZATION - CENTRALIZED AUDIO CONTEXT MANAGEMENT
@@ -174,6 +137,12 @@ export class Audio {
       console.error('❌ Audio initialization failed:', error);
       this.enabled = false;
     }
+
+    // After the beat track's start(): its first (synchronous) scheduler pass
+    // stays silent, and the kick starts on the grid restart() sets next
+    if (this.audioContext) {
+      this.getContextValue('beatClock')?.useAudioClock(this.audioContext);
+    }
   }
 
   // CENTRALIZED audio context resume - used by both sound and speech
@@ -198,11 +167,11 @@ export class Audio {
     this.effects.reverb = this.audioContext.createConvolver();
     this.effects.reverb.buffer = this.createReverbImpulse(3.5, 0.5); // Longer, more atmospheric reverb
 
-    // Simple distortion
-    this.effects.distortion = this.audioContext.createWaveShaper();
-    // Reuse cached curve for identical amount / sample-rate pairs
-    this.effects.distortion.curve = this.createOrGetCurve(30);
-    this.effects.distortion.oversample = '2x';
+    // One curve shared by every ambient sound's light distortion
+    this.ambientDistortionCurve = this.createDistortionCurve(
+      5,
+      this.audioContext.sampleRate
+    );
   }
 
   createReverbImpulse(duration, decay) {
@@ -230,25 +199,6 @@ export class Audio {
       curve[i] =
         ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
     }
-    return curve;
-  }
-
-  // Distortion curve cache helper with proper FIFO eviction and duplicate check
-  createOrGetCurve(amount) {
-    const sampleRate = this.audioContext ? this.audioContext.sampleRate : 44100;
-    const key = `${amount}_${sampleRate}`;
-    // If the key already exists, return it immediately (no reinsertion)
-    if (this.distortionCurves.has(key)) {
-      return this.distortionCurves.get(key);
-    }
-    // If adding a new key and the cache is full, evict the oldest
-    if (this.distortionCurves.size >= this.maxCurveCache) {
-      const oldestKey = this.distortionCurves.keys().next().value;
-      this.distortionCurves.delete(oldestKey);
-    }
-    // Add the new curve
-    const curve = this.createDistortionCurve(amount, sampleRate);
-    this.distortionCurves.set(key, curve);
     return curve;
   }
 
@@ -434,7 +384,7 @@ export class Audio {
 
       // A light otherworldly distortion
       distortionNode = this.audioContext.createWaveShaper();
-      distortionNode.curve = this.createOrGetCurve(5);
+      distortionNode.curve = this.ambientDistortionCurve;
       distortionNode.oversample = '2x';
 
       // Wet path: pan -> lowpass -> distortion -> reverb -> master
@@ -562,13 +512,7 @@ export class Audio {
     }
 
     // Apply dynamic voice effects based on content
-    applyVoiceEffectsHelper(
-      utterance,
-      voiceType,
-      text,
-      this.voiceConfig,
-      randomRange
-    );
+    applyVoiceEffectsHelper(utterance, voiceType, text, this.voiceConfig);
 
     // Show the text for as long as the line takes to say
     const estimatedDuration = this.calculateSpeechDuration(
@@ -586,6 +530,15 @@ export class Audio {
     }
 
     return true; // Successfully started speech
+  }
+
+  // A random player line for `lineContext` ('start', 'damage', 'lowHealth', 'death')
+  speakPlayerLine(entity, lineContext) {
+    this.speak(
+      entity,
+      getPlayerDialogueLine(lineContext, random, floor),
+      'player'
+    );
   }
 
   // Estimated time to say `text` at `rate`
@@ -641,11 +594,6 @@ export class Audio {
       drawGlow
     );
   }
-
-  // ========================================================================
-  // CONVENIENCE METHODS
-  // ========================================================================
-  // Speech methods bound via bindConvenienceSpeechMethods() from SPEECH_WRAPPER_CONFIG.
 
   // Control methods
   // Apply CONFIG.MIX levels (at init and from the ?tune sliders)

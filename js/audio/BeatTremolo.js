@@ -17,10 +17,6 @@ export function applyBeatTremolo(
     return;
 
   const bpm = beatClock.bpm;
-  if (!Number.isFinite(bpm) || bpm <= 0) {
-    console.warn('⚠️ BeatTremolo: invalid beatClock.bpm, using safe default');
-    return;
-  }
 
   const lfo = audioContext.createOscillator();
   const depth = audioContext.createGain();

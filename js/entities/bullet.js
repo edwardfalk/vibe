@@ -4,20 +4,11 @@ import { drawGlow } from '../effects/glowUtils.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
-// Defensive config access for world dimensions
-const DEFAULT_WORLD_WIDTH = 1920;
-const DEFAULT_WORLD_HEIGHT = 1080;
-
-const GAME_SETTINGS = CONFIG.GAME_SETTINGS;
-if (!GAME_SETTINGS) {
-  console.warn(
-    '[Bullet] CONFIG.GAME_SETTINGS missing! Using default world size.'
-  );
-}
-
-const WORLD_WIDTH = GAME_SETTINGS?.WORLD_WIDTH ?? DEFAULT_WORLD_WIDTH;
-const WORLD_HEIGHT = GAME_SETTINGS?.WORLD_HEIGHT ?? DEFAULT_WORLD_HEIGHT;
+const { WORLD_WIDTH, WORLD_HEIGHT } = CONFIG.GAME_SETTINGS;
 const MAX_BULLET_POOL_SIZE = 400;
+const PLAYER_GLOW = [255, 255, 100];
+const TANK_GLOW = [150, 100, 255];
+const ENEMY_GLOW = [255, 100, 255];
 
 export class Bullet {
   constructor(x, y, angle, speed, owner) {
@@ -33,50 +24,25 @@ export class Bullet {
 
   /** Returns a bullet from pool or creates new; never returns null. Callers should still guard for null for defensive robustness. */
   static acquire(x, y, angle, speed, owner) {
-    Bullet.poolStats.acquired++;
     let bullet;
     if (Bullet.pool.length > 0) {
       bullet = Bullet.pool.pop();
       bullet._inPool = false;
       bullet.reset(x, y, angle, speed, owner);
-      Bullet.poolStats.reused++;
     } else {
       bullet = new Bullet(x, y, angle, speed, owner);
-      Bullet.poolStats.created++;
     }
-    Bullet.poolStats.inUse++;
-    Bullet.poolStats.peakInUse = Math.max(
-      Bullet.poolStats.peakInUse,
-      Bullet.poolStats.inUse
-    );
     return bullet;
   }
 
   static release(bullet) {
     if (!bullet || bullet._inPool) return;
-    if (Bullet.pool.length >= MAX_BULLET_POOL_SIZE) {
-      Bullet.poolStats.inUse = Math.max(0, Bullet.poolStats.inUse - 1);
-      return;
-    }
+    if (Bullet.pool.length >= MAX_BULLET_POOL_SIZE) return;
     bullet._inPool = true;
     bullet.active = false;
     bullet._trailHead = 0;
     bullet._trailCount = 0;
     Bullet.pool.push(bullet);
-    Bullet.poolStats.released++;
-    Bullet.poolStats.inUse = Math.max(0, Bullet.poolStats.inUse - 1);
-    Bullet.poolStats.peakPoolSize = Math.max(
-      Bullet.poolStats.peakPoolSize,
-      Bullet.pool.length
-    );
-  }
-
-  static getPoolStats() {
-    return {
-      ...Bullet.poolStats,
-      poolSize: Bullet.pool.length,
-      maxPoolSize: MAX_BULLET_POOL_SIZE,
-    };
   }
 
   reset(x, y, angle, speed, owner) {
@@ -88,9 +54,7 @@ export class Bullet {
     this.speed = speed;
     this.owner = owner; // 'player' or 'enemy'
     this.ownerId = undefined;
-    this.type = undefined;
     this.energy = undefined;
-    this.penetrating = false;
     this._inPool = false;
     this._remove = false; // a hit marks it; a recycled bullet starts clean
 
@@ -103,14 +67,10 @@ export class Bullet {
     if (owner === 'player') {
       this.size = 8;
       this.damage = 1;
-    } else if (owner === 'enemy-rusher') {
-      this.size = 5;
-      this.damage = 1;
     } else if (owner === 'enemy-tank') {
       this.size = 26;
       this.damage = 50;
       this.energy = 100;
-      this.penetrating = true;
     } else {
       this.size = 6;
       this.damage = 1;
@@ -146,7 +106,7 @@ export class Bullet {
 
     try {
       if (this.owner === 'player') {
-        drawGlow(p, this.x, this.y, this.size * 2, p.color(255, 255, 100), 0.8);
+        drawGlow(p, this.x, this.y, this.size * 2, PLAYER_GLOW, 0.8);
       } else if (this.owner === 'enemy-tank') {
         const energyPercent = Number.isFinite(this.energy)
           ? Math.min(1, Math.max(0, this.energy / 100))
@@ -156,18 +116,11 @@ export class Bullet {
           this.x,
           this.y,
           this.size * 3 * energyPercent,
-          p.color(150, 100, 255),
+          TANK_GLOW,
           1.2
         );
       } else {
-        drawGlow(
-          p,
-          this.x,
-          this.y,
-          this.size * 1.5,
-          p.color(255, 100, 255),
-          0.5
-        );
+        drawGlow(p, this.x, this.y, this.size * 1.5, ENEMY_GLOW, 0.5);
       }
     } catch (error) {
       console.warn('⚠️ Bullet glow error:', error);
@@ -193,19 +146,6 @@ export class Bullet {
       p.stroke(255, 255, 255);
       p.strokeWeight(this.size * 0.4);
       p.line(-this.size * 0.5, 0, this.size * 0.5, 0);
-    } else if (this.owner === 'enemy-rusher') {
-      // Rusher bullet - hot pink shard
-      p.fill(255, 255, 255);
-      p.stroke(255, 20, 147, 200);
-      p.strokeWeight(this.size * 0.8);
-      p.triangle(
-        this.size,
-        0,
-        -this.size,
-        -this.size * 0.5,
-        -this.size,
-        this.size * 0.5
-      );
     } else if (this.owner === 'enemy-tank') {
       // Tank bullet - massive vibrating neon purple hexagon
       const energyPercent = Number.isFinite(this.energy)
@@ -275,8 +215,6 @@ export class Bullet {
 
       if (this.owner === 'player') {
         p.fill(255, 255, 100, alpha);
-      } else if (this.owner === 'enemy-rusher') {
-        p.fill(255, 150, 200, alpha);
       } else if (this.owner === 'enemy-tank') {
         p.fill(150, 100, 255, alpha);
       } else {
@@ -341,12 +279,3 @@ export class Bullet {
 }
 
 Bullet.pool = [];
-Bullet.poolStats = {
-  acquired: 0,
-  released: 0,
-  created: 0,
-  reused: 0,
-  inUse: 0,
-  peakInUse: 0,
-  peakPoolSize: 0,
-};

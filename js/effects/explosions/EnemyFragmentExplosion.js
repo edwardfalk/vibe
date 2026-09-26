@@ -4,58 +4,6 @@
  */
 
 import { random, TWO_PI, cos, sin } from '../../mathUtils.js';
-import { ObjectPool } from '../../shared/ObjectPool.js';
-
-const fragmentPool = new ObjectPool(600);
-const centralParticlePool = new ObjectPool(600);
-const poolStats = {
-  fragmentAcquired: 0,
-  fragmentReleased: 0,
-  centralAcquired: 0,
-  centralReleased: 0,
-  peakFragmentPoolSize: 0,
-  peakCentralPoolSize: 0,
-};
-
-function acquireFragment() {
-  poolStats.fragmentAcquired++;
-  return fragmentPool.acquire();
-}
-
-function releaseFragment(fragment) {
-  if (!fragment) return;
-  fragmentPool.release(fragment);
-  poolStats.fragmentReleased++;
-  poolStats.peakFragmentPoolSize = Math.max(
-    poolStats.peakFragmentPoolSize,
-    fragmentPool.size
-  );
-}
-
-function acquireCentralParticle() {
-  poolStats.centralAcquired++;
-  return centralParticlePool.acquire();
-}
-
-function releaseCentralParticle(particle) {
-  if (!particle) return;
-  centralParticlePool.release(particle);
-  poolStats.centralReleased++;
-  poolStats.peakCentralPoolSize = Math.max(
-    poolStats.peakCentralPoolSize,
-    centralParticlePool.size
-  );
-}
-
-export function getFragmentPoolStats() {
-  return {
-    ...poolStats,
-    fragmentPoolSize: fragmentPool.size,
-    centralPoolSize: centralParticlePool.size,
-    maxFragmentPoolSize: fragmentPool.maxSize,
-    maxCentralPoolSize: centralParticlePool.maxSize,
-  };
-}
 
 export class EnemyFragmentExplosion {
   constructor(x, y, enemy) {
@@ -106,7 +54,7 @@ export class EnemyFragmentExplosion {
         fragmentType = 'weapon';
       }
 
-      const fragment = acquireFragment();
+      const fragment = {};
       fragment.x = this.x + random(-size * 0.3, size * 0.3);
       fragment.y = this.y + random(-size * 0.3, size * 0.3);
       fragment.vx = cos(angle) * speed;
@@ -147,7 +95,7 @@ export class EnemyFragmentExplosion {
       const angle = (i / particleCount) * TWO_PI + random(-0.3, 0.3);
       const speed = random(3, 10);
 
-      const particle = acquireCentralParticle();
+      const particle = {};
       particle.x = this.x;
       particle.y = this.y;
       particle.vx = cos(angle) * speed;
@@ -177,7 +125,6 @@ export class EnemyFragmentExplosion {
 
       if (fragment.life <= 0) {
         const lastIndex = this.fragments.length - 1;
-        releaseFragment(fragment);
         if (i !== lastIndex) this.fragments[i] = this.fragments[lastIndex];
         this.fragments.pop();
       }
@@ -194,7 +141,6 @@ export class EnemyFragmentExplosion {
 
       if (particle.life <= 0) {
         const lastIndex = this.centralExplosion.particles.length - 1;
-        releaseCentralParticle(particle);
         if (i !== lastIndex) {
           this.centralExplosion.particles[i] =
             this.centralExplosion.particles[lastIndex];
@@ -217,8 +163,7 @@ export class EnemyFragmentExplosion {
 
     for (const particle of this.centralExplosion.particles) {
       const alpha = p.map(particle.life, 0, particle.maxLife, 0, 255);
-      p.push();
-      p.translate(particle.x, particle.y);
+      const { x, y } = particle;
       if (particle.glow > 0) {
         p.fill(
           particle.color[0],
@@ -227,14 +172,13 @@ export class EnemyFragmentExplosion {
           alpha * particle.glow * 0.3
         );
         p.noStroke();
-        p.ellipse(0, 0, particle.size * 3);
+        p.ellipse(x, y, particle.size * 3);
       }
       p.fill(particle.color[0], particle.color[1], particle.color[2], alpha);
       p.noStroke();
-      p.ellipse(0, 0, particle.size);
+      p.ellipse(x, y, particle.size);
       p.fill(255, 255, 255, alpha * 0.6);
-      p.ellipse(0, 0, particle.size * 0.4);
-      p.pop();
+      p.ellipse(x, y, particle.size * 0.4);
     }
 
     for (const fragment of this.fragments) {

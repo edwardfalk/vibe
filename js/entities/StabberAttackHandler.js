@@ -19,7 +19,6 @@ export function updateStabberBehavior(stabber, playerX, playerY, deltaTimeMs) {
 
   const clampedDeltaMs = Math.min(deltaTimeMs, MAX_DELTA_MS);
   const dt = clampedDeltaMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
-  if (stabber.stabCooldown > 0) stabber.stabCooldown -= dt;
 
   // Beat-gated stabber chant (replaces frame-based stabChantTimer)
   const beatClock = stabber.getContextValue('beatClock');
@@ -92,7 +91,6 @@ function handleRecoveryPhase(stabber, dt) {
     if (!beatClock || beatClock.canStabberAttack()) {
       stabber.stabRecovering = false;
       stabber.stabRecoveryTime = 0;
-      stabber.stabCooldown = 0;
     }
   }
   return null;
@@ -100,18 +98,6 @@ function handleRecoveryPhase(stabber, dt) {
 
 function handleStabbingPhase(stabber, playerX, playerY, dt) {
   stabber.stabAnimationTime += dt;
-
-  if (stabber.stabDirection === null) {
-    stabber.velocity.x = 0;
-    stabber.velocity.y = 0;
-    stabber.isStabbing = false;
-    stabber.stabAnimationTime = 0;
-    stabber.stabRecovering = true;
-    stabber.stabRecoveryTime = 0;
-    stabber.stabCooldown = 120;
-    stabber.stabDirection = null;
-    return null;
-  }
 
   stabber.velocity.x = cos(stabber.stabDirection) * stabber.speed * 7.0;
   stabber.velocity.y = sin(stabber.stabDirection) * stabber.speed * 7.0;
@@ -123,24 +109,15 @@ function handleStabbingPhase(stabber, playerX, playerY, dt) {
       (hitResult.playerHit ||
         (hitResult.enemiesHit && hitResult.enemiesHit.length > 0))
     ) {
-      stabber.isStabbing = false;
-      stabber.stabAnimationTime = 0;
-      stabber.stabRecovering = true;
-      stabber.stabRecoveryTime = 0;
-      stabber.stabCooldown = 180;
+      stabber.enterRecovery();
       stabber.stabDirection = null;
       return hitResult;
     }
   }
 
   if (stabber.stabAnimationTime >= stabber.maxStabAnimationTime) {
-    stabber.isStabbing = false;
-    stabber.stabAnimationTime = 0;
-    stabber.stabRecovering = true;
-    stabber.stabRecoveryTime = 0;
-    stabber.stabCooldown = 120;
+    stabber.enterRecovery();
     stabber.stabDirection = null;
-    return null;
   }
   return null;
 }
@@ -239,7 +216,7 @@ function handleNormalMovement(stabber, dx, dy, distance) {
   stabber.velocity.x = 0;
   stabber.velocity.y = 0;
 
-  if (distance <= 0 || stabber.stabCooldown > 0) return null;
+  if (distance <= 0) return null;
 
   const unitX = dx / distance;
   const unitY = dy / distance;
@@ -286,26 +263,13 @@ function handleNormalMovement(stabber, dx, dy, distance) {
   return null;
 }
 
-/** Check if stab hit player or other enemies during dash. */
+/** Check if the knife tip, mid-dash, hits the player or other enemies. */
 function checkStabHit(stabber, playerX, playerY) {
   const audioHit = stabber.getContextValue('audio');
   const enemies = stabber.getContextValue('enemies') ?? [];
 
-  if (stabber.stabDirection == null) {
-    return {
-      type: 'stabber-miss',
-      reason: 'no_stab_direction',
-      playerHit: false,
-      enemiesHit: [],
-    };
-  }
-
   const s = stabber.size;
-  const extensionFactor =
-    stabber.stabPreparing || stabber.stabWarning || stabber.isStabbing
-      ? 2.0
-      : 1.0;
-  const knifeLength = s * 0.6 * extensionFactor;
+  const knifeLength = s * 0.6 * 2.0; // extended while dashing
   const tipOffset = 4;
   const tipX =
     stabber.x +
@@ -334,46 +298,30 @@ function checkStabHit(stabber, playerX, playerY) {
     result.type = 'stabber-melee';
     result.playerHit = true;
     result.damage = 25;
-    result.reach = stabReach;
-    result.stabAngle = stabber.stabDirection;
-    result.hitType = 'player';
     if (audioHit) {
       audioHit.playSound('stabberKnifeHit', tipX, tipY);
     }
   }
 
-  if (enemies) {
-    for (let i = 0; i < enemies.length; i++) {
-      const enemy = enemies[i];
-      if (enemy === stabber) continue;
-      const enemyDistance = sqrt((enemy.x - tipX) ** 2 + (enemy.y - tipY) ** 2);
-      if (enemyDistance <= stabReach) {
-        const enemyAngle = atan2(enemy.y - stabber.y, enemy.x - stabber.x);
-        const enemyDiff = normalizeAngle(stabber.stabDirection - enemyAngle);
-        const enemyAngleDifference = Math.abs(enemyDiff);
-        const enemyInStabDirection = enemyAngleDifference <= maxStabAngle;
-        if (enemyInStabDirection) {
-          result.enemiesHit.push({
-            enemy,
-            index: i,
-            damage: 25,
-            angle: stabber.stabDirection,
-          });
-        }
-      }
-    }
-    if (result.enemiesHit.length > 0) {
-      if (audioHit) {
-        audioHit.playSound('stabberKnifeHit', tipX, tipY);
+  for (const enemy of enemies) {
+    if (enemy === stabber) continue;
+    const enemyDistance = sqrt((enemy.x - tipX) ** 2 + (enemy.y - tipY) ** 2);
+    if (enemyDistance <= stabReach) {
+      const enemyAngle = atan2(enemy.y - stabber.y, enemy.x - stabber.x);
+      const enemyDiff = normalizeAngle(stabber.stabDirection - enemyAngle);
+      const enemyAngleDifference = Math.abs(enemyDiff);
+      const enemyInStabDirection = enemyAngleDifference <= maxStabAngle;
+      if (enemyInStabDirection) {
+        result.enemiesHit.push({
+          enemy,
+          damage: 25,
+          angle: stabber.stabDirection,
+        });
       }
     }
   }
-
-  if (result.type === 'stabber-miss') {
-    result.reason =
-      playerDistance > stabReach ? 'out_of_reach' : 'wrong_direction';
-    result.distance = playerDistance;
-    result.reach = stabReach;
+  if (result.enemiesHit.length > 0 && audioHit) {
+    audioHit.playSound('stabberKnifeHit', tipX, tipY);
   }
   return result;
 }

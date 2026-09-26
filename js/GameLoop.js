@@ -13,12 +13,8 @@ import { initializeInputHandlers } from './core/InputHandlers.js';
 import { createTunePanel } from './dev/TunePanel.js';
 import { updateBombs as updateBombSystem } from './systems/BombSystem.js';
 import { updateEnemiesAndResolveResults } from './systems/gameplay/EnemyUpdatePipeline.js';
-import { updateBullets } from './systems/gameplay/BulletUpdatePipeline.js';
-import { drawGameplayWorld } from './systems/gameplay/RenderPipeline.js';
-import { updatePerformanceDiagnostics } from './systems/gameplay/PerformanceDiagnostics.js';
 import { Bullet } from './entities/bullet.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
-import { CONFIG } from './config.js';
 import { runSetup } from './GameLoopSetup.js';
 import { runDraw } from './GameLoopDraw.js';
 
@@ -42,7 +38,6 @@ window.enemyBullets = enemyBullets;
 window.activeBombs = activeBombs;
 window.explosionManager = null;
 window.audio = null;
-window.performanceDiagnostics = null;
 
 // Input state, written by core/InputHandlers.js
 window.playerIsShooting = false;
@@ -50,54 +45,20 @@ window.arrowUpPressed = false;
 window.arrowDownPressed = false;
 window.arrowLeftPressed = false;
 window.arrowRightPressed = false;
-window.gruntFireBeat = -1;
 
 initializeInputHandlers();
 
-function syncRuntimeContext(
-  hitStopFramesOverride = null,
-  targetContext = null
-) {
-  const ctx = targetContext ?? gameContext;
-  if (!ctx) return;
-  const hitStopFrames = hitStopFramesOverride ?? ctx.get('hitStopFrames') ?? 0;
-
-  ctx.assign({
-    player: window.player,
-    enemies: window.enemies,
-    playerBullets: window.playerBullets,
-    enemyBullets: window.enemyBullets,
-    activeBombs: window.activeBombs,
-    audio: window.audio,
-    gameState: window.gameState,
-    cameraSystem: window.cameraSystem,
-    collisionSystem: window.collisionSystem,
-    spawnSystem: window.spawnSystem,
-    explosionManager: window.explosionManager,
-    floatingText: window.floatingText,
-    beatClock: window.beatClock,
-    rhythmFX: window.rhythmFX,
-    visualEffectsManager: window.visualEffectsManager,
-    hitStopFrames,
-  });
-}
-
 function setup(p) {
-  const state = runSetup(
-    p,
-    {
-      enemies,
-      playerBullets,
-      enemyBullets,
-      activeBombs,
-    },
-    (ctx) => syncRuntimeContext(window.hitStopFrames, ctx)
-  );
+  const state = runSetup(p, {
+    enemies,
+    playerBullets,
+    enemyBullets,
+    activeBombs,
+  });
   player = state.player;
   explosionManager = state.explosionManager;
   gameContext = state.gameContext;
   enemyDeathHandler = state.enemyDeathHandler;
-  syncRuntimeContext(window.hitStopFrames);
   window.gameState.showTitle();
   if (new URLSearchParams(location.search).has('tune')) createTunePanel();
 }
@@ -107,14 +68,11 @@ function draw(p) {
 }
 
 function updateGame(p) {
-  syncRuntimeContext();
-
   // Hitstop: freeze game updates for a few frames on impactful kills
-  const hitStopFrames = gameContext?.get?.('hitStopFrames') ?? 0;
+  const hitStopFrames = gameContext.get('hitStopFrames');
   if (hitStopFrames > 0) {
     const next = hitStopFrames - 1;
     gameContext.set('hitStopFrames', next);
-    window.hitStopFrames = next;
     // Still update floating text during hitstop so they don't freeze
     if (window.floatingText) window.floatingText.update();
 
@@ -164,17 +122,14 @@ function updateGame(p) {
         window.gameState.addShotFired();
       }
       if (window.audio) {
-        window.audio.playPlayerShoot(player.x, player.y);
+        window.audio.playSound('playerShoot', player.x, player.y);
       }
     }
   }
 
   // Update bullets
-  updateBullets({
-    playerBullets,
-    enemyBullets,
-    bulletClass: Bullet,
-  });
+  compactBullets(playerBullets);
+  compactBullets(enemyBullets);
 
   // Update bombs (split into dedicated BombSystem module)
   updateBombSystem({
@@ -226,21 +181,12 @@ function updateGame(p) {
     // Process area damage events from plasma clouds and radioactive debris
     if (damageEvents && damageEvents.length > 0) {
       handleAreaDamageEvents(damageEvents, {
-        player: gameContext ? gameContext.get('player') : window.player,
-        enemies: gameContext ? gameContext.get('enemies') : enemies,
-        audio: gameContext ? gameContext.get('audio') : window.audio,
-        gameState: gameContext
-          ? gameContext.get('gameState')
-          : window.gameState,
-        cameraSystem: gameContext
-          ? gameContext.get('cameraSystem')
-          : window.cameraSystem,
-        collisionSystem: gameContext
-          ? gameContext.get('collisionSystem')
-          : window.collisionSystem,
-        explosionManager: gameContext
-          ? gameContext.get('explosionManager')
-          : window.explosionManager,
+        player,
+        enemies,
+        audio: window.audio,
+        gameState: window.gameState,
+        cameraSystem: window.cameraSystem,
+        explosionManager,
         enemyDeathHandler,
       });
     }
@@ -255,30 +201,66 @@ function updateGame(p) {
   if (window.floatingText) {
     window.floatingText.update();
   }
+}
 
-  updatePerformanceDiagnostics({
-    frameCount: p.frameCount,
-    config: CONFIG,
-    collisionSystem: window.collisionSystem,
-    bulletClass: Bullet,
-    floatingText: window.floatingText,
-    explosionManager: window.explosionManager,
-  });
+// Single-pass compaction: O(n) instead of O(n²) from repeated splice
+function compactBullets(arr) {
+  let write = 0;
+  for (let read = 0; read < arr.length; read++) {
+    const bullet = arr[read];
+    bullet.update();
+
+    if (bullet.isOffScreen()) {
+      Bullet.release(bullet);
+    } else {
+      arr[write++] = bullet;
+    }
+  }
+  arr.length = write;
 }
 
 function drawGame(p) {
-  drawGameplayWorld({
-    p,
-    enemies,
-    player,
-    playerBullets,
-    enemyBullets,
-    explosionManager,
-    floatingText: window.floatingText,
-    audio: window.audio,
-    cameraSystem: window.cameraSystem,
-    visualEffectsManager: window.visualEffectsManager,
-  });
+  const cameraSystem = window.cameraSystem;
+  if (cameraSystem) {
+    cameraSystem.applyTransform();
+  }
+
+  for (const enemy of enemies) {
+    enemy.draw(p);
+  }
+
+  if (player) {
+    player.draw(p);
+  }
+
+  for (const bullet of playerBullets) {
+    bullet.draw(p);
+  }
+
+  for (const bullet of enemyBullets) {
+    bullet.draw(p);
+  }
+
+  if (explosionManager) {
+    explosionManager.draw(p);
+  }
+
+  if (window.floatingText) {
+    window.floatingText.draw(p);
+  }
+
+  if (window.audio) {
+    window.audio.drawTexts(p);
+  }
+
+  if (cameraSystem) {
+    cameraSystem.removeTransform();
+  }
+
+  // Screen-space effects applied after camera transform is removed
+  if (window.visualEffectsManager) {
+    window.visualEffectsManager.applyScreenEffects(p);
+  }
 }
 
 // --- p5.js instance mode initialization for ES module compatibility ---

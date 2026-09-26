@@ -30,7 +30,7 @@ function handleRusherExplosionResult(result, enemy, context, blasts) {
   }
 
   if (audio) {
-    audio.playExplosion(result.x, result.y);
+    audio.playSound('explosion', result.x, result.y);
   }
 
   if (cameraSystem) {
@@ -52,11 +52,7 @@ function handleStabberAttackResult(result, context) {
   } = context;
 
   if (result.type === 'stabber-melee' && result.playerHit && player) {
-    if (player.takeDamage(result.damage, 'stabber-melee')) {
-      if (gameState) {
-        gameState.setGameState('gameOver');
-      }
-    } else {
+    if (!player.hurt(result.damage, 'stabber-melee')) {
       const knockbackAngle = atan2(player.y - result.y, player.x - result.x);
       const knockbackForce = 8;
       player.velocity.x += cos(knockbackAngle) * knockbackForce;

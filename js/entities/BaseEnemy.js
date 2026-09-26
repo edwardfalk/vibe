@@ -1,15 +1,15 @@
 import { Bullet } from './bullet.js';
 import { CONFIG } from '../config.js';
-import { random, randomRange, sin, cos, atan2 } from '../mathUtils.js';
+import { random, sin, cos, atan2 } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import {
   getEnemyColors,
   getGlowColorForType,
   getGlowSizeForType,
   drawEnemyHealthBar,
-  drawEnemySpeechBubble,
 } from './BaseEnemyHelpers.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
+import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
@@ -41,18 +41,13 @@ export class BaseEnemy {
     // Movement and animation
     this.velocity = { x: 0, y: 0 };
     this.aimAngle = 0;
-    this.animFrame = randomRange(0, p.TWO_PI);
+    this.animFrame = random(0, p.TWO_PI);
 
     // Combat
     this.shootCooldown = 0;
     this.muzzleFlash = 0;
     this.hitFlash = 0;
     this.markedForRemoval = false;
-
-    // Speech bubble system
-    this.speechText = '';
-    this.speechTimer = 0;
-    this.maxSpeechTime = 180; // 3 seconds - better sync with TTS
 
     // Get per-type speech config
     const speechConfig =
@@ -62,7 +57,7 @@ export class BaseEnemy {
     this.speechCooldown = 0;
     this.maxSpeechCooldown = speechConfig.COOLDOWN * 60; // seconds to frames
     // Random speech timer for ambient chatter
-    this.ambientSpeechTimer = randomRange(
+    this.ambientSpeechTimer = random(
       speechConfig.AMBIENT_MIN * 60,
       speechConfig.AMBIENT_MAX * 60
     ); // seconds to frames
@@ -105,9 +100,7 @@ export class BaseEnemy {
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.hitFlash > 0) this.hitFlash -= dt;
     if (this.muzzleFlash > 0) this.muzzleFlash -= dt;
-    if (this.speechTimer > 0) this.speechTimer -= dt;
     if (this.speechCooldown > 0) this.speechCooldown -= dt;
-    if (this.speechTimer <= 0 && this.speechText) this.speechText = '';
 
     // Spawn animation (frame-rate independent)
     if (this.isSpawning) {
@@ -163,7 +156,7 @@ export class BaseEnemy {
       const speechConfig =
         CONFIG.SPEECH_SETTINGS[this.type.toUpperCase()] ||
         CONFIG.SPEECH_SETTINGS.DEFAULT;
-      this.ambientSpeechTimer = randomRange(
+      this.ambientSpeechTimer = random(
         speechConfig.AMBIENT_MIN * 60,
         speechConfig.AMBIENT_MAX * 60
       ); // seconds to frames
@@ -234,42 +227,17 @@ export class BaseEnemy {
     return null;
   }
 
-  /**
-   * Enhanced glow effects with speech indicators
-   */
   drawEnemyGlow(p) {
     try {
-      const isSpeaking = this.speechTimer > 0;
-      const speechGlowIntensity = isSpeaking ? 0.8 : 0.3;
-      const speechGlowSize = isSpeaking ? 1.3 : 1.0;
-
-      const glowColor = this.getGlowColor(isSpeaking);
-      const glowSize = this.getGlowSize() * speechGlowSize;
-
-      drawGlow(p, this.x, this.y, glowSize, glowColor, speechGlowIntensity);
-
-      if (isSpeaking && this.audio) {
-        const activeTexts = this.audio.activeTexts || [];
-        const myText = activeTexts.find((text) => text.entity === this);
-        if (myText && myText.isAggressive) {
-          const aggressivePulse = sin(p.frameCount * 0.8) * 0.3 + 0.5;
-          drawGlow(
-            p,
-            this.x,
-            this.y,
-            this.size * 2,
-            p.color(255, 0, 0),
-            aggressivePulse * 0.6
-          );
-        }
-      }
+      const glowColor = this.getGlowColor();
+      drawGlow(p, this.x, this.y, this.getGlowSize(), glowColor, 0.3);
     } catch (error) {
       console.warn('⚠️ Enemy glow error:', error);
     }
   }
 
-  getGlowColor(isSpeaking) {
-    return getGlowColorForType(this.type, this.p, isSpeaking);
+  getGlowColor() {
+    return getGlowColorForType(this.type);
   }
 
   getGlowSize() {
@@ -333,8 +301,8 @@ export class BaseEnemy {
     try {
       if (this.hitFlash > 0) {
         const hitIntensity = this.hitFlash / 8;
-        const shakeX = randomRange(-hitIntensity * 4, hitIntensity * 4);
-        const shakeY = randomRange(-hitIntensity * 3, hitIntensity * 3);
+        const shakeX = random(-hitIntensity * 4, hitIntensity * 4);
+        const shakeY = random(-hitIntensity * 3, hitIntensity * 3);
         p.translate(shakeX, shakeY);
 
         // Comical size distortion when hit
@@ -365,7 +333,6 @@ export class BaseEnemy {
       p.ellipse(this.x, this.y, this.hitRadius * 2);
       p.pop();
     }
-    this.drawSpeechBubble(p);
 
     // Draw type-specific indicators
     this.drawSpecificIndicators(p);
@@ -442,10 +409,6 @@ export class BaseEnemy {
     drawEnemyHealthBar(p, this);
   }
 
-  drawSpeechBubble(p) {
-    drawEnemySpeechBubble(p, this);
-  }
-
   /**
    * Draw type-specific indicators - should be overridden by subclasses
    */
@@ -480,7 +443,7 @@ export class BaseEnemy {
 
     // Play alien shooting sound
     if (this.audio) {
-      this.audio.playAlienShoot(this.x, this.y);
+      this.audio.playSound('alienShoot', this.x, this.y);
     }
 
     return bullet;
@@ -488,14 +451,12 @@ export class BaseEnemy {
 
   /**
    * Take damage - handles basic damage logic
+   * @returns {string} DAMAGE_RESULT.DIED or DAMAGE_RESULT.DAMAGED
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     this.health -= amount;
     this.hitFlash = Math.max(this.hitFlash, 8);
-    if (this.health <= 0) {
-      return true; // Enemy died
-    }
-    return false;
+    return this.health <= 0 ? DAMAGE_RESULT.DIED : DAMAGE_RESULT.DAMAGED;
   }
 
   onNearbyDeath(deadEnemy) {

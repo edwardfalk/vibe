@@ -140,6 +140,19 @@ export class BeatClock {
     return this.isOnBeat([1, 3]);
   }
 
+  // Move from Date.now() to the AudioContext's clock once audio starts,
+  // keeping the elapsed time so the grid doesn't jump. Only the first call
+  // switches; later calls do nothing.
+  useAudioClock(audioContext) {
+    if (this.audioContext) return;
+    // Read both clocks back to back so they agree as closely as possible
+    const audioNow = audioContext.currentTime * 1000;
+    const elapsed = Date.now() - this.startTime;
+    this.audioContext = audioContext;
+    this.startTime = audioNow - elapsed;
+    this.update(true);
+  }
+
   // Adjust tempo (for dynamic music)
   setBPM(newBPM) {
     this.bpm = newBPM;

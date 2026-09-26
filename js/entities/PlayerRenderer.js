@@ -2,6 +2,9 @@ import { sin, max } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import { drawPlayerDashEffect } from '../effects/DashEffect.js';
 
+const LOW_HEALTH_GLOW = [255, 100, 100];
+const SHIELD_GLOW = [100, 200, 255];
+
 /**
  * Player character rendering — read-only access to player state.
  * Extracted from player.js to separate rendering from game logic.
@@ -18,19 +21,12 @@ export function drawPlayer(p, player) {
         player.x,
         player.y,
         player.size * 2.5,
-        p.color(255, 100, 100),
+        LOW_HEALTH_GLOW,
         pulse * 0.8
       );
     }
     if (player.shieldUp) {
-      drawGlow(
-        p,
-        player.x,
-        player.y,
-        player.size * 2,
-        p.color(100, 200, 255),
-        0.6
-      );
+      drawGlow(p, player.x, player.y, player.size * 2, SHIELD_GLOW, 0.6);
     }
   } catch (error) {
     console.error('Player glow error:', error);

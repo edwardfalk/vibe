@@ -27,9 +27,6 @@ export const bootGame = async (page) => {
 export async function jumpToLevel(page, level) {
   await page.evaluate((target) => {
     const gs = window.gameState;
-    if (!('practiceRun' in gs)) {
-      throw new Error('practiceRun missing: is play-test-fixes merged?');
-    }
     gs.practiceRun = true;
     for (let guard = 0; gs.level < target; guard++) {
       const before = gs.level;

@@ -8,7 +8,7 @@
  * ?tune panel changes them live.
  *
  * Uses a look-ahead scheduler for sample-accurate timing.
- * Shares the game's AudioContext when available.
+ * Runs on the game's AudioContext: Audio.initialize() starts it.
  */
 
 import { CONFIG } from '../config.js';
@@ -35,8 +35,8 @@ const DRIVE_CURVE_SAMPLES = 1024;
 const TAIL_FADE_SEC = 0.005;
 
 export class BeatTrack {
-  // bpm is kept for the call signature; tempo now comes from BeatClock
-  constructor(bpm = 120, context = null) {
+  // Tempo comes from BeatClock
+  constructor(context = null) {
     this.context = context;
     this.getContextValue = createContextAccessor(context);
     this.volume = CONFIG.MIX.BEAT_TRACK_VOLUME;
@@ -46,9 +46,6 @@ export class BeatTrack {
     this.ctx = null;
     this.masterGain = null;
     this.isPlaying = false;
-
-    // Scheduler state
-    this.schedulerTimer = null;
 
     // Enemy count for dynamic volume scaling
     this._enemyCount = 0;
@@ -60,23 +57,9 @@ export class BeatTrack {
   async start() {
     if (this.isPlaying) return;
 
+    // Called from Audio.initialize(), right after it made the AudioContext
     const audio = this.getContextValue('audio');
-    if (audio && audio.audioContext) {
-      this.ctx = audio.audioContext;
-    } else {
-      if (typeof window === 'undefined') {
-        console.error(
-          '⚠️ AudioContext unavailable: no global window (non-browser environment)'
-        );
-        return;
-      }
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx) {
-        console.error('⚠️ AudioContext not supported in this browser');
-        return;
-      }
-      this.ctx = new Ctx();
-    }
+    this.ctx = audio.audioContext;
 
     if (this.ctx.state === 'suspended') {
       await this.ctx.resume();
@@ -85,11 +68,7 @@ export class BeatTrack {
     this.masterGain = this.ctx.createGain();
     this.masterGain.gain.value = this.muted ? 0 : this.volume;
     // The beat's own duck gain (→ limiter): speech dips it by DUCK_BEAT_DB
-    const bus =
-      audio?.audioContext === this.ctx
-        ? (audio.beatDuckGain ?? audio.masterLimiter)
-        : null;
-    this.masterGain.connect(bus ?? this.ctx.destination);
+    this.masterGain.connect(audio.beatDuckGain);
 
     this.isPlaying = true;
 
@@ -106,14 +85,6 @@ export class BeatTrack {
     }
 
     this._scheduler();
-  }
-
-  stop() {
-    this.isPlaying = false;
-    if (this.schedulerTimer) {
-      clearTimeout(this.schedulerTimer);
-      this.schedulerTimer = null;
-    }
   }
 
   setVolume(vol) {
@@ -162,10 +133,7 @@ export class BeatTrack {
       }
     }
 
-    this.schedulerTimer = setTimeout(
-      () => this._scheduler(),
-      SCHEDULER_INTERVAL_MS
-    );
+    setTimeout(() => this._scheduler(), SCHEDULER_INTERVAL_MS);
   }
 
   _scheduleNote(time, eighth) {
@@ -301,6 +269,10 @@ export class BeatTrack {
       harmonicGain.gain.exponentialRampToValueAtTime(0.001, time + duration);
       harmonicOsc.connect(harmonicGain);
       harmonicGain.connect(this.masterGain);
+      harmonicOsc.onended = () => {
+        harmonicOsc.disconnect();
+        harmonicGain.disconnect();
+      };
       harmonicOsc.start(time);
       harmonicOsc.stop(time + duration);
     }
@@ -321,6 +293,11 @@ export class BeatTrack {
       noiseSource.connect(noiseFilter);
       noiseFilter.connect(noiseGain);
       noiseGain.connect(this.masterGain);
+      noiseSource.onended = () => {
+        noiseSource.disconnect();
+        noiseFilter.disconnect();
+        noiseGain.disconnect();
+      };
       noiseSource.start(time);
     }
   }

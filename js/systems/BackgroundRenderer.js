@@ -3,32 +3,9 @@
  * BackgroundRenderer.js - Handles all background drawing including parallax, cosmic effects, and space elements
  */
 
-import { randomRange } from '../mathUtils.js';
-import {
-  drawDistantStarsLayer,
-  drawNebulaCloudLayer,
-  drawMediumStarsLayer,
-  drawCloseDebrisLayer,
-  drawForegroundSparksLayer,
-  createParallaxLayerConfig,
-  generateParallaxLayerElements,
-} from './background/BackgroundLayers.js';
-import {
-  drawCosmicAuroraBackgroundLayer,
-  resetCosmicAuroraCache,
-} from './background/CosmicAuroraBackground.js';
-import {
-  drawAuroraWispsLayer,
-  drawInteractiveBackgroundEffectsLayer,
-  resetBeatPulseCache,
-} from './background/BackgroundEffects.js';
-import {
-  drawDistantGalaxiesLayer,
-  drawFlowingNebulaStreamsLayer,
-  drawShootingStarsLayer,
-  drawEnhancedSparklesLayer,
-  resetEnhancedSpaceElementsCache,
-} from './background/EnhancedSpaceElements.js';
+import { createParallaxLayers } from './background/BackgroundLayers.js';
+import { drawCosmicAuroraBackgroundLayer } from './background/CosmicAuroraBackground.js';
+import { drawInteractiveBackgroundEffectsLayer } from './background/BackgroundEffects.js';
 
 /**
  * @param {p5} p - The p5 instance
@@ -43,85 +20,27 @@ export class BackgroundRenderer {
     this.player = player;
     this.gameState = gameState;
     this.context = context;
-    // Parallax background layers
     this.parallaxLayers = [];
-    this.parallaxInitialized = false;
   }
 
-  // Initialize parallax background layers
+  // Generate the parallax layers' elements (once, at setup)
   createParallaxBackground(p = this.p) {
-    if (this.parallaxInitialized) return;
-
-    this.parallaxLayers = createParallaxLayerConfig();
-
-    // Generate elements for each layer
-    this.generateLayerElements(p);
-    this.parallaxInitialized = true;
+    this.parallaxLayers = createParallaxLayers(p);
   }
 
-  // Generate elements for parallax layers
-  generateLayerElements(p = this.p) {
-    generateParallaxLayerElements(this.parallaxLayers, p);
-  }
-
-  // Draw parallax background
   drawParallaxBackground(p = this.p) {
-    if (!this.parallaxInitialized) {
-      this.createParallaxBackground(p);
-    }
     p.push();
-    // Use injected cameraSystem for robust, modular parallax offset (do not use global or p.cameraSystem)
     const cameraX = this.cameraSystem ? this.cameraSystem.x : 0;
     const cameraY = this.cameraSystem ? this.cameraSystem.y : 0;
-    for (const layer of this.parallaxLayers) {
-      this.drawParallaxLayer(layer, cameraX, cameraY, p);
-    }
-    p.pop();
-  }
-
-  // Draw individual parallax layer
-  drawParallaxLayer(layer, cameraX, cameraY, p = this.p) {
-    p.push();
-
-    // Apply parallax offset
-    const parallaxX = cameraX * layer.speed;
-    const parallaxY = cameraY * layer.speed;
-    p.translate(-parallaxX, -parallaxY);
-
     const beatClock = this.context?.get?.('beatClock') ?? window.beatClock;
-    switch (layer.name) {
-      case 'distant_galaxies':
-        drawDistantGalaxiesLayer(layer.elements, p);
-        break;
-      case 'distant_stars':
-        drawDistantStarsLayer(layer.elements, p, beatClock);
-        break;
-      case 'nebula_streams':
-        drawFlowingNebulaStreamsLayer(layer.elements, p);
-        break;
-      case 'aurora_wisps':
-        drawAuroraWispsLayer(layer.elements, p, beatClock);
-        break;
-      case 'nebula_clouds':
-        drawNebulaCloudLayer(layer.elements, p, beatClock);
-        break;
-      case 'enhanced_sparkles':
-        drawEnhancedSparklesLayer(layer.elements, p);
-        break;
-      case 'medium_stars':
-        drawMediumStarsLayer(layer.elements, p, beatClock);
-        break;
-      case 'shooting_stars':
-        drawShootingStarsLayer(layer.elements, p);
-        break;
-      case 'close_debris':
-        drawCloseDebrisLayer(layer.elements, p);
-        break;
-      case 'foreground_sparks':
-        drawForegroundSparksLayer(layer.elements, p);
-        break;
+    for (const layer of this.parallaxLayers) {
+      p.push();
+      const parallaxX = cameraX * layer.speed;
+      const parallaxY = cameraY * layer.speed;
+      p.translate(-parallaxX, -parallaxY);
+      layer.draw(layer.elements, p, beatClock);
+      p.pop();
     }
-
     p.pop();
   }
 
@@ -139,18 +58,8 @@ export class BackgroundRenderer {
       p,
       this.player,
       this.gameState,
-      beatClock,
-      randomRange
+      beatClock
     );
     p.pop();
-  }
-
-  // Reset background renderer
-  reset() {
-    this.parallaxLayers = [];
-    this.parallaxInitialized = false;
-    resetCosmicAuroraCache();
-    resetEnhancedSpaceElementsCache();
-    resetBeatPulseCache();
   }
 }

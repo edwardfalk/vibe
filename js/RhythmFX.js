@@ -19,14 +19,13 @@ export class RhythmFX {
     this.pulseIntensity = 0;
     this.edgeFlashIntensity = 0;
     this.lastBeat = -1;
-    this.beatJustHit = false;
 
-    // Enemy type icons and colors
+    // Early-warning ring colour per enemy type
     this.enemyTypeConfig = {
-      grunt: { icon: '●', color: [50, 255, 50], beatPattern: [2, 4] },
-      tank: { icon: '■', color: [150, 100, 255], beatPattern: [1] },
-      stabber: { icon: '▲', color: [255, 215, 0], beatPattern: [3.5] },
-      rusher: { icon: '◆', color: [255, 50, 150], beatPattern: [1, 3] },
+      grunt: { color: [50, 255, 50] },
+      tank: { color: [150, 100, 255] },
+      stabber: { color: [255, 215, 0] },
+      rusher: { color: [255, 50, 150] },
     };
   }
 
@@ -45,12 +44,9 @@ export class RhythmFX {
     if (beatClock) {
       const currentBeat = beatClock.getCurrentBeat();
       if (currentBeat !== this.lastBeat) {
-        this.beatJustHit = true;
         this.lastBeat = currentBeat;
         // Trigger pulse on beat hit
         this.pulseIntensity = currentBeat === 0 ? 1.0 : 0.5; // Stronger on downbeat
-      } else {
-        this.beatJustHit = false;
       }
 
       // Decay pulse intensity (frame-rate independent)

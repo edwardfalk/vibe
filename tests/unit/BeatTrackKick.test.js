@@ -7,7 +7,7 @@ const original = structuredClone(CONFIG.BEAT_TRACK);
 // Schedule one measure (8 eighth notes) and report which beats (0-3) got
 // a kick and which got a sub pulse.
 function playMeasure() {
-  const track = new BeatTrack(120, {});
+  const track = new BeatTrack({});
   const kicks = [];
   const pulses = [];
   vi.spyOn(track, '_playKick').mockImplementation(() => {
@@ -44,7 +44,7 @@ describe('BeatTrack kick', () => {
   });
 
   it('drive curve soft-clips but keeps full scale, cached per drive', () => {
-    const track = new BeatTrack(120, {});
+    const track = new BeatTrack({});
     track.ctx = { createWaveShaper: () => ({}) };
     const curve = track._getDriveShaper(4).curve;
     // A quarter of full scale in comes out well above a quarter: overtones
@@ -75,7 +75,7 @@ describe('BeatTrack kick', () => {
         disconnect() {},
         ...extra,
       });
-      const track = new BeatTrack(120, {});
+      const track = new BeatTrack({});
       track.ctx = {
         createOscillator: () =>
           node('osc', { frequency: param(), start() {}, stop() {} }),

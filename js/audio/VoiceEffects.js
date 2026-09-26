@@ -1,16 +1,11 @@
+import { random } from '../mathUtils.js';
 import {
   isAggressiveText,
   isConfusedText,
   isScreamingText,
 } from './TextSemantics.js';
 
-export function applyVoiceEffects(
-  utterance,
-  voiceType,
-  text,
-  voiceConfig,
-  randomRange
-) {
+export function applyVoiceEffects(utterance, voiceType, text, voiceConfig) {
   const raw = voiceConfig[voiceType] || voiceConfig.player;
   const baseConfig = {
     rate: raw?.rate ?? 1.0,
@@ -28,7 +23,7 @@ export function applyVoiceEffects(
   } else if (voiceType === 'grunt') {
     if (isConfused) {
       utterance.rate = Math.max(0.4, baseConfig.rate - 0.2);
-      utterance.pitch = baseConfig.pitch + randomRange(-0.1, 0.1);
+      utterance.pitch = baseConfig.pitch + random(-0.1, 0.1);
     }
     if (isAggressive) {
       utterance.rate = Math.min(1.0, baseConfig.rate + 0.2);
@@ -46,11 +41,11 @@ export function applyVoiceEffects(
     }
   } else if (voiceType === 'stabber' && isAggressive) {
     utterance.rate = Math.max(0.7, baseConfig.rate - 0.2);
-    utterance.pitch = baseConfig.pitch + randomRange(-0.05, 0.05);
+    utterance.pitch = baseConfig.pitch + random(-0.05, 0.05);
   }
 
-  utterance.rate += randomRange(-0.05, 0.05);
-  utterance.pitch += randomRange(-0.03, 0.03);
+  utterance.rate += random(-0.05, 0.05);
+  utterance.pitch += random(-0.03, 0.03);
   utterance.rate = Math.max(0.1, Math.min(2.0, utterance.rate));
   utterance.pitch = Math.max(0.1, Math.min(2.0, utterance.pitch));
 }

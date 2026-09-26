@@ -12,8 +12,10 @@ import { applyKillFeedback } from '../combat/KillFeedback.js';
  * @returns {boolean} true if bullet hit
  */
 export function resolveBulletEnemyHit(bullet, enemy, deps) {
-  const { getContextValue, handleEnemyDeath, context } = deps;
+  const { getContextValue, handleEnemyDeath, getContext } = deps;
+  if (!bullet.checkCollision(enemy)) return false;
 
+  const context = getContext();
   const explosionManager = getContextValue('explosionManager');
   const audio = getContextValue('audio');
   const gameState = getContextValue('gameState');
@@ -21,15 +23,14 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
   const beatClock = getContextValue('beatClock');
   const visualEffectsManager = getContextValue('visualEffectsManager');
   const cameraSystem = getContextValue('cameraSystem');
-  if (!bullet.checkCollision(enemy)) return false;
 
   // Read before damage is applied
   const enemyType = enemy.type;
 
   // Damage enemy (pass bullet angle for knockback)
-  const rawResult = enemy.takeDamage(bullet.damage, bullet.angle);
+  const result = enemy.takeDamage(bullet.damage, bullet.angle);
 
-  handleDamageResult(rawResult, enemy, {
+  handleDamageResult(result, enemy, {
     explosionManager,
     audio,
     gameState,
@@ -40,17 +41,8 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
       floatingText,
       visualEffectsManager,
       cameraSystem,
-      getHitStopFrames: () =>
-        context?.get?.('hitStopFrames') ?? window.hitStopFrames ?? 0,
-      setHitStopFrames: (value) => {
-        if (context && typeof context.set === 'function') {
-          context.set('hitStopFrames', value);
-          return;
-        }
-        if (typeof window !== 'undefined') {
-          window.hitStopFrames = value;
-        }
-      },
+      getHitStopFrames: () => context.get('hitStopFrames') ?? 0,
+      setHitStopFrames: (value) => context.set('hitStopFrames', value),
     },
     hitX: bullet.x,
     hitY: bullet.y,
@@ -73,7 +65,7 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
   const gameState = getContextValue('gameState');
 
   if (audio) {
-    audio.playTankEnergyBall(bullet.x, bullet.y);
+    audio.playSound('tankBallKill', bullet.x, bullet.y);
   }
 
   // Calculate energy cost based on enemy's remaining health
@@ -84,8 +76,8 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
   handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
 
   if (audio) {
-    audio.playEnemyFrying(enemy.x, enemy.y);
-    audio.playExplosion(enemy.x, enemy.y);
+    audio.playSound('enemyFrying', enemy.x, enemy.y);
+    audio.playSound('explosion', enemy.x, enemy.y);
   }
 
   enemy.markedForRemoval = true;
@@ -126,11 +118,11 @@ export function handleRegularEnemyBulletHit(bullet, enemy, deps) {
 
   // Determine bullet source type for tank anger tracking
   let bulletSource = 'unknown';
-  if (bullet.type === 'grunt' || bullet.owner === 'enemy-grunt') {
+  if (bullet.owner === 'enemy-grunt') {
     bulletSource = 'grunt';
-  } else if (bullet.type === 'stabber' || bullet.owner === 'enemy-stabber') {
+  } else if (bullet.owner === 'enemy-stabber') {
     bulletSource = 'stabber';
-  } else if (bullet.type === 'tankEnergy' || bullet.owner === 'enemy-tank') {
+  } else if (bullet.owner === 'enemy-tank') {
     bulletSource = 'tank';
   }
 
@@ -142,7 +134,7 @@ export function handleRegularEnemyBulletHit(bullet, enemy, deps) {
       audio,
       gameState,
       onDeath: (e) => handleEnemyDeath(e, e.type, e.x, e.y),
-      deathAudio: 'playExplosion',
+      deathSound: 'explosion',
       scorePoints: 8,
       hitX: bullet.x,
       hitY: bullet.y,

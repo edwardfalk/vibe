@@ -2,12 +2,22 @@
  * SpawnSystem.js - Handles enemy spawning logic and timing
  */
 
-import { EnemyFactory } from '../entities/EnemyFactory.js';
+import { Grunt } from '../entities/Grunt.js';
+import { Rusher } from '../entities/Rusher.js';
+import { Tank } from '../entities/Tank.js';
+import { Stabber } from '../entities/Stabber.js';
 import { CONFIG } from '../config.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { max, min, floor, random, sin, cos, sqrt } from '../mathUtils.js';
 
 // Level at which each enemy type joins the regular mix
+const ENEMY_CLASSES = {
+  grunt: Grunt,
+  rusher: Rusher,
+  tank: Tank,
+  stabber: Stabber,
+};
+
 export const ENEMY_INTRO_LEVEL = { stabber: 2, rusher: 3, tank: 5 };
 
 // The next type to be introduced after this level, or null
@@ -27,8 +37,6 @@ export class SpawnSystem {
     // Beat-aligned spawning; intervals and caps come from CONFIG.PACING
     this.lastSpawnBeat = -Infinity;
     this.previewed = new Set(); // types already given a one-off taste
-
-    this.enemyFactory = new EnemyFactory(context);
     this.getContextValue = createContextAccessor(() => this.context);
   }
 
@@ -100,14 +108,14 @@ export class SpawnSystem {
     for (let i = 0; i < count; i++) {
       const enemyType = forcedType ?? this.getEnemyTypeForLevel(level);
       const spawnPos = this.findSpawnPosition();
-      const enemy = this.enemyFactory.createEnemy(
-        spawnPos.x,
-        spawnPos.y,
-        enemyType,
-        p
-      );
-      enemies.push(enemy);
+      enemies.push(this.createEnemy(spawnPos.x, spawnPos.y, enemyType, p));
     }
+  }
+
+  createEnemy(x, y, type, p) {
+    const config = { context: this.context };
+    const audio = this.getContextValue('audio');
+    return new ENEMY_CLASSES[type](x, y, type, config, p, audio);
   }
 
   // Determine enemy type based on level

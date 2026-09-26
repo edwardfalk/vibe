@@ -5,7 +5,8 @@
 
 import { constrain } from '../mathUtils.js';
 
-export function drawGlow(p, x, y, size, color, intensity = 1) {
+// rgb is an [r, g, b] array
+export function drawGlow(p, x, y, size, rgb, intensity = 1) {
   if (intensity < 0.05) return;
 
   p.push();
@@ -18,7 +19,7 @@ export function drawGlow(p, x, y, size, color, intensity = 1) {
     const alpha = Math.min(255, (clampedIntensity * 255) / Math.pow(2, i));
     const glowSize = size * (0.8 + i * 0.6);
 
-    p.fill(p.red(color), p.green(color), p.blue(color), alpha);
+    p.fill(rgb[0], rgb[1], rgb[2], alpha);
     p.ellipse(x, y, glowSize, glowSize);
   }
 
