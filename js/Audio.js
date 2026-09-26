@@ -141,6 +141,12 @@ export class Audio {
       console.error('❌ Audio initialization failed:', error);
       this.enabled = false;
     }
+
+    // After the beat track's start(): its first (synchronous) scheduler pass
+    // stays silent, and the kick starts on the grid restart() sets next
+    if (this.audioContext) {
+      this.getContextValue('beatClock')?.useAudioClock(this.audioContext);
+    }
   }
 
   // CENTRALIZED audio context resume - used by both sound and speech

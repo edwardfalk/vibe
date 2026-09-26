@@ -212,6 +212,35 @@ describe('BeatClock', () => {
       expect(beat).toBeLessThan(4);
     });
 
+    it('useAudioClock keeps the elapsed time across the switch', () => {
+      vi.useFakeTimers({ now: 100_000 });
+      try {
+        const dateClock = new BeatClock(120);
+        vi.setSystemTime(101_300); // 2.6 beats on Date.now()
+        const ctx = createMockAudioContext(42);
+        dateClock.useAudioClock(ctx);
+        expect(dateClock.audioContext).toBe(ctx);
+        expect(dateClock.cache.elapsed).toBe(1300);
+        expect(dateClock.cache.totalBeats).toBe(2);
+        // From here it follows the audio clock only
+        ctx.currentTime = 42.2;
+        vi.setSystemTime(200_000);
+        expect(dateClock.getTotalBeats()).toBe(3);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('useAudioClock does nothing once it runs on an audio clock', () => {
+      mockCtx.currentTime = 1.3;
+      clock.update(true);
+      const { startTime } = clock;
+      const other = createMockAudioContext(99);
+      clock.useAudioClock(other);
+      expect(clock.audioContext).toBe(mockCtx);
+      expect(clock.startTime).toBe(startTime);
+    });
+
     it('reset restarts timing from current AudioContext time', () => {
       mockCtx.currentTime = 5.0; // 10 beats elapsed
       clock.update(true);

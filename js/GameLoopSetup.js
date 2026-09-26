@@ -100,27 +100,6 @@ export function runSetup(p, arrays, syncContext = null) {
     );
   }
 
-  // Monkey-patch audio.initialize so BeatClock syncs once AudioContext is available
-  const originalInit = window.audio?.initialize?.bind(window.audio);
-  if (originalInit && window.audio) {
-    window.audio.initialize = function () {
-      originalInit();
-      if (
-        this.audioContext &&
-        window.beatClock &&
-        !window.beatClock.audioContext
-      ) {
-        // Preserve beat position across Date.now → AudioContext epoch switch.
-        // Capture both clocks as close together as possible to minimize drift.
-        const audioNow = this.audioContext.currentTime * 1000;
-        const dateNow = Date.now();
-        const oldElapsed = dateNow - window.beatClock.startTime;
-        window.beatClock.audioContext = this.audioContext;
-        window.beatClock.startTime = audioNow - oldElapsed;
-        window.beatClock.update(true);
-      }
-    };
-  }
   if (!window.rhythmFX) {
     window.rhythmFX = new RhythmFX(gameContext);
   }
