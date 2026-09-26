@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock browser globals that GameState uses
 vi.stubGlobal('window', {
@@ -173,5 +173,39 @@ describe('game over screen', () => {
     gs.practiceRun = true;
     gs.addScore(100000);
     expect(textsDrawn(gs)).not.toContain('NEW HIGH SCORE! 🎉');
+  });
+});
+
+const { CameraSystem } = await import('../../js/systems/CameraSystem.js');
+const { GameContext } = await import('../../js/core/GameContext.js');
+
+describe('restart', () => {
+  const leftovers = ['floatingText', 'audio', 'rhythmFX', 'cameraSystem'];
+
+  afterEach(() => {
+    for (const key of leftovers) window[key] = null;
+    window.explosionManager = null;
+  });
+
+  it("clears the last run's effects, texts, hitstop and shake", () => {
+    const gs = new GameState();
+    gs.gameContext = new GameContext();
+    gs.gameContext.set('hitStopFrames', 7);
+    window.explosionManager = { fragmentExplosions: [{}] };
+    window.floatingText = { texts: [{}] };
+    window.audio = { activeTexts: [{}], speakPlayerLine: () => {} };
+    window.rhythmFX = { telegraphs: [{}] };
+    window.cameraSystem = new CameraSystem({});
+    window.cameraSystem.addShake(20, 40);
+
+    gs.restart();
+    clearTimeout(gs.startSpeechTimer);
+
+    expect(window.explosionManager.fragmentExplosions).toEqual([]);
+    expect(window.floatingText.texts).toEqual([]);
+    expect(window.audio.activeTexts).toEqual([]);
+    expect(window.rhythmFX.telegraphs).toEqual([]);
+    expect(window.cameraSystem.screenShake.intensity).toBe(0);
+    expect(gs.gameContext.get('hitStopFrames')).toBe(0);
   });
 });

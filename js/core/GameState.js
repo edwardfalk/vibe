@@ -180,20 +180,22 @@ export class GameState {
     if (window.enemyBullets) window.enemyBullets.length = 0;
     if (window.activeBombs) window.activeBombs.length = 0;
 
-    // Reset camera
-    if (window.cameraSystem) {
-      window.cameraSystem.x = 0;
-      window.cameraSystem.y = 0;
-      window.cameraSystem.targetX = 0;
-      window.cameraSystem.targetY = 0;
-    }
+    // Reset camera, including any screen shake
+    if (window.cameraSystem) window.cameraSystem.reset();
 
     // Reset explosion manager
     if (window.explosionManager) {
       window.explosionManager.explosions = [];
       window.explosionManager.plasmaClouds = [];
       window.explosionManager.radioactiveDebris = [];
+      window.explosionManager.fragmentExplosions = [];
     }
+
+    // Clear the last run's leftovers on screen
+    if (window.floatingText) window.floatingText.texts = [];
+    if (window.audio) window.audio.activeTexts = [];
+    if (window.rhythmFX) window.rhythmFX.telegraphs = [];
+    this.gameContext?.set('hitStopFrames', 0);
 
     // Reset BeatClock so enemies sync to fresh beat positions
     if (window.beatClock) {

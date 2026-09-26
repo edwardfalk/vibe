@@ -42,6 +42,7 @@ export function runSetup(p, arrays) {
   window.cameraSystem = new CameraSystem(p, gameContext);
   window.gameState = new GameState();
   window.gameState.activeBombs = activeBombs;
+  window.gameState.gameContext = gameContext; // restart() clears hitstop
 
   const player = new Player(
     p,
