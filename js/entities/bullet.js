@@ -4,19 +4,7 @@ import { drawGlow } from '../effects/glowUtils.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
-// Defensive config access for world dimensions
-const DEFAULT_WORLD_WIDTH = 1920;
-const DEFAULT_WORLD_HEIGHT = 1080;
-
-const GAME_SETTINGS = CONFIG.GAME_SETTINGS;
-if (!GAME_SETTINGS) {
-  console.warn(
-    '[Bullet] CONFIG.GAME_SETTINGS missing! Using default world size.'
-  );
-}
-
-const WORLD_WIDTH = GAME_SETTINGS?.WORLD_WIDTH ?? DEFAULT_WORLD_WIDTH;
-const WORLD_HEIGHT = GAME_SETTINGS?.WORLD_HEIGHT ?? DEFAULT_WORLD_HEIGHT;
+const { WORLD_WIDTH, WORLD_HEIGHT } = CONFIG.GAME_SETTINGS;
 const MAX_BULLET_POOL_SIZE = 400;
 
 export class Bullet {
@@ -65,7 +53,6 @@ export class Bullet {
     this.ownerId = undefined;
     this.type = undefined;
     this.energy = undefined;
-    this.penetrating = false;
     this._inPool = false;
     this._remove = false; // a hit marks it; a recycled bullet starts clean
 
@@ -78,14 +65,10 @@ export class Bullet {
     if (owner === 'player') {
       this.size = 8;
       this.damage = 1;
-    } else if (owner === 'enemy-rusher') {
-      this.size = 5;
-      this.damage = 1;
     } else if (owner === 'enemy-tank') {
       this.size = 26;
       this.damage = 50;
       this.energy = 100;
-      this.penetrating = true;
     } else {
       this.size = 6;
       this.damage = 1;
@@ -168,19 +151,6 @@ export class Bullet {
       p.stroke(255, 255, 255);
       p.strokeWeight(this.size * 0.4);
       p.line(-this.size * 0.5, 0, this.size * 0.5, 0);
-    } else if (this.owner === 'enemy-rusher') {
-      // Rusher bullet - hot pink shard
-      p.fill(255, 255, 255);
-      p.stroke(255, 20, 147, 200);
-      p.strokeWeight(this.size * 0.8);
-      p.triangle(
-        this.size,
-        0,
-        -this.size,
-        -this.size * 0.5,
-        -this.size,
-        this.size * 0.5
-      );
     } else if (this.owner === 'enemy-tank') {
       // Tank bullet - massive vibrating neon purple hexagon
       const energyPercent = Number.isFinite(this.energy)
@@ -250,8 +220,6 @@ export class Bullet {
 
       if (this.owner === 'player') {
         p.fill(255, 255, 100, alpha);
-      } else if (this.owner === 'enemy-rusher') {
-        p.fill(255, 150, 200, alpha);
       } else if (this.owner === 'enemy-tank') {
         p.fill(150, 100, 255, alpha);
       } else {
