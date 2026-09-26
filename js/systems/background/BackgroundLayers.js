@@ -56,14 +56,28 @@ const spot = (p) => ({
 });
 const phased = (p) => ({ ...spot(p), phase: random(0, p.TWO_PI) });
 
+// How far (px) an element's drawing can reach from its position, at most:
+// its size and motion, a glow (a canvas shadow fades out within about twice
+// its shadowBlur) and antialiasing. Elements further off the canvas than this
+// are skipped. The numbers are the draw functions' own maxima.
+const glow = (shadowBlur) => 2 * shadowBlur;
+const AA = 2;
+
 // Back to front. speed is the parallax factor; make() is called count times,
 // layer by layer, so a given random seed always gives the same sky.
 const PARALLAX_LAYERS = [
-  { speed: 0.05, count: 6, draw: drawDistantGalaxiesLayer, make: phased },
+  {
+    speed: 0.05,
+    count: 6,
+    draw: drawDistantGalaxiesLayer,
+    make: phased,
+    reach: 75 * Math.SQRT2 + AA, // the 150 px image, rotated, scale <= 1
+  },
   {
     speed: 0.1,
     count: 50,
     draw: drawDistantStarsLayer,
+    reach: (3 + 10) / 2 + glow(15) + AA,
     make: (p) => ({
       ...spot(p),
       size: random(1, 3),
@@ -71,12 +85,26 @@ const PARALLAX_LAYERS = [
       twinkleSpeed: random(0.01, 0.03),
     }),
   },
-  { speed: 0.2, count: 15, draw: drawFlowingNebulaStreamsLayer, make: phased },
-  { speed: 0.25, count: 12, draw: drawAuroraWispsLayer, make: phased },
+  {
+    speed: 0.2,
+    count: 15,
+    draw: drawFlowingNebulaStreamsLayer,
+    make: phased,
+    // Flows 20 px; the 160x100 image scales up to 1.3
+    reach: 20 + 1.3 * Math.hypot(80, 50) + AA,
+  },
+  {
+    speed: 0.25,
+    count: 12,
+    draw: drawAuroraWispsLayer,
+    make: phased,
+    reach: (100 + 35 + 20) / 2 + AA, // widest: base + modulation + beat
+  },
   {
     speed: 0.3,
     count: 8,
     draw: drawNebulaCloudLayer,
+    reach: (300 + 10) / 2 + 20 + glow(80) + AA, // size, drift, glow
     make: (p) => ({
       ...spot(p),
       size: random(100, 300),
@@ -89,11 +117,18 @@ const PARALLAX_LAYERS = [
       driftSpeed: random(0.1, 0.3),
     }),
   },
-  { speed: 0.4, count: 40, draw: drawEnhancedSparklesLayer, make: phased },
+  {
+    speed: 0.4,
+    count: 40,
+    draw: drawEnhancedSparklesLayer,
+    make: phased,
+    reach: 3 / 2 + glow(15) + AA,
+  },
   {
     speed: 0.5,
     count: 30,
     draw: drawMediumStarsLayer,
+    reach: (5 * 1.5 + 2) / 2 + glow(25) + AA, // size x pulse (< 1.5) + beat
     make: (p) => ({
       ...spot(p),
       size: random(2, 5),
@@ -105,6 +140,7 @@ const PARALLAX_LAYERS = [
     speed: 0.6,
     count: 5,
     draw: drawShootingStarsLayer,
+    reach: Infinity, // they fly; only five, so always drawn
     make: (p) => ({
       startX: random(-p.width, p.width * 2),
       startY: random(-p.height, p.height * 2),
@@ -117,6 +153,7 @@ const PARALLAX_LAYERS = [
     speed: 0.8,
     count: 15,
     draw: drawCloseDebrisLayer,
+    reach: Math.hypot(4, 4) + 1 + glow(10) + AA, // 8 px shape, 2 px stroke
     make: (p) => ({
       ...spot(p),
       size: random(3, 8),
@@ -129,6 +166,7 @@ const PARALLAX_LAYERS = [
     speed: 1.2,
     count: 60,
     draw: drawForegroundSparksLayer,
+    reach: 4 * 5 + 1 + glow(15) + AA, // a streak up to 20 px, 2 px stroke
     make: (p) => ({
       ...spot(p),
       size: random(2, 4),
@@ -138,18 +176,19 @@ const PARALLAX_LAYERS = [
   },
 ];
 
-/** Each layer with its elements generated: { speed, draw, elements }. */
+/** Each layer with its elements generated: { speed, draw, reach, elements }. */
 export function createParallaxLayers(p) {
-  return PARALLAX_LAYERS.map(({ speed, count, draw, make }) => ({
+  return PARALLAX_LAYERS.map(({ speed, count, draw, make, reach }) => ({
     speed,
     draw,
+    reach,
     elements: Array.from({ length: count }, () => make(p)),
   }));
 }
 
 // ─── ParallaxLayerRenderers ───────────────────────────────────────────────────
 
-function drawDistantStarsLayer(stars, p, beatClock = null) {
+function drawDistantStarsLayer(stars, p, beatClock, onView) {
   const beatBoost = beatClock ? beatClock.getBeatIntensity(10) * 80 : 0;
   const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
   const STAR_BEAT_MULTIPLIER = 10;
@@ -158,6 +197,7 @@ function drawDistantStarsLayer(stars, p, beatClock = null) {
   p.drawingContext.shadowBlur = 5 + beatPulse * 10;
   p.drawingContext.shadowColor = '#FFFFFF';
   for (const star of stars) {
+    if (!onView(star.x, star.y)) continue;
     const twinkle =
       p.sin((p.millis() / 1000) * (star.twinkleSpeed * 60)) * 0.5 + 0.5;
     const alpha = Math.min(255, star.brightness * twinkle * 255 + beatBoost);
@@ -174,11 +214,12 @@ function drawDistantStarsLayer(stars, p, beatClock = null) {
   p.drawingContext.shadowColor = 'transparent';
 }
 
-function drawNebulaCloudLayer(clouds, p, beatClock = null) {
+function drawNebulaCloudLayer(clouds, p, beatClock, onView) {
   const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
 
   p.noStroke();
   for (const cloud of clouds) {
+    if (!onView(cloud.x, cloud.y)) continue;
     const drift = p.sin((p.millis() / 1000) * (cloud.driftSpeed * 60)) * 20;
     const boost = beatPulse * 0.7;
     const r = Math.min(255, cloud.color.r + boost * 60);
@@ -202,7 +243,7 @@ function drawNebulaCloudLayer(clouds, p, beatClock = null) {
 
 // ─── MediumStarRenderer ───────────────────────────────────────────────────────
 
-function drawMediumStarsLayer(stars, p, beatClock = null) {
+function drawMediumStarsLayer(stars, p, beatClock, onView) {
   const beatPulse = beatClock ? beatClock.getBeatIntensity(8) : 0;
   const measurePhase = beatClock ? beatClock.getMeasurePhase() : 0;
 
@@ -212,6 +253,10 @@ function drawMediumStarsLayer(stars, p, beatClock = null) {
   p.drawingContext.shadowBlur = Math.max(0, shadowBlurCandidate);
   let starIndex = 0;
   for (const star of stars) {
+    if (!onView(star.x, star.y)) {
+      starIndex++; // the index sets the star's pulse
+      continue;
+    }
     const { alpha, finalSize } = computeMediumStarVisual(
       star,
       starIndex,
@@ -250,7 +295,7 @@ function drawMediumStarsLayer(stars, p, beatClock = null) {
 
 // ─── NearFieldParallax ────────────────────────────────────────────────────────
 
-function drawCloseDebrisLayer(debris, p) {
+function drawCloseDebrisLayer(debris, p, beatClock, onView) {
   p.stroke(255, 0, 200, 150); // Hot magenta
   p.strokeWeight(2);
   p.noFill();
@@ -258,6 +303,10 @@ function drawCloseDebrisLayer(debris, p) {
   p.drawingContext.shadowColor = '#FF00C8';
 
   for (const piece of debris) {
+    if (!onView(piece.x, piece.y)) {
+      piece.rotation += piece.rotationSpeed; // it keeps spinning off view
+      continue;
+    }
     p.push();
     p.translate(piece.x, piece.y);
     p.rotate(piece.rotation);
@@ -296,12 +345,13 @@ function drawCloseDebrisLayer(debris, p) {
   p.drawingContext.shadowColor = 'transparent';
 }
 
-function drawForegroundSparksLayer(sparks, p) {
+function drawForegroundSparksLayer(sparks, p, beatClock, onView) {
   p.noFill();
   p.strokeWeight(2);
   p.drawingContext.shadowBlur = 15;
   p.drawingContext.shadowColor = '#00F3FF';
   for (const spark of sparks) {
+    if (!onView(spark.x, spark.y)) continue;
     const flicker =
       p.sin((p.millis() / 1000) * (spark.flickerSpeed * 60)) * 0.5 + 0.5;
     const alpha = spark.alpha * 255 * flicker;

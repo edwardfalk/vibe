@@ -57,12 +57,13 @@ function initEnhancedCaches(p) {
   }
 }
 
-export function drawFlowingNebulaStreamsLayer(streams, p) {
+export function drawFlowingNebulaStreamsLayer(streams, p, beatClock, onView) {
   initEnhancedCaches(p);
   p.push();
   p.imageMode(p.CENTER);
   for (let i = 0; i < streams.length; i++) {
     const stream = streams[i];
+    if (!onView(stream.x, stream.y)) continue;
     // Scale modulations
     const scaleMod =
       1 + p.sin((p.millis() / 1000) * (0.008 * 60) + stream.phase) * 0.3;
@@ -109,9 +110,10 @@ export function drawShootingStarsLayer(stars, p) {
   }
 }
 
-export function drawEnhancedSparklesLayer(sparkles, p) {
+export function drawEnhancedSparklesLayer(sparkles, p, beatClock, onView) {
   for (let i = 0; i < sparkles.length; i++) {
     const sparkle = sparkles[i];
+    if (!onView(sparkle.x, sparkle.y)) continue;
     const twinkle =
       p.sin((p.millis() / 1000) * (0.02 * 60) + sparkle.phase * 2) * 0.5 + 0.5;
     const colorPhase = (p.millis() / 1000) * (0.008 * 60) + sparkle.phase;
@@ -131,12 +133,13 @@ export function drawEnhancedSparklesLayer(sparkles, p) {
   p.drawingContext.shadowColor = 'transparent';
 }
 
-export function drawDistantGalaxiesLayer(galaxies, p) {
+export function drawDistantGalaxiesLayer(galaxies, p, beatClock, onView) {
   initEnhancedCaches(p);
   p.push();
   p.imageMode(p.CENTER);
   for (let i = 0; i < galaxies.length; i++) {
     const galaxy = galaxies[i];
+    if (!onView(galaxy.x, galaxy.y)) continue;
     const rotation = (p.millis() / 1000) * (0.002 * 60) + galaxy.phase;
 
     // Scale ranges roughly from 45/75 to 75/75 (0.6 to 1.0)

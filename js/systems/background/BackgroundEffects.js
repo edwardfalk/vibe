@@ -217,7 +217,7 @@ const AURORA_WISP_MODULATION = 35;
 /** Phase speed for size oscillation */
 const AURORA_PHASE_SPEED = 0.006;
 
-export function drawAuroraWispsLayer(wisps, p, beatClock = null) {
+export function drawAuroraWispsLayer(wisps, p, beatClock, onView) {
   if (!wisps || !Array.isArray(wisps) || wisps.length === 0) return;
   p.push();
   p.noStroke();
@@ -225,6 +225,7 @@ export function drawAuroraWispsLayer(wisps, p, beatClock = null) {
 
   for (let i = 0; i < wisps.length; i++) {
     const wisp = wisps[i];
+    if (!onView(wisp.x, wisp.y)) continue;
     const wispX = wisp.x;
     const wispY = wisp.y;
     const beatModulation =

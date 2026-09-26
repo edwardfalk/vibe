@@ -38,7 +38,15 @@ export class BackgroundRenderer {
       const parallaxX = cameraX * layer.speed;
       const parallaxY = cameraY * layer.speed;
       p.translate(-parallaxX, -parallaxY);
-      layer.draw(layer.elements, p, beatClock);
+      // The canvas in this layer's coordinates, grown by how far an
+      // element's drawing reaches: anything further out is skipped
+      const { reach } = layer;
+      const onView = (x, y) =>
+        x >= parallaxX - reach &&
+        x <= parallaxX + p.width + reach &&
+        y >= parallaxY - reach &&
+        y <= parallaxY + p.height + reach;
+      layer.draw(layer.elements, p, beatClock, onView);
       p.pop();
     }
     p.pop();
