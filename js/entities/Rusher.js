@@ -41,6 +41,7 @@ class Rusher extends BaseEnemy {
     super(x, y, 'rusher', rusherConfig, p, audio);
 
     this.hasScreamed = false;
+    this.chargeSoundPending = false;
     this.chargeDistance = 150; // Distance to start battle cry and charge
     this.explodeDistance = 50; // Distance that lights the fuse unshot
 
@@ -113,8 +114,13 @@ class Rusher extends BaseEnemy {
 
     if (distance <= this.explodeDistance) {
       this.lightFuse();
-      const audio = this.getContextValue('audio') || this.audio;
-      if (audio) audio.playSound('rusherCharge', this.x, this.y);
+      // The charge sound plays once: on the beat after the battle cry, or
+      // here if the rusher closed in before that beat came
+      if (this.chargeSoundPending || !this.hasScreamed) {
+        this.chargeSoundPending = false;
+        const audio = this.getContextValue('audio') || this.audio;
+        if (audio) audio.playSound('rusherCharge', this.x, this.y);
+      }
       return null;
     }
 
@@ -128,7 +134,6 @@ class Rusher extends BaseEnemy {
 
         // Rusher scream with audio
         const audio = this.getContextValue('audio') || this.audio;
-        const beatClock = this.getContextValue('beatClock');
         if (audio) {
           const battleCries = [
             'INCOMING!',
@@ -144,10 +149,19 @@ class Rusher extends BaseEnemy {
           const battleCry = random(battleCries);
           audio.speak(this, battleCry, 'rusher');
 
-          if (!beatClock || beatClock.canRusherCharge()) {
-            audio.playSound('rusherCharge', this.x, this.y);
-          }
+          this.chargeSoundPending = true; // played on the next beat
         }
+      }
+
+      const beatClock = this.getContextValue('beatClock');
+      if (
+        this.chargeSoundPending &&
+        (!beatClock ||
+          this.onBeatOnce(beatClock, 'charge', beatClock.canRusherCharge()))
+      ) {
+        this.chargeSoundPending = false;
+        const audio = this.getContextValue('audio') || this.audio;
+        if (audio) audio.playSound('rusherCharge', this.x, this.y);
       }
 
       // Charge at 50% speed boost

@@ -65,6 +65,11 @@ const CONFIG = {
     // new type appears when this far through the level before it
     PREVIEW_NEW_ENEMY: true,
     PREVIEW_AT_PROGRESS: 0.5,
+    // Enemies appear this far (px) past an edge of the view: past a tank's
+    // spawn ring (1.5 × its size of 50) plus the biggest screen shake (15).
+    // At most 125: with the view centred, that's the world beyond the top
+    // and bottom edges
+    SPAWN_MARGIN: 95,
   },
 
   // Mix. Speech runs outside Web Audio and can't go above full volume, so it
@@ -152,6 +157,13 @@ const CONFIG = {
     SHIELD_RECHARGE_MS: 8000,
     REGEN_DELAY_MS: 3000, // healing starts this long after the last hit
     REGEN_PER_SEC: 2, // health points per second
+    // Knockback: a push of this many px/frame that fades by KNOCKBACK_DECAY
+    // (share kept per frame), so it carries him about force x 6.7 px in all
+    KNOCKBACK_DECAY: 0.85,
+    KNOCKBACK_STAB: 8,
+    KNOCKBACK_RUSHER_BLAST: 12,
+    KNOCKBACK_AREA: 6, // hazard clouds
+    KNOCKBACK_BOMB: 15,
   },
 
   // Tank armour plates (hits to break). Applies to tanks spawned after a

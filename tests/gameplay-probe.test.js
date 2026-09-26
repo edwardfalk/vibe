@@ -28,6 +28,21 @@ test.describe('Gameplay Probes', () => {
     expect(after.playerAlive).toBe(true);
   });
 
+  test('Screen flashes fade out in the running game', async ({ page }) => {
+    await bootGame(page);
+    await page.evaluate(() => {
+      window.visualEffectsManager.triggerBloom(0.4, 10);
+      window.visualEffectsManager.triggerChromaticAberration(0.6, 10);
+    });
+    await page.waitForFunction(
+      () =>
+        window.visualEffectsManager.bloomIntensity === 0 &&
+        window.visualEffectsManager.chromaticAberration === 0,
+      null,
+      { timeout: 3000 }
+    );
+  });
+
   test('Title screen waits for input, then starts the run', async ({
     page,
   }) => {

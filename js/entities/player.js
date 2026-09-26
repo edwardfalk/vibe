@@ -32,6 +32,7 @@ export class Player {
 
     // Movement
     this.velocity = { x: 0, y: 0 };
+    this.knockback = { x: 0, y: 0 }; // px/frame, fades (CONFIG.PLAYER)
     this.isMoving = false;
     this.animFrame = 0;
 
@@ -68,6 +69,13 @@ export class Player {
 
     this.context = context;
     this.getContextValue = createContextAccessor(() => this.context);
+  }
+
+  /** Push him away from (fromX, fromY) with `force` px/frame */
+  knockBack(fromX, fromY, force) {
+    const angle = atan2(this.y - fromY, this.x - fromX);
+    this.knockback.x += cos(angle) * force;
+    this.knockback.y += sin(angle) * force;
   }
 
   update(deltaTimeMs) {
@@ -147,6 +155,14 @@ export class Player {
       this.x += this.velocity.x * dt;
       this.y += this.velocity.y * dt;
     }
+
+    // Knockback rides on top of steering and dashing, and fades
+    const frames = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
+    this.x += this.knockback.x * frames;
+    this.y += this.knockback.y * frames;
+    const keep = CONFIG.PLAYER.KNOCKBACK_DECAY ** frames;
+    this.knockback.x *= keep;
+    this.knockback.y *= keep;
 
     // Use world bounds consistent with CameraSystem.js and bullet.js
     const halfSize = this.size / 2;

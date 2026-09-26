@@ -109,15 +109,13 @@ export class RhythmFX {
   drawAttackTelegraphs(p, cameraSystem) {
     if (!this._getBeatClock() || this.telegraphs.length === 0) return;
 
-    const cameraX = cameraSystem ? cameraSystem.x : 0;
-    const cameraY = cameraSystem ? cameraSystem.y : 0;
-
     p.push();
 
     for (const telegraph of this.telegraphs) {
       // Convert world position to screen position
-      const screenX = telegraph.x - cameraX;
-      const screenY = telegraph.y - cameraY;
+      const { x: screenX, y: screenY } = cameraSystem
+        ? cameraSystem.worldToScreen(telegraph.x, telegraph.y)
+        : telegraph;
 
       // Calculate ring size based on beats until attack
       const progress = 1 - min(1, max(0, telegraph.beatsUntil / 2));
@@ -214,12 +212,12 @@ export class RhythmFX {
   }
 
   /**
-   * Draw all beat visualization elements
+   * Draw the screen-wide beat effects (telegraphs are drawn by the game
+   * loop, under the HUD and only while playing)
    */
-  draw(p, cameraSystem) {
+  draw(p) {
     this.drawScreenPulse(p);
     this.drawEdgeFlash(p);
-    this.drawAttackTelegraphs(p, cameraSystem);
   }
 }
 

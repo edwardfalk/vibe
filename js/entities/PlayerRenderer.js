@@ -138,17 +138,19 @@ export function drawPlayer(p, player) {
   p.strokeWeight(1);
   p.line(-0.6 * u, headY + 2.8 * u, 1.8 * u, headY + 2.3 * u);
   p.noStroke();
+  p.pop();
 
+  // Outside the aim frame: the dash lines trail the world-space velocity
+  // and the health bar stays level above his head
+  p.push();
+  p.translate(player.x, player.y);
   drawPlayerDashEffect(p, s, {
     isDashing: player.isDashing,
     dashTimerMs: player.dashTimerMs,
     maxDashTimeMs: player.maxDashTimeMs,
     dashVelocity: player.dashVelocity,
   });
-
-  // Health bar above player (drawn relative to player)
   drawPlayerHealthBar(p, player);
-
   p.pop();
 }
 

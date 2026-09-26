@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock browser globals that GameState uses
 vi.stubGlobal('window', {
@@ -50,6 +50,14 @@ describe('GameState', () => {
   it('addScore increases score', () => {
     gs.addScore(100);
     expect(gs.score).toBe(100);
+  });
+
+  it('a run that is over earns no more score or kills', () => {
+    gs.gameState = 'gameOver';
+    gs.addScore(100);
+    gs.addKill();
+    expect(gs.score).toBe(0);
+    expect(gs.totalKills).toBe(0);
   });
 
   it('addKill increments kills and streak', () => {
@@ -126,5 +134,86 @@ describe('GameState', () => {
     gs.addShotFired();
     gs.addShotFired();
     expect(gs.shotsFired).toBe(2);
+  });
+});
+
+const { drawGameOver } = await import('../../js/systems/UIOverlays.js');
+
+describe('game over screen', () => {
+  function textsDrawn(gs) {
+    const texts = [];
+    const p = new Proxy(
+      { width: 800, height: 600, frameCount: 0, sin: Math.sin },
+      {
+        get: (target, key) =>
+          key in target
+            ? target[key]
+            : key === 'text'
+              ? (s) => texts.push(s)
+              : () => {},
+      }
+    );
+    drawGameOver(p, gs);
+    return texts;
+  }
+
+  beforeEach(() => localStorage.clear());
+
+  it('says NEW HIGH SCORE when the run beat the old one', () => {
+    localStorage.setItem('vibeHighScore', '100');
+    const gs = new GameState();
+    gs.restart();
+    gs.addScore(150);
+    expect(textsDrawn(gs)).toContain('NEW HIGH SCORE! 🎉');
+  });
+
+  it('stays quiet when the run did not beat it', () => {
+    localStorage.setItem('vibeHighScore', '100');
+    const gs = new GameState();
+    gs.restart();
+    gs.addScore(50);
+    expect(textsDrawn(gs)).not.toContain('NEW HIGH SCORE! 🎉');
+  });
+
+  it('stays quiet on a practice run', () => {
+    const gs = new GameState();
+    gs.restart();
+    gs.practiceRun = true;
+    gs.addScore(100000);
+    expect(textsDrawn(gs)).not.toContain('NEW HIGH SCORE! 🎉');
+  });
+});
+
+const { CameraSystem } = await import('../../js/systems/CameraSystem.js');
+const { GameContext } = await import('../../js/core/GameContext.js');
+
+describe('restart', () => {
+  const leftovers = ['floatingText', 'audio', 'rhythmFX', 'cameraSystem'];
+
+  afterEach(() => {
+    for (const key of leftovers) window[key] = null;
+    window.explosionManager = null;
+  });
+
+  it("clears the last run's effects, texts, hitstop and shake", () => {
+    const gs = new GameState();
+    gs.gameContext = new GameContext();
+    gs.gameContext.set('hitStopFrames', 7);
+    window.explosionManager = { fragmentExplosions: [{}] };
+    window.floatingText = { texts: [{}] };
+    window.audio = { activeTexts: [{}], speakPlayerLine: () => {} };
+    window.rhythmFX = { telegraphs: [{}] };
+    window.cameraSystem = new CameraSystem({});
+    window.cameraSystem.addShake(20, 40);
+
+    gs.restart();
+    clearTimeout(gs.startSpeechTimer);
+
+    expect(window.explosionManager.fragmentExplosions).toEqual([]);
+    expect(window.floatingText.texts).toEqual([]);
+    expect(window.audio.activeTexts).toEqual([]);
+    expect(window.rhythmFX.telegraphs).toEqual([]);
+    expect(window.cameraSystem.screenShake.intensity).toBe(0);
+    expect(gs.gameContext.get('hitStopFrames')).toBe(0);
   });
 });

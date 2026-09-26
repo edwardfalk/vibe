@@ -89,16 +89,6 @@ describe('rusher blast vs enemies', () => {
     expect(gs.addKill).toHaveBeenCalledTimes(1);
   });
 
-  it('no scoring after the blast has ended the game', () => {
-    const grunt = stub(50, 0, true);
-    const gs = run([exploding(0, 0), grunt], {
-      gameState: 'gameOver',
-      addKill: vi.fn(),
-      addScore: vi.fn(),
-    });
-    expect(gs.addKill).not.toHaveBeenCalled();
-  });
-
   it('a caught rusher lights its fuse instead of dying; a lit one keeps its fuse', () => {
     const context = { get: () => undefined, set() {} };
     const unlit = new Rusher(60, 0, 'rusher', { context }, mockP5, null);

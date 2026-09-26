@@ -72,6 +72,8 @@ export class CollisionSystem {
       if (bullet._remove) continue;
 
       for (let j = 0; j < enemies.length; j++) {
+        // Killed earlier this frame; leaves the array next frame
+        if (enemies[j].markedForRemoval) continue;
         if (this.resolveBulletEnemyHit(bullet, i, enemies[j])) {
           break;
         }
@@ -115,7 +117,7 @@ export class CollisionSystem {
 
       for (let j = 0; j < enemies.length; j++) {
         const enemy = enemies[j];
-        if (bullet.ownerId === enemy.id) continue;
+        if (bullet.ownerId === enemy.id || enemy.markedForRemoval) continue;
 
         // Check if bullet hits enemy (but not the one that fired it)
         if (bullet.checkCollision(enemy)) {
