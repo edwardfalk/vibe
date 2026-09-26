@@ -4,7 +4,14 @@
  *   MediumStarRenderer.js, NearFieldParallax.js, BeatReactiveBackground.js
  */
 
-import { random, randomRange } from '../../mathUtils.js';
+import { random } from '../../mathUtils.js';
+import {
+  drawDistantGalaxiesLayer,
+  drawFlowingNebulaStreamsLayer,
+  drawShootingStarsLayer,
+  drawEnhancedSparklesLayer,
+} from './EnhancedSpaceElements.js';
+import { drawAuroraWispsLayer } from './BackgroundEffects.js';
 
 // ─── BeatReactiveBackground ───────────────────────────────────────────────────
 
@@ -37,225 +44,112 @@ function computeMediumStarVisual(
   };
 }
 
-// ─── ParallaxLayerConfig ──────────────────────────────────────────────────────
-
-export function createParallaxLayerConfig() {
-  return [
-    {
-      name: 'distant_galaxies',
-      elements: [],
-      speed: 0.05,
-      depth: 0.95,
-    },
-    {
-      name: 'distant_stars',
-      elements: [],
-      speed: 0.1,
-      depth: 0.9,
-    },
-    {
-      name: 'nebula_streams',
-      elements: [],
-      speed: 0.2,
-      depth: 0.8,
-    },
-    {
-      name: 'aurora_wisps',
-      elements: [],
-      speed: 0.25,
-      depth: 0.75,
-    },
-    {
-      name: 'nebula_clouds',
-      elements: [],
-      speed: 0.3,
-      depth: 0.7,
-    },
-    {
-      name: 'enhanced_sparkles',
-      elements: [],
-      speed: 0.4,
-      depth: 0.6,
-    },
-    {
-      name: 'medium_stars',
-      elements: [],
-      speed: 0.5,
-      depth: 0.5,
-    },
-    {
-      name: 'shooting_stars',
-      elements: [],
-      speed: 0.6,
-      depth: 0.4,
-    },
-    {
-      name: 'close_debris',
-      elements: [],
-      speed: 0.8,
-      depth: 0.3,
-    },
-    {
-      name: 'foreground_sparks',
-      elements: [],
-      speed: 1.2,
-      depth: 0.1,
-    },
-  ];
-}
-
-// ─── ParallaxLayerFactory ─────────────────────────────────────────────────────
-
-const DISTANT_STAR_COUNT = 50;
-const NEBULA_CLOUD_COUNT = 8;
-const MEDIUM_STAR_COUNT = 30;
-const CLOSE_DEBRIS_COUNT = 15;
-const FOREGROUND_SPARK_COUNT = 60;
-
-const DISTANT_GALAXY_COUNT = 6;
-const NEBULA_STREAM_COUNT = 15;
-const AURORA_WISP_COUNT = 12;
-const ENHANCED_SPARKLE_COUNT = 40;
-const SHOOTING_STAR_COUNT = 5;
+// ─── Parallax layers ──────────────────────────────────────────────────────────
 
 const MEDIUM_STAR_COLORS = ['white', 'cyan', 'magenta'];
 const DEBRIS_SHAPES = ['triangle', 'square', 'diamond'];
 
-export function generateParallaxLayerElements(parallaxLayers, p) {
-  const findLayer = (name) => parallaxLayers.find((l) => l.name === name);
+// Anywhere in a 3x3-screen area around the start view
+const spot = (p) => ({
+  x: random(-p.width, p.width * 2),
+  y: random(-p.height, p.height * 2),
+});
+const phased = (p) => ({ ...spot(p), phase: random(0, p.TWO_PI) });
 
-  const distantGalaxies = findLayer('distant_galaxies');
-  if (distantGalaxies) {
-    for (let i = 0; i < DISTANT_GALAXY_COUNT; i++) {
-      distantGalaxies.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        phase: randomRange(0, p.TWO_PI),
-      });
-    }
-  }
+// Back to front. speed is the parallax factor; make() is called count times,
+// layer by layer, so a given random seed always gives the same sky.
+const PARALLAX_LAYERS = [
+  { speed: 0.05, count: 6, draw: drawDistantGalaxiesLayer, make: phased },
+  {
+    speed: 0.1,
+    count: 50,
+    draw: drawDistantStarsLayer,
+    make: (p) => ({
+      ...spot(p),
+      size: random(1, 3),
+      brightness: random(0.3, 1),
+      twinkleSpeed: random(0.01, 0.03),
+    }),
+  },
+  { speed: 0.2, count: 15, draw: drawFlowingNebulaStreamsLayer, make: phased },
+  { speed: 0.25, count: 12, draw: drawAuroraWispsLayer, make: phased },
+  {
+    speed: 0.3,
+    count: 8,
+    draw: drawNebulaCloudLayer,
+    make: (p) => ({
+      ...spot(p),
+      size: random(100, 300),
+      color: {
+        r: random(11, 46), // Deep violet range
+        g: random(0, 11),
+        b: random(26, 70), // Indigo range
+      },
+      alpha: random(0.05, 0.15),
+      driftSpeed: random(0.1, 0.3),
+    }),
+  },
+  { speed: 0.4, count: 40, draw: drawEnhancedSparklesLayer, make: phased },
+  {
+    speed: 0.5,
+    count: 30,
+    draw: drawMediumStarsLayer,
+    make: (p) => ({
+      ...spot(p),
+      size: random(2, 5),
+      brightness: random(0.5, 1),
+      color: random(MEDIUM_STAR_COLORS),
+    }),
+  },
+  {
+    speed: 0.6,
+    count: 5,
+    draw: drawShootingStarsLayer,
+    make: (p) => ({
+      startX: random(-p.width, p.width * 2),
+      startY: random(-p.height, p.height * 2),
+      endXOffset: random(200, 500),
+      endYOffset: random(-500, -200),
+      phaseOffset: random(0, 600),
+    }),
+  },
+  {
+    speed: 0.8,
+    count: 15,
+    draw: drawCloseDebrisLayer,
+    make: (p) => ({
+      ...spot(p),
+      size: random(3, 8),
+      rotation: random(0, p.TWO_PI),
+      rotationSpeed: random(-0.02, 0.02),
+      shape: random(DEBRIS_SHAPES),
+    }),
+  },
+  {
+    speed: 1.2,
+    count: 60,
+    draw: drawForegroundSparksLayer,
+    make: (p) => ({
+      ...spot(p),
+      size: random(2, 4),
+      alpha: random(150 / 255, 1),
+      flickerSpeed: random(0.05, 0.15),
+    }),
+  },
+];
 
-  const distantStars = findLayer('distant_stars');
-  if (distantStars) {
-    for (let i = 0; i < DISTANT_STAR_COUNT; i++) {
-      distantStars.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        size: randomRange(1, 3),
-        brightness: randomRange(0.3, 1),
-        twinkleSpeed: randomRange(0.01, 0.03),
-      });
-    }
-  }
-
-  const nebulaStreams = findLayer('nebula_streams');
-  if (nebulaStreams) {
-    for (let i = 0; i < NEBULA_STREAM_COUNT; i++) {
-      nebulaStreams.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        phase: randomRange(0, p.TWO_PI),
-      });
-    }
-  }
-
-  const auroraWisps = findLayer('aurora_wisps');
-  if (auroraWisps) {
-    for (let i = 0; i < AURORA_WISP_COUNT; i++) {
-      auroraWisps.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        phase: randomRange(0, p.TWO_PI),
-      });
-    }
-  }
-
-  const nebulaClouds = findLayer('nebula_clouds');
-  if (nebulaClouds) {
-    for (let i = 0; i < NEBULA_CLOUD_COUNT; i++) {
-      nebulaClouds.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        size: randomRange(100, 300),
-        color: {
-          r: randomRange(11, 46), // Deep violet range
-          g: randomRange(0, 11),
-          b: randomRange(26, 70), // Indigo range
-        },
-        alpha: randomRange(0.05, 0.15),
-        driftSpeed: randomRange(0.1, 0.3),
-      });
-    }
-  }
-
-  const enhancedSparkles = findLayer('enhanced_sparkles');
-  if (enhancedSparkles) {
-    for (let i = 0; i < ENHANCED_SPARKLE_COUNT; i++) {
-      enhancedSparkles.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        phase: randomRange(0, p.TWO_PI),
-      });
-    }
-  }
-
-  const mediumStars = findLayer('medium_stars');
-  if (mediumStars) {
-    for (let i = 0; i < MEDIUM_STAR_COUNT; i++) {
-      mediumStars.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        size: randomRange(2, 5),
-        brightness: randomRange(0.5, 1),
-        color: random(MEDIUM_STAR_COLORS),
-      });
-    }
-  }
-
-  const shootingStars = findLayer('shooting_stars');
-  if (shootingStars) {
-    for (let i = 0; i < SHOOTING_STAR_COUNT; i++) {
-      shootingStars.elements.push({
-        startX: randomRange(-p.width, p.width * 2),
-        startY: randomRange(-p.height, p.height * 2),
-        endXOffset: randomRange(200, 500),
-        endYOffset: randomRange(-500, -200),
-        phaseOffset: randomRange(0, 600),
-      });
-    }
-  }
-
-  const closeDebris = findLayer('close_debris');
-  if (closeDebris) {
-    for (let i = 0; i < CLOSE_DEBRIS_COUNT; i++) {
-      closeDebris.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        size: randomRange(3, 8),
-        rotation: randomRange(0, p.TWO_PI),
-        rotationSpeed: randomRange(-0.02, 0.02),
-        shape: random(DEBRIS_SHAPES),
-      });
-    }
-  }
-
-  const foregroundSparks = findLayer('foreground_sparks');
-  if (foregroundSparks) {
-    for (let i = 0; i < FOREGROUND_SPARK_COUNT; i++) {
-      foregroundSparks.elements.push({
-        x: randomRange(-p.width, p.width * 2),
-        y: randomRange(-p.height, p.height * 2),
-        size: randomRange(2, 4),
-        alpha: randomRange(150 / 255, 1),
-        flickerSpeed: randomRange(0.05, 0.15),
-      });
-    }
-  }
+/** Each layer with its elements generated: { speed, draw, elements }. */
+export function createParallaxLayers(p) {
+  return PARALLAX_LAYERS.map(({ speed, count, draw, make }) => ({
+    speed,
+    draw,
+    elements: Array.from({ length: count }, () => make(p)),
+  }));
 }
 
 // ─── ParallaxLayerRenderers ───────────────────────────────────────────────────
 
-export function drawDistantStarsLayer(stars, p, beatClock = null) {
+function drawDistantStarsLayer(stars, p, beatClock = null) {
   const beatBoost = beatClock ? beatClock.getBeatIntensity(10) * 80 : 0;
   const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
   const STAR_BEAT_MULTIPLIER = 10;
@@ -280,7 +174,7 @@ export function drawDistantStarsLayer(stars, p, beatClock = null) {
   p.drawingContext.shadowColor = 'transparent';
 }
 
-export function drawNebulaCloudLayer(clouds, p, beatClock = null) {
+function drawNebulaCloudLayer(clouds, p, beatClock = null) {
   const beatPulse = beatClock ? beatClock.getBeatIntensity(6) : 0;
 
   p.noStroke();
@@ -308,7 +202,7 @@ export function drawNebulaCloudLayer(clouds, p, beatClock = null) {
 
 // ─── MediumStarRenderer ───────────────────────────────────────────────────────
 
-export function drawMediumStarsLayer(stars, p, beatClock = null) {
+function drawMediumStarsLayer(stars, p, beatClock = null) {
   const beatPulse = beatClock ? beatClock.getBeatIntensity(8) : 0;
   const measurePhase = beatClock ? beatClock.getMeasurePhase() : 0;
 
@@ -356,7 +250,7 @@ export function drawMediumStarsLayer(stars, p, beatClock = null) {
 
 // ─── NearFieldParallax ────────────────────────────────────────────────────────
 
-export function drawCloseDebrisLayer(debris, p) {
+function drawCloseDebrisLayer(debris, p) {
   p.stroke(255, 0, 200, 150); // Hot magenta
   p.strokeWeight(2);
   p.noFill();
@@ -402,7 +296,7 @@ export function drawCloseDebrisLayer(debris, p) {
   p.drawingContext.shadowColor = 'transparent';
 }
 
-export function drawForegroundSparksLayer(sparks, p) {
+function drawForegroundSparksLayer(sparks, p) {
   p.noFill();
   p.strokeWeight(2);
   p.drawingContext.shadowBlur = 15;
