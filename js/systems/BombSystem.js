@@ -13,6 +13,7 @@ const WARNING_SECONDS = 3;
 export function tryPlaceTankBomb(activeBombs, enemy) {
   if (!activeBombs || !enemy) return;
   if (activeBombs.length >= MAX_ACTIVE_BOMBS) return;
+  if (activeBombs.some((bomb) => bomb.tankId === enemy.id)) return; // one each
   const timer = 180;
   activeBombs.push({
     x: enemy.x,
