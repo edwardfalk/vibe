@@ -36,30 +36,14 @@ export class FloatingTextManager {
       this.accumulatorPos.y = (this.accumulatorPos.y + y) / 2;
       this.accumulatorTimer = 10;
 
-      if (this.accumulatedTextRef && this.accumulatedTextRef.life > 0) {
-        this.accumulatedTextRef.text = `-${this.damageAccumulator}`;
-        this.accumulatedTextRef.size =
-          14 + Math.min(this.damageAccumulator * 1.5, 16);
-        this.accumulatedTextRef.life = 40;
-        this.accumulatedTextRef.x = this.accumulatorPos.x;
-        this.accumulatedTextRef.y = this.accumulatorPos.y;
-      } else {
-        const t = {
-          x: this.accumulatorPos.x,
-          y: this.accumulatorPos.y,
-          text: `-${this.damageAccumulator}`,
-          size: 14 + Math.min(this.damageAccumulator * 1.5, 16),
-          life: 40,
-          maxLife: 40,
-          color: [255, 255, 255],
-          vy: -2,
-          vx: 0,
-          isAccumulated: true,
-          momentum: 1.0,
-        };
-        this.accumulatedTextRef = t;
-        this.texts.push(t);
-      }
+      // The text outlives the accumulator (life 40 vs 10 frames), so while
+      // damage is still accumulating its text is always on screen.
+      const t = this.accumulatedTextRef;
+      t.text = `-${this.damageAccumulator}`;
+      t.size = 14 + Math.min(this.damageAccumulator * 1.5, 16);
+      t.life = 40;
+      t.x = this.accumulatorPos.x;
+      t.y = this.accumulatorPos.y;
     } else {
       this.damageAccumulator = amount;
       this.accumulatorPos = { x, y };
@@ -79,7 +63,6 @@ export class FloatingTextManager {
         vx: (Math.random() - 0.5) * 0.5,
         life: 40,
         maxLife: 40,
-        isAccumulated: true,
         momentum: 1.0,
       };
       this.accumulatedTextRef = t;
@@ -187,22 +170,16 @@ export class FloatingTextManager {
       const t = this.texts[i];
 
       t.y += t.vy;
-      t.x += t.vx || 0;
-
-      if (t.momentum) {
-        t.vy *= t.momentum;
-        if (t.vx) t.vx *= t.momentum;
-      } else {
-        t.vy *= 0.97;
-        if (t.vx) t.vx *= 0.97;
-      }
+      t.x += t.vx;
+      t.vy *= t.momentum;
+      t.vx *= t.momentum;
 
       if (t.targetScale !== undefined && t.scale !== undefined) {
         t.scale += (t.targetScale - t.scale) * 0.15;
       }
 
       if (t.rotate) {
-        t.rotation = (t.rotation || 0) + 0.1;
+        t.rotation += 0.1;
       }
 
       t.life--;
@@ -238,8 +215,10 @@ export class FloatingTextManager {
         displayScale = Math.max(displayScale, 1 + (1 - lifePercent) * 0.5);
       }
 
+      // Scaled or rotating texts draw in their own frame, around (0, 0)
       const needsTransform = (t.rotate && t.rotation) || displayScale !== 1;
-
+      let x = t.x;
+      let y = t.y;
       if (needsTransform) {
         p.push();
         p.translate(t.x, t.y);
@@ -247,33 +226,23 @@ export class FloatingTextManager {
         if (t.rotate && t.rotation) {
           p.rotate(t.rotation);
         }
-
-        p.textSize(t.size);
-
-        if (t.isStreak || t.isKill) {
-          p.fill(t.color[0], t.color[1], t.color[2], displayAlpha * 0.3);
-          p.text(t.text, 0, 0);
-        }
-        p.fill(0, 0, 0, displayAlpha * 0.5);
-        p.text(t.text, 2, 2);
-
-        p.fill(t.color[0], t.color[1], t.color[2], displayAlpha);
-        p.text(t.text, 0, 0);
-
-        p.pop();
-      } else {
-        p.textSize(t.size);
-
-        if (t.isStreak || t.isKill) {
-          p.fill(t.color[0], t.color[1], t.color[2], displayAlpha * 0.3);
-          p.text(t.text, t.x, t.y);
-        }
-        p.fill(0, 0, 0, displayAlpha * 0.5);
-        p.text(t.text, t.x + 2, t.y + 2);
-
-        p.fill(t.color[0], t.color[1], t.color[2], displayAlpha);
-        p.text(t.text, t.x, t.y);
+        x = 0;
+        y = 0;
       }
+
+      p.textSize(t.size);
+
+      if (t.isStreak || t.isKill) {
+        p.fill(t.color[0], t.color[1], t.color[2], displayAlpha * 0.3);
+        p.text(t.text, x, y);
+      }
+      p.fill(0, 0, 0, displayAlpha * 0.5);
+      p.text(t.text, x + 2, y + 2);
+
+      p.fill(t.color[0], t.color[1], t.color[2], displayAlpha);
+      p.text(t.text, x, y);
+
+      if (needsTransform) p.pop();
     }
   }
 }
