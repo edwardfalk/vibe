@@ -1,6 +1,7 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { random, sqrt, atan2 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
+import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 // Per-beat chances for beat-gated grunt sounds (rolled once per beat)
 const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
@@ -352,7 +353,7 @@ class Grunt extends BaseEnemy {
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     // Reject further damage while deferred death is pending
-    if (this.pendingStabDeath) return false;
+    if (this.pendingStabDeath) return DAMAGE_RESULT.DAMAGED;
 
     if (
       damageSource === 'stabber_melee' &&
@@ -369,9 +370,10 @@ class Grunt extends BaseEnemy {
         this._pendingStabDeathParams = { amount, bulletAngle, damageSource };
       }
       // Signal DAMAGED (not DIED) — deferred timer handles death exclusively
-      return false;
+      return DAMAGE_RESULT.DAMAGED;
     }
-    const died = super.takeDamage(amount, bulletAngle, damageSource);
+    const result = super.takeDamage(amount, bulletAngle, damageSource);
+    const died = result === DAMAGE_RESULT.DIED;
     const audioSurv = this.getContextValue('audio');
     if (damageSource !== 'stabber_melee' && !died && audioSurv) {
       audioSurv.playSound('gruntHit', this.x, this.y);
@@ -385,7 +387,7 @@ class Grunt extends BaseEnemy {
       this.sayOw(audioSurv);
       this.speechCooldown = 60; // 1s cooldown to avoid spam
     }
-    return died;
+    return result;
   }
 
   /** "Ow": spoken (forced past the voice cooldown), else the sound */

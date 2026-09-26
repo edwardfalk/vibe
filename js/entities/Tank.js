@@ -10,6 +10,7 @@ import {
   normalizeAngle,
 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
+import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 const TANK_POWER_SOUND_CHANCE = 0.5; // per beat 1 while charging
 // Per attempt once the speech timer is up (= today's effective rate)
@@ -471,7 +472,7 @@ class Tank extends BaseEnemy {
       armor.hp -= amount;
       if (audio) audio.playSound('hit', this.x, this.y);
       this.hitFlash = 8;
-      if (armor.hp > 0) return false; // the plate took it all
+      if (armor.hp > 0) return DAMAGE_RESULT.DAMAGED; // the plate took it all
 
       const overflow = -armor.hp;
       armor.hp = 0;
@@ -479,7 +480,7 @@ class Tank extends BaseEnemy {
       if (audio) audio.playSound('explosion', this.x, this.y);
       this.breakArmor(plate);
       this.trackAnger(damageSource);
-      if (overflow <= 0) return false;
+      if (overflow <= 0) return DAMAGE_RESULT.DAMAGED;
       if (audio) audio.playSound('tankHit', this.x, this.y);
       return super.takeDamage(overflow, bulletAngle, damageSource);
     }

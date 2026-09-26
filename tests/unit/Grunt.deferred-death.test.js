@@ -29,6 +29,7 @@ vi.mock('../../js/entities/BaseEnemyHelpers.js', () => ({
 import { Grunt } from '../../js/entities/Grunt.js';
 import { CONFIG } from '../../js/config.js';
 import { Bullet } from '../../js/entities/bullet.js';
+import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
 
 /**
  * Create a minimal mock p5 instance with the methods BaseEnemy/Grunt need.
@@ -112,12 +113,12 @@ describe('Grunt deferred stabber death', () => {
     grunt.spawnTimer = grunt.spawnDuration;
   });
 
-  it('returns false (DAMAGED, not DIED) when taking fatal stabber_melee damage', () => {
+  it('returns DAMAGED (not DIED) when taking fatal stabber_melee damage', () => {
     // Grunt has 2 health. Dealing 2+ damage from stabber_melee should trigger deferred death.
     const result = grunt.takeDamage(5, null, 'stabber_melee');
 
-    // Should return false (deferred), NOT true (died immediately)
-    expect(result).toBe(false);
+    // Deferred: DAMAGED, not DIED
+    expect(result).toBe(DAMAGE_RESULT.DAMAGED);
     // Should NOT be marked for removal yet
     expect(grunt.markedForRemoval).toBe(false);
     // Should have pending death flag set
@@ -127,16 +128,16 @@ describe('Grunt deferred stabber death', () => {
   it('rejects further damage while pendingStabDeath is true', () => {
     // First fatal hit from stabber
     const firstResult = grunt.takeDamage(5, null, 'stabber_melee');
-    expect(firstResult).toBe(false);
+    expect(firstResult).toBe(DAMAGE_RESULT.DAMAGED);
     expect(grunt.pendingStabDeath).toBe(true);
 
-    // Second hit while pending death should also return false
+    // Second hit while pending death is DAMAGED too
     const secondResult = grunt.takeDamage(5, null, 'stabber_melee');
-    expect(secondResult).toBe(false);
+    expect(secondResult).toBe(DAMAGE_RESULT.DAMAGED);
 
     // Third hit from a non-stabber source should also be rejected
     const thirdResult = grunt.takeDamage(1, 0, 'player_bullet');
-    expect(thirdResult).toBe(false);
+    expect(thirdResult).toBe(DAMAGE_RESULT.DAMAGED);
 
     // Still not removed yet
     expect(grunt.markedForRemoval).toBe(false);

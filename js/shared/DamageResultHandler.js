@@ -1,28 +1,26 @@
-import { DAMAGE_RESULT, normalizeDamageResult } from './DamageResult.js';
+import { DAMAGE_RESULT } from './DamageResult.js';
 
 /**
- * Handles a normalized damage result with standard effects.
+ * Handles an enemy's takeDamage result (DAMAGE_RESULT) with standard effects.
  *
  * All three call-sites (CollisionSystem, EnemyUpdatePipeline, AreaDamageHandler)
  * share the same EXPLODING/DAMAGED/DIED switch structure. This function captures
  * the common behavior and parameterizes the differences via `ctx`.
  *
- * @param {*} rawResult - Raw return value from enemy.takeDamage()
+ * @param {string} result - The DAMAGE_RESULT enemy.takeDamage() returned
  * @param {object} enemy - The damaged enemy
  * @param {object} ctx - Context bag:
  *   Required: { explosionManager, audio }
- *   Death handling (at least one): { enemyDeathHandler } or { onDeath(enemy) }
+ *   Death handling: { onDeath(enemy) }
  *   Scoring: { gameState, scorePoints } (default 10)
  *   Kill feedback (optional): { killFeedback: { beatClock, floatingText,
  *       visualEffectsManager, cameraSystem, getHitStopFrames, setHitStopFrames } }
  *   Hit position (optional): { hitX, hitY } - where the hit visual goes,
  *       defaults to enemy.x, enemy.y
  *   Floating damage (optional): { floatingText, bulletDamage } - shows damage number on DAMAGED
- * @returns {string} The normalized DAMAGE_RESULT value
+ * @returns {string} result, passed through
  */
-export function handleDamageResult(rawResult, enemy, ctx) {
-  const result = normalizeDamageResult(rawResult);
-
+export function handleDamageResult(result, enemy, ctx) {
   const hitX = ctx.hitX ?? enemy.x;
   const hitY = ctx.hitY ?? enemy.y;
 
@@ -33,16 +31,7 @@ export function handleDamageResult(rawResult, enemy, ctx) {
 
   if (result === DAMAGE_RESULT.DIED) {
     // Death effects (explosion + type-specific sound)
-    if (ctx.onDeath) {
-      ctx.onDeath(enemy);
-    } else if (ctx.enemyDeathHandler) {
-      ctx.enemyDeathHandler.handleEnemyDeath(
-        enemy,
-        enemy.type,
-        enemy.x,
-        enemy.y
-      );
-    }
+    if (ctx.onDeath) ctx.onDeath(enemy);
 
     // Extra audio on death (e.g. friendly-fire explosion sound)
     if (ctx.deathSound && ctx.audio) {
@@ -69,7 +58,6 @@ export function handleDamageResult(rawResult, enemy, ctx) {
     return result;
   }
 
-  // DAMAGED or NONE
   if (result === DAMAGE_RESULT.DAMAGED) {
     addHitEffect(ctx, hitX, hitY);
 

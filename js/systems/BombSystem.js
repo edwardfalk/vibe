@@ -1,8 +1,5 @@
 import { sqrt, max, floor, atan2, cos, sin } from '../mathUtils.js';
-import {
-  DAMAGE_RESULT,
-  normalizeDamageResult,
-} from '../shared/DamageResult.js';
+import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 const BOMB_EXPLOSION_RADIUS = 250;
 const MIN_PLAYER_BOMB_DAMAGE = 10;
@@ -131,9 +128,7 @@ export function updateBombs(context) {
           MAX_ENEMY_BOMB_DAMAGE * (1 - enemyDistance / BOMB_EXPLOSION_RADIUS)
         )
       );
-      const damageResult = normalizeDamageResult(
-        enemy.takeDamage(damage, null, 'bomb')
-      );
+      const damageResult = enemy.takeDamage(damage, null, 'bomb');
 
       if (damageResult === DAMAGE_RESULT.DAMAGED) {
         if (floatingText) {

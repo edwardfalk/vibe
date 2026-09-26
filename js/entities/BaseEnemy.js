@@ -9,6 +9,7 @@ import {
   drawEnemyHealthBar,
 } from './BaseEnemyHelpers.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
+import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
@@ -450,14 +451,12 @@ export class BaseEnemy {
 
   /**
    * Take damage - handles basic damage logic
+   * @returns {string} DAMAGE_RESULT.DIED or DAMAGE_RESULT.DAMAGED
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     this.health -= amount;
     this.hitFlash = Math.max(this.hitFlash, 8);
-    if (this.health <= 0) {
-      return true; // Enemy died
-    }
-    return false;
+    return this.health <= 0 ? DAMAGE_RESULT.DIED : DAMAGE_RESULT.DAMAGED;
   }
 
   onNearbyDeath(deadEnemy) {

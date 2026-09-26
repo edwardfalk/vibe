@@ -28,9 +28,9 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
   const enemyType = enemy.type;
 
   // Damage enemy (pass bullet angle for knockback)
-  const rawResult = enemy.takeDamage(bullet.damage, bullet.angle);
+  const result = enemy.takeDamage(bullet.damage, bullet.angle);
 
-  handleDamageResult(rawResult, enemy, {
+  handleDamageResult(result, enemy, {
     explosionManager,
     audio,
     gameState,

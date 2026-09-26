@@ -46,7 +46,8 @@ export function handleAreaDamageEvents(damageEvents, context) {
         explosionManager,
         audio,
         gameState,
-        enemyDeathHandler,
+        onDeath: (e) =>
+          enemyDeathHandler?.handleEnemyDeath(e, e.type, e.x, e.y),
         scorePoints: 10,
       },
       'area'
