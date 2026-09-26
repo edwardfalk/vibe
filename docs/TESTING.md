@@ -26,9 +26,25 @@ These run through Playwright too. They're for measuring and looking, so CI doesn
 
 ## Proving a refactor changes nothing
 
-`pnpm run compare` (or `node tests/replay/compare.js <ref>`, which compares against `main` by default) replays the game headless from that git ref and from your working tree. Both replays get the same seeded random numbers, clock and scripted input, and three runs climb to later levels. It compares a fingerprint of each frame: every shape drawn with its full style and position, plus every sound, speech line and game-state change. `same` on all three runs means nothing a player sees or hears changed. It takes about two minutes.
+`pnpm run compare` replays the game headless from a git ref and from your working tree. Run it as `node tests/replay/compare.js <ref>`; the ref defaults to your local `main`. It takes about two minutes.
 
-When a run differs, it names the first frame. Rerun with `DETAIL=<frame>-<frame>` to keep the two outputs with that frame written in full, and diff them. A change that is meant to show, such as a new enemy or a tuned number, will of course differ. The tool is for refactors.
+**What it records.** Each frame is reduced to a fingerprint of what the game did:
+
+- every shape drawn, with its full style and position;
+- every Web Audio node, connection and parameter change, including buffer contents and scheduled starts and stops;
+- every speech line with its rate, pitch and volume;
+- every game-state change.
+
+Both replays get the same seeded random numbers, clock and scripted input. The run starts the way a player starts it, with a key on the title screen. There are three runs: one normal, and two that climb to later levels.
+
+**Reading the result.** `same` on all three runs means the game drew and played exactly the same things. When a run differs, it names the first frame that differs. Rerun with `DETAIL=<frame>-<frame>` to keep the two outputs with that frame written in full, then diff them. A change that is meant to show, such as a new enemy or a tuned number, will of course differ. The tool is for refactors.
+
+**What it doesn't see:**
+
+- the HTML parts of the page (`index.html`, the title overlay, the toast);
+- code outside `js/`;
+- speech ducking, since the fake speech engine never reports that it is speaking;
+- a Web Audio node that is never connected. It makes no sound, so it is left out on purpose.
 
 The Playwright config has four projects (`e2e`, `playtest`, `screenshot`, `beats`). The scripts always pick one. A bare `npx playwright test` runs all four.
 

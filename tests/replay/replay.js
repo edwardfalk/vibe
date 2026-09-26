@@ -2,8 +2,9 @@
  * Replay: runs the whole game (js/GameLoop.js) headless on a mock p5 with a
  * seeded Math.random, a virtual clock and scripted input, and writes one
  * SHA-1 per frame of everything the frame did: every drawing primitive with
- * the full style and transform it is drawn with, every sound and speech line,
- * and every game-state change. Two trees that write the same file look and
+ * the full style and transform it is drawn with, every Web Audio node,
+ * connection and parameter change, every speech line with its voice
+ * settings, and every game-state change. Two trees that write the same file look and
  * sound the same, so a refactor that should change nothing can be proved to.
  *
  * Usage: node tests/replay/replay.js <root> <out> [frames] [seed] [mode]
@@ -31,7 +32,10 @@ Math.random = () => {
 };
 
 const fd = openSync(out, 'w');
-const [dA, dB] = (process.env.DETAIL ?? '-1--1').split('-').map(Number);
+// DETAIL=a-b: also write frames a..b in full
+const [dA, dB] = /^\d+-\d+$/.test(process.env.DETAIL ?? '')
+  ? process.env.DETAIL.split('-').map(Number)
+  : [Infinity, -Infinity];
 let hash = createHash('sha1');
 let frameNo = 0;
 let nLines = 0;
@@ -49,7 +53,7 @@ const log = {
     hash = createHash('sha1');
   },
   flush() {
-    this.endFrame('END');
+    this.endFrame(`F${frameNo}`);
   },
 };
 // Round numbers so float noise in the last bits doesn't count as a change
@@ -75,8 +79,16 @@ globalThis.setTimeout = (fn, ms = 0) => {
 globalThis.clearTimeout = (id) => {
   timers = timers.filter((t) => t.id !== id);
 };
-globalThis.setInterval = () => 0;
-globalThis.clearInterval = () => {};
+globalThis.setInterval = (fn, ms = 0) => {
+  const id = ++timerId;
+  const tick = () => {
+    timers.push({ id, at: now + ms, fn: tick });
+    fn();
+  };
+  timers.push({ id, at: now + ms, fn: tick });
+  return id;
+};
+globalThis.clearInterval = globalThis.clearTimeout;
 function runTimers() {
   for (;;) {
     timers.sort((a, b) => a.at - b.at || a.id - b.id);
@@ -90,11 +102,12 @@ function runTimers() {
 // ---- browser globals
 globalThis.window = globalThis;
 const listeners = {};
-globalThis.addEventListener = (type, fn) => {
-  (listeners[type] ??= []).push(fn);
+globalThis.addEventListener = (type, fn, opts) => {
+  const capture = opts === true || !!opts?.capture;
+  (listeners[type] ??= []).push({ fn, capture });
 };
 globalThis.removeEventListener = (type, fn) => {
-  listeners[type] = (listeners[type] ?? []).filter((f) => f !== fn);
+  listeners[type] = (listeners[type] ?? []).filter((l) => l.fn !== fn);
 };
 function dispatch(type, props) {
   const ev = {
@@ -107,10 +120,21 @@ function dispatch(type, props) {
     button: 0,
     target: {},
     preventDefault() {},
-    stopImmediatePropagation() {},
+    stopImmediatePropagation() {
+      stopped = true;
+    },
     ...props,
   };
-  for (const fn of [...(listeners[type] ?? [])]) fn(ev);
+  // Capture-phase listeners on window run before the rest, as in a browser
+  let stopped = false;
+  const all = listeners[type] ?? [];
+  for (const { fn } of [
+    ...all.filter((l) => l.capture),
+    ...all.filter((l) => !l.capture),
+  ]) {
+    if (stopped) break;
+    fn(ev);
+  }
 }
 const store = {};
 globalThis.localStorage = {
@@ -136,7 +160,9 @@ Object.defineProperty(globalThis, 'location', { value: { search: '' } });
 globalThis.speechSynthesis = {
   getVoices: () => [],
   speak(u) {
-    log.push(`SPEECH ${u.text}`);
+    log.push(
+      `SPEECH ${u.text} rate=${R(u.rate)} pitch=${R(u.pitch)} vol=${R(u.volume)} voice=${u.voice?.name ?? ''}`
+    );
   },
   cancel() {},
   speaking: false,
@@ -146,11 +172,165 @@ globalThis.SpeechSynthesisUtterance = class {
     this.text = text;
   }
 };
+// ---- recording Web Audio: every node, connection, parameter change and
+// scheduled start/stop is logged, so a changed sound shows up. A node is
+// named and logged only once it joins the graph (connects, or is connected
+// to): one never connected makes no sound, and must not renumber the rest.
+const AUDIO_PARAMS = new Set([
+  'gain',
+  'frequency',
+  'detune',
+  'Q',
+  'pan',
+  'threshold',
+  'knee',
+  'ratio',
+  'attack',
+  'release',
+  'delayTime',
+  'playbackRate',
+]);
+let audioIds = 0;
+const audioNodes = new WeakMap(); // node proxy -> its recorder
+const sha = (data) =>
+  createHash('sha1')
+    .update(Buffer.from(data.buffer, data.byteOffset, data.byteLength))
+    .digest('hex')
+    .slice(0, 12);
+const fmtAudio = (v) => {
+  if (v && typeof v === 'object') {
+    const rec = audioNodes.get(v);
+    if (rec) return rec.ref();
+    if (ArrayBuffer.isView(v)) return `data:${sha(v)}`;
+    return 'obj';
+  }
+  return typeof v === 'function' ? 'fn' : R(v);
+};
+function audioParam(rec, name) {
+  let value = 0;
+  const param = new Proxy(
+    {},
+    {
+      get(_, k) {
+        if (k === 'value') return value;
+        if (typeof k === 'symbol' || k === 'then') return undefined;
+        return (...a) => {
+          rec.emit(`.${name}.${String(k)}(${a.map(fmtAudio)})`);
+          return param;
+        };
+      },
+      set(_, k, v) {
+        if (k === 'value') value = v;
+        rec.emit(`.${name}.${String(k)}=${fmtAudio(v)}`);
+        return true;
+      },
+    }
+  );
+  return param;
+}
+function audioNode(kind, fields = {}, live = false) {
+  const params = {};
+  const props = { ...fields };
+  let name = null;
+  let pending = [];
+  const rec = {
+    name: () => (name ??= `${kind}#${++audioIds}`),
+    // How other lines refer to this node; a buffer carries its contents
+    ref: () =>
+      props.channels
+        ? `${rec.name()}[${props.channels.length}x${props.length}@${props.sampleRate}]:${props.channels.map(sha).join('/')}`
+        : rec.name(),
+    emit(line) {
+      if (live) log.push(`AU ${rec.name()}${line}`);
+      else pending.push(line);
+    },
+    goLive() {
+      if (live) return;
+      live = true;
+      log.push(`AU new ${rec.name()}`);
+      for (const line of pending) log.push(`AU ${rec.name()}${line}`);
+      pending = [];
+    },
+  };
+  const node = new Proxy(
+    {},
+    {
+      get(_, k) {
+        if (typeof k === 'symbol' || k === 'then') return undefined;
+        if (k in props) return props[k];
+        if (AUDIO_PARAMS.has(k)) return (params[k] ??= audioParam(rec, k));
+        return (...a) => {
+          if (k === 'connect') {
+            rec.goLive();
+            audioNodes.get(a[0])?.goLive();
+          }
+          rec.emit(`.${String(k)}(${a.map(fmtAudio)})`);
+          // A stopped source ends then: run its onended, as a browser would
+          if (k === 'stop') {
+            const when = a[0] ?? 0;
+            setTimeout(
+              () => props.onended?.(),
+              Math.max(0, when * 1000 - (now - T0))
+            );
+          }
+          return a[0];
+        };
+      },
+      set(_, k, v) {
+        props[k] = v;
+        rec.emit(`.${String(k)}=${fmtAudio(v)}`);
+        return true;
+      },
+    }
+  );
+  audioNodes.set(node, rec);
+  return node;
+}
+globalThis.AudioContext = class {
+  constructor() {
+    const sampleRate = 48000;
+    return new Proxy(
+      {
+        state: 'running',
+        sampleRate,
+        destination: audioNode('destination', {}, true),
+        resume: async () => {},
+        suspend: async () => {},
+        createBuffer(channels, length, rate) {
+          const data = [...Array(channels)].map(() => new Float32Array(length));
+          return audioNode('buffer', {
+            length,
+            sampleRate: rate,
+            numberOfChannels: channels,
+            channels: data,
+            getChannelData: (c) => data[c],
+          });
+        },
+      },
+      {
+        get(t, k) {
+          if (k === 'currentTime') return (now - T0) / 1000;
+          if (k in t) return t[k];
+          if (typeof k === 'string' && k.startsWith('create'))
+            return () => audioNode(k.slice(6));
+          return undefined;
+        },
+      }
+    );
+  }
+};
+
 console.log = () => {};
 console.info = () => {};
 console.debug = () => {};
 console.warn = (...a) => log.push(`WARN ${a.map(String).join(' ')}`);
-console.error = (...a) => log.push(`ERROR ${a.map(String).join(' ')}`);
+// The game catches and logs its own errors; in a replay any error means the
+// game or this harness broke, so the run fails rather than compare it
+const errors = [];
+console.error = (...a) => {
+  errors.push(a.map(String).join(' '));
+  log.push(`ERROR ${errors.at(-1)}`);
+};
 
 // ---- mock p5 with tracked style + transform state
 let gfxCount = 0;
@@ -198,7 +378,12 @@ function makeP(tag, w, h) {
     return [R(a * x + c * y + e), R(b * x + d * y + f)];
   };
   const styleStr = () =>
-    `f=${s.fill ? s.fill.join(',') : 'none'} s=${s.stroke ? s.stroke.join(',') : 'none'} sw=${R(s.sw)} b=${s.blend} ga=${R(s.ctx.globalAlpha)} sb=${R(s.ctx.shadowBlur)} sc=${s.ctx.shadowColor} m=${s.m.slice(0, 4).map(R).join(',')}`;
+    `f=${s.fill ? s.fill.join(',') : 'none'} s=${s.stroke ? s.stroke.join(',') : 'none'} sw=${R(s.sw)} sj=${s.strokeJoin} b=${s.blend} m=${s.m.slice(0, 4).map(R).join(',')} ctx=${Object.entries(
+      s.ctx
+    )
+      .filter(([k]) => k !== 'fillStyle')
+      .map(([k, v]) => `${k}:${R(v)}`)
+      .join(';')}`;
   const draw = (name, pts, extra = []) => {
     log.push(
       `${tag}.${name} ${pts.map((p) => xf(...p).join(',')).join(' ')} ${extra.map(R).join(',')} | ${styleStr()}`
@@ -225,8 +410,11 @@ function makeP(tag, w, h) {
             const fs = s.ctx.fillStyle;
             const fsStr =
               typeof fs === 'object' ? `${fs.desc}[${fs.stops.join(' ')}]` : fs;
+            // Points are logged transformed, so the matrix's translation
+            // (left out of the style) still counts
+            const [x, y, w, h] = args;
             log.push(
-              `${tag}.ctx.fillRect ${args.map(R)} fs=${fsStr} | ${styleStr()}`
+              `${tag}.ctx.fillRect ${xf(x, y)} ${R(w)},${R(h)} fs=${fsStr} | ${styleStr()}`
             );
           };
         return (...args) => log.push(`${tag}.ctx.${String(k)}(${args.map(R)})`);
@@ -433,6 +621,8 @@ function makeP(tag, w, h) {
     get(t, k) {
       if (k in t) return t[k];
       if (typeof k === 'symbol' || k === 'then') return undefined;
+      // p5 constants such as ROUND or BEVEL
+      if (/^[A-Z_]+$/.test(k)) return k.toLowerCase();
       return (...args) =>
         log.push(`${tag}.UNKNOWN.${String(k)}(${args.map(R)})`);
     },
@@ -466,9 +656,13 @@ wrap(window.audio, 'speakPlayerLine', 'A');
 wrap(window.gameState, 'setGameState', 'GS');
 
 // Reseed as the run starts: work done behind the title screen, which no
-// player sees, must not shift what the run draws
+// player sees, must not shift what the run draws. Then press a key on the
+// title screen, as a player does: that starts audio and the run.
 seed = SEED;
-window.gameState.restart();
+dispatch('keydown', { code: 'Enter', key: 'Enter' });
+if (window.gameState.gameState !== 'playing') {
+  throw new Error(`the title screen didn't start the run`);
+}
 
 let gameOverAt = -1;
 for (let f = 1; f <= FRAMES; f++) {
@@ -540,3 +734,7 @@ for (let f = 1; f <= FRAMES; f++) {
 log.flush();
 closeSync(fd);
 process.stderr.write(`${out}: ${FRAMES} frames, ${nLines} lines\n`);
+if (errors.length) {
+  process.stderr.write(`${errors.length} errors, first: ${errors[0]}\n`);
+  process.exit(1);
+}

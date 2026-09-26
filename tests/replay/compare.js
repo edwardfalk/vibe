@@ -1,7 +1,8 @@
 /**
- * Proves a refactor changes nothing a player sees or hears: replays the game
- * from a git ref and from the working tree with the same seeds and input,
- * and compares their per-frame fingerprints (see replay.js).
+ * Proves a refactor changes nothing the game draws or plays: replays it from
+ * a git ref and from the working tree with the same seeds and input, and
+ * compares their per-frame fingerprints (see replay.js, and docs/TESTING.md
+ * for what it can't see).
  *
  * Usage: node tests/replay/compare.js [ref]   (ref defaults to main)
  * Exits 1 if any frame differs, and names the first one. To see what
@@ -30,25 +31,31 @@ const RUNS = [
 const tmp = mkdtempSync(join(tmpdir(), 'vibe-replay-'));
 const base = join(tmp, 'base');
 const archive = join(tmp, 'base.tar');
-execFileSync('git', ['archive', '-o', archive, ref, 'js', 'package.json'], {
-  cwd: tree,
-});
-mkdirSync(base);
-execFileSync('tar', ['-x', '-f', archive, '-C', base]);
-
-// All six replays at once; each is single-threaded
+// If one replay fails, stop the others instead of leaving them running
+const abort = new AbortController();
 const results = [];
 try {
+  execFileSync('git', ['archive', '-o', archive, ref, 'js', 'package.json'], {
+    cwd: tree,
+  });
+  mkdirSync(base);
+  execFileSync('tar', ['-x', '-f', archive, '-C', base]);
+
+  // All six replays at once; each is single-threaded
   await Promise.all(
     RUNS.flatMap(([frames, seed, mode], r) =>
       [base, tree].map((root, i) => {
         const out = join(tmp, `${r}-${i}.txt`);
-        return run('node', [replay, root, out, frames, seed, mode]).then(
+        const args = [replay, root, out, frames, seed, mode];
+        return run('node', args, { signal: abort.signal }).then(
           () => ((results[r] ??= [])[i] = readFileSync(out, 'utf8').split('\n'))
         );
       })
     )
-  );
+  ).catch((err) => {
+    abort.abort();
+    throw err;
+  });
 } finally {
   if (!process.env.DETAIL) rmSync(tmp, { recursive: true, force: true });
 }
