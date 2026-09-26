@@ -237,7 +237,7 @@ export class BaseEnemy {
   }
 
   getGlowColor() {
-    return getGlowColorForType(this.type, this.p);
+    return getGlowColorForType(this.type);
   }
 
   getGlowSize() {

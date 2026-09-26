@@ -163,8 +163,7 @@ export class EnemyFragmentExplosion {
 
     for (const particle of this.centralExplosion.particles) {
       const alpha = p.map(particle.life, 0, particle.maxLife, 0, 255);
-      p.push();
-      p.translate(particle.x, particle.y);
+      const { x, y } = particle;
       if (particle.glow > 0) {
         p.fill(
           particle.color[0],
@@ -173,14 +172,13 @@ export class EnemyFragmentExplosion {
           alpha * particle.glow * 0.3
         );
         p.noStroke();
-        p.ellipse(0, 0, particle.size * 3);
+        p.ellipse(x, y, particle.size * 3);
       }
       p.fill(particle.color[0], particle.color[1], particle.color[2], alpha);
       p.noStroke();
-      p.ellipse(0, 0, particle.size);
+      p.ellipse(x, y, particle.size);
       p.fill(255, 255, 255, alpha * 0.6);
-      p.ellipse(0, 0, particle.size * 0.4);
-      p.pop();
+      p.ellipse(x, y, particle.size * 0.4);
     }
 
     for (const fragment of this.fragments) {

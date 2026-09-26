@@ -310,11 +310,9 @@ class Tank extends BaseEnemy {
 
   drawArmorPlates(s) {
     // Synthwave style armor plates - geometric with neon outlines
-    const armorColor = this.p.color(20, 15, 35);
-    const outlineColor = this.p.color(138, 43, 226);
-    this.p.stroke(outlineColor);
+    this.p.stroke(138, 43, 226);
     this.p.strokeWeight(2);
-    this.p.fill(armorColor);
+    this.p.fill(20, 15, 35);
 
     const thickness = s * 0.2;
     const length = s * 1.0;

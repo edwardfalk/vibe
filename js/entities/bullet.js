@@ -6,6 +6,9 @@ import { drawGlow } from '../effects/glowUtils.js';
 
 const { WORLD_WIDTH, WORLD_HEIGHT } = CONFIG.GAME_SETTINGS;
 const MAX_BULLET_POOL_SIZE = 400;
+const PLAYER_GLOW = [255, 255, 100];
+const TANK_GLOW = [150, 100, 255];
+const ENEMY_GLOW = [255, 100, 255];
 
 export class Bullet {
   constructor(x, y, angle, speed, owner) {
@@ -103,7 +106,7 @@ export class Bullet {
 
     try {
       if (this.owner === 'player') {
-        drawGlow(p, this.x, this.y, this.size * 2, p.color(255, 255, 100), 0.8);
+        drawGlow(p, this.x, this.y, this.size * 2, PLAYER_GLOW, 0.8);
       } else if (this.owner === 'enemy-tank') {
         const energyPercent = Number.isFinite(this.energy)
           ? Math.min(1, Math.max(0, this.energy / 100))
@@ -113,18 +116,11 @@ export class Bullet {
           this.x,
           this.y,
           this.size * 3 * energyPercent,
-          p.color(150, 100, 255),
+          TANK_GLOW,
           1.2
         );
       } else {
-        drawGlow(
-          p,
-          this.x,
-          this.y,
-          this.size * 1.5,
-          p.color(255, 100, 255),
-          0.5
-        );
+        drawGlow(p, this.x, this.y, this.size * 1.5, ENEMY_GLOW, 0.5);
       }
     } catch (error) {
       console.warn('⚠️ Bullet glow error:', error);

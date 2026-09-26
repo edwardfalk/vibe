@@ -73,7 +73,7 @@ export function drawActiveTexts(
   }
 
   if (showBeatIndicator && typeof drawGlowFn === 'function') {
-    drawGlowFn(p, beatX, beatY, 40, p.color(255, 255, 100), 0.5);
+    drawGlowFn(p, beatX, beatY, 40, [255, 255, 100], 0.5);
   }
 
   p.pop();

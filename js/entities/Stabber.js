@@ -148,9 +148,8 @@ class Stabber extends BaseEnemy {
     if (isExtended) {
       const tipX = s * 0.3 + currentKnifeLength + s * 0.15;
       const tipY = 0;
-      const glowColor = this.p.color(120, 200, 255, 180);
       this.p.noStroke();
-      this.p.fill(glowColor);
+      this.p.fill(120, 200, 255, 180);
       this.p.ellipse(tipX, tipY, 10, 10);
       this.p.fill(255, 255, 255, 200);
       this.p.ellipse(tipX, tipY, 5, 5);

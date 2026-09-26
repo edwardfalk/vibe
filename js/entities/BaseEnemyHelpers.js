@@ -37,12 +37,16 @@ export function getEnemyColors(type, p) {
   };
 }
 
-/** Get glow color for enemy type. */
-export function getGlowColorForType(type, p) {
-  if (type === 'tank') return p.color(100, 50, 200);
-  if (type === 'rusher') return p.color(255, 100, 150);
-  if (type === 'stabber') return p.color(255, 140, 0);
-  return p.color(50, 200, 50);
+const GLOW_RGB = {
+  tank: [100, 50, 200],
+  rusher: [255, 100, 150],
+  stabber: [255, 140, 0],
+};
+const DEFAULT_GLOW_RGB = [50, 200, 50];
+
+/** Glow colour for an enemy type, as [r, g, b]. */
+export function getGlowColorForType(type) {
+  return GLOW_RGB[type] ?? DEFAULT_GLOW_RGB;
 }
 
 /** Get glow size for enemy type. */

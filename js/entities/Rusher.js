@@ -177,9 +177,9 @@ class Rusher extends BaseEnemy {
   getGlowColor() {
     if (this.vibrating) {
       const pulse = this.p.sin(this.p.frameCount * 0.3) * 0.5 + 0.5;
-      return this.p.color(255, 80 + pulse * 80, 50);
+      return [255, 80 + pulse * 80, 50];
     }
-    return this.p.color(255, 100, 150);
+    return super.getGlowColor();
   }
 
   /**
