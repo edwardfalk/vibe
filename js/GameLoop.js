@@ -13,8 +13,6 @@ import { initializeInputHandlers } from './core/InputHandlers.js';
 import { createTunePanel } from './dev/TunePanel.js';
 import { updateBombs as updateBombSystem } from './systems/BombSystem.js';
 import { updateEnemiesAndResolveResults } from './systems/gameplay/EnemyUpdatePipeline.js';
-import { updateBullets } from './systems/gameplay/BulletUpdatePipeline.js';
-import { drawGameplayWorld } from './systems/gameplay/RenderPipeline.js';
 import { Bullet } from './entities/bullet.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
 import { runSetup } from './GameLoopSetup.js';
@@ -131,11 +129,8 @@ function updateGame(p) {
   }
 
   // Update bullets
-  updateBullets({
-    playerBullets,
-    enemyBullets,
-    bulletClass: Bullet,
-  });
+  compactBullets(playerBullets);
+  compactBullets(enemyBullets);
 
   // Update bombs (split into dedicated BombSystem module)
   updateBombSystem({
@@ -218,19 +213,64 @@ function updateGame(p) {
   }
 }
 
+// Single-pass compaction: O(n) instead of O(n²) from repeated splice
+function compactBullets(arr) {
+  let write = 0;
+  for (let read = 0; read < arr.length; read++) {
+    const bullet = arr[read];
+    bullet.update();
+
+    if (bullet.isOffScreen()) {
+      Bullet.release(bullet);
+    } else {
+      arr[write++] = bullet;
+    }
+  }
+  arr.length = write;
+}
+
 function drawGame(p) {
-  drawGameplayWorld({
-    p,
-    enemies,
-    player,
-    playerBullets,
-    enemyBullets,
-    explosionManager,
-    floatingText: window.floatingText,
-    audio: window.audio,
-    cameraSystem: window.cameraSystem,
-    visualEffectsManager: window.visualEffectsManager,
-  });
+  const cameraSystem = window.cameraSystem;
+  if (cameraSystem) {
+    cameraSystem.applyTransform();
+  }
+
+  for (const enemy of enemies) {
+    enemy.draw(p);
+  }
+
+  if (player) {
+    player.draw(p);
+  }
+
+  for (const bullet of playerBullets) {
+    bullet.draw(p);
+  }
+
+  for (const bullet of enemyBullets) {
+    bullet.draw(p);
+  }
+
+  if (explosionManager) {
+    explosionManager.draw(p);
+  }
+
+  if (window.floatingText) {
+    window.floatingText.draw(p);
+  }
+
+  if (window.audio) {
+    window.audio.drawTexts(p);
+  }
+
+  if (cameraSystem) {
+    cameraSystem.removeTransform();
+  }
+
+  // Screen-space effects applied after camera transform is removed
+  if (window.visualEffectsManager) {
+    window.visualEffectsManager.applyScreenEffects(p);
+  }
 }
 
 // --- p5.js instance mode initialization for ES module compatibility ---

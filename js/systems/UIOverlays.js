@@ -1,5 +1,20 @@
 import { floor } from '../mathUtils.js';
-import { GAME_OVER_MESSAGES, FUNNY_COMMENTS } from './UIConstants.js';
+
+const GAME_OVER_MESSAGES = [
+  'GAME OVER',
+  'YOU GOT VIBED',
+  'ALIEN SUPERIORITY',
+  'SPACE REKT',
+  'COSMIC FAIL',
+];
+
+const FUNNY_COMMENTS = [
+  'The aliens are laughing at you!',
+  'Maybe try not getting exploded?',
+  'Space is hard, who knew?',
+  'The rushers send their regards',
+  'Better luck next time, earthling!',
+];
 
 /**
  * Full-screen overlay renderers for game over and pause states.
