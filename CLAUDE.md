@@ -12,7 +12,8 @@ pnpm run test:unit:watch  # Vitest watch mode
 pnpm run test:e2e         # Playwright E2E (headless, auto-starts server)
 pnpm run test:e2e:headed  # Playwright with visible browser
 pnpm run test:beats       # Enemies act on their beats (not in CI)
-pnpm run playtest         # Aim-bot plays; reports FPS and pacing
+pnpm run playtest         # Aim-bot plays; reports FPS, ms per frame and pacing
+pnpm run compare          # Refactor check: replays main vs working tree, frame by frame
 pnpm run screenshot       # Screenshots (screenshot:level for LEVEL=n)
 npx eslint "**/*.js"    # Lint
 npx prettier --write "**/*.{js,md,json}"  # Format

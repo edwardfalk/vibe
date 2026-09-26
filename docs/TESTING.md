@@ -24,6 +24,12 @@ These run through Playwright too. They're for measuring and looking, so CI doesn
 - `pnpm run screenshot`: screenshots of a running game.
 - `pnpm run test:beats`: records when enemies act and checks each lands on its beat.
 
+## Proving a refactor changes nothing
+
+`pnpm run compare` (or `node tests/replay/compare.js <ref>`, which compares against `main` by default) replays the game headless from that git ref and from your working tree. Both replays get the same seeded random numbers, clock and scripted input, and three runs climb to later levels. It compares a fingerprint of each frame: every shape drawn with its full style and position, plus every sound, speech line and game-state change. `same` on all three runs means nothing a player sees or hears changed. It takes about two minutes.
+
+When a run differs, it names the first frame. Rerun with `DETAIL=<frame>-<frame>` to keep the two outputs with that frame written in full, and diff them. A change that is meant to show, such as a new enemy or a tuned number, will of course differ. The tool is for refactors.
+
 The Playwright config has four projects (`e2e`, `playtest`, `screenshot`, `beats`). The scripts always pick one. A bare `npx playwright test` runs all four.
 
 ## Listing the tests
