@@ -10,10 +10,12 @@ function world() {
   const clock = new BeatClock(120, ctx);
   const fxContext = { get: (k) => (k === 'beatClock' ? clock : null) };
   const rhythmFX = new RhythmFX(fxContext);
+  const floatingText = { addText: vi.fn() };
   const values = {
     audio: createMockAudio(),
     beatClock: clock,
     rhythmFX,
+    floatingText,
     enemies: [],
   };
   const context = { get: (k) => values[k] ?? null, set() {} };
@@ -21,7 +23,20 @@ function world() {
     ctx.currentTime = ms / 1000;
     clock.update(true);
   };
-  return { clock, rhythmFX, context, at };
+  return { clock, rhythmFX, floatingText, context, at };
+}
+
+// Question marks shown over a grunt through one bar, with the hero at x
+function questionMarks(roll, heroXAt) {
+  vi.spyOn(Math, 'random').mockReturnValue(roll);
+  const { floatingText, context, at } = world();
+  const grunt = new Grunt(0, 0, 'grunt', { context }, createMockP5(), null);
+  for (let ms = 0; ms < 2000; ms += 10) {
+    at(ms);
+    grunt.updateSpecificBehavior(heroXAt(ms), 0, 10);
+  }
+  return floatingText.addText.mock.calls.filter(([, , text]) => text === '?')
+    .length;
 }
 
 describe('attack warning rings', () => {
@@ -45,6 +60,21 @@ describe('attack warning rings', () => {
     }
     // Beats 1 and 3 (0 and 2 counted from 0) warn of the shots on 2 and 4
     expect([...warnedOn].sort()).toEqual([0, 2]);
+  });
+
+  it('a warned grunt that holds its fire shows a ? instead', () => {
+    // 0.1 is under the 20% skip chance: every shot is skipped
+    expect(questionMarks(0.1, () => 150)).toBe(2); // beats 2 and 4
+  });
+
+  it('a grunt that fires shows no ?', () => {
+    expect(questionMarks(0.99, () => 150)).toBe(0);
+  });
+
+  it('a grunt that was never warned shows no ?', () => {
+    // Out of range through beat 1, in range only as beat 2 lands
+    const heroX = (ms) => (ms % 1000 < 500 ? 900 : 150);
+    expect(questionMarks(0.1, heroX)).toBe(0);
   });
 
   it('keeps one ring per enemy, drawn where the enemy is now', () => {
