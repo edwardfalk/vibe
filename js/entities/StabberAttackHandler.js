@@ -297,7 +297,7 @@ function checkStabHit(stabber, playerX, playerY) {
   if (playerDistance <= stabReach && inStabDirection) {
     result.type = 'stabber-melee';
     result.playerHit = true;
-    result.damage = 25;
+    result.damage = CONFIG.PLAYER.DAMAGE_STAB;
     if (audioHit) {
       audioHit.playSound('stabberKnifeHit', tipX, tipY);
     }

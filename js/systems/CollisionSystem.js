@@ -2,6 +2,7 @@
  * CollisionSystem.js - Handles all collision detection between bullets, enemies, and player
  */
 
+import { CONFIG } from '../config.js';
 import { Bullet } from '../entities/bullet.js';
 import {
   handleContactCollisions,
@@ -97,7 +98,11 @@ export class CollisionSystem {
 
       // Check player collision
       if (bullet.checkCollision(player)) {
-        player.hurt(bullet.damage, `${bullet.owner}-bullet`);
+        const damage =
+          bullet.owner === 'enemy-tank'
+            ? CONFIG.PLAYER.DAMAGE_TANK_BALL
+            : CONFIG.PLAYER.DAMAGE_GRUNT_BULLET;
+        player.hurt(damage, `${bullet.owner}-bullet`);
         Bullet.release(bullet);
         bullet._remove = true;
         break; // Exit loop since bullet hit player

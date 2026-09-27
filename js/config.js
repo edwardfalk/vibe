@@ -154,9 +154,15 @@ const CONFIG = {
   // returns on the beat; slow healing once he's gone a while unhit.
   // Contact ticks (1 per frame) bypass the shield. Tune live with ?tune.
   PLAYER: {
-    SHIELD_RECHARGE_MS: 8000,
-    REGEN_DELAY_MS: 3000, // healing starts this long after the last hit
-    REGEN_PER_SEC: 2, // health points per second
+    SHIELD_RECHARGE_MS: 15000,
+    REGEN_DELAY_MS: 6000, // healing starts this long after the last hit
+    REGEN_PER_SEC: 0.5, // health points per second
+    // What each hit takes from him (of 100). Enemies hitting each other
+    // keep their own numbers.
+    DAMAGE_GRUNT_BULLET: 5,
+    DAMAGE_TANK_BALL: 50,
+    DAMAGE_STAB: 25,
+    HEAD_SIZE: 0.36, // head diameter as a share of his size
     // Knockback: a push of this many px/frame that fades by KNOCKBACK_DECAY
     // (share kept per frame), so it carries him about force x 6.7 px in all
     KNOCKBACK_DECAY: 0.85,
