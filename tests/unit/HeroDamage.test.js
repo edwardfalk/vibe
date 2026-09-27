@@ -21,7 +21,14 @@ describe('damage enemy shots do to the hero', () => {
   });
 
   it('a tank ball takes CONFIG.PLAYER.DAMAGE_TANK_BALL', () => {
-    expect(hitHeroWith('enemy-tank')).toBe(CONFIG.PLAYER.DAMAGE_TANK_BALL);
+    // Not the ball's own 50, so the test tells the two apart
+    const saved = CONFIG.PLAYER.DAMAGE_TANK_BALL;
+    CONFIG.PLAYER.DAMAGE_TANK_BALL = 37;
+    try {
+      expect(hitHeroWith('enemy-tank')).toBe(37);
+    } finally {
+      CONFIG.PLAYER.DAMAGE_TANK_BALL = saved;
+    }
   });
 
   it('a grunt bullet still does its own 1 to another enemy', () => {

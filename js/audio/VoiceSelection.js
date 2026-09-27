@@ -1,7 +1,10 @@
-// Each speaker gets one voice and keeps it line to line: the first voice
-// whose name has one of its hint words (earlier hints win), else a fixed
-// place in the list, spread out so the speakers sound different.
-// Hints are whole words, so 'male' doesn't match 'Female'.
+// Each speaker gets one voice and keeps it line to line. The voices are
+// handed out together, in SPEAKERS order: each speaker takes the first voice
+// nobody has yet whose name has one of its hint words (earlier hints win),
+// else the first free voice from its fixed spot in the list. Speakers only
+// share a voice once every voice is taken. Hints are whole words, so 'male'
+// doesn't match 'Female'.
+const SPEAKERS = ['player', 'tank', 'stabber', 'rusher', 'grunt'];
 const VOICE_HINTS = {
   player: [
     'deep',
@@ -68,15 +71,34 @@ const FALLBACK_AT = {
 const hasWord = (voice, word) =>
   new RegExp(`\\b${word}\\b`).test(voice.name.toLowerCase());
 
+function assignVoices(voices) {
+  const taken = new Set();
+  const byType = {};
+  for (const type of SPEAKERS) {
+    const free = voices.filter((voice) => !taken.has(voice));
+    let pick;
+    for (const word of VOICE_HINTS[type]) {
+      pick = free.find((voice) => hasWord(voice, word));
+      if (pick) break;
+    }
+    if (!pick) {
+      const start = Math.min(
+        voices.length - 1,
+        Math.floor(FALLBACK_AT[type] * voices.length)
+      );
+      const order = [...voices.slice(start), ...voices.slice(0, start)];
+      pick = order.find((voice) => !taken.has(voice)) ?? voices[start];
+    }
+    taken.add(pick);
+    byType[type] = pick;
+  }
+  return byType;
+}
+
 export function selectVoice(englishVoices = [], voiceType = 'player') {
   if (englishVoices.length === 0) return null;
   const usVoices = englishVoices.filter((voice) => voice.lang.includes('US'));
   const voices = usVoices.length > 0 ? usVoices : englishVoices;
-
-  for (const word of VOICE_HINTS[voiceType] ?? []) {
-    const match = voices.find((voice) => hasWord(voice, word));
-    if (match) return match;
-  }
-  const at = FALLBACK_AT[voiceType] ?? 0;
-  return voices[Math.min(voices.length - 1, Math.floor(at * voices.length))];
+  const byType = assignVoices(voices);
+  return byType[voiceType] ?? byType.player;
 }
