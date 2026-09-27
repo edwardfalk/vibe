@@ -1,6 +1,7 @@
 import { sin, max } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import { drawPlayerDashEffect } from '../effects/DashEffect.js';
+import { CONFIG } from '../config.js';
 
 const LOW_HEALTH_GLOW = [255, 100, 100];
 const SHIELD_GLOW = [100, 200, 255];
@@ -109,9 +110,9 @@ export function drawPlayer(p, player) {
   }
 
   // Head: bare, in space. Buzz cut and black shades are all the protection
-  // he needs. Drawn big so the look reads in play; features scale with it.
-  const headD = s * 0.5;
-  const headY = -s * 0.33;
+  // he needs. Features scale with the head.
+  const headD = s * CONFIG.PLAYER.HEAD_SIZE;
+  const headY = -s * 0.08 - headD / 2; // sits on his shoulders at any size
   const u = headD / 10; // one tenth of the head
   p.fill(player.skinColor);
   p.ellipse(0, headY, headD);
