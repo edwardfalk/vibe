@@ -15,7 +15,13 @@ const GRUNT_SPEECH_CHANCE = 0.18;
 // Grunts only shoot at the hero from this close
 const GRUNT_FIRE_RANGE = 300;
 // Shown over a warned grunt that doesn't fire after all
-const SHOT_CANCELLED = { text: '?', color: [180, 180, 180], size: 20 };
+// (lift: px above the grunt's top, clear of its health bar)
+const SHOT_CANCELLED = {
+  text: '?',
+  color: [180, 180, 180],
+  size: 20,
+  lift: 10,
+};
 
 const GRUNT_LINES = [
   'KILL HUMAN!',
@@ -60,7 +66,7 @@ class Grunt extends BaseEnemy {
 
     // --- Deferred-death state ---------------------------------
     this.pendingStabDeath = false; // true while "ow" delay active
-    this.warnedForShot = false; // a ring warned of the coming shot
+    this.warnedOnBeat = null; // the beat a ring last warned of a shot from
     this.pendingStabDeathTimer = 0; // frames remaining
     this._pendingStabDeathParams = null;
 
@@ -184,15 +190,16 @@ class Grunt extends BaseEnemy {
         beatsUntilShot,
         this
       );
-      this.warnedForShot = true;
+      this.warnedOnBeat = beatClock.getTotalBeats();
     }
 
     if (
       beatClock &&
       this.onBeatOnce(beatClock, 'fire', beatClock.canGruntShoot())
     ) {
-      const warned = this.warnedForShot;
-      this.warnedForShot = false;
+      // Warned on the beat just before this one; a warning whose fire
+      // window was missed (hitstop, a pause) must not show up a bar later
+      const warned = this.warnedOnBeat === beatClock.getTotalBeats() - 1;
       if (inRange) {
         // Coordination: check if another grunt already fired this beat
         const currentTotalBeat = beatClock.getTotalBeats();
@@ -213,7 +220,7 @@ class Grunt extends BaseEnemy {
         const { text, color, size } = SHOT_CANCELLED;
         this.getContextValue('floatingText')?.addText(
           this.x,
-          this.y - this.size,
+          this.y - this.size - SHOT_CANCELLED.lift,
           text,
           color,
           size

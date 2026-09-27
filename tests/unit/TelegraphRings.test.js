@@ -71,6 +71,25 @@ describe('attack warning rings', () => {
     expect(questionMarks(0.99, () => 150)).toBe(0);
   });
 
+  it('a warned grunt the hero ran from shows a ? on its beat', () => {
+    // In range through beats 1 and 3, out of range as 2 and 4 land
+    const heroX = (ms) => (ms % 1000 < 500 ? 150 : 900);
+    expect(questionMarks(0.99, heroX)).toBe(2);
+  });
+
+  it('a warning whose fire window was missed shows no ? a bar later', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    const { floatingText, context, at } = world();
+    const grunt = new Grunt(0, 0, 'grunt', { context }, createMockP5(), null);
+    for (let ms = 0; ms < 2000; ms += 10) {
+      if (ms >= 490 && ms < 620) continue; // hitstop across beat 2's window
+      at(ms);
+      // In range through beat 1, out of range from beat 3 on
+      grunt.updateSpecificBehavior(ms < 1000 ? 150 : 900, 0, 10);
+    }
+    expect(floatingText.addText).not.toHaveBeenCalled();
+  });
+
   it('a grunt that was never warned shows no ?', () => {
     // Out of range through beat 1, in range only as beat 2 lands
     const heroX = (ms) => (ms % 1000 < 500 ? 900 : 150);
