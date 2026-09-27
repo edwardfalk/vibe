@@ -22,7 +22,7 @@ import {
 } from './audio/SpatialAudio.js';
 import { applyBeatTremolo as applyBeatTremoloEffect } from './audio/BeatTremolo.js';
 import { drawActiveTexts, updateActiveTexts } from './audio/TextDisplay.js';
-import { selectVoiceWithEffects as selectVoiceWithEffectsHelper } from './audio/VoiceSelection.js';
+import { selectVoice } from './audio/VoiceSelection.js';
 import { applyVoiceEffects as applyVoiceEffectsHelper } from './audio/VoiceEffects.js';
 import {
   isAggressiveText as isAggressiveTextHelper,
@@ -493,14 +493,8 @@ export class Audio {
       config.volume * distance * CONFIG.MIX.SPEECH_VOLUME
     );
 
-    // Enhanced voice selection with effects
-    const voice = selectVoiceWithEffectsHelper(
-      this.englishVoices,
-      voiceType,
-      text,
-      random,
-      floor
-    );
+    // Each speaker keeps one voice
+    const voice = selectVoice(this.englishVoices, voiceType);
     if (voice) {
       utterance.voice = voice;
       utterance.lang = voice.lang;

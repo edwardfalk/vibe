@@ -1,155 +1,82 @@
-function pickVoice(voices, randomFn, floorFn) {
-  if (voices.length === 0) return null;
-  return voices[floorFn(randomFn() * voices.length)];
-}
+// Each speaker gets one voice and keeps it line to line: the first voice
+// whose name has one of its hint words (earlier hints win), else a fixed
+// place in the list, spread out so the speakers sound different.
+// Hints are whole words, so 'male' doesn't match 'Female'.
+const VOICE_HINTS = {
+  player: [
+    'deep',
+    'bass',
+    'rich',
+    'low',
+    'resonant',
+    'male',
+    'david',
+    'alex',
+    'james',
+    'john',
+    'michael',
+    'mark',
+    'paul',
+    'daniel',
+    'tom',
+    'sam',
+  ],
+  grunt: ['high', 'child', 'junior', 'squeaky', 'zira', 'flo', 'grandma'],
+  rusher: [
+    'female',
+    'high',
+    'fast',
+    'excited',
+    'energetic',
+    'zira',
+    'samantha',
+    'karen',
+    'moira',
+  ],
+  tank: [
+    'deep',
+    'bass',
+    'low',
+    'heavy',
+    'strong',
+    'male',
+    'david',
+    'daniel',
+    'alex',
+  ],
+  stabber: [
+    'clear',
+    'precise',
+    'clinical',
+    'sharp',
+    'articulate',
+    'google',
+    'reed',
+    'compact',
+  ],
+};
 
-function getUsPreferredVoices(englishVoices = []) {
-  const usVoices = englishVoices.filter((voice) => voice.lang.includes('US'));
-  return usVoices.length > 0 ? usVoices : englishVoices;
-}
+// Where in the list each speaker falls back to, as a share of its length
+const FALLBACK_AT = {
+  player: 0,
+  tank: 0.25,
+  stabber: 0.5,
+  rusher: 0.75,
+  grunt: 1,
+};
 
-export function selectVoiceWithEffects(
-  englishVoices = [],
-  voiceType = 'player',
-  text = '',
-  randomFn = Math.random,
-  floorFn = Math.floor
-) {
-  void text;
+const hasWord = (voice, word) =>
+  new RegExp(`\\b${word}\\b`).test(voice.name.toLowerCase());
+
+export function selectVoice(englishVoices = [], voiceType = 'player') {
   if (englishVoices.length === 0) return null;
-  const availableVoices = getUsPreferredVoices(englishVoices);
+  const usVoices = englishVoices.filter((voice) => voice.lang.includes('US'));
+  const voices = usVoices.length > 0 ? usVoices : englishVoices;
 
-  if (voiceType === 'player') {
-    const maleVoices = availableVoices.filter((voice) => {
-      const name = voice.name.toLowerCase();
-      return (
-        name.includes('male') ||
-        name.includes('david') ||
-        name.includes('alex') ||
-        name.includes('james') ||
-        name.includes('john') ||
-        name.includes('michael') ||
-        name.includes('mark') ||
-        name.includes('paul') ||
-        name.includes('daniel') ||
-        name.includes('deep') ||
-        name.includes('bass') ||
-        name.includes('rich') ||
-        name.includes('low') ||
-        name.includes('tom') ||
-        name.includes('sam')
-      );
-    });
-
-    const deepVoices = maleVoices.filter((voice) => {
-      const name = voice.name.toLowerCase();
-      return (
-        name.includes('deep') ||
-        name.includes('bass') ||
-        name.includes('rich') ||
-        name.includes('low') ||
-        name.includes('resonant')
-      );
-    });
-
-    if (deepVoices.length > 0) return deepVoices[0];
-    if (maleVoices.length > 0) return maleVoices[0];
-    return availableVoices[0];
+  for (const word of VOICE_HINTS[voiceType] ?? []) {
+    const match = voices.find((voice) => hasWord(voice, word));
+    if (match) return match;
   }
-
-  if (voiceType === 'grunt') {
-    // Whiny big-baby voice - prefer high/child-like voices
-    const whinyVoices = availableVoices.filter((voice) => {
-      const name = voice.name.toLowerCase();
-      return (
-        name.includes('high') ||
-        name.includes('child') ||
-        name.includes('junior') ||
-        name.includes('squeaky') ||
-        name.includes('zira') ||
-        name.includes('flo') ||
-        name.includes('grandma')
-      );
-    });
-    if (whinyVoices.length > 0) {
-      return pickVoice(whinyVoices, randomFn, floorFn);
-    }
-    // Fallback: pick the last voice (typically higher-pitched on most systems)
-    return availableVoices[availableVoices.length - 1];
-  }
-
-  if (voiceType === 'rusher') {
-    const franticVoices = availableVoices.filter((voice) => {
-      const name = voice.name.toLowerCase();
-      return (
-        name.includes('female') ||
-        name.includes('high') ||
-        name.includes('fast') ||
-        name.includes('excited') ||
-        name.includes('energetic') ||
-        name.includes('zira') ||
-        name.includes('samantha') ||
-        name.includes('karen') ||
-        name.includes('moira')
-      );
-    });
-    if (franticVoices.length > 0) {
-      return pickVoice(franticVoices, randomFn, floorFn);
-    }
-    // Fallback: pick from the upper half of voices (tend to be higher pitched)
-    const upperHalf = availableVoices.slice(
-      floorFn(availableVoices.length / 2)
-    );
-    return pickVoice(
-      upperHalf.length > 0 ? upperHalf : availableVoices,
-      randomFn,
-      floorFn
-    );
-  }
-
-  if (voiceType === 'tank') {
-    const deepVoices = availableVoices.filter((voice) => {
-      const name = voice.name.toLowerCase();
-      return (
-        name.includes('deep') ||
-        name.includes('bass') ||
-        name.includes('low') ||
-        name.includes('heavy') ||
-        name.includes('strong') ||
-        name.includes('male') ||
-        name.includes('david') ||
-        name.includes('daniel') ||
-        name.includes('alex')
-      );
-    });
-    if (deepVoices.length > 0) {
-      return pickVoice(deepVoices, randomFn, floorFn);
-    }
-    // Fallback: pick the first voice (typically lower-pitched on most systems)
-    return availableVoices[0];
-  }
-
-  if (voiceType === 'stabber') {
-    const preciseVoices = availableVoices.filter((voice) => {
-      const name = voice.name.toLowerCase();
-      return (
-        name.includes('clear') ||
-        name.includes('precise') ||
-        name.includes('clinical') ||
-        name.includes('sharp') ||
-        name.includes('articulate') ||
-        name.includes('google') ||
-        name.includes('reed') ||
-        name.includes('compact')
-      );
-    });
-    if (preciseVoices.length > 0) {
-      return pickVoice(preciseVoices, randomFn, floorFn);
-    }
-    // Fallback: pick from the middle of the list (neutral/precise-sounding)
-    const midIdx = floorFn(availableVoices.length / 2);
-    return availableVoices[midIdx];
-  }
-
-  return pickVoice(availableVoices, randomFn, floorFn);
+  const at = FALLBACK_AT[voiceType] ?? 0;
+  return voices[Math.min(voices.length - 1, Math.floor(at * voices.length))];
 }
