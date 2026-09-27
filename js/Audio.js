@@ -205,18 +205,13 @@ export class Audio {
   loadVoices() {
     if (this._voicesLoaded) return;
 
+    // Chrome adds voices in batches after load, so keep the list current
     const loadVoices = () => {
-      const allVoices = this.speechSynthesis.getVoices();
-      this.englishVoices = englishVoicesOf(allVoices);
-      this._voicesLoaded = true;
-      this.speechSynthesis.onvoiceschanged = null;
+      this.englishVoices = englishVoicesOf(this.speechSynthesis.getVoices());
     };
-
-    if (this.speechSynthesis.getVoices().length === 0) {
-      this.speechSynthesis.onvoiceschanged = loadVoices;
-    } else {
-      loadVoices();
-    }
+    loadVoices();
+    this.speechSynthesis.addEventListener?.('voiceschanged', loadVoices);
+    this._voicesLoaded = true;
   }
 
   // ========================================================================
@@ -446,6 +441,8 @@ export class Audio {
     if (!this.speechEnabled || !this.speechSynthesis || !text) {
       return false;
     }
+    // A line with no speaker (a ?tune voice sample) comes from the hero
+    entity ??= this.player;
 
     // Check cooldown unless force is true
     const now = Date.now();

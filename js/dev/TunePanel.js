@@ -159,6 +159,8 @@ export function createTunePanel() {
       select.style.maxWidth = '100%';
       const fill = () => {
         const choices = typeof options === 'function' ? options() : options;
+        // A saved choice this browser lacks still shows, rather than a blank
+        if (!choices.includes(settings[key])) choices.push(settings[key]);
         select.replaceChildren(...choices.map((c) => new Option(c, c)));
         select.value = settings[key];
       };

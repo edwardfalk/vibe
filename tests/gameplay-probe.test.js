@@ -167,21 +167,28 @@ test.describe('Gameplay Probes', () => {
   test('?tune voice dropdowns list the voices and a pick is heard', async ({
     page,
   }) => {
-    // Headless Chromium has no voices: hand it two, as Chrome does a moment
-    // after load, and record what the game says instead of speaking
     await page.goto('/?tune');
     await page.waitForFunction(() => window.gameState?.gameState === 'title');
+    await page.keyboard.press('Enter'); // start a run: audio is running
+    await page.waitForFunction(() => window.gameState.gameState === 'playing');
+    // Headless Chromium has no voices: hand it two, as Chrome does a moment
+    // after load. Chrome only accepts its own voice objects on a real
+    // utterance, so use a plain one, and record what would be said.
     await page.evaluate(() => {
+      const synth = window.speechSynthesis;
       const voices = [
         { name: 'Test Voice A', lang: 'en-US' },
         { name: 'Test Voice B', lang: 'en-GB' },
       ];
-      window.speechSynthesis.getVoices = () => voices;
-      window.speechSynthesis.dispatchEvent(new Event('voiceschanged'));
+      synth.getVoices = () => voices;
+      window.SpeechSynthesisUtterance = class {
+        constructor(text) {
+          this.text = text;
+        }
+      };
       window.__said = [];
-      window.audio.initialized = true; // as once a run has started
-      window.audio.speak = (entity, text, type) =>
-        window.__said.push([type, text]);
+      synth.speak = (u) => window.__said.push([u.text, u.voice?.name]);
+      synth.dispatchEvent(new Event('voiceschanged'));
     });
     const tank = page.locator('#tunePanel select').nth(2); // after the kick pattern and the hero
     await expect(tank.locator('option')).toHaveText([
@@ -190,8 +197,10 @@ test.describe('Gameplay Probes', () => {
       'Test Voice B',
     ]);
     await tank.selectOption('Test Voice B');
-    expect(await page.evaluate(() => window.__said)).toEqual([
-      ['tank', 'Targeting traitors!'],
+    // The sample line went through the game's own speech, in that voice
+    expect(await page.evaluate(() => window.__said)).toContainEqual([
+      'Targeting traitors!',
+      'Test Voice B',
     ]);
     await expect(page.locator('#tunePanel pre')).toContainText(
       '"tank": "Test Voice B"'
