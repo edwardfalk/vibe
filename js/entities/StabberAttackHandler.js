@@ -242,7 +242,8 @@ function handleNormalMovement(stabber, dx, dy, distance) {
           stabber.x,
           stabber.y,
           'stabber',
-          beatsUntilStab
+          beatsUntilStab,
+          stabber
         );
       }
 

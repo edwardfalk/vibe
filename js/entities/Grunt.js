@@ -168,16 +168,17 @@ class Grunt extends BaseEnemy {
     // BEAT-ALIGNED GRUNT SHOOTING: once per beat 2 or 4, with random skip
     const rhythmFX = this.getContextValue('rhythmFX');
     if (distance < 300 && beatClock) {
-      const timeToNextAttack = beatClock.getTimeToNextBeat();
-      const beatInterval = beatClock.beatInterval;
-      const safeScale =
-        beatInterval && Number.isFinite(beatInterval)
-          ? timeToNextAttack / beatInterval
-          : 0;
-      if (timeToNextAttack < 500 && beatClock.isOnBeat([2, 4])) {
-        if (rhythmFX && safeScale >= 0) {
-          rhythmFX.addAttackTelegraph(this.x, this.y, 'grunt', safeScale);
-        }
+      // Warn through the beat before each shot (beats 1 and 3, counted
+      // from 0 here): the ring closes as beat 2 or 4 lands
+      if (rhythmFX && beatClock.getCurrentBeat() % 2 === 0) {
+        const beatsUntilShot = 1 - beatClock.getBeatPhase();
+        rhythmFX.addAttackTelegraph(
+          this.x,
+          this.y,
+          'grunt',
+          beatsUntilShot,
+          this
+        );
       }
 
       if (this.onBeatOnce(beatClock, 'fire', beatClock.canGruntShoot())) {

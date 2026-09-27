@@ -13,7 +13,7 @@ export class RhythmFX {
   constructor(context = null) {
     this.context = context;
     // Attack telegraphs for enemies
-    this.telegraphs = []; // {x, y, type, beatsUntil, intensity}
+    this.telegraphs = []; // {x, y, type, beatsUntil, intensity, owner}
 
     // Screen effects
     this.pulseIntensity = 0;
@@ -68,8 +68,8 @@ export class RhythmFX {
     for (let i = this.telegraphs.length - 1; i >= 0; i--) {
       const t = this.telegraphs[i];
       t.beatsUntil -= beatsPerFrame;
-      // Telegraph intensity is now driven solely by beat-based beatsUntil decay
-      if (t.beatsUntil <= 0 || t.intensity < 0.01) {
+      // A dead enemy's warning would mislead: it goes with the enemy
+      if (t.beatsUntil <= 0 || t.owner?.markedForRemoval) {
         this.telegraphs.splice(i, 1);
       }
     }
@@ -81,25 +81,20 @@ export class RhythmFX {
    * @param {number} y - Enemy Y position
    * @param {string} type - Enemy type ('grunt', 'tank', 'stabber', 'rusher')
    * @param {number} beatsUntil - How many beats until attack (0.0 to 4.0)
+   * @param {object} [owner] - The enemy: one ring per enemy, drawn where it
+   *   is now, so a moving enemy doesn't leave a trail of rings
    */
-  addAttackTelegraph(x, y, type, beatsUntil) {
-    // Find existing telegraph for this position and update it, or add new
-    const existing = this.telegraphs.find(
-      (t) => abs(t.x - x) < 5 && abs(t.y - y) < 5 && t.type === type
+  addAttackTelegraph(x, y, type, beatsUntil, owner = null) {
+    const existing = this.telegraphs.find((t) =>
+      owner
+        ? t.owner === owner
+        : !t.owner && abs(t.x - x) < 5 && abs(t.y - y) < 5 && t.type === type
     );
 
     if (existing) {
       existing.beatsUntil = beatsUntil;
-      existing.intensity = 1.0;
     } else {
-      this.telegraphs.push({
-        x,
-        y,
-        type,
-        beatsUntil,
-        intensity: 1.0,
-        id: Math.random().toString(36).substr(2, 9),
-      });
+      this.telegraphs.push({ x, y, type, beatsUntil, owner });
     }
   }
 
@@ -113,9 +108,10 @@ export class RhythmFX {
 
     for (const telegraph of this.telegraphs) {
       // Convert world position to screen position
+      const at = telegraph.owner ?? telegraph;
       const { x: screenX, y: screenY } = cameraSystem
-        ? cameraSystem.worldToScreen(telegraph.x, telegraph.y)
-        : telegraph;
+        ? cameraSystem.worldToScreen(at.x, at.y)
+        : at;
 
       // Calculate ring size based on beats until attack
       const progress = 1 - min(1, max(0, telegraph.beatsUntil / 2));
@@ -141,7 +137,7 @@ export class RhythmFX {
       }
 
       // Draw expanding ring
-      const alpha = (1 - progress) * 200 * telegraph.intensity;
+      const alpha = (1 - progress) * 200;
       p.noFill();
       p.stroke(r, g, b, alpha);
       p.strokeWeight(2 + progress * 2);
