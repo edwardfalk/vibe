@@ -12,6 +12,16 @@ const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
 const GRUNT_MOVE_SOUND_CHANCE = 0.5;
 // Per attempt once the speech timer is up (= today's effective rate)
 const GRUNT_SPEECH_CHANCE = 0.18;
+// Grunts only shoot at the hero from this close
+const GRUNT_FIRE_RANGE = 300;
+// Shown over a warned grunt that doesn't fire after all
+// (lift: px above the grunt's top, clear of its health bar)
+const SHOT_CANCELLED = {
+  text: '?',
+  color: [180, 180, 180],
+  size: 20,
+  lift: 10,
+};
 
 const GRUNT_LINES = [
   'KILL HUMAN!',
@@ -56,6 +66,7 @@ class Grunt extends BaseEnemy {
 
     // --- Deferred-death state ---------------------------------
     this.pendingStabDeath = false; // true while "ow" delay active
+    this.warnedOnBeat = null; // the beat a ring last warned of a shot from
     this.pendingStabDeathTimer = 0; // frames remaining
     this._pendingStabDeathParams = null;
 
@@ -167,20 +178,29 @@ class Grunt extends BaseEnemy {
 
     // BEAT-ALIGNED GRUNT SHOOTING: once per beat 2 or 4, with random skip
     const rhythmFX = this.getContextValue('rhythmFX');
-    if (distance < 300 && beatClock) {
-      const timeToNextAttack = beatClock.getTimeToNextBeat();
-      const beatInterval = beatClock.beatInterval;
-      const safeScale =
-        beatInterval && Number.isFinite(beatInterval)
-          ? timeToNextAttack / beatInterval
-          : 0;
-      if (timeToNextAttack < 500 && beatClock.isOnBeat([2, 4])) {
-        if (rhythmFX && safeScale >= 0) {
-          rhythmFX.addAttackTelegraph(this.x, this.y, 'grunt', safeScale);
-        }
-      }
+    const inRange = distance < GRUNT_FIRE_RANGE;
+    // Warn through the beat before each shot (beats 1 and 3, counted from 0
+    // here): the ring closes as beat 2 or 4 lands
+    if (inRange && rhythmFX && beatClock?.getCurrentBeat() % 2 === 0) {
+      const beatsUntilShot = 1 - beatClock.getBeatPhase();
+      rhythmFX.addAttackTelegraph(
+        this.x,
+        this.y,
+        'grunt',
+        beatsUntilShot,
+        this
+      );
+      this.warnedOnBeat = beatClock.getTotalBeats();
+    }
 
-      if (this.onBeatOnce(beatClock, 'fire', beatClock.canGruntShoot())) {
+    if (
+      beatClock &&
+      this.onBeatOnce(beatClock, 'fire', beatClock.canGruntShoot())
+    ) {
+      // Warned on the beat just before this one; a warning whose fire
+      // window was missed (hitstop, a pause) must not show up a bar later
+      const warned = this.warnedOnBeat === beatClock.getTotalBeats() - 1;
+      if (inRange) {
         // Coordination: check if another grunt already fired this beat
         const currentTotalBeat = beatClock.getTotalBeats();
         const lastGruntFireBeat = this.getContextValue('gruntFireBeat') ?? -1;
@@ -194,6 +214,17 @@ class Grunt extends BaseEnemy {
           this.context.set('gruntFireBeat', currentTotalBeat);
           return this.createBullet();
         }
+      }
+      // A warning with nothing after it would look like a glitch
+      if (warned) {
+        const { text, color, size } = SHOT_CANCELLED;
+        this.getContextValue('floatingText')?.addText(
+          this.x,
+          this.y - this.size - SHOT_CANCELLED.lift,
+          text,
+          color,
+          size
+        );
       }
     }
 

@@ -266,7 +266,8 @@ class Tank extends BaseEnemy {
             this.x,
             this.y,
             'tank',
-            this.chargeDurationBeats
+            this.chargeDurationBeats,
+            this
           );
         }
       }
