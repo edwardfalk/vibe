@@ -1,10 +1,20 @@
-// Each speaker gets one voice and keeps it line to line. The voices are
-// handed out together, in SPEAKERS order: each speaker takes the first voice
+// Each speaker gets one voice and keeps it line to line. A voice named in
+// CONFIG.VOICES (the ?tune dropdowns) wins; 'auto' or a name this browser
+// doesn't have means pick one. Picked voices are handed out together, in
+// SPEAKERS order, around the named ones: each speaker takes the first voice
 // nobody has yet whose name has one of its hint words (earlier hints win),
 // else the first free voice from its fixed spot in the list. Speakers only
 // share a voice once every voice is taken. Hints are whole words, so 'male'
 // doesn't match 'Female'.
-const SPEAKERS = ['player', 'tank', 'stabber', 'rusher', 'grunt'];
+export const SPEAKERS = ['player', 'tank', 'stabber', 'rusher', 'grunt'];
+
+// The voices the game speaks with: English, US or GB
+export const englishVoicesOf = (voices) =>
+  voices.filter(
+    (voice) =>
+      voice.lang.startsWith('en-') &&
+      (voice.lang.includes('US') || voice.lang.includes('GB'))
+  );
 const VOICE_HINTS = {
   player: [
     'deep',
@@ -71,10 +81,11 @@ const FALLBACK_AT = {
 const hasWord = (voice, word) =>
   new RegExp(`\\b${word}\\b`).test(voice.name.toLowerCase());
 
-function assignVoices(voices) {
-  const taken = new Set();
-  const byType = {};
+function assignVoices(voices, named) {
+  const taken = new Set(Object.values(named));
+  const byType = { ...named };
   for (const type of SPEAKERS) {
+    if (byType[type]) continue;
     const free = voices.filter((voice) => !taken.has(voice));
     let pick;
     for (const word of VOICE_HINTS[type]) {
@@ -95,10 +106,19 @@ function assignVoices(voices) {
   return byType;
 }
 
-export function selectVoice(englishVoices = [], voiceType = 'player') {
+export function selectVoice(
+  englishVoices = [],
+  voiceType = 'player',
+  chosen = {}
+) {
   if (englishVoices.length === 0) return null;
+  const named = {};
+  for (const type of SPEAKERS) {
+    const voice = englishVoices.find((v) => v.name === chosen[type]);
+    if (voice) named[type] = voice;
+  }
   const usVoices = englishVoices.filter((voice) => voice.lang.includes('US'));
   const voices = usVoices.length > 0 ? usVoices : englishVoices;
-  const byType = assignVoices(voices);
+  const byType = assignVoices(voices, named);
   return byType[voiceType] ?? byType.player;
 }

@@ -156,10 +156,45 @@ test.describe('Gameplay Probes', () => {
     await page.waitForFunction(() => window.gameState?.gameState === 'title');
     // A real click (pointer events) on a slider, then a dropdown change
     await page.locator('#tunePanel input[type=range]').first().click();
-    await page.locator('#tunePanel select').selectOption('oneThree');
+    // The kick pattern is the first dropdown
+    await page.locator('#tunePanel select').first().selectOption('oneThree');
     expect(await page.evaluate(() => window.gameState.gameState)).toBe('title');
     await expect(page.locator('#tunePanel pre')).toContainText(
       '"PATTERN": "oneThree"'
+    );
+  });
+
+  test('?tune voice dropdowns list the voices and a pick is heard', async ({
+    page,
+  }) => {
+    // Headless Chromium has no voices: hand it two, as Chrome does a moment
+    // after load, and record what the game says instead of speaking
+    await page.goto('/?tune');
+    await page.waitForFunction(() => window.gameState?.gameState === 'title');
+    await page.evaluate(() => {
+      const voices = [
+        { name: 'Test Voice A', lang: 'en-US' },
+        { name: 'Test Voice B', lang: 'en-GB' },
+      ];
+      window.speechSynthesis.getVoices = () => voices;
+      window.speechSynthesis.dispatchEvent(new Event('voiceschanged'));
+      window.__said = [];
+      window.audio.initialized = true; // as once a run has started
+      window.audio.speak = (entity, text, type) =>
+        window.__said.push([type, text]);
+    });
+    const tank = page.locator('#tunePanel select').nth(2); // after the kick pattern and the hero
+    await expect(tank.locator('option')).toHaveText([
+      'auto',
+      'Test Voice A',
+      'Test Voice B',
+    ]);
+    await tank.selectOption('Test Voice B');
+    expect(await page.evaluate(() => window.__said)).toEqual([
+      ['tank', 'Targeting traitors!'],
+    ]);
+    await expect(page.locator('#tunePanel pre')).toContainText(
+      '"tank": "Test Voice B"'
     );
   });
 

@@ -22,7 +22,7 @@ import {
 } from './audio/SpatialAudio.js';
 import { applyBeatTremolo as applyBeatTremoloEffect } from './audio/BeatTremolo.js';
 import { drawActiveTexts, updateActiveTexts } from './audio/TextDisplay.js';
-import { selectVoice } from './audio/VoiceSelection.js';
+import { englishVoicesOf, selectVoice } from './audio/VoiceSelection.js';
 import { applyVoiceEffects as applyVoiceEffectsHelper } from './audio/VoiceEffects.js';
 import {
   isAggressiveText as isAggressiveTextHelper,
@@ -207,11 +207,7 @@ export class Audio {
 
     const loadVoices = () => {
       const allVoices = this.speechSynthesis.getVoices();
-      this.englishVoices = allVoices.filter(
-        (voice) =>
-          voice.lang.startsWith('en-') &&
-          (voice.lang.includes('US') || voice.lang.includes('GB'))
-      );
+      this.englishVoices = englishVoicesOf(allVoices);
       this._voicesLoaded = true;
       this.speechSynthesis.onvoiceschanged = null;
     };
@@ -494,7 +490,7 @@ export class Audio {
     );
 
     // Each speaker keeps one voice
-    const voice = selectVoice(this.englishVoices, voiceType);
+    const voice = selectVoice(this.englishVoices, voiceType, CONFIG.VOICES);
     if (voice) {
       utterance.voice = voice;
       utterance.lang = voice.lang;

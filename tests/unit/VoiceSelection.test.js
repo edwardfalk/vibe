@@ -50,6 +50,18 @@ describe('selectVoice', () => {
     expect(new Set(picks).size).toBe(5);
   });
 
+  it('uses the voice ?tune names, and picks the rest around it', () => {
+    const voices = ['Alex', 'Daniel', 'Samantha', 'Karen', 'Moira'].map((n) =>
+      voice(n)
+    );
+    const chosen = { player: 'auto', tank: 'Alex', grunt: 'No Such Voice' };
+    // Alex would be the hero's own pick; the tank named it, so he moves on
+    expect(selectVoice(voices, 'tank', chosen).name).toBe('Alex');
+    expect(selectVoice(voices, 'player', chosen).name).toBe('Daniel');
+    // A name this browser lacks falls back to a pick, never an error
+    expect(selectVoice(voices, 'grunt', chosen)).toBeTruthy();
+  });
+
   it('prefers US voices and returns null with none', () => {
     expect(selectVoice([voice('UK', 'en-GB'), voice('US')]).name).toBe('US');
     expect(selectVoice([], 'grunt')).toBeNull();

@@ -188,6 +188,15 @@ const CONFIG = {
     KNOCKBACK_FORCE: 8, // px/frame per hit; about 53 px in total
     MAX_KNOCKBACK: 20, // px/frame cap under steady fire
   },
+  // The voice each speaker uses, by name ('auto': the game picks one). The
+  // ?tune dropdowns list the voices this browser has.
+  VOICES: {
+    player: 'auto',
+    tank: 'auto',
+    stabber: 'auto',
+    rusher: 'auto',
+    grunt: 'auto',
+  },
 };
 
 export const VOICE_CONFIG = {
