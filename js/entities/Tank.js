@@ -22,7 +22,8 @@ const THREE_PI_4 = (3 * PI) / 4;
 // The armour plates. `hits` is the impact-angle range a plate takes (0 is a
 // shot at the nose), `side` the direction it breaks off in, and `rect` where
 // it is drawn (plate thickness, plate length, chassis side y, chassis front
-// x). The left and right hit ranges are each other's drawn plates; kept as is
+// x). The impact angle is where the shot came from, and y points down, so the
+// left plate (drawn at -y) takes the negative angles
 const ARMOR_PLATES = [
   {
     name: 'front',
@@ -34,7 +35,7 @@ const ARMOR_PLATES = [
   },
   {
     name: 'left',
-    hits: (a) => a > PI_4 && a < THREE_PI_4,
+    hits: (a) => a < -PI_4 && a > -THREE_PI_4,
     side: -PI / 2,
     fill: [100, 100, 120],
     stroke: [50, 50, 60],
@@ -42,7 +43,7 @@ const ARMOR_PLATES = [
   },
   {
     name: 'right',
-    hits: (a) => a < -PI_4 && a > -THREE_PI_4,
+    hits: (a) => a > PI_4 && a < THREE_PI_4,
     side: PI / 2,
     fill: [100, 100, 120],
     stroke: [50, 50, 60],
@@ -50,12 +51,22 @@ const ARMOR_PLATES = [
   },
 ];
 
+// Damage sources named for the attack rather than the enemy type
+const ANGER_SOURCE_TYPE = { stabber_melee: 'stabber' };
+
 const ANGER_LINES = [
   'ENOUGH! YOU DIE FIRST!',
   'TARGETING TRAITORS!',
   'FRIENDLY FIRE? NOT ANYMORE!',
   'YOU MADE ME MAD!',
   'TURNING GUNS ON YOU!',
+];
+
+const CALM_LINES = [
+  'BACK TO NORMAL TARGETS',
+  'ANGER SUBSIDING',
+  'RETURNING TO MISSION',
+  'FOCUS ON HUMAN AGAIN',
 ];
 
 const TANK_LINES = [
@@ -99,6 +110,7 @@ class Tank extends BaseEnemy {
     this.angerTarget = null; // Which enemy type to target when angry
     this.angerCooldown = 0; // Cooldown before returning to normal behavior
     this.maxAngerCooldown = 600; // 10 seconds of anger
+    this.calmLinePending = false;
 
     // Destructible armour plates (see ARMOR_PLATES)
     const { FRONT, SIDE } = CONFIG.TANK_ARMOR;
@@ -127,20 +139,20 @@ class Tank extends BaseEnemy {
       if (this.angerCooldown <= 0) {
         this.isAngry = false;
         this.angerTarget = null;
+        this.damageTracker.clear(); // a fresh count for the next grudge
+        this.calmLinePending = true; // said on the next beat 1
+      }
+    }
 
-        // Tank speaks about calming down (beat-gated)
-        const audio = this.getContextValue('audio');
-        const beatClock = this.getContextValue('beatClock');
-        if (audio && (!beatClock || beatClock.isOnBeat([1]))) {
-          const calmLines = [
-            'BACK TO NORMAL TARGETS',
-            'ANGER SUBSIDING',
-            'RETURNING TO MISSION',
-            'FOCUS ON HUMAN AGAIN',
-          ];
-          const calmLine = random(calmLines);
-          audio.speak(this, calmLine, 'tank');
-        }
+    if (this.calmLinePending) {
+      const audio = this.getContextValue('audio');
+      const beatClock = this.getContextValue('beatClock');
+      if (
+        !beatClock ||
+        this.onBeatOnce(beatClock, 'calmLine', beatClock.isOnBeat([1]))
+      ) {
+        this.calmLinePending = false;
+        if (audio) audio.speak(this, random(CALM_LINES), 'tank');
       }
     }
 
@@ -514,12 +526,15 @@ class Tank extends BaseEnemy {
   }
 
   /** Hits from other enemies make the tank angry at their type */
-  trackAnger(damageSource) {
-    if (!damageSource || damageSource === 'player') return;
+  trackAnger(source) {
+    if (!source || source === 'player') return;
+    // A stab is named for the attack; the grudge is against the stabber
+    const damageSource = ANGER_SOURCE_TYPE[source] ?? source;
     const count = (this.damageTracker.get(damageSource) || 0) + 1;
     this.damageTracker.set(damageSource, count);
     if (count >= this.angerThreshold && !this.isAngry) {
       this.isAngry = true;
+      this.calmLinePending = false;
       this.angerTarget = damageSource;
       this.angerCooldown = this.maxAngerCooldown;
       const audio = this.getContextValue('audio');

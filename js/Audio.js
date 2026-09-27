@@ -22,7 +22,7 @@ import {
 } from './audio/SpatialAudio.js';
 import { applyBeatTremolo as applyBeatTremoloEffect } from './audio/BeatTremolo.js';
 import { drawActiveTexts, updateActiveTexts } from './audio/TextDisplay.js';
-import { selectVoiceWithEffects as selectVoiceWithEffectsHelper } from './audio/VoiceSelection.js';
+import { englishVoicesOf, selectVoice } from './audio/VoiceSelection.js';
 import { applyVoiceEffects as applyVoiceEffectsHelper } from './audio/VoiceEffects.js';
 import {
   isAggressiveText as isAggressiveTextHelper,
@@ -205,22 +205,13 @@ export class Audio {
   loadVoices() {
     if (this._voicesLoaded) return;
 
+    // Chrome adds voices in batches after load, so keep the list current
     const loadVoices = () => {
-      const allVoices = this.speechSynthesis.getVoices();
-      this.englishVoices = allVoices.filter(
-        (voice) =>
-          voice.lang.startsWith('en-') &&
-          (voice.lang.includes('US') || voice.lang.includes('GB'))
-      );
-      this._voicesLoaded = true;
-      this.speechSynthesis.onvoiceschanged = null;
+      this.englishVoices = englishVoicesOf(this.speechSynthesis.getVoices());
     };
-
-    if (this.speechSynthesis.getVoices().length === 0) {
-      this.speechSynthesis.onvoiceschanged = loadVoices;
-    } else {
-      loadVoices();
-    }
+    loadVoices();
+    this.speechSynthesis.addEventListener?.('voiceschanged', loadVoices);
+    this._voicesLoaded = true;
   }
 
   // ========================================================================
@@ -280,8 +271,9 @@ export class Audio {
     }
 
     // Get player position for relative audio positioning
-    let playerX = 400,
-      playerY = 300; // Default screen center
+    // The world is centred on 0,0, which is where the hero starts
+    let playerX = 0,
+      playerY = 0;
     if (
       this.player &&
       Number.isFinite(this.player.x) &&
@@ -449,6 +441,8 @@ export class Audio {
     if (!this.speechEnabled || !this.speechSynthesis || !text) {
       return false;
     }
+    // A line with no speaker (a ?tune voice sample) comes from the hero
+    entity ??= this.player;
 
     // Check cooldown unless force is true
     const now = Date.now();
@@ -472,21 +466,15 @@ export class Audio {
     utterance.pitch = config.pitch;
 
     // Get player position for relative audio positioning
-    let playerX = CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2,
-      playerY = CONFIG.GAME_SETTINGS.WORLD_HEIGHT / 2;
+    let playerX = 0,
+      playerY = 0;
     if (typeof this.player !== 'undefined' && this.player) {
       playerX = this.player.x;
       playerY = this.player.y;
     }
-    // Ensure entity.x and entity.y are valid numbers
-    const ex =
-      entity && typeof entity.x === 'number' && !isNaN(entity.x)
-        ? entity.x
-        : 400;
-    const ey =
-      entity && typeof entity.y === 'number' && !isNaN(entity.y)
-        ? entity.y
-        : 300;
+    // A speaker without a position speaks from where the hero is
+    const ex = Number.isFinite(entity?.x) ? entity.x : playerX;
+    const ey = Number.isFinite(entity?.y) ? entity.y : playerY;
     // Speech is outside Web Audio and capped at 1: keep it near full and let
     // syncDuck dip the game while it plays
     const distance = Math.max(
@@ -498,14 +486,8 @@ export class Audio {
       config.volume * distance * CONFIG.MIX.SPEECH_VOLUME
     );
 
-    // Enhanced voice selection with effects
-    const voice = selectVoiceWithEffectsHelper(
-      this.englishVoices,
-      voiceType,
-      text,
-      random,
-      floor
-    );
+    // Each speaker keeps one voice
+    const voice = selectVoice(this.englishVoices, voiceType, CONFIG.VOICES);
     if (voice) {
       utterance.voice = voice;
       utterance.lang = voice.lang;

@@ -28,6 +28,21 @@ test.describe('Gameplay Probes', () => {
     expect(after.playerAlive).toBe(true);
   });
 
+  test('Screen flashes fade out in the running game', async ({ page }) => {
+    await bootGame(page);
+    await page.evaluate(() => {
+      window.visualEffectsManager.triggerBloom(0.4, 10);
+      window.visualEffectsManager.triggerChromaticAberration(0.6, 10);
+    });
+    await page.waitForFunction(
+      () =>
+        window.visualEffectsManager.bloomIntensity === 0 &&
+        window.visualEffectsManager.chromaticAberration === 0,
+      null,
+      { timeout: 3000 }
+    );
+  });
+
   test('Title screen waits for input, then starts the run', async ({
     page,
   }) => {
@@ -141,10 +156,54 @@ test.describe('Gameplay Probes', () => {
     await page.waitForFunction(() => window.gameState?.gameState === 'title');
     // A real click (pointer events) on a slider, then a dropdown change
     await page.locator('#tunePanel input[type=range]').first().click();
-    await page.locator('#tunePanel select').selectOption('oneThree');
+    // The kick pattern is the first dropdown
+    await page.locator('#tunePanel select').first().selectOption('oneThree');
     expect(await page.evaluate(() => window.gameState.gameState)).toBe('title');
     await expect(page.locator('#tunePanel pre')).toContainText(
       '"PATTERN": "oneThree"'
+    );
+  });
+
+  test('?tune voice dropdowns list the voices and a pick is heard', async ({
+    page,
+  }) => {
+    await page.goto('/?tune');
+    await page.waitForFunction(() => window.gameState?.gameState === 'title');
+    await page.keyboard.press('Enter'); // start a run: audio is running
+    await page.waitForFunction(() => window.gameState.gameState === 'playing');
+    // Headless Chromium has no voices: hand it two, as Chrome does a moment
+    // after load. Chrome only accepts its own voice objects on a real
+    // utterance, so use a plain one, and record what would be said.
+    await page.evaluate(() => {
+      const synth = window.speechSynthesis;
+      const voices = [
+        { name: 'Test Voice A', lang: 'en-US' },
+        { name: 'Test Voice B', lang: 'en-GB' },
+      ];
+      synth.getVoices = () => voices;
+      window.SpeechSynthesisUtterance = class {
+        constructor(text) {
+          this.text = text;
+        }
+      };
+      window.__said = [];
+      synth.speak = (u) => window.__said.push([u.text, u.voice?.name]);
+      synth.dispatchEvent(new Event('voiceschanged'));
+    });
+    const tank = page.locator('#tunePanel select').nth(2); // after the kick pattern and the hero
+    await expect(tank.locator('option')).toHaveText([
+      'auto',
+      'Test Voice A',
+      'Test Voice B',
+    ]);
+    await tank.selectOption('Test Voice B');
+    // The sample line went through the game's own speech, in that voice
+    expect(await page.evaluate(() => window.__said)).toContainEqual([
+      'Targeting traitors!',
+      'Test Voice B',
+    ]);
+    await expect(page.locator('#tunePanel pre')).toContainText(
+      '"tank": "Test Voice B"'
     );
   });
 

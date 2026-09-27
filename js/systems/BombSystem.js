@@ -1,4 +1,5 @@
-import { sqrt, max, floor, atan2, cos, sin } from '../mathUtils.js';
+import { sqrt, max, floor } from '../mathUtils.js';
+import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 const BOMB_EXPLOSION_RADIUS = 250;
@@ -12,6 +13,7 @@ const WARNING_SECONDS = 3;
 export function tryPlaceTankBomb(activeBombs, enemy) {
   if (!activeBombs || !enemy) return;
   if (activeBombs.length >= MAX_ACTIVE_BOMBS) return;
+  if (activeBombs.some((bomb) => bomb.tankId === enemy.id)) return; // one each
   const timer = 180;
   activeBombs.push({
     x: enemy.x,
@@ -98,11 +100,8 @@ export function updateBombs(context) {
           )
         );
 
-        if (!player.hurt(damage, 'tank-bomb') && player.velocity) {
-          const knockbackAngle = atan2(player.y - bomb.y, player.x - bomb.x);
-          const knockbackForce = 15;
-          player.velocity.x += cos(knockbackAngle) * knockbackForce;
-          player.velocity.y += sin(knockbackAngle) * knockbackForce;
+        if (!player.hurt(damage, 'tank-bomb')) {
+          player.knockBack(bomb.x, bomb.y, CONFIG.PLAYER.KNOCKBACK_BOMB);
         }
       }
     }
@@ -110,6 +109,7 @@ export function updateBombs(context) {
     for (let j = enemies.length - 1; j >= 0; j--) {
       const enemy = enemies[j];
       if (enemy.id === bomb.tankId) continue; // originating tank placed the bomb
+      if (enemy.markedForRemoval) continue; // killed last frame, not yet removed
       const dx = bomb.x - enemy.x;
       const dy = bomb.y - enemy.y;
       const enemyDistSq = dx * dx + dy * dy;

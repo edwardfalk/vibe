@@ -10,6 +10,8 @@ export class GameState {
     this.score = 0;
     this.startSpeechTimer = null;
     this.highScore = parseInt(localStorage.getItem('vibeHighScore')) || 0;
+    // What this run has to beat; highScore itself follows the score up
+    this.highScoreAtRunStart = this.highScore;
     this.level = 1;
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
@@ -34,13 +36,17 @@ export class GameState {
   }
 
   // Score management
+  // A run that is over earns nothing more: the frame the hero dies in keeps
+  // running, and bombs, blasts and friendly fire can still kill enemies in it
   addScore(points) {
+    if (this.gameState === 'gameOver') return;
     this.score += points;
     this.checkLevelProgression();
     this.updateHighScore();
   }
 
   addKill() {
+    if (this.gameState === 'gameOver') return;
     this.totalKills++;
     this.killStreak++;
     if (this.killStreak > 0 && this.killStreak % 5 === 0 && window.audio) {
@@ -153,6 +159,7 @@ export class GameState {
     this.totalKills = 0;
     this.shotsFired = 0;
     this._flushHighScore();
+    this.highScoreAtRunStart = this.highScore;
 
     // Reset game state
     this.practiceRun = false;
@@ -160,12 +167,11 @@ export class GameState {
 
     // Reset player
     if (window.player) {
-      // Use the p5 instance from the player object
-      const p = window.player.p;
-      window.player.x = p.width / 2;
-      window.player.y = p.height / 2;
+      window.player.x = 0; // the world's centre
+      window.player.y = 0;
       window.player.health = window.player.maxHealth;
       window.player.velocity = { x: 0, y: 0 };
+      window.player.knockback = { x: 0, y: 0 };
       window.player.shieldUp = true;
       window.player.shieldDownMs = 0;
       window.player.msSinceHit = 0;
@@ -177,20 +183,23 @@ export class GameState {
     if (window.enemyBullets) window.enemyBullets.length = 0;
     if (window.activeBombs) window.activeBombs.length = 0;
 
-    // Reset camera
-    if (window.cameraSystem) {
-      window.cameraSystem.x = 0;
-      window.cameraSystem.y = 0;
-      window.cameraSystem.targetX = 0;
-      window.cameraSystem.targetY = 0;
-    }
+    // Reset camera, including any screen shake
+    if (window.cameraSystem) window.cameraSystem.reset();
 
     // Reset explosion manager
     if (window.explosionManager) {
       window.explosionManager.explosions = [];
       window.explosionManager.plasmaClouds = [];
       window.explosionManager.radioactiveDebris = [];
+      window.explosionManager.fragmentExplosions = [];
     }
+
+    // Clear the last run's leftovers on screen
+    if (window.floatingText) window.floatingText.texts = [];
+    if (window.audio) window.audio.activeTexts = [];
+    if (window.rhythmFX) window.rhythmFX.telegraphs = [];
+    this.gameContext?.set('hitStopFrames', 0);
+    window.visualEffectsManager?.reset();
 
     // Reset BeatClock so enemies sync to fresh beat positions
     if (window.beatClock) {

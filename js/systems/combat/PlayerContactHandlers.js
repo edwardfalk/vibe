@@ -1,4 +1,5 @@
-import { sqrt, atan2, cos, sin } from '../../mathUtils.js';
+import { sqrt } from '../../mathUtils.js';
+import { CONFIG } from '../../config.js';
 import { tryPlaceTankBomb } from '../BombSystem.js';
 
 export function handleContactCollisions({
@@ -11,7 +12,7 @@ export function handleContactCollisions({
 
   for (let i = enemies.length - 1; i >= 0; i--) {
     const enemy = enemies[i];
-    if (!enemy.checkCollision(player)) continue;
+    if (enemy.markedForRemoval || !enemy.checkCollision(player)) continue;
 
     let damage = 0;
     let shouldPlaceBomb = false;
@@ -58,10 +59,11 @@ export function handleRusherExplosionCollision({
 
   if (player.hurt(explosion.damage, 'rusher-explosion')) return;
 
-  const knockbackAngle = atan2(player.y - explosion.y, player.x - explosion.x);
-  const knockbackForce = 12;
-  player.velocity.x += cos(knockbackAngle) * knockbackForce;
-  player.velocity.y += sin(knockbackAngle) * knockbackForce;
+  player.knockBack(
+    explosion.x,
+    explosion.y,
+    CONFIG.PLAYER.KNOCKBACK_RUSHER_BLAST
+  );
 
   cameraSystem?.addShake?.(15, 25);
   explosionManager?.addExplosion?.(player.x, player.y, 'hit');

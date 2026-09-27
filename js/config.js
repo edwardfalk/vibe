@@ -65,6 +65,11 @@ const CONFIG = {
     // new type appears when this far through the level before it
     PREVIEW_NEW_ENEMY: true,
     PREVIEW_AT_PROGRESS: 0.5,
+    // Enemies appear this far (px) past an edge of the view: past a tank's
+    // spawn ring (1.5 × its size of 50) plus the biggest screen shake (15).
+    // At most 125: with the view centred, that's the world beyond the top
+    // and bottom edges
+    SPAWN_MARGIN: 95,
   },
 
   // Mix. Speech runs outside Web Audio and can't go above full volume, so it
@@ -149,9 +154,22 @@ const CONFIG = {
   // returns on the beat; slow healing once he's gone a while unhit.
   // Contact ticks (1 per frame) bypass the shield. Tune live with ?tune.
   PLAYER: {
-    SHIELD_RECHARGE_MS: 8000,
-    REGEN_DELAY_MS: 3000, // healing starts this long after the last hit
-    REGEN_PER_SEC: 2, // health points per second
+    SHIELD_RECHARGE_MS: 15000,
+    REGEN_DELAY_MS: 6000, // healing starts this long after the last hit
+    REGEN_PER_SEC: 0.5, // health points per second
+    // What each hit takes from him (of 100). Enemies hitting each other
+    // keep their own numbers.
+    DAMAGE_GRUNT_BULLET: 5,
+    DAMAGE_TANK_BALL: 50,
+    DAMAGE_STAB: 25,
+    HEAD_SIZE: 0.36, // head diameter as a share of his size
+    // Knockback: a push of this many px/frame that fades by KNOCKBACK_DECAY
+    // (share kept per frame), so it carries him about force x 6.7 px in all
+    KNOCKBACK_DECAY: 0.85,
+    KNOCKBACK_STAB: 8,
+    KNOCKBACK_RUSHER_BLAST: 12,
+    KNOCKBACK_AREA: 6, // hazard clouds
+    KNOCKBACK_BOMB: 15,
   },
 
   // Tank armour plates (hits to break). Applies to tanks spawned after a
@@ -169,6 +187,15 @@ const CONFIG = {
     MAX_WARNING_TIME: 40, // Frames for warning phase
     KNOCKBACK_FORCE: 8, // px/frame per hit; about 53 px in total
     MAX_KNOCKBACK: 20, // px/frame cap under steady fire
+  },
+  // The voice each speaker uses, by name ('auto': the game picks one). The
+  // ?tune dropdowns list the voices this browser has.
+  VOICES: {
+    player: 'auto',
+    tank: 'auto',
+    stabber: 'auto',
+    rusher: 'auto',
+    grunt: 'auto',
   },
 };
 

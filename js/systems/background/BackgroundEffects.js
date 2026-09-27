@@ -126,7 +126,8 @@ export function drawInteractiveBackgroundEffectsLayer(
   p,
   player,
   gameState,
-  beatClock
+  beatClock,
+  cameraSystem
 ) {
   p.push();
 
@@ -159,6 +160,10 @@ export function drawInteractiveBackgroundEffectsLayer(
   drawBeatPulseOverlay(p, beatClock, healthOverlayColor);
 
   if (player && player.isMoving) {
+    // Drawn in screen space, before the camera transform
+    const { x: rippleX, y: rippleY } = cameraSystem
+      ? cameraSystem.worldToScreen(player.x, player.y)
+      : player;
     const rippleIntensity = p.map(player.speed, 0, 5, 0, 1);
     for (let i = 0; i < 3; i++) {
       const rippleRadius = ((p.millis() / 1000) * (2 * 60) + i * 20) % 100;
@@ -166,7 +171,7 @@ export function drawInteractiveBackgroundEffectsLayer(
       p.stroke(64, 224, 208, rippleAlpha);
       p.strokeWeight(2);
       p.noFill();
-      p.ellipse(player.x, player.y, rippleRadius, rippleRadius);
+      p.ellipse(rippleX, rippleY, rippleRadius, rippleRadius);
     }
   }
 
@@ -212,7 +217,7 @@ const AURORA_WISP_MODULATION = 35;
 /** Phase speed for size oscillation */
 const AURORA_PHASE_SPEED = 0.006;
 
-export function drawAuroraWispsLayer(wisps, p, beatClock = null) {
+export function drawAuroraWispsLayer(wisps, p, beatClock, onView) {
   if (!wisps || !Array.isArray(wisps) || wisps.length === 0) return;
   p.push();
   p.noStroke();
@@ -220,6 +225,7 @@ export function drawAuroraWispsLayer(wisps, p, beatClock = null) {
 
   for (let i = 0; i < wisps.length; i++) {
     const wisp = wisps[i];
+    if (!onView(wisp.x, wisp.y)) continue;
     const wispX = wisp.x;
     const wispY = wisp.y;
     const beatModulation =

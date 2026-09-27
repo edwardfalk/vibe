@@ -1,6 +1,8 @@
-import { atan2, cos, sin } from '../../mathUtils.js';
 import { CONFIG } from '../../config.js';
-import { handleDamageResult } from '../../shared/DamageResultHandler.js';
+import {
+  handleDamageResult,
+  STABBER_KILL_POINTS,
+} from '../../shared/DamageResultHandler.js';
 import { damageEnemiesInRadius } from '../../effects/AreaDamageHandler.js';
 
 function handleRusherExplosionResult(result, enemy, context, blasts) {
@@ -53,10 +55,7 @@ function handleStabberAttackResult(result, context) {
 
   if (result.type === 'stabber-melee' && result.playerHit && player) {
     if (!player.hurt(result.damage, 'stabber-melee')) {
-      const knockbackAngle = atan2(player.y - result.y, player.x - result.x);
-      const knockbackForce = 8;
-      player.velocity.x += cos(knockbackAngle) * knockbackForce;
-      player.velocity.y += sin(knockbackAngle) * knockbackForce;
+      player.knockBack(result.x, result.y, CONFIG.PLAYER.KNOCKBACK_STAB);
 
       if (cameraSystem) {
         cameraSystem.addShake(10, 20);
@@ -86,7 +85,7 @@ function handleStabberAttackResult(result, context) {
             collisionSystem.handleEnemyDeath(e, e.type, e.x, e.y);
           }
         },
-        scorePoints: 15,
+        scorePoints: STABBER_KILL_POINTS,
       }
     );
   }
@@ -150,7 +149,7 @@ function damageEnemiesInBlasts(blasts, context) {
         explosionManager: context.explosionManager,
         audio: context.audio,
         // No scoring from blasts in the frame the game ended
-        gameState: gameState?.gameState === 'playing' ? gameState : null,
+        gameState,
         onDeath: (e) => collisionSystem?.handleEnemyDeath(e, e.type, e.x, e.y),
         scorePoints: 10,
       },

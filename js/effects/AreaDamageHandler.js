@@ -1,4 +1,4 @@
-import { atan2, cos, sin } from '../mathUtils.js';
+import { CONFIG } from '../config.js';
 import { handleDamageResult } from '../shared/DamageResultHandler.js';
 
 export function handleAreaDamageEvents(damageEvents, context) {
@@ -23,10 +23,7 @@ export function handleAreaDamageEvents(damageEvents, context) {
         if (player.hurt(event.damage, 'area-effect')) continue;
 
         // Apply knockback
-        const knockbackAngle = atan2(player.y - event.y, player.x - event.x);
-        const knockbackForce = 6;
-        player.velocity.x += cos(knockbackAngle) * knockbackForce;
-        player.velocity.y += sin(knockbackAngle) * knockbackForce;
+        player.knockBack(event.x, event.y, CONFIG.PLAYER.KNOCKBACK_AREA);
 
         if (cameraSystem) {
           cameraSystem.addShake(8, 15);
@@ -40,6 +37,7 @@ export function handleAreaDamageEvents(damageEvents, context) {
       {
         explosionManager,
         audio,
+        // No scoring once the player has died, this frame or earlier
         gameState,
         onDeath: (e) =>
           enemyDeathHandler?.handleEnemyDeath(e, e.type, e.x, e.y),

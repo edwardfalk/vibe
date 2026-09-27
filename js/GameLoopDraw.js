@@ -31,6 +31,8 @@ export function runDraw(p, updateGame, drawGame) {
       case 'playing':
         updateGame(p);
         drawGame(p);
+        // Under the HUD; not while paused or over, when they would freeze
+        window.rhythmFX?.drawAttackTelegraphs(p, window.cameraSystem ?? null);
         break;
 
       case 'paused':
@@ -47,6 +49,6 @@ export function runDraw(p, updateGame, drawGame) {
   }
 
   if (window.rhythmFX) {
-    window.rhythmFX.draw(p, window.cameraSystem ?? null);
+    window.rhythmFX.draw(p);
   }
 }

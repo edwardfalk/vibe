@@ -42,14 +42,10 @@ export function runSetup(p, arrays) {
   window.cameraSystem = new CameraSystem(p, gameContext);
   window.gameState = new GameState();
   window.gameState.activeBombs = activeBombs;
+  window.gameState.gameContext = gameContext; // restart() clears hitstop
 
-  const player = new Player(
-    p,
-    p.width / 2,
-    p.height / 2,
-    window.cameraSystem,
-    gameContext
-  );
+  // The hero starts at the world's centre, where the camera starts
+  const player = new Player(p, 0, 0, window.cameraSystem, gameContext);
   window.player = player;
 
   window.enemies = enemies;

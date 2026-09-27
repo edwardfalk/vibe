@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createMockP5, createMockAudio } from './helpers/enemyMocks.js';
 import { Tank } from '../../js/entities/Tank.js';
 import { Stabber } from '../../js/entities/Stabber.js';
+import { Rusher } from '../../js/entities/Rusher.js';
 import { BeatClock } from '../../js/audio/BeatClock.js';
 import { updateStabberBehavior } from '../../js/entities/StabberAttackHandler.js';
 
@@ -46,6 +47,36 @@ describe('Beat-gated entity behaviour', () => {
     }
     const power = audio.playSound.mock.calls.filter(([n]) => n === 'tankPower');
     expect(power.length).toBe(1);
+  });
+
+  it('tank says its calm-down line once, on the next beat 1 after its anger ends', () => {
+    const { audio, context, at } = world();
+    const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
+    t.isAngry = true;
+    t.angerCooldown = 0.5; // runs out on the first frame, between beats
+    for (let ms = 4300; ms < 6200; ms += 10) {
+      at(ms); // on to the next beat 1 (6000) and through its window
+      t.updateSpecificBehavior(700, 100, 10); // player out of charge range
+    }
+    expect(t.isAngry).toBe(false);
+    expect(audio.speak).toHaveBeenCalledTimes(1);
+  });
+
+  it("rusher's charge sound plays once, on the next beat after its battle cry", () => {
+    const { audio, context, at } = world();
+    const r = new Rusher(0, 0, 'rusher', { context }, createMockP5(), audio);
+    for (let ms = 250; ms < 700; ms += 10) {
+      at(ms); // from between beats on through beat 2's window
+      r.updateSpecificBehavior(100, 0, 10); // within charge distance
+    }
+    // Closing in lights the fuse: no second charge sound
+    at(700);
+    r.updateSpecificBehavior(r.x + r.explodeDistance - 1, r.y, 10);
+    expect(r.vibrating).toBe(true);
+    const charge = audio.playSound.mock.calls.filter(
+      ([n]) => n === 'rusherCharge'
+    );
+    expect(charge.length).toBe(1);
   });
 
   it('stabber warns on beat 3 and dashes on the off-beat 3.5', () => {

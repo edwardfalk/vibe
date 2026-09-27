@@ -30,6 +30,10 @@ let explosionManager;
 let gameContext;
 let enemyDeathHandler;
 
+// Chromatic aberration during hitstop: ramps up over RAMP_FRAMES to PEAK,
+// then fades out over FADE_FRAMES once the game runs again.
+const HITSTOP_CHROMA = { RAMP_FRAMES: 8, PEAK: 0.6, FADE_FRAMES: 20 };
+
 // Global system references for easy access
 window.player = null;
 window.enemies = enemies;
@@ -78,9 +82,13 @@ function updateGame(p) {
 
     // Apply chromatic aberration during hit-stop (decays as hitstop ends)
     if (window.visualEffectsManager && next > 0) {
-      const hitStopProgress = (8 - next) / 8; // Intensity peaks at end of hitstop (impact moment)
-      const chromaIntensity = hitStopProgress * 0.6;
-      window.visualEffectsManager.chromaticAberration = chromaIntensity;
+      // Intensity peaks at end of hitstop (impact moment)
+      const hitStopProgress =
+        (HITSTOP_CHROMA.RAMP_FRAMES - next) / HITSTOP_CHROMA.RAMP_FRAMES;
+      window.visualEffectsManager.triggerChromaticAberration(
+        hitStopProgress * HITSTOP_CHROMA.PEAK,
+        HITSTOP_CHROMA.FADE_FRAMES
+      );
     }
 
     return;
@@ -201,6 +209,9 @@ function updateGame(p) {
   if (window.floatingText) {
     window.floatingText.update();
   }
+
+  // Fade bloom and chromatic aberration (here, so they hold while paused)
+  window.visualEffectsManager?.update();
 }
 
 // Single-pass compaction: O(n) instead of O(n²) from repeated splice

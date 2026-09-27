@@ -29,10 +29,12 @@ export class EnemyFragmentExplosion {
     const size = this.enemy.size;
     const fragmentCount = 12;
 
-    const bodyColor = this.enemy.bodyColor || [100, 150, 100];
-    const skinColor = this.enemy.skinColor || [120, 180, 120];
-    const helmetColor = this.enemy.helmetColor || [80, 80, 120];
-    const weaponColor = this.enemy.weaponColor || [148, 0, 211];
+    // Enemy colours are p5 Color objects; draw() indexes [r, g, b]
+    const rgb = (color, fallback) => color?.levels ?? color ?? fallback;
+    const bodyColor = rgb(this.enemy.bodyColor, [100, 150, 100]);
+    const skinColor = rgb(this.enemy.skinColor, [120, 180, 120]);
+    const helmetColor = rgb(this.enemy.helmetColor, [80, 80, 120]);
+    const weaponColor = rgb(this.enemy.weaponColor, [148, 0, 211]);
 
     for (let i = 0; i < fragmentCount; i++) {
       const angle = (i / fragmentCount) * TWO_PI + random(-0.5, 0.5);

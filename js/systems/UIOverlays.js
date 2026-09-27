@@ -38,7 +38,8 @@ export function drawGameOver(p, gameState) {
     GAME_OVER_MESSAGES.length > 0
       ? (GAME_OVER_MESSAGES[messageIndex] ?? '')
       : '';
-  const isNewHighScore = gameState.score > gameState.highScore;
+  const isNewHighScore =
+    !gameState.practiceRun && gameState.score > gameState.highScoreAtRunStart;
 
   // Game over text with animation
   p.textFont('monospace');
