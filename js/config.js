@@ -110,6 +110,19 @@ const CONFIG = {
     },
   },
 
+  // The sky: a nebula that is the kick drum's body
+  // (js/systems/background/NebulaSky.js). Tune live with ?tune; ?sky=full or
+  // ?sky=flat in the URL forces a render mode.
+  SKY: {
+    KICK_STRENGTH: 1, // scales everything the kick does to the sky
+    DOWNBEAT_FRONT: 1, // the downbeat's travelling front, against the breath
+    OFFBEAT_SHARE: 0.55, // beats 2-4 relative to the downbeat
+    PULSE_DECAY_SEC: 0.22, // how long each kick's breath lasts
+    OFFSET_MS: 0, // added to the device's output latency; + = the pulse lands later
+    LEVEL_OVERRIDE: 0, // 1-8 previews that level's sky; 0 follows the game
+    LEVEL_EASE_SEC: 0.5, // how fast the sky follows a level change (floor 0.05)
+  },
+
   // Rusher fuse and blast. Shot (or close enough), a rusher brakes to a stop
   // and blows on the first beat 1 or 3 after FUSE_MIN_MS, so a player who
   // runs gets away. Tune live with ?tune.
