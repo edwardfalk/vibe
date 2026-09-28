@@ -4,6 +4,7 @@ import {
   REST_FRAME,
 } from '../../js/systems/background/NebulaSky.js';
 import { CONFIG } from '../../js/config.js';
+import { readFileSync } from 'node:fs';
 
 // A p5 stand-in: a fake WebGL buffer that records uniforms, and 2D contexts
 // that record every number drawn with
@@ -152,6 +153,16 @@ describe('NebulaSky', () => {
     gl.lost = true;
     sky.draw(p, frame());
     expect(sky.mode).toBe('flat');
+  });
+
+  it('never raises a possibly negative number to a power in the shader', () => {
+    // GLSL ES leaves pow(x, y) undefined for x < 0, and some GPUs return NaN
+    const src = readFileSync(
+      new URL('../../js/systems/background/NebulaSky.js', import.meta.url),
+      'utf8'
+    );
+    // rg is 1 - abs(...), never negative
+    expect(src.match(/pow\([^,]*,/g)).toEqual(['pow(rg,']);
   });
 
   it('ships with the level preview off', () => {

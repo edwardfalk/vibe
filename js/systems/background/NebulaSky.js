@@ -200,7 +200,9 @@ void main(){
   float bub = smoothstep(0.1, 0.85, lv);
   float bR = BUBBLE_R0 + BUBBLE_GROWTH * lv;
   float rw = length(wp - heart) + (q.x - 0.5) * 120.0 + (fw - 0.5) * 170.0;
-  float wall = exp(-pow((rw - bR) / (35.0 + 25.0 * lv), 2.0));
+  // Square by multiplying: GLSL ES leaves a negative base to a power undefined
+  float wz = (rw - bR) / (35.0 + 25.0 * lv);
+  float wall = exp(-wz * wz);
   f += bub * (0.08 * wall - 0.2 * (1.0 - smoothstep(0.35 * bR, bR, rw)) * smoothstep(90.0, 200.0, r));
   // The heart's cluster lights the gas: faces turned toward it catch light
   vec2 ld = normalize(mix(vec2(0.86, 0.5), dir, smoothstep(0.0, 60.0, r)));
@@ -228,7 +230,8 @@ void main(){
   vec3 lightCol = mix(LIGHT_COOL, mix(LIGHT_TEAL, LIGHT_WARM, g2), heat);
   col += lightCol * (fil * 0.2 + edge * g1 * (0.04 + 0.10 * lv) * (0.5 + 1.2 * near));
   // The wall's inner face, turned to the cluster, is lit; the kick lights it more
-  float rim = exp(-pow((rw - bR + 18.0) / 16.0, 2.0)) * g1 * 0.12 * lv * bub;
+  float rz = (rw - bR + 18.0) / 16.0;
+  float rim = exp(-rz * rz) * g1 * 0.12 * lv * bub;
   col += lightCol * rim * (1.0 + 1.5 * breath);
   // The breath: dense gas lights up from inside, most near the heart; voids stay dark
   // and from level 4 up the thin gas between clouds dims: density, not area
