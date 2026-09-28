@@ -1,6 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { bootGame } from './helpers/boot.js';
 
+// The gas buffer's luminance spread in the fixed resting level-8 frame must
+// stay above this: a black or NaN shader leaves a flat buffer
+const SKY_GAS_STD_FLOOR = 0.025; // real 0.0498, black shader 0
+
 test.describe('Gameplay Probes', () => {
   test('The sky draws in every state and its shader links', async ({
     page,
@@ -44,6 +48,72 @@ test.describe('Gameplay Probes', () => {
     await page.evaluate(() => window.gameState.setGameState('gameOver'));
     expect(await drawsIn('gameOver')).toBeGreaterThan(0);
     expect(errors).toEqual([]);
+  });
+
+  test('The resting level-8 sky leaves the gameplay colours to the game', async ({
+    page,
+  }) => {
+    await page.goto('/?sky=full');
+    await page.waitForFunction(
+      () => window.backgroundRenderer?.sky?.mode === 'full'
+    );
+    const stats = await page.evaluate(async () => {
+      const { REST_FRAME } =
+        await import('/js/systems/background/NebulaSky.js');
+      const r = window.backgroundRenderer;
+      r.sky.draw(r.p, { ...REST_FRAME, t: 8, flow: 3, level: 8 });
+      const c = document.querySelector('canvas');
+      const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      const gas = document.createElement('canvas');
+      gas.width = 400;
+      gas.height = 300;
+      const g2 = gas.getContext('2d');
+      g2.drawImage(r.sky.g.elt, 0, 0);
+      const gd = g2.getImageData(0, 0, 400, 300).data;
+      const lum = (a, i) =>
+        (0.2126 * a[i] + 0.7152 * a[i + 1] + 0.0722 * a[i + 2]) / 255;
+      // The gameplay hues (deg): green, orange, pink, purple, cyan, magenta
+      const HUES = [120, 40, 340, 260, 180, 325];
+      let bright = 0;
+      let clash = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        if (lum(d, i) > 0.2) bright++;
+        const r8 = d[i] / 255;
+        const g8 = d[i + 1] / 255;
+        const b8 = d[i + 2] / 255;
+        const mx = Math.max(r8, g8, b8);
+        const mn = Math.min(r8, g8, b8);
+        if (mx > 0.35 && (mx - mn) / mx > 0.45) {
+          let h;
+          if (mx === r8) h = 60 * (((g8 - b8) / (mx - mn)) % 6);
+          else if (mx === g8) h = 60 * ((b8 - r8) / (mx - mn) + 2);
+          else h = 60 * ((r8 - g8) / (mx - mn) + 4);
+          h = (h + 360) % 360;
+          const near = (q) =>
+            Math.min(Math.abs(h - q), 360 - Math.abs(h - q)) < 15;
+          if (HUES.some(near)) clash++;
+        }
+      }
+      let sum = 0;
+      let sq = 0;
+      for (let i = 0; i < gd.length; i += 4) {
+        const l = lum(gd, i);
+        sum += l;
+        sq += l * l;
+      }
+      const n = d.length / 4;
+      const gn = gd.length / 4;
+      const mean = sum / gn;
+      return {
+        brightFrac: bright / n,
+        clashFrac: clash / n,
+        gasStd: Math.sqrt(sq / gn - mean * mean),
+      };
+    });
+    console.log('resting L8 sky', stats);
+    expect(stats.clashFrac).toBeLessThanOrEqual(0.005);
+    expect(stats.brightFrac).toBeLessThanOrEqual(0.12);
+    expect(stats.gasStd).toBeGreaterThan(SKY_GAS_STD_FLOOR);
   });
 
   test('Game loop advances with live entities', async ({ page }) => {
