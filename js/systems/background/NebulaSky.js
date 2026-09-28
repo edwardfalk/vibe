@@ -33,10 +33,10 @@ const KICK_END_SEC = 0.45;
 const TAIL_START_SEC = 0.28;
 const MAX_KICK_AGE_SEC = 1; // "no kick" (99) is clamped here before any maths
 const BREATH_ATTACK_SEC = 0.008; // puts the peak right on the thump
-const BREATH_BASE = 0.8;
+const BREATH_BASE = 1.1;
 const BREATH_PER_LEVEL = 0.3;
-const PUSH_BASE_PX = 14; // the gas pushes out from the cluster
-const PUSH_PER_LEVEL_PX = 16;
+const PUSH_BASE_PX = 20; // the gas pushes out from the cluster
+const PUSH_PER_LEVEL_PX = 20;
 const LEVEL_UP_BREATH = 1.6; // the first kick after the level rises
 const FRONT_ATTACK_SEC = 0.012;
 const FRONT_DECAY_SEC = 0.3;
@@ -165,6 +165,8 @@ const vec3 LIGHT_WARM = vec3(0.85, 0.70, 0.52);  // ... on hot, dense gas
 const vec3 FRONT_LIGHT = vec3(0.20, 0.32, 0.38); // the downbeat front's glow
 const vec3 HEART_GLOW = vec3(0.16, 0.24, 0.30);  // the cluster's own glow
 const vec3 VOID = vec3(0.006, 0.008, 0.02);      // the darkest the sky gets
+const vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);   // luminance weights
+const float KICK_LUMA_CAP = 0.255; // a kick lifts gas no brighter than this (before the shoulder)
 
 float h(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
 float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -181,7 +183,7 @@ void main(){
   // moves the gas more than it lights it
   float x = (r - ringR) / ringW;
   float front = exp(-x * x) * smoothstep(10.0, 80.0, r);
-  float lens = -ringA * 24.0 * x * front;
+  float lens = -ringA * 32.0 * x * front;
   vec2 wp = sp - dir * (push * r / (r + 60.0) * exp(-r / 520.0) + lens);
   float ft = flow;
   vec2 P = (wp + cam) / 290.0 + vec2(0.006, 0.003) * ft;
@@ -199,7 +201,7 @@ void main(){
   float bR = BUBBLE_R0 + BUBBLE_GROWTH * lv;
   float rw = length(wp - heart) + (q.x - 0.5) * 120.0 + (fw - 0.5) * 170.0;
   float wall = exp(-pow((rw - bR) / (35.0 + 25.0 * lv), 2.0));
-  f += bub * (0.08 * wall - 0.2 * (1.0 - smoothstep(0.35 * bR, bR, rw)));
+  f += bub * (0.08 * wall - 0.2 * (1.0 - smoothstep(0.35 * bR, bR, rw)) * smoothstep(90.0, 200.0, r));
   // The heart's cluster lights the gas: faces turned toward it catch light
   vec2 ld = normalize(mix(vec2(0.86, 0.5), dir, smoothstep(0.0, 60.0, r)));
   float edge = clamp((f - mac - fbm5(W - ld * 0.035)) * 12.0, 0.0, 1.0);
@@ -230,11 +232,17 @@ void main(){
   col += lightCol * rim * (1.0 + 1.5 * breath);
   // The breath: dense gas lights up from inside, most near the heart; voids stay dark
   // and from level 4 up the thin gas between clouds dims: density, not area
-  col *= (1.0 + breath * ((0.15 + 1.1 * g3 + 0.9 * fil) * (0.55 + 0.9 * near) - 0.35 * lv * (1.0 - g2))) * (1.0 - 0.1 * inhale);
+  vec3 rest = col;
+  col *= max(0.0, 1.0 + breath * ((0.15 + 0.35 * g1 + 0.35 * g2 + 0.5 * g3 + 0.9 * fil) * (0.55 + 0.9 * near) - 0.35 * lv * (1.0 - g2))) * (1.0 - 0.1 * inhale);
+  // The kick may light the gas, but never past the readability line
+  float lRest = dot(rest, LUMA);
+  float lKick = dot(col, LUMA);
+  float room = max(0.0, KICK_LUMA_CAP - lRest);
+  if (lKick > lRest + room) col = rest + (col - rest) * room / (lKick - lRest);
   // Behind the front the gas thins; at the front it is compressed and lit
-  col *= 1.0 - 0.3 * ringA * (1.0 - smoothstep(0.0, ringR, r)) + front * ringA * 0.35;
-  col += lightCol * edge * g1 * front * ringA * 0.25;
-  col += FRONT_LIGHT * front * ringA * (0.05 + 0.3 * hz * hz) * (1.1 - 0.45 * lv);
+  col *= 1.0 - 0.05 * ringA * (1.0 - smoothstep(0.0, ringR, r)) + front * ringA * 0.7;
+  col += lightCol * edge * g1 * front * ringA * 0.5;
+  col += FRONT_LIGHT * front * ringA * (0.25 + 0.4 * hz * hz);
   col *= 1.0 - dust * 0.85;
   // The heart's own faint glow
   col += HEART_GLOW * exp(-r / 38.0) * (0.25 + 0.5 * lv) * (1.0 + 1.5 * breath);
