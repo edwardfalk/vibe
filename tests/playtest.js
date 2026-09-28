@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 import { writeFileSync } from 'fs';
-import { bootGame } from './helpers/boot.js';
+import { bootGame, jumpToLevel } from './helpers/boot.js';
 
 const DURATION_MS = parseInt(process.env.DURATION) || 30000;
 const SAMPLE_INTERVAL = 500;
@@ -101,6 +101,9 @@ test('playtest session', async ({ page }) => {
   page.on('pageerror', (err) => errors.push(err.message));
 
   await bootGame(page);
+  // LEVEL=8 pnpm run playtest measures a later level's sky and band
+  const startLevel = parseInt(process.env.LEVEL) || 1;
+  if (startLevel > 1) await jumpToLevel(page, startLevel);
 
   // Time each animation frame's work: fps is capped at 60, so it can't show
   // whether a change made frames cheaper.
@@ -187,6 +190,10 @@ test('playtest session', async ({ page }) => {
   }
 
   await page.mouse.up();
+  const sky = await page.evaluate(() => ({
+    mode: window.backgroundRenderer?.sky?.mode,
+    renderer: window.backgroundRenderer?.sky?.renderer,
+  }));
   const pacing = await page.evaluate(() => window.__pacing);
   const frameMs = await page.evaluate(() => {
     const ms = window.__frameMs.toSorted((a, b) => a - b);
@@ -213,6 +220,7 @@ test('playtest session', async ({ page }) => {
     duration: `${durationActual}s`,
     fps,
     frameMs,
+    sky,
     peakEnemies,
     finalScore: lastSample.score,
     finalLevel: lastSample.level,
@@ -230,6 +238,12 @@ test('playtest session', async ({ page }) => {
   console.log(
     `   Frame work (ms): avg=${frameMs.avg} p50=${frameMs.p50} p95=${frameMs.p95}`
   );
+  console.log(`   Sky: ${sky.mode} on ${sky.renderer}`);
+  if (sky.mode !== 'full') {
+    console.log(
+      "   ⚠️ The sky isn't drawing its shader: these ms aren't the GPU's."
+    );
+  }
   console.log(`   Peak enemies: ${peakEnemies}`);
   console.log(
     `   Final: Level ${lastSample.level} | Score ${lastSample.score} | Health ${lastSample.playerHealth}`
