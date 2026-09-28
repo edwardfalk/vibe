@@ -20,6 +20,50 @@ const KICK_PATTERNS = {
   four: [0, 1, 2, 3],
   oneThree: [0, 2],
 };
+
+const mod4 = (n) => ((n % 4) + 4) % 4;
+// "None" for the sky: finite, so no maths downstream turns it into NaN
+export const NONE_SEC = 99;
+// How far back to look for the two latest kicks (oneThree kicks every 2 beats)
+const LOOKBACK_BEATS = 8;
+
+/** Does the kick play on this beat (0-3) of the bar? Read live, so ?tune applies at once. */
+export function kicksOn(beat) {
+  const { KICK } = CONFIG.BEAT_TRACK;
+  return KICK.ENABLED && !!KICK_PATTERNS[KICK.PATTERN]?.includes(beat);
+}
+
+/**
+ * The kick as the player hears it, for the sky. It works from the grid this
+ * track plays on and the current pattern, so a pattern change, a stall or a
+ * restart can cost one wrong pulse (see the spec). Times are seconds; "none"
+ * is NONE_SEC.
+ * @param {number} beats BeatClock's position in beats (getTotalBeats() + getBeatPhase())
+ * @param {number} beatSec seconds per beat
+ * @param {number} latencySec output latency plus the sky's offset
+ * @param {boolean} running the track is playing on a running AudioContext
+ */
+export function heardKick(beats, beatSec, latencySec, running) {
+  const heard = beats - latencySec / beatSec;
+  const n = Math.floor(heard);
+  const kicks = (k) => running && kicksOn(mod4(k));
+  const back = [];
+  for (let k = n; k > n - LOOKBACK_BEATS && back.length < 2; k--) {
+    if (kicks(k)) back.push(k);
+  }
+  let next = null;
+  for (let k = n + 1; k <= n + 4 && next === null; k++) {
+    if (kicks(k)) next = k;
+  }
+  const age = (k) => (k === undefined ? NONE_SEC : (heard - k) * beatSec);
+  return {
+    t: heard * beatSec,
+    kickAge: age(back[0]),
+    prevKickAge: age(back[1]),
+    downbeat: back[0] !== undefined && mod4(back[0]) === 0,
+    nextKickIn: next === null ? NONE_SEC : (next - heard) * beatSec,
+  };
+}
 // Look-ahead buffer for sample-accurate scheduling.
 // 75ms balances glitch-free playback with minimal audio-visual desync.
 const SCHEDULE_AHEAD_SEC = 0.075;
@@ -140,8 +184,8 @@ export class BeatTrack {
     // Only play on downbeats (8th notes 0, 2, 4, 6 = beats 1, 2, 3, 4)
     if (eighth % 2 !== 0) return;
     const beat = eighth / 2; // 0-3
-    const { KICK, SUB_PULSE } = CONFIG.BEAT_TRACK;
-    if (KICK.ENABLED && KICK_PATTERNS[KICK.PATTERN]?.includes(beat)) {
+    const { SUB_PULSE } = CONFIG.BEAT_TRACK;
+    if (kicksOn(beat)) {
       this._playKick(time);
     }
     if (SUB_PULSE.ENABLED) {
