@@ -43,8 +43,4 @@ export function runDraw(p, updateGame, drawGame) {
   if (window.uiRenderer) {
     window.uiRenderer.drawUI(p);
   }
-
-  if (window.rhythmFX) {
-    window.rhythmFX.draw(p);
-  }
 }

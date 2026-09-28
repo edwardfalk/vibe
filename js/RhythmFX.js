@@ -3,8 +3,6 @@
  *
  * Provides:
  * - Enemy attack telegraph rings (warning when enemies are about to attack)
- * - Screen pulse effects tied to beat phase
- * - Edge flash on strong beats
  */
 
 import { sin, min, max, abs } from './mathUtils.js';
@@ -14,11 +12,6 @@ export class RhythmFX {
     this.context = context;
     // Attack telegraphs for enemies
     this.telegraphs = []; // {x, y, type, beatsUntil, intensity, owner}
-
-    // Screen effects
-    this.pulseIntensity = 0;
-    this.edgeFlashIntensity = 0;
-    this.lastBeat = -1;
 
     // Early-warning ring colour per enemy type
     this.enemyTypeConfig = {
@@ -41,26 +34,6 @@ export class RhythmFX {
    */
   update(deltaTimeMs = 16.67) {
     const beatClock = this._getBeatClock();
-    if (beatClock) {
-      const currentBeat = beatClock.getCurrentBeat();
-      if (currentBeat !== this.lastBeat) {
-        this.lastBeat = currentBeat;
-        // Trigger pulse on beat hit
-        this.pulseIntensity = currentBeat === 0 ? 1.0 : 0.5; // Stronger on downbeat
-      }
-
-      // Decay pulse intensity (frame-rate independent)
-      this.pulseIntensity *= Math.pow(0.92, deltaTimeMs / 16.67);
-
-      const beatPhase = beatClock.getBeatPhase();
-      const isDownbeat = currentBeat === 0;
-      if (beatPhase < 0.15 && isDownbeat) {
-        this.edgeFlashIntensity = (1 - beatPhase / 0.15) * 0.85;
-      } else {
-        this.edgeFlashIntensity *= Math.pow(0.9, deltaTimeMs / 16.67);
-      }
-    }
-
     // Decay telegraphs using actual deltaTime
     const beatsPerFrame = beatClock
       ? deltaTimeMs / beatClock.beatInterval
@@ -151,69 +124,6 @@ export class RhythmFX {
     }
 
     p.pop();
-  }
-
-  /**
-   * Draw screen pulse effect
-   */
-  drawScreenPulse(p) {
-    if (this.pulseIntensity < 0.01) return;
-
-    p.push();
-
-    // Subtle vignette pulse
-    const ctx = p.drawingContext;
-    ctx.save();
-    const gradient = ctx.createRadialGradient(
-      p.width / 2,
-      p.height / 2,
-      0,
-      p.width / 2,
-      p.height / 2,
-      p.width * 0.7
-    );
-
-    const intensity = this.pulseIntensity * 0.15;
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
-    gradient.addColorStop(0.7, `rgba(200, 180, 255, ${intensity * 0.3})`);
-    gradient.addColorStop(1, `rgba(138, 43, 226, ${intensity})`);
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, p.width, p.height);
-    ctx.restore();
-
-    p.pop();
-  }
-
-  /**
-   * Draw edge flash on strong beats
-   */
-  drawEdgeFlash(p) {
-    if (this.edgeFlashIntensity < 0.01) return;
-
-    p.push();
-
-    const intensity = this.edgeFlashIntensity;
-    const weight = 3 + intensity * 5;
-
-    p.noFill();
-    p.stroke(255, 200, 100, intensity * 255);
-    p.strokeWeight(weight);
-
-    // Draw glowing border
-    const inset = weight / 2;
-    p.rect(inset, inset, p.width - weight, p.height - weight);
-
-    p.pop();
-  }
-
-  /**
-   * Draw the screen-wide beat effects (telegraphs are drawn by the game
-   * loop, under the HUD and only while playing)
-   */
-  draw(p) {
-    this.drawScreenPulse(p);
-    this.drawEdgeFlash(p);
   }
 }
 
