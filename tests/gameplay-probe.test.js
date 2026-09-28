@@ -50,6 +50,34 @@ test.describe('Gameplay Probes', () => {
     expect(errors).toEqual([]);
   });
 
+  test('The sky paints over the whole canvas, full or flat', async ({
+    page,
+  }) => {
+    // The sky is what clears the canvas each frame
+    for (const mode of ['full', 'flat']) {
+      await page.goto(`/?sky=${mode}`);
+      await page.waitForFunction(
+        (m) => window.backgroundRenderer?.sky?.mode === m,
+        mode
+      );
+      const uncovered = await page.evaluate(async () => {
+        const { REST_FRAME } =
+          await import('/js/systems/background/NebulaSky.js');
+        const r = window.backgroundRenderer;
+        r.p.background(255, 0, 255); // the sky must paint over this
+        r.sky.draw(r.p, { ...REST_FRAME, t: 8, flow: 3, level: 8 });
+        const c = document.querySelector('canvas');
+        const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+        let n = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i] > 200 && d[i + 1] < 80 && d[i + 2] > 200) n++;
+        }
+        return n;
+      });
+      expect(uncovered, mode).toBe(0);
+    }
+  });
+
   test('The resting level-8 sky leaves the gameplay colours to the game', async ({
     page,
   }) => {
