@@ -2,6 +2,50 @@ import { test, expect } from '@playwright/test';
 import { bootGame } from './helpers/boot.js';
 
 test.describe('Gameplay Probes', () => {
+  test('The sky draws in every state and its shader links', async ({
+    page,
+  }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+    await page.goto('/');
+    await page.waitForFunction(() => window.backgroundRenderer?.sky);
+    // Count the sky's draws per game state
+    await page.evaluate(() => {
+      const r = window.backgroundRenderer;
+      const draw = r.drawSky.bind(r);
+      window.__skyDraws = {};
+      r.drawSky = (p) => {
+        const state = window.gameState.gameState;
+        window.__skyDraws[state] = (window.__skyDraws[state] ?? 0) + 1;
+        draw(p);
+      };
+    });
+    const drawsIn = async (state) => {
+      const count = () =>
+        page.evaluate((s) => window.__skyDraws[s] ?? 0, state);
+      const before = await count();
+      await page.waitForTimeout(300);
+      return (await count()) - before;
+    };
+    const sky = await page.evaluate(() => ({
+      mode: window.backgroundRenderer.sky.mode,
+      linked: window.backgroundRenderer.sky.shaderLinked,
+    }));
+    expect(['full', 'flat']).toContain(sky.mode);
+    expect(sky.linked).toBe(true);
+    expect(await drawsIn('title')).toBeGreaterThan(0);
+    await page.keyboard.press(' ');
+    await page.waitForFunction(() => window.gameState?.gameState === 'playing');
+    expect(await drawsIn('playing')).toBeGreaterThan(0);
+    await page.keyboard.press('p');
+    await page.waitForFunction(() => window.gameState?.gameState === 'paused');
+    expect(await drawsIn('paused')).toBeGreaterThan(0);
+    await page.evaluate(() => window.gameState.setGameState('gameOver'));
+    expect(await drawsIn('gameOver')).toBeGreaterThan(0);
+    expect(errors).toEqual([]);
+  });
+
   test('Game loop advances with live entities', async ({ page }) => {
     await bootGame(page);
 
