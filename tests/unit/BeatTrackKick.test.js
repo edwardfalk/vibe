@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { BeatTrack } from '../../js/audio/BeatTrack.js';
+import { BeatTrack, heardKick } from '../../js/audio/BeatTrack.js';
 import { CONFIG } from '../../js/config.js';
 
 const original = structuredClone(CONFIG.BEAT_TRACK);
@@ -104,5 +104,47 @@ describe('BeatTrack kick', () => {
     CONFIG.BEAT_TRACK.KICK.ENABLED = true;
     CONFIG.BEAT_TRACK.SUB_PULSE.ENABLED = false;
     expect(playMeasure()).toEqual({ kicks: [0, 1, 2, 3], pulses: [] });
+  });
+
+  it('heardKick reports the last kick and whether it was beat 1', () => {
+    // Beat 8 is beat 1 of the third bar; 0.2 beats = 0.1 s later
+    const one = heardKick(8.2, 0.5, 0, true);
+    expect(one.kickAge).toBeCloseTo(0.1);
+    expect(one.downbeat).toBe(true);
+    expect(one.t).toBeCloseTo(4.1);
+    expect(heardKick(9.2, 0.5, 0, true).downbeat).toBe(false);
+  });
+
+  it('heardKick shifts the kick later by the output latency', () => {
+    // Heard at 8.2 - 0.05 / 0.5 = 8.1 beats: 0.05 s after the kick
+    expect(heardKick(8.2, 0.5, 0.05, true).kickAge).toBeCloseTo(0.05);
+  });
+
+  it('heardKick counts the next and previous kicks across the bar line', () => {
+    CONFIG.BEAT_TRACK.KICK.PATTERN = 'oneThree';
+    // Beat 10.5 is halfway through beat 3; kicks on beats 8, 10 and 12
+    const k = heardKick(10.5, 0.5, 0, true);
+    expect(k.kickAge).toBeCloseTo(0.25);
+    expect(k.prevKickAge).toBeCloseTo(1.25);
+    expect(k.nextKickIn).toBeCloseTo(0.75);
+  });
+
+  it('heardKick follows a pattern change at once', () => {
+    expect(heardKick(9.1, 0.5, 0, true).kickAge).toBeCloseTo(0.05);
+    CONFIG.BEAT_TRACK.KICK.PATTERN = 'oneThree';
+    // Beat 9 (beat 2) no longer kicks: the last kick was beat 8
+    expect(heardKick(9.1, 0.5, 0, true).kickAge).toBeCloseTo(0.55);
+  });
+
+  it('heardKick gives finite "none" values when nothing plays', () => {
+    const none = {
+      kickAge: 99,
+      prevKickAge: 99,
+      nextKickIn: 99,
+      downbeat: false,
+    };
+    expect(heardKick(8.2, 0.5, 0, false)).toMatchObject(none);
+    CONFIG.BEAT_TRACK.KICK.ENABLED = false;
+    expect(heardKick(8.2, 0.5, 0, true)).toMatchObject(none);
   });
 });

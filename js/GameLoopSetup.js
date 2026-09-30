@@ -65,7 +65,6 @@ export function runSetup(p, arrays) {
     window.gameState,
     gameContext
   );
-  window.backgroundRenderer.createParallaxBackground(p);
 
   window.visualEffectsManager = new VisualEffectsManager();
   window.audio = new Audio(p, window.player, gameContext);
@@ -101,6 +100,7 @@ export function runSetup(p, arrays) {
     explosionManager,
     floatingText: window.floatingText,
     beatClock: window.beatClock,
+    beatTrack: window.beatTrack,
     rhythmFX: window.rhythmFX,
     visualEffectsManager: window.visualEffectsManager,
     hitStopFrames: 0,

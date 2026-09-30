@@ -3,7 +3,12 @@ import prettierPlugin from 'eslint-plugin-prettier';
 export default [
   {
     // Global ignores (an object with only `ignores` applies to every config)
-    ignores: ['node_modules/**', '.worktrees/**', '.superpowers/**'],
+    ignores: [
+      'node_modules/**',
+      '.worktrees/**',
+      '.superpowers/**',
+      'docs/superpowers/**',
+    ],
   },
   {
     files: ['**/*.js'],

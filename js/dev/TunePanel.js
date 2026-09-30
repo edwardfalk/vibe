@@ -1,5 +1,5 @@
 /**
- * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK, PACING,
+ * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK, SKY, PACING,
  * MIX, RUSHER, TANK_ARMOR, HITBOX, the stabber's knockback and the hero's
  * shield, healing, knockback, the damage hits do to him and his head size,
  * and each speaker's voice (a new pick says a sample line). Sound and spawn changes apply from the next
@@ -20,6 +20,7 @@ const PACING = 'PACING';
 const MIX = 'MIX';
 const RUSHER = 'RUSHER';
 const HITBOX = 'HITBOX';
+const SKY = 'SKY';
 
 // The voices this browser has; Chrome fills the list in a moment after load
 const voiceChoices = () => [
@@ -51,6 +52,13 @@ const KNOBS = [
   [KICK, 'CLICK_FREQ_HZ', [500, 8000, 50]],
   ['BEAT_TRACK.SUB_PULSE', 'ENABLED'],
   ['BEAT_TRACK.SUB_PULSE', 'VOLUME', [0, 4, 0.05]],
+  [SKY, 'KICK_STRENGTH', [0, 2, 0.05]],
+  [SKY, 'DOWNBEAT_FRONT', [0, 2, 0.05]],
+  [SKY, 'OFFBEAT_SHARE', [0, 1, 0.05]],
+  [SKY, 'PULSE_DECAY_SEC', [0.05, 0.6, 0.01]],
+  [SKY, 'OFFSET_MS', [-50, 150, 5]],
+  [SKY, 'LEVEL_OVERRIDE', [0, 8, 1]],
+  [SKY, 'LEVEL_EASE_SEC', [0.05, 3, 0.05]],
   [PACING, 'FIRST_LEVEL_POINTS', [30, 300, 10]],
   [PACING, 'LEVEL_POINTS_PER_LEVEL', [40, 300, 10]],
   [PACING, 'SPAWN_INTERVAL_BEATS', [2, 16, 1]],

@@ -48,6 +48,7 @@ New enemy types join as you level up: grunts from the start, then stabbers at le
 Open the game with [`?tune`](https://edwardfalk.github.io/vibe/?tune) in the URL for a panel of live sliders:
 
 - the kick's sound: pitch, decay, drive and click;
+- the sky: how hard the kick hits it, the downbeat's front, its timing against your speakers, and a preview of each level's sky;
 - the mix: effects, beat and speech levels, and how far the game dips under speech;
 - pacing: level thresholds, time between enemy waves, and how many enemies can be on screen.
 
@@ -55,7 +56,7 @@ There's also a **Level +1** button. A run that used it can't set a high score. T
 
 ## Tech
 
-- [p5.js](https://p5js.org/) in instance mode for drawing, Web Audio for sound, and the Speech Synthesis API for voices.
+- [p5.js](https://p5js.org/) in instance mode for drawing, a WebGL shader for the sky, Web Audio for sound, and the Speech Synthesis API for voices.
 - Plain ES modules with no build step, served as static files on GitHub Pages.
 - Unit tests with [Vitest](https://vitest.dev/), and browser tests with [Playwright](https://playwright.dev/), including checks that the kick and enemy shots land on the beat. GitHub Actions runs lint and all tests on every pull request and every push to main.
 

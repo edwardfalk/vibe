@@ -2,11 +2,11 @@
 
 ## Suites
 
-| Suite                | Command              | What it covers                                                                                                                                         |
-| -------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Unit (Vitest)        | `pnpm run test:unit` | logic such as the beat clock, spawning and pacing, damage results, the bullet pool, beat-gated sounds, player fire                                     |
-| Browser (Playwright) | `pnpm run test:e2e`  | the real game in headless Chromium: title screen, input, combat, scoring, game over, mute, restart, and that the kick and enemy shots land on the beat |
-| Everything           | `pnpm run test`      | unit tests, then browser tests; CI runs lint, then these two, so the fast failures show first                                                          |
+| Suite                | Command              | What it covers                                                                                                                                                                                                                                                     |
+| -------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Unit (Vitest)        | `pnpm run test:unit` | logic such as the beat clock, spawning and pacing, damage results, the bullet pool, beat-gated sounds, player fire, the heard kick and the sky                                                                                                                     |
+| Browser (Playwright) | `pnpm run test:e2e`  | the real game in headless Chromium: title screen, input, combat, scoring, game over, mute, restart, that the kick and enemy shots land on the beat, and that the sky draws in every state, its shader links, and the resting sky leaves the gameplay colours alone |
+| Everything           | `pnpm run test`      | unit tests, then browser tests; CI runs lint, then these two, so the fast failures show first                                                                                                                                                                      |
 
 Useful variants:
 
@@ -20,7 +20,7 @@ The browser tests start their own server on port 5500, or reuse a dev server tha
 
 These run through Playwright too. They're for measuring and looking, so CI doesn't run them:
 
-- `pnpm run playtest`: a bot plays and reports frame rate, the work per frame in ms (avg, p50, p95) and pacing. Fps is capped at 60, so compare the ms figures to see whether a change made frames cheaper.
+- `pnpm run playtest`: a bot plays and reports frame rate, the work per frame in ms (avg, p50, p95) and pacing. Fps is capped at 60, so compare the ms figures to see whether a change made frames cheaper. It runs Chromium on the machine's real GPU, so the sky draws its shader; ms figures from before the sky (September 2026) don't compare. `LEVEL=8` starts it at level 8. It prints the sky's mode, and its numbers count only in `full`.
 - `pnpm run screenshot`: screenshots of a running game.
 - `pnpm run test:beats`: records when enemies act and checks each lands on its beat.
 
@@ -44,7 +44,10 @@ Both replays get the same seeded random numbers, clock and scripted input. The r
 - the HTML parts of the page (`index.html`, the title overlay, the toast);
 - code outside `js/`;
 - speech ducking, since the fake speech engine never reports that it is speaking;
-- a Web Audio node that is never connected. It makes no sound, so it is left out on purpose.
+- a Web Audio node that is never connected. It makes no sound, so it is left out on purpose;
+- the sky's shader: Node has no WebGL, so the replay records the flat sky (its buffers show up as `UNKNOWN.pixelDensity` in a `DETAIL` dump).
+
+CI and the browser tests run Chromium without a GPU, so they draw the sky flat; the readability test forces `?sky=full` for its one fixed frame.
 
 The Playwright config has four projects (`e2e`, `playtest`, `screenshot`, `beats`). The scripts always pick one. A bare `npx playwright test` runs all four.
 

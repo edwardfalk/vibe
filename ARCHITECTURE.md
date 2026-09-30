@@ -14,17 +14,17 @@ The states are `title → playing ⇄ paused → gameOver → playing`. The titl
 
 ## Folders
 
-| Folder         | Owns                                                                                                                                                                              |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `js/`          | the loop files above, [`config.js`](js/config.js) (every tunable number), [`Audio.js`](js/Audio.js) (sound effects and speech), `RhythmFX.js` (attack telegraphs and beat pulses) |
-| `js/core/`     | [`GameContext.js`](js/core/GameContext.js) (the shared-state container), `GameState.js` (score, level, state machine), `InputHandlers.js`                                         |
-| `js/audio/`    | [`BeatClock.js`](js/audio/BeatClock.js) (the one timing grid), [`BeatTrack.js`](js/audio/BeatTrack.js) (kick and sub pulse), sound presets, voices and dialogue                   |
-| `js/entities/` | the player, `BaseEnemy` and the four enemy types, bullets                                                                                                                         |
-| `js/systems/`  | spawning, collisions, camera, bombs, HUD, background, and the enemy update pipeline                                                                                               |
-| `js/effects/`  | explosions, floating text, dash and glow effects, area damage                                                                                                                     |
-| `js/shared/`   | small cross-cutting pieces: the damage-result values and handler, the context accessor                                                                                            |
-| `js/dev/`      | [`TunePanel.js`](js/dev/TunePanel.js), the `?tune` sliders                                                                                                                        |
-| `tests/`       | Playwright browser tests and dev tools; `tests/unit/` holds the Vitest tests                                                                                                      |
+| Folder         | Owns                                                                                                                                                              |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `js/`          | the loop files above, [`config.js`](js/config.js) (every tunable number), [`Audio.js`](js/Audio.js) (sound effects and speech), `RhythmFX.js` (attack telegraphs) |
+| `js/core/`     | [`GameContext.js`](js/core/GameContext.js) (the shared-state container), `GameState.js` (score, level, state machine), `InputHandlers.js`                         |
+| `js/audio/`    | [`BeatClock.js`](js/audio/BeatClock.js) (the one timing grid), [`BeatTrack.js`](js/audio/BeatTrack.js) (kick and sub pulse), sound presets, voices and dialogue   |
+| `js/entities/` | the player, `BaseEnemy` and the four enemy types, bullets                                                                                                         |
+| `js/systems/`  | spawning, collisions, camera, bombs, HUD, the sky, and the enemy update pipeline                                                                                  |
+| `js/effects/`  | explosions, floating text, dash and glow effects, area damage                                                                                                     |
+| `js/shared/`   | small cross-cutting pieces: the damage-result values and handler, the context accessor                                                                            |
+| `js/dev/`      | [`TunePanel.js`](js/dev/TunePanel.js), the `?tune` sliders                                                                                                        |
+| `tests/`       | Playwright browser tests and dev tools; `tests/unit/` holds the Vitest tests                                                                                      |
 
 ## Shared state
 
@@ -40,6 +40,8 @@ When a module was given a `GameContext`, the accessor returns `context.get(key)`
 - A beat's window opens when the beat lands, not before it, and each beat-gated sound plays at most once per beat.
 - The player's held fire asks `isOnEighthNote()` and otherwise queues the shot for the next eighth note.
 - [`BeatTrack`](js/audio/BeatTrack.js) schedules the kick and sub pulse a little ahead, on BeatClock's grid, with a look-ahead scheduler.
+
+**The sky.** [`NebulaSky`](js/systems/background/NebulaSky.js) is the kick drum's body: on each kick the nebula's star cluster breathes and the dense gas lights up, and on beat 1 a front also rolls out through the gas. [`BackgroundRenderer`](js/systems/BackgroundRenderer.js) asks `heardKick()` in BeatTrack when the player hears each kick: BeatClock's grid, minus the audio output latency and `CONFIG.SKY.OFFSET_MS`, on the beats `kicksOn()` says the kick plays. The gas is a fragment shader on a 400×300 WebGL buffer. Without a hardware GPU, if the shader fails, or with `?sky=flat` in the URL, the sky is flat: stars and the pulsing cluster on dark.
 
 ## Audio graph
 
@@ -64,12 +66,12 @@ Speech can't be routed through Web Audio or raised above full volume, so it stay
 
 ## Dev tools
 
-| Tool       | Command                                                      | What it does                                                                                                                                                                                                                                                |
-| ---------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `?tune`    | open the game with `?tune`                                   | live sliders for the kick, mix, pacing, rushers, tank armour, hit radii, stabber knockback, and the hero's shield, healing, knockback, the damage hits do to him and his head size, and a voice for each speaker (a pick says a sample line), plus Level +1 |
-| Playtest   | `pnpm run playtest`                                          | a bot plays for a while (aiming at enemies) and reports frame rate and pacing                                                                                                                                                                               |
-| Screenshot | `pnpm run screenshot` (`screenshot:level` for a later level) | saves screenshots of a running game                                                                                                                                                                                                                         |
-| Beat check | `pnpm run test:beats`                                        | records when enemies act and checks that each lands on its beat                                                                                                                                                                                             |
+| Tool       | Command                                                      | What it does                                                                                                                                                                                                                                                         |
+| ---------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `?tune`    | open the game with `?tune`                                   | live sliders for the kick, the sky, mix, pacing, rushers, tank armour, hit radii, stabber knockback, and the hero's shield, healing, knockback, the damage hits do to him and his head size, and a voice for each speaker (a pick says a sample line), plus Level +1 |
+| Playtest   | `pnpm run playtest`                                          | a bot plays for a while (aiming at enemies) and reports frame rate and pacing                                                                                                                                                                                        |
+| Screenshot | `pnpm run screenshot` (`screenshot:level` for a later level) | saves screenshots of a running game                                                                                                                                                                                                                                  |
+| Beat check | `pnpm run test:beats`                                        | records when enemies act and checks that each lands on its beat                                                                                                                                                                                                      |
 
 ## Known debt
 

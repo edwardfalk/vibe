@@ -16,11 +16,7 @@ export function runDraw(p, updateGame, drawGame) {
   window.audio?.syncDuck?.();
 
   if (window.backgroundRenderer) {
-    window.backgroundRenderer.drawCosmicAuroraBackground(p);
-  }
-
-  if (window.backgroundRenderer) {
-    window.backgroundRenderer.drawParallaxBackground(p);
+    window.backgroundRenderer.drawSky(p);
     if (window.gameState && window.gameState.gameState === 'playing') {
       window.backgroundRenderer.drawInteractiveBackgroundEffects(p);
     }
@@ -46,9 +42,5 @@ export function runDraw(p, updateGame, drawGame) {
 
   if (window.uiRenderer) {
     window.uiRenderer.drawUI(p);
-  }
-
-  if (window.rhythmFX) {
-    window.rhythmFX.draw(p);
   }
 }
