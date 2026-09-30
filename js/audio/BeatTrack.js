@@ -40,7 +40,7 @@ export function kicksOn(beat) {
  * is NONE_SEC.
  * @param {number} beats BeatClock's position in beats (getTotalBeats() + getBeatPhase())
  * @param {number} beatSec seconds per beat
- * @param {number} latencySec output latency plus the sky's offset
+ * @param {number} latencySec audio latency (base + output) plus the sky's offset
  * @param {boolean} running the track is playing on a running AudioContext
  */
 export function heardKick(beats, beatSec, latencySec, running) {
