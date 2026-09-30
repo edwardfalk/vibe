@@ -115,7 +115,7 @@ describe('BeatTrack kick', () => {
     expect(heardKick(9.2, 0.5, 0, true).downbeat).toBe(false);
   });
 
-  it('heardKick shifts the kick later by the output latency', () => {
+  it('heardKick shifts the kick later by the audio latency', () => {
     // Heard at 8.2 - 0.05 / 0.5 = 8.1 beats: 0.05 s after the kick
     expect(heardKick(8.2, 0.5, 0.05, true).kickAge).toBeCloseTo(0.05);
   });

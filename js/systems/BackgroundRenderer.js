@@ -83,7 +83,8 @@ export class BackgroundRenderer {
       : 0;
     const running = !!beatTrack?.isPlaying && ctx?.state === 'running';
     const latencySec =
-      (ctx?.outputLatency || ctx?.baseLatency || 0) +
+      (ctx?.baseLatency ?? 0) +
+      (ctx?.outputLatency ?? 0) +
       CONFIG.SKY.OFFSET_MS / 1000;
 
     const { WORLD_WIDTH, WORLD_HEIGHT } = CONFIG.GAME_SETTINGS;

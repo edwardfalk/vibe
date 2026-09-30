@@ -118,7 +118,7 @@ const CONFIG = {
     DOWNBEAT_FRONT: 1, // the downbeat's travelling front, against the breath
     OFFBEAT_SHARE: 0.4, // beats 2-4 relative to the downbeat
     PULSE_DECAY_SEC: 0.22, // how long each kick's breath lasts
-    OFFSET_MS: 0, // added to the device's output latency; + = the pulse lands later
+    OFFSET_MS: 0, // added to the audio latency (base + output); + = the pulse lands later
     LEVEL_OVERRIDE: 0, // 1-8 previews that level's sky; 0 follows the game
     LEVEL_EASE_SEC: 0.5, // how fast the sky follows a level change (floor 0.05)
   },

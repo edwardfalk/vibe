@@ -41,7 +41,7 @@ When a module was given a `GameContext`, the accessor returns `context.get(key)`
 - The player's held fire asks `isOnEighthNote()` and otherwise queues the shot for the next eighth note.
 - [`BeatTrack`](js/audio/BeatTrack.js) schedules the kick and sub pulse a little ahead, on BeatClock's grid, with a look-ahead scheduler.
 
-**The sky.** [`NebulaSky`](js/systems/background/NebulaSky.js) is the kick drum's body: on each kick the nebula's star cluster breathes and the dense gas lights up, and on beat 1 a front also rolls out through the gas. [`BackgroundRenderer`](js/systems/BackgroundRenderer.js) asks `heardKick()` in BeatTrack when the player hears each kick: BeatClock's grid, minus the audio output latency and `CONFIG.SKY.OFFSET_MS`, on the beats `kicksOn()` says the kick plays. The gas is a fragment shader on a 400×300 WebGL buffer. Without a hardware GPU, if the shader fails, or with `?sky=flat` in the URL, the sky is flat: stars and the pulsing cluster on dark.
+**The sky.** [`NebulaSky`](js/systems/background/NebulaSky.js) is the kick drum's body: on each kick the nebula's star cluster breathes and the dense gas lights up, and on beat 1 a front also rolls out through the gas. [`BackgroundRenderer`](js/systems/BackgroundRenderer.js) asks `heardKick()` in BeatTrack when the player hears each kick: BeatClock's grid, minus the audio latency (`baseLatency` + `outputLatency`) and `CONFIG.SKY.OFFSET_MS`, on the beats `kicksOn()` says the kick plays. The gas is a fragment shader on a 400×300 WebGL buffer. Without a hardware GPU, if the shader fails, or with `?sky=flat` in the URL, the sky is flat: stars and the pulsing cluster on dark.
 
 ## Audio graph
 

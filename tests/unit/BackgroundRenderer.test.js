@@ -70,7 +70,7 @@ describe('BackgroundRenderer sky frame', () => {
     });
   });
 
-  it('hears the kick after latency plus OFFSET_MS, and only on a running context', () => {
+  it('hears the kick after both latencies plus OFFSET_MS, and only on a running context', () => {
     const beatClock = {
       beatInterval: 500,
       getTotalBeats: () => 8,
@@ -78,14 +78,14 @@ describe('BackgroundRenderer sky frame', () => {
     };
     const beatTrack = {
       isPlaying: true,
-      ctx: { state: 'running', outputLatency: 0.02 },
+      ctx: { state: 'running', baseLatency: 0.01, outputLatency: 0.02 },
     };
     const { step } = renderer(1, { beatClock, beatTrack });
     const offset = CONFIG.SKY.OFFSET_MS;
     try {
       CONFIG.SKY.OFFSET_MS = 30;
-      // Beat 8.2 is 0.1 s after beat 8's kick; heard 0.02 + 0.03 s later
-      expect(step().kickAge).toBeCloseTo(0.05);
+      // Beat 8.2 is 0.1 s after beat 8's kick; heard 0.01 + 0.02 + 0.03 s later
+      expect(step().kickAge).toBeCloseTo(0.04);
       beatTrack.ctx.state = 'suspended';
       expect(step().kickAge).toBe(99);
     } finally {
