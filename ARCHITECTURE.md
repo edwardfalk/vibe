@@ -57,6 +57,8 @@ speech     -> speechSynthesis (outside Web Audio); while a line plays,
 
 Speech can't be routed through Web Audio or raised above full volume, so it stays on top by the mix keeping the beat lower and dipping the game while anyone speaks. The levels are in `CONFIG.MIX`.
 
+Pausing suspends the `AudioContext` (`Audio.syncPause`, called when P is pressed and every frame). That stops BeatClock too, since it reads the context's clock, so everything resumes in step; the sky keeps its own clock and holds while the sound is held. Mute (M) uses gains instead, because the game keeps running while muted. `CONFIG.SOUND_WHILE_PAUSED`, which `?tune` turns on, keeps the sound playing through a pause.
+
 ## Damage flow
 
 `enemy.takeDamage()` returns one of the [`DAMAGE_RESULT`](js/shared/DamageResult.js) values: `damaged`, `died` or `exploding` (any hit lights a rusher's fuse, so it returns `exploding`). Compare with `=== DAMAGE_RESULT.DIED`, never by truthiness: every value is a non-empty string. Then [`handleDamageResult()`](js/shared/DamageResultHandler.js) plays the explosions and sounds and adds the score. Bullet hits, enemy updates (such as a rusher exploding) and area damage all go through this one path.

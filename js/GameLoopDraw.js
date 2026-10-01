@@ -14,6 +14,8 @@ export function runDraw(p, updateGame, drawGame) {
   // Before the state switch, so speech on the game-over screen can't stick.
   // (Pauses in a hidden tab with the draw loop; the 5 s cap still applies.)
   window.audio?.syncDuck?.();
+  // Pausing holds the sound; checked every frame, so ?tune's box takes at once
+  window.audio?.syncPause?.(window.gameState?.gameState === 'paused');
 
   if (window.backgroundRenderer) {
     window.backgroundRenderer.drawSky(p);

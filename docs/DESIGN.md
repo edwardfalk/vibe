@@ -55,3 +55,7 @@ Enemies speak through the browser's speech synthesis, which runs outside Web Aud
 - both come back over `DUCK_RELEASE_SEC`.
 
 The levels are in `CONFIG.MIX`. The kick, the mix and pacing can all be tuned live by opening the game with `?tune`.
+
+## Pausing
+
+Pausing (P) freezes the game, its sound and the sky. The audio is suspended, which stops the beat clock too, so on unpause the music, the kick and every enemy pick up exactly where they stopped. A line being spoken is cut. With `?tune` the sound plays on while paused (its "Sound while paused" box), so the kick can be tuned by ear; untick it to hear a real pause.

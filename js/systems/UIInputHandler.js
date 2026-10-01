@@ -19,11 +19,14 @@ export function handleKeyPress(
   if (key === 'p' || key === 'P') {
     if (gameState.gameState === 'playing') {
       gameState.setGameState('paused');
-      return true;
     } else if (gameState.gameState === 'paused') {
       gameState.setGameState('playing');
-      return true;
+    } else {
+      return false;
     }
+    // At once, not on the next frame: a sound due in between stays silent
+    audio?.syncPause?.(gameState.gameState === 'paused');
+    return true;
   }
 
   if (key === 'm' || key === 'M') {

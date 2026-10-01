@@ -70,6 +70,31 @@ describe('BackgroundRenderer sky frame', () => {
     });
   });
 
+  it('stands still while the game is paused and its sound held, kick glow and all', () => {
+    const beatClock = {
+      beatInterval: 500,
+      getTotalBeats: () => 8,
+      getBeatPhase: () => 0.2,
+    };
+    const beatTrack = { isPlaying: true, ctx: { state: 'running' } };
+    const audio = { soundPaused: false };
+    const { gameState, step } = renderer(1, { beatClock, beatTrack, audio });
+    const moving = step();
+    expect(step().flow).toBeGreaterThan(moving.flow);
+    gameState.level = 2; // a level rise, so the next kick is a deeper one
+    step();
+    // Paused: the context is suspended and the beat clock stands still
+    audio.soundPaused = true;
+    beatTrack.ctx.state = 'suspended';
+    const held = step();
+    const later = step(500);
+    expect(later.flow).toBe(held.flow);
+    expect(later.kickAge).toBe(held.kickAge);
+    expect(later.levelAge).toBe(held.levelAge);
+    expect(later.level).toBe(held.level);
+    expect(held.kickAge).toBeLessThan(99); // the glow it had, not none
+  });
+
   it('hears the kick after both latencies plus OFFSET_MS, and only on a running context', () => {
     const beatClock = {
       beatInterval: 500,
