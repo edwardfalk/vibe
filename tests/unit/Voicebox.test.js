@@ -152,6 +152,19 @@ describe('Voicebox', () => {
     );
   });
 
+  it('a chain that leaves too little for level out to recover', async () => {
+    // 40 dB down is past the +20 dB level out may add: the line would play
+    // inaudibly while the readout showed numbers
+    const { voicebox, reply } = setup({
+      chain: async (s) => s.map((x) => x * 0.01),
+    });
+    const rendering = voicebox.renderLine(GRUNT, 'Kill human!');
+    reply();
+    await expect(rendering).rejects.toThrow(
+      'the effect chain left almost nothing to hear'
+    );
+  });
+
   it('refuses a line that is too long, before asking the worker', async () => {
     const { voicebox, worker } = setup();
     const long = 'a'.repeat(CONFIG.SPEECH.MAX_LINE_CHARS + 1);

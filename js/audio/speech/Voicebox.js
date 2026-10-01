@@ -10,6 +10,9 @@ import { fitCeiling, isUsable, loudness, matchLoudness } from './levels.js';
 
 // A start this close to now might already be past when Web Audio sees it
 const LEAD_SEC = 0.02;
+// Level out may miss its target by this much before a line counts as lost:
+// past it, the chain took more than level out's +20 dB can give back
+const LEVEL_MISS_DB = 1;
 // A word, with contractions inside it ("can't"); quotes around it don't count
 const WORD = /[A-Za-z]+(?:'[A-Za-z]+)*/g;
 
@@ -105,6 +108,14 @@ export class Voicebox {
     if (!Number.isFinite(loudnessChain) || !isUsable(samples)) {
       throw new Error('the effect chain left nothing to hear');
     }
+    const loudnessOut = loudness(samples, dry.sampleRate);
+    const shortDb =
+      TARGET_DB + (setup.levelDb ?? 0) - reductionDb - loudnessOut;
+    if (shortDb > LEVEL_MISS_DB) {
+      throw new Error(
+        `the effect chain left almost nothing to hear (${shortDb.toFixed(0)} dB too quiet)`
+      );
+    }
     const buffer = this.ctx.createBuffer(1, samples.length, dry.sampleRate);
     buffer.copyToChannel(samples, 0);
     return {
@@ -115,7 +126,7 @@ export class Voicebox {
       levelMs,
       loudnessIn: loudness(dry.samples, dry.sampleRate),
       loudnessChain,
-      loudnessOut: loudness(samples, dry.sampleRate),
+      loudnessOut,
       reductionDb,
     };
   }
