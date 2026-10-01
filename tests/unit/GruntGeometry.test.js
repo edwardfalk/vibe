@@ -95,6 +95,17 @@ describe('drawing a grunt', () => {
     spy.mockRestore();
   });
 
+  it('rebuilds its sprites once when its size changes, and drops the old ones', () => {
+    const { p, graphics } = transformP5();
+    drawGrunt(p, S, pose(0));
+    const first = graphics.slice();
+    drawGrunt(p, S * 1.3, pose(0)); // the ?tune size slider moved
+    drawGrunt(p, S * 1.3, pose(0));
+    expect(graphics.length).toBe(first.length * 2);
+    expect(first.every((g) => g.removed)).toBe(true);
+    expect(graphics.slice(first.length).some((g) => g.removed)).toBe(false);
+  });
+
   it('builds its sprites once, not every frame', () => {
     const { p, graphics } = transformP5();
     drawGrunt(p, S, pose(0));

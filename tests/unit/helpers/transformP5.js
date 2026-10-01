@@ -1,7 +1,8 @@
 // A p5 stand-in for drawing tests. It keeps the transform matrix the way p5
 // does (push, pop, translate, rotate, scale) and records each ellipse and
 // image with where it lands on screen. Any other call (fill, arc, rect, ...)
-// is recorded by name in `calls`. createGraphics returns a plain recorder.
+// is recorded by name in `calls`. createGraphics returns a plain recorder
+// that notes whether it was removed.
 export function transformP5() {
   // [a, b, c, d, e, f]: screen x = a·x + c·y + e, screen y = b·x + d·y + f
   let m = [1, 0, 0, 1, 0, 0];
@@ -35,7 +36,16 @@ export function transformP5() {
     return top;
   };
   const recorder = () =>
-    new Proxy({ CHORD: 'chord' }, { get: (t, k) => t[k] ?? (() => {}) });
+    new Proxy(
+      {
+        CHORD: 'chord',
+        removed: false,
+        remove() {
+          this.removed = true;
+        },
+      },
+      { get: (t, k) => t[k] ?? (() => {}) }
+    );
   const p = {
     CHORD: 'chord',
     CLOSE: 'close',

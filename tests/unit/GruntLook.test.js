@@ -26,10 +26,10 @@ const gruntWith = (clock) => {
   g.isSpawning = false;
   return g;
 };
-const HOP_PX = CONFIG.GRUNT_LOOK.HOP_PX;
+const DEFAULTS = { ...CONFIG.GRUNT_LOOK };
 
 afterEach(() => {
-  CONFIG.GRUNT_LOOK.HOP_PX = HOP_PX;
+  Object.assign(CONFIG.GRUNT_LOOK, DEFAULTS);
   vi.restoreAllMocks();
 });
 
@@ -104,9 +104,16 @@ describe('drawing a grunt', () => {
     expect(g.pose().flash).toBe(0);
   });
 
-  it('keeps its health bar clear of its antennae, at any hop', () => {
-    for (const hop of [HOP_PX, 12]) {
+  it('keeps its health bar clear of its antennae, at any hop and size', () => {
+    for (const [hop, scale] of [
+      [DEFAULTS.HOP_PX, DEFAULTS.ART_SCALE],
+      [12, DEFAULTS.ART_SCALE],
+      [12, 0.8],
+      [12, 1.6],
+      [DEFAULTS.HOP_PX, 1.6],
+    ]) {
       CONFIG.GRUNT_LOOK.HOP_PX = hop;
+      CONFIG.GRUNT_LOOK.ART_SCALE = scale;
       for (let i = 0; i < 80; i++) {
         const g = gruntWith(clockAt(16 + i / 20));
         g.aimAngle = i % 2 ? 0.4 : Math.PI - 0.4;

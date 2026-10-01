@@ -448,13 +448,14 @@ const PARTS = {
   ],
 };
 
-// p5 instance → its parts, built on the first grunt drawn and shared by all.
-// ponytail: keyed by p alone; every grunt draws at 26 × ART_SCALE, which has
-// no slider. A live size knob would need a rebuild here (spec review D3).
+// p5 instance → { s, parts }: built on the first grunt drawn and shared by
+// all. When the drawn size changes (the ?tune slider) they are rebuilt and
+// the old ones removed.
 const spriteCache = new WeakMap();
 function partsFor(p, s) {
   const cached = spriteCache.get(p);
-  if (cached) return cached;
+  if (cached?.s === s) return cached.parts;
+  for (const part of Object.values(cached?.parts ?? {})) part.g.remove();
   const parts = {};
   for (const [name, [[x0, y0, x1, y1], draw]] of Object.entries(PARTS)) {
     const w = (x1 - x0) * s;
@@ -470,7 +471,7 @@ function partsFor(p, s) {
     draw(g, s);
     parts[name] = { g, x: x0 * s, y: y0 * s, w, h };
   }
-  spriteCache.set(p, parts);
+  spriteCache.set(p, { s, parts });
   return parts;
 }
 const stamp = (p, part) => p.image(part.g, part.x, part.y, part.w, part.h);

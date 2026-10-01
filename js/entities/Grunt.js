@@ -32,9 +32,10 @@ const SHOT_CANCELLED = {
   size: 20,
   lift: 14,
 };
-// Its antenna bobbles reach this many sizes above its centre before the hop
-// and the float lift them (measured over a bar of every pose)
-const ANTENNA_REACH = 1.26;
+// Its antenna bobbles reach this many of its drawn sizes above its centre
+// before the hop and the float lift them (measured over a bar of every pose:
+// 1.26 sizes at ART_SCALE 1.15)
+const ANTENNA_REACH = 1.1;
 const HEALTH_BAR_GAP_PX = 2;
 const GRUNT_SHOT_SPEED = 4; // px per frame
 
@@ -377,7 +378,7 @@ class Grunt extends BaseEnemy {
   get healthBarRise() {
     const L = CONFIG.GRUNT_LOOK;
     return (
-      this.size * ANTENNA_REACH +
+      this.size * L.ART_SCALE * ANTENNA_REACH +
       L.HOP_PX +
       L.HOVER_PX +
       HEALTH_BAR_HEIGHT_PX +

@@ -165,10 +165,10 @@ const CONFIG = {
 
   // The grunt's look and motion (js/entities/GruntRenderer.js): a jelly that
   // hovers on one jet and dances on the beat. All of it is drawn only; the
-  // hit circle is HITBOX.grunt. Tune live with ?tune (all but ART_SCALE,
-  // which the cached sprites bake in).
+  // hit circle is HITBOX.grunt. Tune live with ?tune; a new ART_SCALE
+  // rebuilds the cached sprites.
   GRUNT_LOOK: {
-    ART_SCALE: 1.15, // drawn size over its size
+    ART_SCALE: 1.15, // drawn size over its size; the hit circle stays
     HOP_PX: 4.5, // the jet's puff on 2 and 4 lifts it this far
     IDLE_DANCE: 0.35, // share of that dance a grunt does on a snare it doesn't fire on
     HOVER_PX: 1.6, // its lazy float
