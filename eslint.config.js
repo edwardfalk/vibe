@@ -8,6 +8,7 @@ export default [
       '.worktrees/**',
       '.superpowers/**',
       'docs/superpowers/**',
+      'js/vendor/**',
     ],
   },
   {

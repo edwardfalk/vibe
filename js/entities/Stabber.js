@@ -2,21 +2,10 @@ import { BaseEnemy } from './BaseEnemy.js';
 import { sin, cos, ceil, max } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { updateStabberBehavior } from './StabberAttackHandler.js';
+import { STABBER_LINES } from '../audio/DialogueLines.js';
 
 // Per attempt once the speech timer is up (= today's effective rate)
 const STABBER_SPEECH_CHANCE = 0.025;
-
-const STABBER_LINES = [
-  'STAB!',
-  'SLICE!',
-  'CUT!',
-  'POKE!',
-  'ACUPUNCTURE!',
-  'LITTLE PRICK!',
-  'STABBY MCSTABFACE!',
-  'NEEDLE THERAPY!',
-  'I COLLECT BELLY BUTTONS!',
-];
 
 /**
  * Stabber class - Melee assassin with armor system

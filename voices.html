@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vibe voice playground</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        background: #05020f;
+        color: #eee;
+        font: 14px/1.4 monospace;
+      }
+      h1 {
+        color: #0ff;
+        font-size: 18px;
+        margin: 0 0 12px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin: 6px 0;
+      }
+      fieldset {
+        border: 1px solid #0ff4;
+        margin: 10px 0;
+        padding: 8px 12px;
+      }
+      legend {
+        color: #0ff;
+      }
+      label {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+      }
+      input[type='range'] {
+        width: 160px;
+      }
+      input[type='text'],
+      textarea {
+        background: #111;
+        color: #fff;
+        border: 1px solid #555;
+        padding: 4px;
+        font: inherit;
+      }
+      #phrase {
+        flex: 1;
+        min-width: 12em;
+      }
+      button,
+      select {
+        background: #112;
+        color: #0ff;
+        border: 1px solid #0ff8;
+        padding: 4px 8px;
+        font: inherit;
+        cursor: pointer;
+      }
+      button:focus-visible,
+      select:focus-visible,
+      input:focus-visible {
+        outline: 2px solid #f0f;
+      }
+      #readout {
+        white-space: pre-wrap;
+        color: #9f9;
+        min-height: 4.5em;
+      }
+      #readout.warn {
+        color: #ff0;
+      }
+      #readout.error,
+      #notice {
+        color: #f66;
+      }
+      .stage {
+        border-left: 2px solid #0ff4;
+        padding-left: 8px;
+        margin: 6px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Voice playground</h1>
+    <p id="notice" hidden></p>
+    <div class="row">
+      <label
+        >Speaker
+        <select id="speaker"></select
+      ></label>
+      <label
+        >Engine
+        <select id="engine">
+          <option value="sam">SAM</option>
+          <option value="espeak">espeak-ng</option>
+        </select></label
+      >
+    </div>
+    <div class="row">
+      <input id="phrase" type="text" placeholder="Type a phrase" />
+      <select id="lines" aria-label="The speaker's real lines"></select>
+    </div>
+    <div class="row" id="hears"></div>
+    <fieldset>
+      <legend>Voice</legend>
+      <div class="row" id="voice"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Respelling (only the engine hears it)</legend>
+      <div class="row">
+        <input id="respell-word" type="text" placeholder="word" />
+        <input id="respell-as" type="text" placeholder="say it as" />
+        <button id="respell-add">Add</button>
+      </div>
+      <div id="respell-list"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Effect chain</legend>
+      <div id="chain"></div>
+      <div class="row">
+        <select id="stage-type" aria-label="Stage to add"></select>
+        <button id="stage-add">Add stage</button>
+      </div>
+      <div class="row">
+        <label
+          >Level
+          <input id="level" type="range" min="-12" max="12" step="0.5" />
+          <span id="level-value"></span> dB</label
+        >
+      </div>
+    </fieldset>
+    <div class="row">
+      <button id="play-now">Play now</button>
+      <button id="play-grid">Play on the grid (as in game)</button>
+      <button id="play-game">Play the game's version</button>
+      <button id="play-all">Hear all lines</button>
+      <label><input id="kick" type="checkbox" /> 120 BPM kick</label>
+    </div>
+    <div id="readout" role="status"></div>
+    <div class="row">
+      <button id="copy">Copy config</button>
+      <button id="reset">Reset to game</button>
+    </div>
+    <textarea id="copy-text" rows="10" cols="80" hidden readonly></textarea>
+    <script type="module" src="js/dev/VoicePlayground.js"></script>
+  </body>
+</html>

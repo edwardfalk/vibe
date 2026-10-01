@@ -73,3 +73,13 @@ export function normalizeAngle(angle) {
   while (angle < -PI) angle += TWO_PI;
   return angle;
 }
+
+// A small seeded generator: the same seed always gives the same sequence
+export function mulberry32(seed) {
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let z = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    z = (z + Math.imul(z ^ (z >>> 7), 61 | z)) ^ z;
+    return ((z ^ (z >>> 14)) >>> 0) / 4294967296;
+  };
+}

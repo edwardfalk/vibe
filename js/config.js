@@ -210,6 +210,63 @@ const CONFIG = {
     rusher: 'auto',
     grunt: 'auto',
   },
+  // The game's own speech engines (js/audio/speech/): each speaker's engine,
+  // voice and effect chain. Tune them in voices.html, then paste here.
+  SPEECH: {
+    TARGET_DB: -20, // RMS loudness every line is matched to, in and out
+    PEAK_DB: -1, // ceiling; wins over the target
+    REDUCTION_WARN_DB: 3, // the playground warns when fitting the ceiling costs more
+    MAX_WAIT_MS: 750, // a line not ready and scheduled by then is dropped, not played late
+    WORKER_TIMEOUT_MS: 15000, // a worker this slow to answer has hung: speech turns off
+    MAX_LINE_CHARS: 200, // longer text is refused before it reaches an engine
+    SPEAKERS: {
+      player: {
+        engine: 'espeak',
+        voice: { variant: 'Mr serious', pitch: 30, range: 40, speed: 150 },
+        chain: [{ type: 'reverb', seconds: 1.1, mix: 0.22 }],
+        levelDb: 0,
+      },
+      grunt: {
+        engine: 'espeak',
+        voice: { variant: 'AnxiousAndy', pitch: 85, range: 70, speed: 175 },
+        chain: [
+          { type: 'bandpass', freq: 1700, q: 0.9 },
+          { type: 'crush', levels: 15 },
+        ],
+        levelDb: 0,
+      },
+      stabber: {
+        engine: 'sam',
+        voice: { pitch: 64, speed: 88, mouth: 200, throat: 150 },
+        chain: [
+          { type: 'highpass', freq: 480 },
+          { type: 'slapback', time: 0.085, feedback: 0.32, mix: 0.29 },
+        ],
+        levelDb: 0,
+      },
+      rusher: {
+        engine: 'espeak',
+        voice: { variant: 'Tweaky', pitch: 72, range: 90, speed: 235 },
+        chain: [
+          { type: 'drive', amount: 5 },
+          { type: 'tremolo', rate: 14, depth: 0.6 },
+        ],
+        levelDb: 0,
+      },
+      tank: {
+        engine: 'sam',
+        voice: { pitch: 125, speed: 105, mouth: 100, throat: 92 },
+        chain: [
+          { type: 'ringmod', freq: 38, mix: 0.74 },
+          { type: 'lowpass', freq: 2400 },
+        ],
+        levelDb: 0,
+      },
+    },
+    // Words an engine mispronounces, respelled for that engine only; the
+    // speech bubble always shows the real word
+    RESPELL: { sam: { death: 'deth' }, espeak: {} },
+  },
 };
 
 export const VOICE_CONFIG = {

@@ -6,6 +6,7 @@ import {
   handleDamageResult,
   STABBER_KILL_POINTS,
 } from '../shared/DamageResultHandler.js';
+import { GRUNT_LINES, GRUNT_OW } from '../audio/DialogueLines.js';
 
 // Per-beat chances for beat-gated grunt sounds (rolled once per beat)
 const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
@@ -22,32 +23,6 @@ const SHOT_CANCELLED = {
   size: 20,
   lift: 10,
 };
-
-const GRUNT_LINES = [
-  'KILL HUMAN!',
-  'DESTROY TARGET!',
-  'ELIMINATE!',
-  'ATTACK MODE!',
-  'HOSTILE DETECTED!',
-  'ENGAGE ENEMY!',
-  'FIRE WEAPONS!',
-  'DEATH TO HUMANS!',
-  'WAIT WHAT?',
-  'I FORGOT SOMETHING!',
-  'WHERE AM I?',
-  'HELP!',
-  'WRONG PLANET?',
-  'NEED BACKUP!',
-  'LOST AGAIN!',
-  'OOPS!',
-  'MY HELMET IS TIGHT!',
-  'WIFI PASSWORD?',
-  'MOMMY?',
-  'SCARED!',
-  'IS THAT MY TARGET?',
-  'WHICH BUTTON?',
-  "I'M CONFUSED!",
-];
 
 /**
  * Grunt class - Tactical ranged combat AI
@@ -427,7 +402,7 @@ class Grunt extends BaseEnemy {
 
   /** "Ow": spoken (forced past the voice cooldown), else the sound */
   sayOw(audio) {
-    if (!audio.speak(this, 'ow', 'grunt', true)) {
+    if (!audio.speak(this, GRUNT_OW, 'grunt', true)) {
       audio.playSound('gruntOw', this.x, this.y);
     }
   }

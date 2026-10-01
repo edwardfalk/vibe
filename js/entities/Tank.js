@@ -11,6 +11,13 @@ import {
 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
+import {
+  TANK_LINES,
+  TANK_ANGER_LINES,
+  TANK_CALM_LINES,
+  TANK_FIRE,
+  TANK_CHARGING,
+} from '../audio/DialogueLines.js';
 
 const TANK_POWER_SOUND_CHANCE = 0.5; // per beat 1 while charging
 // Per attempt once the speech timer is up (= today's effective rate)
@@ -53,33 +60,6 @@ const ARMOR_PLATES = [
 
 // Damage sources named for the attack rather than the enemy type
 const ANGER_SOURCE_TYPE = { stabber_melee: 'stabber' };
-
-const ANGER_LINES = [
-  'ENOUGH! YOU DIE FIRST!',
-  'TARGETING TRAITORS!',
-  'FRIENDLY FIRE? NOT ANYMORE!',
-  'YOU MADE ME MAD!',
-  'TURNING GUNS ON YOU!',
-];
-
-const CALM_LINES = [
-  'BACK TO NORMAL TARGETS',
-  'ANGER SUBSIDING',
-  'RETURNING TO MISSION',
-  'FOCUS ON HUMAN AGAIN',
-];
-
-const TANK_LINES = [
-  'HEAVY ARTILLERY!',
-  'SIEGE MODE!',
-  'CRUSH!',
-  'PULVERIZE!',
-  'DEVASTATE!',
-  'DO YOU LIFT BRO?',
-  'SIZE MATTERS!',
-  'BIG MUSCLES!',
-  'ALPHA MALE!',
-];
 
 /**
  * Tank class - Heavy artillery with charging system
@@ -152,7 +132,7 @@ class Tank extends BaseEnemy {
         this.onBeatOnce(beatClock, 'calmLine', beatClock.isOnBeat([1]))
       ) {
         this.calmLinePending = false;
-        if (audio) audio.speak(this, random(CALM_LINES), 'tank');
+        if (audio) audio.speak(this, random(TANK_CALM_LINES), 'tank');
       }
     }
 
@@ -239,7 +219,7 @@ class Tank extends BaseEnemy {
         this._lastTankFireBeat = beatClock.getTotalBeats();
 
         if (audioTank) {
-          audioTank.speak(this, 'FIRE!', 'tank');
+          audioTank.speak(this, TANK_FIRE, 'tank');
         }
 
         return this.createBullet();
@@ -256,7 +236,7 @@ class Tank extends BaseEnemy {
         this.chargingShot = true;
         this.chargeStartBeat = beatClock.getTotalBeats();
         if (audioTank) {
-          audioTank.speak(this, 'CHARGING!', 'tank');
+          audioTank.speak(this, TANK_CHARGING, 'tank');
           audioTank.playSound('tankCharging', this.x, this.y);
         }
 
@@ -539,7 +519,7 @@ class Tank extends BaseEnemy {
       this.angerTarget = damageSource;
       this.angerCooldown = this.maxAngerCooldown;
       const audio = this.getContextValue('audio');
-      if (audio) audio.speak(this, random(ANGER_LINES), 'tank');
+      if (audio) audio.speak(this, random(TANK_ANGER_LINES), 'tank');
     }
   }
 }
