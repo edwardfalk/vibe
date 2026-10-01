@@ -534,6 +534,56 @@ test.describe('Gameplay Probes', () => {
     check(await record());
   });
 
+  test('Pausing stops the sound and the beat; unpausing picks them up again', async ({
+    page,
+  }) => {
+    await bootGame(page);
+    await page.waitForFunction(() => window.beatTrack?.isPlaying);
+    const beats = () =>
+      page.evaluate(
+        () => window.beatClock.getTotalBeats() + window.beatClock.getBeatPhase()
+      );
+    await page.keyboard.press('p');
+    await page.waitForFunction(
+      () => window.audio.audioContext.state === 'suspended'
+    );
+    const held = await beats();
+    await page.waitForTimeout(300);
+    expect(await beats()).toBe(held);
+    await page.keyboard.press('p');
+    await page.waitForFunction(
+      () => window.audio.audioContext.state === 'running'
+    );
+    await page.waitForTimeout(100);
+    expect(await beats()).toBeGreaterThan(held);
+  });
+
+  test('With ?tune the sound plays on while paused, and its box turns that off and on', async ({
+    page,
+  }) => {
+    await bootGame(page, '/?tune');
+    const state = () => page.evaluate(() => window.audio.audioContext.state);
+    const box = page.getByLabel('Sound while paused');
+    await page.keyboard.press('p');
+    await page.waitForTimeout(200);
+    expect(await state()).toBe('running');
+    await box.uncheck();
+    await page.waitForFunction(
+      () => window.audio.audioContext.state === 'suspended'
+    );
+    await box.check();
+    await page.waitForFunction(
+      () => window.audio.audioContext.state === 'running'
+    );
+    // The box handed the keyboard back: P still unpauses
+    await page.keyboard.press('p');
+    await page.waitForFunction(() => window.gameState.gameState === 'playing');
+    // Never saved: the panel's JSON for config.js leaves it out
+    expect(await page.locator('#tunePanel pre').textContent()).not.toContain(
+      'SOUND_WHILE_PAUSED'
+    );
+  });
+
   test('Game dips while speech plays and always recovers', async ({ page }) => {
     await bootGame(page);
     await page.waitForFunction(() => window.audio?.duckGain);

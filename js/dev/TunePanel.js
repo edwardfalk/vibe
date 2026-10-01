@@ -1,6 +1,7 @@
 /**
  * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK, SKY, PACING,
- * MIX, RUSHER, TANK_ARMOR, HITBOX, the stabber's knockback and the hero's
+ * MIX, RUSHER, TANK_ARMOR, HITBOX, a Sound while paused box (ticked here:
+ * the beat plays on while paused), the stabber's knockback and the hero's
  * shield, healing, knockback, the damage hits do to him and his head size,
  * and each speaker's voice (a new pick says a sample line). Sound and spawn changes apply from the next
  * beat or wave; level thresholds from the next level-up (the first one after
@@ -120,7 +121,7 @@ export function createTunePanel() {
   panel.style.cssText =
     'position:fixed;top:8px;right:8px;z-index:200;width:280px;max-height:calc(100vh - 16px);overflow:auto;padding:10px;background:rgba(5,2,15,0.9);border:1px solid #0ff;color:#fff;font:12px monospace;';
   panel.innerHTML =
-    '<b style="color:#0ff">TUNING</b><div style="color:#aaa;margin:4px 0 8px">P pauses the game; the beat keeps playing. <a href="voices.html" target="voices" style="color:#0ff">Voice playground</a></div>';
+    '<b style="color:#0ff">TUNING</b><div style="color:#aaa;margin:4px 0 8px">P pauses the game; the beat plays on while Sound while paused is ticked. <a href="voices.html" target="voices" style="color:#0ff">Voice playground</a></div>';
 
   // Jump ahead to hear later levels without playing up to them
   const levelUp = document.createElement('button');
@@ -134,6 +135,22 @@ export function createTunePanel() {
     levelUp.blur();
   };
   panel.append(levelUp);
+
+  // Sound while paused: on here, so the kick can be tuned by ear while the
+  // game is paused. Not a knob, so it never lands in the JSON for config.js
+  CONFIG.SOUND_WHILE_PAUSED = true;
+  const soundRow = document.createElement('label');
+  soundRow.style.cssText = 'display:block;margin:6px 0;';
+  const sound = document.createElement('input');
+  sound.type = 'checkbox';
+  sound.checked = true;
+  sound.onchange = () => {
+    CONFIG.SOUND_WHILE_PAUSED = sound.checked;
+    window.audio?.syncPause?.(window.gameState?.gameState === 'paused');
+    sound.blur(); // hand the keyboard back to the game, so P still works
+  };
+  soundRow.append(sound, ' Sound while paused');
+  panel.append(soundRow);
 
   const json = document.createElement('pre');
   json.style.cssText = 'white-space:pre-wrap;color:#0ff;margin:8px 0 0;';

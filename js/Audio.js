@@ -51,6 +51,9 @@ export class Audio {
     this.initialized = false;
     this.enabled = true;
     this.volume = 1.0;
+    // A pause holds the sound (see syncPause); _resuming until it is back
+    this._pausedByGame = false;
+    this._resuming = false;
 
     // Effects nodes
     this.effects = {
@@ -148,7 +151,8 @@ export class Audio {
 
   // CENTRALIZED audio context resume - used by both sound and speech
   ensureAudioContext() {
-    if (!this.enabled) return false;
+    // A sound during a pause must not bring the audio back
+    if (!this.enabled || this._pausedByGame) return false;
 
     this.initialize();
     if (!this.audioContext) return false;
@@ -429,6 +433,8 @@ export class Audio {
   // ========================================================================
 
   speak(entity, text, voiceType = 'player', force = false) {
+    // Nobody speaks while a pause holds the sound
+    if (this._pausedByGame) return false;
     if (!this.speechEnabled || !this.speechSynthesis || !text) {
       return false;
     }
@@ -604,6 +610,35 @@ export class Audio {
         timeConstant
       );
     }
+  }
+
+  // Pausing the game stops its sound. Suspending the context also stops
+  // BeatClock (it reads the context's clock), so on unpause the beat, the
+  // kick and every enemy pick up exactly where they stopped; a line being
+  // spoken is cut. With CONFIG.SOUND_WHILE_PAUSED (?tune ticks it) the sound
+  // plays on. Called when P is pressed and every frame; it acts once per change.
+  syncPause(paused) {
+    const hold = !!this.audioContext && paused && !CONFIG.SOUND_WHILE_PAUSED;
+    if (hold === this._pausedByGame) return;
+    this._pausedByGame = hold;
+    if (hold) {
+      this.speechSynthesis?.cancel();
+      this.audioContext
+        .suspend()
+        .catch((error) => console.warn('Audio suspend failed:', error));
+      return;
+    }
+    // Context calls run in order, so quick P presses end where the last one left
+    this._resuming = true;
+    this.audioContext
+      .resume()
+      .catch((error) => console.warn('Audio resume failed:', error))
+      .finally(() => (this._resuming = false));
+  }
+
+  /** True while a pause holds the sound, until it is fully back (the sky waits) */
+  get soundPaused() {
+    return this._pausedByGame || this._resuming;
   }
 
   toggle() {

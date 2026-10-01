@@ -86,6 +86,12 @@ const CONFIG = {
     DUCK_MAX_HOLD_MS: 5000, // never stay ducked longer than this after a line starts
   },
 
+  // Pausing (P) stops the sound: the audio is suspended, which also stops
+  // BeatClock, so everything picks up where it stopped. ?tune turns this on
+  // (its "Sound while paused" box), so the kick can be tuned by ear while
+  // paused. Top level, so ?tune's JSON never carries it into this file.
+  SOUND_WHILE_PAUSED: false,
+
   // Beat track: the steady kick and the sub pulse under it.
   // Tune live by opening the game with ?tune in the URL.
   BEAT_TRACK: {

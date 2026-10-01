@@ -29,6 +29,8 @@ export class BackgroundRenderer {
     this.getContextValue = createContextAccessor(context);
     this.sky = null; // made on the first draw, when p5 can make buffers
     this.flow = 0;
+    // The sky's own clock, which stands still while a pause holds the sound
+    this.skyTime = 0;
     this.level = null; // the eased sky level; starts at its target
     this.levelTarget = null;
     this.levelRoseAt = -Infinity;
@@ -60,8 +62,12 @@ export class BackgroundRenderer {
 
   /** The sky's frame (see NebulaSky.draw). Advances the flow and the level. */
   skyFrame(p) {
-    const now = p.millis() / 1000;
-    const dt = constrain((p.deltaTime ?? 0) / 1000, 0, MAX_DT_SEC);
+    // A pause that holds the sound holds the sky: no flow, no easing, no time
+    const held = !!this.getContextValue('audio')?.soundPaused;
+    const frameSec = held ? 0 : (p.deltaTime ?? 0) / 1000;
+    this.skyTime += frameSec;
+    const now = this.skyTime;
+    const dt = constrain(frameSec, 0, MAX_DT_SEC);
     const target =
       CONFIG.SKY.LEVEL_OVERRIDE ||
       Math.min(this.gameState?.level ?? 1, MAX_SKY_LEVEL);
@@ -81,7 +87,9 @@ export class BackgroundRenderer {
     const beats = beatClock
       ? beatClock.getTotalBeats() + beatClock.getBeatPhase()
       : 0;
-    const running = !!beatTrack?.isPlaying && ctx?.state === 'running';
+    // While held, the stopped beat keeps the kick glow it had
+    const running =
+      !!beatTrack?.isPlaying && (ctx?.state === 'running' || held);
     const latencySec =
       (ctx?.baseLatency ?? 0) +
       (ctx?.outputLatency ?? 0) +

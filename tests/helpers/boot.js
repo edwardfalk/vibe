@@ -3,10 +3,10 @@
  * (screenshot, playtest, beat assertions).
  */
 
-// Start a run: load, press a key on the title screen, wait until playing
-// with core systems and at least one live enemy.
-export const bootGame = async (page) => {
-  await page.goto('/');
+// Start a run: load (url, e.g. '/?tune'), press a key on the title screen,
+// wait until playing with core systems and at least one live enemy.
+export const bootGame = async (page, url = '/') => {
+  await page.goto(url);
   await page.waitForSelector('canvas', { state: 'attached' });
   // Any key starts the run from the title screen
   await page.keyboard.press(' ');
