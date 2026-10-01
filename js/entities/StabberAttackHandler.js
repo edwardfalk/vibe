@@ -6,6 +6,7 @@
 
 import { random, sqrt, sin, cos, atan2, normalizeAngle } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
+import { STAB_WARNINGS } from '../audio/DialogueLines.js';
 
 const STABBER_CHANT_CHANCE = 0.35; // per off-beat window
 
@@ -137,13 +138,7 @@ function handleWarningPhase(stabber, dt) {
     stabber.stabWarningPlayed = true;
     audioWarn.playSound('stabberStalk', stabber.x, stabber.y);
     audioWarn.playSound('stabberKnife', stabber.x, stabber.y);
-    const stabWarnings = [
-      'STAB TIME!',
-      'SLICE AND DICE!',
-      'ACUPUNCTURE TIME!',
-      'STABBY MCSTABFACE!',
-    ];
-    const warning = random(stabWarnings);
+    const warning = random(STAB_WARNINGS);
     audioWarn.speak(stabber, warning, 'stabber');
   }
 

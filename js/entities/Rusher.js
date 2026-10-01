@@ -2,6 +2,7 @@ import { BaseEnemy } from './BaseEnemy.js';
 import { random, sqrt, sin, min } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
+import { RUSHER_LINES, RUSHER_BATTLE_CRIES } from '../audio/DialogueLines.js';
 
 // Per attempt once the speech timer is up (= today's effective rate)
 const RUSHER_SPEECH_CHANCE = 0.03;
@@ -9,19 +10,6 @@ const RUSHER_SPEECH_CHANCE = 0.03;
 // A lit rusher blows this long after its minimum fuse even if no beat 1 or 3
 // comes (a bar at 120 BPM, which has two)
 const FUSE_MAX_BEAT_WAIT_MS = 2000;
-
-const RUSHER_LINES = [
-  'KAMIKAZE TIME!',
-  'SUICIDE RUN!',
-  'INCOMING!',
-  'BOOM!',
-  'EXPLOSIVE DIARRHEA!',
-  'LEEROY JENKINS!',
-  'WHEEE!',
-  "CAN'T STOP!",
-  'YOLO!',
-  'KAMIKAZE PIZZA PARTY!',
-];
 
 /**
  * Rusher class - Suicide bomber mechanics
@@ -135,18 +123,7 @@ class Rusher extends BaseEnemy {
         // Rusher scream with audio
         const audio = this.getContextValue('audio') || this.audio;
         if (audio) {
-          const battleCries = [
-            'INCOMING!',
-            'BOOM!',
-            'KAMIKAZE!',
-            'WHEEE!',
-            'YOLO!',
-            "CAN'T STOP!",
-            'EXPLOSIVE DIARRHEA!',
-            'LEEROY JENKINS!',
-            'KAMIKAZE PIZZA PARTY!',
-          ];
-          const battleCry = random(battleCries);
+          const battleCry = random(RUSHER_BATTLE_CRIES);
           audio.speak(this, battleCry, 'rusher');
 
           this.chargeSoundPending = true; // played on the next beat
