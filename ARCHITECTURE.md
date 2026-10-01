@@ -85,7 +85,7 @@ Speech can't be routed through Web Audio or raised above full volume, so it stay
 
 A new enemy touches these places:
 
-1. A class extending [`BaseEnemy`](js/entities/BaseEnemy.js) in `js/entities/`. `takeDamage()` returns a `DAMAGE_RESULT` value.
+1. A class extending [`BaseEnemy`](js/entities/BaseEnemy.js) in `js/entities/`. `takeDamage()` returns a `DAMAGE_RESULT` value. It draws through `drawBody`, `drawHead`, `drawArms` and `drawWeapon`, which turn with its aim; to draw some other way, override `drawFigure`, as the grunt does with [`GruntRenderer.js`](js/entities/GruntRenderer.js).
 2. An entry in `ENEMY_CLASSES` and `ENEMY_INTRO_LEVEL` in [`SpawnSystem.js`](js/systems/SpawnSystem.js), and its weight in `getEnemyTypeForLevel()` there: the type lists are written out per level range, so a type missing from them never spawns.
 3. What touching it does to the player, in the switch in [`PlayerContactHandlers.js`](js/systems/combat/PlayerContactHandlers.js). An unlisted type does nothing on contact.
 4. A beat gate in `BeatClock` (like `canGruntShoot()`), used through `onBeatOnce()` so the action fires once per beat.

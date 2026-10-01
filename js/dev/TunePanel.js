@@ -1,6 +1,7 @@
 /**
  * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK, SKY, PACING,
- * MIX, RUSHER, TANK_ARMOR, HITBOX, the stabber's knockback and the hero's
+ * MIX, RUSHER, TANK_ARMOR, HITBOX, the grunt's motion (GRUNT_LOOK), the
+ * stabber's knockback and the hero's
  * shield, healing, knockback, the damage hits do to him and his head size,
  * and each speaker's voice (a new pick says a sample line). Sound and spawn changes apply from the next
  * beat or wave; level thresholds from the next level-up (the first one after
@@ -21,6 +22,7 @@ const MIX = 'MIX';
 const RUSHER = 'RUSHER';
 const HITBOX = 'HITBOX';
 const SKY = 'SKY';
+const GRUNT = 'GRUNT_LOOK';
 
 // The voices this browser has; Chrome fills the list in a moment after load
 const voiceChoices = () => [
@@ -86,6 +88,14 @@ const KNOBS = [
   [HITBOX, 'rusher', [8, 50, 1]],
   [HITBOX, 'stabber', [8, 50, 1]],
   [HITBOX, 'tank', [20, 70, 1]],
+  [GRUNT, 'HOP_PX', [0, 12, 0.5]],
+  [GRUNT, 'HOVER_PX', [0, 6, 0.1]],
+  [GRUNT, 'LEAN_RAD', [0, 0.4, 0.01]],
+  [GRUNT, 'WANDER_RAD', [0, 0.4, 0.01]],
+  [GRUNT, 'JIGGLE', [0, 0.3, 0.01]],
+  [GRUNT, 'COUGH_CHANCE', [0, 0.5, 0.01]],
+  [GRUNT, 'TUMBLE_RAD', [0, 1, 0.05]],
+  [GRUNT, 'FACING_DEADZONE', [0, 0.6, 0.01]],
   ['STABBER_SETTINGS', 'KNOCKBACK_FORCE', [0, 20, 0.5]],
   ['STABBER_SETTINGS', 'MAX_KNOCKBACK', [0, 40, 1]],
   ['PLAYER', 'SHIELD_RECHARGE_MS', [1000, 20000, 500]],
