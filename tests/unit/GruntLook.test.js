@@ -120,6 +120,9 @@ describe('drawing a grunt', () => {
         g.facing = i % 2 ? 1 : -1;
         if (i % 4 === 0) g.warnedOnBeat = Math.floor(16 + i / 20);
         if (i % 4 === 1) g.heldOnBeat = Math.floor(16 + i / 20);
+        // Every other one fired on its last snare (beats 2 and 4 are odd
+        // here): those do the full hop, which lifts the antennae highest
+        if (i % 2 === 0) g.firedAt = Math.floor((16 + i / 20 - 1) / 2) * 2 + 1;
         g.health = 1; // damaged, so its health bar shows
         const { p, shapes, calls } = transformP5();
         g.draw(p);

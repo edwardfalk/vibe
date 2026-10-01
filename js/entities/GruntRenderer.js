@@ -4,8 +4,9 @@
  * in space and never walk (docs/DESIGN.md, "The cast").
  *
  * It never turns with its aim: it mirrors to face its target, and only its gun
- * swings. Its moves follow BeatClock's grid: the jet puffs on 2 and 4 (its
- * snare) and it hops; through the beat before a shot it winds up.
+ * swings. Its moves follow BeatClock's grid: on 2 and 4 (its snare) every
+ * grunt starts a hop; one that fires does it in full, the rest a small one and
+ * slump back. Through the beat before a shot it winds up.
  *
  * gruntPose() is pure: beat position, seed, aim and recent events in, numbers
  * out. drawGrunt() only draws a pose. Neither uses the game's random numbers;
