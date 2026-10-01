@@ -77,6 +77,18 @@ describe('drawing a grunt', () => {
     }
   });
 
+  it('stops dancing while the game is paused, and moves on when it updates again', () => {
+    let beats = 17.1;
+    const clock = { ...clockAt(17.1), getBeatPosition: () => beats };
+    const g = gruntWith(clock);
+    g.update(100, 0);
+    const before = g.pose();
+    beats = 17.4; // the beat moves on, but the game is paused: no update
+    expect(g.pose()).toEqual(before);
+    g.update(100, 0);
+    expect(g.pose().t).toBeGreaterThan(before.t);
+  });
+
   it('winds up on the beat it was warned on, and sulks on the beat it held its fire', () => {
     const g = gruntWith(clockAt(16.6));
     g.warnedOnBeat = 16;

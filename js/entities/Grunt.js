@@ -65,6 +65,10 @@ class Grunt extends BaseEnemy {
     this.lookSeed = this.animFrame / p.TWO_PI;
     this.firedAt = null; // the clock's beat position when it last fired
     this.heldOnBeat = null; // the beat it last held its fire on after a warning
+    // The beat it is drawn at, kept by update(), so a paused game freezes it.
+    // A grunt can be drawn once before its first update.
+    this.poseBeats =
+      this.getContextValue('beatClock')?.getBeatPosition() ?? null;
 
     // Grunt weird noises are now beat-gated (no timer needed)
   }
@@ -309,6 +313,9 @@ class Grunt extends BaseEnemy {
   update(playerX, playerY, deltaTimeMs) {
     const bullet = super.update(playerX, playerY, deltaTimeMs);
     this.facing = nextFacing(this.facing, this.aimAngle);
+    // After super.update(), so a shot it just fired is never in the future
+    this.poseBeats =
+      this.getContextValue('beatClock')?.getBeatPosition() ?? null;
     return bullet;
   }
 
@@ -318,10 +325,10 @@ class Grunt extends BaseEnemy {
     drawGrunt(p, s * CONFIG.GRUNT_LOOK.ART_SCALE, this.pose());
   }
 
-  /** This frame's pose, from one reading of the beat clock and what it did when */
+  /** Its pose, at the beat update() last kept (frozen while paused) and what it did when */
   pose() {
     const clock = this.getContextValue('beatClock');
-    const beats = clock ? clock.getBeatPosition() : null;
+    const beats = this.poseBeats;
     const total = Math.floor(beats ?? 0);
     const phase = (beats ?? 0) - total;
     // While its "ow" plays (a pending stab death) no event shows

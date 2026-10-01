@@ -152,14 +152,16 @@ describe("the grunt's body shows its shot and its held fire", () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.1); // under the skip chance
     const { floatingText, context, at } = world();
     const grunt = new Grunt(0, 0, 'grunt', { context }, createMockP5(), null);
+    grunt.isSpawning = false;
+    // Through update(), which keeps the beat the grunt is drawn at
     for (let ms = 0; ms <= 600; ms += 10) {
       at(ms);
-      grunt.updateSpecificBehavior(150, 0, 10);
+      grunt.update(150, 0, 10);
     }
     expect(floatingText.addText).toHaveBeenCalled(); // the ? of beat 2
     expect(grunt.pose().droop).toBeGreaterThan(0.9);
     at(1010); // beat 3
-    grunt.updateSpecificBehavior(150, 0, 10);
+    grunt.update(150, 0, 10);
     expect(grunt.pose().droop).toBe(0);
   });
 });
