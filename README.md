@@ -54,6 +54,8 @@ Open the game with [`?tune`](https://edwardfalk.github.io/vibe/?tune) in the URL
 
 There's also a **Level +1** button. A run that used it can't set a high score. The panel shows the current values as JSON, ready to paste into [`js/config.js`](js/config.js), where every setting lives.
 
+The [voice playground](https://edwardfalk.github.io/vibe/voices.html) is for the speakers' new voices. Type any phrase, pick a speaker, and change its engine (SAM or espeak-ng), its voice and its effect chain. "Copy config" gives you the settings for `js/config.js`. The game itself switches to these voices in the next update.
+
 ## Tech
 
 - [p5.js](https://p5js.org/) in instance mode for drawing, a WebGL shader for the sky, Web Audio for sound, and the Speech Synthesis API for voices.
@@ -77,4 +79,9 @@ Vibe started in May 2025 as an experiment in building a game with AI coding agen
 
 ## Licence
 
-[MIT](LICENSE)
+The game's own code is [MIT](LICENSE).
+
+It ships two speech engines under their own terms:
+
+- [espeak-ng](js/vendor/espeak-ng/) is GPL-3. [`SOURCE.md`](js/vendor/espeak-ng/SOURCE.md) there identifies its source.
+- [SAM](js/vendor/sam/) carries no licence grant; it ships at the author's accepted risk.
