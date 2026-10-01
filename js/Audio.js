@@ -29,6 +29,7 @@ import {
   isConfusedText as isConfusedTextHelper,
 } from './audio/TextSemantics.js';
 import { CONFIG, VOICE_CONFIG } from './config.js';
+import { createReverbImpulse } from './audio/speech/effects.js';
 import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
 import { getPlayerDialogueLine } from './audio/DialogueLines.js';
 
@@ -165,27 +166,17 @@ export class Audio {
   createEffects() {
     // Enhanced reverb for atmospheric ambient sounds
     this.effects.reverb = this.audioContext.createConvolver();
-    this.effects.reverb.buffer = this.createReverbImpulse(3.5, 0.5); // Longer, more atmospheric reverb
+    this.effects.reverb.buffer = createReverbImpulse(
+      this.audioContext,
+      3.5,
+      0.5
+    ); // Longer, more atmospheric reverb
 
     // One curve shared by every ambient sound's light distortion
     this.ambientDistortionCurve = this.createDistortionCurve(
       5,
       this.audioContext.sampleRate
     );
-  }
-
-  createReverbImpulse(duration, decay) {
-    const sampleRate = this.audioContext.sampleRate;
-    const length = sampleRate * duration;
-    const impulse = this.audioContext.createBuffer(2, length, sampleRate);
-
-    for (let channel = 0; channel < 2; channel++) {
-      const channelData = impulse.getChannelData(channel);
-      for (let i = 0; i < length; i++) {
-        channelData[i] = (random() * 2 - 1) * Math.pow(1 - i / length, decay);
-      }
-    }
-    return impulse;
   }
 
   createDistortionCurve(amount, sampleRate) {

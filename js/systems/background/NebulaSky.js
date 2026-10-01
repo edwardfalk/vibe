@@ -14,7 +14,7 @@
  */
 
 import { CONFIG } from '../../config.js';
-import { constrain } from '../../mathUtils.js';
+import { constrain, mulberry32 } from '../../mathUtils.js';
 import { NONE_SEC } from '../../audio/BeatTrack.js';
 
 // The gas buffer, a quarter of the game's 800x600 canvas, drawn scaled up
@@ -262,15 +262,6 @@ void main(){
 function requestedMode() {
   const q = new URLSearchParams(globalThis.location?.search ?? '').get('sky');
   return q === 'full' || q === 'flat' ? q : 'auto';
-}
-
-function mulberry32(seed) {
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0;
-    let z = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    z = (z + Math.imul(z ^ (z >>> 7), 61 | z)) ^ z;
-    return ((z ^ (z >>> 14)) >>> 0) / 4294967296;
-  };
 }
 
 function glowSprite(p, c) {
