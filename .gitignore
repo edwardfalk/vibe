@@ -42,6 +42,8 @@ file-command-tests/
 dist/
 build/
 *.min.js
+# …except the vendored speech engines, which ship as built files
+!js/vendor/**
 *.min.css
 
 # Environment files
