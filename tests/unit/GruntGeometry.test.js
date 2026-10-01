@@ -5,6 +5,7 @@ import {
   gruntMuzzle,
   gruntPose,
   nextFacing,
+  SHOULDER,
 } from '../../js/entities/GruntRenderer.js';
 import { transformP5 } from './helpers/transformP5.js';
 
@@ -34,6 +35,22 @@ describe("the grunt's gun", () => {
         drawGrunt(p, S, pose(aim, events));
         const [a, b] = gunOf(shapes).matrix;
         expect(angleBetween(Math.atan2(b, a), aim)).toBeLessThan(1e-9);
+      }
+    }
+  });
+
+  it('stays on its shoulder as it dances, floats and leans', () => {
+    for (let i = 0; i < 40; i++) {
+      for (const aim of [0.3, Math.PI - 0.3]) {
+        const { p, shapes } = transformP5();
+        drawGrunt(p, S, pose(aim, { beats: 16 + i / 10 }));
+        // The nozzle is drawn straight under the body's transforms
+        const [a, b, c, d, e, f] = shapes.filter((s) => s.kind === 'image')[1]
+          .matrix;
+        const [x, y] = [SHOULDER[0] * S, SHOULDER[1] * S];
+        const gun = gunOf(shapes).matrix;
+        expect(gun[4]).toBeCloseTo(a * x + c * y + e, 6);
+        expect(gun[5]).toBeCloseTo(b * x + d * y + f, 6);
       }
     }
   });
