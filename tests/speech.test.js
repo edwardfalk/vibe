@@ -152,3 +152,71 @@ test('speech gate: both engines run in a worker, at level, every setting heard',
       `engine files ${vendorBytes()} bytes`
   );
 });
+
+test('every shipped line comes out at level, under the ceiling', async ({
+  page,
+}) => {
+  test.setTimeout(180000);
+  await page.goto(`${BASE}/voices.html`);
+  const { lines, limits } = await page.evaluate(async () => {
+    const at = (path) => new URL(path, location.href).href;
+    const { Voicebox, spoken } = await import(
+      at('js/audio/speech/Voicebox.js')
+    );
+    const { loudness } = await import(at('js/audio/speech/levels.js'));
+    const { CONFIG } = await import(at('js/config.js'));
+    const { SPEAKER_LINES } = await import(at('js/audio/DialogueLines.js'));
+    const S = CONFIG.SPEECH;
+    const voicebox = new Voicebox({ audioContext: new AudioContext() });
+    const lines = [];
+    for (const [speaker, texts] of Object.entries(SPEAKER_LINES)) {
+      const setup = S.SPEAKERS[speaker];
+      for (const text of texts) {
+        const t0 = performance.now();
+        const line = await voicebox.renderLine(
+          setup,
+          spoken(setup.engine, text, S.RESPELL)
+        );
+        const totalMs = performance.now() - t0;
+        const samples = line.buffer.getChannelData(0);
+        const peak = samples.reduce((m, x) => Math.max(m, Math.abs(x)), 0);
+        lines.push({
+          speaker,
+          text,
+          peakDb: 20 * Math.log10(peak),
+          offBy:
+            loudness(samples, line.buffer.sampleRate) -
+            (S.TARGET_DB + (setup.levelDb ?? 0)),
+          reductionDb: line.reductionDb,
+          engineMs: line.renderMs,
+          chainMs: line.chainMs,
+          levelMs: line.levelMs,
+          totalMs,
+        });
+      }
+    }
+    return {
+      lines,
+      limits: { peakDb: S.PEAK_DB, warnDb: S.REDUCTION_WARN_DB },
+    };
+  });
+
+  for (const l of lines) {
+    const name = `${l.speaker} "${l.text}"`;
+    expect
+      .soft(l.peakDb, `${name}: peak`)
+      .toBeLessThanOrEqual(limits.peakDb + 0.01);
+    expect.soft(Math.abs(l.offBy), `${name}: level out`).toBeLessThanOrEqual(1);
+    expect
+      .soft(l.reductionDb, `${name}: ceiling cost`)
+      .toBeLessThan(limits.warnDb);
+  }
+
+  const timing = (key) => {
+    const sorted = lines.map((l) => l[key]).sort((a, b) => a - b);
+    return `${key} median ${pick(sorted, 0.5).toFixed(0)} / p95 ${pick(sorted, 0.95).toFixed(0)} ms`;
+  };
+  console.log(
+    `speech lines: ${lines.length}; ${['engineMs', 'chainMs', 'levelMs', 'totalMs'].map(timing).join('; ')}`
+  );
+});
