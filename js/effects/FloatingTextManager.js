@@ -4,6 +4,8 @@
  * Enhanced with momentum physics, merging, and beat-synced effects.
  */
 
+import { GRUNT_COLORS } from '../entities/GruntRenderer.js';
+
 const DAMAGE_MERGE_RADIUS = 60;
 
 export class FloatingTextManager {
@@ -74,7 +76,7 @@ export class FloatingTextManager {
 
   addKill(x, y, enemyType, streak = 0) {
     const typeColors = {
-      grunt: [50, 255, 50],
+      grunt: GRUNT_COLORS.belly,
       rusher: [255, 50, 150],
       tank: [150, 100, 255],
       stabber: [255, 215, 0],

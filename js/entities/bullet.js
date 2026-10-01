@@ -1,6 +1,7 @@
 import { CONFIG } from '../config.js';
 import { sin, cos, PI, dist } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
+import { GRUNT_COLORS } from './GruntRenderer.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
@@ -8,7 +9,7 @@ const { WORLD_WIDTH, WORLD_HEIGHT } = CONFIG.GAME_SETTINGS;
 const MAX_BULLET_POOL_SIZE = 400;
 const PLAYER_GLOW = [255, 255, 100];
 const TANK_GLOW = [150, 100, 255];
-const ENEMY_GLOW = [255, 100, 255];
+const ENEMY_GLOW = GRUNT_COLORS.shot; // only grunts fire small shots
 
 export class Bullet {
   constructor(x, y, angle, speed, owner) {
@@ -188,8 +189,8 @@ export class Bullet {
         p.endShape();
       }
     } else {
-      // Standard enemy bullet - neon green line
-      p.stroke(0, 255, 0, 200);
+      // A grunt's shot: a coral line with a white core
+      p.stroke(...GRUNT_COLORS.shotCore, 210);
       p.strokeWeight(this.size);
       p.line(-this.size, 0, this.size, 0);
 
@@ -218,7 +219,7 @@ export class Bullet {
       } else if (this.owner === 'enemy-tank') {
         p.fill(150, 100, 255, alpha);
       } else {
-        p.fill(255, 100, 255, alpha);
+        p.fill(...GRUNT_COLORS.shot, alpha);
       }
 
       p.noStroke();

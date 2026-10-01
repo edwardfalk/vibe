@@ -4,6 +4,7 @@
  */
 
 import { random, TWO_PI, cos, sin } from '../../mathUtils.js';
+import { GRUNT_COLORS } from '../../entities/GruntRenderer.js';
 
 export class EnemyFragmentExplosion {
   constructor(x, y, enemy) {
@@ -87,7 +88,7 @@ export class EnemyFragmentExplosion {
     const particleCount = 20;
 
     let primaryColor;
-    if (this.enemy.type === 'grunt') primaryColor = [50, 205, 50];
+    if (this.enemy.type === 'grunt') primaryColor = GRUNT_COLORS.body;
     else if (this.enemy.type === 'stabber') primaryColor = [255, 215, 0];
     else if (this.enemy.type === 'rusher') primaryColor = [255, 20, 147];
     else if (this.enemy.type === 'tank') primaryColor = [138, 43, 226];

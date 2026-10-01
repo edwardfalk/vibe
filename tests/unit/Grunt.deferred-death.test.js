@@ -116,15 +116,20 @@ describe('Grunt deferred stabber death', () => {
 });
 
 describe('Grunt shot', () => {
-  it('leaves from the drawn gun, which sits artOffsetY off the hit axis', () => {
+  it('leaves from its gun muzzle, mirrored left and right, on the side it turns to face', () => {
     const context = { get: () => undefined, set() {} };
     const g = new Grunt(100, 100, 'grunt', { context }, createMockP5(), null);
-    g.aimAngle = 0; // aiming +x, so the art's local +y is world +y
     const acquire = vi.spyOn(Bullet, 'acquire');
+    g.aimAngle = 0;
     g.createBullet();
-    const [x, y] = acquire.mock.calls[0];
-    expect(x).toBeCloseTo(100 + g.size * 0.9, 5);
-    expect(y).toBeCloseTo(100 + g.artOffsetY, 5);
-    expect(g.artOffsetY).toBeGreaterThan(0);
+    // Now the target is to its left while it still faces right from
+    // spawning: the shot leaves from the side it turns to face this frame
+    g.aimAngle = Math.PI;
+    g.createBullet();
+    const [[rx, ry], [lx, ly]] = acquire.mock.calls.slice(-2);
+    // The gun reaches well past its size, at the draw scale
+    expect(rx).toBeGreaterThan(100 + g.size * 0.95);
+    expect(100 - lx).toBeCloseTo(rx - 100);
+    expect(ly).toBeCloseTo(ry);
   });
 });

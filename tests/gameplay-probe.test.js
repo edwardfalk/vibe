@@ -100,8 +100,9 @@ test.describe('Gameplay Probes', () => {
       const gd = g2.getImageData(0, 0, 400, 300).data;
       const lum = (a, i) =>
         (0.2126 * a[i] + 0.7152 * a[i + 1] + 0.0722 * a[i + 2]) / 255;
-      // The gameplay hues (deg): green, orange, pink, purple, cyan, magenta
-      const HUES = [120, 40, 340, 260, 180, 325];
+      // The gameplay hues (deg): green, orange, pink, purple, cyan, magenta,
+      // and the grunt's coral (helmet and shots)
+      const HUES = [120, 40, 340, 260, 180, 325, 11];
       let bright = 0;
       let clash = 0;
       for (let i = 0; i < d.length; i += 4) {

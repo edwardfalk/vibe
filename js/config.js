@@ -163,6 +163,23 @@ const CONFIG = {
     tank: 42,
   },
 
+  // The grunt's look and motion (js/entities/GruntRenderer.js): a jelly that
+  // hovers on one jet and dances on the beat. All of it is drawn only; the
+  // hit circle is HITBOX.grunt. Tune live with ?tune; a new ART_SCALE
+  // rebuilds the cached sprites.
+  GRUNT_LOOK: {
+    ART_SCALE: 1.15, // drawn size over its size; the hit circle stays
+    HOP_PX: 4.5, // the jet's puff on 2 and 4 lifts it this far
+    IDLE_DANCE: 0.35, // share of that dance a grunt does on a snare it doesn't fire on
+    HOVER_PX: 1.6, // its lazy float
+    LEAN_RAD: 0.12, // it leans right on 1 and left on 3
+    WANDER_RAD: 0.13, // and is never quite level
+    JIGGLE: 0.09, // how much the jelly jiggles after each puff
+    COUGH_CHANCE: 0.07, // chance its jet coughs, rolled 9 times a second
+    TUMBLE_RAD: 0.35, // its own shot rocks it back this far
+    FACING_DEADZONE: 0.17, // it turns round once |cos(aim)| passes this
+  },
+
   // The hero: a shield that takes one real hit whole, then recharges and
   // returns on the beat; slow healing once he's gone a while unhit.
   // Contact ticks (1 per frame) bypass the shield. Tune live with ?tune.

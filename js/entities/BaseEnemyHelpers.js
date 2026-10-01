@@ -3,6 +3,8 @@
  * Extracted from BaseEnemy.js for file-size split (~500 line guideline).
  */
 
+import { GRUNT_COLORS } from './GruntRenderer.js';
+
 /** Get enemy colors by type. Returns { skinColor, helmetColor, weaponColor, eyeColor }. */
 export function getEnemyColors(type, p) {
   if (type === 'rusher') {
@@ -29,11 +31,12 @@ export function getEnemyColors(type, p) {
       eyeColor: p.color(255, 69, 0),
     };
   }
+  // The grunt
   return {
-    skinColor: p.color(50, 205, 50),
-    helmetColor: p.color(34, 139, 34),
-    weaponColor: p.color(0, 255, 127),
-    eyeColor: p.color(255, 20, 147),
+    skinColor: p.color(...GRUNT_COLORS.belly),
+    helmetColor: p.color(...GRUNT_COLORS.helmet),
+    weaponColor: p.color(...GRUNT_COLORS.gun),
+    eyeColor: p.color(...GRUNT_COLORS.eye),
   };
 }
 
@@ -41,6 +44,7 @@ const GLOW_RGB = {
   tank: [100, 50, 200],
   rusher: [255, 100, 150],
   stabber: [255, 140, 0],
+  grunt: GRUNT_COLORS.glow,
 };
 const DEFAULT_GLOW_RGB = [50, 200, 50];
 
@@ -56,13 +60,16 @@ export function getGlowSizeForType(type, size) {
   return size * 1.1;
 }
 
+export const HEALTH_BAR_HEIGHT_PX = 4;
+
 /** Draw enemy health bar. */
 export function drawEnemyHealthBar(p, enemy) {
   if (enemy.health >= enemy.maxHealth || enemy.markedForRemoval) return;
 
   const barWidth = enemy.size * 1.2;
-  const barHeight = 4;
-  const barY = enemy.y - enemy.size * 0.8;
+  const barHeight = HEALTH_BAR_HEIGHT_PX;
+  // An enemy that reaches higher (the grunt's antennae) lifts its bar
+  const barY = enemy.y - (enemy.healthBarRise ?? enemy.size * 0.8);
 
   p.fill(100, 100, 100);
   p.rect(enemy.x - barWidth / 2, barY, barWidth, barHeight);
