@@ -22,7 +22,7 @@ A steady kick (four on the floor by default) and a sub-bass pulse keep time unde
 
 The aliens live in space. There is no ground, so they never walk: they hover, on boosters or whatever else they have. Grunts are stupid, whiny and clumsy: each is a droplet of jelly in a helmet far too small, its eyes pointing two different ways, hovering on one jet that now and then coughs.
 
-Grunts dance together. Their jets puff on 2 and 4, the beats they fire on, and they hop: every grunt, every bar, whether it fires or not. Through the beat before a shot a grunt winds up (its antennae go amber, then white-hot); when it holds its fire instead, it sulks. The look and its numbers are in `js/entities/GruntRenderer.js` and `CONFIG.GRUNT_LOOK`.
+Grunts dance together. Every grunt crouches as 2 and 4 come, the beats they fire on. One that fires hops on its jet's puff and squashes as it lands; the rest give a small hop and slump back. Through the beat before a shot a grunt winds up (its antennae go amber, then white-hot); when it holds its fire instead, it sulks. They stop while the game is paused. The look and its numbers are in `js/entities/GruntRenderer.js` and `CONFIG.GRUNT_LOOK`.
 
 ## The sky
 
