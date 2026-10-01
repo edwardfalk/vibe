@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { CONFIG } from '../../js/config.js';
 import {
   GRUNT_COLORS,
@@ -19,6 +19,10 @@ const poseAt = (beat, phase, o = {}) =>
     ...o,
   });
 const brightness = (rgb) => rgb[0] + rgb[1] + rgb[2];
+const WANDER_RAD = CONFIG.GRUNT_LOOK.WANDER_RAD;
+afterEach(() => {
+  CONFIG.GRUNT_LOOK.WANDER_RAD = WANDER_RAD;
+});
 
 describe('the grunt dances on the beat', () => {
   it('hops on 2 and 4, its snare, and not on 1 and 3', () => {
@@ -27,6 +31,13 @@ describe('the grunt dances on the beat', () => {
     expect(poseAt(3, 0.15).hop).toBeGreaterThan(half);
     expect(poseAt(0, 0.15).hop).toBe(0);
     expect(poseAt(2, 0.15).hop).toBe(0);
+  });
+
+  it('leans right on 1 and left on 3', () => {
+    CONFIG.GRUNT_LOOK.WANDER_RAD = 0; // only the dance leans
+    // A positive turn is clockwise on screen: its top goes right
+    expect(poseAt(0, 0).lean).toBeCloseTo(CONFIG.GRUNT_LOOK.LEAN_RAD);
+    expect(poseAt(2, 0).lean).toBeCloseTo(-CONFIG.GRUNT_LOOK.LEAN_RAD);
   });
 });
 

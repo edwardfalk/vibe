@@ -79,7 +79,7 @@ Speech can't be routed through Web Audio or raised above full volume, so it stay
 
 - **`window.*` still has readers.** Game code should read the context, but `GameState` still reads 11 globals (`window.audio`, `window.player` and others) instead of being handed what it needs; `Audio` reaches `window.beatTrack`, and `player.js` reads the input flags that `InputHandlers` writes to `window`.
 - **The game is frame-locked.** Enemies and the player move by frame time, but bullets move a fixed step per frame and bomb fuses count frames, so on a 120 Hz screen those run twice as fast.
-- **Some files are long:** `Audio.js` is about 650 lines, and `Tank.js` and `BaseEnemy.js` are about 500 each.
+- **Some files are long:** `Audio.js` is about 650 lines, `GruntRenderer.js` about 680 (the grunt's pose and drawing together), and `Tank.js` about 500.
 
 ## Adding an enemy-instrument
 

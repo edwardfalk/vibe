@@ -140,9 +140,11 @@ describe("the grunt's body shows its shot and its held fire", () => {
       at(ms);
       grunt.updateSpecificBehavior(150, 0, 10); // warned through beat 1
     }
-    // A slow frame: its first update in beat 2 comes 80 ms after it lands
+    // A slow frame: its first update in beat 2 comes 80 ms after it lands.
+    // Through update() itself, which must hand the shot on to the game
     at(580);
-    expect(grunt.updateSpecificBehavior(150, 0, 10)).toBeTruthy();
+    grunt.isSpawning = false;
+    expect(grunt.update(150, 0, 10)?.owner).toBe('enemy-grunt');
     expect(grunt.pose().flash).toBeGreaterThan(0.9);
   });
 
