@@ -120,7 +120,7 @@ export function createTunePanel() {
   panel.style.cssText =
     'position:fixed;top:8px;right:8px;z-index:200;width:280px;max-height:calc(100vh - 16px);overflow:auto;padding:10px;background:rgba(5,2,15,0.9);border:1px solid #0ff;color:#fff;font:12px monospace;';
   panel.innerHTML =
-    '<b style="color:#0ff">TUNING</b><div style="color:#aaa;margin:4px 0 8px">P pauses the game; the beat keeps playing.</div>';
+    '<b style="color:#0ff">TUNING</b><div style="color:#aaa;margin:4px 0 8px">P pauses the game; the beat keeps playing. <a href="voices.html" target="voices" style="color:#0ff">Voice playground</a></div>';
 
   // Jump ahead to hear later levels without playing up to them
   const levelUp = document.createElement('button');
