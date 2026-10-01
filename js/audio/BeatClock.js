@@ -55,6 +55,13 @@ export class BeatClock {
     return this.cache.currentBeat;
   }
 
+  // Total beats since start plus the phase through the current one, from one
+  // reading of the clock (getTotalBeats then getBeatPhase can straddle a beat)
+  getBeatPosition() {
+    this.update();
+    return this.cache.elapsed / this.beatInterval;
+  }
+
   // Get total beats since start (for longer patterns)
   getTotalBeats() {
     this.update();

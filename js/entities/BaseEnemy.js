@@ -1,4 +1,3 @@
-import { Bullet } from './bullet.js';
 import { CONFIG } from '../config.js';
 import { random, sin, cos, atan2 } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
@@ -163,14 +162,6 @@ export class BaseEnemy {
     }
   }
 
-  /**
-   * Shift (local y, px) that centres an off-centre sprite on its hit circle.
-   * Subclasses whose art leans to one side override it.
-   */
-  get artOffsetY() {
-    return 0;
-  }
-
   /** Collision radius for bullets; the sprite is wider than size/2 */
   get hitRadius() {
     return CONFIG.HITBOX[this.type] ?? this.size / 2;
@@ -323,8 +314,8 @@ export class BaseEnemy {
     bobble += animationMods.bobble;
     waddle += animationMods.waddle;
 
-    // Apply animation offsets, and the art's own offset (see artOffsetY)
-    p.translate(waddle, bobble + this.artOffsetY);
+    // Apply animation offsets
+    p.translate(waddle, bobble);
 
     this.applyHitShake(p);
 
@@ -426,39 +417,6 @@ export class BaseEnemy {
    */
   drawSpecificIndicators(p) {
     // Base implementation does nothing
-  }
-
-  /**
-   * Create bullet - should be overridden by subclasses
-   */
-  createBullet() {
-    // From the drawn gun: along the aim, then artOffsetY across it
-    const bulletDistance = this.size * 0.9;
-    const bulletX =
-      this.x +
-      cos(this.aimAngle) * bulletDistance -
-      sin(this.aimAngle) * this.artOffsetY;
-    const bulletY =
-      this.y +
-      sin(this.aimAngle) * bulletDistance +
-      cos(this.aimAngle) * this.artOffsetY;
-
-    // Create bullet with enemy type information
-    const bullet = Bullet.acquire(
-      bulletX,
-      bulletY,
-      this.aimAngle,
-      4,
-      `enemy-${this.type}`
-    );
-    bullet.ownerId = this.id; // Use unique enemy ID to prevent self-shooting
-
-    // Play alien shooting sound
-    if (this.audio) {
-      this.audio.playSound('alienShoot', this.x, this.y);
-    }
-
-    return bullet;
   }
 
   /**

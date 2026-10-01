@@ -7,6 +7,15 @@ import {
   STABBER_KILL_POINTS,
 } from '../shared/DamageResultHandler.js';
 import { GRUNT_LINES, GRUNT_OW } from '../audio/DialogueLines.js';
+import { Bullet } from './bullet.js';
+import { HEALTH_BAR_HEIGHT_PX } from './BaseEnemyHelpers.js';
+import {
+  GRUNT_COLORS,
+  drawGrunt,
+  gruntMuzzle,
+  gruntPose,
+  nextFacing,
+} from './GruntRenderer.js';
 
 // Per-beat chances for beat-gated grunt sounds (rolled once per beat)
 const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
@@ -16,13 +25,18 @@ const GRUNT_SPEECH_CHANCE = 0.18;
 // Grunts only shoot at the hero from this close
 const GRUNT_FIRE_RANGE = 300;
 // Shown over a warned grunt that doesn't fire after all
-// (lift: px above the grunt's top, clear of its health bar)
+// (lift: px above its health bar's top)
 const SHOT_CANCELLED = {
   text: '?',
   color: [180, 180, 180],
   size: 20,
-  lift: 10,
+  lift: 14,
 };
+// Its antenna bobbles reach this many sizes above its centre before the hop
+// and the float lift them (measured over a bar of every pose)
+const ANTENNA_REACH = 1.26;
+const HEALTH_BAR_GAP_PX = 2;
+const GRUNT_SHOT_SPEED = 4; // px per frame
 
 /**
  * Grunt class - Tactical ranged combat AI
@@ -35,7 +49,7 @@ class Grunt extends BaseEnemy {
       size: 26,
       health: 2,
       speed: 1.2,
-      color: p.color(50, 205, 50), // Lime green
+      color: p.color(...GRUNT_COLORS.body),
     };
     super(x, y, 'grunt', gruntConfig, p, audio);
 
@@ -44,6 +58,13 @@ class Grunt extends BaseEnemy {
     this.warnedOnBeat = null; // the beat a ring last warned of a shot from
     this.pendingStabDeathTimer = 0; // frames remaining
     this._pendingStabDeathParams = null;
+
+    // --- Its look (GruntRenderer.js) --------------------------
+    this.facing = 1; // 1 faces right, -1 left; update() turns it
+    // BaseEnemy's random phase, so the look adds no random() call
+    this.lookSeed = this.animFrame / p.TWO_PI;
+    this.firedAt = null; // the clock's beat position when it last fired
+    this.heldOnBeat = null; // the beat it last held its fire on after a warning
 
     // Grunt weird noises are now beat-gated (no timer needed)
   }
@@ -185,17 +206,18 @@ class Grunt extends BaseEnemy {
         const skipChance = alreadyFired ? 0.6 : 0.2;
         if (random() >= skipChance && !this.shouldAvoidFriendlyFire()) {
           // Fire!
-          this.muzzleFlash = 4;
+          this.firedAt = beatClock.getBeatPosition();
           this.context.set('gruntFireBeat', currentTotalBeat);
           return this.createBullet();
         }
       }
       // A warning with nothing after it would look like a glitch
       if (warned) {
+        this.heldOnBeat = beatClock.getTotalBeats();
         const { text, color, size } = SHOT_CANCELLED;
         this.getContextValue('floatingText')?.addText(
           this.x,
-          this.y - this.size - SHOT_CANCELLED.lift,
+          this.y - this.healthBarRise - SHOT_CANCELLED.lift,
           text,
           color,
           size
@@ -283,75 +305,77 @@ class Grunt extends BaseEnemy {
     };
   }
 
-  /**
-   * The head and antennae lean the art about 6 px toward local -y (measured
-   * -25..+13 px across a bullet's path); this puts it back on the hit circle.
-   * @override
-   */
-  get artOffsetY() {
-    return this.size * 0.23;
+  /** @override Turns to face its target once it has moved and aimed */
+  update(playerX, playerY, deltaTimeMs) {
+    const bullet = super.update(playerX, playerY, deltaTimeMs);
+    this.facing = nextFacing(this.facing, this.aimAngle);
+    return bullet;
+  }
+
+  /** @override The jelly mirrors to face its target; it never turns with its aim */
+  drawFigure(p, s) {
+    this.applyHitShake(p);
+    drawGrunt(p, s * CONFIG.GRUNT_LOOK.ART_SCALE, this.pose());
+  }
+
+  /** This frame's pose, from one reading of the beat clock and what it did when */
+  pose() {
+    const clock = this.getContextValue('beatClock');
+    const beats = clock ? clock.getBeatPosition() : null;
+    const total = Math.floor(beats ?? 0);
+    const phase = (beats ?? 0) - total;
+    // While its "ow" plays (a pending stab death) no event shows
+    const live = beats !== null && !this.pendingStabDeath;
+    return gruntPose({
+      beats,
+      beatSec: (clock?.beatInterval ?? 0) / 1000,
+      seed: this.lookSeed,
+      aimAngle: this.aimAngle,
+      facing: this.facing,
+      size: this.size * CONFIG.GRUNT_LOOK.ART_SCALE,
+      warn: live && this.warnedOnBeat === total ? phase : -1,
+      sinceShot:
+        live && this.firedAt !== null ? beats - this.firedAt : Infinity,
+      sulk: live && this.heldOnBeat === total ? phase : -1,
+    });
+  }
+
+  /** Its shot leaves the gun's muzzle, on the side it turns to face */
+  createBullet() {
+    // This runs inside super.update(), before update() turns it round
+    const facing = nextFacing(this.facing, this.aimAngle);
+    const { x, y } = gruntMuzzle(
+      this.x,
+      this.y,
+      this.size,
+      this.aimAngle,
+      facing
+    );
+    const bullet = Bullet.acquire(
+      x,
+      y,
+      this.aimAngle,
+      GRUNT_SHOT_SPEED,
+      'enemy-grunt'
+    );
+    bullet.ownerId = this.id; // so it can't shoot itself
+    this.audio?.playSound('alienShoot', this.x, this.y);
+    return bullet;
   }
 
   /**
-   * Draw grunt-specific body shape with round, bumbling baby-like features
+   * Its health bar's height above its centre, px (drawEnemyHealthBar): clear
+   * of its antennae at the top of a hop, at any ?tune setting
    */
-  drawBody(s) {
-    // Main round body (baby-like proportions)
-    this.p.fill(this.bodyColor);
-    this.p.noStroke();
-    this.p.ellipse(0, 0, s, s * 0.9); // Rounder main body
-
-    const r = this.p.red(this.bodyColor);
-    const g = this.p.green(this.bodyColor);
-    const b = this.p.blue(this.bodyColor);
-
-    // Round baby-like head (larger and rounder)
-    this.p.fill(r + 20, g + 20, b + 20);
-    this.p.ellipse(0, -s * 0.4, s * 0.8, s * 0.8); // Big round head
-
-    // Simple round helmet (baby helmet style)
-    this.p.fill(120, 120, 150); // Gray helmet color
-    this.p.arc(0, -s * 0.4, s * 0.85, s * 0.5, this.p.PI, this.p.TWO_PI);
-
-    // Small gold triangle badge (looks official but cute)
-    this.p.fill(255, 215, 0); // Gold
-    this.p.triangle(0, -s * 0.6, -s * 0.06, -s * 0.5, s * 0.06, -s * 0.5);
-
-    // BIG ROUND BUMBLING EYES (different sizes for silly look)
-    this.p.fill(100, 255, 100); // Bright green eyes
-    this.p.ellipse(-s * 0.15, -s * 0.35, s * 0.16); // Left eye (bigger and rounder)
-    this.p.ellipse(s * 0.12, -s * 0.38, s * 0.12); // Right eye (smaller, slightly offset)
-
-    // Eye highlights (make them look innocent/bumbling)
-    this.p.fill(255);
-    this.p.ellipse(-s * 0.12, -s * 0.32, s * 0.06); // Left highlight (bigger)
-    this.p.ellipse(s * 0.15, -s * 0.36, s * 0.04); // Right highlight (smaller)
-
-    // SHORT STUMPY ANTENNAE (baby-like proportions)
-    this.p.stroke(this.bodyColor);
-    this.p.strokeWeight(3); // Thicker for baby look
-    this.p.line(-s * 0.15, -s * 0.7, -s * 0.18, -s * 0.85); // Left antenna (shorter)
-    this.p.line(s * 0.15, -s * 0.7, s * 0.18, -s * 0.85); // Right antenna (shorter)
-
-    // Round antenna bobbles (bigger and more prominent)
-    this.p.fill(100, 255, 100); // Matching eye color
-    this.p.noStroke();
-    this.p.ellipse(-s * 0.18, -s * 0.85, s * 0.12); // Left bobble (bigger)
-    this.p.ellipse(s * 0.18, -s * 0.85, s * 0.12); // Right bobble (bigger)
-
-    // Chubby little arms
-    this.p.fill(r + 10, g + 10, b + 10);
-    this.p.ellipse(-s * 0.4, -s * 0.1, s * 0.2, s * 0.35); // Left arm (round)
-    this.p.ellipse(s * 0.4, -s * 0.1, s * 0.2, s * 0.35); // Right arm (round)
-
-    // Little round hands
-    this.p.fill(this.bodyColor);
-    this.p.ellipse(-s * 0.45, s * 0.05, s * 0.12); // Left hand
-    this.p.ellipse(s * 0.45, s * 0.05, s * 0.12); // Right hand
-
-    // Minimal tactical gear (just a belt so they look "official")
-    this.p.fill(r + 30, g + 30, b + 30);
-    this.p.rect(-s * 0.3, s * 0.1, s * 0.6, s * 0.08); // Simple belt
+  get healthBarRise() {
+    const L = CONFIG.GRUNT_LOOK;
+    return (
+      this.size * ANTENNA_REACH +
+      L.HOP_PX +
+      L.HOVER_PX +
+      HEALTH_BAR_HEIGHT_PX +
+      HEALTH_BAR_GAP_PX
+    );
   }
 
   /**

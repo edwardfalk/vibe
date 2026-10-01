@@ -56,13 +56,16 @@ export function getGlowSizeForType(type, size) {
   return size * 1.1;
 }
 
+export const HEALTH_BAR_HEIGHT_PX = 4;
+
 /** Draw enemy health bar. */
 export function drawEnemyHealthBar(p, enemy) {
   if (enemy.health >= enemy.maxHealth || enemy.markedForRemoval) return;
 
   const barWidth = enemy.size * 1.2;
-  const barHeight = 4;
-  const barY = enemy.y - enemy.size * 0.8;
+  const barHeight = HEALTH_BAR_HEIGHT_PX;
+  // An enemy that reaches higher (the grunt's antennae) lifts its bar
+  const barY = enemy.y - (enemy.healthBarRise ?? enemy.size * 0.8);
 
   p.fill(100, 100, 100);
   p.rect(enemy.x - barWidth / 2, barY, barWidth, barHeight);
