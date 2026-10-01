@@ -70,6 +70,9 @@ const DANCE = {
   TIP_BOUNCE_END_SEC: 0.6,
   BLINK_FROM: 0.5, // it blinks through this part of one beat a bar
   BLINK_TO: 0.64,
+  SLUMP_RAD: 0.15, // a grunt that doesn't fire on the snare slumps back this far
+  // A shot at the very start of the snare counts, despite rounding
+  SNARE_SLACK_BEATS: 0.01,
 };
 // The jet: thrust 0..1
 const JET = {
@@ -203,21 +206,28 @@ export function gruntPose({
   const t = beats * beatSec;
   pose.t = t;
 
-  // The dance: a crouch, a hop on the snare, a squash as it lands; a nod on 1 and 3
+  // The dance: every grunt crouches before the snare; on it, one that fires
+  // hops, squashes as it lands and puffs its jet in full, the rest do a small
+  // hop and slump back. A nod on 1 and 3 for all.
   const pos = mod(beats, 4); // 0..4 through the bar; 1 and 3 are beats 2 and 4
   const sinceSnare = mod(pos - 1, 2) * beatSec;
   const toSnare = 2 * beatSec - sinceSnare;
+  const firedThisSnare =
+    sinceShot <= sinceSnare / beatSec + DANCE.SNARE_SLACK_BEATS;
+  const dance = firedThisSnare ? 1 : L.IDLE_DANCE;
   if (toSnare < DANCE.CROUCH_SEC) {
     pose.squash += DANCE.CROUCH_SQUASH * smooth(1 - toSnare / DANCE.CROUCH_SEC);
   }
   if (sinceSnare < DANCE.AIR_SEC) {
     const air = Math.sin((PI * sinceSnare) / DANCE.AIR_SEC);
-    pose.hop = L.HOP_PX * air;
-    pose.squash -= DANCE.AIR_STRETCH * air;
+    pose.hop = L.HOP_PX * air * dance;
+    pose.squash -= DANCE.AIR_STRETCH * air * dance;
+    if (!firedThisSnare) pose.back = -DANCE.SLUMP_RAD * air;
   } else {
     const u = sinceSnare - DANCE.AIR_SEC;
     pose.squash +=
       DANCE.LAND_SQUASH *
+      dance *
       Math.exp(-u / DANCE.LAND_DECAY_SEC) *
       Math.cos((TWO_PI * u) / DANCE.LAND_WOBBLE_SEC);
   }
@@ -229,6 +239,7 @@ export function gruntPose({
     (lag - lean) * size * DANCE.TIP_REACH,
     sinceSnare < DANCE.TIP_BOUNCE_END_SEC
       ? DANCE.TIP_BOUNCE_PX *
+        dance *
         Math.exp(-sinceSnare / DANCE.TIP_BOUNCE_DECAY_SEC) *
         Math.cos((TWO_PI * sinceSnare) / DANCE.TIP_BOUNCE_PERIOD_SEC)
       : 0,
@@ -250,7 +261,8 @@ export function gruntPose({
     JET.FLICKER *
       roll(Math.floor(t * JET.FLICKER_PER_SEC) * HASH_PRIME + seedInt + 1);
   pose.thrust =
-    (JET.IDLE + (1 - JET.IDLE) * Math.exp(-sinceSnare / JET.PUFF_DECAY_SEC)) *
+    (JET.IDLE +
+      (1 - JET.IDLE) * dance * Math.exp(-sinceSnare / JET.PUFF_DECAY_SEC)) *
     (cough ? JET.COUGH_THRUST : flicker);
   // It floats, sags when its jet coughs, and is never quite level
   pose.hover =
@@ -265,6 +277,7 @@ export function gruntPose({
           Math.sin(t * RATE.WANDER_FAST + seed * SEED_PHASE.WANDER_FAST));
   pose.jiggle =
     L.JIGGLE *
+    dance *
     Math.exp(-sinceSnare / JIGGLE_DECAY_SEC) *
     Math.cos(sinceSnare * RATE.JIGGLE);
 
@@ -272,7 +285,7 @@ export function gruntPose({
   // and its bobbles go amber, then white-hot (a step in brightness too)
   if (warn >= 0) {
     const k = smooth(warn);
-    pose.back = -WINDUP.LEAN_RAD * k;
+    pose.back -= WINDUP.LEAN_RAD * k;
     pose.puff = 1 + WINDUP.PUFF * k;
     pose.bob = warn < 0.5 ? AMBER : HOT;
     pose.bobGlow = warn < 0.5 ? WINDUP.AMBER_GLOW : 1;

@@ -89,6 +89,7 @@ const KNOBS = [
   [HITBOX, 'stabber', [8, 50, 1]],
   [HITBOX, 'tank', [20, 70, 1]],
   [GRUNT, 'HOP_PX', [0, 12, 0.5]],
+  [GRUNT, 'IDLE_DANCE', [0, 1, 0.05]],
   [GRUNT, 'HOVER_PX', [0, 6, 0.1]],
   [GRUNT, 'LEAN_RAD', [0, 0.4, 0.01]],
   [GRUNT, 'WANDER_RAD', [0, 0.4, 0.01]],

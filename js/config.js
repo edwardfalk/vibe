@@ -170,6 +170,7 @@ const CONFIG = {
   GRUNT_LOOK: {
     ART_SCALE: 1.15, // drawn size over its size
     HOP_PX: 4.5, // the jet's puff on 2 and 4 lifts it this far
+    IDLE_DANCE: 0.35, // share of that dance a grunt does on a snare it doesn't fire on
     HOVER_PX: 1.6, // its lazy float
     LEAN_RAD: 0.12, // it leans right on 1 and left on 3
     WANDER_RAD: 0.13, // and is never quite level

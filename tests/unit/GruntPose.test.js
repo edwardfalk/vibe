@@ -19,18 +19,41 @@ const poseAt = (beat, phase, o = {}) =>
     ...o,
   });
 const brightness = (rgb) => rgb[0] + rgb[1] + rgb[2];
-const WANDER_RAD = CONFIG.GRUNT_LOOK.WANDER_RAD;
+const DEFAULTS = { ...CONFIG.GRUNT_LOOK };
 afterEach(() => {
-  CONFIG.GRUNT_LOOK.WANDER_RAD = WANDER_RAD;
+  Object.assign(CONFIG.GRUNT_LOOK, DEFAULTS);
 });
 
 describe('the grunt dances on the beat', () => {
   it('hops on 2 and 4, its snare, and not on 1 and 3', () => {
+    // A shot on the snare it hops on (0.15 beats ago, as the snare landed)
     const half = CONFIG.GRUNT_LOOK.HOP_PX * 0.5;
-    expect(poseAt(1, 0.15).hop).toBeGreaterThan(half);
-    expect(poseAt(3, 0.15).hop).toBeGreaterThan(half);
+    expect(poseAt(1, 0.15, { sinceShot: 0.15 }).hop).toBeGreaterThan(half);
+    expect(poseAt(3, 0.15, { sinceShot: 0.15 }).hop).toBeGreaterThan(half);
     expect(poseAt(0, 0.15).hop).toBe(0);
     expect(poseAt(2, 0.15).hop).toBe(0);
+  });
+
+  it('does the full dance when it fires on the snare, a small one and slumps back when not', () => {
+    const fires = poseAt(1, 0.15, { sinceShot: 0.15 });
+    const idle = poseAt(1, 0.15);
+    expect(fires.hop).toBeGreaterThan(CONFIG.GRUNT_LOOK.HOP_PX * 0.9);
+    expect(idle.hop).toBeGreaterThan(0);
+    expect(idle.hop).toBeCloseTo(fires.hop * CONFIG.GRUNT_LOOK.IDLE_DANCE);
+    expect(idle.thrust).toBeLessThan(fires.thrust);
+    expect(idle.back).toBeLessThan(0); // it slumps back from its target
+  });
+
+  it('counts only a shot on this snare, not the one before', () => {
+    // Fired on the previous snare, two beats earlier
+    const old = poseAt(3, 0.15, { sinceShot: 2.15 });
+    expect(old.hop).toBeCloseTo(poseAt(3, 0.15).hop);
+  });
+
+  it('does not hop at all when it does not fire, with IDLE_DANCE 0', () => {
+    CONFIG.GRUNT_LOOK.IDLE_DANCE = 0;
+    expect(poseAt(1, 0.15).hop).toBe(0);
+    expect(poseAt(1, 0.15, { sinceShot: 0.15 }).hop).toBeGreaterThan(0);
   });
 
   it('leans right on 1 and left on 3', () => {
