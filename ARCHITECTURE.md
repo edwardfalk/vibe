@@ -81,13 +81,13 @@ Pausing suspends the `AudioContext` (`Audio.syncPause`, called when P is pressed
 
 - **`window.*` still has readers.** Game code should read the context, but `GameState` still reads 11 globals (`window.audio`, `window.player` and others) instead of being handed what it needs; `Audio` reaches `window.beatTrack`, and `player.js` reads the input flags that `InputHandlers` writes to `window`.
 - **The game is frame-locked.** Enemies and the player move by frame time, but bullets move a fixed step per frame and bomb fuses count frames, so on a 120 Hz screen those run twice as fast.
-- **Some files are long:** `Audio.js` is about 650 lines, and `Tank.js` and `BaseEnemy.js` are about 500 each.
+- **Some files are long:** `Audio.js` is about 650 lines, `GruntRenderer.js` about 680 (the grunt's pose and drawing together), and `Tank.js` about 500.
 
 ## Adding an enemy-instrument
 
 A new enemy touches these places:
 
-1. A class extending [`BaseEnemy`](js/entities/BaseEnemy.js) in `js/entities/`. `takeDamage()` returns a `DAMAGE_RESULT` value.
+1. A class extending [`BaseEnemy`](js/entities/BaseEnemy.js) in `js/entities/`. `takeDamage()` returns a `DAMAGE_RESULT` value. It draws through `drawBody`, `drawHead`, `drawArms` and `drawWeapon`, which turn with its aim; to draw some other way, override `drawFigure`, as the grunt does with [`GruntRenderer.js`](js/entities/GruntRenderer.js).
 2. An entry in `ENEMY_CLASSES` and `ENEMY_INTRO_LEVEL` in [`SpawnSystem.js`](js/systems/SpawnSystem.js), and its weight in `getEnemyTypeForLevel()` there: the type lists are written out per level range, so a type missing from them never spawns.
 3. What touching it does to the player, in the switch in [`PlayerContactHandlers.js`](js/systems/combat/PlayerContactHandlers.js). An unlisted type does nothing on contact.
 4. A beat gate in `BeatClock` (like `canGruntShoot()`), used through `onBeatOnce()` so the action fires once per beat.

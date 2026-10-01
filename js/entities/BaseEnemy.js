@@ -1,4 +1,3 @@
-import { Bullet } from './bullet.js';
 import { CONFIG } from '../config.js';
 import { random, sin, cos, atan2 } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
@@ -163,14 +162,6 @@ export class BaseEnemy {
     }
   }
 
-  /**
-   * Shift (local y, px) that centres an off-centre sprite on its hit circle.
-   * Subclasses whose art leans to one side override it.
-   */
-  get artOffsetY() {
-    return 0;
-  }
-
   /** Collision radius for bullets; the sprite is wider than size/2 */
   get hitRadius() {
     return CONFIG.HITBOX[this.type] ?? this.size / 2;
@@ -278,20 +269,6 @@ export class BaseEnemy {
       p.scale(0.3 + eased * 0.7);
     }
 
-    p.rotate(this.aimAngle);
-
-    const s = this.size;
-    let bobble = sin(this.animFrame) * 2;
-    let waddle = cos(this.animFrame * 0.8) * 1.5;
-
-    // Allow subclasses to modify animation
-    const animationMods = this.getAnimationModifications();
-    bobble += animationMods.bobble;
-    waddle += animationMods.waddle;
-
-    // Apply animation offsets, and the art's own offset (see artOffsetY)
-    p.translate(waddle, bobble + this.artOffsetY);
-
     // Compose spawn alpha with hit-flash alpha; p.tint doesn't affect shape primitives, use globalAlpha
     const hitAlpha = this.hitFlash > 0 ? 100 : 255;
     const finalAlpha = Math.round(spawnAlpha * (hitAlpha / 255)) / 255;
@@ -299,24 +276,7 @@ export class BaseEnemy {
     if (p.drawingContext) p.drawingContext.globalAlpha = finalAlpha;
 
     try {
-      if (this.hitFlash > 0) {
-        const hitIntensity = this.hitFlash / 8;
-        const shakeX = random(-hitIntensity * 4, hitIntensity * 4);
-        const shakeY = random(-hitIntensity * 3, hitIntensity * 3);
-        p.translate(shakeX, shakeY);
-
-        // Comical size distortion when hit
-        const distortion = 1 + sin(p.frameCount * 2) * hitIntensity * 0.1;
-        p.scale(distortion, 1 / distortion);
-      }
-
-      // Draw main body (subclasses implement specific shapes)
-      this.drawBody(s, p);
-
-      // Draw common elements
-      this.drawHead(s, p);
-      this.drawArms(s, p);
-      this.drawWeapon(s, p);
+      this.drawFigure(p, this.size);
     } finally {
       if (p.drawingContext) p.drawingContext.globalAlpha = prevAlpha;
       p.pop();
@@ -336,6 +296,49 @@ export class BaseEnemy {
 
     // Draw type-specific indicators
     this.drawSpecificIndicators(p);
+  }
+
+  /**
+   * The enemy's figure, drawn at its centre: it turns with its aim, bobs,
+   * shakes when hit, then draws body, head, arms and weapon. An enemy that
+   * draws some other way overrides this (the grunt does).
+   */
+  drawFigure(p, s) {
+    p.rotate(this.aimAngle);
+
+    let bobble = sin(this.animFrame) * 2;
+    let waddle = cos(this.animFrame * 0.8) * 1.5;
+
+    // Allow subclasses to modify animation
+    const animationMods = this.getAnimationModifications();
+    bobble += animationMods.bobble;
+    waddle += animationMods.waddle;
+
+    // Apply animation offsets
+    p.translate(waddle, bobble);
+
+    this.applyHitShake(p);
+
+    // Draw main body (subclasses implement specific shapes)
+    this.drawBody(s, p);
+
+    // Draw common elements
+    this.drawHead(s, p);
+    this.drawArms(s, p);
+    this.drawWeapon(s, p);
+  }
+
+  /** Shake and squash the figure for a few frames after a hit */
+  applyHitShake(p) {
+    if (!(this.hitFlash > 0)) return;
+    const hitIntensity = this.hitFlash / 8;
+    const shakeX = random(-hitIntensity * 4, hitIntensity * 4);
+    const shakeY = random(-hitIntensity * 3, hitIntensity * 3);
+    p.translate(shakeX, shakeY);
+
+    // Comical size distortion when hit
+    const distortion = 1 + sin(p.frameCount * 2) * hitIntensity * 0.1;
+    p.scale(distortion, 1 / distortion);
   }
 
   /**
@@ -414,39 +417,6 @@ export class BaseEnemy {
    */
   drawSpecificIndicators(p) {
     // Base implementation does nothing
-  }
-
-  /**
-   * Create bullet - should be overridden by subclasses
-   */
-  createBullet() {
-    // From the drawn gun: along the aim, then artOffsetY across it
-    const bulletDistance = this.size * 0.9;
-    const bulletX =
-      this.x +
-      cos(this.aimAngle) * bulletDistance -
-      sin(this.aimAngle) * this.artOffsetY;
-    const bulletY =
-      this.y +
-      sin(this.aimAngle) * bulletDistance +
-      cos(this.aimAngle) * this.artOffsetY;
-
-    // Create bullet with enemy type information
-    const bullet = Bullet.acquire(
-      bulletX,
-      bulletY,
-      this.aimAngle,
-      4,
-      `enemy-${this.type}`
-    );
-    bullet.ownerId = this.id; // Use unique enemy ID to prevent self-shooting
-
-    // Play alien shooting sound
-    if (this.audio) {
-      this.audio.playSound('alienShoot', this.x, this.y);
-    }
-
-    return bullet;
   }
 
   /**

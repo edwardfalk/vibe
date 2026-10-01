@@ -128,3 +128,40 @@ describe('attack warning rings', () => {
     expect(rhythmFX.telegraphs).toHaveLength(0);
   });
 });
+
+describe("the grunt's body shows its shot and its held fire", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('fires with a full flash, even late in its fire window', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99); // never skip or wander
+    const { context, at } = world();
+    const grunt = new Grunt(0, 0, 'grunt', { context }, createMockP5(), null);
+    for (let ms = 0; ms < 500; ms += 10) {
+      at(ms);
+      grunt.updateSpecificBehavior(150, 0, 10); // warned through beat 1
+    }
+    // A slow frame: its first update in beat 2 comes 80 ms after it lands.
+    // Through update() itself, which must hand the shot on to the game
+    at(580);
+    grunt.isSpawning = false;
+    expect(grunt.update(150, 0, 10)?.owner).toBe('enemy-grunt');
+    expect(grunt.pose().flash).toBeGreaterThan(0.9);
+  });
+
+  it('sulks through the beat it held its fire on, and is over it by the next', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1); // under the skip chance
+    const { floatingText, context, at } = world();
+    const grunt = new Grunt(0, 0, 'grunt', { context }, createMockP5(), null);
+    grunt.isSpawning = false;
+    // Through update(), which keeps the beat the grunt is drawn at
+    for (let ms = 0; ms <= 600; ms += 10) {
+      at(ms);
+      grunt.update(150, 0, 10);
+    }
+    expect(floatingText.addText).toHaveBeenCalled(); // the ? of beat 2
+    expect(grunt.pose().droop).toBeGreaterThan(0.9);
+    at(1010); // beat 3
+    grunt.update(150, 0, 10);
+    expect(grunt.pose().droop).toBe(0);
+  });
+});

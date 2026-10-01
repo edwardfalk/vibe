@@ -116,6 +116,13 @@ describe('BeatClock', () => {
       expect(clock.cache.totalBeats).toBe(2);
     });
 
+    it('getBeatPosition is the total beats plus the phase, from one reading', () => {
+      mockCtx.currentTime = 1.3; // 2.6 beats at 120 bpm
+      expect(clock.getBeatPosition()).toBeCloseTo(2.6, 9);
+      mockCtx.currentTime = 1.5;
+      expect(clock.getBeatPosition()).toBeCloseTo(3, 9);
+    });
+
     it('getCurrentBeat cycles 0-3 across a full measure', () => {
       // 120 BPM = 0.5s per beat
       // Beat 0: t=0.0s, Beat 1: t=0.5s, Beat 2: t=1.0s, Beat 3: t=1.5s
