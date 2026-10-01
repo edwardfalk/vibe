@@ -1,6 +1,6 @@
 /**
- * espeak-ng compiled to WebAssembly (js/vendor/espeak-ng, GPL-3): English
- * text in one of espeak-ng's voice variants.
+ * espeak-ng, compiled to JavaScript by Emscripten (its wasm2js build;
+ * js/vendor/espeak-ng, GPL-3): English text in one of its voice variants.
  */
 import createModule from '../../../vendor/espeak-ng/espeak-ng.js';
 
@@ -56,18 +56,28 @@ export async function render(text, { variant, pitch, range, speed }) {
     throw new Error(`espeak-ng has no voice variant "${variant}"`);
   }
   const name = `en-us+${variant}`;
-  if (engine.voice !== name) {
-    engine.synth.set_voice(name); // costs a few ms, so only on a change
-    engine.voice = name;
-  }
-  engine.synth.set_rate(speed);
-  engine.synth.set_pitch(pitch);
-  engine.synth.set_range(range);
   const chunks = [];
-  engine.synth.synthesize(text, (chunk) => {
-    if (chunk) chunks.push(chunk);
-    return false; // keep going
-  });
+  try {
+    if (engine.voice !== name) {
+      engine.synth.set_voice(name); // costs a few ms, so only on a change
+      engine.voice = name;
+    }
+    engine.synth.set_rate(speed);
+    engine.synth.set_pitch(pitch);
+    engine.synth.set_range(range);
+    engine.synth.synthesize(text, (chunk) => {
+      if (chunk) chunks.push(chunk);
+      return false; // keep going
+    });
+  } catch (cause) {
+    // Anything thrown inside the engine is an abort: it is dead from here on
+    throw Object.assign(
+      new Error(`espeak-ng crashed: ${cause?.message ?? cause}`),
+      {
+        fatal: true,
+      }
+    );
+  }
   const samples = new Float32Array(chunks.reduce((n, c) => n + c.length, 0));
   let at = 0;
   for (const chunk of chunks) {

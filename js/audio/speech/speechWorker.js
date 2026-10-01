@@ -23,9 +23,9 @@ export async function renderRequest({ engine, text, voice, targetDb }) {
   };
 }
 
-// A WebAssembly crash leaves espeak-ng dead for good, and so does a failed load
-const isFatal = (error) =>
-  error?.fatal === true || error instanceof WebAssembly.RuntimeError;
+// An engine that crashed or failed to load marks its error fatal: it is
+// dead for the rest of the session
+const isFatal = (error) => error?.fatal === true;
 
 async function handle(message) {
   if (message.type === 'variants') return { variants: await espeak.variants() };
