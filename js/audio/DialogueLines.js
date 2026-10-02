@@ -136,6 +136,9 @@ export const TANK_LINES = [
   'SIZE MATTERS!',
   'BIG MUSCLES!',
   'ALPHA MALE!',
+  'NOT ON THE LIST!',
+  "YOU'RE NOT GETTING IN!",
+  'NO SNEAKERS!',
 ];
 
 function pickRandomLine(lines, randomFn = Math.random, floorFn = Math.floor) {

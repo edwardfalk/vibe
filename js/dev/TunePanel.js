@@ -1,12 +1,13 @@
 /**
  * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK, SKY, PACING,
- * MIX, RUSHER, TANK_ARMOR, HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
+ * MIX, RUSHER, TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
+ * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the
  * stabber's knockback and the hero's
  * shield, healing, knockback, the damage hits do to him and his head size,
  * and each speaker's voice (a new pick says a sample line). Sound and spawn changes apply from the next
  * beat or wave; level thresholds from the next level-up (the first one after
- * a restart); armour on tanks spawned after the change; the rest at once.
+ * a restart); armour on tanks spawned after the change (and the tank's health); the rest at once.
  * To keep a setting, copy the JSON at the bottom into js/config.js.
  */
 
@@ -24,6 +25,9 @@ const RUSHER = 'RUSHER';
 const HITBOX = 'HITBOX';
 const SKY = 'SKY';
 const GRUNT = 'GRUNT_LOOK';
+const TANK = 'TANK';
+const TANK_LOOK = 'TANK_LOOK';
+const BOMB = 'BOMB';
 
 // The voices this browser has; Chrome fills the list in a moment after load
 const voiceChoices = () => [
@@ -84,6 +88,21 @@ const KNOBS = [
   [RUSHER, 'EXPLOSION_DAMAGE', [5, 100, 5]],
   ['TANK_ARMOR', 'FRONT', [0, 200, 5]],
   ['TANK_ARMOR', 'SIDE', [0, 150, 5]],
+  [TANK, 'HEALTH', [10, 200, 5]],
+  [TANK, 'TURN_STEP_DEG', [5, 180, 5]],
+  [TANK, 'TURN_SEC', [0.05, 1.9, 0.05]], // under one bar at 120 BPM
+  [TANK, 'AIM_ARC_DEG', [10, 180, 5]],
+  [TANK, 'AIM_TAU_SEC', [0, 1, 0.05]],
+  [TANK, 'DRIFT_PX_S', [0, 60, 1]],
+  [TANK, 'LURCH_PX_S', [0, 300, 5]],
+  [TANK, 'LURCH_TAU_SEC', [0.05, 1, 0.01]],
+  [TANK, 'LURCH_MIN_DIST_PX', [0, 400, 10]],
+  [TANK_LOOK, 'ART_SCALE', [0.6, 1.6, 0.05]],
+  [TANK_LOOK, 'SWAGGER', [0, 2, 0.1]],
+  [BOMB, 'FUSE_BEATS', [2, 16, 1]],
+  [BOMB, 'RADIUS_PX', [80, 400, 10]],
+  [BOMB, 'ENEMY_DAMAGE_MAX', [0, 100, 5]],
+  [BOMB, 'PLAYER_DAMAGE_MAX', [0, 100, 5]],
   [HITBOX, 'SHOW'],
   [HITBOX, 'grunt', [8, 50, 1]],
   [HITBOX, 'rusher', [8, 50, 1]],
@@ -107,12 +126,14 @@ const KNOBS = [
   ['PLAYER', 'DAMAGE_GRUNT_BULLET', [0, 30, 1]],
   ['PLAYER', 'DAMAGE_TANK_BALL', [0, 100, 1]],
   ['PLAYER', 'DAMAGE_STAB', [0, 60, 1]],
+  ['PLAYER', 'DAMAGE_TANK_SHOVE', [0, 60, 1]],
   ['PLAYER', 'HEAD_SIZE', [0.25, 0.6, 0.01]],
   ['PLAYER', 'KNOCKBACK_DECAY', [0, 0.98, 0.01]],
   ['PLAYER', 'KNOCKBACK_STAB', [0, 30, 0.5]],
   ['PLAYER', 'KNOCKBACK_RUSHER_BLAST', [0, 30, 0.5]],
   ['PLAYER', 'KNOCKBACK_AREA', [0, 30, 0.5]],
   ['PLAYER', 'KNOCKBACK_BOMB', [0, 30, 0.5]],
+  ['PLAYER', 'KNOCKBACK_TANK_SHOVE', [0, 30, 0.5]],
   ...SPEAKERS.map((speaker) => ['VOICES', speaker, voiceChoices]),
 ];
 

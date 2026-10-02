@@ -43,5 +43,13 @@ describe('dialogue lines', () => {
     expect(SPEAKER_LINES.player).toEqual(
       expect.arrayContaining(['3', '2', '1'])
     );
+    // The Bouncer's lines (docs/superpowers/specs/2026-10-01-bouncer-tank-design.md)
+    expect(SPEAKER_LINES.tank).toEqual(
+      expect.arrayContaining([
+        'NOT ON THE LIST!',
+        "YOU'RE NOT GETTING IN!",
+        'NO SNEAKERS!',
+      ])
+    );
   });
 });
