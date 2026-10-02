@@ -3,11 +3,12 @@ import { Bullet } from './bullet.js';
 import {
   floor,
   random,
-  sqrt,
-  sin,
   cos,
+  sin,
   PI,
   normalizeAngle,
+  smooth,
+  clamp01,
 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
@@ -18,10 +19,20 @@ import {
   TANK_FIRE,
   TANK_CHARGING,
 } from '../audio/DialogueLines.js';
+import {
+  TANK_COLORS,
+  tankMuzzle,
+  turnStep,
+  nextGunRel,
+} from './TankRenderer.js';
 
 const TANK_POWER_SOUND_CHANCE = 0.5; // per beat 1 while charging
 // Per attempt once the speech timer is up (= today's effective rate)
 const TANK_SPEECH_CHANCE = 0.025;
+const BEATS_PER_BAR = 4;
+const POWER_UP_BEATS = 4; // the charge's second bar opens with a power-up tone
+const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
+const DEG = PI / 180;
 
 const PI_4 = PI / 4;
 const THREE_PI_4 = (3 * PI) / 4;
@@ -70,18 +81,32 @@ class Tank extends BaseEnemy {
     const tankConfig = {
       ...config,
       size: 50,
-      health: 60,
-      speed: 0.3,
-      color: p.color(138, 43, 226), // Blue violet - massive
+      health: CONFIG.TANK.HEALTH,
+      speed: CONFIG.TANK.DRIFT_PX_S / FRAMES_PER_SEC,
+      color: p.color(...TANK_COLORS.skin),
     };
 
     super(x, y, 'tank', tankConfig, p, audio);
 
-    // Tank special charging system (beat-aligned)
+    // His body faces one way and turns only on beat 1; his gun swings
+    // within an arc of that facing (TankRenderer.js has the geometry).
+    // He spawns facing the hero
+    const hero = this.getContextValue('player');
+    this.facing = hero ? Math.atan2(hero.y - y, hero.x - x) : 0;
+    this.turn = { from: this.facing, to: this.facing, at: null };
+    this.gunRel = 0;
+    this.aimAngle = this.facing;
+    this.lastActedBar = null; // the bar he last acted on beat 1 of
+    this.kickAt = null; // when he did (a beat position)
+    this.lurchNow = 0; // this frame's lurch, 0 to 1 (drawn too)
+    this.poseBeats = null; // the beat position update() last kept
+
+    // His charge, on his bar clock (beat positions)
     this.chargingShot = false;
-    this.chargeStartBeat = -1; // Beat number when charge started
-    this.chargeDurationBeats = 8; // 2 measures (8 beats)
-    this._lastTankFireBeat = -100; // Last beat fired on
+    this.chargeStartBeat = -1;
+    this.chargeDurationBeats = CONFIG.TANK.CHARGE_BEATS;
+    this._lastTankFireBeat = -Infinity;
+    this.firedAt = null;
 
     // Tank anger system - tracks who damages it
     this.damageTracker = new Map(); // Track damage sources: enemyType -> count
@@ -101,19 +126,167 @@ class Tank extends BaseEnemy {
     };
   }
 
+  /** @override He keeps the beat position he is drawn at, and his gun is his aim */
+  update(playerX, playerY, deltaTimeMs) {
+    this.poseBeats =
+      this.getContextValue('beatClock')?.getBeatPosition() ?? null;
+    const bullet = super.update(playerX, playerY, deltaTimeMs);
+    // BaseEnemy.update pointed aimAngle at the hero; his aim is his gun's
+    this.aimAngle = this.facing + this.gunRel;
+    return bullet;
+  }
+
   /**
-   * Update specific tank behavior - heavy artillery
-   * @param {number} playerX - Player X position
-   * @param {number} playerY - Player Y position
-   * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
+   * Turn on beat 1, aim, drift and lurch, charge and fire, all on the beat
+   * clock. Returns his shot, or null.
    */
   updateSpecificBehavior(
     playerX,
     playerY,
     deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS
   ) {
-    // Tank anger system - update anger cooldown and targeting
-    const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS; // Normalize to 60fps baseline
+    const T = CONFIG.TANK;
+    this.updateAnger(deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS);
+    const target = this.target(playerX, playerY);
+    const toTarget = Math.atan2(target.y - this.y, target.x - this.x);
+    const distance = Math.hypot(target.x - this.x, target.y - this.y);
+    const beatClock = this.getContextValue('beatClock');
+    // The frame's one clock reading: update() kept the same one, and tests
+    // that call this directly get theirs here
+    const beats = beatClock?.getBeatPosition() ?? null;
+    this.poseBeats = beats;
+    const beatSec = (beatClock?.beatInterval ?? 0) / 1000;
+
+    // Beat 1: the first update in a bar he hasn't acted in, however late in
+    // that bar. First seen past beat 1 (a spawn ending mid-bar), he notes
+    // the bar and waits for the next
+    let fire = false;
+    if (beats !== null) {
+      this.facing = this.facingAt(beats, beatSec);
+      const bar = Math.floor(beats / BEATS_PER_BAR);
+      if (this.lastActedBar === null && beats - bar * BEATS_PER_BAR >= 1) {
+        this.lastActedBar = bar;
+      } else if (bar !== this.lastActedBar) {
+        this.lastActedBar = bar;
+        this.kickAt = beats;
+        fire = this.onKick(bar * BEATS_PER_BAR, toTarget, distance);
+      }
+      this.facing = this.facingAt(beats, beatSec);
+    }
+    this.gunRel = nextGunRel(
+      this.gunRel,
+      this.facing,
+      toTarget,
+      T.AIM_ARC_DEG * DEG,
+      deltaTimeMs / 1000,
+      T.AIM_TAU_SEC
+    );
+
+    // A slow drift toward his target, and a lurch along his facing from
+    // when he acted on beat 1; closer than LURCH_MIN_DIST_PX he holds still
+    const near = distance <= T.LURCH_MIN_DIST_PX;
+    this.lurchNow =
+      near || beats === null || this.kickAt === null
+        ? 0
+        : Math.exp(-((beats - this.kickAt) * beatSec) / T.LURCH_TAU_SEC);
+    const drift = near ? 0 : T.DRIFT_PX_S;
+    const lurch = T.LURCH_PX_S * this.lurchNow;
+    this.velocity.x =
+      (Math.cos(toTarget) * drift + Math.cos(this.facing) * lurch) /
+      FRAMES_PER_SEC;
+    this.velocity.y =
+      (Math.sin(toTarget) * drift + Math.sin(this.facing) * lurch) /
+      FRAMES_PER_SEC;
+
+    if (!fire) return null;
+    this.chargingShot = false;
+    this.firedAt = beats;
+    this.getContextValue('audio')?.speak(this, TANK_FIRE, 'tank');
+    return this.createBullet();
+  }
+
+  /**
+   * Beat 1 (kickBeat is the bar's start, counting the charge in bars): turn
+   * toward the target, then start a charge, power it up or call the shot.
+   * Returns true when the charged shot is due.
+   */
+  onKick(kickBeat, toTarget, distance) {
+    const T = CONFIG.TANK;
+    const step = turnStep(
+      this.facing,
+      toTarget,
+      T.TURN_STEP_DEG * DEG,
+      T.TURN_DEADZONE_DEG * DEG
+    );
+    if (step !== 0) {
+      this.turn = {
+        from: this.facing,
+        to: this.facing + step,
+        at: this.kickAt,
+      };
+    }
+    const audio = this.getContextValue('audio');
+    if (this.chargingShot) {
+      const since = kickBeat - this.chargeStartBeat;
+      if (since >= this.chargeDurationBeats) {
+        this._lastTankFireBeat = kickBeat;
+        return true;
+      }
+      if (random() < TANK_POWER_SOUND_CHANCE) {
+        audio?.playSound('tankPower', this.x, this.y);
+      }
+      // A tone, no line: "CHARGING!" and "FIRE!" 4 s apart both clear the
+      // 2.5 s cooldown all voices share; the tones carry the attack
+      if (since === POWER_UP_BEATS) {
+        audio?.playSound('tankPowerUp', this.x, this.y);
+      }
+      return false;
+    }
+    if (
+      distance < T.CHARGE_RANGE_PX &&
+      kickBeat - this._lastTankFireBeat >= T.RECHARGE_BEATS
+    ) {
+      this.chargingShot = true;
+      this.chargeStartBeat = kickBeat;
+      audio?.speak(this, TANK_CHARGING, 'tank');
+      audio?.playSound('tankCharging', this.x, this.y);
+    }
+    return false;
+  }
+
+  /** His facing at a beat position: along the latest turn's ease, then held */
+  facingAt(beats, beatSec) {
+    const { from, to, at } = this.turn;
+    if (at === null || beatSec <= 0) return to;
+    return (
+      from +
+      (to - from) *
+        smooth(clamp01(((beats - at) * beatSec) / CONFIG.TANK.TURN_SEC))
+    );
+  }
+
+  /** Who he is after: the hero, or while angry the nearest live alien of that kind */
+  target(playerX, playerY) {
+    if (this.isAngry && this.angerTarget) {
+      let best = null;
+      let bestD = Infinity;
+      for (const e of this.getContextValue('enemies') ?? []) {
+        if (e === this || e.markedForRemoval || e.type !== this.angerTarget) {
+          continue;
+        }
+        const d = (e.x - this.x) ** 2 + (e.y - this.y) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = e;
+        }
+      }
+      if (best) return best;
+    }
+    return { x: playerX, y: playerY };
+  }
+
+  /** His anger runs down; once it has, he says so on the next beat 1 */
+  updateAnger(dt) {
     if (this.isAngry) {
       this.angerCooldown -= dt;
       if (this.angerCooldown <= 0) {
@@ -123,137 +296,16 @@ class Tank extends BaseEnemy {
         this.calmLinePending = true; // said on the next beat 1
       }
     }
-
-    if (this.calmLinePending) {
-      const audio = this.getContextValue('audio');
-      const beatClock = this.getContextValue('beatClock');
-      if (
-        !beatClock ||
-        this.onBeatOnce(beatClock, 'calmLine', beatClock.isOnBeat([1]))
-      ) {
-        this.calmLinePending = false;
-        if (audio) audio.speak(this, random(TANK_CALM_LINES), 'tank');
-      }
-    }
-
-    // Calculate movement towards target (player or angry target)
-    let targetX = playerX;
-    let targetY = playerY;
-
-    // Tank anger targeting - find nearest enemy of angry target type
-    const enemies = this.getContextValue('enemies');
-    if (this.isAngry && this.angerTarget && enemies) {
-      let nearestAngryTarget = null;
-      let nearestDistance = Infinity;
-
-      for (const enemy of enemies) {
-        if (enemy.type === this.angerTarget && enemy !== this) {
-          const dist = sqrt((enemy.x - this.x) ** 2 + (enemy.y - this.y) ** 2);
-          if (dist < nearestDistance) {
-            nearestDistance = dist;
-            nearestAngryTarget = enemy;
-          }
-        }
-      }
-
-      if (nearestAngryTarget) {
-        targetX = nearestAngryTarget.x;
-        targetY = nearestAngryTarget.y;
-      }
-    }
-
-    const dx = targetX - this.x;
-    const dy = targetY - this.y;
-    const distance = sqrt(dx * dx + dy * dy);
-
-    // Tank movement - very slow and steady
-    this.velocity.x = 0;
-    this.velocity.y = 0;
-
-    if (distance > 0) {
-      const unitX = dx / distance;
-      const unitY = dy / distance;
-
-      // Tanks move very slowly but relentlessly
-      this.velocity.x = unitX * this.speed;
-      this.velocity.y = unitY * this.speed;
-    }
-
-    const audioTank = this.getContextValue('audio');
+    if (!this.calmLinePending) return;
+    const audio = this.getContextValue('audio');
     const beatClock = this.getContextValue('beatClock');
-    const rhythmFX = this.getContextValue('rhythmFX');
-
-    // Handle charging shot system (beat-aligned)
-    if (!beatClock) return null;
-
-    if (this.chargingShot) {
-      const beatsSinceCharge = beatClock.getTotalBeats() - this.chargeStartBeat;
-
-      // Charge-up sound on beat 1 during charge
-      if (
-        this.onBeatOnce(beatClock, 'powerSound', beatClock.isOnBeat([1])) &&
-        random() < TANK_POWER_SOUND_CHANCE
-      ) {
-        if (audioTank) audioTank.playSound('tankPower', this.x, this.y);
-      }
-
-      // Power-up tone four beats into the charge. No line here: "CHARGING!"
-      // and "FIRE!" 4 s apart both clear the 2.5 s cooldown all voices share.
-      // With several tanks, some of their lines are still dropped; the tones
-      // carry the attack either way
-      if (
-        beatsSinceCharge >= 4 &&
-        beatsSinceCharge < 5 &&
-        audioTank &&
-        this.onBeatOnce(beatClock, 'chargeMilestone', beatClock.isOnBeat([1]))
-      ) {
-        audioTank.playSound('tankPowerUp', this.x, this.y);
-      }
-
-      // Fire when charge complete AND on beat 1
-      if (
-        beatsSinceCharge >= this.chargeDurationBeats &&
-        beatClock.canTankShoot()
-      ) {
-        this.chargingShot = false;
-        this._lastTankFireBeat = beatClock.getTotalBeats();
-
-        if (audioTank) {
-          audioTank.speak(this, TANK_FIRE, 'tank');
-        }
-
-        return this.createBullet();
-      }
-    } else {
-      // Start charge on beat 1, within range, with cooldown since last fire
-      const beatsSinceLastFire =
-        beatClock.getTotalBeats() - this._lastTankFireBeat;
-      if (
-        distance < 400 &&
-        beatsSinceLastFire >= 8 &&
-        beatClock.canTankShoot()
-      ) {
-        this.chargingShot = true;
-        this.chargeStartBeat = beatClock.getTotalBeats();
-        if (audioTank) {
-          audioTank.speak(this, TANK_CHARGING, 'tank');
-          audioTank.playSound('tankCharging', this.x, this.y);
-        }
-
-        // Telegraph the upcoming fire
-        if (rhythmFX) {
-          rhythmFX.addAttackTelegraph(
-            this.x,
-            this.y,
-            'tank',
-            this.chargeDurationBeats,
-            this
-          );
-        }
-      }
+    if (
+      !beatClock ||
+      this.onBeatOnce(beatClock, 'calmLine', beatClock.isOnBeat([1]))
+    ) {
+      this.calmLinePending = false;
+      if (audio) audio.speak(this, random(TANK_CALM_LINES), 'tank');
     }
-
-    return null;
   }
 
   /** @override */
@@ -419,15 +471,18 @@ class Tank extends BaseEnemy {
    * Create tank's devastating energy ball
    */
   createBullet() {
-    const bulletDistance = this.size * 0.9;
-    const bulletX = this.x + cos(this.aimAngle) * bulletDistance;
-    const bulletY = this.y + sin(this.aimAngle) * bulletDistance;
-
-    // Devastating slow energy ball with owner ID
+    // From the cannon's muzzle, along his gun (TankRenderer.js)
+    const { x, y } = tankMuzzle(
+      this.x,
+      this.y,
+      this.size * CONFIG.TANK_LOOK.ART_SCALE,
+      this.facing,
+      this.gunRel
+    );
     const bullet = Bullet.acquire(
-      bulletX,
-      bulletY,
-      this.aimAngle,
+      x,
+      y,
+      this.facing + this.gunRel,
       2,
       'enemy-tank'
     );
