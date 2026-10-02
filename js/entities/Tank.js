@@ -26,6 +26,10 @@ const POWER_UP_BEATS = 4; // the charge's second bar opens with a power-up tone
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const DEG = PI / 180;
 
+// The beat a hero was last shoved on, by any tank. A shove lands only on a
+// beat's first update, so this keeps it to one a frame from all tanks
+const shovedOnBeat = new WeakMap();
+
 // The armour plates. `side` is the direction it breaks off in, and `rect`
 // where it is drawn (plate thickness, plate length, chassis side y, chassis
 // front x)
@@ -93,6 +97,9 @@ class Tank extends BaseEnemy {
     this.chargeDurationBeats = CONFIG.TANK.CHARGE_BEATS;
     this._lastTankFireBeat = -Infinity;
     this.firedAt = null;
+    this.lastBeat = null; // the last beat he saw, for the shove
+    this.lastShoveBeat = -Infinity;
+    this.shovedAt = null;
 
     // Tank anger system - tracks who damages it
     this.damageTracker = new Map(); // Track damage sources: enemyType -> count
@@ -190,6 +197,15 @@ class Tank extends BaseEnemy {
       (Math.sin(toTarget) * drift + Math.sin(this.facing) * lurch) /
       FRAMES_PER_SEC;
 
+    // Any new beat: a hero in front of him gets shoved
+    if (beats !== null) {
+      const beat = Math.floor(beats);
+      if (this.lastBeat !== null && beat !== this.lastBeat) {
+        this.tryShove(beat, beats);
+      }
+      this.lastBeat = beat;
+    }
+
     if (!fire) return null;
     this.chargingShot = false;
     this.firedAt = beats;
@@ -244,6 +260,28 @@ class Tank extends BaseEnemy {
       audio?.playSound('tankCharging', this.x, this.y);
     }
     return false;
+  }
+
+  /**
+   * The bouncer's shove, on the beat: a hero within reach and on his front
+   * side is hit and knocked back, at most once per SHOVE_COOLDOWN_BEATS from
+   * him and once a frame from all tanks. A real hit, so the shield takes it
+   * whole; the knockback happens either way, as the rusher's blast does.
+   */
+  tryShove(beatIndex, beats) {
+    if (beatIndex - this.lastShoveBeat < CONFIG.TANK.SHOVE_COOLDOWN_BEATS) {
+      return;
+    }
+    const hero = this.getContextValue('player');
+    if (!hero || !this.checkCollision(hero)) return;
+    const toHero = Math.atan2(hero.y - this.y, hero.x - this.x);
+    if (tankSide(toHero - this.facing) !== 'front') return;
+    if (shovedOnBeat.get(hero) === beatIndex) return;
+    shovedOnBeat.set(hero, beatIndex);
+    this.lastShoveBeat = beatIndex;
+    this.shovedAt = beats;
+    if (hero.hurt(CONFIG.PLAYER.DAMAGE_TANK_SHOVE, 'tank-shove')) return;
+    hero.knockBack(this.x, this.y, CONFIG.PLAYER.KNOCKBACK_TANK_SHOVE);
   }
 
   /** His facing at a beat position: along the latest turn's ease, then held */
