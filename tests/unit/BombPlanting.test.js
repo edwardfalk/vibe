@@ -66,9 +66,11 @@ describe("planting the hero's bomb", () => {
       touch({ x: -60, y: 0 }, [touchingTank(1)], activeBombs, audio);
     }
     expect(activeBombs).toHaveLength(1);
-    // Forced past the cooldown all voices share, as the count is
+    // From the hero (no speaker is the hero), so the shout shows over him
+    // and not under the count on the bomb; forced past the cooldown all
+    // voices share, as the count is
     expect(audio.speak.mock.calls).toEqual([
-      [activeBombs[0], 'TIMEBOMB!', 'player', true],
+      [null, 'TIMEBOMB!', 'player', true],
     ]);
   });
 
@@ -144,22 +146,32 @@ describe('the bomb, on the beat', () => {
     expect(activeBombs).toHaveLength(0);
   });
 
-  it('with a shorter fuse, says no word before its count starts', () => {
+  it('with a shorter fuse, drops the words that would come before its count starts', () => {
     const saved = CONFIG.BOMB.FUSE_BEATS;
-    CONFIG.BOMB.FUSE_BEATS = 4;
-    try {
-      const { activeBombs, audio, ticks, now } = setup();
-      const at = [];
-      audio.speak.mockImplementation(() => (at.push(now()), true));
-      ticks(10.5, 15.75);
-      // The last even beats before the bang: "2" on beat 0, "1" on beat 2
-      expect(said(audio).map(([w]) => w)).toEqual(['2', '1']);
-      expect(at).toEqual([12, 14]);
-      expect(activeBombs).toHaveLength(1);
-      ticks(16, 16);
-      expect(activeBombs).toHaveLength(0);
-    } finally {
-      CONFIG.BOMB.FUSE_BEATS = saved;
+    // [fuse, words, the beats they're said on, the bang]: the last even
+    // beats before the bang, from its beat 0 (beat 12) on
+    for (const [fuse, words, beats, bang] of [
+      [4, ['2', '1'], [12, 14], 16],
+      [5, ['2', '1'], [13, 15], 17],
+      [3, ['1'], [13], 15],
+    ]) {
+      CONFIG.BOMB.FUSE_BEATS = fuse;
+      try {
+        const { activeBombs, audio, ticks, now } = setup();
+        const at = [];
+        audio.speak.mockImplementation(() => (at.push(now()), true));
+        ticks(10.5, bang - 0.25);
+        expect(
+          said(audio).map(([w]) => w),
+          `fuse ${fuse}`
+        ).toEqual(words);
+        expect(at, `fuse ${fuse}`).toEqual(beats);
+        expect(activeBombs).toHaveLength(1);
+        ticks(bang, bang);
+        expect(activeBombs, `fuse ${fuse}`).toHaveLength(0);
+      } finally {
+        CONFIG.BOMB.FUSE_BEATS = saved;
+      }
     }
   });
 

@@ -20,7 +20,6 @@ import { BOMB_PLANTED } from '../audio/DialogueLines.js';
 
 const COUNT_WORDS = ['3', '2', '1'];
 const COUNT_EVERY_BEATS = 2;
-const COUNT_LEAD_BEATS = 1; // "TIMEBOMB!" gets at least this long before the count
 const AMBER_LEFT = 0.34; // its light goes white-hot for the last third
 // Its look, at size 50 (the prototype's numbers, in px): a halo, the body,
 // the hero's band, a glint, the light and the blink's ring
@@ -46,7 +45,7 @@ const backOf = (tank) =>
 // Beats since its beat 0, the first whole beat at least COUNT_LEAD_BEATS
 // after it was planted
 const fuseOf = (bomb, beats) =>
-  beats - Math.ceil(bomb.plantedAt + COUNT_LEAD_BEATS);
+  beats - Math.ceil(bomb.plantedAt + CONFIG.BOMB.COUNT_LEAD_BEATS);
 // Its damage at a point: from hi at its centre to lo at its reach, 0 beyond;
 // never above hi, so a max of 0 deals none
 function blastAt(bomb, x, y, lo, hi) {
@@ -75,7 +74,9 @@ export function plantBomb(activeBombs, tank, beatClock, audio = null) {
     tankId: tank.id,
     tankRef: tank,
   });
-  audio?.speak?.(activeBombs.at(-1), BOMB_PLANTED, 'player', true);
+  // From the hero (no speaker is the hero), so it shows over him and not
+  // under the count on the bomb
+  audio?.speak?.(null, BOMB_PLANTED, 'player', true);
 }
 
 export function updateBombs(context) {
@@ -120,9 +121,13 @@ export function updateBombs(context) {
         COUNT_WORDS.length,
         floor((fuse - first) / COUNT_EVERY_BEATS) + 1
       );
-      if (fuse >= 0 && due > bomb.said) {
+      if (due > bomb.said) {
         bomb.said = due;
-        audio?.speak?.(bomb, COUNT_WORDS[due - 1], 'player', true);
+        // A word whose beat came before beat 0 counts as said, unspoken
+        const wordAt = first + (due - 1) * COUNT_EVERY_BEATS;
+        if (wordAt >= 0) {
+          audio?.speak?.(bomb, COUNT_WORDS[due - 1], 'player', true);
+        }
       }
       continue;
     }
@@ -216,7 +221,9 @@ export function drawBombs(p, activeBombs) {
     const facing = tank && !tank.markedForRemoval ? tank.facing : bomb.facing;
     const beats = bomb.seenAt;
     const left = 1 - clamp01(fuseOf(bomb, beats) / B.FUSE_BEATS);
-    const age = Math.max(0, (beats - bomb.plantedAt) * bomb.beatSec);
+    // Its blink speeds up from its beat 0, as the prototype's did from a
+    // 6-beat fuse's start; it holds lit until then
+    const age = Math.max(0, fuseOf(bomb, beats) * bomb.beatSec);
     const blinks = 2 * age + (14 / 27) * age ** 3; // faster and faster
     const on = blinks % 1 < 0.45;
     const lit = left < AMBER_LEFT ? C.hot : C.amber;
