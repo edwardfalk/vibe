@@ -129,14 +129,33 @@ const CONFIG = {
     LEVEL_EASE_SEC: 0.5, // how fast the sky follows a level change (floor 0.05)
   },
 
-  // Rusher fuse and blast. Shot (or close enough), a rusher brakes to a stop
-  // and blows on the first beat 1 or 3 after FUSE_MIN_MS, so a player who
-  // runs gets away. Tune live with ?tune.
+  // The rusher, a stuntman on a rocket (js/entities/Rusher.js). He steers
+  // only on the beat: each new beat he turns toward the hero by at most
+  // TURN_STEP_DEG and his booster sets his speed to BOOST_PX_S, which coasts
+  // down toward CRUISE_PX_S. Shot, or this close to the hero, he lights: he
+  // brakes and blows on the first beat 1 or 3 at least FUSE_MIN_BEATS on,
+  // hurting everything within EXPLOSION_RADIUS. Shots push him (PUSH). Tune
+  // live with ?tune.
   RUSHER: {
-    FUSE_MIN_MS: 1000, // shortest fuse; the blast waits for beat 1 or 3 after it
-    BRAKE: 0.85, // share of speed kept per frame while lit (0 = instant stop)
+    BOOST_PX_S: 330, // his speed right after each beat's boost
+    CRUISE_PX_S: 150, // what it coasts down toward
+    BOOST_TAU_SEC: 0.22, // how fast it coasts down
+    CHARGE_BOOST: 1.25, // after his battle cry his speed is this much higher
+    TURN_STEP_DEG: 100, // the most he turns on one beat
+    TURN_SEC: 0.12, // how long that turn takes
+    CRY_DIST_PX: 150, // his battle cry, this close to the hero
+    PASS_DIST_PX: 160, // the hero getting behind him this close is shooting past
+    LIGHT_DIST_PX: 50, // he lights this close to the hero, unshot
+    FUSE_MIN_BEATS: 2, // he blows on the first beat 1 or 3 at least this far on
+    BRAKE: 0.85, // share of speed kept per 60 Hz frame while lit (0 = instant stop)
+    PUSH: true, // shots push him along their path
+    PUSH_PX_S: 260, // a shot sets his speed to this, along it
+    PUSH_KEEP: 0.3, // plus this share of what it was
+    PUSH_BRAKE: 0.95, // and once pushed he brakes this gently, so he slides
+    FLIP_COS: 0.3, // drawn upright, he turns round once |cos(heading)| passes this
     EXPLOSION_RADIUS: 150,
     EXPLOSION_DAMAGE: 35,
+    CRASH_VOLUME: 1, // the crash's level, times SoundConfig's rusherCrash
   },
 
   // Hazard clouds. A tank's death leaves plasma; the hero's bomb leaves plasma and
@@ -164,7 +183,7 @@ const CONFIG = {
   HITBOX: {
     SHOW: false,
     grunt: 22,
-    rusher: 14,
+    rusher: 18, // the stuntman's rocket and rider
     stabber: 18,
     tank: 55, // the Bouncer's shoulders reach about 65 px
   },

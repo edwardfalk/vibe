@@ -1,6 +1,6 @@
 /**
  * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK, SKY, PACING,
- * MIX, RUSHER, TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
+ * MIX, the rusher's flight, fuse, push and blast (RUSHER), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the
  * stabber's knockback and the hero's
@@ -82,10 +82,21 @@ const KNOBS = [
   [MIX, 'DUCK_SFX_DB', [-24, 0, 1]],
   [MIX, 'DUCK_BEAT_DB', [-24, 0, 1]],
   [MIX, 'DUCK_RELEASE_SEC', [0.05, 1.5, 0.05]],
-  [RUSHER, 'FUSE_MIN_MS', [0, 3000, 100]],
+  [RUSHER, 'BOOST_PX_S', [0, 600, 10]],
+  [RUSHER, 'CRUISE_PX_S', [0, 400, 10]],
+  [RUSHER, 'BOOST_TAU_SEC', [0.02, 1, 0.01]],
+  [RUSHER, 'CHARGE_BOOST', [1, 2, 0.05]],
+  [RUSHER, 'TURN_STEP_DEG', [10, 180, 5]],
+  [RUSHER, 'LIGHT_DIST_PX', [10, 150, 5]],
+  [RUSHER, 'FUSE_MIN_BEATS', [1, 8, 1]],
   [RUSHER, 'BRAKE', [0, 0.99, 0.01]],
+  [RUSHER, 'PUSH'],
+  [RUSHER, 'PUSH_PX_S', [0, 600, 10]],
+  [RUSHER, 'PUSH_KEEP', [0, 1, 0.05]],
+  [RUSHER, 'PUSH_BRAKE', [0.5, 0.99, 0.01]],
   [RUSHER, 'EXPLOSION_RADIUS', [60, 300, 10]],
   [RUSHER, 'EXPLOSION_DAMAGE', [5, 100, 5]],
+  [RUSHER, 'CRASH_VOLUME', [0, 2, 0.05]],
   ['TANK_ARMOR', 'FRONT', [0, 200, 5]],
   ['TANK_ARMOR', 'SIDE', [0, 150, 5]],
   [TANK, 'HEALTH', [10, 200, 5]],

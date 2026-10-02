@@ -1,20 +1,31 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { random, sqrt, sin, min } from '../mathUtils.js';
+import { random, env, PI } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { RUSHER_LINES, RUSHER_BATTLE_CRIES } from '../audio/DialogueLines.js';
+import { turnStep, turnAt } from './TankRenderer.js';
 
 // Per attempt once the speech timer is up (= today's effective rate)
 const RUSHER_SPEECH_CHANCE = 0.03;
+const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
+const DEG = PI / 180;
+const STRONG_EVERY = 2; // beats 1 and 3: every second beat from a bar's start
+const LATE_BEATS = 0.5; // a blast this late moves on to the next 1 or 3
+const EPS = 1e-6; // slack on beat positions, for floating-point error
 
-// A lit rusher blows this long after its minimum fuse even if no beat 1 or 3
-// comes (a bar at 120 BPM, which has two)
-const FUSE_MAX_BEAT_WAIT_MS = 2000;
+/** The first beat 1 or 3 (an even beat position) at least `beats` after `from` */
+export function strongBeatAfter(from, beats) {
+  return Math.ceil((from + beats - EPS) / STRONG_EVERY) * STRONG_EVERY;
+}
+
+// Whole beats from `beats` to `blastBeat`, rounded up
+const beatsTo = (blastBeat, beats) => Math.ceil(blastBeat - beats - EPS);
 
 /**
- * Rusher class - Suicide bomber mechanics
- * Battle cry and charge when near; shot or at point-blank, it brakes to a stop
- * and explodes on beat 1 or 3 once the fuse has burnt (CONFIG.RUSHER)
+ * Rusher: the family's reckless little cousin, a stuntman on a rocket. He
+ * steers only on the beat and flies straight between, so a hero who dashes
+ * aside sees him shoot past. Shot, or close, he lights: he brakes and blows
+ * on the first beat 1 or 3 at least FUSE_MIN_BEATS on (CONFIG.RUSHER).
  */
 class Rusher extends BaseEnemy {
   constructor(x, y, type, config, p, audio) {
@@ -22,173 +33,246 @@ class Rusher extends BaseEnemy {
       ...config,
       size: 22,
       health: 1,
-      speed: 2.8,
-      color: p.color(255, 20, 147), // Deep pink - aggressive
+      speed: CONFIG.RUSHER.CRUISE_PX_S / FRAMES_PER_SEC,
+      color: p.color(255, 20, 147),
     };
-
     super(x, y, 'rusher', rusherConfig, p, audio);
 
-    this.hasScreamed = false;
-    this.chargeSoundPending = false;
-    this.chargeDistance = 150; // Distance to start battle cry and charge
-    this.explodeDistance = 50; // Distance that lights the fuse unshot
-
-    // Lit fuse: shot or close enough, the rusher brakes and waits for the
-    // blast (CONFIG.RUSHER)
-    this.vibrating = false;
-    this.fuseMs = 0;
+    // He flies along his heading and turns only on the beat. He spawns
+    // facing the hero
+    const hero = this.getContextValue('player');
+    this.heading = hero ? Math.atan2(hero.y - y, hero.x - x) : 0;
+    this.turn = { from: this.heading, to: this.heading, at: null };
+    this.aimAngle = this.heading;
+    this.speedNow = CONFIG.RUSHER.CRUISE_PX_S; // px/s
+    this.toHero = this.heading;
+    this.ahead = true; // the hero in front of him, to tell shooting past
+    this.seenBeats = null; // his last update's beat position, to tell a new beat and a stall
+    this.cried = false;
+    this.chargeSoundDue = false;
+    this.lit = null; // { at, by, blastBeat, beatsTotal } once lit
+    this.pushed = false;
+    this.pushDir = 0;
+    // When things happened to him, in beat positions (poseBeats), for drawing
+    this.boostAt = null;
+    this.cryAt = null;
+    this.whoaAt = null;
+    this.hitAt = null;
+    this.pushAt = null;
+    // The beat he is drawn at, kept by update(). Kept from here on, so a hit
+    // before his first update stamps a real beat
+    this.poseBeats =
+      this.getContextValue('beatClock')?.getBeatPosition() ?? null;
   }
 
-  /** 0 when lit, 1 once FUSE_MIN_MS has burnt (it then waits for the beat) */
-  get fuseProgress() {
-    const { FUSE_MIN_MS } = CONFIG.RUSHER;
-    return FUSE_MIN_MS > 0 ? min(this.fuseMs / FUSE_MIN_MS, 1) : 1;
+  /** @override He keeps the beat he is drawn at, aims along his flight and stays in the world */
+  update(playerX, playerY, deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
+    this.poseBeats =
+      this.getContextValue('beatClock')?.getBeatPosition() ?? null;
+    const result = super.update(playerX, playerY, deltaTimeMs);
+    // Lit, he brakes on every update, his spawn's included: BaseEnemy moves
+    // him then too [review-added 2026-10-02: Codex]
+    if (this.lit) this.brake(deltaTimeMs);
+    this.aimAngle = this.heading;
+    this.keepInWorld();
+    return result;
   }
 
-  lightFuse() {
-    this.vibrating = true;
-    this.fuseMs = 0;
-
-    const rhythmFX = this.getContextValue('rhythmFX');
-    const beatClock = this.getContextValue('beatClock');
-    if (rhythmFX && beatClock) {
-      // The blast comes on the strong beat after the minimum fuse
-      const beatsUntil = CONFIG.RUSHER.FUSE_MIN_MS / beatClock.beatInterval + 1;
-      rhythmFX.addAttackTelegraph(this.x, this.y, 'rusher', beatsUntil, this);
-    }
+  /** Lit: his velocity keeps BRAKE (PUSH_BRAKE once pushed) of itself per 60 Hz frame */
+  brake(deltaTimeMs) {
+    const R = CONFIG.RUSHER;
+    const keep =
+      (this.pushed ? R.PUSH_BRAKE : R.BRAKE) **
+      (deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS);
+    this.velocity.x *= keep;
+    this.velocity.y *= keep;
   }
 
   /**
-   * Brake to a stop, then explode on the first beat 1 or 3 after the
-   * minimum fuse
+   * Each update, in order: he is put back inside the world; whole beats the
+   * game sat out move his blast on; the charge sound waits for a new beat;
+   * lit, he blows on his beat; unlit, he cries when close, boosts and turns
+   * on each new beat, notes shooting past and lights closer still. Returns
+   * his blast, or null.
    */
-  burnFuse(deltaTimeMs) {
-    const { FUSE_MIN_MS, BRAKE, EXPLOSION_RADIUS, EXPLOSION_DAMAGE } =
-      CONFIG.RUSHER;
-    this.fuseMs += deltaTimeMs;
+  updateSpecificBehavior(
+    playerX,
+    playerY,
+    deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS
+  ) {
+    const R = CONFIG.RUSHER;
+    const clock = this.getContextValue('beatClock');
+    // Read the clock again (update() read it before BaseEnemy moved him):
+    // this reading is the one he keeps, and tests that call this directly
+    // get theirs here
+    const beats = clock?.getBeatPosition() ?? null;
+    this.poseBeats = beats;
+    const beatSec = (clock?.beatInterval ?? 0) / 1000;
+    // In the world before anything reads where he is: a blast at the wall
+    // goes off where he is [review-added 2026-10-02: Codex]
+    this.keepInWorld();
+    this.toHero = Math.atan2(playerY - this.y, playerX - this.x);
+    const distance = Math.hypot(playerX - this.x, playerY - this.y);
 
-    const keep = BRAKE ** (deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS);
-    this.velocity.x *= keep;
-    this.velocity.y *= keep;
-
-    if (this.fuseMs < FUSE_MIN_MS) return null;
-    const beatClock = this.getContextValue('beatClock');
-    const onBeat = !beatClock || beatClock.canRusherExplode();
-    if (!onBeat && this.fuseMs < FUSE_MIN_MS + FUSE_MAX_BEAT_WAIT_MS) {
-      return null;
+    const prev = this.seenBeats;
+    this.holdFuseThroughStall(beats);
+    // A new beat: his first update in a beat he hasn't seen, however late in
+    // it; a clock that jumps several beats gives one
+    const newBeat =
+      beats !== null && prev !== null && Math.floor(beats) !== Math.floor(prev);
+    if (newBeat && this.chargeSoundDue) {
+      this.chargeSoundDue = false;
+      this.getContextValue('audio')?.playSound('rusherCharge', this.x, this.y);
     }
 
+    if (this.lit) return this.blowOnBeat(beats);
+
+    if (!this.cried && distance <= R.CRY_DIST_PX) {
+      this.cried = true;
+      this.cryAt = beats;
+      this.chargeSoundDue = true;
+      this.getContextValue('audio')?.speak(
+        this,
+        random(RUSHER_BATTLE_CRIES),
+        'rusher'
+      );
+    }
+    // Where his last turn has got to, so a new beat's turn starts from there,
+    // however long since his last update [review-added 2026-10-02: Codex]
+    if (beats !== null) {
+      this.heading = turnAt(this.turn, beats, beatSec, R.TURN_SEC);
+    }
+    if (newBeat) {
+      const step = turnStep(
+        this.heading,
+        this.toHero,
+        R.TURN_STEP_DEG * DEG,
+        0
+      );
+      this.turn = { from: this.heading, to: this.heading + step, at: beats };
+      this.boostAt = beats;
+    }
+    if (beats !== null) {
+      this.heading = turnAt(this.turn, beats, beatSec, R.TURN_SEC);
+    }
+    const sinceBoost =
+      this.boostAt === null ? Infinity : (beats - this.boostAt) * beatSec;
+    this.speedNow =
+      (R.CRUISE_PX_S +
+        (R.BOOST_PX_S - R.CRUISE_PX_S) * env(sinceBoost, R.BOOST_TAU_SEC)) *
+      (this.cried ? R.CHARGE_BOOST : 1);
+    this.velocity.x = (Math.cos(this.heading) * this.speedNow) / FRAMES_PER_SEC;
+    this.velocity.y = (Math.sin(this.heading) * this.speedNow) / FRAMES_PER_SEC;
+
+    // Shooting past: the hero went from ahead of him to behind him, close by
+    const ahead = Math.cos(this.toHero - this.heading) > 0;
+    if (this.ahead && !ahead && distance < R.PASS_DIST_PX) this.whoaAt = beats;
+    this.ahead = ahead;
+
+    if (distance <= R.LIGHT_DIST_PX) this.light('hero');
+    return null;
+  }
+
+  /**
+   * Whole beats since his last update that the game sat out (a hidden tab,
+   * ?tune's "Sound while paused") move his blast on by as many, then on to
+   * the next beat 1 or 3, as the bomb's fuse holds. A fuse that grows past
+   * the beats he lit with grows his count too
+   */
+  holdFuseThroughStall(beats) {
+    const lit = this.lit;
+    if (lit?.blastBeat != null && beats !== null && this.seenBeats !== null) {
+      const missed = Math.floor(beats - this.seenBeats);
+      if (missed >= 1) {
+        lit.blastBeat = strongBeatAfter(lit.blastBeat + missed, 0);
+        lit.beatsTotal = Math.max(
+          lit.beatsTotal,
+          beatsTo(lit.blastBeat, beats)
+        );
+      }
+    }
+    this.seenBeats = beats;
+  }
+
+  /**
+   * Lit, he blows on his blast beat, never before it (update() brakes him).
+   * Half a beat or more after it (a hitstop or a slow frame across the
+   * beat), it moves on to the next beat 1 or 3, so every crash's nearest
+   * beat is 1 or 3. With no clock he never blows
+   */
+  blowOnBeat(beats) {
+    const R = CONFIG.RUSHER;
+    const lit = this.lit;
+    if (beats === null || lit.blastBeat === null) return null;
+    if (beats < lit.blastBeat - EPS) return null;
+    if (beats - lit.blastBeat >= LATE_BEATS) {
+      lit.blastBeat = strongBeatAfter(beats, 0);
+      lit.beatsTotal = Math.max(lit.beatsTotal, beatsTo(lit.blastBeat, beats));
+      return null;
+    }
     return {
       type: 'rusher-explosion',
       x: this.x,
       y: this.y,
-      radius: EXPLOSION_RADIUS,
-      damage: EXPLOSION_DAMAGE,
+      radius: R.EXPLOSION_RADIUS,
+      damage: R.EXPLOSION_DAMAGE,
+      chain: lit.by === 'blast',
     };
   }
 
   /**
-   * Update specific rusher behavior - suicide bombing
-   * @param {number} playerX - Player X position
-   * @param {number} playerY - Player Y position
-   * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
+   * Lights his fuse, once: his blast is the first beat 1 or 3 at least
+   * FUSE_MIN_BEATS on. Lit by a blast, he counts from the start of the beat
+   * it went off on, so a chain goes crash, two beats, crash
    */
-  updateSpecificBehavior(playerX, playerY, deltaTimeMs) {
-    if (this.vibrating) return this.burnFuse(deltaTimeMs);
-
-    const dx = playerX - this.x;
-    const dy = playerY - this.y;
-    const distance = sqrt(dx * dx + dy * dy);
-
-    if (distance <= this.explodeDistance) {
-      this.lightFuse();
-      // The charge sound plays once: on the beat after the battle cry, or
-      // here if the rusher closed in before that beat came
-      if (this.chargeSoundPending || !this.hasScreamed) {
-        this.chargeSoundPending = false;
-        const audio = this.getContextValue('audio') || this.audio;
-        if (audio) audio.playSound('rusherCharge', this.x, this.y);
-      }
-      return null;
+  light(by) {
+    if (this.lit) return;
+    const beats = this.poseBeats;
+    let blastBeat = null;
+    let beatsTotal = 0;
+    if (beats !== null) {
+      const from = by === 'blast' ? Math.floor(beats + EPS) : beats;
+      blastBeat = strongBeatAfter(from, CONFIG.RUSHER.FUSE_MIN_BEATS);
+      beatsTotal = beatsTo(blastBeat, beats);
     }
-
-    const unitX = dx / distance;
-    const unitY = dy / distance;
-
-    if (distance <= this.chargeDistance) {
-      // Battle cry and charge sequence
-      if (!this.hasScreamed) {
-        this.hasScreamed = true;
-
-        // Rusher scream with audio
-        const audio = this.getContextValue('audio') || this.audio;
-        if (audio) {
-          const battleCry = random(RUSHER_BATTLE_CRIES);
-          audio.speak(this, battleCry, 'rusher');
-
-          this.chargeSoundPending = true; // played on the next beat
-        }
-      }
-
-      const beatClock = this.getContextValue('beatClock');
-      if (
-        this.chargeSoundPending &&
-        (!beatClock ||
-          this.onBeatOnce(beatClock, 'charge', beatClock.canRusherCharge()))
-      ) {
-        this.chargeSoundPending = false;
-        const audio = this.getContextValue('audio') || this.audio;
-        if (audio) audio.playSound('rusherCharge', this.x, this.y);
-      }
-
-      // Charge at 50% speed boost
-      this.velocity.x = unitX * this.speed * 1.5;
-      this.velocity.y = unitY * this.speed * 1.5;
-    } else {
-      // Normal approach
-      this.velocity.x = unitX * this.speed;
-      this.velocity.y = unitY * this.speed;
-    }
-
-    return null;
+    this.lit = { at: beats, by, blastBeat, beatsTotal };
   }
 
-  /** @override */
+  /**
+   * A hit along `angle` knocks him that way at PUSH_PX_S, keeping PUSH_KEEP
+   * of his own speed; from then on he brakes with PUSH_BRAKE
+   */
+  push(angle) {
+    const R = CONFIG.RUSHER;
+    const v = R.PUSH_PX_S / FRAMES_PER_SEC;
+    this.velocity.x = Math.cos(angle) * v + this.velocity.x * R.PUSH_KEEP;
+    this.velocity.y = Math.sin(angle) * v + this.velocity.y * R.PUSH_KEEP;
+    this.pushed = true;
+    this.pushAt = this.poseBeats;
+    this.pushDir = angle;
+  }
+
+  /**
+   * Any hit lights him; one with a direction (a bullet, a stab) also pushes
+   * him, lit or not. Lit, he ignores damage: he never dies of it, he blows
+   */
+  takeDamage(amount, bulletAngle = null, damageSource = null) {
+    this.hitFlash = 8;
+    if (bulletAngle !== null && CONFIG.RUSHER.PUSH) this.push(bulletAngle);
+    if (this.lit) return DAMAGE_RESULT.EXPLODING;
+    this.hitAt = this.poseBeats;
+    this.getContextValue('audio')?.playSound('rusherHit', this.x, this.y);
+    this.light(damageSource === 'rusher-blast' ? 'blast' : 'hit');
+    return DAMAGE_RESULT.EXPLODING;
+  }
+
+  /** @override His chatter falls on his crash beats, 1 and 3 */
   getAmbientSpeechConfig() {
     return {
       lines: RUSHER_LINES,
-      gate: (beatClock) => !!beatClock?.canRusherExplode(),
+      gate: (beatClock) => !!beatClock?.isOnBeat([1, 3]),
       chance: RUSHER_SPEECH_CHANCE,
     };
-  }
-
-  /**
-   * Enhanced glow effects for rushers
-   */
-  getGlowColor() {
-    if (this.vibrating) {
-      const pulse = this.p.sin(this.p.frameCount * 0.3) * 0.5 + 0.5;
-      return [255, 80 + pulse * 80, 50];
-    }
-    return super.getGlowColor();
-  }
-
-  /**
-   * Get animation modifications for explosive behavior
-   * Note: Visual effects use frameCount (appropriate for visual timing)
-   */
-  getAnimationModifications() {
-    let bobble = 0;
-    let waddle = 0;
-
-    // Lit rusher shakes harder as the fuse burns down
-    if (this.vibrating) {
-      const shake = (2 + this.fuseProgress * 6) * (Math.random() - 0.5);
-      bobble += shake;
-      waddle += shake * 0.7;
-    }
-
-    return { bobble, waddle };
   }
 
   /**
@@ -235,59 +319,6 @@ class Rusher extends BaseEnemy {
       s * 0.6 + random() * s * 0.3
     );
     this.p.pop();
-  }
-
-  /**
-   * Draw type-specific indicators
-   */
-  drawSpecificIndicators() {
-    if (this.vibrating) {
-      this.drawExplosionWarning();
-    }
-  }
-
-  /**
-   * The blast's full reach, blinking faster and filling in as the fuse
-   * burns, so the player sees how far to run
-   */
-  drawExplosionWarning() {
-    const radius = CONFIG.RUSHER.EXPLOSION_RADIUS;
-    const progress = this.fuseProgress;
-    const pulse = sin(this.fuseMs * (0.01 + progress * 0.03)) * 0.5 + 0.5;
-
-    this.p.noFill();
-    this.p.stroke(255, 40, 40, 120 + pulse * 135);
-    this.p.strokeWeight(2);
-    this.p.ellipse(this.x, this.y, radius * 2);
-
-    this.p.noStroke();
-    this.p.fill(255, 60, 0, 25 + pulse * 50);
-    this.p.ellipse(this.x, this.y, radius * 2 * progress);
-  }
-
-  /**
-   * Override takeDamage to handle explosion trigger
-   */
-  takeDamage() {
-    this.hitFlash = 8;
-    // Lit, it is committed to exploding and ignores further hits
-    if (this.vibrating) return DAMAGE_RESULT.EXPLODING;
-
-    const audio = this.getContextValue('audio');
-    if (audio) {
-      audio.playSound('rusherHit', this.x, this.y);
-    }
-
-    // Shot: light the fuse; the pipeline keeps it until the blast
-    this.lightFuse();
-    return DAMAGE_RESULT.EXPLODING;
-  }
-
-  /**
-   * Rushers don't shoot - they explode
-   */
-  createBullet() {
-    return null;
   }
 }
 

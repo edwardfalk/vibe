@@ -5,6 +5,7 @@ import { Stabber } from '../../js/entities/Stabber.js';
 import { Rusher } from '../../js/entities/Rusher.js';
 import { updateStabberBehavior } from '../../js/entities/StabberAttackHandler.js';
 import { beatWorld as world } from './helpers/beatWorld.js';
+import { CONFIG } from '../../js/config.js';
 
 describe('Beat-gated entity behaviour', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -39,17 +40,17 @@ describe('Beat-gated entity behaviour', () => {
     expect(audio.speak).toHaveBeenCalledTimes(1);
   });
 
-  it("rusher's charge sound plays once, on the next beat after its battle cry", () => {
+  it("rusher's charge sound plays once, on the first new beat after its battle cry", () => {
     const { audio, context, at } = world();
     const r = new Rusher(0, 0, 'rusher', { context }, createMockP5(), audio);
     for (let ms = 250; ms < 700; ms += 10) {
-      at(ms); // from between beats on through beat 2's window
-      r.updateSpecificBehavior(100, 0, 10); // within charge distance
+      at(ms); // from between beats on past beat 2
+      r.updateSpecificBehavior(100, 0, 10); // within cry distance
     }
-    // Closing in lights the fuse: no second charge sound
+    // Closing in lights him: no second charge sound
     at(700);
-    r.updateSpecificBehavior(r.x + r.explodeDistance - 1, r.y, 10);
-    expect(r.vibrating).toBe(true);
+    r.updateSpecificBehavior(r.x + CONFIG.RUSHER.LIGHT_DIST_PX - 1, r.y, 10);
+    expect(r.lit?.by).toBe('hero');
     const charge = audio.playSound.mock.calls.filter(
       ([n]) => n === 'rusherCharge'
     );

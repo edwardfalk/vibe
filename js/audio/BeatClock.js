@@ -133,15 +133,6 @@ export class BeatClock {
     return sinceHalf >= 0 && sinceHalf <= this.tolerance;
   }
 
-  // RUSHER TIMING: Can charge on any beat, but explode on strong beats (1 or 3)
-  canRusherCharge() {
-    return this.isOnBeat();
-  }
-
-  canRusherExplode() {
-    return this.isOnBeat([1, 3]);
-  }
-
   // Move from Date.now() to the AudioContext's clock once audio starts,
   // keeping the elapsed time so the grid doesn't jump. Only the first call
   // switches; later calls do nothing.
