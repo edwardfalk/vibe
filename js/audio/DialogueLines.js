@@ -155,7 +155,7 @@ export function getPlayerDialogueLine(
 export const GRUNT_OW = 'ow';
 export const TANK_FIRE = 'FIRE!';
 export const TANK_CHARGING = 'CHARGING!';
-// BombSystem counts the bomb down (WARNING_SECONDS = 3) in the hero's voice
+// The hero counts his bomb down, 3, 2, 1, on its beats (BombSystem.js)
 const COUNTDOWN = ['3', '2', '1'];
 const distinct = (...lists) => [...new Set(lists.flat())];
 

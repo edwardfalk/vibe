@@ -1,12 +1,14 @@
 import { sqrt } from '../../mathUtils.js';
 import { CONFIG } from '../../config.js';
 import { plantBomb } from '../BombSystem.js';
+import { tankSide } from '../../entities/TankRenderer.js';
 
 export function handleContactCollisions({
   player,
   enemies,
   audio,
   activeBombs,
+  beatClock,
 }) {
   if (!player || !enemies) return false;
 
@@ -21,9 +23,14 @@ export function handleContactCollisions({
       case 'grunt':
         damage = 1;
         break;
-      case 'tank':
-        shouldPlaceBomb = true;
+      case 'tank': {
+        // Only from behind: his front shoves on the beat (Tank.js) and his
+        // sides do nothing; a tank still spawning takes no bomb
+        if (enemy.isSpawning) break;
+        const toHero = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+        shouldPlaceBomb = tankSide(toHero - enemy.facing) === 'back';
         break;
+      }
       case 'rusher':
       case 'stabber':
         break;
@@ -34,7 +41,7 @@ export function handleContactCollisions({
     }
 
     if (!shouldPlaceBomb || !activeBombs) continue;
-    plantBomb(activeBombs, enemy);
+    plantBomb(activeBombs, enemy, beatClock);
   }
 
   return false;

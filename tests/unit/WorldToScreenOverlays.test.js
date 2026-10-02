@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { RhythmFX } from '../../js/RhythmFX.js';
-import { UIRenderer } from '../../js/systems/UIRenderer.js';
 import { CameraSystem } from '../../js/systems/CameraSystem.js';
+import { drawBombs } from '../../js/systems/BombSystem.js';
+import { transformP5 } from './helpers/transformP5.js';
 
 // A p5 stand-in that records where circles are drawn
 function recordingP5() {
@@ -41,18 +42,29 @@ describe('world-space overlays drawn in screen space', () => {
     ]);
   });
 
-  it('a bomb countdown ring is drawn where the bomb is on screen', () => {
-    const p = recordingP5();
+  it('a bomb is drawn at its world position under the camera', () => {
+    const { p, shapes } = transformP5();
+    p.width = 800;
+    p.height = 600;
     const camera = cameraAt(100, 50, p);
-    const ui = Object.create(UIRenderer.prototype);
-    ui.cameraSystem = camera;
-    ui.gameState = {
-      activeBombs: [{ x: 300, y: 200, timer: 120, maxTimer: 180 }],
-    };
-    ui.drawBombs(p);
-    expect(p.shapes[0]).toEqual([
-      camera.worldToScreen(300, 200).x,
-      camera.worldToScreen(300, 200).y,
+    camera.applyTransform();
+    drawBombs(p, [
+      {
+        x: 300,
+        y: 200,
+        facing: 0,
+        plantedAt: 0,
+        seenAt: 0.2,
+        beatSec: 0.5,
+        said: 0,
+      },
     ]);
+    camera.removeTransform();
+    const { x, y } = camera.worldToScreen(300, 200);
+    expect(
+      shapes.some(
+        (sh) => Math.hypot(sh.centre?.[0] - x, sh.centre?.[1] - y) < 1e-6
+      )
+    ).toBe(true);
   });
 });

@@ -57,6 +57,7 @@ describe('enemies killed this frame', () => {
       player,
       enemies: [deadEnemy('grunt'), deadEnemy('tank')],
       activeBombs,
+      beatClock: { getBeatPosition: () => 0, beatInterval: 500 },
     });
     expect(player.hurt).not.toHaveBeenCalled();
     expect(activeBombs).toEqual([]);
@@ -66,9 +67,21 @@ describe('enemies killed this frame', () => {
     const enemy = deadEnemy('grunt');
     const gameState = { addKill: vi.fn(), addScore: vi.fn() };
     updateBombs({
-      activeBombs: [{ x: 0, y: 0, timer: 1, tankId: 2, tankRef: null }],
+      activeBombs: [
+        {
+          x: 0,
+          y: 0,
+          plantedAt: 0,
+          seenAt: 100,
+          beatSec: 0.5,
+          said: 3,
+          tankId: 2,
+          tankRef: null,
+        },
+      ],
       enemies: [enemy],
       gameState,
+      beatClock: { getBeatPosition: () => 100, beatInterval: 500 },
     });
     expect(enemy.takeDamage).not.toHaveBeenCalled();
     expect(gameState.addScore).not.toHaveBeenCalled();

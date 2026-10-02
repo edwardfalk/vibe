@@ -39,7 +39,7 @@ describe('dialogue lines', () => {
     expect(SPEAKER_LINES.rusher).toEqual(
       expect.arrayContaining(RUSHER_BATTLE_CRIES)
     );
-    // BombSystem counts down WARNING_SECONDS (3) in the hero's voice
+    // The hero counts his bomb down 3, 2, 1 (BombSystem.js)
     expect(SPEAKER_LINES.player).toEqual(
       expect.arrayContaining(['3', '2', '1'])
     );
