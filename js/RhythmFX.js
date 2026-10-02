@@ -16,7 +16,6 @@ export class RhythmFX {
     // Early-warning ring colour per enemy type
     this.enemyTypeConfig = {
       grunt: { color: [50, 255, 50] },
-      tank: { color: [150, 100, 255] },
       stabber: { color: [255, 215, 0] },
       rusher: { color: [255, 50, 150] },
     };

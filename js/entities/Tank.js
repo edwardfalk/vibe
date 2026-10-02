@@ -154,8 +154,9 @@ class Tank extends BaseEnemy {
     const toTarget = Math.atan2(target.y - this.y, target.x - this.x);
     const distance = Math.hypot(target.x - this.x, target.y - this.y);
     const beatClock = this.getContextValue('beatClock');
-    // The frame's one clock reading: update() kept the same one, and tests
-    // that call this directly get theirs here
+    // Read the clock again (update() read it before BaseEnemy moved him):
+    // this reading is the one he keeps, and tests that call this directly
+    // get theirs here
     const beats = beatClock?.getBeatPosition() ?? null;
     this.poseBeats = beats;
     const beatSec = (beatClock?.beatInterval ?? 0) / 1000;
