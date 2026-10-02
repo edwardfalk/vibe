@@ -180,7 +180,8 @@ class Tank extends BaseEnemy {
     );
 
     // A slow drift toward his target, and a lurch along his facing from
-    // when he acted on beat 1; closer than LURCH_MIN_DIST_PX he holds still
+    // when he acted on beat 1; closer than LURCH_MIN_DIST_PX he comes no
+    // closer. A tank in his line of fire makes him step sideways, near or not
     const near = distance <= T.LURCH_MIN_DIST_PX;
     this.lurchNow =
       near || beats === null || this.kickAt === null
@@ -188,11 +189,16 @@ class Tank extends BaseEnemy {
         : Math.exp(-((beats - this.kickAt) * beatSec) / T.LURCH_TAU_SEC);
     const drift = near ? 0 : T.DRIFT_PX_S;
     const lurch = T.LURCH_PX_S * this.lurchNow;
+    const side = T.SIDESTEP_PX_S * this.laneStep(target, toTarget, distance);
     this.velocity.x =
-      (Math.cos(toTarget) * drift + Math.cos(this.facing) * lurch) /
+      (Math.cos(toTarget) * drift +
+        Math.cos(this.facing) * lurch -
+        Math.sin(toTarget) * side) /
       FRAMES_PER_SEC;
     this.velocity.y =
-      (Math.sin(toTarget) * drift + Math.sin(this.facing) * lurch) /
+      (Math.sin(toTarget) * drift +
+        Math.sin(this.facing) * lurch +
+        Math.cos(toTarget) * side) /
       FRAMES_PER_SEC;
 
     // Any new beat: a hero in front of him gets shoved
@@ -281,6 +287,30 @@ class Tank extends BaseEnemy {
     this.getContextValue('audio')?.playSound('tankShove', hero.x, hero.y);
     if (hero.hurt(CONFIG.PLAYER.DAMAGE_TANK_SHOVE, 'tank-shove')) return;
     hero.knockBack(this.x, this.y, CONFIG.PLAYER.KNOCKBACK_TANK_SHOVE);
+  }
+
+  /**
+   * Which way he steps to keep his line of fire clear: away from the
+   * nearest other tank between him and his target and within FIRE_LANE_PX
+   * of the line (-1 his left, 1 his right, 0 for a clear lane). One dead
+   * ahead sends him right. Other aliens he shoots through.
+   */
+  laneStep(target, toTarget, distance) {
+    const ux = Math.cos(toTarget);
+    const uy = Math.sin(toTarget);
+    let nearest = Infinity;
+    let step = 0;
+    for (const e of this.getContextValue('enemies') ?? []) {
+      if (e === this || e === target || e.type !== 'tank') continue;
+      if (e.markedForRemoval) continue;
+      const along = (e.x - this.x) * ux + (e.y - this.y) * uy;
+      const across = (e.y - this.y) * ux - (e.x - this.x) * uy; // + is his right
+      if (along <= 0 || along >= Math.min(distance, nearest)) continue;
+      if (Math.abs(across) >= CONFIG.TANK.FIRE_LANE_PX) continue;
+      nearest = along;
+      step = across > 0 ? -1 : 1;
+    }
+    return step;
   }
 
   /** His facing at a beat position: along the latest turn's ease, then held */

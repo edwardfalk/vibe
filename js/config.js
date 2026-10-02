@@ -201,6 +201,11 @@ const CONFIG = {
     LURCH_PX_S: 95, // the lurch on each beat 1, at its peak
     LURCH_TAU_SEC: 0.28, // and how fast it dies away
     LURCH_MIN_DIST_PX: 130, // closer than this he holds his ground
+    // He keeps his line of fire clear of other tanks: one in his lane (between
+    // him and his target, this close to the line: a tank's hit circle plus
+    // his ball) makes him step sideways, so tanks spread round the hero
+    FIRE_LANE_PX: 70,
+    SIDESTEP_PX_S: 40,
     CHARGE_RANGE_PX: 400, // he starts a charge with his target this close
     CHARGE_BEATS: 8, // two bars of straining, then the shot on beat 1
     RECHARGE_BEATS: 8, // from a shot to the next charge
