@@ -1,1 +1,4 @@
 js/vendor/
+# The superpowers plans' scratch (git-ignored in .git/info/exclude, which
+# Prettier doesn't read)
+.superpowers/
