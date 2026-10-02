@@ -1,6 +1,15 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { Bullet } from './bullet.js';
-import { random, cos, sin, PI, smooth, clamp01, env } from '../mathUtils.js';
+import {
+  random,
+  cos,
+  sin,
+  PI,
+  smooth,
+  clamp01,
+  env,
+  constrain,
+} from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import {
@@ -121,6 +130,12 @@ class Tank extends BaseEnemy {
     const bullet = super.update(playerX, playerY, deltaTimeMs);
     // BaseEnemy.update pointed aimAngle at the hero; his aim is his gun's
     this.aimAngle = this.facing + this.gunRel;
+    // Stepping round a hero in a corner could carry him out of the world,
+    // where the camera never goes; he stays in, as the hero does (player.js)
+    const halfW = CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2 - this.size / 2;
+    const halfH = CONFIG.GAME_SETTINGS.WORLD_HEIGHT / 2 - this.size / 2;
+    this.x = constrain(this.x, -halfW, halfW);
+    this.y = constrain(this.y, -halfH, halfH);
     return bullet;
   }
 

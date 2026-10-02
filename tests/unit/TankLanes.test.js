@@ -43,6 +43,66 @@ describe('a tank keeps his line of fire clear of other tanks', () => {
     expect(a.velocity.y).toBeCloseTo(CONFIG.TANK.SIDESTEP_PX_S / 60, 9);
   });
 
+  // His sideways speed after a frame, px/s (+ is his right, facing +x),
+  // with nothing else moving him
+  const sidestepWith = (others, setup = () => {}) => {
+    Object.assign(CONFIG.TANK, {
+      LURCH_PX_S: 0,
+      TURN_STEP_DEG: 0,
+      DRIFT_PX_S: 0,
+    });
+    const w = tankWorld({ hero: { x: 400, y: 0 } });
+    const a = w.tank(0, 0);
+    for (const o of others) w.values.enemies.push(o);
+    setup(a, w);
+    w.frame(a, 4250);
+    return a.velocity.y * 60;
+  };
+  const tankAt = (x, y, o = {}) => ({ type: 'tank', x, y, ...o });
+
+  it('only steps for live tanks ahead of him: not a grunt, a dead tank, or one behind him', () => {
+    expect(sidestepWith([tankAt(200, 10)])).toBeLessThan(0); // the control
+    expect(sidestepWith([{ type: 'grunt', x: 200, y: 10 }])).toBe(0);
+    expect(sidestepWith([tankAt(200, 10, { markedForRemoval: true })])).toBe(0);
+    expect(sidestepWith([tankAt(-100, 10)])).toBe(0);
+  });
+
+  it('steps away from the nearest tank in his lane', () => {
+    const near = tankAt(100, 20); // his right: step left
+    const far = tankAt(250, -20); // his left
+    expect(sidestepWith([near, far])).toBeCloseTo(
+      -CONFIG.TANK.SIDESTEP_PX_S,
+      9
+    );
+  });
+
+  it("doesn't step aside for the tank he is angry with", () => {
+    // Rounding puts a target here a hair inside his own distance
+    const grudge = tankAt(150, 6);
+    const step = sidestepWith([grudge], (a) => {
+      Object.assign(a, {
+        isAngry: true,
+        angerTarget: 'tank',
+        angerCooldown: 1e9,
+      });
+    });
+    expect(step).toBe(0);
+  });
+
+  it('stays inside the world, however far his sidestep would carry him', () => {
+    const w = tankWorld({ hero: { x: 400, y: 0 } });
+    const t = w.tank(0, 0);
+    t.x = CONFIG.GAME_SETTINGS.WORLD_WIDTH; // pushed far past the right edge
+    t.y = -CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
+    w.frame(t, 4250);
+    expect(t.x).toBeLessThanOrEqual(
+      CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2 - t.size / 2
+    );
+    expect(t.y).toBeGreaterThanOrEqual(
+      -CONFIG.GAME_SETTINGS.WORLD_HEIGHT / 2 + t.size / 2
+    );
+  });
+
   it('around a passive hero, tanks spread round him, with every lane clear', () => {
     const w = tankWorld({ hero: { x: 0, y: 0 } });
     // Clumped on one side of him
