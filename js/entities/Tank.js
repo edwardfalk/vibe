@@ -1,15 +1,6 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { Bullet } from './bullet.js';
-import {
-  floor,
-  random,
-  cos,
-  sin,
-  PI,
-  normalizeAngle,
-  smooth,
-  clamp01,
-} from '../mathUtils.js';
+import { floor, random, cos, sin, PI, smooth, clamp01 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import {
@@ -24,6 +15,7 @@ import {
   tankMuzzle,
   turnStep,
   nextGunRel,
+  tankSide,
 } from './TankRenderer.js';
 
 const TANK_POWER_SOUND_CHANCE = 0.5; // per beat 1 while charging
@@ -34,18 +26,12 @@ const POWER_UP_BEATS = 4; // the charge's second bar opens with a power-up tone
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const DEG = PI / 180;
 
-const PI_4 = PI / 4;
-const THREE_PI_4 = (3 * PI) / 4;
-
-// The armour plates. `hits` is the impact-angle range a plate takes (0 is a
-// shot at the nose), `side` the direction it breaks off in, and `rect` where
-// it is drawn (plate thickness, plate length, chassis side y, chassis front
-// x). The impact angle is where the shot came from, and y points down, so the
-// left plate (drawn at -y) takes the negative angles
+// The armour plates. `side` is the direction it breaks off in, and `rect`
+// where it is drawn (plate thickness, plate length, chassis side y, chassis
+// front x)
 const ARMOR_PLATES = [
   {
     name: 'front',
-    hits: (a) => a >= -PI_4 && a <= PI_4,
     side: 0,
     fill: [120, 120, 140],
     stroke: [60, 60, 70],
@@ -53,7 +39,6 @@ const ARMOR_PLATES = [
   },
   {
     name: 'left',
-    hits: (a) => a < -PI_4 && a > -THREE_PI_4,
     side: -PI / 2,
     fill: [100, 100, 120],
     stroke: [50, 50, 60],
@@ -61,13 +46,14 @@ const ARMOR_PLATES = [
   },
   {
     name: 'right',
-    hits: (a) => a > PI_4 && a < THREE_PI_4,
     side: PI / 2,
     fill: [100, 100, 120],
     stroke: [50, 50, 60],
     rect: (t, len, sideY) => [-len / 2, sideY, len, t],
   },
 ];
+// Which way a broken plate's debris flies, from his facing
+const PLATE_SIDE = { front: 0, left: -PI / 2, right: PI / 2 };
 
 // Damage sources named for the attack rather than the enemy type
 const ANGER_SOURCE_TYPE = { stabber_melee: 'stabber' };
@@ -119,11 +105,17 @@ class Tank extends BaseEnemy {
 
     // Destructible armour plates (see ARMOR_PLATES)
     const { FRONT, SIDE } = CONFIG.TANK_ARMOR;
+    const plate = (hp) => ({ hp, max: hp, destroyed: hp <= 0 });
     this.plates = {
-      front: { hp: FRONT, destroyed: false },
-      left: { hp: SIDE, destroyed: false },
-      right: { hp: SIDE, destroyed: false },
+      front: plate(FRONT),
+      left: plate(SIDE),
+      right: plate(SIDE),
     };
+    // When things happened to him, in beat positions (poseBeats), for drawing
+    this.plateHitAt = { front: null, left: null, right: null };
+    this.plateBrokeAt = { front: null, left: null, right: null };
+    this.hitAt = null;
+    this.backHitAt = null;
   }
 
   /** @override He keeps the beat position he is drawn at, and his gun is his aim */
@@ -499,23 +491,21 @@ class Tank extends BaseEnemy {
     return bullet;
   }
 
-  /**
-   * Override takeDamage to handle armor and anger system
-   */
+  /** Plates by his facing; his bare back, or a broken plate, lets it through */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     const audio = this.getContextValue('audio');
+    this.hitAt = this.poseBeats;
     if (bulletAngle === null) {
       if (audio) audio.playSound('tankHit', this.x, this.y);
       return super.takeDamage(amount, bulletAngle, damageSource);
     }
 
-    const impactAngle = normalizeAngle(bulletAngle - this.aimAngle + PI);
-    const plate = ARMOR_PLATES.find(
-      (pl) => !this.plates[pl.name].destroyed && pl.hits(impactAngle)
-    );
-    if (plate) {
-      const armor = this.plates[plate.name];
+    // Where the shot came from, against his facing: the game's impact angle
+    const side = tankSide(bulletAngle - this.facing + PI);
+    const armor = this.plates[side]; // undefined for his back
+    if (armor && !armor.destroyed) {
       armor.hp -= amount;
+      this.plateHitAt[side] = this.poseBeats;
       if (audio) audio.playSound('hit', this.x, this.y);
       this.hitFlash = 8;
       if (armor.hp > 0) return DAMAGE_RESULT.DAMAGED; // the plate took it all
@@ -523,23 +513,25 @@ class Tank extends BaseEnemy {
       const overflow = -armor.hp;
       armor.hp = 0;
       armor.destroyed = true;
+      this.plateBrokeAt[side] = this.poseBeats;
       if (audio) audio.playSound('explosion', this.x, this.y);
-      this.breakArmor(plate);
+      this.breakArmor(side);
       this.trackAnger(damageSource);
       if (overflow <= 0) return DAMAGE_RESULT.DAMAGED;
       if (audio) audio.playSound('tankHit', this.x, this.y);
       return super.takeDamage(overflow, bulletAngle, damageSource);
     }
 
+    this.backHitAt = this.poseBeats; // his bare back, or skin under a broken plate
     if (audio) audio.playSound('tankHit', this.x, this.y);
     this.trackAnger(damageSource);
     return super.takeDamage(amount, bulletAngle, damageSource);
   }
 
   /** Debris, a label and a shake where an armour plate broke off */
-  breakArmor(plate) {
-    const ox = cos(this.aimAngle + plate.side) * this.size * 0.6;
-    const oy = sin(this.aimAngle + plate.side) * this.size * 0.6;
+  breakArmor(name) {
+    const ox = cos(this.facing + PLATE_SIDE[name]) * this.size * 0.6;
+    const oy = sin(this.facing + PLATE_SIDE[name]) * this.size * 0.6;
 
     const explosionManager = this.getContextValue('explosionManager');
     const floatingText = this.getContextValue('floatingText');
