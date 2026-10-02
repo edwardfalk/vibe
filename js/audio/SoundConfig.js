@@ -84,13 +84,6 @@ export const SOUND_CONFIG = {
     volume: 0.4,
     duration: 0.3,
   },
-  rusherScream: {
-    frequency: 750,
-    waveform: 'sawtooth',
-    volume: 0.4,
-    duration: 0.4,
-    sweep: { to: 150, curve: 'exponential' },
-  },
   enemyFrying: {
     frequency: 1400,
     waveform: 'noise',
@@ -347,5 +340,21 @@ export const SOUND_CONFIG = {
     volume: 0.25,
     duration: 0.15,
     sweep: { to: 500, curve: 'exponential' },
+  },
+  // The rusher's blast: a crash cymbal on beat 1 or 3, its own synth
+  // (js/audio/CrashSynth.js). Six squares at the 808 cymbal's ratios, times
+  // 1.7; one high-pass above the stabbers and the kick's click; a noise wash
+  // and a short bright burst for the bang. CONFIG.RUSHER.CRASH_VOLUME scales it
+  rusherCrash: {
+    synth: 'crash',
+    partialsHz: [349, 517, 628, 889, 918, 1360],
+    highpassHz: 5000,
+    metal: 0.1, // the squares' level
+    wash: 0.22, // the noise wash's level
+    washSec: 1.3,
+    bang: 0.5, // the burst's level
+    bangSec: 0.06,
+    volume: 1,
+    duration: 1.6, // the metal's ring, the longest part
   },
 };

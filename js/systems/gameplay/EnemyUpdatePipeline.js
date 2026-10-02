@@ -19,7 +19,9 @@ function handleRusherExplosionResult(result, enemy, context, blasts) {
   }
 
   if (explosionManager) {
-    explosionManager.addExplosion(result.x, result.y, 'rusher-explosion');
+    explosionManager.addExplosion(result.x, result.y, 'rusher-explosion', {
+      chain: result.chain,
+    });
   }
 
   if (visualEffectsManager) {
@@ -32,7 +34,7 @@ function handleRusherExplosionResult(result, enemy, context, blasts) {
   }
 
   if (audio) {
-    audio.playSound('explosion', result.x, result.y);
+    audio.playSound('rusherCrash', result.x, result.y);
   }
 
   if (cameraSystem) {

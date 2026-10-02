@@ -1,4 +1,5 @@
 import { Explosion } from './Explosion.js';
+import { RusherBlast } from './RusherBlast.js';
 import { HazardCloud } from './HazardCloud.js';
 import { EnemyFragmentExplosion } from './EnemyFragmentExplosion.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
@@ -15,8 +16,12 @@ export class ExplosionManager {
 
   getContextValue = createContextAccessor(() => this.context);
 
-  addExplosion(x, y, type) {
-    this.explosions.push(new Explosion(x, y, type));
+  addExplosion(x, y, type, options = {}) {
+    this.explosions.push(
+      type === 'rusher-explosion'
+        ? new RusherBlast(x, y, options)
+        : new Explosion(x, y, type)
+    );
   }
 
   addPlasmaCloud(x, y) {

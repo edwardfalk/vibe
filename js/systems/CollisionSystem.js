@@ -158,7 +158,6 @@ export class CollisionSystem {
       explosion,
       rusherEnemy,
       player: this.getContextValue('player'),
-      audio: this.getContextValue('audio'),
       cameraSystem: this.getContextValue('cameraSystem'),
       explosionManager: this.getContextValue('explosionManager'),
     });
