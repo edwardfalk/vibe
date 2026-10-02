@@ -139,7 +139,7 @@ const CONFIG = {
     EXPLOSION_DAMAGE: 35,
   },
 
-  // Hazard clouds. A tank's death leaves plasma; its bomb leaves plasma and
+  // Hazard clouds. A tank's death leaves plasma; the hero's bomb leaves plasma and
   // longer-lasting debris. Anything within RADIUS takes DAMAGE every
   // DAMAGE_INTERVAL frames for DURATION frames; MAX_RADIUS is how far the
   // cloud is drawn.

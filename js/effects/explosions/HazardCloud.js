@@ -1,6 +1,6 @@
 /**
  * Hazard cloud: a zone that lingers and deals area damage. Two kinds:
- * PLASMA (a tank's death and its bomb) and DEBRIS (the bomb's longer-lasting
+ * PLASMA (a tank's death and the hero's bomb) and DEBRIS (the bomb's longer-lasting
  * radioactive fallout). Balance numbers live in CONFIG[kind]; how each kind
  * looks lives in LOOKS[kind].
  */

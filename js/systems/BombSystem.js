@@ -10,7 +10,8 @@ const MAX_ENEMY_BOMB_DAMAGE = 30;
 const MAX_ACTIVE_BOMBS = 3;
 const WARNING_SECONDS = 3;
 
-export function tryPlaceTankBomb(activeBombs, enemy) {
+// The hero plants his bomb on a tank (one each, three at once)
+export function plantBomb(activeBombs, enemy) {
   if (!activeBombs || !enemy) return;
   if (activeBombs.length >= MAX_ACTIVE_BOMBS) return;
   if (activeBombs.some((bomb) => bomb.tankId === enemy.id)) return; // one each
@@ -100,7 +101,7 @@ export function updateBombs(context) {
           )
         );
 
-        if (!player.hurt(damage, 'tank-bomb')) {
+        if (!player.hurt(damage, 'bomb')) {
           player.knockBack(bomb.x, bomb.y, CONFIG.PLAYER.KNOCKBACK_BOMB);
         }
       }
@@ -108,7 +109,7 @@ export function updateBombs(context) {
 
     for (let j = enemies.length - 1; j >= 0; j--) {
       const enemy = enemies[j];
-      if (enemy.id === bomb.tankId) continue; // originating tank placed the bomb
+      if (enemy.id === bomb.tankId) continue; // spares the tank it is on, for now
       if (enemy.markedForRemoval) continue; // killed last frame, not yet removed
       const dx = bomb.x - enemy.x;
       const dy = bomb.y - enemy.y;

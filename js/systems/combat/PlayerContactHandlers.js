@@ -1,6 +1,6 @@
 import { sqrt } from '../../mathUtils.js';
 import { CONFIG } from '../../config.js';
-import { tryPlaceTankBomb } from '../BombSystem.js';
+import { plantBomb } from '../BombSystem.js';
 
 export function handleContactCollisions({
   player,
@@ -34,7 +34,7 @@ export function handleContactCollisions({
     }
 
     if (!shouldPlaceBomb || !activeBombs) continue;
-    tryPlaceTankBomb(activeBombs, enemy);
+    plantBomb(activeBombs, enemy);
   }
 
   return false;

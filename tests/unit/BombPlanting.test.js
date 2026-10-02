@@ -9,15 +9,15 @@ const touchingTank = (id) => ({
   checkCollision: () => true,
 });
 
-describe('Tank bombs', () => {
-  it('a tank touching the hero frame after frame plants one bomb', () => {
+describe("The hero's bomb", () => {
+  it('touching a tank frame after frame plants one bomb on it', () => {
     const activeBombs = [];
     const contact = { player: {}, enemies: [touchingTank(1)], activeBombs };
     for (let frame = 0; frame < 10; frame++) handleContactCollisions(contact);
     expect(activeBombs).toHaveLength(1);
   });
 
-  it('each tank plants its own', () => {
+  it('each tank takes its own', () => {
     const activeBombs = [];
     const enemies = [touchingTank(1), touchingTank(2)];
     for (let frame = 0; frame < 10; frame++) {
