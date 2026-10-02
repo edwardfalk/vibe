@@ -37,7 +37,7 @@ When a module was given a `GameContext`, the accessor returns `context.get(key)`
 
 [`BeatClock`](js/audio/BeatClock.js) is the only timing grid. It runs on `AudioContext.currentTime` once audio has started (on `Date.now()` before that), so it can't drift from the audio. `Audio.initialize` makes the switch with `beatClock.useAudioClock()`, which keeps the beat position across it.
 
-- Enemies ask it before they act: `canGruntShoot()` (beats 2 and 4), `canTankShoot()` (1), `canStabberAttack()` (3.5), `canRusherExplode()` (1 and 3).
+- Enemies ask it before they act: `canGruntShoot()` (beats 2 and 4), `canStabberAttack()` (3.5), `canRusherExplode()` (1 and 3). The tank counts his beat 1 by bar instead: he acts on his first update in each bar, however late in it a hitstop or a slow frame puts it (`Tank.js`).
 - A beat's window opens when the beat lands, not before it, and each beat-gated sound plays at most once per beat.
 - The player's held fire asks `isOnEighthNote()` and otherwise queues the shot for the next eighth note.
 - [`BeatTrack`](js/audio/BeatTrack.js) schedules the kick and sub pulse a little ahead, on BeatClock's grid, with a look-ahead scheduler.

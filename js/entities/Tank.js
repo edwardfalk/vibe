@@ -13,6 +13,7 @@ import {
 import {
   TANK_COLORS,
   tankMuzzle,
+  tankCannon,
   turnStep,
   nextGunRel,
   tankSide,
@@ -407,13 +408,8 @@ class Tank extends BaseEnemy {
    */
   createBullet() {
     // From the cannon's muzzle, along his gun (TankRenderer.js)
-    const { x, y } = tankMuzzle(
-      this.x,
-      this.y,
-      this.size * CONFIG.TANK_LOOK.ART_SCALE,
-      this.facing,
-      this.gunRel
-    );
+    const s = this.size * CONFIG.TANK_LOOK.ART_SCALE;
+    const { x, y } = tankMuzzle(this.x, this.y, s, this.facing, this.gunRel);
     const bullet = Bullet.acquire(
       x,
       y,
@@ -422,6 +418,11 @@ class Tank extends BaseEnemy {
       'enemy-tank'
     );
     if (!bullet) return null;
+    // Its first sweep (Bullet.checkCollision) starts at the cannon's pivot in
+    // his fists, so a hero pressed against the barrel is hit too
+    const { pivotX } = tankCannon(s, this.gunRel);
+    bullet.prevX = this.x + pivotX * cos(this.facing);
+    bullet.prevY = this.y + pivotX * sin(this.facing);
     // Three layers: a deep boom with a reverb tail, and two detuned zaps
     // whose beating makes the electric buzz
     const audio = this.getContextValue('audio');

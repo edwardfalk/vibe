@@ -168,29 +168,6 @@ describe('BeatClock', () => {
       expect(clock.canGruntShoot()).toBe(false);
     });
 
-    it('canTankShoot returns true only on beat 1 (0-indexed: 0)', () => {
-      mockCtx.currentTime = 0.0; // beat 0
-      clock.update(true);
-      expect(clock.canTankShoot()).toBe(true);
-
-      mockCtx.currentTime = 2.0; // beat 0 again (new measure)
-      clock.update(true);
-      expect(clock.canTankShoot()).toBe(true);
-
-      // Should NOT fire on other beats
-      mockCtx.currentTime = 0.5; // beat 1
-      clock.update(true);
-      expect(clock.canTankShoot()).toBe(false);
-
-      mockCtx.currentTime = 1.0; // beat 2
-      clock.update(true);
-      expect(clock.canTankShoot()).toBe(false);
-
-      mockCtx.currentTime = 1.5; // beat 3
-      clock.update(true);
-      expect(clock.canTankShoot()).toBe(false);
-    });
-
     it('canRusherExplode returns true on beats 1 and 3 (0-indexed: 0 and 2)', () => {
       mockCtx.currentTime = 0.0; // beat 0
       clock.update(true);

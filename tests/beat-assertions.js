@@ -8,10 +8,11 @@ const NUM_BEATS = parseInt(process.env.BEATS) || 8;
  * When a gate method (canGruntShoot, etc.) returns true, we log the event
  * with the current beat position. We record the *gate opening*, not the
  * enemy deciding to fire (which has random skips). This tells us whether
- * the timing system is correct.
+ * the timing system is correct. The tank has no gate: he acts on his first
+ * update in each bar (Tank.onKick), so that is what is recorded for him.
  */
 const injectRecorder = async (page) => {
-  await page.evaluate(() => {
+  await page.evaluate(async () => {
     window.__beatEvents = [];
     const bc = window.beatClock;
     if (!bc) throw new Error('beatClock not found on window');
@@ -34,9 +35,22 @@ const injectRecorder = async (page) => {
     };
 
     wrap('canGruntShoot', 'grunt');
-    wrap('canTankShoot', 'tank');
     wrap('canStabberAttack', 'stabber');
     wrap('canRusherExplode', 'rusher');
+
+    // The same module instance the game loaded, so its tanks use the patch
+    const { Tank } = await import('/js/entities/Tank.js');
+    const onKick = Tank.prototype.onKick;
+    Tank.prototype.onKick = function (...args) {
+      window.__beatEvents.push({
+        type: 'onKick',
+        enemyType: 'tank',
+        beat: bc.getCurrentBeat(), // 0-indexed
+        totalBeats: bc.getTotalBeats(),
+        timestamp: Date.now(),
+      });
+      return onKick.apply(this, args);
+    };
   });
 };
 
@@ -92,7 +106,7 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
 
   // Expected beats (0-indexed):
   // Grunt: beats 1, 3 (canGruntShoot checks currentBeat === 1 || === 3)
-  // Tank: beat 0 (canTankShoot checks currentBeat === 0)
+  // Tank: beat 0 (he acts on his first update in each bar)
   // Stabber: beats 2-3 boundary (canStabberAttack checks currentBeat === 2 or 3)
   // Rusher: beats 0, 2 (canRusherExplode checks currentBeat === 0 || === 2)
 

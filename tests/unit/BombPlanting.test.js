@@ -111,7 +111,8 @@ describe('the bomb, on the beat', () => {
     const ticks = (from, to) => {
       for (let b = from; b <= to + 1e-9; b += 0.25) tick(b);
     };
-    return { tank, activeBombs, audio, explosionManager, tick, ticks };
+    const now = () => beats;
+    return { tank, activeBombs, audio, explosionManager, tick, ticks, now };
   };
   const said = (audio) =>
     audio.speak.mock.calls.map(([, word, voice, force]) => [
@@ -121,16 +122,80 @@ describe('the bomb, on the beat', () => {
     ]);
 
   it('counts 3, 2, 1 on its beats 0, 2 and 4, each forced past the voice cooldown, and blows on beat 6', () => {
-    const { activeBombs, audio, ticks, tick } = setup();
+    const { activeBombs, audio, ticks, tick, now } = setup();
+    const at = [];
+    audio.speak.mockImplementation(() => (at.push(now()), true));
     ticks(10.5, 16.75);
     expect(said(audio)).toEqual([
       ['3', 'player', true],
       ['2', 'player', true],
       ['1', 'player', true],
     ]);
+    expect(at).toEqual([11, 13, 15]); // its beats 0, 2 and 4
     expect(activeBombs).toHaveLength(1);
     tick(17);
     expect(activeBombs).toHaveLength(0);
+  });
+
+  it('hurts the hero near it and knocks him away, but not one past its reach', () => {
+    const hero = (x) => ({
+      x,
+      y: 0,
+      hurt: vi.fn(() => false),
+      knockBack: vi.fn(),
+    });
+    const near = hero(0);
+    const far = hero(CONFIG.BOMB.RADIUS_PX + 30);
+    for (const player of [near, far]) {
+      updateBombs({
+        activeBombs: [
+          {
+            x: 0,
+            y: 0,
+            facing: 0,
+            plantedAt: 0,
+            seenAt: 100,
+            beatSec: 0.5,
+            said: 3,
+            tankId: 't',
+            tankRef: null,
+          },
+        ],
+        enemies: [],
+        player,
+        beatClock: clockAt(100),
+      });
+    }
+    expect(near.hurt).toHaveBeenCalledWith(
+      CONFIG.BOMB.PLAYER_DAMAGE_MAX,
+      'bomb'
+    );
+    expect(near.knockBack).toHaveBeenCalledWith(
+      0,
+      0,
+      CONFIG.PLAYER.KNOCKBACK_BOMB
+    );
+    expect(far.hurt).not.toHaveBeenCalled();
+  });
+
+  it('draws its reach ring at the blast radius', () => {
+    const { p, calls } = transformP5();
+    drawBombs(p, [
+      {
+        x: 0,
+        y: 0,
+        facing: 0,
+        plantedAt: 0,
+        seenAt: 0.2,
+        beatSec: 0.5,
+        said: 0,
+      },
+    ]);
+    const [, , , w, h] = calls.find(([k]) => k === 'arc');
+    expect([w, h]).toEqual([
+      2 * CONFIG.BOMB.RADIUS_PX,
+      2 * CONFIG.BOMB.RADIUS_PX,
+    ]);
   });
 
   it('hurts the tank it is on', () => {

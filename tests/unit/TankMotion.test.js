@@ -85,6 +85,13 @@ describe('the tank turns on the kick', () => {
   });
 });
 
+describe('the tank spawns', () => {
+  it('facing the hero', () => {
+    const w = tankWorld({ hero: { x: 0, y: 300 } });
+    expect(w.tank().facing).toBeCloseTo(Math.PI / 2);
+  });
+});
+
 describe("the tank's gun", () => {
   it('stays in its arc, at the nearer edge for a hero behind him, and his shot leaves the muzzle along it', () => {
     pinned();
@@ -103,6 +110,20 @@ describe("the tank's gun", () => {
     expect(shot.x).toBeCloseTo(m.x, 6);
     expect(shot.y).toBeCloseTo(m.y, 6);
     expect(shot.angle).toBeCloseTo(t.facing + t.gunRel, 9);
+  });
+});
+
+describe("the tank's shot", () => {
+  it('hits a hero pressed against his chest: its first sweep starts in his fists', () => {
+    pinned();
+    const w = tankWorld({ hero: { x: 30, y: 0 } });
+    const t = w.tank();
+    facingRight(t);
+    t.lastActedBar = 1;
+    t.chargingShot = true; // charged long ago: it fires on this beat 1
+    t.chargeStartBeat = 0;
+    const shot = w.frame(t, 4000);
+    expect(shot.checkCollision({ x: 30, y: 0, size: 32 })).toBe(true);
   });
 });
 
@@ -129,6 +150,20 @@ describe('the tank moves', () => {
   });
 });
 
+describe('the lurch', () => {
+  it('dies away within the beat', () => {
+    Object.assign(CONFIG.TANK, { DRIFT_PX_S: 0, TURN_STEP_DEG: 0 });
+    const w = tankWorld({ hero: { x: 1000, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    w.frame(t, 4000);
+    const kick = t.velocity.x;
+    expect(kick).toBeGreaterThan(0);
+    w.frame(t, 4500);
+    expect(t.velocity.x).toBeLessThan(kick * 0.2);
+  });
+});
+
 describe("the tank's charge", () => {
   it('starts on a beat 1 with the hero in range and fires two bars later, however late in that bar', () => {
     const w = tankWorld({ hero: { x: 300, y: 0 } });
@@ -143,5 +178,18 @@ describe("the tank's charge", () => {
     expect(t.chargingShot).toBe(false);
     const lines = w.audio.speak.mock.calls.map(([, line]) => line);
     expect(lines).toEqual(['CHARGING!', 'FIRE!']);
+  });
+
+  it('waits RECHARGE_BEATS after a shot before charging again', () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    w.frame(t, 4000); // bar 2: CHARGING!
+    w.frame(t, 6000);
+    expect(w.frame(t, 8000)?.owner).toBe('enemy-tank'); // bar 4: the shot
+    w.frame(t, 10000); // bar 5: four beats on
+    expect(t.chargingShot).toBe(false);
+    w.frame(t, 12000); // bar 6: eight beats on
+    expect(t.chargingShot).toBe(true);
   });
 });

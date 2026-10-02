@@ -44,6 +44,18 @@ describe('the front shove', () => {
     expect(hero.knockback.x).toBeGreaterThan(0); // pushed away from his front
   });
 
+  it('waits for the next beat when the hero steps into reach mid-beat', () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } }); // in front, out of reach
+    const t = w.tank();
+    w.frame(t, 4250);
+    w.frame(t, 4500);
+    w.player.x = 60; // he steps in
+    w.frame(t, 4600);
+    expect(w.player.hurt).not.toHaveBeenCalled();
+    w.frame(t, 5000); // the next beat
+    expect(w.player.hurt).toHaveBeenCalledTimes(1);
+  });
+
   it('a fatal shove pushes no corpse', () => {
     const w = tankWorld({ hero: { x: 60, y: 0 } });
     w.player.hurt.mockReturnValue(true);
