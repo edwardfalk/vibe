@@ -1,6 +1,6 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { Bullet } from './bullet.js';
-import { floor, random, cos, sin, PI, smooth, clamp01 } from '../mathUtils.js';
+import { random, cos, sin, PI, smooth, clamp01, env } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import {
@@ -16,7 +16,10 @@ import {
   turnStep,
   nextGunRel,
   tankSide,
+  drawTank,
+  TANK_REACH,
 } from './TankRenderer.js';
+import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 
 const TANK_POWER_SOUND_CHANCE = 0.5; // per beat 1 while charging
 // Per attempt once the speech timer is up (= today's effective rate)
@@ -30,32 +33,13 @@ const DEG = PI / 180;
 // beat's first update, so this keeps it to one a frame from all tanks
 const shovedOnBeat = new WeakMap();
 
-// The armour plates. `side` is the direction it breaks off in, and `rect`
-// where it is drawn (plate thickness, plate length, chassis side y, chassis
-// front x)
-const ARMOR_PLATES = [
-  {
-    name: 'front',
-    side: 0,
-    fill: [120, 120, 140],
-    stroke: [60, 60, 70],
-    rect: (t, len, sideY, frontX) => [frontX, -len * 0.4, t * 1.5, len * 0.8],
-  },
-  {
-    name: 'left',
-    side: -PI / 2,
-    fill: [100, 100, 120],
-    stroke: [50, 50, 60],
-    rect: (t, len, sideY) => [-len / 2, -sideY - t, len, t],
-  },
-  {
-    name: 'right',
-    side: PI / 2,
-    fill: [100, 100, 120],
-    stroke: [50, 50, 60],
-    rect: (t, len, sideY) => [-len / 2, sideY, len, t],
-  },
-];
+const PLATE_NAMES = ['front', 'left', 'right'];
+// How fast his drawn envelopes fade (s)
+const KICK_TAU_SEC = 0.1;
+const HIT_TAU_SEC = 0.08;
+const FIRE_TAU_SEC = 0.25;
+const SHOVE_TAU_SEC = 0.2;
+
 // Which way a broken plate's debris flies, from his facing
 const PLATE_SIDE = { front: 0, left: -PI / 2, right: PI / 2 };
 
@@ -110,7 +94,7 @@ class Tank extends BaseEnemy {
     this.maxAngerCooldown = 600; // 10 seconds of anger
     this.calmLinePending = false;
 
-    // Destructible armour plates (see ARMOR_PLATES)
+    // Destructible armour plates, by side (tankSide in TankRenderer.js)
     const { FRONT, SIDE } = CONFIG.TANK_ARMOR;
     const plate = (hp) => ({ hp, max: hp, destroyed: hp <= 0 });
     this.plates = {
@@ -123,6 +107,9 @@ class Tank extends BaseEnemy {
     this.plateBrokeAt = { front: null, left: null, right: null };
     this.hitAt = null;
     this.backHitAt = null;
+
+    this.hitFlashAlpha = 255; // he stays solid when hit: his own parts flash
+    this.lookSeed = this.animFrame / p.TWO_PI; // his swagger's phase
   }
 
   /** @override He keeps the beat position he is drawn at, and his gun is his aim */
@@ -347,154 +334,72 @@ class Tank extends BaseEnemy {
     };
   }
 
-  /**
-   * Draw tank-specific body shape - heavy geometric block
-   */
-  drawBody(s) {
-    this.p.strokeJoin(this.p.MITER);
-
-    // Deep Violet outline
-    this.p.stroke(138, 43, 226);
-    this.p.strokeWeight(3);
-
-    // Dark heavy interior
-    this.p.fill(15, 10, 25);
-
-    // Main heavy hexagon chassis
-    this.p.beginShape();
-    this.p.vertex(-s * 0.3, -s * 0.6);
-    this.p.vertex(s * 0.3, -s * 0.6);
-    this.p.vertex(s * 0.6, 0);
-    this.p.vertex(s * 0.3, s * 0.6);
-    this.p.vertex(-s * 0.3, s * 0.6);
-    this.p.vertex(-s * 0.6, 0);
-    this.p.endShape(this.p.CLOSE);
-
-    // Glowing core reactor
-    this.p.noStroke();
-    this.p.fill(148, 0, 211, 150 + Math.sin(this.p.frameCount * 0.1) * 50);
-    this.p.ellipse(0, 0, s * 0.5, s * 0.5);
-
-    // Core bright center
-    this.p.fill(255, 255, 255, 200);
-    this.p.ellipse(0, 0, s * 0.2, s * 0.2);
-
-    // Draw Destructible Armor Pieces
-    this.drawArmorPlates(s);
+  /** @override He turns with his facing; drawn from his pose (TankRenderer.js) */
+  drawFigure(p, s) {
+    this.applyHitShake(p);
+    drawTank(p, s * CONFIG.TANK_LOOK.ART_SCALE, this.pose());
   }
 
-  drawArmorPlates(s) {
-    // Synthwave style armor plates - geometric with neon outlines
-    this.p.stroke(138, 43, 226);
-    this.p.strokeWeight(2);
-    this.p.fill(20, 15, 35);
-
-    const thickness = s * 0.2;
-    const length = s * 1.0;
-    const chassisSideY = s * 0.6;
-    const chassisFrontX = s * 0.5;
-    for (const plate of ARMOR_PLATES) {
-      this.p.push();
-      if (!this.plates[plate.name].destroyed) {
-        this.p.fill(...plate.fill);
-        this.p.stroke(...plate.stroke);
-        this.p.strokeWeight(2);
-      } else {
-        this.p.fill(50, 50, 50, 150);
-        this.p.noStroke();
-      }
-      this.p.rect(
-        ...plate.rect(thickness, length, chassisSideY, chassisFrontX)
-      );
-      this.p.pop();
-    }
-  }
-
-  /**
-   * Override weapon drawing for tank's heavy weapon
-   */
-  drawWeapon(s) {
-    // Massive tank cannon
-    this.p.fill(this.weaponColor);
-    this.p.rect(s * 0.3, -s * 0.1, s * 0.8, s * 0.2);
-
-    // Cannon details
-    this.p.fill(
-      this.weaponColor.levels[0] + 30,
-      this.weaponColor.levels[1] + 30,
-      this.weaponColor.levels[2] + 30
+  /** His health bar clears his body, shoulders and cannon (TANK_REACH) */
+  get healthBarRise() {
+    return (
+      this.size * CONFIG.TANK_LOOK.ART_SCALE * TANK_REACH +
+      HEALTH_BAR_HEIGHT_PX +
+      HEALTH_BAR_GAP_PX
     );
-    this.p.rect(s * 0.35, -s * 0.08, s * 0.7, s * 0.06);
-    this.p.rect(s * 0.35, s * 0.02, s * 0.7, s * 0.06);
-
-    // Muzzle flash (larger for tank)
-    if (this.muzzleFlash > 0) {
-      this.p.fill(255, 255, 100, this.muzzleFlash * 30);
-      this.p.ellipse(s * 1.1, 0, s * 0.4, s * 0.2);
-    }
   }
 
-  /**
-   * Draw type-specific indicators
-   */
-  drawSpecificIndicators() {
-    if (this.chargingShot) {
-      this.drawChargingIndicator();
+  /** His pose, at the beat update() last kept (frozen while paused) and what happened when */
+  pose() {
+    const beats = this.poseBeats;
+    const clock = this.getContextValue('beatClock');
+    const beatSec = (clock?.beatInterval ?? 0) / 1000;
+    const since = (at) =>
+      beats === null || at === null ? Infinity : (beats - at) * beatSec;
+    const plates = {};
+    const plateHit = {};
+    const plateBroke = {};
+    for (const name of PLATE_NAMES) {
+      const pl = this.plates[name];
+      plates[name] = pl.destroyed || pl.max <= 0 ? 0 : pl.hp / pl.max;
+      plateHit[name] = env(since(this.plateHitAt[name]), HIT_TAU_SEC);
+      plateBroke[name] = since(this.plateBrokeAt[name]);
     }
-    const activeBombs = this.getContextValue('activeBombs');
-    if (activeBombs?.some((bomb) => bomb.tankId === this.id)) {
-      this.p.push();
-      this.p.fill(255, 0, 0);
-      this.p.textAlign(this.p.CENTER, this.p.CENTER);
-      this.p.textSize(16);
-      this.p.stroke(0, 0, 0);
-      this.p.strokeWeight(3);
-      this.p.text('TIME BOMB!', this.x, this.y - this.size - 50);
-      this.p.pop();
-    }
-  }
-
-  /**
-   * Draw charging indicator
-   */
-  drawChargingIndicator() {
-    const beatClock = this.getContextValue('beatClock');
-    const chargePercent = beatClock
-      ? Math.min(
-          1,
-          (beatClock.getTotalBeats() - this.chargeStartBeat) /
-            this.chargeDurationBeats
-        )
-      : 0;
-
-    // Charging circle around tank
-    const pulse = sin(this.p.frameCount * 2.0) * 0.3 + 0.7;
-    const chargeRadius = this.size * (0.8 + chargePercent * 0.4);
-
-    // Outer charge field
-    this.p.fill(100, 200, 255, 30 + chargePercent * 50 + pulse * 30);
-    this.p.noStroke();
-    this.p.ellipse(this.x, this.y, chargeRadius * 2.5);
-
-    // Inner energy core
-    this.p.fill(150, 220, 255, 60 + chargePercent * 80 + pulse * 40);
-    this.p.ellipse(this.x, this.y, chargeRadius * 1.5);
-
-    // Charge percentage text
-    this.p.fill(255, 255, 255);
-    this.p.textAlign(this.p.CENTER, this.p.CENTER);
-    this.p.textSize(10);
-    this.p.text(
-      `${floor(chargePercent * 100)}%`,
-      this.x,
-      this.y - this.size - 25
-    );
-
-    // "CHARGING" text
-    if (chargePercent > 0.3) {
-      this.p.textSize(12);
-      this.p.text('CHARGING', this.x, this.y - this.size - 40);
-    }
+    const charging = this.chargingShot && beats !== null;
+    const intoCharge = charging ? beats - this.chargeStartBeat : 0;
+    const turnAge = since(this.turn.at);
+    return {
+      t: beats === null ? 0 : beats * beatSec,
+      beatSec,
+      beat: beats === null ? 0 : Math.floor(beats) % BEATS_PER_BAR,
+      beatPhase: beats === null ? 0 : beats - Math.floor(beats),
+      kick:
+        beats === null
+          ? 0
+          : Math.exp(-((beats % BEATS_PER_BAR) * beatSec) / KICK_TAU_SEC),
+      facing: this.facing,
+      turn: {
+        from: this.turn.from,
+        to: this.turn.to,
+        k: smooth(clamp01(turnAge / CONFIG.TANK.TURN_SEC)),
+        age: turnAge,
+      },
+      turnSec: CONFIG.TANK.TURN_SEC,
+      gunRel: this.gunRel,
+      lurch: this.lurchNow,
+      shove: env(since(this.shovedAt), SHOVE_TAU_SEC),
+      charge: charging ? clamp01(intoCharge / this.chargeDurationBeats) : -1,
+      chargeBeats: Math.max(0, Math.floor(intoCharge)),
+      fire: env(since(this.firedAt), FIRE_TAU_SEC),
+      fireAge: since(this.firedAt),
+      plates,
+      plateHit,
+      plateBroke,
+      hit: env(since(this.hitAt), HIT_TAU_SEC),
+      backHit: env(since(this.backHitAt), HIT_TAU_SEC),
+      angry: this.isAngry ? 1 : 0,
+      seed: this.lookSeed,
+    };
   }
 
   /**

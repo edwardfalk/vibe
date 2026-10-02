@@ -166,7 +166,7 @@ const CONFIG = {
     grunt: 22,
     rusher: 14,
     stabber: 18,
-    tank: 42,
+    tank: 55, // the Bouncer's shoulders reach about 65 px
   },
 
   // The grunt's look and motion (js/entities/GruntRenderer.js): a jelly that

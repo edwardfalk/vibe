@@ -40,6 +40,7 @@ export function transformP5() {
       {
         CHORD: 'chord',
         removed: false,
+        drawingContext: new Proxy({}, { get: () => () => {} }),
         remove() {
           this.removed = true;
         },
@@ -75,8 +76,18 @@ export function transformP5() {
         top: topOf(x, y, w, h),
         blend,
       }),
-    image: (g, x, y) =>
-      shapes.push({ kind: 'image', g, origin: at(x, y), matrix: m, blend }),
+    image: (g, x, y, w = 0, h = 0) => {
+      const corners = [at(x, y), at(x + w, y), at(x, y + h), at(x + w, y + h)];
+      shapes.push({
+        kind: 'image',
+        g,
+        origin: at(x, y),
+        matrix: m,
+        blend,
+        alpha: p.drawingContext.globalAlpha,
+        top: Math.min(...corners.map(([, cy]) => cy)),
+      });
+    },
     createGraphics: () => {
       const g = recorder();
       graphics.push(g);
