@@ -164,23 +164,26 @@ describe('the bomb, on the beat', () => {
     const back = tankBackPoint(100, 0, s, Math.PI / 2);
     expect(activeBombs[0].x).toBeCloseTo(back.x);
     expect(activeBombs[0].y).toBeCloseTo(back.y);
-    tank.markedForRemoval = true; // shot dead before the bang
+    tank.y = 30; // he moves on, and is shot dead there before the bang
+    tank.markedForRemoval = true;
+    const died = tankBackPoint(100, 30, s, Math.PI / 2);
     ticks(12.25, 13);
     tank.x = 400; // whatever happens to the corpse
     ticks(13.25, 14);
-    expect(activeBombs[0].x).toBeCloseTo(back.x);
+    expect(activeBombs[0].x).toBeCloseTo(died.x);
+    expect(activeBombs[0].y).toBeCloseTo(died.y);
     const { p, shapes } = transformP5();
     drawBombs(p, activeBombs);
     expect(
       shapes.some(
         (sh) =>
-          Math.hypot(sh.centre?.[0] - back.x, sh.centre?.[1] - back.y) < 1e-6
+          Math.hypot(sh.centre?.[0] - died.x, sh.centre?.[1] - died.y) < 1e-6
       )
     ).toBe(true);
     ticks(14.25, 17);
     expect(explosionManager.addExplosion).toHaveBeenCalledWith(
-      back.x,
-      back.y,
+      died.x,
+      died.y,
       'tank-plasma'
     );
   });
