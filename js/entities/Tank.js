@@ -1,15 +1,6 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { Bullet } from './bullet.js';
-import {
-  random,
-  cos,
-  sin,
-  PI,
-  smooth,
-  clamp01,
-  env,
-  constrain,
-} from '../mathUtils.js';
+import { random, cos, sin, PI, smooth, clamp01, env } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import {
@@ -24,6 +15,7 @@ import {
   tankMuzzle,
   tankCannon,
   turnStep,
+  turnAt,
   nextGunRel,
   tankSide,
   drawTank,
@@ -130,12 +122,8 @@ class Tank extends BaseEnemy {
     const bullet = super.update(playerX, playerY, deltaTimeMs);
     // BaseEnemy.update pointed aimAngle at the hero; his aim is his gun's
     this.aimAngle = this.facing + this.gunRel;
-    // Stepping round a hero in a corner could carry him out of the world,
-    // where the camera never goes; he stays in, as the hero does (player.js)
-    const halfW = CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2 - this.size / 2;
-    const halfH = CONFIG.GAME_SETTINGS.WORLD_HEIGHT / 2 - this.size / 2;
-    this.x = constrain(this.x, -halfW, halfW);
-    this.y = constrain(this.y, -halfH, halfH);
+    // Stepping round a hero in a corner could carry him out of the world
+    this.keepInWorld();
     return bullet;
   }
 
@@ -331,13 +319,7 @@ class Tank extends BaseEnemy {
 
   /** His facing at a beat position: along the latest turn's ease, then held */
   facingAt(beats, beatSec) {
-    const { from, to, at } = this.turn;
-    if (at === null || beatSec <= 0) return to;
-    return (
-      from +
-      (to - from) *
-        smooth(clamp01(((beats - at) * beatSec) / CONFIG.TANK.TURN_SEC))
-    );
+    return turnAt(this.turn, beats, beatSec, CONFIG.TANK.TURN_SEC);
   }
 
   /** Who he is after: the hero, or while angry the nearest live alien of that kind */

@@ -2,6 +2,7 @@ import { Explosion } from './Explosion.js';
 import { HazardCloud } from './HazardCloud.js';
 import { EnemyFragmentExplosion } from './EnemyFragmentExplosion.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
+import { CONFIG } from '../../config.js';
 
 export class ExplosionManager {
   constructor(context = null) {
@@ -45,10 +46,10 @@ export class ExplosionManager {
     this.fragmentExplosions.push(fragmentExplosion);
   }
 
-  update() {
+  update(deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
     // Update explosions
     for (let i = this.explosions.length - 1; i >= 0; i--) {
-      this.explosions[i].update();
+      this.explosions[i].update(deltaTimeMs);
       if (!this.explosions[i].active) {
         const lastIndex = this.explosions.length - 1;
         if (i !== lastIndex) {

@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { random, sin, cos, atan2 } from '../mathUtils.js';
+import { random, sin, cos, atan2, constrain } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import {
   getEnemyColors,
@@ -459,6 +459,18 @@ export class BaseEnemy {
     } else {
       audio.playSound(responseKey, this.x, this.y);
     }
+  }
+
+  /**
+   * Keep inside the world, where the camera never goes past. The tank and
+   * the rusher call it: a sidestep, or a rusher shooting past near a wall,
+   * could otherwise carry them out
+   */
+  keepInWorld() {
+    const halfW = CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2 - this.size / 2;
+    const halfH = CONFIG.GAME_SETTINGS.WORLD_HEIGHT / 2 - this.size / 2;
+    this.x = constrain(this.x, -halfW, halfW);
+    this.y = constrain(this.y, -halfH, halfH);
   }
 
   /**

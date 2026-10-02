@@ -87,6 +87,19 @@ export function turnStep(facing, toTarget, stepRad, deadRad) {
 }
 
 /**
+ * Where a turn has got to at a beat position: from `from` to `to`, eased
+ * over turnSec from its start `at` (a beat position). No start, or no clock,
+ * means it is done. The tank and the rusher both turn this way.
+ */
+export function turnAt(turn, beats, beatSec, turnSec) {
+  const { from, to, at } = turn;
+  if (at === null || beatSec <= 0) return to;
+  return (
+    from + (to - from) * smooth(clamp01(((beats - at) * beatSec) / turnSec))
+  );
+}
+
+/**
  * His gun's angle from his facing after an update of dtSec: it eases toward
  * the target (time constant tauSec) and never leaves its arc. A target
  * outside the arc holds the gun at the nearer edge.
