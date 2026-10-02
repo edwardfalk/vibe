@@ -78,6 +78,10 @@ export const RUSHER_LINES = [
   "CAN'T STOP!",
   'YOLO!',
   'KAMIKAZE PIZZA PARTY!',
+  // The stuntman (docs/superpowers/specs/2026-10-02-stuntman-rusher-design.md)
+  'WATCH THIS!',
+  'NO HANDS!',
+  'TA-DA!',
 ];
 
 export const RUSHER_BATTLE_CRIES = [
