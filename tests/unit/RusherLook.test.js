@@ -17,6 +17,7 @@ import { transformP5 } from './helpers/transformP5.js';
 const MS_PER_BEAT = 500;
 const FRAME_MS = 16;
 const DEFAULTS = { ...CONFIG.RUSHER };
+const LOOK_DEFAULTS = { ...CONFIG.RUSHER_LOOK };
 // A pose in flight, and two fuses: mid-count after a blast, and white-hot
 const LOOK = {
   t: 3,
@@ -68,9 +69,43 @@ function fused(startBeats) {
   return { r, to, jump };
 }
 
+// A canvas context that logs paths: beginPath starts one, and each arc's
+// radius and each stroke's lineWidth go into it. Any other call does nothing
+function pathLog() {
+  const paths = [];
+  let path = null;
+  const state = { globalAlpha: 1 };
+  const saved = [];
+  const ctx = new Proxy(state, {
+    get: (t, k) => {
+      if (k === 'beginPath')
+        return () => paths.push((path = { arcs: [], strokes: [] }));
+      if (k === 'arc') return (x, y, r) => path?.arcs.push(r);
+      if (k === 'stroke') return () => path?.strokes.push(t.lineWidth);
+      if (k === 'save') return () => saved.push({ ...t });
+      if (k === 'restore') return () => Object.assign(t, saved.pop());
+      if (k in t) return t[k];
+      return () => {};
+    },
+  });
+  const arcsAt = (r, inPaths = paths) =>
+    inPaths.flatMap((pa) => pa.arcs.filter((a) => a === r)).length;
+  return {
+    ctx,
+    arcsAt,
+    // The lit arcs are the paths stroked first on the thick ink
+    litArcsAt: (r) =>
+      arcsAt(
+        r,
+        paths.filter((pa) => pa.strokes[0] >= 8)
+      ),
+  };
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
   Object.assign(CONFIG.RUSHER, DEFAULTS);
+  Object.assign(CONFIG.RUSHER_LOOK, LOOK_DEFAULTS);
 });
 
 describe("the rusher's look", () => {
@@ -169,5 +204,72 @@ describe("the rusher's look", () => {
       to(13.4); // and coasting
       expect(Number.isFinite(r.pose().speed01)).toBe(true);
     }
+  });
+
+  // [blind review 2026-10-02] the ring is the only warning before his blast
+  it('lit, he draws his ring at the blast reach; unlit, nothing there', () => {
+    const { r, to } = fused(12.9);
+    to(13);
+    r.spawnTimer = r.spawnDuration;
+    const { p } = transformP5();
+    const drawn = () => {
+      const log = pathLog();
+      p.drawingContext = log.ctx;
+      r.draw(p);
+      return log.arcsAt(CONFIG.RUSHER.EXPLOSION_RADIUS);
+    };
+    expect(drawn()).toBe(0);
+    r.takeDamage(1, null, 'hit');
+    expect(drawn()).toBeGreaterThan(0);
+  });
+
+  it.each([3, 2, 1])(
+    'with %s of 3 beats left, his ring lights that many arcs',
+    (left) => {
+      const log = pathLog();
+      const fuse = {
+        age: 1,
+        beatsTotal: 3,
+        beatsLeft: left,
+        hot: false,
+        tick: 0,
+      };
+      drawCountRing({ drawingContext: log.ctx }, 0, 0, fuse, 150);
+      expect(log.litArcsAt(150)).toBe(left);
+    }
+  );
+
+  // [blind review 2026-10-02] the figure's scale is his size × ART_SCALE / 22,
+  // the blast's is ART_SCALE: for some values they differ by a rounding
+  it.each([1, 0.74, 0.99])(
+    'at ART_SCALE %s, a rusher and a blast on screen build their sprites once',
+    (scale) => {
+      CONFIG.RUSHER_LOOK.ART_SCALE = scale;
+      const { p, graphics } = transformP5();
+      const frame = () => {
+        drawRusher(p, PROTO_SIZE * scale, { ...LOOK, fuse: null }); // as drawFigure
+        drawRusherBlast(p, {
+          x: 0,
+          y: 0,
+          ageMs: 100,
+          radius: 150,
+          chain: false,
+          seed: 0.4,
+        });
+      };
+      frame();
+      const built = graphics.length;
+      for (let i = 0; i < 5; i++) frame();
+      expect(graphics.length).toBe(built);
+    }
+  );
+
+  // [blind review 2026-10-02] roundRect: Firefox 112+, Safari 16+; the rest of
+  // the game runs on Firefox 92 and Safari 15.4
+  it('draws his fuse on a canvas without roundRect', () => {
+    const { p } = transformP5();
+    p.drawingContext.roundRect = undefined;
+    for (const fuse of FUSES)
+      expect(() => drawRusher(p, PROTO_SIZE, { ...LOOK, fuse })).not.toThrow();
   });
 });

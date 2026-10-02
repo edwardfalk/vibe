@@ -284,9 +284,13 @@ let SP = null; // his sprites, built at K
 let K = 1; // drawn px per prototype px
 let ctx = null;
 let A0 = 1; // the alpha he was handed (his spawn fade): his overlays multiply it
-function begin(p, k) {
+// His blast caches its own copy: its scale (ART_SCALE) and his figure's (size
+// × ART_SCALE / PROTO_SIZE) can differ by a rounding, and one shared entry
+// would rebuild every sprite twice a frame
+const BLAST_PARTS = { ...RUSHER_PARTS };
+function begin(p, k, parts = RUSHER_PARTS) {
   K = k;
-  SP = spriteParts(p, RUSHER_PARTS, k);
+  SP = spriteParts(p, parts, k);
   ctx = p.drawingContext;
   A0 = ctx.globalAlpha;
 }
@@ -545,7 +549,9 @@ export function drawRusher(p, s, look) {
     ctx.globalAlpha = A0;
     ctx.fillStyle = CS.ink;
     ctx.beginPath();
-    ctx.roundRect(-4.6, -top - 1.2, 9.2, top + 3.4, 4.6);
+    // roundRect: Firefox 112+, Safari 16+; square corners before that
+    if (ctx.roundRect) ctx.roundRect(-4.6, -top - 1.2, 9.2, top + 3.4, 4.6);
+    else ctx.rect(-4.6, -top - 1.2, 9.2, top + 3.4);
     ctx.fill();
     for (let i = 0; i < n; i++) {
       if (i < left) {
@@ -749,7 +755,7 @@ export function drawCountRing(p, x, y, fuse, radius) {
  * - a chain blast adds a teal encore ring.
  */
 export function drawRusherBlast(p, b) {
-  begin(p, CONFIG.RUSHER_LOOK.ART_SCALE);
+  begin(p, CONFIG.RUSHER_LOOK.ART_SCALE, BLAST_PARTS);
   const a = b.ageMs / 1000;
   const out = 1 - (1 - clamp01(a / 0.3)) ** 3; // fast, then easing in to the reach
   const R = b.radius;

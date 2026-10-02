@@ -140,6 +140,37 @@ describe('the rusher in flight', () => {
     );
   });
 
+  // [blind review 2026-10-02] speedNow is a number on the way: pin the move
+  it('moves at his speed along his heading, per 60 Hz frame', () => {
+    const { r, at, step } = flight();
+    step(1010);
+    step(1505); // the boost
+    expect(Math.hypot(r.velocity.x, r.velocity.y) * 60).toBeCloseTo(
+      R.BOOST_PX_S,
+      6
+    );
+    const x0 = r.x;
+    at(1521);
+    r.update(FAR, 0, CONFIG.GAME_SETTINGS.FRAME_TIME_MS);
+    expect(r.x - x0).toBeCloseTo(R.BOOST_PX_S / 60, 6);
+  });
+
+  it('spawns heading at the hero, drawn facing his way', () => {
+    const { r } = flight({ player: { x: -300, y: 40 } });
+    expect(r.heading).toBeCloseTo(Math.atan2(40, -300), 6);
+    expect(r.side).toBe(-1);
+  });
+
+  it('a hero inside his turn step: one beat turns him straight at the hero', () => {
+    const { r, step } = flight();
+    const hx = Math.cos(20 * DEG) * FAR;
+    const hy = Math.sin(20 * DEG) * FAR;
+    step(1010, hx, hy);
+    step(1505, hx, hy); // the boost starts the turn
+    step(1705, hx, hy); // TURN_SEC has passed
+    expect(r.heading).toBeCloseTo(Math.atan2(hy - r.y, hx - r.x), 2);
+  });
+
   it('with no beat clock he never boosts', () => {
     const context = { get: () => null, set() {} };
     const r = new Rusher(0, 0, 'rusher', { context }, createMockP5(), null);

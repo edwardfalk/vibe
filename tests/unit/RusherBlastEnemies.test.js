@@ -119,6 +119,10 @@ describe('rusher blast vs enemies', () => {
   it('plays one crash, no explosion, and adds the blast with its chain flag', () => {
     const audio = { playSound: vi.fn(), speak: vi.fn() };
     const explosionManager = { addExplosion: vi.fn() };
+    const collisionSystem = {
+      handleRusherExplosion: vi.fn(),
+      handleEnemyDeath: vi.fn(),
+    };
     const chained = {
       ...exploding(0, 0),
       update: () => ({ ...blastResult, chain: true }),
@@ -128,10 +132,7 @@ describe('rusher blast vs enemies', () => {
       enemyBullets: [],
       player: { x: 5000, y: 5000 },
       deltaTimeMs: 16,
-      collisionSystem: {
-        handleRusherExplosion: vi.fn(),
-        handleEnemyDeath: vi.fn(),
-      },
+      collisionSystem,
       explosionManager,
       audio,
       gameState: { gameState: 'playing', addKill: vi.fn(), addScore: vi.fn() },
@@ -143,5 +144,10 @@ describe('rusher blast vs enemies', () => {
       { chain: true }
     );
     expect(audio.playSound.mock.calls.map(([n]) => n)).toEqual(['rusherCrash']);
+    // [blind review 2026-10-02] the blast reaches the hero's damage
+    expect(collisionSystem.handleRusherExplosion).toHaveBeenCalledWith(
+      { ...blastResult, chain: true },
+      chained
+    );
   });
 });

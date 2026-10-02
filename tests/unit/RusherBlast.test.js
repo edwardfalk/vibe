@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { RusherBlast } from '../../js/effects/explosions/RusherBlast.js';
+import { Explosion } from '../../js/effects/explosions/Explosion.js';
 import { ExplosionManager } from '../../js/effects/explosions/ExplosionManager.js';
 import { BLAST_SEC } from '../../js/entities/RusherRenderer.js';
 import { CONFIG } from '../../js/config.js';
@@ -27,5 +28,8 @@ describe("the rusher's blast", () => {
     expect(b.chain).toBe(true);
     m.update(40);
     expect(b.ageMs).toBe(40);
+    // [blind review 2026-10-02] and every other type stays a plain explosion
+    m.addExplosion(0, 0, 'hit');
+    expect(m.explosions[1]).toBeInstanceOf(Explosion);
   });
 });

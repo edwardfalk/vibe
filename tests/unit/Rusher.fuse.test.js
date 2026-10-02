@@ -113,6 +113,28 @@ describe("the rusher's fuse", () => {
     expect(step(16.01)?.type).toBe('rusher-explosion');
   });
 
+  // [final review 2026-10-02] the other side of the half-beat rule: a hitstop
+  // that straddles his beat still lands on it
+  it('an update under half a beat late still blows on his beat', () => {
+    const { r, step, walk } = fused();
+    step(12.0);
+    r.takeDamage(1, null, 'hit'); // his blast is beat 14
+    expect(walk(12.0, 13.9)).toBeNull();
+    expect(step(14.4)?.type).toBe('rusher-explosion'); // 0.4 beat late
+  });
+
+  // [final review 2026-10-02] the stall rule runs before the blast's: the other
+  // way round, the late rule moves 16 to 18 and the stall rule 18 to 20
+  it('a stall across his blast beat moves it on once', () => {
+    const { r, step, walk } = fused();
+    step(14.0);
+    r.takeDamage(1, null, 'hit'); // blast on 16
+    expect(walk(14.0, 15.9)).toBeNull();
+    step(15.9);
+    expect(step(17.2)).toBeNull(); // a beat the game sat out, across beat 16
+    expect(r.lit.blastBeat).toBe(18);
+  });
+
   it('a stall of whole beats moves his blast on and keeps it on 1 or 3', () => {
     const { r, step } = fused();
     step(14.0);

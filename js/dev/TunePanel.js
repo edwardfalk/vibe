@@ -1,6 +1,6 @@
 /**
  * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK, SKY, PACING,
- * MIX, the rusher's flight, fuse, push and blast (RUSHER), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
+ * MIX, the rusher's flight, fuse, push and blast (RUSHER) and look (RUSHER_LOOK), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the
  * stabber's knockback and the hero's

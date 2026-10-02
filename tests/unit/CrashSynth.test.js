@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { playCrash } from '../../js/audio/CrashSynth.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
+import { Audio } from '../../js/Audio.js';
 
 // A Web Audio stand-in that records the nodes it makes
 function fakeAudio() {
@@ -37,6 +38,25 @@ function fakeAudio() {
   return { ctx, made };
 }
 
+// The game's Audio on that stand-in, sound on, the hero at (0, 0)
+function gameAudio() {
+  const { ctx, made } = fakeAudio();
+  ctx.state = 'running';
+  const audio = Object.assign(Object.create(Audio.prototype), {
+    audioContext: ctx,
+    initialized: true,
+    enabled: true,
+    initialize() {},
+    sounds: { ...SOUND_CONFIG },
+    player: { x: 0, y: 0 },
+    masterGain: { kind: 'effects bus' },
+    // As the constructor sets them
+    _pausedByGame: false,
+    _resuming: false,
+  });
+  return { audio, made };
+}
+
 afterEach(() => vi.restoreAllMocks());
 
 describe("the rusher's crash", () => {
@@ -71,5 +91,33 @@ describe("the rusher's crash", () => {
     playCrash(ctx, {}, cfg, 0.5, -1);
     expect(spy).not.toHaveBeenCalled();
     expect(ctx.createBuffer).toHaveBeenCalledTimes(1);
+  });
+});
+
+// [blind review 2026-10-02] the game plays it through playSound's branch
+describe('the crash through playSound', () => {
+  it('plays the crash synth into the effects bus, panned toward the blast, quieter far off', () => {
+    const near = gameAudio();
+    const tone = vi.spyOn(near.audio, 'playTone');
+    near.audio.playSound('rusherCrash', 300, 0);
+    expect(tone).not.toHaveBeenCalled();
+    const squares = near.made.filter((n) => n.kind === 'osc');
+    expect(squares.map((o) => o.type)).toEqual(Array(6).fill('square'));
+    const pan = near.made.find((n) => n.kind === 'pan');
+    expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeGreaterThan(0);
+    expect(pan.connect).toHaveBeenCalledWith(near.audio.masterGain);
+    const far = gameAudio();
+    far.audio.playSound('rusherCrash', 2000, 0);
+    const peak = ({ made }) =>
+      made.find((n) => n.kind === 'gain').gain.exponentialRampToValueAtTime.mock
+        .calls[0][0];
+    expect(peak(far)).toBeLessThan(peak(near));
+  });
+
+  it('makes nothing while the game holds the sound', () => {
+    const { audio, made } = gameAudio();
+    audio._pausedByGame = true;
+    audio.playSound('rusherCrash', 300, 0);
+    expect(made).toHaveLength(0);
   });
 });
