@@ -153,7 +153,7 @@ const TURN_REST_SEC = 9;
 
 // ---- sprite helpers: in a sprite, strokes are free ----
 // A union of shapes with one ink edge: every shape in ink first, then fills
-function union(g, c, shapes, ink = true) {
+export function union(g, c, shapes, ink = true) {
   if (ink) {
     g.fill(...C.ink);
     g.stroke(...C.ink);

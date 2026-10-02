@@ -114,6 +114,7 @@ const KNOBS = [
   [TANK, 'SIDESTEP_PX_S', [0, 150, 5]],
   [TANK_LOOK, 'ART_SCALE', [0.6, 1.6, 0.05]],
   [TANK_LOOK, 'SWAGGER', [0, 2, 0.1]],
+  ['RUSHER_LOOK', 'ART_SCALE', [0.6, 1.6, 0.05]],
   [BOMB, 'FUSE_BEATS', [2, 16, 1]],
   [BOMB, 'COUNT_LEAD_BEATS', [1, 4, 1]],
   [BOMB, 'RADIUS_PX', [80, 400, 10]],

@@ -1,5 +1,13 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { random, env, PI } from '../mathUtils.js';
+import { random, env, clamp01, PI } from '../mathUtils.js';
+import { nextFacing } from './GruntRenderer.js';
+import {
+  RUSHER_COLORS,
+  BOOST_ENV_SEC,
+  drawRusher,
+  drawCountRing,
+  rusherTilt,
+} from './RusherRenderer.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { RUSHER_LINES, RUSHER_BATTLE_CRIES } from '../audio/DialogueLines.js';
@@ -12,6 +20,13 @@ const DEG = PI / 180;
 const STRONG_EVERY = 2; // beats 1 and 3: every second beat from a bar's start
 const LATE_BEATS = 0.5; // a blast this late moves on to the next 1 or 3
 const EPS = 1e-6; // slack on beat positions, for floating-point error
+
+// How fast his drawn envelopes fade (s)
+const CRY_TAU_SEC = 0.6;
+const WHOA_TAU_SEC = 0.5;
+const HIT_TAU_SEC = 0.08;
+const PUSH_TAU_SEC = 0.3;
+const TICK_TAU_SEC = 0.1; // the flash on each beat of his fuse
 
 /** The first beat 1 or 3 (an even beat position) at least `beats` after `from` */
 export function strongBeatAfter(from, beats) {
@@ -34,7 +49,7 @@ class Rusher extends BaseEnemy {
       size: 22,
       health: 1,
       speed: CONFIG.RUSHER.CRUISE_PX_S / FRAMES_PER_SEC,
-      color: p.color(255, 20, 147),
+      color: p.color(...RUSHER_COLORS.bike),
     };
     super(x, y, 'rusher', rusherConfig, p, audio);
 
@@ -44,6 +59,7 @@ class Rusher extends BaseEnemy {
     this.heading = hero ? Math.atan2(hero.y - y, hero.x - x) : 0;
     this.turn = { from: this.heading, to: this.heading, at: null };
     this.aimAngle = this.heading;
+    this.side = Math.cos(this.heading) >= 0 ? 1 : -1; // drawn facing right (1) or left
     this.speedNow = CONFIG.RUSHER.CRUISE_PX_S; // px/s
     this.toHero = this.heading;
     this.ahead = true; // the hero in front of him, to tell shooting past
@@ -59,6 +75,8 @@ class Rusher extends BaseEnemy {
     this.whoaAt = null;
     this.hitAt = null;
     this.pushAt = null;
+    this.hitFlashAlpha = 255; // he stays solid when hit: his own POW shows it
+    this.lookSeed = this.animFrame / p.TWO_PI; // his flicker's phase
     // The beat he is drawn at, kept by update(). Kept from here on, so a hit
     // before his first update stamps a real beat
     this.poseBeats =
@@ -74,6 +92,7 @@ class Rusher extends BaseEnemy {
     // him then too [review-added 2026-10-02: Codex]
     if (this.lit) this.brake(deltaTimeMs);
     this.aimAngle = this.heading;
+    this.side = nextFacing(this.side, this.heading, CONFIG.RUSHER.FLIP_COS);
     this.keepInWorld();
     return result;
   }
@@ -275,50 +294,72 @@ class Rusher extends BaseEnemy {
     };
   }
 
-  /**
-   * Draw rusher-specific body shape - sharp arrow/dart design
-   */
-  drawBody(s) {
-    // The dart is drawn nose-up (-y); a quarter turn points it along +x,
-    // where the enemy's frame aims, so it flies nose first
-    this.p.push();
-    this.p.rotate(this.p.HALF_PI);
-    this.p.strokeJoin(this.p.MITER);
+  /** @override Drawn from his pose (RusherRenderer.js), mirrored to his side and pitched along his flight */
+  drawFigure(p, s) {
+    this.applyHitShake(p);
+    drawRusher(p, s * CONFIG.RUSHER_LOOK.ART_SCALE, this.pose());
+  }
 
-    // Hot pink outline
-    this.p.stroke(255, 20, 147);
-    this.p.strokeWeight(2);
-
-    // Dark interior
-    this.p.fill(20, 5, 15);
-
-    // Sharp swept-back shape
-    this.p.beginShape();
-    this.p.vertex(0, -s * 0.6); // Sharp nose
-    this.p.vertex(s * 0.4, s * 0.4); // Right wing tip
-    this.p.vertex(0, s * 0.2); // Back indent
-    this.p.vertex(-s * 0.4, s * 0.4); // Left wing tip
-    this.p.endShape(this.p.CLOSE);
-
-    // Inner glowing lines
-    this.p.stroke(255, 105, 180, 150);
-    this.p.strokeWeight(1);
-    this.p.line(0, -s * 0.5, 0, s * 0.1); // Center spine
-    this.p.line(0, 0, s * 0.2, s * 0.2); // Right rib
-    this.p.line(0, 0, -s * 0.2, s * 0.2); // Left rib
-
-    // Thruster flame at the back
-    this.p.noStroke();
-    this.p.fill(255, 0, 255, 200); // Yellow/Pink flame
-    this.p.triangle(
-      -s * 0.2,
-      s * 0.25,
-      s * 0.2,
-      s * 0.25,
-      0,
-      s * 0.6 + random() * s * 0.3
+  /** Lit: the ring at his blast's reach counts the beats left */
+  drawSpecificIndicators(p) {
+    if (!this.lit) return;
+    drawCountRing(
+      p,
+      this.x,
+      this.y,
+      this.pose().fuse,
+      CONFIG.RUSHER.EXPLOSION_RADIUS
     );
-    this.p.pop();
+  }
+
+  /** His pose, at the beat update() last kept (frozen while paused), and what happened when */
+  pose() {
+    const R = CONFIG.RUSHER;
+    const beats = this.poseBeats;
+    const beatSec =
+      (this.getContextValue('beatClock')?.beatInterval ?? 0) / 1000;
+    const since = (at) =>
+      beats === null || at === null ? Infinity : (beats - at) * beatSec;
+    const lit = this.lit;
+    const speed = lit
+      ? Math.hypot(this.velocity.x, this.velocity.y) * FRAMES_PER_SEC
+      : this.speedNow;
+    let fuse = null;
+    if (lit) {
+      const timed = beats !== null && lit.blastBeat !== null;
+      const left = timed ? lit.blastBeat - beats : lit.beatsTotal;
+      fuse = {
+        age: since(lit.at),
+        beatsTotal: lit.beatsTotal,
+        beatsLeft: Math.max(1, Math.ceil(left - EPS)),
+        hot: timed && left <= 0.5,
+        tick:
+          beats === null
+            ? 0
+            : env((beats - Math.floor(beats)) * beatSec, TICK_TAU_SEC),
+        by: lit.by,
+      };
+    }
+    return {
+      t: beats === null ? 0 : beats * beatSec,
+      side: this.side,
+      tilt: rusherTilt(this.heading, this.side),
+      boost: lit ? 0 : env(since(this.boostAt), BOOST_ENV_SEC),
+      speed,
+      // Finite whatever the sliders say (both speeds at 0, or boost under cruise) [review-added 2026-10-02: Codex]
+      speed01: clamp01(
+        speed / Math.max(R.BOOST_PX_S * R.CHARGE_BOOST, speed, EPS)
+      ),
+      cry: env(since(this.cryAt), CRY_TAU_SEC),
+      charging: this.cried && !lit,
+      whoa: env(since(this.whoaAt), WHOA_TAU_SEC),
+      toHero: this.toHero,
+      hit: env(since(this.hitAt), HIT_TAU_SEC),
+      push: env(since(this.pushAt), PUSH_TAU_SEC),
+      pushDir: this.pushDir,
+      fuse,
+      seed: this.lookSeed,
+    };
   }
 }
 

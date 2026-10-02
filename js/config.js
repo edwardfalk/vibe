@@ -188,6 +188,12 @@ const CONFIG = {
     tank: 55, // the Bouncer's shoulders reach about 65 px
   },
 
+  // How the rusher looks (js/entities/RusherRenderer.js). Drawn only; his hit
+  // circle is HITBOX.rusher. A new ART_SCALE rebuilds his cached sprites.
+  RUSHER_LOOK: {
+    ART_SCALE: 1, // 1 = the prototype's proportions at size 22
+  },
+
   // The grunt's look and motion (js/entities/GruntRenderer.js): a jelly that
   // hovers on one jet and dances on the beat. All of it is drawn only; the
   // hit circle is HITBOX.grunt. Tune live with ?tune; a new ART_SCALE
