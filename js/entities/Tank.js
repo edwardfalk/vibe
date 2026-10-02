@@ -75,6 +75,7 @@ class Tank extends BaseEnemy {
     this.kickAt = null; // when he did (a beat position)
     this.lurchNow = 0; // this frame's lurch, 0 to 1 (drawn too)
     this.poseBeats = null; // the beat position update() last kept
+    this.seenBeats = null; // his last update's, to tell a stall
 
     // His charge, on his bar clock (beat positions)
     this.chargingShot = false;
@@ -144,6 +145,15 @@ class Tank extends BaseEnemy {
     this.poseBeats = beats;
     const beatSec = (beatClock?.beatInterval ?? 0) / 1000;
 
+    // Whole bars since his last update the game sat out (a hidden tab,
+    // ?tune's "Sound while paused") don't count toward his charge, as whole
+    // beats don't toward a bomb's fuse. A hitstop never lasts a bar
+    if (beats !== null && this.seenBeats !== null && this.chargingShot) {
+      const missed = Math.floor((beats - this.seenBeats) / BEATS_PER_BAR);
+      if (missed >= 1) this.chargeStartBeat += missed * BEATS_PER_BAR;
+    }
+    this.seenBeats = beats;
+
     // Beat 1: the first update in a bar he hasn't acted in, however late in
     // that bar. First seen past beat 1 (a spawn ending mid-bar), he notes
     // the bar and waits for the next
@@ -154,13 +164,6 @@ class Tank extends BaseEnemy {
       if (this.lastActedBar === null && beats - bar * BEATS_PER_BAR >= 1) {
         this.lastActedBar = bar;
       } else if (bar !== this.lastActedBar) {
-        // Whole bars the game sat out (a hidden tab, ?tune's "Sound while
-        // paused") don't count toward his charge, as beats the game sat out
-        // don't toward a bomb's fuse. A hitstop never skips a whole bar
-        if (this.chargingShot && this.lastActedBar !== null) {
-          this.chargeStartBeat +=
-            Math.max(0, bar - this.lastActedBar - 1) * BEATS_PER_BAR;
-        }
         this.lastActedBar = bar;
         this.kickAt = beats;
         fire = this.onKick(bar * BEATS_PER_BAR, toTarget, distance);

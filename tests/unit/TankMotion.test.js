@@ -193,16 +193,32 @@ describe("the tank's charge", () => {
     expect(w.frame(t, 14000)?.owner).toBe('enemy-tank'); // bar 7
   });
 
-  it('waits RECHARGE_BEATS after a shot before charging again', () => {
+  it('holds his charge when the game sits out its second bar, too', () => {
     const w = tankWorld({ hero: { x: 300, y: 0 } });
     const t = w.tank();
     t.lastActedBar = 1;
     w.frame(t, 4000); // bar 2: CHARGING!
-    w.frame(t, 6000);
-    expect(w.frame(t, 8000)?.owner).toBe('enemy-tank'); // bar 4: the shot
-    w.frame(t, 10000); // bar 5: four beats on
-    expect(t.chargingShot).toBe(false);
-    w.frame(t, 12000); // bar 6: eight beats on
-    expect(t.chargingShot).toBe(true);
+    w.frame(t, 5000);
+    w.frame(t, 6000); // bar 3, the charge's second
+    w.frame(t, 6016);
+    // Hidden from just after bar 3's beat 1 to bar 7, beat 2: the charge
+    // still has bar 3 to run, so it fires on bar 8's beat 1
+    expect(w.frame(t, 14600)).toBeNull();
+    expect(w.frame(t, 16000)?.owner).toBe('enemy-tank');
+  });
+
+  it('waits RECHARGE_BEATS after a shot before charging again', () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    // A frame a beat: frames a bar or more apart are a stall, which holds
+    // his charge
+    const shots = [];
+    for (let ms = 4000; ms <= 8000; ms += 500) shots.push(w.frame(t, ms));
+    expect(shots.at(-1)?.owner).toBe('enemy-tank'); // bar 4: the shot
+    for (let ms = 8500; ms <= 10000; ms += 500) w.frame(t, ms);
+    expect(t.chargingShot).toBe(false); // bar 5: four beats on
+    for (let ms = 10500; ms <= 12000; ms += 500) w.frame(t, ms);
+    expect(t.chargingShot).toBe(true); // bar 6: eight beats on
   });
 });
