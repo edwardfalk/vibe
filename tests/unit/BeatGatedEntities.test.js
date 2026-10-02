@@ -1,33 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { createMockP5, createMockAudio } from './helpers/enemyMocks.js';
+import { createMockP5 } from './helpers/enemyMocks.js';
 import { Tank } from '../../js/entities/Tank.js';
 import { Stabber } from '../../js/entities/Stabber.js';
 import { Rusher } from '../../js/entities/Rusher.js';
-import { BeatClock } from '../../js/audio/BeatClock.js';
 import { updateStabberBehavior } from '../../js/entities/StabberAttackHandler.js';
-
-// A real BeatClock on a fake audio clock, plus a context the entities read
-function world() {
-  const ctx = { currentTime: 0 };
-  const clock = new BeatClock(120, ctx);
-  const audio = createMockAudio();
-  const context = {
-    get: (k) =>
-      k === 'audio'
-        ? audio
-        : k === 'beatClock'
-          ? clock
-          : k === 'enemies'
-            ? []
-            : null,
-    set() {},
-  };
-  const at = (ms) => {
-    ctx.currentTime = ms / 1000;
-    clock.update(true);
-  };
-  return { clock, audio, context, at };
-}
+import { beatWorld as world } from './helpers/beatWorld.js';
 
 describe('Beat-gated entity behaviour', () => {
   afterEach(() => vi.restoreAllMocks());

@@ -59,6 +59,7 @@ export class CollisionSystem {
       enemies: this.getContextValue('enemies'),
       audio: this.getContextValue('audio'),
       activeBombs: this.getContextValue('activeBombs'),
+      beatClock: this.getContextValue('beatClock'),
     });
   }
 

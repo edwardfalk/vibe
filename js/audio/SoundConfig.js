@@ -244,6 +244,16 @@ export const SOUND_CONFIG = {
     volume: 0.2,
     duration: 0.06,
   },
+  // The bouncer's shove: a whump falling from the hero's band into the
+  // tank's, so it stands apart from the kick it often lands with and from
+  // the hero's own hit
+  tankShove: {
+    frequency: 320,
+    waveform: 'triangle',
+    volume: 0.6,
+    duration: 0.16,
+    sweep: { to: 70, curve: 'exponential' },
+  },
   tankHit: {
     frequency: 55,
     waveform: 'square',

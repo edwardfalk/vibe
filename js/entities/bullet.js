@@ -1,14 +1,15 @@
 import { CONFIG } from '../config.js';
-import { sin, cos, PI, dist } from '../mathUtils.js';
+import { sin, cos, dist } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import { GRUNT_COLORS } from './GruntRenderer.js';
+import { TANK_COLORS, drawTankBall } from './TankRenderer.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
 const { WORLD_WIDTH, WORLD_HEIGHT } = CONFIG.GAME_SETTINGS;
 const MAX_BULLET_POOL_SIZE = 400;
 const PLAYER_GLOW = [255, 255, 100];
-const TANK_GLOW = [150, 100, 255];
+const TANK_GLOW = TANK_COLORS.amber;
 const ENEMY_GLOW = GRUNT_COLORS.shot; // only grunts fire small shots
 
 export class Bullet {
@@ -148,46 +149,13 @@ export class Bullet {
       p.strokeWeight(this.size * 0.4);
       p.line(-this.size * 0.5, 0, this.size * 0.5, 0);
     } else if (this.owner === 'enemy-tank') {
-      // Tank bullet - massive vibrating neon purple hexagon
+      // The Bouncer's ball: amber with a white-hot core and an ink rim, so
+      // not additive; it shrinks as its energy is spent on aliens it hits
       const energyPercent = Number.isFinite(this.energy)
         ? Math.min(1, Math.max(0, this.energy / 100))
         : 1;
-      const vibration = sin(p.frameCount * 0.8) * 2; // Fast vibration
-
-      p.translate(vibration, vibration * 0.5);
-
-      p.stroke(138, 43, 226, 200);
-      p.strokeWeight(this.size * 0.5 * energyPercent);
-      p.fill(255, 255, 255);
-
-      p.beginShape();
-      for (let i = 0; i < 6; i++) {
-        p.vertex(
-          cos((i * PI) / 3) * this.size * energyPercent,
-          sin((i * PI) / 3) * this.size * energyPercent
-        );
-      }
-      p.endShape(p.CLOSE);
-
-      // Lightning bolts crackling out of the core, new each frame
-      p.blendMode(p.ADD);
-      p.noFill();
-      p.stroke(190, 140, 255, 230);
-      p.strokeWeight(1.5);
-      for (let bolt = 0; bolt < 4; bolt++) {
-        const ang = Math.random() * PI * 2;
-        const along = { x: cos(ang), y: sin(ang) };
-        p.beginShape();
-        for (let k = 0; k <= 5; k++) {
-          const r = this.size * energyPercent * (0.9 + k * 0.2);
-          const jag =
-            k === 0
-              ? 0
-              : (Math.random() - 0.5) * this.size * energyPercent * 0.5;
-          p.vertex(along.x * r - along.y * jag, along.y * r + along.x * jag);
-        }
-        p.endShape();
-      }
+      p.blendMode(p.BLEND);
+      drawTankBall(p, this.size * energyPercent, (p.frameCount / 60) * 14);
     } else {
       // A grunt's shot: a coral line with a white core
       p.stroke(...GRUNT_COLORS.shotCore, 210);
@@ -217,7 +185,7 @@ export class Bullet {
       if (this.owner === 'player') {
         p.fill(255, 255, 100, alpha);
       } else if (this.owner === 'enemy-tank') {
-        p.fill(150, 100, 255, alpha);
+        p.fill(...TANK_COLORS.amber, alpha);
       } else {
         p.fill(...GRUNT_COLORS.shot, alpha);
       }

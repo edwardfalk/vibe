@@ -38,9 +38,6 @@ const HEALTH_BAR = {
 /** Kill streak indicator position (y from top) */
 const KILL_STREAK_Y = 80;
 
-/** Bomb warning circle base size */
-const BOMB_WARNING_SIZE = 60;
-
 /** Toast position and timing */
 const TOAST = {
   bottom: 32,
@@ -115,56 +112,6 @@ export class UIRenderer {
   // Draw pause screen (delegated to UIOverlays)
   drawPauseScreen(p) {
     drawPauseScreen(p, this.gameState);
-  }
-
-  // Draw bomb countdown indicators
-  drawBombs(p) {
-    if (
-      !this.gameState ||
-      !this.gameState.activeBombs ||
-      this.gameState.activeBombs.length === 0
-    )
-      return;
-
-    p.push();
-
-    for (const bomb of this.gameState.activeBombs) {
-      const { x: screenX, y: screenY } = this.cameraSystem
-        ? this.cameraSystem.worldToScreen(bomb.x, bomb.y)
-        : bomb;
-
-      // Calculate countdown
-      const secondsLeft = ceil(bomb.timer / 60);
-      const progress = bomb.timer / bomb.maxTimer;
-
-      const pulseIntensity = 1 + p.sin(p.frameCount * 0.3) * 0.3;
-      const warningSize = BOMB_WARNING_SIZE * pulseIntensity;
-
-      // Warning circle color (red to yellow as time runs out)
-      const red = 255;
-      const green = progress * 255;
-      const blue = 0;
-
-      p.stroke(red, green, blue, 200);
-      p.strokeWeight(4);
-      p.noFill();
-      p.circle(screenX, screenY, warningSize);
-
-      // Countdown text
-      p.fill(255, 255, 255);
-      p.textAlign(p.CENTER, p.CENTER);
-      p.textSize(24);
-      p.strokeWeight(2);
-      p.stroke(0, 0, 0);
-      p.text(secondsLeft, screenX, screenY);
-
-      // 'TIME BOMB' label (was 'BOMB')
-      p.textSize(12);
-      p.fill(255, 0, 0);
-      p.text('TIME BOMB', screenX, screenY - 35);
-    }
-
-    p.pop();
   }
 
   // Draw level progress indicator
@@ -376,7 +323,6 @@ export class UIRenderer {
     this.drawKillStreakIndicator(p);
     this.drawHealthBar(p);
     this.drawDashStatus(p);
-    this.drawBombs(p);
 
     // Draw overlays based on game state
     if (this.gameState) {

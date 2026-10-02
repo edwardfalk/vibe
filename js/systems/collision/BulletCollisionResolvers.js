@@ -3,6 +3,7 @@
  * Each function resolves what happens when a bullet hits a target.
  */
 
+import { CONFIG } from '../../config.js';
 import { Bullet } from '../../entities/bullet.js';
 import { handleDamageResult } from '../../shared/DamageResultHandler.js';
 import { applyKillFeedback } from '../combat/KillFeedback.js';
@@ -60,6 +61,17 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
  * Handle tank energy ball hitting an enemy (friendly fire).
  */
 export function handleTankEnergyBallHit(bullet, enemy, deps) {
+  // Another tank only takes a dent, through his armour, and the ball is spent
+  // on him; any other alien it meets dies outright
+  if (enemy.type === 'tank') {
+    handleRegularEnemyBulletHit(
+      bullet,
+      enemy,
+      deps,
+      CONFIG.TANK.SHOT_DAMAGE_TO_TANKS
+    );
+    return;
+  }
   const { getContextValue, handleEnemyDeath } = deps;
   const audio = getContextValue('audio');
   const gameState = getContextValue('gameState');
@@ -110,7 +122,12 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
 /**
  * Handle regular enemy bullet hitting another enemy (friendly fire).
  */
-export function handleRegularEnemyBulletHit(bullet, enemy, deps) {
+export function handleRegularEnemyBulletHit(
+  bullet,
+  enemy,
+  deps,
+  damage = bullet.damage
+) {
   const { getContextValue, handleEnemyDeath } = deps;
   const explosionManager = getContextValue('explosionManager');
   const audio = getContextValue('audio');
@@ -127,7 +144,7 @@ export function handleRegularEnemyBulletHit(bullet, enemy, deps) {
   }
 
   handleDamageResult(
-    enemy.takeDamage(bullet.damage, bullet.angle, bulletSource),
+    enemy.takeDamage(damage, bullet.angle, bulletSource),
     enemy,
     {
       explosionManager,

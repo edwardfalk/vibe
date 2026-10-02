@@ -139,7 +139,7 @@ const CONFIG = {
     EXPLOSION_DAMAGE: 35,
   },
 
-  // Hazard clouds. A tank's death leaves plasma; its bomb leaves plasma and
+  // Hazard clouds. A tank's death leaves plasma; the hero's bomb leaves plasma and
   // longer-lasting debris. Anything within RADIUS takes DAMAGE every
   // DAMAGE_INTERVAL frames for DURATION frames; MAX_RADIUS is how far the
   // cloud is drawn.
@@ -166,7 +166,7 @@ const CONFIG = {
     grunt: 22,
     rusher: 14,
     stabber: 18,
-    tank: 42,
+    tank: 55, // the Bouncer's shoulders reach about 65 px
   },
 
   // The grunt's look and motion (js/entities/GruntRenderer.js): a jelly that
@@ -186,6 +186,58 @@ const CONFIG = {
     FACING_DEADZONE: 0.17, // it turns round once |cos(aim)| passes this
   },
 
+  // The tank, a bouncer from space (js/entities/Tank.js). He turns only on
+  // beat 1, a step at a time; his gun follows his target within an arc; he
+  // drifts, and lurches on each beat 1; he shoves a hero in front of him on
+  // the beat. Health applies to tanks spawned after a change. Tune with ?tune.
+  TANK: {
+    HEALTH: 60,
+    TURN_STEP_DEG: 60, // the most he turns on one beat 1
+    TURN_SEC: 0.4, // how long that turn takes (keep under a bar)
+    TURN_DEADZONE_DEG: 3, // a target this close to his facing gets no turn
+    AIM_ARC_DEG: 70, // his gun reaches this far either side of his facing
+    AIM_TAU_SEC: 0.25, // how sluggishly it follows his target
+    DRIFT_PX_S: 14, // between kicks he drifts toward his target
+    LURCH_PX_S: 95, // the lurch on each beat 1, at its peak
+    LURCH_TAU_SEC: 0.28, // and how fast it dies away
+    LURCH_MIN_DIST_PX: 130, // closer than this he holds his ground
+    // He keeps his line of fire clear of other tanks: one in his lane (between
+    // him and his target, this close to the line: a tank's hit circle plus
+    // his ball) makes him step sideways, so tanks spread round the hero
+    FIRE_LANE_PX: 70,
+    SIDESTEP_PX_S: 40,
+    CHARGE_RANGE_PX: 400, // he starts a charge with his target this close
+    CHARGE_BEATS: 8, // two bars of straining, then the shot on beat 1
+    RECHARGE_BEATS: 8, // from a shot to the next charge
+    SHOVE_COOLDOWN_BEATS: 2, // between two shoves from one tank
+    SHOT_DAMAGE_TO_TANKS: 10, // another tank's ball only dents him (it kills other aliens)
+  },
+
+  // How the tank looks (js/entities/TankRenderer.js). Drawn only; his hit
+  // circle is HITBOX.tank. A new ART_SCALE rebuilds his cached sprites.
+  TANK_LOOK: {
+    ART_SCALE: 1, // 1 = the prototype's proportions at size 50
+    SWAGGER: 1, // his shoulder roll on 2, neck roll on 3, knuckle crack on 4
+  },
+
+  // The hero's bomb (js/systems/BombSystem.js), planted on a tank's back
+  // with a shout of "TIMEBOMB!". It counts "3, 2, 1" on the last three even
+  // beats before it blows (beats 0, 2 and 4 of a 6-beat fuse; beat 0 is the
+  // first beat at least COUNT_LEAD_BEATS after planting, none said before it) and
+  // blows on beat FUSE_BEATS, hurting everything in RADIUS_PX, the tank it
+  // is on and the hero too. Damage falls from MAX at its centre to MIN at
+  // its reach. Tune live with ?tune.
+  BOMB: {
+    FUSE_BEATS: 6,
+    RADIUS_PX: 250,
+    ENEMY_DAMAGE_MIN: 5,
+    ENEMY_DAMAGE_MAX: 30,
+    PLAYER_DAMAGE_MIN: 10,
+    PLAYER_DAMAGE_MAX: 40,
+    MAX_ACTIVE: 3,
+    COUNT_LEAD_BEATS: 1, // "TIMEBOMB!" gets at least this long before the count
+  },
+
   // The hero: a shield that takes one real hit whole, then recharges and
   // returns on the beat; slow healing once he's gone a while unhit.
   // Contact ticks (1 per frame) bypass the shield. Tune live with ?tune.
@@ -198,6 +250,7 @@ const CONFIG = {
     DAMAGE_GRUNT_BULLET: 5,
     DAMAGE_TANK_BALL: 50,
     DAMAGE_STAB: 25,
+    DAMAGE_TANK_SHOVE: 15, // a tank's shove when he's in front of it
     HEAD_SIZE: 0.36, // head diameter as a share of his size
     // Knockback: a push of this many px/frame that fades by KNOCKBACK_DECAY
     // (share kept per frame), so it carries him about force x 6.7 px in all
@@ -206,6 +259,7 @@ const CONFIG = {
     KNOCKBACK_RUSHER_BLAST: 12,
     KNOCKBACK_AREA: 6, // hazard clouds
     KNOCKBACK_BOMB: 15,
+    KNOCKBACK_TANK_SHOVE: 14, // about 95 px
   },
 
   // Tank armour plates (hits to break). Applies to tanks spawned after a

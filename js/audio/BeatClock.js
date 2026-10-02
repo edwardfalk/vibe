@@ -123,11 +123,6 @@ export class BeatClock {
     return this.isOnBeat([2, 4]);
   }
 
-  // TANK TIMING: Beat 1 only (bass drum pattern)
-  canTankShoot() {
-    return this.isOnBeat([1]);
-  }
-
   // STABBER TIMING: the off-beat 3.5 (syncopated, creates tension).
   // Opens halfway through beat 3 and lasts `tolerance`, like the other gates.
   canStabberAttack() {

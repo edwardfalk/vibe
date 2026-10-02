@@ -14,7 +14,8 @@
  * as a hash.
  */
 import { CONFIG } from '../config.js';
-import { mulberry32 } from '../mathUtils.js';
+import { mulberry32, smooth, clamp01 } from '../mathUtils.js';
+import { spriteParts, stamp } from './spriteCache.js';
 
 const PI = Math.PI;
 const TWO_PI = 2 * PI;
@@ -48,8 +49,8 @@ export const GRUNT_COLORS = Object.freeze(
   )
 );
 // Wind-up: amber for the first half of the warning beat, white-hot after
-const AMBER = Object.freeze([255, 170, 40]);
-const HOT = Object.freeze([255, 248, 225]);
+export const AMBER = Object.freeze([255, 170, 40]);
+export const HOT = Object.freeze([255, 248, 225]);
 const SULK_GREY = Object.freeze([125, 135, 125]);
 
 // The dance's shape: seconds from its snare (beats 2 and 4) unless named otherwise
@@ -118,8 +119,6 @@ const SULK_FADE = 0.15; // of the beat: it perks up just before the next one
 export const SHOULDER = Object.freeze([0.28, 0.12]);
 export const GUN_REACH = 0.56;
 
-const smooth = (k) => k * k * (3 - 2 * k);
-const clamp01 = (x) => Math.max(0, Math.min(1, x));
 const mod = (a, n) => ((a % n) + n) % n;
 const mix = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
 // A repeatable 0..1 for a whole number: dice without random()
@@ -364,7 +363,6 @@ const JELLY = {
     [5, -7, 0.035],
   ],
 };
-const SPRITE_SCALE = 4; // sprite px per drawn px, so a zoomed grunt stays crisp
 
 // A part with an ink edge: a slightly larger ink copy behind it. Strokes cost
 // twice as much on Edward's laptop (measured in the prototype).
@@ -449,33 +447,7 @@ const PARTS = {
   ],
 };
 
-// p5 instance → { s, parts }: built on the first grunt drawn and shared by
-// all. When the drawn size changes (the ?tune slider) they are rebuilt and
-// the old ones removed.
-const spriteCache = new WeakMap();
-function partsFor(p, s) {
-  const cached = spriteCache.get(p);
-  if (cached?.s === s) return cached.parts;
-  for (const part of Object.values(cached?.parts ?? {})) part.g.remove();
-  const parts = {};
-  for (const [name, [[x0, y0, x1, y1], draw]] of Object.entries(PARTS)) {
-    const w = (x1 - x0) * s;
-    const h = (y1 - y0) * s;
-    const g = p.createGraphics(
-      Math.ceil(w * SPRITE_SCALE),
-      Math.ceil(h * SPRITE_SCALE)
-    );
-    g.pixelDensity(1);
-    g.noStroke();
-    g.scale(SPRITE_SCALE);
-    g.translate(-x0 * s, -y0 * s);
-    draw(g, s);
-    parts[name] = { g, x: x0 * s, y: y0 * s, w, h };
-  }
-  spriteCache.set(p, { s, parts });
-  return parts;
-}
-const stamp = (p, part) => p.image(part.g, part.x, part.y, part.w, part.h);
+const partsFor = (p, s) => spriteParts(p, PARTS, s);
 
 // The body's transforms from its centre: float and hop; lean and squash round
 // its middle; mirror to face its target; then wind-up and knock-back

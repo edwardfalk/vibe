@@ -136,6 +136,9 @@ export const TANK_LINES = [
   'SIZE MATTERS!',
   'BIG MUSCLES!',
   'ALPHA MALE!',
+  'NOT ON THE LIST!',
+  "YOU'RE NOT GETTING IN!",
+  'NO SNEAKERS!',
 ];
 
 function pickRandomLine(lines, randomFn = Math.random, floorFn = Math.floor) {
@@ -155,14 +158,16 @@ export function getPlayerDialogueLine(
 export const GRUNT_OW = 'ow';
 export const TANK_FIRE = 'FIRE!';
 export const TANK_CHARGING = 'CHARGING!';
-// BombSystem counts the bomb down (WARNING_SECONDS = 3) in the hero's voice
+// The hero shouts as he plants his bomb, then counts it down, 3, 2, 1, on
+// its beats (BombSystem.js)
+export const BOMB_PLANTED = 'TIMEBOMB!';
 const COUNTDOWN = ['3', '2', '1'];
 const distinct = (...lists) => [...new Set(lists.flat())];
 
 // Every fixed line, by the speaker who says it: the voice playground plays
 // them all, which is how an engine's mispronunciations get found
 export const SPEAKER_LINES = {
-  player: distinct(...Object.values(PLAYER_LINES), COUNTDOWN),
+  player: distinct(...Object.values(PLAYER_LINES), [BOMB_PLANTED], COUNTDOWN),
   grunt: distinct(GRUNT_LINES, [GRUNT_OW]),
   stabber: distinct(STABBER_LINES, STAB_WARNINGS),
   rusher: distinct(RUSHER_LINES, RUSHER_BATTLE_CRIES),

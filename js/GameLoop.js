@@ -11,7 +11,10 @@
 
 import { initializeInputHandlers } from './core/InputHandlers.js';
 import { createTunePanel } from './dev/TunePanel.js';
-import { updateBombs as updateBombSystem } from './systems/BombSystem.js';
+import {
+  updateBombs as updateBombSystem,
+  drawBombs,
+} from './systems/BombSystem.js';
 import { updateEnemiesAndResolveResults } from './systems/gameplay/EnemyUpdatePipeline.js';
 import { Bullet } from './entities/bullet.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
@@ -150,6 +153,7 @@ function updateGame(p) {
     gameState: window.gameState,
     collisionSystem: window.collisionSystem,
     enemyDeathHandler,
+    beatClock: window.beatClock,
   });
 
   // Update enemies and resolve their emitted combat results
@@ -239,6 +243,7 @@ function drawGame(p) {
   for (const enemy of enemies) {
     enemy.draw(p);
   }
+  drawBombs(p, activeBombs);
 
   if (player) {
     player.draw(p);

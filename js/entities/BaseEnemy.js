@@ -46,6 +46,7 @@ export class BaseEnemy {
     this.shootCooldown = 0;
     this.muzzleFlash = 0;
     this.hitFlash = 0;
+    this.hitFlashAlpha = 100; // how solid it is drawn just after a hit (of 255); a type may set its own
     this.markedForRemoval = false;
 
     // Get per-type speech config
@@ -270,7 +271,7 @@ export class BaseEnemy {
     }
 
     // Compose spawn alpha with hit-flash alpha; p.tint doesn't affect shape primitives, use globalAlpha
-    const hitAlpha = this.hitFlash > 0 ? 100 : 255;
+    const hitAlpha = this.hitFlash > 0 ? this.hitFlashAlpha : 255;
     const finalAlpha = Math.round(spawnAlpha * (hitAlpha / 255)) / 255;
     const prevAlpha = p.drawingContext?.globalAlpha ?? 1;
     if (p.drawingContext) p.drawingContext.globalAlpha = finalAlpha;

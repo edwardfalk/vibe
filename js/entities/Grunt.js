@@ -8,7 +8,7 @@ import {
 } from '../shared/DamageResultHandler.js';
 import { GRUNT_LINES, GRUNT_OW } from '../audio/DialogueLines.js';
 import { Bullet } from './bullet.js';
-import { HEALTH_BAR_HEIGHT_PX } from './BaseEnemyHelpers.js';
+import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 import {
   GRUNT_COLORS,
   drawGrunt,
@@ -36,7 +36,6 @@ const SHOT_CANCELLED = {
 // before the hop and the float lift them (measured over a bar of every pose:
 // 1.26 sizes at ART_SCALE 1.15)
 const ANTENNA_REACH = 1.1;
-const HEALTH_BAR_GAP_PX = 2;
 const GRUNT_SHOT_SPEED = 4; // px per frame
 
 /**

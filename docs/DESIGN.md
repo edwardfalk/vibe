@@ -24,11 +24,15 @@ The aliens live in space. There is no ground, so they never walk: they hover, on
 
 Grunts dance together. Every grunt crouches as 2 and 4 come, the beats they fire on. One that fires hops on its jet's puff and squashes as it lands; the rest give a small hop and slump back. Through the beat before a shot a grunt winds up (its antennae go amber, then white-hot); when it holds its fire instead, it sulks. They stop while the game is paused. The look and its numbers are in `js/entities/GruntRenderer.js` and `CONFIG.GRUNT_LOOK`.
 
+The tank is a vain muscle bully, the grunts' big brother: a bouncer from space, seen from above, all shoulders, with a small shiny bald head, sunglasses and a gold chain. His armour (a chest guard and two shoulder pads) sits on the side he faces; his back is bare. He turns only on beat 1, his kick, a heavy step of at most 60°, and lurches forward on it; between kicks he holds his facing, so you can get round him. Stand in front of him and he shoves you on the beat, with a whump of its own. His charge takes two bars and fires on beat 1: his chain lights a link a beat, and the cannon goes amber, then white-hot for the last half-beat. His ball kills any smaller alien in its way, but another tank only takes a dent: tanks are inconvenienced by each other, not killed, so you can't just wait for them to shoot each other. They try not to, too: a tank with another in his line of fire steps sideways, so around a hero who stays put they spread round him, each with a clear shot.
+
+The time bomb is the hero's weapon against tanks. You plant it by touching a tank's bare back, shouting "TIMEBOMB!". It rides there, counts "3, 2, 1" in your voice on the beat from the beat after that, and blows on the sixth beat, with the kick, and kills the tank it is on: the blast hits him from his own back and the plasma it leaves finishes him. It hurts everything else near it too, you included, so run: the ring round it shows how far and how long. The look and its numbers are in `js/entities/TankRenderer.js`, `CONFIG.TANK`, `CONFIG.TANK_LOOK` and `CONFIG.BOMB`.
+
 ## The sky
 
 The steady kick is the one instrument you also see. The sky is a nebula around a young star cluster. On every kick you hear, the cluster breathes and the dense gas lights up from inside; on beat 1 a pressure front also rolls out through the gas. On beats where the kick doesn't play, the sky only drifts. It grows with the level: sparse, cool teal at level 1; by level 8 the cluster has blown a bubble walled with rust and ochre gas.
 
-This is BeatTrack's steady kick, not the tank's beat-1 part. The older per-beat flashes are gone, so the sky is the one visual beat, apart from the grunts' dance (see The cast). Its numbers are in `CONFIG.SKY`.
+This is BeatTrack's steady kick, not the tank's beat-1 part. The older per-beat flashes are gone, so the sky is the one visual beat apart from the enemies' own moves: the grunts' dance and the tank's kick, turn and swagger (see The cast). Its numbers are in `CONFIG.SKY`.
 
 ## Player fire
 

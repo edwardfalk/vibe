@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { CONFIG } from '../../js/config.js';
 import { BaseEnemy } from '../../js/entities/BaseEnemy.js';
 import { Grunt } from '../../js/entities/Grunt.js';
+import { Tank } from '../../js/entities/Tank.js';
 import { HEALTH_BAR_HEIGHT_PX } from '../../js/entities/BaseEnemyHelpers.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { transformP5 } from './helpers/transformP5.js';
@@ -33,34 +34,76 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('making a grunt', () => {
+const tankWith = (clock) => {
+  const context = {
+    get: (k) => (k === 'beatClock' ? clock : undefined),
+    set() {},
+  };
+  const t = new Tank(0, 0, 'tank', { context }, createMockP5(), null);
+  t.isSpawning = false;
+  return t;
+};
+const KINDS = [
+  {
+    kind: 'grunt',
+    make: gruntWith,
+    base: ['grunt', { size: 26, health: 2, speed: 1.2, color: null }],
+    busy: (g) => {
+      g.warnedOnBeat = 17; // the wind-up
+    },
+  },
+  {
+    kind: 'tank',
+    make: tankWith,
+    base: ['tank', { size: 50, health: 60, speed: 0.2, color: null }],
+    busy: (t) => {
+      t.chargingShot = true; // the second bar of his charge
+      t.chargeStartBeat = 12;
+      t.poseBeats = 17.3;
+    },
+  },
+];
+
+describe.each(KINDS)('a $kind', ({ make, base, busy }) => {
   it("rolls no more of the game's random numbers than any enemy does", () => {
     const spy = vi.spyOn(Math, 'random');
-    const config = { size: 26, health: 2, speed: 1.2, color: null };
-    new BaseEnemy(0, 0, 'grunt', config, createMockP5(), null);
-    const base = spy.mock.calls.length;
+    new BaseEnemy(0, 0, base[0], base[1], createMockP5(), null);
+    const plain = spy.mock.calls.length;
     spy.mockClear();
-    gruntWith(null);
-    expect(spy.mock.calls.length).toBe(base);
+    make(null);
+    expect(spy.mock.calls.length).toBe(plain);
   });
-});
 
-describe('drawing a grunt', () => {
   it("draws without the game's random numbers, apart from the hit-shake's two", () => {
     for (const clock of [clockAt(17.3), null]) {
-      const g = gruntWith(clock);
-      g.warnedOnBeat = 17; // draw the wind-up too
+      const e = make(clock);
+      busy(e);
       const { p } = transformP5();
       const spy = vi.spyOn(Math, 'random');
-      g.draw(p);
+      e.draw(p);
       expect(spy).toHaveBeenCalledTimes(0);
-      g.hitFlash = 5;
-      g.draw(p);
+      e.hitFlash = 5;
+      e.draw(p);
       expect(spy).toHaveBeenCalledTimes(2);
+      expect(p.drawingContext.globalAlpha).toBe(1); // restored after drawing
       spy.mockRestore();
     }
   });
 
+  it('stops dancing while the game is paused, and moves on when it updates again', () => {
+    let beats = 17.1;
+    const clock = { ...clockAt(17.1), getBeatPosition: () => beats };
+    const e = make(clock);
+    e.update(100, 0);
+    const before = e.pose();
+    beats = 17.4; // the beat moves on, but the game is paused: no update
+    expect(e.pose()).toEqual(before);
+    e.update(100, 0);
+    expect(e.pose().t).toBeGreaterThan(before.t);
+  });
+});
+
+describe('drawing a grunt', () => {
   it('turns to face a target on its left by mirroring, not by turning upside down', () => {
     const g = gruntWith(clockAt(17.3));
     g.update(-100, 0); // its target is straight to its left
@@ -75,18 +118,6 @@ describe('drawing a grunt', () => {
       expect(Math.sign(matrix[0])).toBe(-1);
       expect(matrix[3]).toBeGreaterThan(0);
     }
-  });
-
-  it('stops dancing while the game is paused, and moves on when it updates again', () => {
-    let beats = 17.1;
-    const clock = { ...clockAt(17.1), getBeatPosition: () => beats };
-    const g = gruntWith(clock);
-    g.update(100, 0);
-    const before = g.pose();
-    beats = 17.4; // the beat moves on, but the game is paused: no update
-    expect(g.pose()).toEqual(before);
-    g.update(100, 0);
-    expect(g.pose().t).toBeGreaterThan(before.t);
   });
 
   it('winds up on the beat it was warned on, and sulks on the beat it held its fire', () => {

@@ -5,6 +5,7 @@
  */
 
 import { GRUNT_COLORS } from '../entities/GruntRenderer.js';
+import { TANK_COLORS } from '../entities/TankRenderer.js';
 
 const DAMAGE_MERGE_RADIUS = 60;
 
@@ -78,7 +79,7 @@ export class FloatingTextManager {
     const typeColors = {
       grunt: GRUNT_COLORS.belly,
       rusher: [255, 50, 150],
-      tank: [150, 100, 255],
+      tank: TANK_COLORS.gold,
       stabber: [255, 215, 0],
     };
     const color = typeColors[enemyType] || [255, 255, 255];
