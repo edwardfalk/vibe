@@ -154,6 +154,13 @@ class Tank extends BaseEnemy {
       if (this.lastActedBar === null && beats - bar * BEATS_PER_BAR >= 1) {
         this.lastActedBar = bar;
       } else if (bar !== this.lastActedBar) {
+        // Whole bars the game sat out (a hidden tab, ?tune's "Sound while
+        // paused") don't count toward his charge, as beats the game sat out
+        // don't toward a bomb's fuse. A hitstop never skips a whole bar
+        if (this.chargingShot && this.lastActedBar !== null) {
+          this.chargeStartBeat +=
+            Math.max(0, bar - this.lastActedBar - 1) * BEATS_PER_BAR;
+        }
         this.lastActedBar = bar;
         this.kickAt = beats;
         fire = this.onKick(bar * BEATS_PER_BAR, toTarget, distance);
@@ -268,6 +275,7 @@ class Tank extends BaseEnemy {
     shovedOnBeat.set(hero, beatIndex);
     this.lastShoveBeat = beatIndex;
     this.shovedAt = beats;
+    this.getContextValue('audio')?.playSound('tankShove', hero.x, hero.y);
     if (hero.hurt(CONFIG.PLAYER.DAMAGE_TANK_SHOVE, 'tank-shove')) return;
     hero.knockBack(this.x, this.y, CONFIG.PLAYER.KNOCKBACK_TANK_SHOVE);
   }

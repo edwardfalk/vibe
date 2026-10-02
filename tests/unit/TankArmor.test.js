@@ -1,8 +1,10 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { Tank } from '../../js/entities/Tank.js';
 import { CONFIG } from '../../js/config.js';
 import { createMockAudio } from './helpers/enemyMocks.js';
 import { tankWorld } from './helpers/tankWorld.js';
+import { CollisionSystem } from '../../js/systems/CollisionSystem.js';
+import { Bullet } from '../../js/entities/bullet.js';
 
 describe('Tank anger at stabbers', () => {
   const FROM_BEHIND = 0; // flying +x into a tank facing +x: no plate there
@@ -121,5 +123,47 @@ describe('Tank anger steers him', () => {
     for (let ms = 6016; ms < 8000; ms += 16) w.frame(t, ms);
     w.frame(t, 8000);
     expect(t.turn.to).toBeCloseTo(Math.PI / 6, 5); // none left: back toward the hero
+  });
+});
+
+describe("another tank's shot", () => {
+  // A ball from a tank at -200 flying +x, at its target's centre
+  const shotAt = (target) => {
+    const w = tankWorld({ hero: { x: 9999, y: 0 }, enemies: [target] });
+    const ball = Bullet.acquire(target.x, target.y, 0, 2, 'enemy-tank');
+    ball.ownerId = 'the shooter';
+    w.values.enemyBullets = [ball];
+    const handleEnemyDeath = vi.fn();
+    new CollisionSystem(w.context, {
+      handleEnemyDeath,
+    }).checkEnemyBulletsVsEnemies();
+    return { ball, handleEnemyDeath };
+  };
+
+  it('only dents a tank, through his armour, and is spent on him', () => {
+    const w = tankWorld({ hero: { x: 9999, y: 0 } });
+    const tank = w.tank(); // faces +x: the ball hits his back
+    const { ball, handleEnemyDeath } = shotAt(tank);
+    expect(tank.health).toBe(tank.maxHealth - CONFIG.TANK.SHOT_DAMAGE_TO_TANKS);
+    expect(tank.markedForRemoval).toBeFalsy();
+    expect(handleEnemyDeath).not.toHaveBeenCalled();
+    expect(ball._remove).toBe(true);
+  });
+
+  it('still kills any other alien outright', () => {
+    const grunt = {
+      id: 9,
+      type: 'grunt',
+      x: 0,
+      y: 0,
+      size: 26,
+      health: 2,
+      maxHealth: 2,
+      markedForRemoval: false,
+      takeDamage: vi.fn(),
+    };
+    const { handleEnemyDeath } = shotAt(grunt);
+    expect(grunt.markedForRemoval).toBe(true);
+    expect(handleEnemyDeath).toHaveBeenCalled();
   });
 });

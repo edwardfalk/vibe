@@ -56,6 +56,14 @@ describe('the front shove', () => {
     expect(w.player.hurt).toHaveBeenCalledTimes(1);
   });
 
+  it('has a sound of its own', () => {
+    const w = tankWorld({ hero: { x: 60, y: 0 } });
+    const t = w.tank();
+    w.frame(t, 4250);
+    w.frame(t, 4500);
+    expect(w.audio.playSound).toHaveBeenCalledWith('tankShove', 60, 0);
+  });
+
   it('a fatal shove pushes no corpse', () => {
     const w = tankWorld({ hero: { x: 60, y: 0 } });
     w.player.hurt.mockReturnValue(true);

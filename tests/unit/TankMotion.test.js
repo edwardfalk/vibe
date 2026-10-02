@@ -180,6 +180,19 @@ describe("the tank's charge", () => {
     expect(lines).toEqual(['CHARGING!', 'FIRE!']);
   });
 
+  it('holds his charge through bars the game sat out (a hidden tab), then fires on a beat 1', () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    w.frame(t, 4000); // bar 2: CHARGING!
+    w.frame(t, 5000);
+    // Bars 3, 4 and 5 go by without a frame; back in bar 6, beat 2. One
+    // bar of the charge has run, so it fires on the next beat 1
+    expect(w.frame(t, 12600)).toBeNull();
+    expect(t.chargingShot).toBe(true);
+    expect(w.frame(t, 14000)?.owner).toBe('enemy-tank'); // bar 7
+  });
+
   it('waits RECHARGE_BEATS after a shot before charging again', () => {
     const w = tankWorld({ hero: { x: 300, y: 0 } });
     const t = w.tank();

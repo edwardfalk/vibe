@@ -97,6 +97,7 @@ const KNOBS = [
   [TANK, 'LURCH_PX_S', [0, 300, 5]],
   [TANK, 'LURCH_TAU_SEC', [0.05, 1, 0.01]],
   [TANK, 'LURCH_MIN_DIST_PX', [0, 400, 10]],
+  [TANK, 'SHOT_DAMAGE_TO_TANKS', [0, 60, 1]],
   [TANK_LOOK, 'ART_SCALE', [0.6, 1.6, 0.05]],
   [TANK_LOOK, 'SWAGGER', [0, 2, 0.1]],
   [BOMB, 'FUSE_BEATS', [2, 16, 1]],

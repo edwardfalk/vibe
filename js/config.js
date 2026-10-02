@@ -205,6 +205,7 @@ const CONFIG = {
     CHARGE_BEATS: 8, // two bars of straining, then the shot on beat 1
     RECHARGE_BEATS: 8, // from a shot to the next charge
     SHOVE_COOLDOWN_BEATS: 2, // between two shoves from one tank
+    SHOT_DAMAGE_TO_TANKS: 10, // another tank's ball only dents him (it kills other aliens)
   },
 
   // How the tank looks (js/entities/TankRenderer.js). Drawn only; his hit
