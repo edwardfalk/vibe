@@ -41,7 +41,7 @@ export function handleContactCollisions({
     }
 
     if (!shouldPlaceBomb || !activeBombs) continue;
-    plantBomb(activeBombs, enemy, beatClock);
+    plantBomb(activeBombs, enemy, beatClock, audio);
   }
 
   return false;

@@ -29,11 +29,12 @@ const touchingTank = (id, o = {}) => ({
   checkCollision: () => true,
   ...o,
 });
-const touch = (player, enemies, activeBombs) =>
+const touch = (player, enemies, activeBombs, audio = null) =>
   handleContactCollisions({
     player,
     enemies,
     activeBombs,
+    audio,
     beatClock: clockAt(9),
   });
 
@@ -58,12 +59,17 @@ describe("planting the hero's bomb", () => {
     expect(activeBombs).toEqual([]);
   });
 
-  it('touching a tank frame after frame plants one bomb on it', () => {
+  it('touching a tank frame after frame plants one bomb on it, and the hero shouts "TIMEBOMB!" once', () => {
     const activeBombs = [];
+    const audio = createMockAudio();
     for (let i = 0; i < 10; i++) {
-      touch({ x: -60, y: 0 }, [touchingTank(1)], activeBombs);
+      touch({ x: -60, y: 0 }, [touchingTank(1)], activeBombs, audio);
     }
     expect(activeBombs).toHaveLength(1);
+    // Forced past the cooldown all voices share, as the count is
+    expect(audio.speak.mock.calls).toEqual([
+      [activeBombs[0], 'TIMEBOMB!', 'player', true],
+    ]);
   });
 
   it('each tank takes its own', () => {
@@ -75,7 +81,8 @@ describe("planting the hero's bomb", () => {
 });
 
 describe('the bomb, on the beat', () => {
-  // Planted at beat 10.3: its beat 0 is beat 11. Ticks come under a beat
+  // Planted at beat 10.3: its beat 0, the first whole beat at least a beat
+  // later (room for "TIMEBOMB!"), is beat 12. Ticks come under a beat
   // apart, as frames do; a longer gap is a stall (see the last test)
   const setup = () => {
     let beats = 10.3;
@@ -125,16 +132,35 @@ describe('the bomb, on the beat', () => {
     const { activeBombs, audio, ticks, tick, now } = setup();
     const at = [];
     audio.speak.mockImplementation(() => (at.push(now()), true));
-    ticks(10.5, 16.75);
+    ticks(10.5, 17.75);
     expect(said(audio)).toEqual([
       ['3', 'player', true],
       ['2', 'player', true],
       ['1', 'player', true],
     ]);
-    expect(at).toEqual([11, 13, 15]); // its beats 0, 2 and 4
+    expect(at).toEqual([12, 14, 16]); // its beats 0, 2 and 4
     expect(activeBombs).toHaveLength(1);
-    tick(17);
+    tick(18);
     expect(activeBombs).toHaveLength(0);
+  });
+
+  it('with a shorter fuse, says no word before its count starts', () => {
+    const saved = CONFIG.BOMB.FUSE_BEATS;
+    CONFIG.BOMB.FUSE_BEATS = 4;
+    try {
+      const { activeBombs, audio, ticks, now } = setup();
+      const at = [];
+      audio.speak.mockImplementation(() => (at.push(now()), true));
+      ticks(10.5, 15.75);
+      // The last even beats before the bang: "2" on beat 0, "1" on beat 2
+      expect(said(audio).map(([w]) => w)).toEqual(['2', '1']);
+      expect(at).toEqual([12, 14]);
+      expect(activeBombs).toHaveLength(1);
+      ticks(16, 16);
+      expect(activeBombs).toHaveLength(0);
+    } finally {
+      CONFIG.BOMB.FUSE_BEATS = saved;
+    }
   });
 
   it('hurts the hero near it and knocks him away, but not one past its reach', () => {
@@ -200,7 +226,7 @@ describe('the bomb, on the beat', () => {
 
   it('hurts the tank it is on', () => {
     const { tank, ticks } = setup();
-    ticks(10.5, 17);
+    ticks(10.5, 18);
     expect(tank.takeDamage).toHaveBeenCalledWith(
       expect.any(Number),
       null,
@@ -210,13 +236,15 @@ describe('the bomb, on the beat', () => {
 
   it('holds its fuse through beats the game sat out (a hidden tab), then counts on', () => {
     const { activeBombs, audio, ticks, tick } = setup();
-    ticks(10.5, 12.25); // "3" said at 11
+    ticks(10.5, 12.25); // "3" said at 12
     tick(22.25); // ten beats went by without a frame
     expect(activeBombs).toHaveLength(1);
     expect(said(audio).map(([w]) => w)).toEqual(['3']);
     ticks(22.5, 26.25); // two beats past where it stopped: "2", then "1"
     expect(said(audio).map(([w]) => w)).toEqual(['3', '2', '1']);
-    ticks(26.5, 27.25);
+    ticks(26.5, 27.75);
+    expect(activeBombs).toHaveLength(1);
+    ticks(28, 28);
     expect(activeBombs).toHaveLength(0);
   });
 
@@ -245,7 +273,7 @@ describe('the bomb, on the beat', () => {
           Math.hypot(sh.centre?.[0] - died.x, sh.centre?.[1] - died.y) < 1e-6
       )
     ).toBe(true);
-    ticks(14.25, 17);
+    ticks(14.25, 18);
     expect(explosionManager.addExplosion).toHaveBeenCalledWith(
       died.x,
       died.y,

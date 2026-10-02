@@ -39,9 +39,9 @@ describe('dialogue lines', () => {
     expect(SPEAKER_LINES.rusher).toEqual(
       expect.arrayContaining(RUSHER_BATTLE_CRIES)
     );
-    // The hero counts his bomb down 3, 2, 1 (BombSystem.js)
+    // The hero shouts as he plants his bomb, then counts it down (BombSystem.js)
     expect(SPEAKER_LINES.player).toEqual(
-      expect.arrayContaining(['3', '2', '1'])
+      expect.arrayContaining(['TIMEBOMB!', '3', '2', '1'])
     );
     // The Bouncer's lines (docs/superpowers/specs/2026-10-01-bouncer-tank-design.md)
     expect(SPEAKER_LINES.tank).toEqual(

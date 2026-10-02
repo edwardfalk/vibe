@@ -220,9 +220,10 @@ const CONFIG = {
     SWAGGER: 1, // his shoulder roll on 2, neck roll on 3, knuckle crack on 4
   },
 
-  // The hero's bomb (js/systems/BombSystem.js), planted on a tank's back. It
-  // counts "3, 2, 1" on the last three even beats before it blows (beats 0,
-  // 2 and 4 of a 6-beat fuse; beat 0 is the first beat after planting) and
+  // The hero's bomb (js/systems/BombSystem.js), planted on a tank's back
+  // with a shout of "TIMEBOMB!". It counts "3, 2, 1" on the last three even
+  // beats before it blows (beats 0, 2 and 4 of a 6-beat fuse; beat 0 is the
+  // first beat at least a beat after planting, none said before it) and
   // blows on beat FUSE_BEATS, hurting everything in RADIUS_PX, the tank it
   // is on and the hero too. Damage falls from MAX at its centre to MIN at
   // its reach. Tune live with ?tune.

@@ -1,7 +1,9 @@
 /**
  * The hero's bomb: his weapon against tanks. He plants it by touching a
- * tank's bare back (PlayerContactHandlers.js). It rides there, counts down
- * "3, 2, 1" on the beat in his voice, and blows on beat CONFIG.BOMB.FUSE_BEATS,
+ * tank's bare back (PlayerContactHandlers.js), shouting "TIMEBOMB!". It
+ * rides there, counts down "3, 2, 1" on the beat in his voice from its beat
+ * 0, the first beat at least a beat later, and blows on its beat
+ * CONFIG.BOMB.FUSE_BEATS,
  * hurting everything within reach: the tank it is on, other aliens and the
  * hero. Once its tank is gone it stays where he died and still blows.
  *
@@ -14,9 +16,11 @@ import { floor, clamp01 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
+import { BOMB_PLANTED } from '../audio/DialogueLines.js';
 
 const COUNT_WORDS = ['3', '2', '1'];
 const COUNT_EVERY_BEATS = 2;
+const COUNT_LEAD_BEATS = 1; // "TIMEBOMB!" gets at least this long before the count
 const AMBER_LEFT = 0.34; // its light goes white-hot for the last third
 // Its look, at size 50 (the prototype's numbers, in px): a halo, the body,
 // the hero's band, a glint, the light and the blink's ring
@@ -39,8 +43,10 @@ const backOf = (tank) =>
     tank.size * CONFIG.TANK_LOOK.ART_SCALE,
     tank.facing
   );
-// Beats since its beat 0, the first whole beat after it was planted
-const fuseOf = (bomb, beats) => beats - (floor(bomb.plantedAt) + 1);
+// Beats since its beat 0, the first whole beat at least COUNT_LEAD_BEATS
+// after it was planted
+const fuseOf = (bomb, beats) =>
+  beats - Math.ceil(bomb.plantedAt + COUNT_LEAD_BEATS);
 // Its damage at a point: from hi at its centre to lo at its reach, 0 beyond;
 // never above hi, so a max of 0 deals none
 function blastAt(bomb, x, y, lo, hi) {
@@ -50,8 +56,11 @@ function blastAt(bomb, x, y, lo, hi) {
   return Math.min(hi, Math.max(lo, floor(hi * (1 - d / R))));
 }
 
-/** The hero plants his bomb on a tank's back (one each, MAX_ACTIVE at once) */
-export function plantBomb(activeBombs, tank, beatClock) {
+/**
+ * The hero plants his bomb on a tank's back (one each, MAX_ACTIVE at once)
+ * and shouts "TIMEBOMB!", forced past the cooldown all voices share
+ */
+export function plantBomb(activeBombs, tank, beatClock, audio = null) {
   if (!activeBombs || !tank || !beatClock) return;
   if (activeBombs.length >= CONFIG.BOMB.MAX_ACTIVE) return;
   if (activeBombs.some((bomb) => bomb.tankId === tank.id)) return; // one each
@@ -66,6 +75,7 @@ export function plantBomb(activeBombs, tank, beatClock) {
     tankId: tank.id,
     tankRef: tank,
   });
+  audio?.speak?.(activeBombs.at(-1), BOMB_PLANTED, 'player', true);
 }
 
 export function updateBombs(context) {
@@ -102,14 +112,15 @@ export function updateBombs(context) {
 
     const fuse = fuseOf(bomb, beats);
     if (fuse < B.FUSE_BEATS) {
-      // "3", "2", "1" on the last three even beats before the bang, forced
-      // past the cooldown all voices share; after a stall only the latest
+      // "3", "2", "1" on the last three even beats before the bang, from its
+      // beat 0 on (a short fuse drops the first), forced past the cooldown
+      // all voices share; after a stall only the latest
       const first = B.FUSE_BEATS - COUNT_WORDS.length * COUNT_EVERY_BEATS;
       const due = Math.min(
         COUNT_WORDS.length,
         floor((fuse - first) / COUNT_EVERY_BEATS) + 1
       );
-      if (due > bomb.said) {
+      if (fuse >= 0 && due > bomb.said) {
         bomb.said = due;
         audio?.speak?.(bomb, COUNT_WORDS[due - 1], 'player', true);
       }
