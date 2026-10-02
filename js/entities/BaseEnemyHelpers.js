@@ -5,15 +5,16 @@
 
 import { GRUNT_COLORS } from './GruntRenderer.js';
 import { TANK_COLORS } from './TankRenderer.js';
+import { RUSHER_COLORS } from './RusherRenderer.js';
 
 /** Get enemy colors by type. Returns { skinColor, helmetColor, weaponColor, eyeColor }. */
 export function getEnemyColors(type, p) {
   if (type === 'rusher') {
     return {
-      skinColor: p.color(255, 105, 180),
-      helmetColor: p.color(139, 0, 139),
-      weaponColor: p.color(255, 20, 147),
-      eyeColor: p.color(255, 215, 0),
+      skinColor: p.color(...RUSHER_COLORS.skin),
+      helmetColor: p.color(...RUSHER_COLORS.helmet),
+      weaponColor: p.color(...RUSHER_COLORS.bike),
+      eyeColor: p.color(...RUSHER_COLORS.eye),
     };
   }
   if (type === 'tank') {
@@ -43,7 +44,7 @@ export function getEnemyColors(type, p) {
 
 const GLOW_RGB = {
   tank: TANK_COLORS.armour,
-  rusher: [255, 100, 150],
+  rusher: RUSHER_COLORS.bike,
   stabber: [255, 140, 0],
   grunt: GRUNT_COLORS.glow,
 };

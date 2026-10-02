@@ -51,5 +51,9 @@ describe('dialogue lines', () => {
         'NO SNEAKERS!',
       ])
     );
+    // The stuntman's lines
+    expect(SPEAKER_LINES.rusher).toEqual(
+      expect.arrayContaining(['WATCH THIS!', 'NO HANDS!', 'TA-DA!'])
+    );
   });
 });

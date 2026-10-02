@@ -6,6 +6,7 @@
 import { random, TWO_PI, cos, sin } from '../../mathUtils.js';
 import { GRUNT_COLORS } from '../../entities/GruntRenderer.js';
 import { TANK_COLORS } from '../../entities/TankRenderer.js';
+import { RUSHER_COLORS } from '../../entities/RusherRenderer.js';
 
 export class EnemyFragmentExplosion {
   constructor(x, y, enemy) {
@@ -91,7 +92,7 @@ export class EnemyFragmentExplosion {
     let primaryColor;
     if (this.enemy.type === 'grunt') primaryColor = GRUNT_COLORS.body;
     else if (this.enemy.type === 'stabber') primaryColor = [255, 215, 0];
-    else if (this.enemy.type === 'rusher') primaryColor = [255, 20, 147];
+    else if (this.enemy.type === 'rusher') primaryColor = RUSHER_COLORS.bike;
     else if (this.enemy.type === 'tank') primaryColor = TANK_COLORS.skin;
     else primaryColor = [255, 255, 255];
 

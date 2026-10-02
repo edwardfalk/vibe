@@ -33,7 +33,7 @@ Every sound an enemy makes is timed to one shared clock, so together they play a
 
 - **Grunts** keep their distance, stepping back when you get close and advancing when you run.
 - **Stabbers** wind up, flash a warning, then dash at you.
-- **Rushers** charge, then shake until the next strong beat and explode.
+- **Rushers** are stuntmen on rockets who steer only on the beat: dash aside and they shoot past. Shot or too close, they light, count down on the beat and blow up with a crash on beat 1 or 3, taking anything near with them, other rushers included. Your shots knock them along, so bat one into a crowd.
 - **Tanks** are big, slow bouncers who turn only on the kick. Their armour is on the side facing you and their back is bare: get behind one to plant your time bomb, which counts down on the beat and kills him. Stand in front of one and he shoves you.
 - **Everyone talks.** Enemies shout lines like "KILL HUMAN!" and "SLICE AND DICE!" through the browser's speech synthesis, and the mix dips the game under them so they're heard.
 

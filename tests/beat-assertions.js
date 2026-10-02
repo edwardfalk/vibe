@@ -10,6 +10,7 @@ const NUM_BEATS = parseInt(process.env.BEATS) || 8;
  * enemy deciding to fire (which has random skips). This tells us whether
  * the timing system is correct. The tank has no gate: he acts on his first
  * update in each bar (Tank.onKick), so that is what is recorded for him.
+ * The rusher is recorded by his blast, at its nearest beat.
  */
 const injectRecorder = async (page) => {
   await page.evaluate(async () => {
@@ -36,7 +37,6 @@ const injectRecorder = async (page) => {
 
     wrap('canGruntShoot', 'grunt');
     wrap('canStabberAttack', 'stabber');
-    wrap('canRusherExplode', 'rusher');
 
     // The same module instance the game loaded, so its tanks use the patch
     const { Tank } = await import('/js/entities/Tank.js');
@@ -50,6 +50,24 @@ const injectRecorder = async (page) => {
         timestamp: Date.now(),
       });
       return onKick.apply(this, args);
+    };
+
+    // The rusher counts beat positions too: record each blast at its
+    // nearest beat (0-indexed), which must be 1 or 3
+    const { Rusher } = await import('/js/entities/Rusher.js');
+    const update = Rusher.prototype.updateSpecificBehavior;
+    Rusher.prototype.updateSpecificBehavior = function (...args) {
+      const result = update.apply(this, args);
+      if (result?.type === 'rusher-explosion') {
+        window.__beatEvents.push({
+          type: 'blast',
+          enemyType: 'rusher',
+          beat: Math.round(this.poseBeats) % 4, // the reading he blew on [review-added 2026-10-02]
+          totalBeats: bc.getTotalBeats(),
+          timestamp: Date.now(),
+        });
+      }
+      return result;
     };
   });
 };
@@ -80,6 +98,22 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   // Inject recorder after level is set
   await injectRecorder(page);
 
+  // Light one rusher behind the hero: he blows within four beats
+  await page.evaluate(() => {
+    const hero = window.player;
+    const r = window.spawnSystem.createEnemy(
+      hero.x - 250,
+      hero.y,
+      'rusher',
+      hero.p
+    );
+    r.isSpawning = false;
+    window.enemies.push(r);
+    r.takeDamage(1, null, 'hit');
+    if (r.lit?.blastBeat == null)
+      throw new Error('lit rusher has no blast beat');
+  });
+
   // Simulate some gameplay so enemies engage
   await page.keyboard.down('d');
   await page.keyboard.down(' ');
@@ -108,7 +142,7 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   // Grunt: beats 1, 3 (canGruntShoot checks currentBeat === 1 || === 3)
   // Tank: beat 0 (he acts on his first update in each bar)
   // Stabber: beats 2-3 boundary (canStabberAttack checks currentBeat === 2 or 3)
-  // Rusher: beats 0, 2 (canRusherExplode checks currentBeat === 0 || === 2)
+  // Rusher: his blast's nearest beat, 0 or 2 (beats 1 and 3)
 
   const expectedBeats = {
     grunt: [1, 3],
@@ -158,6 +192,12 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
       ).toHaveLength(0);
     }
   }
+
+  // The lit rusher must have blown, or the rusher's check proved nothing
+  expect(
+    byType.rusher?.length ?? 0,
+    'no rusher blast was recorded'
+  ).toBeGreaterThan(0);
 
   // Assert: we should have recorded at least some events
   expect(events.length, 'No beat events recorded at all').toBeGreaterThan(0);

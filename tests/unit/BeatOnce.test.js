@@ -23,8 +23,6 @@ describe('Beat windows open when the beat lands', () => {
   it('each gate opens just after its own beat', () => {
     expect(clockAt(1510).clock.canGruntShoot()).toBe(true); // beat 4
     expect(clockAt(510).clock.canGruntShoot()).toBe(true); // beat 2
-    expect(clockAt(1010).clock.canRusherExplode()).toBe(true); // beat 3
-    expect(clockAt(510).clock.canRusherExplode()).toBe(false); // beat 2
   });
 
   it('the stabber window is the off-beat 3.5, not beat 4', () => {

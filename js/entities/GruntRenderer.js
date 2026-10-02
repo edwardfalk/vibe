@@ -127,11 +127,15 @@ const roll = (n) => mulberry32(n)();
 /**
  * Which way it faces, 1 (right) or -1 (left), for an aim. It turns round only
  * once its target is FACING_DEADZONE past straight above or below it, so its
- * idle jitter doesn't flip it back and forth.
+ * idle jitter doesn't flip it back and forth. The rusher passes his own dead
+ * zone.
  */
-export function nextFacing(facing, aimAngle) {
+export function nextFacing(
+  facing,
+  aimAngle,
+  dead = CONFIG.GRUNT_LOOK.FACING_DEADZONE
+) {
   const c = Math.cos(aimAngle);
-  const dead = CONFIG.GRUNT_LOOK.FACING_DEADZONE;
   if (c > dead) return 1;
   if (c < -dead) return -1;
   return facing === -1 ? -1 : 1;

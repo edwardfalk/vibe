@@ -1,7 +1,9 @@
 import { Explosion } from './Explosion.js';
+import { RusherBlast } from './RusherBlast.js';
 import { HazardCloud } from './HazardCloud.js';
 import { EnemyFragmentExplosion } from './EnemyFragmentExplosion.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
+import { CONFIG } from '../../config.js';
 
 export class ExplosionManager {
   constructor(context = null) {
@@ -14,8 +16,12 @@ export class ExplosionManager {
 
   getContextValue = createContextAccessor(() => this.context);
 
-  addExplosion(x, y, type) {
-    this.explosions.push(new Explosion(x, y, type));
+  addExplosion(x, y, type, options = {}) {
+    this.explosions.push(
+      type === 'rusher-explosion'
+        ? new RusherBlast(x, y, options)
+        : new Explosion(x, y, type)
+    );
   }
 
   addPlasmaCloud(x, y) {
@@ -45,10 +51,10 @@ export class ExplosionManager {
     this.fragmentExplosions.push(fragmentExplosion);
   }
 
-  update() {
+  update(deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
     // Update explosions
     for (let i = this.explosions.length - 1; i >= 0; i--) {
-      this.explosions[i].update();
+      this.explosions[i].update(deltaTimeMs);
       if (!this.explosions[i].active) {
         const lastIndex = this.explosions.length - 1;
         if (i !== lastIndex) {

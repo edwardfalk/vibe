@@ -89,15 +89,15 @@ describe('rusher blast vs enemies', () => {
     expect(gs.addKill).toHaveBeenCalledTimes(1);
   });
 
-  it('a caught rusher lights its fuse instead of dying; a lit one keeps its fuse', () => {
+  it('a caught rusher lights instead of dying; a lit one keeps its fuse', () => {
     const context = { get: () => undefined, set() {} };
     const unlit = new Rusher(60, 0, 'rusher', { context }, mockP5, null);
     const lit = new Rusher(-60, 0, 'rusher', { context }, mockP5, null);
-    lit.lightFuse();
-    lit.fuseMs = 500;
+    lit.takeDamage(1, null, 'hit');
+    const fuse = lit.lit;
     const gs = run([exploding(0, 0), unlit, lit]);
-    expect(unlit.vibrating).toBe(true);
-    expect(lit.fuseMs).toBe(500);
+    expect(unlit.lit?.by).toBe('blast');
+    expect(lit.lit).toBe(fuse);
     expect(gs.addKill).not.toHaveBeenCalled();
   });
 
@@ -114,5 +114,40 @@ describe('rusher blast vs enemies', () => {
     const gs = run([victim, killer, exploding(0, 0)]);
     expect(victim.takeDamage).not.toHaveBeenCalled();
     expect(gs.addKill).not.toHaveBeenCalled();
+  });
+
+  it('plays one crash, no explosion, and adds the blast with its chain flag', () => {
+    const audio = { playSound: vi.fn(), speak: vi.fn() };
+    const explosionManager = { addExplosion: vi.fn() };
+    const collisionSystem = {
+      handleRusherExplosion: vi.fn(),
+      handleEnemyDeath: vi.fn(),
+    };
+    const chained = {
+      ...exploding(0, 0),
+      update: () => ({ ...blastResult, chain: true }),
+    };
+    updateEnemiesAndResolveResults({
+      enemies: [chained],
+      enemyBullets: [],
+      player: { x: 5000, y: 5000 },
+      deltaTimeMs: 16,
+      collisionSystem,
+      explosionManager,
+      audio,
+      gameState: { gameState: 'playing', addKill: vi.fn(), addScore: vi.fn() },
+    });
+    expect(explosionManager.addExplosion).toHaveBeenCalledWith(
+      0,
+      0,
+      'rusher-explosion',
+      { chain: true }
+    );
+    expect(audio.playSound.mock.calls.map(([n]) => n)).toEqual(['rusherCrash']);
+    // [blind review 2026-10-02] the blast reaches the hero's damage
+    expect(collisionSystem.handleRusherExplosion).toHaveBeenCalledWith(
+      { ...blastResult, chain: true },
+      chained
+    );
   });
 });

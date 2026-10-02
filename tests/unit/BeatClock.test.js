@@ -168,25 +168,6 @@ describe('BeatClock', () => {
       expect(clock.canGruntShoot()).toBe(false);
     });
 
-    it('canRusherExplode returns true on beats 1 and 3 (0-indexed: 0 and 2)', () => {
-      mockCtx.currentTime = 0.0; // beat 0
-      clock.update(true);
-      expect(clock.canRusherExplode()).toBe(true);
-
-      mockCtx.currentTime = 1.0; // beat 2
-      clock.update(true);
-      expect(clock.canRusherExplode()).toBe(true);
-
-      // Should NOT fire on beats 1 and 3
-      mockCtx.currentTime = 0.5; // beat 1
-      clock.update(true);
-      expect(clock.canRusherExplode()).toBe(false);
-
-      mockCtx.currentTime = 1.5; // beat 3
-      clock.update(true);
-      expect(clock.canRusherExplode()).toBe(false);
-    });
-
     it('falls back to Date.now when no audioContext provided', () => {
       const fallbackClock = new BeatClock(120);
       expect(fallbackClock.audioContext).toBeNull();

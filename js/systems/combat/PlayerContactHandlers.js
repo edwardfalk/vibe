@@ -51,7 +51,6 @@ export function handleRusherExplosionCollision({
   explosion,
   rusherEnemy,
   player,
-  audio,
   cameraSystem,
   explosionManager,
 }) {
@@ -61,8 +60,6 @@ export function handleRusherExplosionCollision({
     (player.x - explosion.x) ** 2 + (player.y - explosion.y) ** 2
   );
   if (distance > explosion.radius) return;
-
-  audio?.playSound('explosion', explosion.x, explosion.y);
 
   if (player.hurt(explosion.damage, 'rusher-explosion')) return;
 

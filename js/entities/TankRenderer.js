@@ -87,6 +87,19 @@ export function turnStep(facing, toTarget, stepRad, deadRad) {
 }
 
 /**
+ * Where a turn has got to at a beat position: from `from` to `to`, eased
+ * over turnSec from its start `at` (a beat position). No start, or no clock,
+ * means it is done. The tank and the rusher both turn this way.
+ */
+export function turnAt(turn, beats, beatSec, turnSec) {
+  const { from, to, at } = turn;
+  if (at === null || beatSec <= 0) return to;
+  return (
+    from + (to - from) * smooth(clamp01(((beats - at) * beatSec) / turnSec))
+  );
+}
+
+/**
  * His gun's angle from his facing after an update of dtSec: it eases toward
  * the target (time constant tauSec) and never leaves its arc. A target
  * outside the arc holds the gun at the nearer edge.
@@ -140,7 +153,7 @@ const TURN_REST_SEC = 9;
 
 // ---- sprite helpers: in a sprite, strokes are free ----
 // A union of shapes with one ink edge: every shape in ink first, then fills
-function union(g, c, shapes, ink = true) {
+export function union(g, c, shapes, ink = true) {
   if (ink) {
     g.fill(...C.ink);
     g.stroke(...C.ink);

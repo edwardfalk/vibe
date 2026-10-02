@@ -3,6 +3,7 @@ import { CONFIG } from '../../js/config.js';
 import { BaseEnemy } from '../../js/entities/BaseEnemy.js';
 import { Grunt } from '../../js/entities/Grunt.js';
 import { Tank } from '../../js/entities/Tank.js';
+import { Rusher } from '../../js/entities/Rusher.js';
 import { HEALTH_BAR_HEIGHT_PX } from '../../js/entities/BaseEnemyHelpers.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { transformP5 } from './helpers/transformP5.js';
@@ -43,6 +44,15 @@ const tankWith = (clock) => {
   t.isSpawning = false;
   return t;
 };
+const rusherWith = (clock) => {
+  const context = {
+    get: (k) => (k === 'beatClock' ? clock : undefined),
+    set() {},
+  };
+  const r = new Rusher(0, 0, 'rusher', { context }, createMockP5(), null);
+  r.isSpawning = false;
+  return r;
+};
 const KINDS = [
   {
     kind: 'grunt',
@@ -60,6 +70,20 @@ const KINDS = [
       t.chargingShot = true; // the second bar of his charge
       t.chargeStartBeat = 12;
       t.poseBeats = 17.3;
+    },
+  },
+  {
+    kind: 'rusher',
+    make: rusherWith,
+    base: ['rusher', { size: 22, health: 1, speed: 2.5, color: null }],
+    busy: (r) => {
+      r.cried = true; // lit by a blast, pushed, mid-fuse
+      r.cryAt = 16.2;
+      r.lit = { at: 16.4, by: 'blast', blastBeat: 20, beatsTotal: 4 };
+      r.hitAt = 16.4;
+      r.pushed = true;
+      r.pushAt = 16.4;
+      r.pushDir = 1;
     },
   },
 ];

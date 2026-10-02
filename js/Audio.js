@@ -32,6 +32,7 @@ import { CONFIG, VOICE_CONFIG } from './config.js';
 import { createReverbImpulse } from './audio/speech/effects.js';
 import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
 import { getPlayerDialogueLine } from './audio/DialogueLines.js';
+import { playCrash, crashNoise } from './audio/CrashSynth.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
 const DUCK_ATTACK_SEC = 0.05;
@@ -127,6 +128,8 @@ export class Audio {
       this.applyMix();
 
       this.createEffects();
+      // The crash's noise, once, from a fixed seed (CrashSynth.js)
+      crashNoise(this.audioContext, SOUND_CONFIG.rusherCrash.duration);
       this.loadVoices();
 
       // Start drum machine now that audio context is available
@@ -221,8 +224,28 @@ export class Audio {
       console.warn(`❌ Sound not found: ${soundName}`);
       return;
     }
+    if (soundConfig.synth === 'crash') {
+      this.playCrashAt(soundConfig, x, y);
+      return;
+    }
 
     this.playTone(soundConfig, x, y, soundName);
+  }
+
+  /** The rusher's crash (CrashSynth.js), quieter and panned with distance from the hero */
+  playCrashAt(config, x, y) {
+    const hx = Number.isFinite(this.player?.x) ? this.player.x : 0;
+    const hy = Number.isFinite(this.player?.y) ? this.player.y : 0;
+    const placed = x !== null && y !== null;
+    const near = placed ? calculateVolumeForPosition(x, y, hx, hy) : 1;
+    const pan = placed ? calculatePanForPosition(x, hx) : 0;
+    playCrash(
+      this.audioContext,
+      this.masterGain,
+      config,
+      config.volume * CONFIG.RUSHER.CRASH_VOLUME * near,
+      pan
+    );
   }
 
   playTone(config, x, y, soundName = '') {

@@ -14,7 +14,7 @@ At 120 BPM in 4/4 time (a beat every 500 ms):
 | Stabber | lunges on beat 3.5        | off-beat accent |
 | Rusher  | explodes on beats 1 and 3 | crash           |
 
-The attacks are also pitched apart so they don't mask each other: tank shots low (about 90 Hz), grunt shots in the middle (about 950 Hz) and stabber attacks high (about 2.2 kHz). The tank's tones are square waves: laptop speakers can't play 90 Hz itself, but they do play its overtones. Its shot adds a short electric zap that falls from 1.2 kHz, below the stabbers. The presets are in `js/audio/SoundConfig.js`.
+The attacks are also pitched apart so they don't mask each other: tank shots low (about 90 Hz), grunt shots in the middle (about 950 Hz) and stabber attacks high (about 2.2 kHz). The rusher's crash is a cymbal above them all: everything in it is high-passed at 5 kHz, so nothing sits in the kick's band. The tank's tones are square waves: laptop speakers can't play 90 Hz itself, but they do play its overtones. Its shot adds a short electric zap that falls from 1.2 kHz, below the stabbers. The presets are in `js/audio/SoundConfig.js`.
 
 A steady kick (four on the floor by default) and a sub-bass pulse keep time under everything. Without them, enemy hits are just sounds. With them, you can hear that the hits land on the beat. The kick's sound and pattern are in `CONFIG.BEAT_TRACK`.
 
@@ -28,11 +28,13 @@ The tank is a vain muscle bully, the grunts' big brother: a bouncer from space, 
 
 The time bomb is the hero's weapon against tanks. You plant it by touching a tank's bare back, shouting "TIMEBOMB!". It rides there, counts "3, 2, 1" in your voice on the beat from the beat after that, and blows on the sixth beat, with the kick, and kills the tank it is on: the blast hits him from his own back and the plasma it leaves finishes him. It hurts everything else near it too, you included, so run: the ring round it shows how far and how long. The look and its numbers are in `js/entities/TankRenderer.js`, `CONFIG.TANK`, `CONFIG.TANK_LOOK` and `CONFIG.BOMB`.
 
+The rusher is the family's reckless little cousin, who thinks blowing up is the best party there is: a stuntman from space riding a hot-pink rocket like a motorbike, in a star-spangled helmet and a cape. He steers only on the beat. On every beat he boosts toward you, turning at most 100°, and between beats he flies dead straight: dash aside just after a boost and he shoots past and has to loop round. Shoot him, or let him get close, and he lights. He stops, pops a wheelie and waves to the crowd, and the ring at his blast's reach counts the beats to the first beat 1 or 3 at least two beats on, losing an arc a beat: amber for the last, white-hot for the last half-beat. Then he goes off with a crash. He is your firework too: his blast kills the grunts round him and lights any rusher it reaches, which goes off two beats later, crash … crash. Your shots knock him along their path, so you can bat a lit rusher into a crowd. The look and its numbers are in `js/entities/RusherRenderer.js`, `CONFIG.RUSHER` and `CONFIG.RUSHER_LOOK`.
+
 ## The sky
 
 The steady kick is the one instrument you also see. The sky is a nebula around a young star cluster. On every kick you hear, the cluster breathes and the dense gas lights up from inside; on beat 1 a pressure front also rolls out through the gas. On beats where the kick doesn't play, the sky only drifts. It grows with the level: sparse, cool teal at level 1; by level 8 the cluster has blown a bubble walled with rust and ochre gas.
 
-This is BeatTrack's steady kick, not the tank's beat-1 part. The older per-beat flashes are gone, so the sky is the one visual beat apart from the enemies' own moves: the grunts' dance and the tank's kick, turn and swagger (see The cast). Its numbers are in `CONFIG.SKY`.
+This is BeatTrack's steady kick, not the tank's beat-1 part. The older per-beat flashes are gone, so the sky is the one visual beat apart from the enemies' own moves: the grunts' dance, the tank's kick, turn and swagger, and the rusher's boost on every beat (see The cast). Its numbers are in `CONFIG.SKY`.
 
 ## Player fire
 

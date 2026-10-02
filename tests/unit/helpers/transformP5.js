@@ -3,6 +3,27 @@
 // image with where it lands on screen. Any other call (fill, arc, rect, ...)
 // is recorded by name in `calls`. createGraphics returns a plain recorder
 // that notes whether it was removed.
+// A raw canvas context stand-in: properties set on it (globalAlpha,
+// fillStyle, ...) read back; save() and restore() keep and bring back that
+// state, as a canvas does; every fill, stroke and image notes the alpha it
+// was drawn at, in alphasDrawn; any other call does nothing
+function rawContext() {
+  const state = { globalAlpha: 1 };
+  const saved = [];
+  const alphasDrawn = [];
+  const DRAWS = new Set(['fill', 'stroke', 'fillRect', 'drawImage']);
+  return new Proxy(state, {
+    get: (t, k) => {
+      if (k === 'save') return () => saved.push({ ...t });
+      if (k === 'restore') return () => Object.assign(t, saved.pop());
+      if (k === 'alphasDrawn') return alphasDrawn;
+      if (k in t) return t[k];
+      if (DRAWS.has(k)) return () => alphasDrawn.push(t.globalAlpha);
+      return () => {};
+    },
+  });
+}
+
 export function transformP5() {
   // [a, b, c, d, e, f]: screen x = a·x + c·y + e, screen y = b·x + d·y + f
   let m = [1, 0, 0, 1, 0, 0];
@@ -54,7 +75,7 @@ export function transformP5() {
     BLEND: 'blend',
     TWO_PI: 2 * Math.PI,
     frameCount: 7,
-    drawingContext: { globalAlpha: 1 },
+    drawingContext: rawContext(),
     push: () => stack.push(m),
     pop: () => {
       m = stack.pop();

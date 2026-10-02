@@ -8,9 +8,9 @@ describe('Frequency redistribution', () => {
     expect(SOUND_CONFIG.playerDash.frequency).toBe(200);
   });
 
-  it('rusher sounds should be in upper-mid band (600-800Hz)', () => {
+  it('rusher sounds: the charge in the upper mids, the crash above the stabbers and the kick click', () => {
     expect(SOUND_CONFIG.rusherCharge.frequency).toBe(700);
-    expect(SOUND_CONFIG.rusherScream.frequency).toBe(750);
+    expect(SOUND_CONFIG.rusherCrash.highpassHz).toBeGreaterThan(2500);
   });
 
   it('explosion should be deeper to avoid grunt territory', () => {
