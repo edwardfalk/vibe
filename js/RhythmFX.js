@@ -16,7 +16,6 @@ export class RhythmFX {
     // Early-warning ring colour per enemy type
     this.enemyTypeConfig = {
       grunt: { color: [50, 255, 50] },
-      tank: { color: [150, 100, 255] },
       stabber: { color: [255, 215, 0] },
       rusher: { color: [255, 50, 150] },
     };
@@ -52,7 +51,7 @@ export class RhythmFX {
    * Register an enemy attack telegraph
    * @param {number} x - Enemy X position
    * @param {number} y - Enemy Y position
-   * @param {string} type - Enemy type ('grunt', 'tank', 'stabber', 'rusher')
+   * @param {string} type - Enemy type ('grunt', 'stabber', 'rusher'; the tank's chain counts his charge instead)
    * @param {number} beatsUntil - How many beats until attack (0.0 to 4.0)
    * @param {object} [owner] - The enemy: one ring per enemy, drawn where it
    *   is now, so a moving enemy doesn't leave a trail of rings
