@@ -56,6 +56,14 @@ export function constrain(value, low, high) {
   return max(low, min(high, value));
 }
 
+export const clamp01 = (x) => Math.max(0, Math.min(1, x));
+// Ease in and out over 0..1
+export const smooth = (k) => k * k * (3 - 2 * k);
+// An envelope age seconds after its event: 1 decaying with time constant
+// tau; 0 before the event (a negative age) and after 3 s
+export const env = (age, tau) =>
+  age >= 0 && age < 3 ? Math.exp(-age / tau) : 0;
+
 /**
  * Calculate distance between two points.
  */

@@ -61,6 +61,7 @@ export function getGlowSizeForType(type, size) {
 }
 
 export const HEALTH_BAR_HEIGHT_PX = 4;
+export const HEALTH_BAR_GAP_PX = 2; // between a health bar and the art below it
 
 /** Draw enemy health bar. */
 export function drawEnemyHealthBar(p, enemy) {
