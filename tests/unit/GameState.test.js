@@ -83,6 +83,49 @@ describe('GameState', () => {
     expect(gs.practiceRun).toBe(false);
   });
 
+  it("restart starts the hero's look clean, and ends a dash he died in", () => {
+    const player = {
+      maxHealth: 100,
+      shotAt: 3.6,
+      hurtAt: 3.6,
+      shieldBackAt: 3.6,
+      footfalls: [{ x: 1, y: 2, at: 3.5, foot: 1 }],
+      lastEighth: 7,
+      isDashing: true,
+      dashTimerMs: 120,
+    };
+    window.player = player;
+    try {
+      gs.restart();
+      expect([player.shotAt, player.hurtAt, player.shieldBackAt]).toEqual([
+        null,
+        null,
+        null,
+      ]);
+      expect(player.footfalls).toEqual([]);
+      expect(player.lastEighth).toBe(null);
+      expect([player.isDashing, player.dashTimerMs]).toEqual([false, 0]);
+    } finally {
+      window.player = null;
+    }
+  });
+
+  it('says a levelUp line on a new level: the next place he looks', () => {
+    const player = {};
+    window.audio = { playSound: vi.fn(), speakPlayerLine: vi.fn() };
+    window.player = player;
+    try {
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      expect(window.audio.speakPlayerLine).toHaveBeenCalledWith(
+        player,
+        'levelUp'
+      );
+    } finally {
+      window.audio = null;
+      window.player = null;
+    }
+  });
+
   it('level progresses at threshold', () => {
     gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
     expect(gs.level).toBe(2);

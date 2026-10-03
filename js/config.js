@@ -276,7 +276,6 @@ const CONFIG = {
     DAMAGE_TANK_BALL: 50,
     DAMAGE_STAB: 25,
     DAMAGE_TANK_SHOVE: 15, // a tank's shove when he's in front of it
-    HEAD_SIZE: 0.36, // head diameter as a share of his size
     // Knockback: a push of this many px/frame that fades by KNOCKBACK_DECAY
     // (share kept per frame), so it carries him about force x 6.7 px in all
     KNOCKBACK_DECAY: 0.85,
@@ -285,6 +284,16 @@ const CONFIG = {
     KNOCKBACK_AREA: 6, // hazard clouds
     KNOCKBACK_BOMB: 15,
     KNOCKBACK_TANK_SHOVE: 14, // about 95 px
+  },
+
+  // The hero's look (js/entities/PlayerRenderer.js), drawn only. ART_SCALE:
+  // drawn size over his size (1 = the prototype's proportions at size 32,
+  // about 44 px tall); his hit circle stays size / 2, but his shots leave
+  // the drawn gun. A new ART_SCALE rebuilds his sprites. FLIP_COS: he turns
+  // round once his aim is this far past straight up or down (cos of it).
+  PLAYER_LOOK: {
+    ART_SCALE: 1,
+    FLIP_COS: 0.3,
   },
 
   // Tank armour plates (hits to break). Applies to tanks spawned after a

@@ -31,6 +31,7 @@ Every sound an enemy makes is timed to one shared clock, so together they play a
 | Stabber | lunges on the "and" of 3                                              | off-beat accent |
 | Rusher  | explodes on beats 1 and 3                                             | crash           |
 
+- **You** are the Dude, in a bathrobe with a White Russian, looking for his carpet. He walks on your hi-hat's eighth notes, and the more they hurt him, the less he abides.
 - **Grunts** keep their distance, stepping back when you get close and advancing when you run.
 - **Stabbers** wind up, flash a warning, then dash at you.
 - **Rushers** are stuntmen on rockets who steer only on the beat: dash aside and they shoot past. Shot or too close, they light, count down on the beat and blow up with a crash on beat 1 or 3, taking anything near with them, other rushers included. Your shots knock them along, so bat one into a crowd.

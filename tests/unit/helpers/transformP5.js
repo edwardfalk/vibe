@@ -5,20 +5,47 @@
 // that notes whether it was removed.
 // A raw canvas context stand-in: properties set on it (globalAlpha,
 // fillStyle, ...) read back; save() and restore() keep and bring back that
-// state, as a canvas does; every fill, stroke and image notes the alpha it
-// was drawn at, in alphasDrawn; any other call does nothing
+// state exactly, as a canvas does; moved counts the transforms (translate,
+// rotate, scale, ...) in that state; every fill, stroke and image notes the
+// alpha and composite it was drawn with, in alphasDrawn and opsDrawn; depth
+// is how many saves are open; any other call does nothing
 function rawContext() {
-  const state = { globalAlpha: 1 };
+  const state = {
+    globalAlpha: 1,
+    globalCompositeOperation: 'source-over',
+    moved: 0,
+  };
   const saved = [];
   const alphasDrawn = [];
+  const opsDrawn = [];
   const DRAWS = new Set(['fill', 'stroke', 'fillRect', 'drawImage']);
+  const MOVES = new Set([
+    'translate',
+    'rotate',
+    'scale',
+    'transform',
+    'setTransform',
+  ]);
   return new Proxy(state, {
     get: (t, k) => {
       if (k === 'save') return () => saved.push({ ...t });
-      if (k === 'restore') return () => Object.assign(t, saved.pop());
+      if (k === 'restore') {
+        return () => {
+          for (const key of Object.keys(t)) delete t[key];
+          Object.assign(t, saved.pop());
+        };
+      }
       if (k === 'alphasDrawn') return alphasDrawn;
+      if (k === 'opsDrawn') return opsDrawn;
+      if (k === 'depth') return saved.length; // saves not yet restored
       if (k in t) return t[k];
-      if (DRAWS.has(k)) return () => alphasDrawn.push(t.globalAlpha);
+      if (MOVES.has(k)) return () => t.moved++;
+      if (DRAWS.has(k)) {
+        return () => {
+          alphasDrawn.push(t.globalAlpha);
+          opsDrawn.push(t.globalCompositeOperation);
+        };
+      }
       return () => {};
     },
   });

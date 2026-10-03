@@ -20,6 +20,8 @@ A steady kick (four on the floor by default) and a sub-bass pulse keep time unde
 
 ## The cast
 
+The hero is the Dude: a long-haired, bearded slacker in a bathrobe and jelly sandals, a White Russian in his other hand, black shades his only protection. He is looking for his carpet ("that carpet really tied the room together"), and he's sure one of the aliens has it. Calm is his nature, so his anger is the joke. He is the only one who walks: a foot lands on every eighth note, the hi-hat he fires on, and space cracks under it. Standing, he nods on the beat. As they hurt him his face goes red, an anger vein throbs on the kick, his shades narrow into a glare, and near the end steam puffs from under his hair and he glows red on the kick. A hit knocks his shades crooked and spills his drink. His shield is a bubble that swells on the kick, shatters when it takes a hit and pops back on the beat. The look and its numbers are in `js/entities/PlayerRenderer.js` and `CONFIG.PLAYER_LOOK`.
+
 The aliens live in space. There is no ground, so they never walk: they hover, on boosters or whatever else they have. Grunts are stupid, whiny and clumsy: each is a droplet of jelly in a helmet far too small, its eyes pointing two different ways, hovering on one jet that now and then coughs.
 
 Grunts dance together. Every grunt crouches as 2 and 4 come, the beats they fire on. One that fires hops on its jet's puff and squashes as it lands; the rest give a small hop and slump back. Through the beat before a shot a grunt winds up (its antennae go amber, then white-hot); when it holds its fire instead, it sulks. They stop while the game is paused. The look and its numbers are in `js/entities/GruntRenderer.js` and `CONFIG.GRUNT_LOOK`.
@@ -34,7 +36,7 @@ The rusher is the family's reckless little cousin, who thinks blowing up is the 
 
 The steady kick is the one instrument you also see. The sky is a nebula around a young star cluster. On every kick you hear, the cluster breathes and the dense gas lights up from inside; on beat 1 a pressure front also rolls out through the gas. On beats where the kick doesn't play, the sky only drifts. It grows with the level: sparse, cool teal at level 1; by level 8 the cluster has blown a bubble walled with rust and ochre gas.
 
-This is BeatTrack's steady kick, not the tank's beat-1 part. The older per-beat flashes are gone, so the sky is the one visual beat apart from the enemies' own moves: the grunts' dance, the tank's kick, turn and swagger, and the rusher's boost on every beat (see The cast). Its numbers are in `CONFIG.SKY`.
+This is BeatTrack's steady kick, not the tank's beat-1 part. The older per-beat flashes are gone, so the sky is the one visual beat apart from the cast's own moves: the hero's stride on the eighths and his nod, with his anger and his bubble throbbing on the kick, the grunts' dance, the tank's kick, turn and swagger, and the rusher's boost on every beat (see The cast). Its numbers are in `CONFIG.SKY`.
 
 ## Player fire
 

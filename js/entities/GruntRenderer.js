@@ -119,8 +119,8 @@ const SULK_FADE = 0.15; // of the beat: it perks up just before the next one
 export const SHOULDER = Object.freeze([0.28, 0.12]);
 export const GUN_REACH = 0.56;
 
-const mod = (a, n) => ((a % n) + n) % n;
-const mix = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
+export const mod = (a, n) => ((a % n) + n) % n;
+export const mix = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
 // A repeatable 0..1 for a whole number: dice without random()
 const roll = (n) => mulberry32(n)();
 
