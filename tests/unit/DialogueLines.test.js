@@ -8,6 +8,9 @@ import {
   TANK_CALM_LINES,
   STAB_WARNINGS,
   RUSHER_BATTLE_CRIES,
+  PLAYER_LINES,
+  MAX_FIGHT_WORDS,
+  getPlayerDialogueLine,
 } from '../../js/audio/DialogueLines.js';
 import { CONFIG } from '../../js/config.js';
 
@@ -55,5 +58,35 @@ describe('dialogue lines', () => {
     expect(SPEAKER_LINES.rusher).toEqual(
       expect.arrayContaining(['WATCH THIS!', 'NO HANDS!', 'TA-DA!'])
     );
+    // The Dude's (docs/superpowers/specs/2026-10-03-dude-hero-design.md)
+    expect(SPEAKER_LINES.player).toEqual(
+      expect.arrayContaining([
+        "WHERE'S MY CARPET?!",
+        'THAT CARPET REALLY TIED THE ROOM TOGETHER.',
+        'NO CARPET HERE EITHER.',
+      ])
+    );
+  });
+
+  it('gives the hero lines for each moment, short in the fight', () => {
+    for (const context of [
+      'start',
+      'levelUp',
+      'damage',
+      'lowHealth',
+      'death',
+    ]) {
+      expect(PLAYER_LINES[context].length, context).toBeGreaterThan(0);
+      expect(PLAYER_LINES[context]).toContain(
+        getPlayerDialogueLine(context, () => 0.5)
+      );
+    }
+    for (const context of ['levelUp', 'damage', 'lowHealth']) {
+      for (const line of PLAYER_LINES[context]) {
+        expect(line.split(/\s+/).length, line).toBeLessThanOrEqual(
+          MAX_FIGHT_WORDS
+        );
+      }
+    }
   });
 });

@@ -87,9 +87,9 @@ export class GameState {
         window.audio.playSound('levelUp');
       }
 
-      // Level up speech
+      // A new level: the next place he looks for his carpet
       if (window.audio && window.player) {
-        window.audio.speakPlayerLine(window.player, 'start');
+        window.audio.speakPlayerLine(window.player, 'levelUp');
       }
     }
   }

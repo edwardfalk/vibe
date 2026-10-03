@@ -110,6 +110,22 @@ describe('GameState', () => {
     }
   });
 
+  it('says a levelUp line on a new level: the next place he looks', () => {
+    const player = {};
+    window.audio = { playSound: vi.fn(), speakPlayerLine: vi.fn() };
+    window.player = player;
+    try {
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      expect(window.audio.speakPlayerLine).toHaveBeenCalledWith(
+        player,
+        'levelUp'
+      );
+    } finally {
+      window.audio = null;
+      window.player = null;
+    }
+  });
+
   it('level progresses at threshold', () => {
     gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
     expect(gs.level).toBe(2);
