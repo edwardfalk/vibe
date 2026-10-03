@@ -175,6 +175,16 @@ export class GameState {
       window.player.shieldUp = true;
       window.player.shieldDownMs = 0;
       window.player.msSinceHit = 0;
+      // His look starts clean: the beat clock's reset below can land it
+      // near beat 4 (it snaps to a beat), so last run's first stamps would
+      // otherwise survive; and a dash he died in doesn't carry over
+      window.player.shotAt = null;
+      window.player.hurtAt = null;
+      window.player.shieldBackAt = null;
+      window.player.footfalls = [];
+      window.player.lastEighth = null;
+      window.player.isDashing = false;
+      window.player.dashTimerMs = 0;
     }
 
     // Clear all game objects

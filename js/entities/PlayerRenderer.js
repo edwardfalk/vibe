@@ -3,6 +3,37 @@ import { drawGlow } from '../effects/glowUtils.js';
 import { drawPlayerDashEffect } from '../effects/DashEffect.js';
 import { CONFIG } from '../config.js';
 
+// His geometry, in the prototype's px at his size 32 (PROTO_SIZE), facing
+// right. player.js uses it too: his shots leave the drawn gun, and his
+// stomps' cracks land under him
+export const PROTO_SIZE = 32;
+export const SHOULDER = Object.freeze([2.4, -7]); // his gun arm's shoulder
+export const MUZZLE = Object.freeze([24, -1]); // the muzzle, in the gun arm's frame
+export const FEET_Y = 20.6; // his soles, below his centre
+export const CRACK_AHEAD = 4; // a stomp's crack, ahead of his centre
+
+/** His gun shoulder at (x, y), facing 1 (right) or -1, drawn at size s */
+export function heroShoulder(x, y, facing, s) {
+  const k = s / PROTO_SIZE;
+  return { x: x + facing * SHOULDER[0] * k, y: y + SHOULDER[1] * k };
+}
+
+/**
+ * Where his shot leaves: the muzzle in his rest pose, his gun arm along
+ * aimAngle from the shoulder. In his mirrored frame MUZZLE's second number
+ * is toward the top of the gun, so it flips with his facing.
+ */
+export function heroMuzzle(x, y, aimAngle, facing, s) {
+  const k = s / PROTO_SIZE;
+  const sh = heroShoulder(x, y, facing, s);
+  const c = Math.cos(aimAngle);
+  const sn = Math.sin(aimAngle);
+  return {
+    x: sh.x + (MUZZLE[0] * c - MUZZLE[1] * facing * sn) * k,
+    y: sh.y + (MUZZLE[0] * sn + MUZZLE[1] * facing * c) * k,
+  };
+}
+
 const LOW_HEALTH_GLOW = [255, 100, 100];
 const SHIELD_GLOW = [100, 200, 255];
 

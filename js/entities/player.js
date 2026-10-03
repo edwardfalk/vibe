@@ -2,15 +2,32 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { CONFIG } from '../config.js';
 import { Bullet } from './bullet.js';
-import { max, atan2, cos, sin } from '../mathUtils.js';
+import { max, atan2, cos, sin, env, clamp01 } from '../mathUtils.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
-import { drawPlayer } from './PlayerRenderer.js';
+import {
+  drawPlayer,
+  PROTO_SIZE,
+  FEET_Y,
+  CRACK_AHEAD,
+} from './PlayerRenderer.js';
+import { nextFacing, mod } from './GruntRenderer.js';
+import { rusherTilt } from './RusherRenderer.js';
+import { heardKickOf } from '../audio/BeatTrack.js';
 
 const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
 // A dash step clamps the frame time to this range
 const MIN_DASH_DELTA_MS = 1;
 const MAX_DASH_DELTA_MS = 100;
+// His look's timing (PlayerRenderer.js draws from pose())
+const DEFAULT_BEAT_MS = 500; // without a beat clock
+const STAMPS = ['shotAt', 'hurtAt', 'shieldBackAt']; // beat positions; null = never
+const FOOTFALLS_KEPT = 3; // a crack lasts under a beat
+const CONTACT_FLINCH_SEC = 0.35; // contact ticks (one a frame) restamp his flinch this seldom
+const FIRING_SEC = 0.3; // he yells this long after a shot (held fire is an eighth apart)
+const KICK_TAU_SEC = 0.12; // his pulses on the heard kick
+const NOD_TAU_SEC = 0.12; // his nod on each beat
+const BACK_SHARE = 0.25; // walking this much against his facing, he backs off
 
 export class Player {
   /**
@@ -28,7 +45,7 @@ export class Player {
     this.size = 32;
     this.health = 100;
     this.maxHealth = 100;
-    this.speed = 3;
+    this.speed = 3; // px a frame. Keep it constant: his flipbook's stride is drawn for it (PlayerRenderer.js)
 
     // Movement
     this.velocity = { x: 0, y: 0 };
@@ -67,8 +84,22 @@ export class Player {
     this.shieldDownMs = 0;
     this.msSinceHit = 0;
 
+    // His look: the beat position update() last kept (so pause and hitstop
+    // freeze his pose), the way he faces, and when things happened to him,
+    // in beat positions (null = never)
+    this.poseBeats = null;
+    this.facing = 1; // 1 faces right, -1 left (nextFacing)
+    this.shotAt = null;
+    this.hurtAt = null;
+    this.shieldBackAt = null;
+    this.footfalls = []; // { x, y, at, foot }: where his last stomps landed
+    this.lastEighth = null; // the eighth note his last stomp landed on
+
     this.context = context;
     this.getContextValue = createContextAccessor(() => this.context);
+    // As the tank and the rusher do: a hit before his first update stamps a real beat
+    this.poseBeats =
+      this.getContextValue('beatClock')?.getBeatPosition?.() ?? null;
   }
 
   /** Push him away from (fromX, fromY) with `force` px/frame */
@@ -79,6 +110,8 @@ export class Player {
   }
 
   update(deltaTimeMs) {
+    this.keepPoseBeats();
+
     // The shield recharges, then comes back on the beat
     if (!this.shieldUp) {
       this.shieldDownMs += deltaTimeMs;
@@ -89,6 +122,7 @@ export class Player {
         (!beatClock || beatClock.isOnBeat([1, 2, 3, 4]))
       ) {
         this.shieldUp = true;
+        this.shieldBackAt = this.poseBeats;
         this.getContextValue('audio')?.playSound('shieldUp', this.x, this.y);
       }
     }
@@ -212,6 +246,14 @@ export class Player {
       this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
     }
 
+    // He turns round to face his aim, past FLIP_COS
+    this.facing = nextFacing(
+      this.facing,
+      this.aimAngle,
+      CONFIG.PLAYER_LOOK.FLIP_COS
+    );
+    this.recordFootfall();
+
     // Update animation
     if (this.isMoving) {
       this.animFrame += 0.15;
@@ -279,6 +321,113 @@ export class Player {
     }
   }
 
+  /**
+   * Keep the beat position for his look. Anything stamped after it is
+   * dropped: the clock was moved back (restart() resets it), so it would
+   * otherwise come round again in the new run.
+   */
+  keepPoseBeats() {
+    const beats =
+      this.getContextValue('beatClock')?.getBeatPosition?.() ?? null;
+    this.poseBeats = beats;
+    if (beats === null) return;
+    for (const key of STAMPS) {
+      if (this[key] !== null && this[key] > beats) this[key] = null;
+    }
+    if (this.footfalls.some((f) => f.at > beats)) {
+      this.footfalls = this.footfalls.filter((f) => f.at <= beats);
+    }
+    if (this.lastEighth !== null && this.lastEighth > beats * 2) {
+      this.lastEighth = null;
+    }
+  }
+
+  /** A stomp on each new eighth note he walks into: his look's cracks */
+  recordFootfall() {
+    const beats = this.poseBeats;
+    if (!this.isMoving || this.isDashing || beats === null) {
+      this.lastEighth = null;
+      return;
+    }
+    const eighth = Math.floor(beats * 2);
+    // Setting off mid-eighth, his first foot lands on the next one
+    if (this.lastEighth === null) this.lastEighth = eighth;
+    if (eighth === this.lastEighth) return;
+    this.lastEighth = eighth;
+    const k = this.drawnSize() / PROTO_SIZE;
+    this.footfalls.push({
+      x: this.x + this.facing * CRACK_AHEAD * k,
+      y: this.y + FEET_Y * k,
+      at: eighth / 2,
+      foot: mod(eighth, 2),
+    });
+    if (this.footfalls.length > FOOTFALLS_KEPT) this.footfalls.shift();
+  }
+
+  /** His drawn size: his size times PLAYER_LOOK.ART_SCALE */
+  drawnSize() {
+    return this.size * CONFIG.PLAYER_LOOK.ART_SCALE;
+  }
+
+  /** Seconds since a beat-position stamp; Infinity if never (or no clock) */
+  sinceStamp(at) {
+    if (this.poseBeats === null || at === null) return Infinity;
+    const beatMs =
+      this.getContextValue('beatClock')?.beatInterval ?? DEFAULT_BEAT_MS;
+    return ((this.poseBeats - at) * beatMs) / 1000;
+  }
+
+  /** His pose, at the beat update() last kept (frozen while paused), and what happened when */
+  pose() {
+    const beats = this.poseBeats;
+    const beatSec =
+      (this.getContextValue('beatClock')?.beatInterval ?? DEFAULT_BEAT_MS) /
+      1000;
+    const since = (at) => this.sinceStamp(at);
+    const eighths = beats === null ? 0 : beats * 2;
+    const e8 = Math.floor(eighths);
+    const kick =
+      beats === null
+        ? null
+        : heardKickOf(
+            this.getContextValue('beatTrack'),
+            beats,
+            beatSec,
+            !!this.getContextValue('audio')?.soundPaused
+          );
+    const kickEnv = kick ? env(kick.kickAge, KICK_TAU_SEC) : 0;
+    const speed = Math.hypot(this.velocity.x, this.velocity.y);
+    // Without a clock he stands still in his pose, keys or not
+    const walking = beats !== null && this.isMoving && !this.isDashing;
+    return {
+      t: beats === null ? 0 : beats * beatSec,
+      side: this.facing,
+      aimRel: rusherTilt(this.aimAngle, this.facing), // his aim in his mirrored frame
+      moving: walking,
+      back: walking && this.velocity.x * this.facing < -BACK_SHARE * speed,
+      stepFoot: mod(e8, 2),
+      stepPhase: eighths - e8,
+      beat:
+        beats === null
+          ? 0
+          : env((beats - Math.floor(beats)) * beatSec, NOD_TAU_SEC),
+      kick: kickEnv,
+      kickAge: kick ? kick.kickAge : Infinity,
+      prevKickAge: kick ? kick.prevKickAge : Infinity,
+      downbeatKick: kick?.downbeat ? kickEnv : 0,
+      dash: this.isDashing ? clamp01(this.dashTimerMs / this.maxDashTimeMs) : 0,
+      dashDir: Math.atan2(this.dashVelocity.y, this.dashVelocity.x),
+      hp: this.health / this.maxHealth,
+      hurtAge: since(this.hurtAt),
+      shotAge: since(this.shotAt),
+      firing: this.isCurrentlyShooting || since(this.shotAt) < FIRING_SEC,
+      shield: this.shieldUp,
+      shatterAge: this.shieldUp ? Infinity : this.shieldDownMs / 1000,
+      shieldBackAge: since(this.shieldBackAt),
+      footfalls: this.footfalls.map((f) => ({ ...f, age: since(f.at) })),
+    };
+  }
+
   draw(p) {
     drawPlayer(p, this);
   }
@@ -328,6 +477,7 @@ export class Player {
   fireBullet() {
     // Cooldown is set by the caller (shoot method) after this returns
     this.muzzleFlash = 4;
+    this.shotAt = this.poseBeats;
     this.queuedShot = null; // any shot replaces a pending one, or both fire
 
     // Calculate bullet spawn position
@@ -418,6 +568,7 @@ export class Player {
     }
     audio?.playSound('playerHit');
     gameState?.resetKillStreak?.();
+    this.stampHurt(damageSource);
 
     const prevHealth = this.health;
     this.health -= amount;
@@ -447,6 +598,17 @@ export class Player {
       return true; // Player died
     }
     return false;
+  }
+
+  /** His look's flinch; contact ticks (one a frame) restamp it at most every CONTACT_FLINCH_SEC */
+  stampHurt(damageSource) {
+    if (
+      damageSource.endsWith('-contact') &&
+      this.sinceStamp(this.hurtAt) < CONTACT_FLINCH_SEC
+    ) {
+      return;
+    }
+    this.hurtAt = this.poseBeats;
   }
 
   // Take a hit; a fatal one ends the run. Returns true if the player died.

@@ -287,6 +287,16 @@ const CONFIG = {
     KNOCKBACK_TANK_SHOVE: 14, // about 95 px
   },
 
+  // The hero's look (js/entities/PlayerRenderer.js), drawn only. ART_SCALE:
+  // drawn size over his size (1 = the prototype's proportions at size 32,
+  // about 44 px tall); his hit circle stays size / 2, but his shots leave
+  // the drawn gun. A new ART_SCALE rebuilds his sprites. FLIP_COS: he turns
+  // round once his aim is this far past straight up or down (cos of it).
+  PLAYER_LOOK: {
+    ART_SCALE: 1,
+    FLIP_COS: 0.3,
+  },
+
   // Tank armour plates (hits to break). Applies to tanks spawned after a
   // change. Front 45 / sides 30: about 25 s of held fire to kill one
   // head-on, as before the double-shot fix. Tune live with ?tune.

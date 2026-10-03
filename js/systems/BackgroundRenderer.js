@@ -7,7 +7,7 @@
 
 import { NebulaSky, levelFraction } from './background/NebulaSky.js';
 import { drawInteractiveBackgroundEffectsLayer } from './background/BackgroundEffects.js';
-import { heardKick, NONE_SEC } from '../audio/BeatTrack.js';
+import { heardKickOf, NONE_SEC } from '../audio/BeatTrack.js';
 import { CONFIG } from '../config.js';
 import { constrain } from '../mathUtils.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
@@ -81,23 +81,15 @@ export class BackgroundRenderer {
     this.flow += dt * (1 + FLOW_PER_LEVEL * levelFraction(this.level));
 
     const beatClock = this.getContextValue('beatClock');
-    const beatTrack = this.getContextValue('beatTrack');
-    const ctx = beatTrack?.ctx;
     const beatSec = (beatClock?.beatInterval ?? DEFAULT_BEAT_MS) / 1000;
     const beats = beatClock
       ? beatClock.getTotalBeats() + beatClock.getBeatPhase()
       : 0;
-    // While held, the stopped beat keeps the kick glow it had
-    const running =
-      !!beatTrack?.isPlaying && (ctx?.state === 'running' || held);
-    const latencySec =
-      (ctx?.baseLatency ?? 0) +
-      (ctx?.outputLatency ?? 0) +
-      CONFIG.SKY.OFFSET_MS / 1000;
 
     const { WORLD_WIDTH, WORLD_HEIGHT } = CONFIG.GAME_SETTINGS;
     return {
-      ...heardKick(beats, beatSec, latencySec, running),
+      // While held, the stopped beat keeps the kick glow it had
+      ...heardKickOf(this.getContextValue('beatTrack'), beats, beatSec, held),
       beatSec,
       flow: this.flow,
       camX: (this.cameraSystem?.x ?? 0) + WORLD_WIDTH / 2,
