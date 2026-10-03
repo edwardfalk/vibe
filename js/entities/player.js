@@ -6,6 +6,8 @@ import { max, atan2, cos, sin, env, clamp01 } from '../mathUtils.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import {
   drawPlayer,
+  heroShoulder,
+  heroMuzzle,
   PROTO_SIZE,
   FEET_Y,
   CRACK_AHEAD,
@@ -51,12 +53,10 @@ export class Player {
     this.velocity = { x: 0, y: 0 };
     this.knockback = { x: 0, y: 0 }; // px/frame, fades (CONFIG.PLAYER)
     this.isMoving = false;
-    this.animFrame = 0;
 
     // Shooting
     this.aimAngle = 0;
     this.shootCooldownMs = 0;
-    this.muzzleFlash = 0;
     this.queuedShot = null;
     this.wantsToContinueShooting = false;
 
@@ -72,12 +72,6 @@ export class Player {
     this.dashSpeed = 8;
     this.dashCooldownMs = 0; // ms
     this.maxDashCooldownMs = 3000; // ms (was 180 frames)
-
-    // Visual colors with better contrast
-    this.vestColor = this.p.color(70, 130, 180); // Steel blue vest
-    this.pantsColor = this.p.color(25, 25, 112); // Midnight blue pants
-    this.skinColor = this.p.color(255, 219, 172); // Peach skin
-    this.gunColor = this.p.color(169, 169, 169); // Dark gray gun
 
     // Shield: takes one real hit, then recharges (CONFIG.PLAYER)
     this.shieldUp = true;
@@ -218,7 +212,9 @@ export class Player {
       worldBounds.bottom - halfSize
     );
 
-    // Use arrow keys for aim if any are pressed
+    // His aim. With the arrow keys it is their direction. With the mouse
+    // he faces the cursor as seen from his centre, then aims from his
+    // shoulder, so his shots leave the drawn gun on a line through the cursor
     if (
       window.arrowUpPressed ||
       window.arrowDownPressed ||
@@ -234,30 +230,25 @@ export class Player {
       if (dx !== 0 || dy !== 0) {
         this.aimAngle = atan2(dy, dx);
       }
-    } else if (this.cameraSystem) {
-      // Aim at the mouse in world coordinates (the camera moves)
-      const worldMouse = this.cameraSystem.screenToWorld(
-        this.p.mouseX,
-        this.p.mouseY
+      this.facing = nextFacing(
+        this.facing,
+        this.aimAngle,
+        CONFIG.PLAYER_LOOK.FLIP_COS
       );
-      this.aimAngle = atan2(worldMouse.y - this.y, worldMouse.x - this.x);
     } else {
-      // Fallback for when camera system is not available
-      this.aimAngle = atan2(this.p.mouseY - this.y, this.p.mouseX - this.x);
+      // The mouse in world coordinates (the camera moves)
+      const at = this.cameraSystem
+        ? this.cameraSystem.screenToWorld(this.p.mouseX, this.p.mouseY)
+        : { x: this.p.mouseX, y: this.p.mouseY };
+      this.facing = nextFacing(
+        this.facing,
+        atan2(at.y - this.y, at.x - this.x),
+        CONFIG.PLAYER_LOOK.FLIP_COS
+      );
+      const sh = heroShoulder(this.x, this.y, this.facing, this.drawnSize());
+      this.aimAngle = atan2(at.y - sh.y, at.x - sh.x);
     }
-
-    // He turns round to face his aim, past FLIP_COS
-    this.facing = nextFacing(
-      this.facing,
-      this.aimAngle,
-      CONFIG.PLAYER_LOOK.FLIP_COS
-    );
     this.recordFootfall();
-
-    // Update animation
-    if (this.isMoving) {
-      this.animFrame += 0.15;
-    }
 
     // Handle queued shots
     if (this.queuedShot) {
@@ -314,7 +305,6 @@ export class Player {
         this.shootCooldownMs = max(0, this.shootCooldownMs);
       }
     }
-    if (this.muzzleFlash > 0) this.muzzleFlash--;
     if (this.dashCooldownMs > 0) {
       this.dashCooldownMs -= deltaTimeMs;
       this.dashCooldownMs = max(0, this.dashCooldownMs);
@@ -476,16 +466,18 @@ export class Player {
 
   fireBullet() {
     // Cooldown is set by the caller (shoot method) after this returns
-    this.muzzleFlash = 4;
     this.shotAt = this.poseBeats;
     this.queuedShot = null; // any shot replaces a pending one, or both fire
 
-    // Calculate bullet spawn position
-    const bulletDistance = this.size * 0.8;
-    const bulletX = this.x + this.p.cos(this.aimAngle) * bulletDistance;
-    const bulletY = this.y + this.p.sin(this.aimAngle) * bulletDistance;
-
-    return Bullet.acquire(bulletX, bulletY, this.aimAngle, 8, 'player');
+    // It leaves the drawn gun's muzzle
+    const m = heroMuzzle(
+      this.x,
+      this.y,
+      this.aimAngle,
+      this.facing,
+      this.drawnSize()
+    );
+    return Bullet.acquire(m.x, m.y, this.aimAngle, 8, 'player');
   }
 
   queueShot(timeToNextBeat) {

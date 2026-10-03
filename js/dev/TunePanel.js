@@ -4,7 +4,7 @@
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the
  * stabber's knockback and the hero's
- * shield, healing, knockback, the damage hits do to him and his head size,
+ * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK),
  * and each speaker's voice (a new pick says a sample line). Sound and spawn changes apply from the next
  * beat or wave; level thresholds from the next level-up (the first one after
  * a restart); armour on tanks spawned after the change (and the tank's health); the rest at once.
@@ -38,7 +38,7 @@ const voiceChoices = () => [
 ];
 // What each speaker says when you pick a voice for it
 const VOICE_SAMPLES = {
-  player: 'Time to dance.',
+  player: "Where's my carpet?",
   tank: 'Targeting traitors!',
   stabber: 'Precise. Silent. Deadly.',
   rusher: 'Leeroy Jenkins!',
@@ -115,6 +115,7 @@ const KNOBS = [
   [TANK_LOOK, 'ART_SCALE', [0.6, 1.6, 0.05]],
   [TANK_LOOK, 'SWAGGER', [0, 2, 0.1]],
   ['RUSHER_LOOK', 'ART_SCALE', [0.6, 1.6, 0.05]],
+  ['PLAYER_LOOK', 'ART_SCALE', [0.7, 1.4, 0.05]], // 0.7 is about his old height
   [BOMB, 'FUSE_BEATS', [2, 16, 1]],
   [BOMB, 'COUNT_LEAD_BEATS', [1, 4, 1]],
   [BOMB, 'RADIUS_PX', [80, 400, 10]],
@@ -144,7 +145,6 @@ const KNOBS = [
   ['PLAYER', 'DAMAGE_TANK_BALL', [0, 100, 1]],
   ['PLAYER', 'DAMAGE_STAB', [0, 60, 1]],
   ['PLAYER', 'DAMAGE_TANK_SHOVE', [0, 60, 1]],
-  ['PLAYER', 'HEAD_SIZE', [0.25, 0.6, 0.01]],
   ['PLAYER', 'KNOCKBACK_DECAY', [0, 0.98, 0.01]],
   ['PLAYER', 'KNOCKBACK_STAB', [0, 30, 0.5]],
   ['PLAYER', 'KNOCKBACK_RUSHER_BLAST', [0, 30, 0.5]],

@@ -6,7 +6,8 @@
 // A raw canvas context stand-in: properties set on it (globalAlpha,
 // fillStyle, ...) read back; save() and restore() keep and bring back that
 // state, as a canvas does; every fill, stroke and image notes the alpha it
-// was drawn at, in alphasDrawn; any other call does nothing
+// was drawn at, in alphasDrawn; depth is how many saves are open; any other
+// call does nothing
 function rawContext() {
   const state = { globalAlpha: 1 };
   const saved = [];
@@ -17,6 +18,7 @@ function rawContext() {
       if (k === 'save') return () => saved.push({ ...t });
       if (k === 'restore') return () => Object.assign(t, saved.pop());
       if (k === 'alphasDrawn') return alphasDrawn;
+      if (k === 'depth') return saved.length; // saves not yet restored
       if (k in t) return t[k];
       if (DRAWS.has(k)) return () => alphasDrawn.push(t.globalAlpha);
       return () => {};

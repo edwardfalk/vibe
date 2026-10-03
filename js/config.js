@@ -276,7 +276,6 @@ const CONFIG = {
     DAMAGE_TANK_BALL: 50,
     DAMAGE_STAB: 25,
     DAMAGE_TANK_SHOVE: 15, // a tank's shove when he's in front of it
-    HEAD_SIZE: 0.36, // head diameter as a share of his size
     // Knockback: a push of this many px/frame that fades by KNOCKBACK_DECAY
     // (share kept per frame), so it carries him about force x 6.7 px in all
     KNOCKBACK_DECAY: 0.85,

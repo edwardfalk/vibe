@@ -4,6 +4,7 @@
  */
 
 import { Player } from './entities/player.js';
+import { prepareHeroLook } from './entities/PlayerRenderer.js';
 import { ExplosionManager } from './effects/explosions/ExplosionManager.js';
 import { GameState } from './core/GameState.js';
 import { CameraSystem } from './systems/CameraSystem.js';
@@ -46,6 +47,7 @@ export function runSetup(p, arrays) {
 
   // The hero starts at the world's centre, where the camera starts
   const player = new Player(p, 0, 0, window.cameraSystem, gameContext);
+  prepareHeroLook(p, player); // his sprites, behind the title screen
   window.player = player;
 
   window.enemies = enemies;
