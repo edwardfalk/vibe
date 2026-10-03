@@ -199,12 +199,23 @@ describe('drawing him', () => {
     const player = heroAimingAt({ x: -300, y: 0 });
     for (const set of [() => {}, busy]) {
       set(player);
-      const { p } = transformP5();
+      const { p, calls } = transformP5();
       const spy = vi.spyOn(Math, 'random');
       drawPlayer(p, player);
       expect(spy).toHaveBeenCalledTimes(0);
-      expect(p.drawingContext.globalAlpha).toBe(1);
-      expect(p.drawingContext.depth).toBe(0); // every save restored
+      expect(calls.map(([name]) => name)).not.toContain('random'); // nor p5's
+      const ctx = p.drawingContext;
+      expect(ctx.alphasDrawn.length).toBeGreaterThan(0);
+      expect(ctx.globalAlpha).toBe(1);
+      expect(ctx.globalCompositeOperation).toBe('source-over');
+      expect(ctx.depth).toBe(0); // every save restored
+      expect(ctx.moved).toBe(0); // so nothing drawn next is moved by him
+      // A hurt flash is one added stamp per part: the next part draws plainly
+      expect(ctx.opsDrawn.includes('lighter')).toBe(set === busy);
+      expect(ctx.opsDrawn.join(' ')).not.toContain('lighter lighter');
+      // The last thing drawn (his health bar) isn't caught in his flash
+      expect(ctx.alphasDrawn.at(-1)).toBe(1);
+      expect(ctx.opsDrawn.at(-1)).toBe('source-over');
       spy.mockRestore();
     }
   });
@@ -215,7 +226,22 @@ describe('drawing him', () => {
       const player = heroAimingAt({ x: 300, y: 0 });
       const { p, shapes } = transformP5();
       expect(() => drawPlayer(p, player)).not.toThrow();
+      expect(p.drawingContext.alphasDrawn.length).toBeGreaterThan(0);
       expect(shapes.some((sh) => sh.kind === 'ellipse')).toBe(false); // all raw canvas
+    }
+  });
+
+  it('keeps a crack where it landed when he flinches', () => {
+    const player = heroAimingAt({ x: 300, y: 0 });
+    player.poseBeats = 17.3;
+    player.footfalls = [{ x: 4, y: 20, at: 17.2, foot: 0 }];
+    for (const hurtAt of [null, 17.2]) {
+      player.hurtAt = hurtAt; // unhurt, then flinching
+      const { p } = transformP5();
+      const { points, ctx } = boundsContext();
+      p.drawingContext = ctx;
+      drawPlayer(p, player);
+      expect(points[0]).toEqual([4, 20]); // the crack's first stroke, in the world
     }
   });
 

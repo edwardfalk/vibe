@@ -85,6 +85,8 @@ describe('the hero’s state for his look', () => {
     run(5.6);
     expect(player.footfalls.map((f) => f.at)).toEqual([4.5, 5, 5.5]);
     expect(player.footfalls.map((f) => f.foot)).toEqual([1, 0, 1]);
+    run(6.6); // he keeps the last three
+    expect(player.footfalls.map((f) => f.at)).toEqual([5.5, 6, 6.5]);
   });
 
   it('records one footfall when the clock jumps several eighths', () => {
@@ -204,6 +206,46 @@ describe('the hero’s state for his look', () => {
     expect(dash).toBeCloseTo(player.dashTimerMs / player.maxDashTimeMs, 6);
     clock.beats += 0.2; // a hitstop: the clock runs, update() doesn't
     expect(player.pose().dash).toBe(dash);
+  });
+
+  it('leaves no cracks during the dash’s leap', () => {
+    const { player, held, run } = hero();
+    held.add(KEY.D);
+    expect(player.dash()).toBe(true);
+    run(4.52); // past an eighth, 272 ms in: still leaping
+    expect(player.isDashing).toBe(true);
+    expect(player.footfalls).toEqual([]);
+  });
+
+  it('hands the drawing his stride, his facing, his hits and his shield', () => {
+    const { player, held, mouse, run } = hero();
+    held.add(KEY.D);
+    run(4.25); // walking right, halfway through an eighth
+    let look = player.pose();
+    expect([look.moving, look.back, look.stepFoot, look.stepPhase]).toEqual([
+      true,
+      false,
+      0,
+      0.5,
+    ]);
+    mouse.x = -300; // he faces left, still walking right: backing off
+    run(4.75);
+    look = player.pose();
+    expect([look.side, look.back, look.stepFoot, look.stepPhase]).toEqual([
+      -1,
+      true,
+      1,
+      0.5,
+    ]);
+    player.takeDamage(10, 'enemy-bullet'); // the shield takes it
+    player.takeDamage(40, 'enemy-bullet');
+    player.fireBullet();
+    run(4.85);
+    look = player.pose();
+    expect([look.shield, look.hp, look.firing]).toEqual([false, 0.6, true]);
+    expect(look.hurtAge).toBeCloseTo(0.05, 6);
+    expect(look.shotAge).toBeCloseTo(0.05, 6);
+    expect(look.footfalls.at(-1).age).toBeCloseTo(0.175, 6); // landed on 4.5
   });
 
   it('holds his pose while paused: update() is what moves it', () => {
