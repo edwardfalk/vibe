@@ -92,6 +92,23 @@ const CONFIG = {
   // paused. Top level, so ?tune's JSON never carries it into this file.
   SOUND_WHILE_PAUSED: false,
 
+  // The universe's hum (js/audio/Hum.js): a root and its fifth under
+  // everything, drifting slowly like an old analog synth. It dips on every
+  // beat, breathes over two bars, grows at levels 3 and 5 and brightens as
+  // enemies fill the screen. Every tuned sound shares its root and drift
+  // (js/audio/Harmony.js). Tune live with ?tune. Provisional: re-check
+  // LEVEL_DB and CUTOFF_HZ once the effects are in key (the audio
+  // overhaul's PR 2).
+  HUM: {
+    ROOT: 'F#', // the universe's key: E, F, F#, G or A, in the octave up to A1 = 55 Hz
+    LEVEL_DB: 0, // added to the listening page's level (Hum.js's TRIM_DB)
+    DRIFT_CENTS: 9, // the furthest the root wanders
+    DIP: 0.65, // share of the hum's level each beat's dip takes
+    BREATH: 0.3, // how far the filter opens and closes over two bars
+    CUTOFF_HZ: 420, // the filter's resting brightness
+    FIGHT_OPEN: 1, // a full screen opens the filter this much more (1 = twice as bright)
+  },
+
   // Beat track: the steady kick and the sub pulse under it.
   // Tune live by opening the game with ?tune in the URL.
   BEAT_TRACK: {
