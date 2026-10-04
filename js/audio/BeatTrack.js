@@ -192,9 +192,12 @@ export class BeatTrack {
       this._beatSec = clock.beatInterval / 1000;
       const n8 = EIGHTH_NOTES_PER_MEASURE;
       // From just before now (skips missed notes after a hidden tab, keeps
-      // ones a short stall made late), and never at or before a note already
-      // handed to Web Audio (a restart moves the grid)
+      // ones a short stall made late), never before audio time 0 (the grid
+      // can begin earlier, and Web Audio rejects a negative time), and never
+      // at or before a note already handed to Web Audio (a restart moves the
+      // grid)
       const from = Math.max(
+        0,
         now - LATE_GRACE_SEC,
         (this._lastNoteSec ?? -Infinity) + eighth / 2
       );

@@ -70,6 +70,34 @@ describe('BeatTrack grid', () => {
     expect(notes).toEqual([]);
   });
 
+  it('never schedules before audio time 0, where the grid can begin once audio starts', () => {
+    // BeatClock carried the title screen's time over, so its grid began
+    // before audio time 0, and the first pass looks back LATE_GRACE_SEC from
+    // about 0: Web Audio rejects a negative time
+    const { track, notes } = setup({ now: 0.005, clockStartMs: -40 });
+    track._scheduler();
+    expect(notes).toEqual([]);
+  });
+
+  it("turns the hum's breath over the clock's own bar length", () => {
+    const ctx = { currentTime: 10.2 };
+    const clock = { audioContext: ctx, startTime: 1234, beatInterval: 400 };
+    const track = new BeatTrack({ get: (k) => ({ beatClock: clock })[k] });
+    Object.assign(track, { ctx, masterGain: {}, isPlaying: true });
+    vi.spyOn(track, '_playKick').mockImplementation(() => {});
+    track.hum = { sync: vi.fn(), dipAt: vi.fn(), barAt: vi.fn() };
+    track._scheduler();
+    // Four seconds of passes: at 150 BPM, a bar is 4 × 0.4 s
+    for (let i = 0; i < 160; i++) {
+      ctx.currentTime += 0.025;
+      vi.advanceTimersByTime(25);
+    }
+    expect(track.hum.barAt).toHaveBeenCalled();
+    for (const [, barSec] of track.hum.barAt.mock.calls) {
+      expect(barSec).toBeCloseTo(1.6, 9);
+    }
+  });
+
   it('re-arms the next pass first, so an error in this one cannot stop the kick', () => {
     const { track, ctx, notes } = setup({ now: 10.2, clockStartMs: 1234 });
     track._scheduleNote.mockImplementationOnce(() => {

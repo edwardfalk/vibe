@@ -104,6 +104,19 @@ describe('BeatTrack kick', () => {
     }
   });
 
+  it('keeps every kick when the hum throws on the beat, logging once', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const fail = () => {
+        throw new Error('hum');
+      };
+      expect(playMeasure({ dipAt: fail, barAt: fail })).toEqual([0, 1, 2, 3]);
+      expect(error).toHaveBeenCalledTimes(1);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
   it("ends the tuned kick on the hum's root", () => {
     CONFIG.HUM.DRIFT_CENTS = 0;
     CONFIG.HUM.ROOT = 'F#';

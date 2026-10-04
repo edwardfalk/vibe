@@ -104,6 +104,20 @@ describe('Hum', () => {
     expect(out.connected).toEqual([]);
   });
 
+  it('wires voices -> filter -> dip -> fade -> level, with the breath into the cutoff', () => {
+    const out = ctx.createGain();
+    const wired = new Hum(ctx, out);
+    for (const v of wired.voices) {
+      expect(v.osc.connected).toEqual([v.gain]);
+      expect(v.gain.connected).toEqual([wired.filter]);
+    }
+    expect(wired.filter.connected).toEqual([wired.dip]);
+    expect(wired.dip.connected).toEqual([wired.fade]);
+    expect(wired.fade.connected).toEqual([wired.levelGain]);
+    expect(wired.levelGain.connected).toEqual([out]);
+    expect(wired.breath.connected).toEqual([wired.filter.frequency]);
+  });
+
   it('glides every voice to a new root without making new ones', () => {
     const made = ctx.made.oscillators;
     CONFIG.HUM.ROOT = 'A';
