@@ -222,8 +222,23 @@ test.describe('Gameplay Probes', () => {
   });
 
   test('M mutes sound effects and music, and says so', async ({ page }) => {
+    // Record every Web Audio connection, so the hum's route can be checked
+    await page.addInitScript(() => {
+      const connect = AudioNode.prototype.connect;
+      AudioNode.prototype.connect = function (destination, ...rest) {
+        (this.__to ??= []).push(destination);
+        return connect.call(this, destination, ...rest);
+      };
+    });
     await bootGame(page);
     await page.waitForFunction(() => window.beatTrack?.masterGain);
+    // The hum plays through the effects' masterGain, so M (and the speech
+    // duck after it) takes it too
+    expect(
+      await page.evaluate(() =>
+        window.audio.hum.levelGain.__to.includes(window.audio.masterGain)
+      )
+    ).toBe(true);
     const gains = () =>
       page.evaluate(() => [
         window.audio.masterGain.gain.value,
