@@ -333,7 +333,9 @@ test.describe('Gameplay Probes', () => {
       synth.speak = (u) => window.__said.push([u.text, u.voice?.name]);
       synth.dispatchEvent(new Event('voiceschanged'));
     });
-    const tank = page.locator('#tunePanel select').nth(2); // after the kick pattern and the hero
+    const tank = page
+      .locator('#tunePanel label', { hasText: 'VOICES.tank' })
+      .locator('select');
     await expect(tank.locator('option')).toHaveText([
       'auto',
       'Test Voice A',
