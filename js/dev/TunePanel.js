@@ -57,8 +57,6 @@ const KNOBS = [
   [KICK, 'CLICK_LEVEL', [0, 1.5, 0.01]],
   [KICK, 'CLICK_DECAY_SEC', [0.001, 0.03, 0.001]], // noise buffer is 30 ms
   [KICK, 'CLICK_FREQ_HZ', [500, 8000, 50]],
-  ['BEAT_TRACK.SUB_PULSE', 'ENABLED'],
-  ['BEAT_TRACK.SUB_PULSE', 'VOLUME', [0, 4, 0.05]],
   [SKY, 'KICK_STRENGTH', [0, 2, 0.05]],
   [SKY, 'DOWNBEAT_FRONT', [0, 2, 0.05]],
   [SKY, 'OFFBEAT_SHARE', [0, 1, 0.05]],

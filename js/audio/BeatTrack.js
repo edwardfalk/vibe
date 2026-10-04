@@ -2,10 +2,11 @@
  * BeatTrack.js - The steady backbone synced to BeatClock
  *
  * A kick drum anchors the beat (four on the floor by default) so enemy
- * sounds have something to fall into, over a sub-bass pulse felt more than
- * heard. Enemies and player are the instruments — this keeps time.
- * Tunables live in CONFIG.BEAT_TRACK and are read on every note, so the
- * ?tune panel changes them live.
+ * sounds have something to fall into. It also keeps the hum's time
+ * (Hum.js): the hum dips on every beat this schedules and breathes over its
+ * bars. Enemies and player are the instruments; this keeps time.
+ * Tunables live in CONFIG.BEAT_TRACK and CONFIG.HUM and are read on every
+ * note or pass, so the ?tune panel changes them live.
  *
  * Uses a look-ahead scheduler for sample-accurate timing.
  * Runs on the game's AudioContext: Audio.initialize() starts it.
@@ -13,8 +14,12 @@
 
 import { CONFIG } from '../config.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
+import { hz } from './Harmony.js';
 
 const EIGHTH_NOTES_PER_MEASURE = 8;
+const BEATS_PER_BAR = 4;
+// The kick's click: this much white noise, made once (CLICK_DECAY_SEC stays under it)
+const CLICK_NOISE_SEC = 0.03;
 // Which beats (0-3) the kick plays on, per CONFIG.BEAT_TRACK.KICK.PATTERN
 const KICK_PATTERNS = {
   four: [0, 1, 2, 3],
@@ -98,6 +103,15 @@ const DRIVE_CURVE_SAMPLES = 1024;
 // leftover sine into an audible tick
 const TAIL_FADE_SEC = 0.005;
 
+/** The kick's click noise, made once per track (the loudness test makes its own) */
+export function clickNoise(ctx) {
+  const length = Math.floor(ctx.sampleRate * CLICK_NOISE_SEC);
+  const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+  return buffer;
+}
+
 export class BeatTrack {
   // Tempo comes from BeatClock
   constructor(context = null) {
@@ -111,11 +125,14 @@ export class BeatTrack {
     this.masterGain = null;
     this.isPlaying = false;
 
-    // Enemy count for dynamic volume scaling
+    // The run's level and enemy count, handed to the hum as the clock moves
     this._enemyCount = 0;
-
-    // Level tracking for pulse evolution
     this.level = 1;
+
+    // The hum Audio.initialize made; start() picks it up (the voice
+    // playground has none)
+    this.hum = null;
+    this._humFailed = false;
   }
 
   async start() {
@@ -124,6 +141,7 @@ export class BeatTrack {
     // Called from Audio.initialize(), right after it made the AudioContext
     const audio = this.getContextValue('audio');
     this.ctx = audio.audioContext;
+    this.hum = audio.hum ?? null;
 
     if (this.ctx.state === 'suspended') {
       await this.ctx.resume();
@@ -136,17 +154,7 @@ export class BeatTrack {
 
     this.isPlaying = true;
 
-    // Reusable noise buffer: the kick click and Level 5+ downbeat transients
-    const bufferSize = Math.floor(this.ctx.sampleRate * 0.03); // 30ms
-    this._noiseBuffer = this.ctx.createBuffer(
-      1,
-      bufferSize,
-      this.ctx.sampleRate
-    );
-    const data = this._noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
+    this._noiseBuffer = clickNoise(this.ctx);
 
     this._scheduler();
   }
@@ -171,14 +179,17 @@ export class BeatTrack {
 
   _scheduler() {
     if (!this.isPlaying || !this.ctx) return;
+    // Re-armed first, so an error in this pass can't stop the kick
+    setTimeout(() => this._scheduler(), SCHEDULER_INTERVAL_MS);
 
+    const now = this.ctx.currentTime;
     const clock = this.getContextValue('beatClock');
     // Silent until BeatClock runs on this AudioContext (the first moments
     // after start); from then on the kick uses the enemies' grid exactly
     if (clock?.audioContext === this.ctx) {
-      const now = this.ctx.currentTime;
       const origin = clock.startTime / 1000;
       const eighth = clock.beatInterval / 2000;
+      this._beatSec = clock.beatInterval / 1000;
       const n8 = EIGHTH_NOTES_PER_MEASURE;
       // From just before now (skips missed notes after a hidden tab, keeps
       // ones a short stall made late), and never at or before a note already
@@ -197,19 +208,44 @@ export class BeatTrack {
       }
     }
 
-    setTimeout(() => this._scheduler(), SCHEDULER_INTERVAL_MS);
+    // The hum follows the root, the drift, the level and the fight, once
+    // each time the audio clock moves: a pause or a stalled output freezes
+    // it, and writes at one frozen time would pile up. On the game-over
+    // screen the fight is over, whatever the frame that ended it last counted.
+    if (this.hum && now > (this._humSyncSec ?? -Infinity)) {
+      this._humSyncSec = now;
+      const over = this.getContextValue('gameState')?.gameState === 'gameOver';
+      const enemies = over ? 0 : this._enemyCount;
+      this._tryHum(() => this.hum.sync(now, this.level, enemies));
+    }
   }
 
   _scheduleNote(time, eighth) {
     // Only play on downbeats (8th notes 0, 2, 4, 6 = beats 1, 2, 3, 4)
     if (eighth % 2 !== 0) return;
     const beat = eighth / 2; // 0-3
-    const { SUB_PULSE } = CONFIG.BEAT_TRACK;
     if (kicksOn(beat)) {
       this._playKick(time);
     }
-    if (SUB_PULSE.ENABLED) {
-      this._playPulse(time, beat === 0);
+    // Every beat dips the hum, kick or not; each bar's beat 1 turns its breath
+    if (this.hum) {
+      this._tryHum(() => {
+        this.hum.dipAt(time);
+        if (beat === 0) this.hum.barAt(time, BEATS_PER_BAR * this._beatSec);
+      });
+    }
+  }
+
+  // Nothing in the hum can stop the kick: its first error is logged, and
+  // the work that threw is skipped
+  _tryHum(work) {
+    try {
+      work();
+    } catch (error) {
+      if (!this._humFailed) {
+        console.error('The hum failed; the kick plays on:', error);
+      }
+      this._humFailed = true;
     }
   }
 
@@ -224,10 +260,10 @@ export class BeatTrack {
     const gain = this.ctx.createGain();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(k.PITCH_START_HZ, time);
-    osc.frequency.exponentialRampToValueAtTime(
-      k.PITCH_END_HZ,
-      time + k.PITCH_DROP_SEC
-    );
+    // Tuned, the drop ends on the hum's root, with its drift at this moment
+    let endHz = k.PITCH_END_HZ;
+    if (k.TUNED) this._tryHum(() => (endHz = hz(['1', 1], time)));
+    osc.frequency.exponentialRampToValueAtTime(endHz, time + k.PITCH_DROP_SEC);
     gain.gain.setValueAtTime(k.VOLUME, time);
     gain.gain.exponentialRampToValueAtTime(SILENCE_GAIN, time + k.DECAY_SEC);
     gain.gain.linearRampToValueAtTime(0, time + k.DECAY_SEC + TAIL_FADE_SEC);
@@ -290,80 +326,6 @@ export class BeatTrack {
     shaper.curve = this._driveCurve;
     shaper.oversample = '2x'; // less aliasing from the added overtones
     return shaper;
-  }
-
-  // -- Pulse --------------------------------------------------------------
-
-  _playPulse(time, isDownbeat) {
-    if (!this.ctx || !this.masterGain) return;
-
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(isDownbeat ? 60 : 50, time);
-    osc.frequency.exponentialRampToValueAtTime(35, time + 0.1);
-
-    // Scale volume: quieter when many enemies (their sounds carry the beat)
-    const enemyFactor = Math.max(0.3, 1.0 - (this._enemyCount || 0) * 0.1);
-    const volume =
-      (isDownbeat ? 0.15 : 0.08) *
-      enemyFactor *
-      CONFIG.BEAT_TRACK.SUB_PULSE.VOLUME;
-    const duration = 0.15;
-    gain.gain.setValueAtTime(volume, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-
-    osc.connect(gain);
-    gain.connect(this.masterGain);
-    osc.onended = () => {
-      osc.disconnect();
-      gain.disconnect();
-    };
-    osc.start(time);
-    osc.stop(time + duration);
-
-    // Level 3+: Add octave harmonic
-    if (this.level >= 3 && this.ctx) {
-      const harmonicOsc = this.ctx.createOscillator();
-      const harmonicGain = this.ctx.createGain();
-      harmonicOsc.type = 'sine';
-      harmonicOsc.frequency.setValueAtTime(100, time);
-      harmonicGain.gain.setValueAtTime(volume * 0.3, time);
-      harmonicGain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-      harmonicOsc.connect(harmonicGain);
-      harmonicGain.connect(this.masterGain);
-      harmonicOsc.onended = () => {
-        harmonicOsc.disconnect();
-        harmonicGain.disconnect();
-      };
-      harmonicOsc.start(time);
-      harmonicOsc.stop(time + duration);
-    }
-
-    // Level 5+: Add noise transient on downbeats (reuses pre-created buffer)
-    if (this.level >= 5 && isDownbeat && this.ctx && this._noiseBuffer) {
-      const noiseSource = this.ctx.createBufferSource();
-      noiseSource.buffer = this._noiseBuffer;
-
-      const noiseFilter = this.ctx.createBiquadFilter();
-      noiseFilter.type = 'lowpass';
-      noiseFilter.frequency.setValueAtTime(40, time);
-
-      const noiseGain = this.ctx.createGain();
-      noiseGain.gain.setValueAtTime(volume * 0.5, time);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
-
-      noiseSource.connect(noiseFilter);
-      noiseFilter.connect(noiseGain);
-      noiseGain.connect(this.masterGain);
-      noiseSource.onended = () => {
-        noiseSource.disconnect();
-        noiseFilter.disconnect();
-        noiseGain.disconnect();
-      };
-      noiseSource.start(time);
-    }
   }
 
   setEnemyCount(count) {

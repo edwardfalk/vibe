@@ -2,16 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BeatTrack } from '../../js/audio/BeatTrack.js';
 
 // A BeatTrack whose scheduler reads a fake BeatClock on a fake AudioContext
-function setup({ now, clockStartMs, beatMs = 500 }) {
+function setup({ now, clockStartMs, beatMs = 500, gameState }) {
   const ctx = { currentTime: now };
   const clock = {
     audioContext: ctx,
     startTime: clockStartMs,
     beatInterval: beatMs,
   };
-  const track = new BeatTrack({
-    get: (k) => (k === 'beatClock' ? clock : undefined),
-  });
+  const context = { beatClock: clock, gameState };
+  const track = new BeatTrack({ get: (k) => context[k] });
   track.ctx = ctx;
   track.masterGain = {};
   track.isPlaying = true;
@@ -69,5 +68,69 @@ describe('BeatTrack grid', () => {
     clock.audioContext = null;
     track._scheduler();
     expect(notes).toEqual([]);
+  });
+
+  it('re-arms the next pass first, so an error in this one cannot stop the kick', () => {
+    const { track, ctx, notes } = setup({ now: 10.2, clockStartMs: 1234 });
+    track._scheduleNote.mockImplementationOnce(() => {
+      throw new Error('boom');
+    });
+    expect(() => track._scheduler()).toThrow('boom'); // 10.234 is lost
+    ctx.currentTime = 10.45;
+    vi.advanceTimersByTime(25);
+    expect(notes).toEqual([[10.484, 5]]);
+  });
+
+  it('syncs the hum once each time the audio clock moves', () => {
+    const { track, ctx } = setup({ now: 10.2, clockStartMs: 1234 });
+    track.hum = { sync: vi.fn() };
+    track.setLevel(4);
+    track.setEnemyCount(3);
+    track._scheduler();
+    expect(track.hum.sync).toHaveBeenLastCalledWith(10.2, 4, 3);
+    // A pause or a stalled device freezes the clock: no writes pile up at it
+    vi.advanceTimersByTime(25);
+    expect(track.hum.sync).toHaveBeenCalledTimes(1);
+    ctx.currentTime = 10.25;
+    vi.advanceTimersByTime(25);
+    expect(track.hum.sync).toHaveBeenCalledTimes(2);
+  });
+
+  it('hands the hum no enemies on the game-over screen, whatever the frame last counted', () => {
+    const gameState = { gameState: 'playing' };
+    const { track, ctx } = setup({ now: 10.2, clockStartMs: 1234, gameState });
+    track.hum = { sync: vi.fn() };
+    track.setEnemyCount(3);
+    track._scheduler();
+    expect(track.hum.sync).toHaveBeenLastCalledWith(10.2, 1, 3);
+    // A death inside the frame's update, then that frame's own count
+    gameState.gameState = 'gameOver';
+    track.setEnemyCount(3);
+    ctx.currentTime = 10.25;
+    vi.advanceTimersByTime(25);
+    expect(track.hum.sync).toHaveBeenLastCalledWith(10.25, 1, 0);
+  });
+
+  it("logs the hum's first error only, and keeps scheduling the kick", () => {
+    const { track, ctx, notes } = setup({ now: 10.2, clockStartMs: 1234 });
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      track.hum = {
+        sync: vi.fn(() => {
+          throw new Error('hum');
+        }),
+      };
+      track._scheduler();
+      ctx.currentTime = 10.45;
+      vi.advanceTimersByTime(25);
+      expect(notes).toEqual([
+        [10.234, 4],
+        [10.484, 5],
+      ]);
+      expect(track.hum.sync).toHaveBeenCalledTimes(2);
+      expect(error).toHaveBeenCalledTimes(1);
+    } finally {
+      error.mockRestore();
+    }
   });
 });
