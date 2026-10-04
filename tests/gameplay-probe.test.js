@@ -273,6 +273,11 @@ test.describe('Gameplay Probes', () => {
   test('Kick plays on every beat in a real AudioContext', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (err) => errors.push(err.message));
+    const humErrors = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error' && /hum/i.test(m.text()))
+        humErrors.push(m.text());
+    });
     await bootGame(page);
     await page.waitForFunction(() => window.beatTrack?.isPlaying);
     await page.evaluate(() => {
@@ -290,6 +295,17 @@ test.describe('Gameplay Probes', () => {
     expect(kicks).toBeGreaterThanOrEqual(3);
     expect(kicks).toBeLessThanOrEqual(5);
     expect(errors).toEqual([]);
+    // The hum: Audio built it, BeatTrack keeps its time, and it has faded in
+    // (from the first beat 1, over 0.4 s)
+    expect(
+      await page.evaluate(
+        () => !!window.audio.hum && window.beatTrack.hum === window.audio.hum
+      )
+    ).toBe(true);
+    await expect
+      .poll(() => page.evaluate(() => window.audio.hum.fade.gain.value))
+      .toBeGreaterThan(0.99);
+    expect(humErrors).toEqual([]);
   });
 
   test('?tune panel loads and clicking it does not start the game', async ({
