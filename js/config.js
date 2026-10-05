@@ -328,15 +328,6 @@ const CONFIG = {
     KNOCKBACK_FORCE: 8, // px/frame per hit; about 53 px in total
     MAX_KNOCKBACK: 20, // px/frame cap under steady fire
   },
-  // The voice each speaker uses, by name ('auto': the game picks one). The
-  // ?tune dropdowns list the voices this browser has.
-  VOICES: {
-    player: 'auto',
-    tank: 'auto',
-    stabber: 'auto',
-    rusher: 'auto',
-    grunt: 'auto',
-  },
   // The game's own speech engines (js/audio/speech/): each speaker's engine,
   // voice and effect chain. Tune them in voices.html, then paste here.
   SPEECH: {
@@ -396,14 +387,6 @@ const CONFIG = {
     // speech bubble always shows the real word
     RESPELL: { sam: { death: 'deth' }, espeak: {} },
   },
-};
-
-export const VOICE_CONFIG = {
-  player: { rate: 0.85, pitch: 0.15, volume: 1 },
-  grunt: { rate: 0.85, pitch: 1.8, volume: 0.8 },
-  rusher: { rate: 1.4, pitch: 1.5, volume: 0.8 },
-  tank: { rate: 0.5, pitch: 0.2, volume: 0.9 },
-  stabber: { rate: 0.8, pitch: 2.0, volume: 0.8 },
 };
 
 // Export for use in other files

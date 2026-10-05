@@ -338,51 +338,6 @@ test.describe('Gameplay Probes', () => {
     );
   });
 
-  test('?tune voice dropdowns list the voices and a pick is heard', async ({
-    page,
-  }) => {
-    await page.goto('/?tune');
-    await page.waitForFunction(() => window.gameState?.gameState === 'title');
-    await page.keyboard.press('Enter'); // start a run: audio is running
-    await page.waitForFunction(() => window.gameState.gameState === 'playing');
-    // Headless Chromium has no voices: hand it two, as Chrome does a moment
-    // after load. Chrome only accepts its own voice objects on a real
-    // utterance, so use a plain one, and record what would be said.
-    await page.evaluate(() => {
-      const synth = window.speechSynthesis;
-      const voices = [
-        { name: 'Test Voice A', lang: 'en-US' },
-        { name: 'Test Voice B', lang: 'en-GB' },
-      ];
-      synth.getVoices = () => voices;
-      window.SpeechSynthesisUtterance = class {
-        constructor(text) {
-          this.text = text;
-        }
-      };
-      window.__said = [];
-      synth.speak = (u) => window.__said.push([u.text, u.voice?.name]);
-      synth.dispatchEvent(new Event('voiceschanged'));
-    });
-    const tank = page
-      .locator('#tunePanel label', { hasText: 'VOICES.tank' })
-      .locator('select');
-    await expect(tank.locator('option')).toHaveText([
-      'auto',
-      'Test Voice A',
-      'Test Voice B',
-    ]);
-    await tank.selectOption('Test Voice B');
-    // The sample line went through the game's own speech, in that voice
-    expect(await page.evaluate(() => window.__said)).toContainEqual([
-      'Targeting traitors!',
-      'Test Voice B',
-    ]);
-    await expect(page.locator('#tunePanel pre')).toContainText(
-      '"tank": "Test Voice B"'
-    );
-  });
-
   test('?tune panel clicks during play do not shoot or keep focus', async ({
     page,
   }) => {
