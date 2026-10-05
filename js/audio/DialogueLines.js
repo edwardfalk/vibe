@@ -167,7 +167,7 @@ export const TANK_CHARGING = 'CHARGING!';
 // The hero shouts as he plants his bomb, then counts it down, 3, 2, 1, on
 // its beats (BombSystem.js)
 export const BOMB_PLANTED = 'TIMEBOMB!';
-const COUNTDOWN = ['3', '2', '1'];
+export const COUNTDOWN = ['3', '2', '1'];
 const distinct = (...lists) => [...new Set(lists.flat())];
 
 // Every fixed line, by the speaker who says it: the voice playground plays

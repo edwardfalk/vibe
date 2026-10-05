@@ -238,13 +238,14 @@ describe('restart', () => {
     window.explosionManager = null;
   });
 
-  it("clears the last run's effects, texts, hitstop and shake", () => {
+  it("clears the last run's effects, texts, waiting lines, hitstop and shake", () => {
     const gs = new GameState();
     gs.gameContext = new GameContext();
     gs.gameContext.set('hitStopFrames', 7);
     window.explosionManager = { fragmentExplosions: [{}] };
     window.floatingText = { texts: [{}] };
-    window.audio = { activeTexts: [{}], speakPlayerLine: () => {} };
+    const voicebox = { cancelPending: vi.fn() };
+    window.audio = { activeTexts: [{}], speakPlayerLine: () => {}, voicebox };
     window.rhythmFX = { telegraphs: [{}] };
     window.cameraSystem = new CameraSystem({});
     window.cameraSystem.addShake(20, 40);
@@ -255,6 +256,7 @@ describe('restart', () => {
     expect(window.explosionManager.fragmentExplosions).toEqual([]);
     expect(window.floatingText.texts).toEqual([]);
     expect(window.audio.activeTexts).toEqual([]);
+    expect(voicebox.cancelPending).toHaveBeenCalledTimes(1);
     expect(window.rhythmFX.telegraphs).toEqual([]);
     expect(window.cameraSystem.screenShake.intensity).toBe(0);
     expect(gs.gameContext.get('hitStopFrames')).toBe(0);

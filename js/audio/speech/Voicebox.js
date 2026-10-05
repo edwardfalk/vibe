@@ -1,8 +1,9 @@
 /**
  * Voicebox: the game's speech. The worker renders a line (SAM or espeak-ng)
  * at a set loudness; the speaker's effect chain runs offline; the result is
- * levelled again, fitted under the ceiling, and played. PR 2 adds the game's
- * side: say(), the line cache, cancelPending() and isSpeaking().
+ * levelled again, fitted under the ceiling, and played. The game says its
+ * lines through say(), on the beat grid, from a cache: its lines are a fixed
+ * set, so each is rendered once.
  */
 import { CONFIG } from '../../config.js';
 import { renderChain as renderEffectChain } from './effects.js';
@@ -40,12 +41,32 @@ export function startTime(now, clock) {
 }
 
 const workerUrl = () => new URL('./speechWorker.js', import.meta.url);
+const newWorker = () => new Worker(workerUrl(), { type: 'module' });
+// What say() races a line's render against
+const LATE = Symbol('late');
+
+// The speech worker, started before there is any audio (on the title screen)
+// so its engines have loaded by the first line: SAM loads with the worker,
+// espeak-ng on its first request, which this sends (its reply is nobody's
+// request; a failed espeak-ng comes back fatal on its next one). A Voicebox
+// takes it over through createWorker; an error before then waits for it.
+export function startSpeechWorker() {
+  const worker = newWorker();
+  worker.onerror = (event) => {
+    event.preventDefault?.();
+    worker.earlyError = new Error(
+      event.message || 'the speech worker failed to load'
+    );
+  };
+  worker.postMessage({ id: 0, type: 'variants' });
+  return worker;
+}
 
 export class Voicebox {
   constructor({
     audioContext,
     config = CONFIG.SPEECH,
-    createWorker = () => new Worker(workerUrl(), { type: 'module' }),
+    createWorker = newWorker,
     renderChain = renderEffectChain,
   }) {
     this.ctx = audioContext;
@@ -54,6 +75,11 @@ export class Voicebox {
     this.output = audioContext.createGain();
     this.pending = new Map(); // worker request id → { resolve, reject, timer }
     this.nextId = 0;
+    // speaker and spoken text → Promise<line | null>. Nothing changes
+    // CONFIG.SPEECH in a running game; a live knob for it must clear this
+    this.lines = new Map();
+    this.playing = new Set(); // { source, startsAt, duration } until it ends
+    this.epoch = 0; // cancelPending() moves it on
     this.failed = null; // the Error that turned speech off for the session
     try {
       this.worker = createWorker();
@@ -68,6 +94,7 @@ export class Voicebox {
         this.fail(
           new Error('a message from the speech worker could not be read')
         );
+      if (this.worker.earlyError) this.fail(this.worker.earlyError);
     } catch (error) {
       this.fail(error);
     }
@@ -140,7 +167,78 @@ export class Voicebox {
     panner.pan.value = pan;
     source.connect(level).connect(panner).connect(this.output);
     source.start(when);
+    const playing = { source, startsAt: when, duration: line.spokenSec };
+    this.playing.add(playing);
+    source.onended = () => this.playing.delete(playing);
     return { startsAt: when, duration: line.spokenSec };
+  }
+
+  // A speaker's line, rendered once: asking again, even before it is ready,
+  // gets the same render. One that can't be rendered is logged once and
+  // stays silent (null).
+  prepare(speaker, text) {
+    const setup = this.config.SPEAKERS[speaker] ?? this.config.SPEAKERS.player;
+    const words = spoken(setup.engine, text, this.config.RESPELL);
+    const key = `${speaker}:${words}`;
+    if (!this.lines.has(key)) {
+      const line = this.renderLine(setup, words).catch((error) => {
+        if (!this.failed) {
+          console.warn(
+            `Speech: ${speaker} can't say "${text}": ${error.message}`
+          );
+        }
+        return null;
+      });
+      this.lines.set(key, line);
+    }
+    return this.lines.get(key);
+  }
+
+  // Say a line on the beat grid (startTime), panned and at `gain`. Resolves
+  // { startsAt, duration } in audio seconds once it is scheduled (duration
+  // is the spoken part, without the effect tail), or { dropped } with why it
+  // won't play: 'failed' (no speech, or this line can't be rendered), 'late'
+  // (not ready within MAX_WAIT_MS) or 'cancelled' (cancelPending() came first)
+  async say(speaker, text, { gain = 1, pan = 0, clock = null } = {}) {
+    const epoch = this.epoch;
+    // A line not ready by MAX_WAIT_MS is dropped then, not when its render
+    // ends: its bubble shows on time, and a hung worker can't stack them up
+    let timer;
+    const late = new Promise((resolve) => {
+      timer = setTimeout(resolve, this.config.MAX_WAIT_MS, LATE);
+    });
+    const line = await Promise.race([this.prepare(speaker, text), late]);
+    clearTimeout(timer);
+    if (epoch !== this.epoch) return { dropped: 'cancelled' };
+    if (line === LATE) return { dropped: 'late' };
+    if (!line) return { dropped: 'failed' };
+    return this.play(line, startTime(this.ctx.currentTime, clock), gain, pan);
+  }
+
+  // Stop the lines still waiting for their eighth note; lines still being
+  // rendered won't play. Lines already playing finish, and so does one due
+  // within LEAD_SEC: the main thread's clock trails the audio thread's, so
+  // it may already be sounding, and cutting it would click.
+  cancelPending() {
+    this.epoch++;
+    const now = this.ctx.currentTime;
+    for (const line of this.playing) {
+      if (line.startsAt <= now + LEAD_SEC) continue;
+      line.source.stop();
+      this.playing.delete(line);
+    }
+  }
+
+  // True while a line is being spoken (its effect tail doesn't count), for
+  // at most maxSec after it starts
+  isSpeaking(maxSec = Infinity) {
+    const now = this.ctx.currentTime;
+    for (const { startsAt, duration } of this.playing) {
+      if (startsAt <= now && now < startsAt + Math.min(duration, maxSec)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   variants() {

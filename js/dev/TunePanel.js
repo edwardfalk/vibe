@@ -4,20 +4,18 @@
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the
  * stabber's knockback and the hero's
- * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK),
- * and each speaker's voice (a new pick says a sample line). Sound and spawn changes apply from the next
+ * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK).
+ * Voices are tuned in the voice playground (voices.html). Sound and spawn changes apply from the next
  * beat or wave; level thresholds from the next level-up (the first one after
  * a restart); armour on tanks spawned after the change (and the tank's health); the rest at once.
  * To keep a setting, copy the JSON at the bottom into js/config.js.
  */
 
 import { CONFIG } from '../config.js';
-import { SPEAKERS, englishVoicesOf } from '../audio/VoiceSelection.js';
 import { ROOTS } from '../audio/Harmony.js';
 
 // [group, key, options]: group is a path under CONFIG; options is
-// [min, max, step] for a slider, a list of choices for a dropdown, or a
-// function returning that list (refilled when the browser's voices change);
+// [min, max, step] for a slider or a list of choices for a dropdown;
 // booleans get a checkbox.
 const KICK = 'BEAT_TRACK.KICK';
 const HUM = 'HUM';
@@ -30,22 +28,6 @@ const GRUNT = 'GRUNT_LOOK';
 const TANK = 'TANK';
 const TANK_LOOK = 'TANK_LOOK';
 const BOMB = 'BOMB';
-
-// The voices this browser has; Chrome fills the list in a moment after load
-const voiceChoices = () => [
-  'auto',
-  ...englishVoicesOf(window.speechSynthesis?.getVoices() ?? []).map(
-    (voice) => voice.name
-  ),
-];
-// What each speaker says when you pick a voice for it
-const VOICE_SAMPLES = {
-  player: "Where's my carpet?",
-  tank: 'Targeting traitors!',
-  stabber: 'Precise. Silent. Deadly.',
-  rusher: 'Leeroy Jenkins!',
-  grunt: 'Kill human!',
-};
 
 const KNOBS = [
   [KICK, 'ENABLED'],
@@ -159,7 +141,6 @@ const KNOBS = [
   ['PLAYER', 'KNOCKBACK_AREA', [0, 30, 0.5]],
   ['PLAYER', 'KNOCKBACK_BOMB', [0, 30, 0.5]],
   ['PLAYER', 'KNOCKBACK_TANK_SHOVE', [0, 30, 0.5]],
-  ...SPEAKERS.map((speaker) => ['VOICES', speaker, voiceChoices]),
 ];
 
 // The top-level CONFIG groups the knobs live in, in order: the JSON to copy
@@ -234,31 +215,12 @@ export function createTunePanel() {
       input.type = 'checkbox';
       input.checked = value;
       input.onchange = () => (settings[key] = input.checked);
-    } else if (
-      typeof options === 'function' ||
-      typeof options[0] === 'string'
-    ) {
+    } else if (typeof options[0] === 'string') {
       const select = document.createElement('select');
       select.style.maxWidth = '100%';
-      const fill = () => {
-        const choices = typeof options === 'function' ? options() : options;
-        // A saved choice this browser lacks still shows, rather than a blank
-        if (!choices.includes(settings[key])) choices.push(settings[key]);
-        select.replaceChildren(...choices.map((c) => new Option(c, c)));
-        select.value = settings[key];
-      };
-      fill();
-      if (typeof options === 'function') {
-        window.speechSynthesis?.addEventListener('voiceschanged', fill);
-      }
-      select.onchange = () => {
-        settings[key] = select.value;
-        // Say a sample once audio runs (not on the title screen, where
-        // speaking would start the audio and the beat early)
-        if (path === 'VOICES' && window.audio?.initialized) {
-          window.audio.speak(null, VOICE_SAMPLES[key], key, true);
-        }
-      };
+      select.replaceChildren(...options.map((c) => new Option(c, c)));
+      select.value = settings[key];
+      select.onchange = () => (settings[key] = select.value);
       input = select;
     } else {
       const [min, max, step] = options;

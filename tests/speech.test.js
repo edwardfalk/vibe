@@ -220,3 +220,145 @@ test('every shipped line comes out at level, under the ceiling', async ({
     `speech lines: ${lines.length}; ${['engineMs', 'chainMs', 'levelMs', 'totalMs'].map(timing).join('; ')}`
   );
 });
+
+test('in a running game every line starts on the grid, and the count on its beats', async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await page.goto('/');
+  await page.waitForSelector('canvas', { state: 'attached' });
+  // Before the run starts, so the game's own first line is recorded too:
+  // what Voicebox scheduled, and every speech source's start(when)
+  await page.evaluate(async () => {
+    const { Voicebox } = await import('/js/audio/speech/Voicebox.js');
+    window.__said = [];
+    window.__started = [];
+    const speech = new WeakSet();
+    const { say, play } = Voicebox.prototype;
+    Voicebox.prototype.say = async function (speaker, text, opts) {
+      const askedMs = performance.now();
+      const line = await say.call(this, speaker, text, opts);
+      const readyMs = Math.round(performance.now() - askedMs);
+      window.__said.push({ speaker, text, readyMs, ...line });
+      return line;
+    };
+    Voicebox.prototype.play = function (line, ...rest) {
+      speech.add(line.buffer);
+      return play.call(this, line, ...rest);
+    };
+    const { start } = AudioBufferSourceNode.prototype;
+    AudioBufferSourceNode.prototype.start = function (when = 0, ...rest) {
+      if (speech.has(this.buffer)) window.__started.push(when);
+      return start.call(this, when, ...rest);
+    };
+  });
+  // The engines load on the title screen: wait until they have, as a player
+  // looking at it would (a request answered after espeak-ng's load)
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const worker = window.audio.speechWorker;
+        worker.addEventListener('message', ({ data }) => {
+          if (data.id === -1) resolve();
+        });
+        worker.postMessage({ id: -1, type: 'variants' });
+      })
+  );
+  await page.keyboard.press(' ');
+  // The session's first line
+  const { PLAYER_LINES } = await page.evaluate(
+    () => import('/js/audio/DialogueLines.js')
+  );
+  await page.waitForFunction(
+    (lines) => window.__said.some((l) => lines.includes(l.text)),
+    PLAYER_LINES.start,
+    { timeout: 5000 }
+  );
+  // The count was rendered ahead, when the audio started, not when it's due
+  expect(
+    await page.evaluate(() =>
+      ['3', '2', '1'].every((w) =>
+        window.audio.voicebox.lines.has(`player:${w}`)
+      )
+    )
+  ).toBe(true);
+  const report = await page.evaluate(async () => {
+    const { plantBomb } = await import('/js/systems/BombSystem.js');
+    const { SPEAKER_LINES } = await import('/js/audio/DialogueLines.js');
+    const audio = window.audio;
+    const clock = window.beatClock;
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    // One line from each speaker beside the hero, a beat and a bit apart, so
+    // some are asked inside a beat window and some outside
+    const hero = window.player;
+    for (const [speaker, lines] of Object.entries(SPEAKER_LINES)) {
+      audio.speak({ x: hero.x + 100, y: hero.y }, lines[1], speaker, true);
+      await wait(610);
+    }
+    // The hero's bomb on a stand-in tank, well clear of him: "TIMEBOMB!",
+    // then "3", "2", "1" on its beats 0, 2 and 4
+    plantBomb(
+      window.activeBombs,
+      { id: 'test-tank', x: hero.x + 600, y: hero.y, size: 50, facing: 0 },
+      clock,
+      audio
+    );
+    await wait(5000);
+    return {
+      said: window.__said,
+      started: window.__started,
+      origin: clock.startTime / 1000,
+      beat: clock.beatInterval / 1000,
+      window: clock.tolerance / 1000,
+    };
+  });
+
+  const { said, started, origin, beat } = report;
+  const eighth = beat / 2;
+  const since = (t, step) => (((t - origin) % step) + step) % step;
+  console.log(
+    'speech starts (s after an eighth):',
+    said.map((l) => `${l.text} ${since(l.startsAt, eighth).toFixed(3)}`)
+  );
+  console.log(
+    'ready after (ms):',
+    said.map((l) => `${l.text} ${l.readyMs}`)
+  );
+  expect(errors).toEqual([]);
+  // The session's first line played: the engines had loaded. Another line
+  // may be dropped as late on a busy machine (MAX_WAIT_MS): dropping beats
+  // playing off the beat
+  expect(PLAYER_LINES.start).toContain(said[0].text);
+  expect(said[0].dropped).toBeUndefined();
+  const played = said.filter((l) => !l.dropped);
+  console.log(
+    'dropped:',
+    said.filter((l) => l.dropped).map((l) => `${l.text} (${l.dropped})`)
+  );
+  expect(played.length).toBeGreaterThanOrEqual(8);
+  // Every source Voicebox started, at the time it reported
+  expect(started).toEqual(played.map((l) => l.startsAt));
+  for (const when of started) {
+    const d = since(when, eighth);
+    // On an eighth note, or at once inside the window one opened
+    const onGrid = d < 0.001 || eighth - d < 0.001 || d <= report.window;
+    expect(onGrid, `a line ${d.toFixed(3)} s after an eighth`).toBe(true);
+  }
+  // The count: on its beats, two apart, each inside the window its beat
+  // opened (it starts the frame the bomb notices the beat: 2-41 ms here)
+  const count = ['3', '2', '1'].map((n) =>
+    said.find((l) => l.speaker === 'player' && l.text === n)
+  );
+  expect(count.every(Boolean)).toBe(true);
+  for (const l of count) {
+    expect(
+      since(l.startsAt, beat),
+      `"${l.text}" after its beat`
+    ).toBeLessThanOrEqual(report.window);
+  }
+  expect(count[1].startsAt - count[0].startsAt).toBeCloseTo(2 * beat, 1);
+  expect(count[2].startsAt - count[1].startsAt).toBeCloseTo(2 * beat, 1);
+});

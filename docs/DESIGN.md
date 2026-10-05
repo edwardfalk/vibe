@@ -62,7 +62,7 @@ New types join by level: grunts from level 1, stabbers at 2, rushers at 3 and ta
 
 ## The mix
 
-Enemies speak through the browser's speech synthesis, which runs outside Web Audio and can't be turned up past full volume. So the voices stay on top by the mix keeping the beat lower and dipping the game while anyone speaks:
+Everyone speaks through the game's own speech engines, SAM and espeak-ng, each speaker in its own voice and effect chain. Every line is levelled to the same loudness, kept under a ceiling, and starts on the beat grid, like everything else that sounds. The voices stay on top by the mix keeping the beat lower and dipping the game while anyone speaks:
 
 - effects dip by `DUCK_SFX_DB`;
 - the beat dips less (`DUCK_BEAT_DB`), because it keeps time;
@@ -72,4 +72,4 @@ The levels are in `CONFIG.MIX`. The kick, the hum, the mix and pacing can all be
 
 ## Pausing
 
-Pausing (P) freezes the game, its sound and the sky. The audio is suspended, which stops the beat clock too, so on unpause the music, the kick and every enemy pick up exactly where they stopped. A line being spoken is cut. With `?tune` the sound plays on while paused (its "Sound while paused" box), so the kick can be tuned by ear; untick it to hear a real pause.
+Pausing (P) freezes the game, its sound and the sky. The audio is suspended, which stops the beat clock too, so on unpause the music, the kick and every enemy pick up exactly where they stopped. A line being spoken holds mid-word and finishes on unpause. With `?tune` the sound plays on while paused (its "Sound while paused" box), so the kick can be tuned by ear; untick it to hear a real pause.

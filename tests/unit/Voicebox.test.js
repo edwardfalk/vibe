@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { Voicebox, spoken, startTime } from '../../js/audio/speech/Voicebox.js';
+import {
+  Voicebox,
+  spoken,
+  startSpeechWorker,
+  startTime,
+} from '../../js/audio/speech/Voicebox.js';
 import { CONFIG } from '../../js/config.js';
 
 const RATE = 22050;
@@ -12,9 +17,20 @@ const tone = (seconds) =>
 
 function fakeContext() {
   const ctx = {
+    currentTime: 0,
     sources: [],
-    createGain: () => ({ gain: { value: 1 }, connect: (n) => n }),
-    createStereoPanner: () => ({ pan: { value: 0 }, connect: (n) => n }),
+    gains: [], // the first is Voicebox's output; then one per line played
+    panners: [],
+    createGain() {
+      const node = { gain: { value: 1 }, connect: (n) => n };
+      ctx.gains.push(node);
+      return node;
+    },
+    createStereoPanner() {
+      const node = { pan: { value: 0 }, connect: (n) => n };
+      ctx.panners.push(node);
+      return node;
+    },
     createBuffer: (channels, length, sampleRate) => ({
       length,
       sampleRate,
@@ -26,6 +42,9 @@ function fakeContext() {
         connect: (n) => n,
         start(when) {
           source.when = when;
+        },
+        stop() {
+          source.stopped = true;
         },
       };
       ctx.sources.push(source);
@@ -242,5 +261,200 @@ describe('Voicebox', () => {
     const rendering = voicebox.renderLine(GRUNT, 'Kill human!');
     reply();
     await expect(rendering).rejects.toThrow('gone');
+  });
+});
+
+describe("Voicebox: the game's side", () => {
+  // Grid origin 1 s, 120 BPM: eighths every 0.25 s, the window 100 ms
+  const clock = {
+    audioContext: {},
+    startTime: 1000,
+    beatInterval: 500,
+    tolerance: 100,
+  };
+
+  it('says a line on the grid, panned, from one render', async () => {
+    const { voicebox, worker, ctx, reply } = setup();
+    ctx.currentTime = 1.02; // asked inside the window...
+    const saying = voicebox.say('grunt', 'Kill human!', {
+      gain: 0.7,
+      pan: -0.4,
+      clock,
+    });
+    ctx.currentTime = 1.15; // ...ready past it: the next eighth
+    reply();
+    const line = await saying;
+    expect(line.startsAt).toBeCloseTo(1.25, 9);
+    expect(line.duration).toBe(0.5);
+    expect(ctx.sources[0].when).toBeCloseTo(1.25, 9);
+    expect(ctx.gains[1].gain.value).toBe(0.7);
+    expect(ctx.panners[0].pan.value).toBe(-0.4);
+    // Said again: no new render; another speaker's is its own
+    ctx.currentTime = 2.02; // inside the window: at once
+    expect(
+      (await voicebox.say('grunt', 'Kill human!', { clock })).startsAt
+    ).toBe(2.02);
+    expect(worker.posted).toHaveLength(1);
+    voicebox.say('rusher', 'Kill human!', { clock });
+    expect(worker.posted).toHaveLength(2);
+  });
+
+  it("the engine hears the speaker's respelling; the cache keys on it", async () => {
+    const { voicebox, worker } = setup();
+    voicebox.say('tank', 'DEATH TO HUMANS!'); // the tank speaks through SAM
+    voicebox.say('grunt', 'DEATH TO HUMANS!'); // the grunt through espeak-ng
+    await Promise.resolve();
+    expect(worker.posted.map((m) => m.text)).toEqual([
+      'deth TO HUMANS!',
+      'DEATH TO HUMANS!',
+    ]);
+  });
+
+  it('two asks before the line is ready share one render', async () => {
+    const { voicebox, worker, reply } = setup();
+    const first = voicebox.say('grunt', 'Kill human!');
+    voicebox.prepare('grunt', 'Kill human!');
+    const second = voicebox.say('grunt', 'Kill human!');
+    await Promise.resolve();
+    expect(worker.posted).toHaveLength(1);
+    reply();
+    expect((await first).duration).toBe(0.5);
+    expect((await second).duration).toBe(0.5);
+  });
+
+  it("a line it can't render is logged once and dropped, and speech stays on", async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { voicebox, worker, reply } = setup();
+    const saying = voicebox.say('stabber', 'Ugh');
+    reply({ error: "SAM can't read" });
+    expect(await saying).toEqual({ dropped: 'failed' });
+    expect(await voicebox.say('stabber', 'Ugh')).toEqual({ dropped: 'failed' });
+    expect(worker.posted).toHaveLength(1);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(voicebox.failed).toBeNull();
+  });
+
+  it('a line not ready within MAX_WAIT_MS is dropped late then, and kept', async () => {
+    vi.useFakeTimers();
+    const { voicebox, worker, ctx, reply } = setup();
+    const saying = voicebox.say('grunt', 'Kill human!');
+    await vi.advanceTimersByTimeAsync(CONFIG.SPEECH.MAX_WAIT_MS - 1);
+    let result = null;
+    saying.then((r) => (result = r));
+    await Promise.resolve();
+    expect(result).toBeNull(); // not yet
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await saying).toEqual({ dropped: 'late' }); // the render isn't done
+    expect(ctx.sources).toHaveLength(0);
+    reply(); // it finishes later, and is kept: next time it plays
+    expect((await voicebox.say('grunt', 'Kill human!')).duration).toBe(0.5);
+    expect(worker.posted).toHaveLength(1);
+  });
+
+  it('cancelPending: a line rendering is dropped, one waiting is stopped, one playing finishes', async () => {
+    const { voicebox, ctx, reply } = setup();
+    ctx.currentTime = 1.02;
+    const playing = voicebox.say('grunt', 'Kill human!', { clock });
+    reply();
+    await playing; // starts at once, 1.02
+    ctx.currentTime = 1.15;
+    const waiting = voicebox.say('tank', 'FIRE!', { clock });
+    reply();
+    await waiting; // waits for 1.25
+    const rendering = voicebox.say('rusher', 'Charge!', { clock });
+    voicebox.cancelPending();
+    reply();
+    expect(await rendering).toEqual({ dropped: 'cancelled' });
+    expect(ctx.sources.map((s) => !!s.stopped)).toEqual([false, true]);
+    expect(voicebox.playing.size).toBe(1);
+    // Asked after the cancel, it plays
+    expect((await voicebox.say('rusher', 'Charge!', { clock })).duration).toBe(
+      0.5
+    );
+  });
+
+  it('cancelPending spares a line due within 20 ms: it may already be sounding', async () => {
+    const { voicebox, ctx, reply } = setup();
+    ctx.currentTime = 1.15;
+    const saying = voicebox.say('grunt', 'Kill human!', { clock });
+    reply();
+    await saying; // due at 1.25
+    ctx.currentTime = 1.24; // the audio thread may be at 1.25 already
+    voicebox.cancelPending();
+    expect(ctx.sources[0].stopped).toBeUndefined();
+    expect(voicebox.playing.size).toBe(1);
+  });
+
+  it('isSpeaking only while a line is spoken, and for at most maxSec', async () => {
+    const { voicebox, ctx, reply } = setup();
+    ctx.currentTime = 1.15;
+    const saying = voicebox.say('grunt', 'Kill human!', { clock });
+    reply();
+    await saying; // 1.25 to 1.75
+    expect(voicebox.isSpeaking()).toBe(false); // waiting for its eighth
+    ctx.currentTime = 1.25;
+    expect(voicebox.isSpeaking()).toBe(true);
+    ctx.currentTime = 1.6;
+    expect(voicebox.isSpeaking()).toBe(true);
+    expect(voicebox.isSpeaking(0.3)).toBe(false); // the cap: 0.3 s from its start
+    ctx.currentTime = 1.75; // its tail may still ring; the words are done
+    expect(voicebox.isSpeaking()).toBe(false);
+    ctx.sources[0].onended();
+    expect(voicebox.playing.size).toBe(0);
+  });
+
+  it('says nothing once speech is off, with its one error and no more', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { voicebox, worker } = setup();
+    const saying = voicebox.say('grunt', 'Kill human!');
+    worker.onerror({ message: 'boom' });
+    expect(await saying).toEqual({ dropped: 'failed' });
+    expect(await voicebox.say('grunt', 'Wait, what?')).toEqual({
+      dropped: 'failed',
+    });
+    expect(worker.posted).toHaveLength(1);
+    expect(warn).not.toHaveBeenCalled();
+  });
+});
+
+describe('startSpeechWorker', () => {
+  class FakeWorker {
+    constructor(url, options) {
+      Object.assign(this, { url: String(url), options, posted: [] });
+    }
+    postMessage(message) {
+      this.posted.push(message);
+    }
+    terminate() {}
+  }
+  afterEach(() => delete globalThis.Worker);
+
+  it('starts the worker and espeak-ng loading, for a Voicebox to take over', () => {
+    globalThis.Worker = FakeWorker;
+    const worker = startSpeechWorker();
+    expect(worker.url).toMatch(/speech\/speechWorker\.js$/);
+    expect(worker.options).toEqual({ type: 'module' });
+    expect(worker.posted).toEqual([{ id: 0, type: 'variants' }]);
+    const voicebox = new Voicebox({
+      audioContext: fakeContext(),
+      createWorker: () => worker,
+    });
+    expect(voicebox.worker).toBe(worker);
+    worker.onmessage({ data: { id: 0, variants: [] } }); // nobody's request
+    expect(voicebox.failed).toBeNull();
+    expect(voicebox.pending.size).toBe(0);
+  });
+
+  it('an error before a Voicebox takes it over still turns speech off', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    globalThis.Worker = FakeWorker;
+    const worker = startSpeechWorker();
+    worker.onerror({ message: 'no such file' });
+    const voicebox = new Voicebox({
+      audioContext: fakeContext(),
+      createWorker: () => worker,
+    });
+    expect(voicebox.failed.message).toBe('no such file');
   });
 });

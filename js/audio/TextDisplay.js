@@ -2,9 +2,17 @@ import { random } from '../mathUtils.js';
 
 const FADE_OUT_DURATION_FRAMES = 30;
 
-export function updateActiveTexts(activeTexts) {
+// A bubble waits for its line to start: showsAt in audio seconds, against
+// `now` on the same clock. It shows once the clock has passed its start: a
+// line scheduled during a pause starts where the stopped clock stands, so it
+// shows after the pause, as it is heard. Without a start it shows at once.
+export const isWaiting = ({ showsAt }, now) =>
+  showsAt != null && showsAt >= now;
+
+export function updateActiveTexts(activeTexts, now = Infinity) {
   for (let i = activeTexts.length - 1; i >= 0; i--) {
     const textObj = activeTexts[i];
+    if (isWaiting(textObj, now)) continue;
     textObj.timer--;
 
     if (textObj.entity) {
@@ -27,12 +35,14 @@ export function drawActiveTexts(
   showBeatIndicator,
   beatX,
   beatY,
-  drawGlowFn
+  drawGlowFn,
+  now = Infinity
 ) {
   p.push();
   p.textAlign(p.CENTER, p.CENTER);
 
   for (const textObj of activeTexts) {
+    if (isWaiting(textObj, now)) continue;
     const alpha =
       textObj.timer <= FADE_OUT_DURATION_FRAMES
         ? (textObj.timer / FADE_OUT_DURATION_FRAMES) * 255

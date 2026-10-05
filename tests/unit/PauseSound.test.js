@@ -19,7 +19,7 @@ function fakeAudio() {
     enabled: true,
     speechEnabled: true,
     initialize() {},
-    speechSynthesis: { cancel: vi.fn(), speak: vi.fn() },
+    voicebox: { failed: null, say: vi.fn(), cancelPending: vi.fn() },
     // As the constructor sets them
     _pausedByGame: false,
     _resuming: false,
@@ -34,13 +34,14 @@ afterEach(() => {
 });
 
 describe('pausing the game', () => {
-  it('stops its sound and cuts any line, then starts it again on unpause', async () => {
+  it('stops its sound, a line being spoken too, then starts it again on unpause', async () => {
     const { audio, ctx } = fakeAudio();
     audio.syncPause(true);
     audio.syncPause(true); // every frame: it acts once
     await Promise.resolve();
     expect(ctx.suspend).toHaveBeenCalledTimes(1);
-    expect(audio.speechSynthesis.cancel).toHaveBeenCalledTimes(1);
+    // The suspended context holds a line mid-word; it finishes on unpause
+    expect(audio.voicebox.cancelPending).not.toHaveBeenCalled();
     expect(audio.soundPaused).toBe(true);
     audio.syncPause(false);
     audio.syncPause(false);
@@ -95,7 +96,28 @@ describe('pausing the game', () => {
     expect(audio.ensureAudioContext()).toBe(false);
     expect(audio.speak(null, 'Kill human!', 'grunt', true)).toBe(false);
     expect(ctx.resume).not.toHaveBeenCalled();
-    expect(audio.speechSynthesis.speak).not.toHaveBeenCalled();
+    expect(audio.voicebox.say).not.toHaveBeenCalled();
+  });
+
+  it('keeps a sound or a line made while the audio comes back, for when it is', async () => {
+    const { audio, ctx } = fakeAudio();
+    audio.getContextValue = () => null;
+    audio.voicebox.say = vi.fn(async () => ({ dropped: 'cancelled' }));
+    // Each resume() settles when the context is back (a sound asks too)
+    const pending = [];
+    ctx.resume = vi.fn(() => new Promise((r) => pending.push(r)));
+    audio.syncPause(true);
+    await Promise.resolve();
+    audio.syncPause(false); // the first frame after P: still suspended
+    expect(ctx.state).toBe('suspended');
+    expect(audio.ensureAudioContext()).toBe(true);
+    expect(audio.speak(null, 'TIMEBOMB!', 'player', true)).toBe(true);
+    expect(audio.voicebox.say).toHaveBeenCalledTimes(1);
+    ctx.state = 'running';
+    pending.forEach((r) => r());
+    await settle();
+    expect(audio.soundPaused).toBe(false);
+    expect(audio.ensureAudioContext()).toBe(true);
   });
 
   it('does nothing before the audio has started', () => {

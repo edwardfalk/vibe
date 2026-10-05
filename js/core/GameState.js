@@ -207,6 +207,8 @@ export class GameState {
     // Clear the last run's leftovers on screen
     if (window.floatingText) window.floatingText.texts = [];
     if (window.audio) window.audio.activeTexts = [];
+    // Lines still waiting to start belong to the last run, on its grid
+    window.audio?.voicebox?.cancelPending();
     if (window.rhythmFX) window.rhythmFX.telegraphs = [];
     this.gameContext?.set('hitStopFrames', 0);
     window.visualEffectsManager?.reset();

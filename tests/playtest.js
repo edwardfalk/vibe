@@ -106,12 +106,24 @@ test('playtest session', async ({ page }) => {
   if (startLevel > 1) await jumpToLevel(page, startLevel);
 
   // Time each animation frame's work: fps is capped at 60, so it can't show
-  // whether a change made frames cheaper.
+  // whether a change made frames cheaper. Work between frames (speech is
+  // rendered and levelled there) shows in the gaps between frames and as
+  // long tasks.
   await page.evaluate(() => {
     window.__frameMs = [];
+    window.__frameGapMs = [];
+    window.__longTaskMs = [];
+    new PerformanceObserver((list) => {
+      for (const task of list.getEntries()) {
+        window.__longTaskMs.push(task.duration);
+      }
+    }).observe({ type: 'longtask' });
+    let last = null;
     const raf = window.requestAnimationFrame.bind(window);
     window.requestAnimationFrame = (cb) =>
       raf((t) => {
+        if (last !== null) window.__frameGapMs.push(t - last);
+        last = t;
         const start = performance.now();
         cb(t);
         window.__frameMs.push(performance.now() - start);
@@ -195,11 +207,19 @@ test('playtest session', async ({ page }) => {
     renderer: window.backgroundRenderer?.sky?.renderer,
   }));
   const pacing = await page.evaluate(() => window.__pacing);
-  const frameMs = await page.evaluate(() => {
-    const ms = window.__frameMs.toSorted((a, b) => a - b);
-    const at = (q) => +ms[Math.floor(ms.length * q)].toFixed(2);
-    const avg = ms.reduce((a, b) => a + b, 0) / ms.length;
-    return { avg: +avg.toFixed(2), p50: at(0.5), p95: at(0.95) };
+  const { frameMs, frameGapMs, longTasks } = await page.evaluate(() => {
+    const stats = (list) => {
+      const ms = list.toSorted((a, b) => a - b);
+      const at = (q) => +ms[Math.floor(ms.length * q)].toFixed(2);
+      const avg = ms.reduce((a, b) => a + b, 0) / ms.length;
+      return { avg: +avg.toFixed(2), p50: at(0.5), p95: at(0.95) };
+    };
+    const tasks = window.__longTaskMs;
+    return {
+      frameMs: stats(window.__frameMs),
+      frameGapMs: stats(window.__frameGapMs),
+      longTasks: { count: tasks.length, worstMs: Math.max(0, ...tasks) },
+    };
   });
 
   // Release all keys
@@ -220,6 +240,8 @@ test('playtest session', async ({ page }) => {
     duration: `${durationActual}s`,
     fps,
     frameMs,
+    frameGapMs,
+    longTasks,
     sky,
     peakEnemies,
     finalScore: lastSample.score,
@@ -237,6 +259,9 @@ test('playtest session', async ({ page }) => {
   console.log(`   FPS: min=${fps.min} avg=${fps.avg} p95=${fps.p95}`);
   console.log(
     `   Frame work (ms): avg=${frameMs.avg} p50=${frameMs.p50} p95=${frameMs.p95}`
+  );
+  console.log(
+    `   Frame gaps (ms): p50=${frameGapMs.p50} p95=${frameGapMs.p95} | long tasks: ${longTasks.count}, worst ${longTasks.worstMs} ms`
   );
   console.log(`   Sky: ${sky.mode} on ${sky.renderer}`);
   if (sky.mode !== 'full') {

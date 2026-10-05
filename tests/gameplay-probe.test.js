@@ -239,23 +239,31 @@ test.describe('Gameplay Probes', () => {
         window.audio.hum.levelGain.__to.includes(window.audio.masterGain)
       )
     ).toBe(true);
+    // Speech reaches the speakers through the limiter, past the duck
+    expect(
+      await page.evaluate(() =>
+        window.audio.voicebox.output.__to?.includes(window.audio.masterLimiter)
+      )
+    ).toBe(true);
     const gains = () =>
       page.evaluate(() => [
         window.audio.masterGain.gain.value,
         window.beatTrack.masterGain.gain.value,
+        window.audio.voicebox.output.gain.value,
       ]);
-    const [sfxOn, musicOn] = await gains();
+    const [sfxOn, musicOn, speechOn] = await gains();
     expect(sfxOn).toBeGreaterThan(0);
     expect(musicOn).toBeGreaterThan(0);
+    expect(speechOn).toBeGreaterThan(0);
 
     await page.keyboard.press('m');
     await expect(page.locator('#statusToast')).toBeVisible();
     await expect(page.locator('#statusToast')).toHaveText('Sound off');
-    await expect.poll(gains).toEqual([0, 0]);
+    await expect.poll(gains).toEqual([0, 0, 0]);
 
     await page.keyboard.press('m');
     await expect(page.locator('#statusToast')).toHaveText('Sound on');
-    await expect.poll(gains).toEqual([sfxOn, musicOn]);
+    await expect.poll(gains).toEqual([sfxOn, musicOn, speechOn]);
   });
 
   test('Named keys like arrows and Escape start the run', async ({ page }) => {
@@ -335,51 +343,6 @@ test.describe('Gameplay Probes', () => {
     expect(await page.evaluate(() => window.gameState.gameState)).toBe('title');
     await expect(page.locator('#tunePanel pre')).toContainText(
       '"PATTERN": "oneThree"'
-    );
-  });
-
-  test('?tune voice dropdowns list the voices and a pick is heard', async ({
-    page,
-  }) => {
-    await page.goto('/?tune');
-    await page.waitForFunction(() => window.gameState?.gameState === 'title');
-    await page.keyboard.press('Enter'); // start a run: audio is running
-    await page.waitForFunction(() => window.gameState.gameState === 'playing');
-    // Headless Chromium has no voices: hand it two, as Chrome does a moment
-    // after load. Chrome only accepts its own voice objects on a real
-    // utterance, so use a plain one, and record what would be said.
-    await page.evaluate(() => {
-      const synth = window.speechSynthesis;
-      const voices = [
-        { name: 'Test Voice A', lang: 'en-US' },
-        { name: 'Test Voice B', lang: 'en-GB' },
-      ];
-      synth.getVoices = () => voices;
-      window.SpeechSynthesisUtterance = class {
-        constructor(text) {
-          this.text = text;
-        }
-      };
-      window.__said = [];
-      synth.speak = (u) => window.__said.push([u.text, u.voice?.name]);
-      synth.dispatchEvent(new Event('voiceschanged'));
-    });
-    const tank = page
-      .locator('#tunePanel label', { hasText: 'VOICES.tank' })
-      .locator('select');
-    await expect(tank.locator('option')).toHaveText([
-      'auto',
-      'Test Voice A',
-      'Test Voice B',
-    ]);
-    await tank.selectOption('Test Voice B');
-    // The sample line went through the game's own speech, in that voice
-    expect(await page.evaluate(() => window.__said)).toContainEqual([
-      'Targeting traitors!',
-      'Test Voice B',
-    ]);
-    await expect(page.locator('#tunePanel pre')).toContainText(
-      '"tank": "Test Voice B"'
     );
   });
 
@@ -621,26 +584,12 @@ test.describe('Gameplay Probes', () => {
   test('Game dips while speech plays and always recovers', async ({ page }) => {
     await bootGame(page);
     await page.waitForFunction(() => window.audio?.duckGain);
-    // Stand in for the speech engine: `speaking` with no events at all
+    // Stand in for the voicebox's clock: speaking or not, and nothing else
     await page.evaluate(() => {
       window.__speaking = false;
-      Object.defineProperty(window.audio, 'speechSynthesis', {
-        value: {
-          get speaking() {
-            return window.__speaking;
-          },
-          speak() {},
-          cancel() {},
-          getVoices: () => [],
-        },
-        configurable: true,
-      });
+      window.audio.voicebox.isSpeaking = () => window.__speaking;
     });
-    const speak = (on) =>
-      page.evaluate((v) => {
-        window.__speaking = v;
-        if (v) window.audio.lastSpeechTime = Date.now();
-      }, on);
+    const speak = (on) => page.evaluate((v) => (window.__speaking = v), on);
     const ducked = () =>
       page.waitForFunction(
         () =>
@@ -661,7 +610,7 @@ test.describe('Gameplay Probes', () => {
 
     await speak(true);
     await ducked();
-    await speak(false); // ends with no event
+    await speak(false);
     await released();
 
     await speak(true); // muting mid-speech releases the duck
@@ -669,13 +618,6 @@ test.describe('Gameplay Probes', () => {
     await page.keyboard.press('m');
     await released();
     await page.keyboard.press('m');
-
-    // A stalled engine (`speaking` stuck true) is released after the cap
-    await page.evaluate(() => {
-      window.__speaking = true;
-      window.audio.lastSpeechTime = Date.now() - 6000;
-    });
-    await released();
   });
 
   test('R after game over restarts straight into play', async ({ page }) => {
