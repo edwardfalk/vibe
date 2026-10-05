@@ -36,7 +36,7 @@ Every sound an enemy makes is timed to one shared clock, so together they play a
 - **Stabbers** wind up, flash a warning, then dash at you.
 - **Rushers** are stuntmen on rockets who steer only on the beat: dash aside and they shoot past. Shot or too close, they light, count down on the beat and blow up with a crash on beat 1 or 3, taking anything near with them, other rushers included. Your shots knock them along, so bat one into a crowd.
 - **Tanks** are big, slow bouncers who turn only on the kick. Their armour is on the side facing you and their back is bare: get behind one to plant your time bomb, which counts down on the beat and kills him. Stand in front of one and he shoves you.
-- **Everyone talks.** Enemies shout lines like "KILL HUMAN!" and "SLICE AND DICE!" through the browser's speech synthesis, and the mix dips the game under them so they're heard.
+- **Everyone talks.** Enemies shout lines like "KILL HUMAN!" and "SLICE AND DICE!", each in its own synthesized voice, on the beat, and the mix dips the game under them so they're heard.
 
 A steady kick drum keeps time over a hum, one root note and its fifth, which dips on every beat and grows with the fight. Without them, the enemies' hits are just sounds. With them, you can hear each hit landing on the beat.
 
@@ -56,11 +56,11 @@ Open the game with [`?tune`](https://edwardfalk.github.io/vibe/?tune) in the URL
 
 There's also a **Level +1** button. A run that used it can't set a high score. The panel shows the current values as JSON, ready to paste into [`js/config.js`](js/config.js), where every setting lives.
 
-The [voice playground](https://edwardfalk.github.io/vibe/voices.html) is for the speakers' new voices. Type any phrase, pick a speaker, and change its engine (SAM or espeak-ng), its voice and its effect chain. "Copy config" gives you the settings for `js/config.js`. The game itself switches to these voices in the next update.
+The [voice playground](https://edwardfalk.github.io/vibe/voices.html) is for the speakers' voices. Type any phrase, pick a speaker, and change its engine (SAM or espeak-ng), its voice and its effect chain. "Copy config" gives you the settings for `js/config.js`. The game speaks in these voices.
 
 ## Tech
 
-- [p5.js](https://p5js.org/) in instance mode for drawing, a WebGL shader for the sky, Web Audio for sound, and the Speech Synthesis API for voices.
+- [p5.js](https://p5js.org/) in instance mode for drawing, a WebGL shader for the sky, Web Audio for sound, and two speech engines, SAM and espeak-ng, rendering the voices in a Web Worker.
 - Plain ES modules with no build step, served as static files on GitHub Pages.
 - Unit tests with [Vitest](https://vitest.dev/), and browser tests with [Playwright](https://playwright.dev/), including checks that the kick and enemy shots land on the beat. GitHub Actions runs lint and all tests on every pull request and every push to main.
 
