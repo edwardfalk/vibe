@@ -38,7 +38,7 @@ Every sound an enemy makes is timed to one shared clock, so together they play a
 - **Tanks** are big, slow bouncers who turn only on the kick. Their armour is on the side facing you and their back is bare: get behind one to plant your time bomb, which counts down on the beat and kills him. Stand in front of one and he shoves you.
 - **Everyone talks.** Enemies shout lines like "KILL HUMAN!" and "SLICE AND DICE!" through the browser's speech synthesis, and the mix dips the game under them so they're heard.
 
-A steady kick drum and a sub-bass pulse keep time underneath. Without them, the enemies' hits are just sounds. With them, you can hear each hit landing on the beat.
+A steady kick drum keeps time over a hum, one root note and its fifth, which dips on every beat and grows with the fight. Without them, the enemies' hits are just sounds. With them, you can hear each hit landing on the beat.
 
 The clock ([`BeatClock`](js/audio/BeatClock.js)) runs on the Web Audio clock (`AudioContext.currentTime`), not on frame time. The kick ([`BeatTrack`](js/audio/BeatTrack.js)) is scheduled slightly ahead on the same grid, so frame hiccups don't push it off the beat.
 
@@ -49,6 +49,7 @@ New enemy types join as you level up: grunts from the start, then stabbers at le
 Open the game with [`?tune`](https://edwardfalk.github.io/vibe/?tune) in the URL for a panel of live sliders:
 
 - the kick's sound: pitch, decay, drive and click;
+- the hum: its root, level, drift, dip on the beat, breathing, brightness and how much the fight opens it, and whether the kick is tuned to it;
 - the sky: how hard the kick hits it, the downbeat's front, its timing against your speakers, and a preview of each level's sky;
 - the mix: effects, beat and speech levels, and how far the game dips under speech;
 - pacing: level thresholds, time between enemy waves, and how many enemies can be on screen.

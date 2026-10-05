@@ -1,5 +1,5 @@
 /**
- * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK, SKY, PACING,
+ * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK (the kick, and whether it is tuned to the hum), HUM, SKY, PACING,
  * MIX, the rusher's flight, fuse, push and blast (RUSHER) and look (RUSHER_LOOK), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the
@@ -13,12 +13,14 @@
 
 import { CONFIG } from '../config.js';
 import { SPEAKERS, englishVoicesOf } from '../audio/VoiceSelection.js';
+import { ROOTS } from '../audio/Harmony.js';
 
 // [group, key, options]: group is a path under CONFIG; options is
 // [min, max, step] for a slider, a list of choices for a dropdown, or a
 // function returning that list (refilled when the browser's voices change);
 // booleans get a checkbox.
 const KICK = 'BEAT_TRACK.KICK';
+const HUM = 'HUM';
 const PACING = 'PACING';
 const MIX = 'MIX';
 const RUSHER = 'RUSHER';
@@ -57,8 +59,14 @@ const KNOBS = [
   [KICK, 'CLICK_LEVEL', [0, 1.5, 0.01]],
   [KICK, 'CLICK_DECAY_SEC', [0.001, 0.03, 0.001]], // noise buffer is 30 ms
   [KICK, 'CLICK_FREQ_HZ', [500, 8000, 50]],
-  ['BEAT_TRACK.SUB_PULSE', 'ENABLED'],
-  ['BEAT_TRACK.SUB_PULSE', 'VOLUME', [0, 4, 0.05]],
+  [KICK, 'TUNED'],
+  [HUM, 'ROOT', Object.keys(ROOTS)],
+  [HUM, 'LEVEL_DB', [-24, 12, 1]],
+  [HUM, 'DRIFT_CENTS', [0, 30, 1]],
+  [HUM, 'DIP', [0, 0.9, 0.05]],
+  [HUM, 'BREATH', [0, 1, 0.05]],
+  [HUM, 'CUTOFF_HZ', [150, 1500, 10]],
+  [HUM, 'FIGHT_OPEN', [0, 3, 0.1]],
   [SKY, 'KICK_STRENGTH', [0, 2, 0.05]],
   [SKY, 'DOWNBEAT_FRONT', [0, 2, 0.05]],
   [SKY, 'OFFBEAT_SHARE', [0, 1, 0.05]],

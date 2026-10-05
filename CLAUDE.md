@@ -25,7 +25,7 @@ Always pass `--project` to Playwright (the scripts do); a bare `playwright test`
 
 ## What This Is
 
-A p5.js geometric space shooter where enemy actions sync to musical beats, creating an emergent rhythm that grows as the game progresses. Player held fire snaps to eighth notes (hi-hat), grunts fire on beats 2 & 4 (snare), tanks on beat 1 (kick), stabbers on beat 3.5 (syncopation), rushers explode on 1 & 3 (crash).
+A p5.js geometric space shooter where enemy actions sync to musical beats, creating an emergent rhythm that grows as the game progresses. Player held fire snaps to eighth notes (hi-hat), grunts fire on beats 2 & 4 (snare), tanks on beat 1 (kick), stabbers on beat 3.5 (syncopation), rushers explode on 1 & 3 (crash). Under it all a hum, a root note and its fifth drifting like an old analog synth, dips on every beat; `js/audio/Harmony.js` is the pitch grid every tuned sound shares.
 
 ## Architecture
 

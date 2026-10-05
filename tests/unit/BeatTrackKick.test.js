@@ -1,46 +1,155 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BeatTrack, heardKick } from '../../js/audio/BeatTrack.js';
+import { hz } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 
 const original = structuredClone(CONFIG.BEAT_TRACK);
+const originalHum = structuredClone(CONFIG.HUM);
 
-// Schedule one measure (8 eighth notes) and report which beats (0-3) got
-// a kick and which got a sub pulse.
-function playMeasure() {
+// Schedule `eighths` eighth notes 0.25 s apart (8 = one measure) and report
+// which beats (0-3) got a kick. `hum` stands in for audio.hum; without one
+// the track schedules as it does in the voice playground.
+function playMeasure(hum = null, eighths = 8) {
   const track = new BeatTrack({});
+  track.hum = hum;
+  track._beatSec = 0.5;
   const kicks = [];
-  const pulses = [];
   vi.spyOn(track, '_playKick').mockImplementation(() => {
     kicks.push(track._beat);
   });
-  vi.spyOn(track, '_playPulse').mockImplementation(() => {
-    pulses.push(track._beat);
-  });
-  for (let eighth = 0; eighth < 8; eighth++) {
-    track._beat = eighth / 2;
-    track._scheduleNote(eighth * 0.25, eighth);
+  for (let i = 0; i < eighths; i++) {
+    track._beat = (i % 8) / 2;
+    track._scheduleNote(i * 0.25, i % 8);
   }
-  return { kicks, pulses };
+  return kicks;
+}
+
+// A BeatTrack on a fake AudioContext that records which node connects to
+// which (edges) and where each kick's pitch drop ends (ends)
+function fakeKick() {
+  const edges = [];
+  const ends = [];
+  const param = (onRamp = () => {}) => ({
+    setValueAtTime() {},
+    exponentialRampToValueAtTime: onRamp,
+    linearRampToValueAtTime() {},
+  });
+  const node = (name, extra = {}) => ({
+    name,
+    connect(to) {
+      edges.push(`${name}->${to.name}`);
+    },
+    disconnect() {},
+    ...extra,
+  });
+  const track = new BeatTrack({});
+  track.ctx = {
+    createOscillator: () =>
+      node('osc', {
+        frequency: param((value) => ends.push(value)),
+        start() {},
+        stop() {},
+      }),
+    createGain: () => node('gain', { gain: param() }),
+    createWaveShaper: () => node('shaper'),
+  };
+  track.masterGain = node('master');
+  return { track, edges, ends };
+}
+
+// Where a kick at audio time 2 ends its pitch drop
+function kickEndHz() {
+  const { track, ends } = fakeKick();
+  track._playKick(2);
+  return ends[0];
 }
 
 describe('BeatTrack kick', () => {
   beforeEach(() => {
     CONFIG.BEAT_TRACK = structuredClone(original);
+    CONFIG.HUM = structuredClone(originalHum);
   });
   afterEach(() => {
     CONFIG.BEAT_TRACK = structuredClone(original);
+    CONFIG.HUM = structuredClone(originalHum);
   });
 
-  it('plays four on the floor, with the sub pulse, by default', () => {
-    expect(playMeasure()).toEqual({
-      kicks: [0, 1, 2, 3],
-      pulses: [0, 1, 2, 3],
-    });
+  it('plays four on the floor by default, with no hum as in the voice playground', () => {
+    expect(playMeasure()).toEqual([0, 1, 2, 3]);
   });
 
   it('plays only beats 1 and 3 with the oneThree pattern', () => {
     CONFIG.BEAT_TRACK.KICK.PATTERN = 'oneThree';
-    expect(playMeasure().kicks).toEqual([0, 2]);
+    expect(playMeasure()).toEqual([0, 2]);
+  });
+
+  it('dips the hum on every beat, kick or not, and turns its breath on each beat 1', () => {
+    const setups = [
+      () => {},
+      () => (CONFIG.BEAT_TRACK.KICK.PATTERN = 'oneThree'),
+      () => (CONFIG.BEAT_TRACK.KICK.ENABLED = false),
+    ];
+    for (const setup of setups) {
+      CONFIG.BEAT_TRACK = structuredClone(original);
+      setup();
+      const hum = { dipAt: vi.fn(), barAt: vi.fn() };
+      playMeasure(hum, 16); // two bars
+      expect(hum.dipAt.mock.calls).toEqual(
+        [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map((t) => [t])
+      );
+      expect(hum.barAt.mock.calls).toEqual([
+        [0, 2],
+        [2, 2],
+      ]); // a bar: 4 × 0.5 s
+    }
+  });
+
+  it('keeps every kick when the hum throws on the beat, logging once', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const fail = () => {
+        throw new Error('hum');
+      };
+      expect(playMeasure({ dipAt: fail, barAt: fail })).toEqual([0, 1, 2, 3]);
+      expect(error).toHaveBeenCalledTimes(1);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  it("ends the tuned kick on the hum's root", () => {
+    CONFIG.HUM.DRIFT_CENTS = 0;
+    CONFIG.HUM.ROOT = 'F#';
+    expect(kickEndHz()).toBeCloseTo(46.249, 3);
+    CONFIG.HUM.ROOT = 'A';
+    expect(kickEndHz()).toBeCloseTo(55, 3);
+  });
+
+  it('takes the drift at the moment the tuned kick starts', () => {
+    CONFIG.HUM.DRIFT_CENTS = 9;
+    expect(kickEndHz()).toBeCloseTo(hz(['1', 1], 2), 9);
+    expect(kickEndHz()).not.toBeCloseTo(hz(['1', 1], 0), 3);
+  });
+
+  it('ends the untuned kick on PITCH_END_HZ, as before', () => {
+    CONFIG.BEAT_TRACK.KICK.TUNED = false;
+    CONFIG.BEAT_TRACK.KICK.PITCH_END_HZ = 45;
+    expect(kickEndHz()).toBe(45);
+  });
+
+  it('plays the kick on PITCH_END_HZ if the root is bad, logging once', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      CONFIG.HUM.ROOT = 'H';
+      const { track, ends } = fakeKick();
+      track._playKick(2);
+      track._playKick(2.5);
+      const { PITCH_END_HZ } = CONFIG.BEAT_TRACK.KICK;
+      expect(ends).toEqual([PITCH_END_HZ, PITCH_END_HZ]);
+      expect(error).toHaveBeenCalledTimes(1);
+    } finally {
+      error.mockRestore();
+    }
   });
 
   it('drive curve soft-clips but keeps full scale, cached per drive', () => {
@@ -59,30 +168,9 @@ describe('BeatTrack kick', () => {
   });
 
   it('routes the kick through the drive stage only when DRIVE > 0', () => {
-    // Fake AudioContext that records which node connects to which
+    // The kick's wiring, on fakeKick's AudioContext
     function kickWiring() {
-      const edges = [];
-      const param = () => ({
-        setValueAtTime() {},
-        exponentialRampToValueAtTime() {},
-        linearRampToValueAtTime() {},
-      });
-      const node = (name, extra = {}) => ({
-        name,
-        connect(to) {
-          edges.push(`${name}->${to.name}`);
-        },
-        disconnect() {},
-        ...extra,
-      });
-      const track = new BeatTrack({});
-      track.ctx = {
-        createOscillator: () =>
-          node('osc', { frequency: param(), start() {}, stop() {} }),
-        createGain: () => node('gain', { gain: param() }),
-        createWaveShaper: () => node('shaper'),
-      };
-      track.masterGain = node('master');
+      const { track, edges } = fakeKick();
       track._playKick(0);
       return edges;
     }
@@ -97,13 +185,9 @@ describe('BeatTrack kick', () => {
     expect(kickWiring()).toEqual(['osc->gain', 'gain->master']);
   });
 
-  it('can switch the kick and the sub pulse off independently', () => {
+  it('can switch the kick off', () => {
     CONFIG.BEAT_TRACK.KICK.ENABLED = false;
-    expect(playMeasure()).toEqual({ kicks: [], pulses: [0, 1, 2, 3] });
-
-    CONFIG.BEAT_TRACK.KICK.ENABLED = true;
-    CONFIG.BEAT_TRACK.SUB_PULSE.ENABLED = false;
-    expect(playMeasure()).toEqual({ kicks: [0, 1, 2, 3], pulses: [] });
+    expect(playMeasure()).toEqual([]);
   });
 
   it('heardKick reports the last kick and whether it was beat 1', () => {

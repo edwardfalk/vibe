@@ -77,7 +77,7 @@ const CONFIG = {
   // speaks. Tune live with ?tune.
   MIX: {
     SFX_VOLUME: 1, // game sound effects master
-    BEAT_TRACK_VOLUME: 0.22, // kick + sub pulse, after the drive (was 0.4)
+    BEAT_TRACK_VOLUME: 0.22, // the kick, after the drive (was 0.4)
     SPEECH_VOLUME: 1, // multiplies every voice's volume
     SPEECH_DISTANCE_FLOOR: 0.7, // far-off enemies still this loud (was 0.4)
     DUCK_SFX_DB: -6, // effects dip while someone speaks
@@ -92,12 +92,32 @@ const CONFIG = {
   // paused. Top level, so ?tune's JSON never carries it into this file.
   SOUND_WHILE_PAUSED: false,
 
-  // Beat track: the steady kick and the sub pulse under it.
+  // The universe's hum (js/audio/Hum.js): a root and its fifth under
+  // everything, drifting slowly like an old analog synth. It dips on every
+  // beat, breathes over two bars, grows at levels 3 and 5 and brightens as
+  // enemies fill the screen. Every tuned sound shares its root and drift
+  // (js/audio/Harmony.js). Tune live with ?tune. Provisional: re-check
+  // LEVEL_DB and CUTOFF_HZ once the effects are in key (the audio
+  // overhaul's PR 2).
+  HUM: {
+    ROOT: 'F#', // the universe's key: E, F, F#, G or A, in the octave up to A1 = 55 Hz
+    LEVEL_DB: 0, // added to the listening page's level (Hum.js's TRIM_DB)
+    DRIFT_CENTS: 9, // the furthest the root wanders
+    DIP: 0.65, // share of the hum's level each beat's dip takes
+    BREATH: 0.3, // how far the filter opens and closes over two bars
+    CUTOFF_HZ: 420, // the filter's resting brightness
+    FIGHT_OPEN: 1, // a full screen opens the filter this much more (1 = twice as bright)
+  },
+
+  // Beat track: the steady kick. The hum under it is CONFIG.HUM.
   // Tune live by opening the game with ?tune in the URL.
   BEAT_TRACK: {
     KICK: {
       ENABLED: true,
       PATTERN: 'four', // 'four' = every beat, 'oneThree' = beats 1 and 3
+      // The pitch drop ends on the hum's root (with its drift) instead of
+      // PITCH_END_HZ; false is the kick as it was
+      TUNED: true,
       VOLUME: 0.6, // peak gain, before the beat track's master volume
       PITCH_START_HZ: 150, // punch; laptop speakers need energy up here
       PITCH_END_HZ: 45, // body
@@ -109,10 +129,6 @@ const CONFIG = {
       CLICK_LEVEL: 0.5, // noise attack ("beater"), relative to VOLUME
       CLICK_DECAY_SEC: 0.015,
       CLICK_FREQ_HZ: 2500, // centre of the click's band; hearing peaks ~2-4 kHz
-    },
-    SUB_PULSE: {
-      ENABLED: true,
-      VOLUME: 1, // multiplier on the original sub-bass pulse
     },
   },
 

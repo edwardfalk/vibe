@@ -222,8 +222,23 @@ test.describe('Gameplay Probes', () => {
   });
 
   test('M mutes sound effects and music, and says so', async ({ page }) => {
+    // Record every Web Audio connection, so the hum's route can be checked
+    await page.addInitScript(() => {
+      const connect = AudioNode.prototype.connect;
+      AudioNode.prototype.connect = function (destination, ...rest) {
+        (this.__to ??= []).push(destination);
+        return connect.call(this, destination, ...rest);
+      };
+    });
     await bootGame(page);
     await page.waitForFunction(() => window.beatTrack?.masterGain);
+    // The hum plays through the effects' masterGain, so M (and the speech
+    // duck after it) takes it too
+    expect(
+      await page.evaluate(() =>
+        window.audio.hum.levelGain.__to.includes(window.audio.masterGain)
+      )
+    ).toBe(true);
     const gains = () =>
       page.evaluate(() => [
         window.audio.masterGain.gain.value,
@@ -273,6 +288,11 @@ test.describe('Gameplay Probes', () => {
   test('Kick plays on every beat in a real AudioContext', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (err) => errors.push(err.message));
+    const humErrors = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error' && /hum/i.test(m.text()))
+        humErrors.push(m.text());
+    });
     await bootGame(page);
     await page.waitForFunction(() => window.beatTrack?.isPlaying);
     await page.evaluate(() => {
@@ -290,6 +310,17 @@ test.describe('Gameplay Probes', () => {
     expect(kicks).toBeGreaterThanOrEqual(3);
     expect(kicks).toBeLessThanOrEqual(5);
     expect(errors).toEqual([]);
+    // The hum: Audio built it, BeatTrack keeps its time, and it has faded in
+    // (from the first beat 1, over 0.4 s)
+    expect(
+      await page.evaluate(
+        () => !!window.audio.hum && window.beatTrack.hum === window.audio.hum
+      )
+    ).toBe(true);
+    await expect
+      .poll(() => page.evaluate(() => window.audio.hum.fade.gain.value))
+      .toBeGreaterThan(0.99);
+    expect(humErrors).toEqual([]);
   });
 
   test('?tune panel loads and clicking it does not start the game', async ({
@@ -333,7 +364,9 @@ test.describe('Gameplay Probes', () => {
       synth.speak = (u) => window.__said.push([u.text, u.voice?.name]);
       synth.dispatchEvent(new Event('voiceschanged'));
     });
-    const tank = page.locator('#tunePanel select').nth(2); // after the kick pattern and the hero
+    const tank = page
+      .locator('#tunePanel label', { hasText: 'VOICES.tank' })
+      .locator('select');
     await expect(tank.locator('option')).toHaveText([
       'auto',
       'Test Voice A',

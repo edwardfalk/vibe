@@ -16,7 +16,13 @@ At 120 BPM in 4/4 time (a beat every 500 ms):
 
 The attacks are also pitched apart so they don't mask each other: tank shots low (about 90 Hz), grunt shots in the middle (about 950 Hz) and stabber attacks high (about 2.2 kHz). The rusher's crash is a cymbal above them all: everything in it is high-passed at 5 kHz, so nothing sits in the kick's band. The tank's tones are square waves: laptop speakers can't play 90 Hz itself, but they do play its overtones. Its shot adds a short electric zap that falls from 1.2 kHz, below the stabbers. The presets are in `js/audio/SoundConfig.js`.
 
-A steady kick (four on the floor by default) and a sub-bass pulse keep time under everything. Without them, enemy hits are just sounds. With them, you can hear that the hits land on the beat. The kick's sound and pattern are in `CONFIG.BEAT_TRACK`.
+A steady kick (four on the floor by default) keeps time under everything. Without it, enemy hits are just sounds. With it, you can hear that the hits land on the beat. The kick's sound and pattern are in `CONFIG.BEAT_TRACK`.
+
+## The hum
+
+The universe has a tone as well as a beat. Under everything plays a hum: one root note and its fifth, two detuned saws and a sine through a soft filter, in a dark synthwave colour. The root never changes key (F# by default), but it drifts a few cents, slowly, like an old analog synth, and every tuned sound takes the same drift. The kick's thump ends on the root.
+
+The hum dips on every beat, kick or not, and swells back, and its filter opens over one bar and closes over the next. It grows with the levels: from level 3 a saw an octave higher, from level 5 a shimmer of high fifths. It brightens as enemies fill the screen and settles when the run ends. It sits about 5 dB under the kick above 250 Hz, where laptop speakers play, and dips with the effects while anyone speaks. The pitch grid is `js/audio/Harmony.js`, the hum `js/audio/Hum.js`, and its settings are in `CONFIG.HUM`.
 
 ## The cast
 
@@ -62,7 +68,7 @@ Enemies speak through the browser's speech synthesis, which runs outside Web Aud
 - the beat dips less (`DUCK_BEAT_DB`), because it keeps time;
 - both come back over `DUCK_RELEASE_SEC`.
 
-The levels are in `CONFIG.MIX`. The kick, the mix and pacing can all be tuned live by opening the game with `?tune`.
+The levels are in `CONFIG.MIX`. The kick, the hum, the mix and pacing can all be tuned live by opening the game with `?tune`.
 
 ## Pausing
 

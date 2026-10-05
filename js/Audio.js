@@ -3,6 +3,7 @@
  *
  * Signal flow (one AudioContext, shared with BeatTrack):
  *   effects    -> masterGain (mute) -> duckGain     -> masterLimiter -> out
+ *   hum        -> masterGain (Hum.js; BeatTrack keeps its time)
  *   beat track -> its masterGain    -> beatDuckGain -> masterLimiter
  *   speech     -> speechSynthesis, outside Web Audio; syncDuck() dips the two
  *                 duck gains while it speaks. Levels live in CONFIG.MIX.
@@ -33,9 +34,21 @@ import { createReverbImpulse } from './audio/speech/effects.js';
 import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
 import { getPlayerDialogueLine } from './audio/DialogueLines.js';
 import { playCrash, crashNoise } from './audio/CrashSynth.js';
+import { Hum } from './audio/Hum.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
 const DUCK_ATTACK_SEC = 0.05;
+
+/** The master limiter, so concurrent sounds can't clip (also the loudness test's) */
+export function createMasterLimiter(ctx) {
+  const limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = -6;
+  limiter.knee.value = 3;
+  limiter.ratio.value = 12;
+  limiter.attack.value = 0.003;
+  limiter.release.value = 0.1;
+  return limiter;
+}
 
 export class Audio {
   /**
@@ -49,6 +62,7 @@ export class Audio {
     // Core audio setup
     this.audioContext = null;
     this.masterGain = null;
+    this.hum = null; // the universe's hum, built in initialize()
     this.initialized = false;
     this.enabled = true;
     this.volume = 1.0;
@@ -95,25 +109,7 @@ export class Audio {
       )();
       this.masterGain = this.audioContext.createGain();
 
-      // Master limiter to prevent clipping from concurrent sounds
-      this.masterLimiter = this.audioContext.createDynamicsCompressor();
-      this.masterLimiter.threshold.setValueAtTime(
-        -6,
-        this.audioContext.currentTime
-      );
-      this.masterLimiter.knee.setValueAtTime(3, this.audioContext.currentTime);
-      this.masterLimiter.ratio.setValueAtTime(
-        12,
-        this.audioContext.currentTime
-      );
-      this.masterLimiter.attack.setValueAtTime(
-        0.003,
-        this.audioContext.currentTime
-      );
-      this.masterLimiter.release.setValueAtTime(
-        0.1,
-        this.audioContext.currentTime
-      );
+      this.masterLimiter = createMasterLimiter(this.audioContext);
 
       // Duck gains in front of the limiter: effects and beat dip separately
       // while speech plays (see syncDuck). Mute stays on the gains before these.
@@ -126,6 +122,17 @@ export class Audio {
       this.masterGain.connect(this.duckGain);
       this.masterLimiter.connect(this.audioContext.destination);
       this.applyMix();
+      // The universe's hum, behind masterGain so it mutes and ducks with the
+      // effects; built before the beat track starts, which keeps its time.
+      // A hum that fails (a bad CONFIG.HUM.ROOT) costs only the hum.
+      try {
+        this.hum = new Hum(this.audioContext, this.masterGain);
+      } catch (error) {
+        console.error(
+          'The hum failed to start; the game plays on without it:',
+          error
+        );
+      }
 
       this.createEffects();
       // The crash's noise, once, from a fixed seed (CrashSynth.js)
