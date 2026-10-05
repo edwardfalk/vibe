@@ -344,7 +344,9 @@ const CONFIG = {
     PEAK_DB: -1, // ceiling; wins over the target
     REDUCTION_WARN_DB: 3, // the playground warns when fitting the ceiling costs more
     MAX_WAIT_MS: 750, // a line not ready and scheduled by then is dropped, not played late
-    WORKER_TIMEOUT_MS: 15000, // a worker this slow to answer has hung: speech turns off
+    // A worker this slow to answer has hung: speech turns off. Long enough
+    // for the engines' first download (1.7 MB) on a slow link
+    WORKER_TIMEOUT_MS: 60000,
     MAX_LINE_CHARS: 200, // longer text is refused before it reaches an engine
     SPEAKERS: {
       player: {
