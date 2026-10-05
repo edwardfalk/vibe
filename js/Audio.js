@@ -534,7 +534,7 @@ export class Audio {
     return true; // Successfully started speech
   }
 
-  // A random player line for `lineContext` ('start', 'damage', 'lowHealth', 'death')
+  // A random player line for `lineContext` ('start', 'levelUp', 'damage', 'lowHealth', 'death')
   speakPlayerLine(entity, lineContext) {
     this.speak(
       entity,

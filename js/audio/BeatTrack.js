@@ -64,6 +64,26 @@ export function heardKick(beats, beatSec, latencySec, running) {
     nextKickIn: next === null ? NONE_SEC : (next - heard) * beatSec,
   };
 }
+
+/**
+ * The heard kick at beat position `beats`, from this track's own state: its
+ * AudioContext's latency plus CONFIG.SKY.OFFSET_MS, and whether it is
+ * playing. A pause that holds the sound (held) keeps the glow the stopped
+ * beat had. The sky and the hero's pulses both read it.
+ * @param {?BeatTrack} beatTrack
+ * @param {number} beats BeatClock's position in beats
+ * @param {number} beatSec seconds per beat
+ * @param {boolean} [held] a pause holds the sound
+ */
+export function heardKickOf(beatTrack, beats, beatSec, held = false) {
+  const ctx = beatTrack?.ctx;
+  const running = !!beatTrack?.isPlaying && (ctx?.state === 'running' || held);
+  const latencySec =
+    (ctx?.baseLatency ?? 0) +
+    (ctx?.outputLatency ?? 0) +
+    CONFIG.SKY.OFFSET_MS / 1000;
+  return heardKick(beats, beatSec, latencySec, running);
+}
 // Look-ahead buffer for sample-accurate scheduling.
 // 75ms balances glitch-free playback with minimal audio-visual desync.
 const SCHEDULE_AHEAD_SEC = 0.075;

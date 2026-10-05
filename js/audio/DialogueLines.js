@@ -1,43 +1,45 @@
-const PLAYER_LINES = {
+// The Dude, looking for his carpet (docs/superpowers/specs/2026-10-03-dude-hero-design.md).
+// Every line ducks the band while it plays and holds the one speech slot,
+// so the ones said in the fight (damage, lowHealth, levelUp) are at most
+// MAX_FIGHT_WORDS words
+export const MAX_FIGHT_WORDS = 4;
+export const PLAYER_LINES = {
+  // The run starts
   start: [
-    'RISE!',
-    'CRUSH!',
-    'BLOOD MOON!',
-    'CHAOS!',
-    'DANCE DEATH!',
-    'COSMIC!',
-    'LAUGH!',
-    'RIOT!',
+    "WHERE'S MY CARPET?!",
+    'THAT CARPET REALLY TIED THE ROOM TOGETHER.',
+    'SOMEBODY HAS MY CARPET, MAN.',
+    'WHICH ONE OF YOU HAS IT?',
+    'I JUST WANT MY CARPET BACK.',
+  ],
+  // A new level: the next place he looks
+  levelUp: [
+    'NO CARPET HERE EITHER.',
+    'KEEP LOOKING, MAN.',
+    'NOT HERE. NEXT.',
+    'ANYBODY SEEN A CARPET?',
+    "IT'S AROUND HERE SOMEWHERE.",
   ],
   damage: [
-    'PAIN!',
-    'BROKEN!',
-    'HA!',
-    'YOU MISS!',
-    'TRY AGAIN!',
-    'BITTER!',
-    'BLEED!',
-    'MAD!',
+    'HEY! CAREFUL, MAN!',
+    'NOT THE ROBE!',
+    'MY DRINK!',
+    'NOT COOL, MAN.',
+    "WHERE'S MY CARPET?!",
+    'OUT OF YOUR ELEMENT!',
   ],
   lowHealth: [
-    'MORE!',
-    'STILL HERE!',
-    'NO FEAR!',
-    'DEEP CUT!',
-    'GASP!',
-    'WE CONTINUE!',
-    'HOLD FAST!',
-    'NEVER DONE!',
+    'NOT ABIDING, MAN!',
+    'THIS WILL NOT STAND!',
+    "I'M NOT CALM ANYMORE.",
+    'MY CARPET, MAN!',
+    'I NEED ANOTHER DRINK.',
   ],
   death: [
-    'FALLING...',
-    'FAREWELL!',
-    'DARKNESS...',
-    'SEE YOU...',
-    'I END...',
-    'GOODBYE...',
-    'VOID CALLS!',
-    'FADING...',
+    '...THE CARPET...',
+    'IT REALLY TIED THE ROOM TOGETHER...',
+    'SOMEBODY FIND MY CARPET...',
+    'WHAT A DAY, MAN...',
   ],
 };
 
