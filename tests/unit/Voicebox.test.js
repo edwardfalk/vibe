@@ -275,12 +275,13 @@ describe("Voicebox: the game's side", () => {
 
   it('says a line on the grid, panned, from one render', async () => {
     const { voicebox, worker, ctx, reply } = setup();
-    ctx.currentTime = 1.15; // past the window: the next eighth
+    ctx.currentTime = 1.02; // asked inside the window...
     const saying = voicebox.say('grunt', 'Kill human!', {
       gain: 0.7,
       pan: -0.4,
       clock,
     });
+    ctx.currentTime = 1.15; // ...ready past it: the next eighth
     reply();
     const line = await saying;
     expect(line.startsAt).toBeCloseTo(1.25, 9);

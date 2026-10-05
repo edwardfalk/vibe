@@ -239,23 +239,31 @@ test.describe('Gameplay Probes', () => {
         window.audio.hum.levelGain.__to.includes(window.audio.masterGain)
       )
     ).toBe(true);
+    // Speech reaches the speakers through the limiter, past the duck
+    expect(
+      await page.evaluate(() =>
+        window.audio.voicebox.output.__to?.includes(window.audio.masterLimiter)
+      )
+    ).toBe(true);
     const gains = () =>
       page.evaluate(() => [
         window.audio.masterGain.gain.value,
         window.beatTrack.masterGain.gain.value,
+        window.audio.voicebox.output.gain.value,
       ]);
-    const [sfxOn, musicOn] = await gains();
+    const [sfxOn, musicOn, speechOn] = await gains();
     expect(sfxOn).toBeGreaterThan(0);
     expect(musicOn).toBeGreaterThan(0);
+    expect(speechOn).toBeGreaterThan(0);
 
     await page.keyboard.press('m');
     await expect(page.locator('#statusToast')).toBeVisible();
     await expect(page.locator('#statusToast')).toHaveText('Sound off');
-    await expect.poll(gains).toEqual([0, 0]);
+    await expect.poll(gains).toEqual([0, 0, 0]);
 
     await page.keyboard.press('m');
     await expect(page.locator('#statusToast')).toHaveText('Sound on');
-    await expect.poll(gains).toEqual([sfxOn, musicOn]);
+    await expect.poll(gains).toEqual([sfxOn, musicOn, speechOn]);
   });
 
   test('Named keys like arrows and Escape start the run', async ({ page }) => {

@@ -277,6 +277,14 @@ test('in a running game every line starts on the grid, and the count on its beat
     PLAYER_LINES.start,
     { timeout: 5000 }
   );
+  // The count was rendered ahead, when the audio started, not when it's due
+  expect(
+    await page.evaluate(() =>
+      ['3', '2', '1'].every((w) =>
+        window.audio.voicebox.lines.has(`player:${w}`)
+      )
+    )
+  ).toBe(true);
   const report = await page.evaluate(async () => {
     const { plantBomb } = await import('/js/systems/BombSystem.js');
     const { SPEAKER_LINES } = await import('/js/audio/DialogueLines.js');
@@ -339,16 +347,17 @@ test('in a running game every line starts on the grid, and the count on its beat
     const onGrid = d < 0.001 || eighth - d < 0.001 || d <= report.window;
     expect(onGrid, `a line ${d.toFixed(3)} s after an eighth`).toBe(true);
   }
-  // The count: on beats, two apart. Rendered ahead, each one starts within
-  // a frame or two of its beat, not when a render happens to finish
+  // The count: on its beats, two apart, each inside the window its beat
+  // opened (it starts the frame the bomb notices the beat: 2-41 ms here)
   const count = ['3', '2', '1'].map((n) =>
     said.find((l) => l.speaker === 'player' && l.text === n)
   );
   expect(count.every(Boolean)).toBe(true);
   for (const l of count) {
-    expect(since(l.startsAt, beat), `"${l.text}" after its beat`).toBeLessThan(
-      0.05
-    );
+    expect(
+      since(l.startsAt, beat),
+      `"${l.text}" after its beat`
+    ).toBeLessThanOrEqual(report.window);
   }
   expect(count[1].startsAt - count[0].startsAt).toBeCloseTo(2 * beat, 1);
   expect(count[2].startsAt - count[1].startsAt).toBeCloseTo(2 * beat, 1);

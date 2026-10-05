@@ -100,6 +100,16 @@ describe('Audio.speak', () => {
     expect(audio.activeTexts).toHaveLength(0);
   });
 
+  it('a line dropped as late says so in the console, once per line', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { audio } = speakingAudio({ dropped: 'late' });
+    audio.speak({ x: 0, y: 0 }, 'Kill human!', 'grunt');
+    await settle();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0].join(' ')).toContain('Kill human!');
+    warn.mockRestore();
+  });
+
   it('keeps the chatter cooldown, unless forced', () => {
     const { audio, voicebox } = speakingAudio();
     expect(audio.speak({ x: 0, y: 0 }, 'one', 'grunt')).toBe(true);
@@ -124,8 +134,9 @@ describe('Audio.speak', () => {
         false
       );
       expect(voicebox.say, name).not.toHaveBeenCalled();
-      // A refused line doesn't start the cooldown
+      // A refused line doesn't start the cooldown, nor show a bubble
       expect(audio.lastSpeechTime, name).toBe(0);
+      expect(audio.activeTexts, name).toHaveLength(0);
     }
     const { audio } = speakingAudio();
     expect(audio.speak({ x: 0, y: 0 }, '', 'grunt', true)).toBe(false);
@@ -151,8 +162,12 @@ describe("Audio's speech engines", () => {
     try {
       const audio = new Audio(null, { x: 0, y: 0 }, {});
       expect(audio.speechWorker.posted).toEqual([{ id: 0, type: 'variants' }]);
+      const worker = audio.speechWorker;
       const ctx = { createGain: () => ({ gain: { value: 1 } }) };
-      expect(audio.createVoicebox(ctx).worker).toBe(audio.speechWorker);
+      expect(audio.createVoicebox(ctx).worker).toBe(worker);
+      // Once: a retried initialize() makes its own, not a second owner
+      expect(audio.speechWorker).toBeNull();
+      expect(audio.createVoicebox(ctx).worker).not.toBe(worker);
     } finally {
       delete globalThis.Worker;
     }
@@ -164,6 +179,18 @@ describe("Audio's speech engines", () => {
     expect(audio.speechWorker).toBeNull();
     const ctx = { createGain: () => ({ gain: { value: 1 } }) };
     expect(audio.createVoicebox(ctx).failed).toBeInstanceOf(ReferenceError);
+  });
+});
+
+describe("Audio's bubbles", () => {
+  it('wait for their line by its audio clock', () => {
+    const { audio } = speakingAudio();
+    audio.showText({ x: 0, y: 0 }, 'FIRE!', 'tank', 90, 10.25);
+    audio.updateTexts(); // at 10.15: still waiting
+    expect(audio.activeTexts[0].timer).toBe(90);
+    audio.audioContext.currentTime = 10.25;
+    audio.updateTexts();
+    expect(audio.activeTexts[0].timer).toBe(89);
   });
 });
 

@@ -226,7 +226,10 @@ export class Audio {
 
   // The game's speech; the replay tool, which has no Worker, stands one in
   createVoicebox(audioContext) {
+    // The title screen's worker goes to one Voicebox: a retried
+    // initialize() makes its own, rather than share it
     const worker = this.speechWorker;
+    this.speechWorker = null;
     return new Voicebox({
       audioContext,
       ...(worker && { createWorker: () => worker }),
@@ -517,6 +520,13 @@ export class Audio {
       })
       .then(({ startsAt, duration, dropped }) => {
         if (dropped === 'cancelled') return;
+        // Its bubble still shows; say why it's silent, or a line that is
+        // always late would be missing with no trace
+        if (dropped === 'late') {
+          console.warn(
+            `Speech: "${text}" (${voiceType}) wasn't ready in ${CONFIG.SPEECH.MAX_WAIT_MS} ms; dropped`
+          );
+        }
         // The bubble shows as the line starts; one that won't play, now
         const seconds = dropped ? text.split(' ').length * WORD_SEC : duration;
         this.showText(
