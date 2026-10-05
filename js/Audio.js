@@ -24,7 +24,11 @@ import {
   calculateVolumeForPosition,
 } from './audio/SpatialAudio.js';
 import { applyBeatTremolo as applyBeatTremoloEffect } from './audio/BeatTremolo.js';
-import { drawActiveTexts, updateActiveTexts } from './audio/TextDisplay.js';
+import {
+  drawActiveTexts,
+  isWaiting,
+  updateActiveTexts,
+} from './audio/TextDisplay.js';
 import {
   isAggressiveText as isAggressiveTextHelper,
   isConfusedText as isConfusedTextHelper,
@@ -191,7 +195,8 @@ export class Audio {
       });
     }
 
-    return this.audioContext.state === 'running';
+    // Coming back from a pause, sounds and lines wait for it, not lost
+    return this.audioContext.state === 'running' || this._resuming;
   }
 
   createEffects() {
@@ -681,7 +686,7 @@ export class Audio {
     if (!this.enabled) {
       this.voicebox?.cancelPending();
       this.activeTexts = this.activeTexts.filter(
-        (bubble) => !(bubble.showsAt > this.textTime)
+        (bubble) => !isWaiting(bubble, this.textTime)
       );
     }
     return this.enabled;

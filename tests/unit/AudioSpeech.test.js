@@ -188,7 +188,21 @@ describe("Audio's bubbles", () => {
     audio.showText({ x: 0, y: 0 }, 'FIRE!', 'tank', 90, 10.25);
     audio.updateTexts(); // at 10.15: still waiting
     expect(audio.activeTexts[0].timer).toBe(90);
-    audio.audioContext.currentTime = 10.25;
+    audio.audioContext.currentTime = 10.26;
+    audio.updateTexts();
+    expect(audio.activeTexts[0].timer).toBe(89);
+  });
+
+  it("wait out a pause that stopped the clock at their line's start", () => {
+    const { audio } = speakingAudio();
+    audio.audioContext.state = 'suspended';
+    // Ready during the pause, inside the on-beat window: it starts at once,
+    // where the suspended clock stands, so it is heard after the pause
+    audio.showText({ x: 0, y: 0 }, 'FIRE!', 'tank', 90, 10.15);
+    audio.updateTexts();
+    audio.updateTexts();
+    expect(audio.activeTexts[0].timer).toBe(90);
+    audio.audioContext.currentTime = 10.17; // unpaused
     audio.updateTexts();
     expect(audio.activeTexts[0].timer).toBe(89);
   });
@@ -238,7 +252,7 @@ describe("Audio's speech mix", () => {
 describe('a bubble that waits for its line', () => {
   // Each frame updates, then draws (GameLoop.js); the audio clock runs on
   // its own, through hitstop and slow frames
-  it('shows once the audio clock reaches its start, and only then counts down', () => {
+  it('shows once the audio clock passes its start, and only then counts down', () => {
     const texts = [{ text: 'FIRE!', timer: 2, showsAt: 1, x: 0, y: 0 }];
     const { p, calls } = transformP5();
     const drawn = () => calls.filter(([k]) => k === 'text').map(([, t]) => t);
@@ -250,10 +264,12 @@ describe('a bubble that waits for its line', () => {
     frame(0.99);
     expect(drawn()).toEqual([]);
     expect(texts[0].timer).toBe(2);
-    frame(1); // its line starts
+    frame(1); // its line's start: the clock may stand there (a pause)
+    expect(drawn()).toEqual([]);
+    frame(1.01); // past it: its line is being heard
     expect(drawn()).toEqual(['FIRE!']);
     expect(texts[0].timer).toBe(1);
-    frame(1.02);
+    frame(1.03);
     expect(texts).toEqual([]); // its two frames are up
   });
 

@@ -99,6 +99,27 @@ describe('pausing the game', () => {
     expect(audio.voicebox.say).not.toHaveBeenCalled();
   });
 
+  it('keeps a sound or a line made while the audio comes back, for when it is', async () => {
+    const { audio, ctx } = fakeAudio();
+    audio.getContextValue = () => null;
+    audio.voicebox.say = vi.fn(async () => ({ dropped: 'cancelled' }));
+    // Each resume() settles when the context is back (a sound asks too)
+    const pending = [];
+    ctx.resume = vi.fn(() => new Promise((r) => pending.push(r)));
+    audio.syncPause(true);
+    await Promise.resolve();
+    audio.syncPause(false); // the first frame after P: still suspended
+    expect(ctx.state).toBe('suspended');
+    expect(audio.ensureAudioContext()).toBe(true);
+    expect(audio.speak(null, 'TIMEBOMB!', 'player', true)).toBe(true);
+    expect(audio.voicebox.say).toHaveBeenCalledTimes(1);
+    ctx.state = 'running';
+    pending.forEach((r) => r());
+    await settle();
+    expect(audio.soundPaused).toBe(false);
+    expect(audio.ensureAudioContext()).toBe(true);
+  });
+
   it('does nothing before the audio has started', () => {
     const { audio } = fakeAudio();
     audio.audioContext = null;
