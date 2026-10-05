@@ -189,6 +189,7 @@ const AUDIO_PARAMS = new Set([
   'release',
   'delayTime',
   'playbackRate',
+  'offset', // ConstantSourceNode's, which the hum's drift drives
 ]);
 let audioIds = 0;
 const audioNodes = new WeakMap(); // node proxy -> its recorder
