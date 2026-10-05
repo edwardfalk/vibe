@@ -3,8 +3,8 @@
  * seeded Math.random, a virtual clock and scripted input, and writes one
  * SHA-1 per frame of everything the frame did: every drawing primitive with
  * the full style and transform it is drawn with, every Web Audio node,
- * connection and parameter change, every speech line with its voice
- * settings, and every game-state change. Two trees that write the same file look and
+ * connection and parameter change, every speech line with its speaker,
+ * gain and pan, and every game-state change. Two trees that write the same file look and
  * sound the same, so a refactor that should change nothing can be proved to.
  *
  * Usage: node tests/replay/replay.js <root> <out> [frames] [seed] [mode]
@@ -157,21 +157,6 @@ globalThis.document = {
   body: el(),
 };
 Object.defineProperty(globalThis, 'location', { value: { search: '' } });
-globalThis.speechSynthesis = {
-  getVoices: () => [],
-  speak(u) {
-    log.push(
-      `SPEECH ${u.text} rate=${R(u.rate)} pitch=${R(u.pitch)} vol=${R(u.volume)} voice=${u.voice?.name ?? ''}`
-    );
-  },
-  cancel() {},
-  speaking: false,
-};
-globalThis.SpeechSynthesisUtterance = class {
-  constructor(text) {
-    this.text = text;
-  }
-};
 // ---- recording Web Audio: every node, connection, parameter change and
 // scheduled start/stop is logged, so a changed sound shows up. A node is
 // named and logged only once it joins the graph (connects, or is connected
@@ -655,6 +640,22 @@ wrap(window.audio, 'playSound', 'A');
 wrap(window.audio, 'speak', 'A');
 wrap(window.audio, 'speakPlayerLine', 'A');
 wrap(window.gameState, 'setGameState', 'GS');
+// Node has no Worker, so the game's Voicebox can't run here: a stand-in logs
+// each line and says it at once, half a second long
+window.audio.createVoicebox = (ctx) => ({
+  failed: null,
+  output: ctx.createGain(),
+  connect(node) {
+    this.output.connect(node);
+  },
+  prepare() {},
+  say(speaker, text, { gain, pan }) {
+    log.push(`SPEECH ${speaker} ${text} gain=${R(gain)} pan=${R(pan)}`);
+    return Promise.resolve({ startsAt: ctx.currentTime, duration: 0.5 });
+  },
+  cancelPending() {},
+  isSpeaking: () => false,
+});
 
 // Reseed as the run starts: work done behind the title screen, which no
 // player sees, must not shift what the run draws. Then press a key on the
@@ -731,6 +732,9 @@ for (let f = 1; f <= FRAMES; f++) {
     `=== F${f} ${st} score=${window.gameState.score} lvl=${window.gameState.level} hp=${R(window.player.health)} e=${window.enemies.length} pb=${window.playerBullets.length} eb=${window.enemyBullets.length}`
   );
   sketchP.draw();
+  // A browser runs promise callbacks between frames, and a line's bubble
+  // shows once its say() resolves: let them run before the next frame
+  await new Promise(setImmediate);
 }
 log.flush();
 closeSync(fd);

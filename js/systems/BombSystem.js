@@ -16,9 +16,8 @@ import { floor, clamp01 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
-import { BOMB_PLANTED } from '../audio/DialogueLines.js';
+import { BOMB_PLANTED, COUNTDOWN } from '../audio/DialogueLines.js';
 
-const COUNT_WORDS = ['3', '2', '1'];
 const COUNT_EVERY_BEATS = 2;
 const AMBER_LEFT = 0.34; // its light goes white-hot for the last third
 // Its look, at size 50 (the prototype's numbers, in px): a halo, the body,
@@ -116,9 +115,9 @@ export function updateBombs(context) {
       // "3", "2", "1" on the last three even beats before the bang, from its
       // beat 0 on (a short fuse drops the first), forced past the cooldown
       // all voices share; after a stall only the latest
-      const first = B.FUSE_BEATS - COUNT_WORDS.length * COUNT_EVERY_BEATS;
+      const first = B.FUSE_BEATS - COUNTDOWN.length * COUNT_EVERY_BEATS;
       const due = Math.min(
-        COUNT_WORDS.length,
+        COUNTDOWN.length,
         floor((fuse - first) / COUNT_EVERY_BEATS) + 1
       );
       if (due > bomb.said) {
@@ -126,7 +125,7 @@ export function updateBombs(context) {
         // A word whose beat came before beat 0 counts as said, unspoken
         const wordAt = first + (due - 1) * COUNT_EVERY_BEATS;
         if (wordAt >= 0) {
-          audio?.speak?.(bomb, COUNT_WORDS[due - 1], 'player', true);
+          audio?.speak?.(bomb, COUNTDOWN[due - 1], 'player', true);
         }
       }
       continue;

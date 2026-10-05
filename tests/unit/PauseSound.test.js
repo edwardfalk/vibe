@@ -19,7 +19,7 @@ function fakeAudio() {
     enabled: true,
     speechEnabled: true,
     initialize() {},
-    speechSynthesis: { cancel: vi.fn(), speak: vi.fn() },
+    voicebox: { failed: null, say: vi.fn(), cancelPending: vi.fn() },
     // As the constructor sets them
     _pausedByGame: false,
     _resuming: false,
@@ -34,13 +34,14 @@ afterEach(() => {
 });
 
 describe('pausing the game', () => {
-  it('stops its sound and cuts any line, then starts it again on unpause', async () => {
+  it('stops its sound, a line being spoken too, then starts it again on unpause', async () => {
     const { audio, ctx } = fakeAudio();
     audio.syncPause(true);
     audio.syncPause(true); // every frame: it acts once
     await Promise.resolve();
     expect(ctx.suspend).toHaveBeenCalledTimes(1);
-    expect(audio.speechSynthesis.cancel).toHaveBeenCalledTimes(1);
+    // The suspended context holds a line mid-word; it finishes on unpause
+    expect(audio.voicebox.cancelPending).not.toHaveBeenCalled();
     expect(audio.soundPaused).toBe(true);
     audio.syncPause(false);
     audio.syncPause(false);
@@ -95,7 +96,7 @@ describe('pausing the game', () => {
     expect(audio.ensureAudioContext()).toBe(false);
     expect(audio.speak(null, 'Kill human!', 'grunt', true)).toBe(false);
     expect(ctx.resume).not.toHaveBeenCalled();
-    expect(audio.speechSynthesis.speak).not.toHaveBeenCalled();
+    expect(audio.voicebox.say).not.toHaveBeenCalled();
   });
 
   it('does nothing before the audio has started', () => {

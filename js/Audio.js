@@ -5,8 +5,10 @@
  *   effects    -> masterGain (mute) -> duckGain     -> masterLimiter -> out
  *   hum        -> masterGain (Hum.js; BeatTrack keeps its time)
  *   beat track -> its masterGain    -> beatDuckGain -> masterLimiter
- *   speech     -> speechSynthesis, outside Web Audio; syncDuck() dips the two
- *                 duck gains while it speaks. Levels live in CONFIG.MIX.
+ *   speech     -> Voicebox (js/audio/speech): each line's gain and pan ->
+ *                 speech gain (volume, mute) -> masterLimiter. syncDuck()
+ *                 dips the two duck gains while someone speaks; speech itself
+ *                 is never ducked. Levels live in CONFIG.MIX.
  */
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
@@ -23,21 +25,24 @@ import {
 } from './audio/SpatialAudio.js';
 import { applyBeatTremolo as applyBeatTremoloEffect } from './audio/BeatTremolo.js';
 import { drawActiveTexts, updateActiveTexts } from './audio/TextDisplay.js';
-import { englishVoicesOf, selectVoice } from './audio/VoiceSelection.js';
-import { applyVoiceEffects as applyVoiceEffectsHelper } from './audio/VoiceEffects.js';
 import {
   isAggressiveText as isAggressiveTextHelper,
   isConfusedText as isConfusedTextHelper,
 } from './audio/TextSemantics.js';
-import { CONFIG, VOICE_CONFIG } from './config.js';
+import { CONFIG } from './config.js';
 import { createReverbImpulse } from './audio/speech/effects.js';
+import { Voicebox, startSpeechWorker } from './audio/speech/Voicebox.js';
 import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
-import { getPlayerDialogueLine } from './audio/DialogueLines.js';
+import { COUNTDOWN, getPlayerDialogueLine } from './audio/DialogueLines.js';
 import { playCrash, crashNoise } from './audio/CrashSynth.js';
 import { Hum } from './audio/Hum.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
 const DUCK_ATTACK_SEC = 0.05;
+// A bubble shows for as long as its line is spoken, and at least 1.5 s; one
+// whose line won't play shows for as long as it takes at 150 words a minute
+const bubbleFrames = (seconds) => Math.max(90, Math.round(seconds * 60));
+const WORD_SEC = 0.4;
 
 /** The master limiter, so concurrent sounds can't clip (also the loudness test's) */
 export function createMasterLimiter(ctx) {
@@ -77,10 +82,18 @@ export class Audio {
     // Waveshaper curve for the ambient sounds' wet path (made in createEffects)
     this.ambientDistortionCurve = null;
 
-    // Speech
-    this.speechSynthesis = window.speechSynthesis;
+    // Speech. Its engines start loading now, on the title screen, so the
+    // first line isn't kept waiting for them; initialize() hands the worker
+    // to the Voicebox. Node (the unit tests, the replay) has no Worker, and
+    // one that can't be made is tried, and reported, by the Voicebox.
+    this.speechWorker = null;
+    try {
+      if (typeof Worker !== 'undefined') {
+        this.speechWorker = startSpeechWorker();
+      }
+    } catch (_) {}
+    this.voicebox = null; // built in initialize()
     this.speechEnabled = true;
-    this.englishVoices = [];
     this.lastSpeechTime = 0;
     this.speechCooldown = 2500; // 2.5 seconds - reasonable cooldown to prevent excessive chatter
 
@@ -91,7 +104,6 @@ export class Audio {
     this.beatY = 0;
 
     this.sounds = { ...SOUND_CONFIG };
-    this.voiceConfig = { ...VOICE_CONFIG };
   }
 
   getContextValue = createContextAccessor(() => this.context);
@@ -121,6 +133,12 @@ export class Audio {
 
       this.masterGain.connect(this.duckGain);
       this.masterLimiter.connect(this.audioContext.destination);
+      // Speech goes straight to the limiter: the duck never touches it
+      this.voicebox = this.createVoicebox(this.audioContext);
+      this.voicebox.connect(this.masterLimiter);
+      // The bomb's count must land on its beats, so it can't wait for a
+      // render when it is due
+      for (const word of COUNTDOWN) this.voicebox.prepare('player', word);
       this.applyMix();
       // The universe's hum, behind masterGain so it mutes and ducks with the
       // effects; built before the beat track starts, which keeps its time.
@@ -137,7 +155,6 @@ export class Audio {
       this.createEffects();
       // The crash's noise, once, from a fixed seed (CrashSynth.js)
       crashNoise(this.audioContext, SOUND_CONFIG.rusherCrash.duration);
-      this.loadVoices();
 
       // Start drum machine now that audio context is available
       if (window.beatTrack && !window.beatTrack.isPlaying) {
@@ -207,16 +224,13 @@ export class Audio {
     return curve;
   }
 
-  loadVoices() {
-    if (this._voicesLoaded) return;
-
-    // Chrome adds voices in batches after load, so keep the list current
-    const loadVoices = () => {
-      this.englishVoices = englishVoicesOf(this.speechSynthesis.getVoices());
-    };
-    loadVoices();
-    this.speechSynthesis.addEventListener?.('voiceschanged', loadVoices);
-    this._voicesLoaded = true;
+  // The game's speech; the replay tool, which has no Worker, stands one in
+  createVoicebox(audioContext) {
+    const worker = this.speechWorker;
+    return new Voicebox({
+      audioContext,
+      ...(worker && { createWorker: () => worker }),
+    });
   }
 
   // ========================================================================
@@ -462,83 +476,59 @@ export class Audio {
   // SPEECH
   // ========================================================================
 
+  // Say a line in the speaker's voice, on the beat grid (Voicebox). True
+  // when it is taken: false while paused or muted, inside the chatter
+  // cooldown (unless forced), for an empty line, or without running audio
+  // and a working speech engine (Grunt.sayOw then plays its sound instead).
   speak(entity, text, voiceType = 'player', force = false) {
     // Nobody speaks while a pause holds the sound
     if (this._pausedByGame) return false;
-    if (!this.speechEnabled || !this.speechSynthesis || !text) {
-      return false;
-    }
-    // A line with no speaker (a ?tune voice sample) comes from the hero
+    if (!this.speechEnabled || !text) return false;
+    // A line with no speaker comes from the hero
     entity ??= this.player;
 
     // Check cooldown unless force is true
     const now = Date.now();
     if (!force && now - this.lastSpeechTime < this.speechCooldown) {
-      return false; // Return false immediately, no text, no speech
-    }
-
-    this.lastSpeechTime = now;
-
-    // Ensure audio context is ready
-    this.ensureAudioContext();
-
-    const displayText = text.toUpperCase();
-
-    // Create and configure utterance
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-
-    const config = this.voiceConfig[voiceType] || this.voiceConfig.player;
-    utterance.rate = config.rate;
-    utterance.pitch = config.pitch;
-
-    // Get player position for relative audio positioning
-    let playerX = 0,
-      playerY = 0;
-    if (typeof this.player !== 'undefined' && this.player) {
-      playerX = this.player.x;
-      playerY = this.player.y;
-    }
-    // A speaker without a position speaks from where the hero is
-    const ex = Number.isFinite(entity?.x) ? entity.x : playerX;
-    const ey = Number.isFinite(entity?.y) ? entity.y : playerY;
-    // Speech is outside Web Audio and capped at 1: keep it near full and let
-    // syncDuck dip the game while it plays
-    const distance = Math.max(
-      CONFIG.MIX.SPEECH_DISTANCE_FLOOR,
-      calculateVolumeForPosition(ex, ey, playerX, playerY)
-    );
-    utterance.volume = Math.min(
-      1,
-      config.volume * distance * CONFIG.MIX.SPEECH_VOLUME
-    );
-
-    // Each speaker keeps one voice
-    const voice = selectVoice(this.englishVoices, voiceType, CONFIG.VOICES);
-    if (voice) {
-      utterance.voice = voice;
-      utterance.lang = voice.lang;
-    }
-
-    // Apply dynamic voice effects based on content
-    applyVoiceEffectsHelper(utterance, voiceType, text, this.voiceConfig);
-
-    // Show the text for as long as the line takes to say
-    const estimatedDuration = this.calculateSpeechDuration(
-      text,
-      utterance.rate
-    );
-    this.showText(entity, displayText, voiceType, estimatedDuration);
-
-    // Speak with better error handling
-    try {
-      this.speechSynthesis.speak(utterance);
-    } catch (error) {
-      console.warn('TTS error:', error);
       return false;
     }
+    if (!this.ensureAudioContext() || !this.voicebox || this.voicebox.failed) {
+      return false;
+    }
+    this.lastSpeechTime = now;
 
-    return true; // Successfully started speech
+    // The hero hears it from where the speaker is; one without a position
+    // speaks from where the hero is
+    const hx = Number.isFinite(this.player?.x) ? this.player.x : 0;
+    const hy = Number.isFinite(this.player?.y) ? this.player.y : 0;
+    const ex = Number.isFinite(entity?.x) ? entity.x : hx;
+    const ey = Number.isFinite(entity?.y) ? entity.y : hy;
+    const gain = Math.max(
+      CONFIG.MIX.SPEECH_DISTANCE_FLOOR,
+      calculateVolumeForPosition(ex, ey, hx, hy)
+    );
+    const pan = calculatePanForPosition(ex, hx);
+
+    this.voicebox
+      .say(voiceType, text, {
+        gain,
+        pan,
+        clock: this.getContextValue('beatClock'),
+      })
+      .then(({ startsAt, duration, dropped }) => {
+        if (dropped === 'cancelled') return;
+        // The bubble shows as the line starts; one that won't play, now
+        const seconds = dropped ? text.split(' ').length * WORD_SEC : duration;
+        this.showText(
+          entity,
+          text.toUpperCase(),
+          voiceType,
+          bubbleFrames(seconds),
+          dropped ? null : startsAt
+        );
+      })
+      .catch((error) => console.warn('Speech failed:', error));
+    return true;
   }
 
   // A random player line for `lineContext` ('start', 'levelUp', 'damage', 'lowHealth', 'death')
@@ -550,23 +540,13 @@ export class Audio {
     );
   }
 
-  // Estimated time to say `text` at `rate`
-  calculateSpeechDuration(text, rate) {
-    // Base calculation: ~150 words per minute at rate 1.0
-    const wordsPerMinute = 150 * rate;
-    const words = text.split(' ').length;
-    const durationSeconds = (words / wordsPerMinute) * 60;
-
-    // Convert to frames (60fps) with minimum duration
-    const frames = Math.max(90, Math.floor(durationSeconds * 60)); // Min 1.5 seconds
-    return frames;
-  }
-
   // ========================================================================
   // TEXT DISPLAY SYSTEM
   // ========================================================================
 
-  showText(entity, text, voiceType, duration) {
+  // A bubble over `entity` for `duration` frames, from audio time `showsAt`
+  // (when its line starts; null: now)
+  showText(entity, text, voiceType, duration, showsAt = null) {
     // Determine aggression level and style based on text content
     const isAggressive = isAggressiveTextHelper(text);
     const isConfused = isConfusedTextHelper(text);
@@ -580,6 +560,7 @@ export class Audio {
       text: text,
       voiceType: voiceType,
       timer: duration,
+      showsAt,
       x: entity.x,
       y: entity.y - 30,
       isAggressive: isAggressive,
@@ -589,8 +570,14 @@ export class Audio {
     });
   }
 
+  // Bubbles wait for their line by the audio clock, which runs on through
+  // hitstop and slow frames; without audio, every bubble shows
+  get textTime() {
+    return this.audioContext?.currentTime ?? Infinity;
+  }
+
   updateTexts() {
-    updateActiveTexts(this.activeTexts);
+    updateActiveTexts(this.activeTexts, this.textTime);
   }
 
   drawTexts(p) {
@@ -600,7 +587,8 @@ export class Audio {
       this.showBeatIndicator,
       this.beatX,
       this.beatY,
-      drawGlow
+      drawGlow,
+      this.textTime
     );
   }
 
@@ -612,18 +600,20 @@ export class Audio {
       this.masterGain.gain.value = this.enabled ? this.volume : 0;
     }
     window.beatTrack?.setVolume(CONFIG.MIX.BEAT_TRACK_VOLUME);
+    if (this.voicebox) {
+      this.voicebox.output.gain.value = this.enabled
+        ? CONFIG.MIX.SPEECH_VOLUME
+        : 0;
+    }
   }
 
-  // Dip the game while the speech engine speaks. Reads the engine's own state
-  // every frame, so a lost or late end event can't leave it ducked; capped in
-  // case the engine stalls and reports speaking forever.
+  // Dip the game while someone speaks. Read every frame from the lines' own
+  // start times and lengths, for at most DUCK_MAX_HOLD_MS from a line's start.
   syncDuck() {
     if (!this.duckGain) return;
     const { MIX } = CONFIG;
     const speaking =
-      this.enabled &&
-      !!this.speechSynthesis?.speaking &&
-      Date.now() - this.lastSpeechTime < MIX.DUCK_MAX_HOLD_MS;
+      this.enabled && !!this.voicebox?.isSpeaking(MIX.DUCK_MAX_HOLD_MS / 1000);
     if (speaking === this._ducked) return;
     this._ducked = speaking;
     const t = this.audioContext.currentTime;
@@ -644,15 +634,14 @@ export class Audio {
 
   // Pausing the game stops its sound. Suspending the context also stops
   // BeatClock (it reads the context's clock), so on unpause the beat, the
-  // kick and every enemy pick up exactly where they stopped; a line being
-  // spoken is cut. With CONFIG.SOUND_WHILE_PAUSED (?tune ticks it) the sound
+  // kick, every enemy and a line being spoken pick up exactly where they
+  // stopped. With CONFIG.SOUND_WHILE_PAUSED (?tune ticks it) the sound
   // plays on. Called when P is pressed and every frame; it acts once per change.
   syncPause(paused) {
     const hold = !!this.audioContext && paused && !CONFIG.SOUND_WHILE_PAUSED;
     if (hold === this._pausedByGame) return;
     this._pausedByGame = hold;
     if (hold) {
-      this.speechSynthesis?.cancel();
       this.audioContext
         .suspend()
         .catch((error) => console.warn('Audio suspend failed:', error));
@@ -674,13 +663,17 @@ export class Audio {
   toggle() {
     this.enabled = !this.enabled;
     this.speechEnabled = this.enabled;
-    // Silence what is already playing (beat track, queued speech), not just new sounds.
+    // Silence what is already playing (beat track, speech), not just new
+    // sounds, and drop the lines still waiting to start, with their bubbles.
     // Gains, not audioContext.suspend(): BeatClock runs on the context's clock.
-    if (this.masterGain) {
-      this.masterGain.gain.value = this.enabled ? this.volume : 0;
-    }
+    this.applyMix();
     window.beatTrack?.setMuted(!this.enabled);
-    if (!this.enabled) this.speechSynthesis?.cancel();
+    if (!this.enabled) {
+      this.voicebox?.cancelPending();
+      this.activeTexts = this.activeTexts.filter(
+        (bubble) => !(bubble.showsAt > this.textTime)
+      );
+    }
     return this.enabled;
   }
 

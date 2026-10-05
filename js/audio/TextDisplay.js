@@ -2,9 +2,12 @@ import { random } from '../mathUtils.js';
 
 const FADE_OUT_DURATION_FRAMES = 30;
 
-export function updateActiveTexts(activeTexts) {
+// A bubble waits for its line to start: showsAt in audio seconds, against
+// `now` on the same clock
+export function updateActiveTexts(activeTexts, now = Infinity) {
   for (let i = activeTexts.length - 1; i >= 0; i--) {
     const textObj = activeTexts[i];
+    if (textObj.showsAt > now) continue;
     textObj.timer--;
 
     if (textObj.entity) {
@@ -27,12 +30,14 @@ export function drawActiveTexts(
   showBeatIndicator,
   beatX,
   beatY,
-  drawGlowFn
+  drawGlowFn,
+  now = Infinity
 ) {
   p.push();
   p.textAlign(p.CENTER, p.CENTER);
 
   for (const textObj of activeTexts) {
+    if (textObj.showsAt > now) continue;
     const alpha =
       textObj.timer <= FADE_OUT_DURATION_FRAMES
         ? (textObj.timer / FADE_OUT_DURATION_FRAMES) * 255
