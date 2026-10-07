@@ -339,3 +339,12 @@ describe('his muzzle', () => {
     }
   });
 });
+
+describe('his pose at a given beat', () => {
+  it('takes his kick from that beat: his death scene runs on after update() stops', () => {
+    const { player, run } = hero();
+    run(10.6); // update() keeps 10.6
+    expect(player.pose().kickAge).toBeCloseTo(0.3, 9); // the kick on 10
+    expect(player.poseAt(12.05).kickAge).toBeCloseTo(0.025, 9); // the kick on 12
+  });
+});

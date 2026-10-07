@@ -111,6 +111,57 @@ describe("a grunt's death", () => {
     ]);
   });
 
+  it('pops on an eighth of the clock’s own grid, wherever it starts', () => {
+    const w = deathWorld(1.13);
+    w.clock.startTime = 100; // its eighths at 0.1 + k × 0.25
+    w.kill(aGrunt());
+    expect(w.audio.playGruntPop.mock.calls[0][2]).toBeCloseTo(1.35, 9);
+  });
+
+  it('the death it makes is drawn on the beat clock: whole, then popped, then gone', () => {
+    const w = deathWorld(1.13);
+    w.kill(aGrunt());
+    const [death] = w.deaths(); // pops at 1.25, heard at 1.28
+    const images = () => {
+      const { p, shapes } = transformP5();
+      death.draw(p);
+      return shapes.filter((s) => s.kind === 'image').length;
+    };
+    w.clock.t = 1.27;
+    expect(images()).toBe(4);
+    w.clock.t = 1.29;
+    expect(images()).toBe(2);
+    w.clock.t = 1.28 + 1.5;
+    images();
+    expect(death.active).toBe(false);
+  });
+
+  it('its remains stay as long as the linger slider says', () => {
+    for (const [linger, showing] of [
+      [1, false],
+      [2, true],
+    ]) {
+      CONFIG.DEATHS.LINGER = linger;
+      const clock = { t: 0 };
+      const d = new GruntDeath({
+        x: 0,
+        y: 0,
+        size: SIZE,
+        pose: poseOf(),
+        dir: 0,
+        blast: false,
+        seed: 0.7,
+        diedAt: 0,
+        popsAt: 0.1,
+        now: () => clock.t,
+      });
+      clock.t = 0.1 + 1.6;
+      d.draw(transformP5().p);
+      expect(d.active).toBe(showing);
+    }
+    CONFIG.DEATHS.LINGER = 1;
+  });
+
   it('a pop still pending on a later eighth keeps its chord', () => {
     const w = deathWorld(1.13); // pops on 1.25
     w.kill(aGrunt());

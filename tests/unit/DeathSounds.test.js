@@ -155,6 +155,9 @@ describe("the game's Audio plays them", () => {
     const near = gameAudio();
     near.audio.playGruntPop(0, 0, 3, ['b3', 5], 1);
     expect(near.busGain()).toBeCloseTo(2, 9);
+    // Into the effects' bus, so it mutes and ducks with them
+    const nearPan = near.made.find((n) => n.kind === 'pan');
+    expect(nearPan.connect).toHaveBeenCalledWith(near.audio.masterGain);
     const source = near.made.find((n) => n.kind === 'source');
     const [, offset] = source.start.mock.calls[0];
     expect(offset + GRUNT_POP_SEC).toBeLessThanOrEqual(
@@ -169,9 +172,11 @@ describe("the game's Audio plays them", () => {
 
   it('his last breath at its volume knob', () => {
     CONFIG.DEATHS.BREATH_VOLUME = 0.5;
-    const { audio, busGain } = gameAudio();
+    const { audio, made, busGain } = gameAudio();
     audio.playLastBreath(4);
     expect(busGain()).toBeCloseTo(0.5, 9);
+    const pan = made.find((n) => n.kind === 'pan');
+    expect(pan.connect).toHaveBeenCalledWith(audio.masterGain);
   });
 
   it('neither while a pause holds the sound', () => {

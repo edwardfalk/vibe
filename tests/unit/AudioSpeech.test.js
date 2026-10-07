@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Audio } from '../../js/Audio.js';
+import { PLAYER_LINES } from '../../js/audio/DialogueLines.js';
 import { CONFIG } from '../../js/config.js';
 import {
   drawActiveTexts,
@@ -286,5 +287,16 @@ describe('a bubble that waits for its line', () => {
     updateActiveTexts(texts); // no audio clock: every bubble shows
     drawActiveTexts(p, texts, false, 0, 0, null);
     expect(drawn()).toEqual(['A', 'A', 'B']);
+  });
+});
+
+describe('Audio.speakPlayerLine', () => {
+  it('forces a line past the speech cooldown when asked: his death line right after another', async () => {
+    const { audio, voicebox } = speakingAudio();
+    audio.speakPlayerLine(audio.player, 'damage');
+    audio.speakPlayerLine(audio.player, 'death', true);
+    expect(voicebox.say).toHaveBeenCalledTimes(2);
+    expect(PLAYER_LINES.death).toContain(voicebox.say.mock.calls[1][1]);
+    await settle();
   });
 });
