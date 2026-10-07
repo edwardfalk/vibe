@@ -359,21 +359,25 @@ export class Player {
     return this.size * CONFIG.PLAYER_LOOK.ART_SCALE;
   }
 
-  /** Seconds since a beat-position stamp; Infinity if never (or no clock) */
-  sinceStamp(at) {
-    if (this.poseBeats === null || at === null) return Infinity;
+  /** Seconds since a beat-position stamp, at beat position `beats`; Infinity if never (or no clock) */
+  sinceStamp(at, beats = this.poseBeats) {
+    if (beats === null || at === null) return Infinity;
     const beatMs =
       this.getContextValue('beatClock')?.beatInterval ?? DEFAULT_BEAT_MS;
-    return ((this.poseBeats - at) * beatMs) / 1000;
+    return ((beats - at) * beatMs) / 1000;
   }
 
   /** His pose, at the beat update() last kept (frozen while paused), and what happened when */
   pose() {
-    const beats = this.poseBeats;
+    return this.poseAt(this.poseBeats);
+  }
+
+  /** His pose at beat position `beats`: his death scene's runs on after update() stops */
+  poseAt(beats) {
     const beatSec =
       (this.getContextValue('beatClock')?.beatInterval ?? DEFAULT_BEAT_MS) /
       1000;
-    const since = (at) => this.sinceStamp(at);
+    const since = (at) => this.sinceStamp(at, beats);
     const eighths = beats === null ? 0 : beats * 2;
     const e8 = Math.floor(eighths);
     const kick =
@@ -575,13 +579,15 @@ export class Player {
       audio.playSound('lowHealthWarning', this.x, this.y);
     }
 
-    if (gameState && gameState.gameState === 'playing' && audio) {
+    // A fatal hit's line is his death scene's (GameState.startDeathScene)
+    if (
+      gameState &&
+      gameState.gameState === 'playing' &&
+      audio &&
+      this.health > 0
+    ) {
       const context =
-        this.health <= 0
-          ? 'death'
-          : this.health < this.maxHealth * 0.3
-            ? 'lowHealth'
-            : 'damage';
+        this.health < this.maxHealth * 0.3 ? 'lowHealth' : 'damage';
       audio.speakPlayerLine(this, context);
     }
 

@@ -328,7 +328,8 @@ export class UIRenderer {
     if (this.gameState) {
       switch (this.gameState.gameState) {
         case 'gameOver':
-          this.drawGameOver(p);
+          // After his death scene
+          if (this.gameState.overlayUp()) this.drawGameOver(p);
           break;
         case 'paused':
           this.drawPauseScreen(p);

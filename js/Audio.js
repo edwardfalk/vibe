@@ -37,7 +37,11 @@ import { CONFIG } from './config.js';
 import { createReverbImpulse } from './audio/speech/effects.js';
 import { Voicebox, startSpeechWorker } from './audio/speech/Voicebox.js';
 import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
-import { COUNTDOWN, getPlayerDialogueLine } from './audio/DialogueLines.js';
+import {
+  COUNTDOWN,
+  PLAYER_LINES,
+  getPlayerDialogueLine,
+} from './audio/DialogueLines.js';
 import { playCrash, crashNoise } from './audio/CrashSynth.js';
 import { gruntPop, lastBreath, GRUNT_POP_SEC } from './audio/DeathSounds.js';
 import { Hum } from './audio/Hum.js';
@@ -141,9 +145,11 @@ export class Audio {
       // Speech goes straight to the limiter: the duck never touches it
       this.voicebox = this.createVoicebox(this.audioContext);
       this.voicebox.connect(this.masterLimiter);
-      // The bomb's count must land on its beats, so it can't wait for a
-      // render when it is due
-      for (const word of COUNTDOWN) this.voicebox.prepare('player', word);
+      // The bomb's count and his death lines can't wait for a render: the
+      // count must land on its beats, his death scene is too short
+      for (const line of [...COUNTDOWN, ...PLAYER_LINES.death]) {
+        this.voicebox.prepare('player', line);
+      }
       this.applyMix();
       // The universe's hum, behind masterGain so it mutes and ducks with the
       // effects; built before the beat track starts, which keeps its time.
@@ -586,12 +592,14 @@ export class Audio {
     return true;
   }
 
-  // A random player line for `lineContext` ('start', 'levelUp', 'damage', 'lowHealth', 'death')
-  speakPlayerLine(entity, lineContext) {
+  // A random player line for `lineContext` ('start', 'levelUp', 'damage',
+  // 'lowHealth', 'death'); force: past the speech cooldown
+  speakPlayerLine(entity, lineContext, force = false) {
     this.speak(
       entity,
       getPlayerDialogueLine(lineContext, random, floor),
-      'player'
+      'player',
+      force
     );
   }
 

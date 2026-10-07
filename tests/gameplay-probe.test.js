@@ -526,6 +526,8 @@ test.describe('Gameplay Probes', () => {
     };
     check(await record());
     await page.evaluate(() => window.gameState.setGameState('gameOver'));
+    // R restarts once GAME OVER is up, after his death scene
+    await page.waitForFunction(() => window.gameState.overlayUp());
     await page.keyboard.press('r');
     await page.waitForFunction(() => window.gameState.gameState === 'playing');
     check(await record());
@@ -623,9 +625,76 @@ test.describe('Gameplay Probes', () => {
   test('R after game over restarts straight into play', async ({ page }) => {
     await bootGame(page);
     await page.evaluate(() => window.gameState.setGameState('gameOver'));
+    await page.waitForFunction(() => window.gameState.overlayUp());
     await page.keyboard.press('r');
     await page.waitForFunction(() => window.gameState.gameState === 'playing');
     await expect(page.locator('#title')).toHaveCount(0);
+  });
+
+  test('His death scene: the world holds while he lies back, R waits for GAME OVER, and nothing breaks', async ({
+    page,
+  }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await bootGame(page);
+    // His death lines were rendered when audio started, ready for his scene
+    const ready = await page.evaluate(async () => {
+      const { spoken } = await import('/js/audio/speech/Voicebox.js');
+      const { PLAYER_LINES } = await import('/js/audio/DialogueLines.js');
+      const vb = window.audio.voicebox;
+      const engine = vb.config.SPEAKERS.player.engine;
+      return PLAYER_LINES.death.map((line) =>
+        vb.lines.has(`player:${spoken(engine, line, vb.config.RESPELL)}`)
+      );
+    });
+    expect(ready).toEqual([true, true, true, true]);
+    const at = await page.evaluate(() => {
+      // His living drawing isn't drawn in his scene: his death is
+      window.__heroDrawn = 0;
+      const draw = window.player.draw.bind(window.player);
+      window.player.draw = (p) => {
+        window.__heroDrawn++;
+        draw(p);
+      };
+      // A grunt killed in the frame he dies leaves the array only at the
+      // next update, which his scene never runs: it mustn't be drawn whole
+      const dead = window.spawnSystem.createEnemy(
+        window.player.x + 80,
+        window.player.y,
+        'grunt',
+        window.player.p
+      );
+      window.enemies.push(dead);
+      dead.markedForRemoval = true;
+      window.__deadDrawn = 0;
+      dead.draw = () => window.__deadDrawn++;
+      window.player.shieldUp = false;
+      window.player.hurt(9999, 'test');
+      const enemy = window.enemies[0];
+      window.__held = { x: enemy.x, y: enemy.y, frame: window.frameCount };
+      return window.beatClock.nowSec();
+    });
+    await page.waitForTimeout(600);
+    await page.keyboard.press('r');
+    const during = await page.evaluate(() => ({
+      state: window.gameState.gameState,
+      up: window.gameState.overlayUp(),
+      enemy: { x: window.enemies[0].x, y: window.enemies[0].y },
+      frames: window.frameCount - window.__held.frame,
+      held: window.__held,
+    }));
+    expect(during.state).toBe('gameOver');
+    expect(during.up).toBe(false);
+    expect(during.frames).toBeGreaterThan(10); // still drawing
+    expect(during.enemy).toEqual({ x: during.held.x, y: during.held.y });
+    expect(await page.evaluate(() => window.__deadDrawn)).toBe(0);
+    expect(await page.evaluate(() => window.__heroDrawn)).toBe(0);
+    await page.waitForFunction(() => window.gameState.overlayUp());
+    const up = await page.evaluate(() => window.beatClock.nowSec());
+    expect(up - at).toBeGreaterThanOrEqual(2); // four beats at 120 BPM
+    await page.keyboard.press('r');
+    await page.waitForFunction(() => window.gameState.gameState === 'playing');
+    expect(errors).toEqual([]);
   });
 
   test('Player input affects position', async ({ page }) => {
