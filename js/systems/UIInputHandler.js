@@ -17,7 +17,7 @@ export function handleKeyPress(
     }
     // His scene runs on the audio clock: if the browser suspended it, a key
     // press is the gesture that lets it run again
-    if (gameState.gameState === 'gameOver') audio?.ensureAudioContext?.();
+    if (gameState.gameState === 'gameOver') audio?.wake?.();
   }
 
   if (key === 'p' || key === 'P') {

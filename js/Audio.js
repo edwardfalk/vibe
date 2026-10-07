@@ -187,6 +187,19 @@ export class Audio {
     }
   }
 
+  /**
+   * Bring back a context the browser suspended or interrupted, muted or not
+   * (mute is gains): his death scene's clock runs on it. Call from a key
+   * press, the gesture a browser asks for. Not while a pause holds it.
+   */
+  wake() {
+    const ctx = this.audioContext;
+    if (!ctx || ctx.state === 'running' || this._pausedByGame) return;
+    ctx.resume().catch((error) => {
+      console.warn('Audio context resume failed:', error);
+    });
+  }
+
   // CENTRALIZED audio context resume - used by both sound and speech
   ensureAudioContext() {
     // A sound during a pause must not bring the audio back

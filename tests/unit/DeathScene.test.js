@@ -16,6 +16,7 @@ const { GameState } = await import('../../js/core/GameState.js');
 const { CONFIG } = await import('../../js/config.js');
 const { handleKeyPress } = await import('../../js/systems/UIInputHandler.js');
 const { UIRenderer } = await import('../../js/systems/UIRenderer.js');
+const { Audio } = await import('../../js/Audio.js');
 const { drawDudeDeath, drawDudeScene, easeCameraIn } =
   await import('../../js/entities/DudeDeath.js');
 const { transformP5 } = await import('./helpers/transformP5.js');
@@ -174,10 +175,36 @@ describe("the Dude's death scene", () => {
   it('R during his scene doesn’t restart, but asks a suspended audio clock to run again', () => {
     const w = world();
     w.player.hurt(500, 'test');
-    w.audio.ensureAudioContext = vi.fn(() => true);
+    w.audio.wake = vi.fn();
     expect(w.pressR()).toBe(false);
-    expect(w.audio.ensureAudioContext).toHaveBeenCalledTimes(1);
+    expect(w.audio.wake).toHaveBeenCalledTimes(1);
     expect(w.gameState.gameState).toBe('gameOver');
+  });
+
+  it('waking the audio resumes a suspended or interrupted context, muted or not; not a running one, nor one a pause holds', () => {
+    const audioWith = (state, o = {}) => {
+      const audio = Object.assign(Object.create(Audio.prototype), {
+        audioContext: { state, resume: vi.fn(async () => {}) },
+        enabled: false, // muted: mute is gains, the clock runs on
+        _pausedByGame: false,
+        ...o,
+      });
+      audio.wake();
+      return audio.audioContext.resume;
+    };
+    expect(audioWith('suspended')).toHaveBeenCalledTimes(1);
+    expect(audioWith('interrupted')).toHaveBeenCalledTimes(1);
+    expect(audioWith('running')).not.toHaveBeenCalled();
+    expect(
+      audioWith('suspended', { _pausedByGame: true })
+    ).not.toHaveBeenCalled();
+  });
+
+  it('GAME OVER waits for an eighth of the clock’s own grid, wherever it starts', () => {
+    const w = world(10.13);
+    w.clock.startTime = 100; // its eighths at 0.1 + k × 0.25
+    w.player.hurt(500, 'test');
+    expect(w.gameState.scene.overlayAt).toBeCloseTo(12.35, 9);
   });
 
   it('a hit that is not fatal still speaks as before, and a fatal one says nothing of its own', () => {
