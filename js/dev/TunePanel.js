@@ -4,7 +4,9 @@
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the
  * stabber's knockback and the hero's
- * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK).
+ * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK),
+ * and the deaths (DEATHS): the grunt's pop and the Dude's last breath, how
+ * long remains stay, and his death scene's length and camera zoom.
  * Voices are tuned in the voice playground (voices.html). Sound and spawn changes apply from the next
  * beat or wave; level thresholds from the next level-up (the first one after
  * a restart); armour on tanks spawned after the change (and the tank's health); the rest at once.
@@ -28,6 +30,7 @@ const GRUNT = 'GRUNT_LOOK';
 const TANK = 'TANK';
 const TANK_LOOK = 'TANK_LOOK';
 const BOMB = 'BOMB';
+const DEATHS = 'DEATHS';
 
 const KNOBS = [
   [KICK, 'ENABLED'],
@@ -141,6 +144,11 @@ const KNOBS = [
   ['PLAYER', 'KNOCKBACK_AREA', [0, 30, 0.5]],
   ['PLAYER', 'KNOCKBACK_BOMB', [0, 30, 0.5]],
   ['PLAYER', 'KNOCKBACK_TANK_SHOVE', [0, 30, 0.5]],
+  [DEATHS, 'GRUNT_VOLUME', [0, 3, 0.05]],
+  [DEATHS, 'BREATH_VOLUME', [0, 3, 0.05]],
+  [DEATHS, 'LINGER', [0.5, 2, 0.1]],
+  [DEATHS, 'SCENE_BEATS', [4, 8, 1]],
+  [DEATHS, 'SCENE_ZOOM', [1, 2, 0.05]],
 ];
 
 // The top-level CONFIG groups the knobs live in, in order: the JSON to copy

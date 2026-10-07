@@ -344,6 +344,16 @@ test.describe('Gameplay Probes', () => {
     await expect(page.locator('#tunePanel pre')).toContainText(
       '"PATTERN": "oneThree"'
     );
+    // The deaths' sliders are there to copy back too
+    for (const key of [
+      'GRUNT_VOLUME',
+      'BREATH_VOLUME',
+      'LINGER',
+      'SCENE_BEATS',
+      'SCENE_ZOOM',
+    ]) {
+      await expect(page.locator('#tunePanel')).toContainText(`DEATHS.${key}:`);
+    }
   });
 
   test('?tune panel clicks during play do not shoot or keep focus', async ({
