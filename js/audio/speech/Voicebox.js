@@ -10,7 +10,7 @@ import { renderChain as renderEffectChain } from './effects.js';
 import { fitCeiling, isUsable, loudness, matchLoudness } from './levels.js';
 
 // A start this close to now might already be past when Web Audio sees it
-const LEAD_SEC = 0.02;
+export const LEAD_SEC = 0.02;
 // Level out may miss its target by this much before a line counts as lost:
 // past it, the chain took more than level out's +20 dB can give back
 const LEVEL_MISS_DB = 1;

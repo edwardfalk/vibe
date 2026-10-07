@@ -83,11 +83,20 @@ export function heardKick(beats, beatSec, latencySec, running) {
 export function heardKickOf(beatTrack, beats, beatSec, held = false) {
   const ctx = beatTrack?.ctx;
   const running = !!beatTrack?.isPlaying && (ctx?.state === 'running' || held);
-  const latencySec =
+  return heardKick(beats, beatSec, heardLatencySec(ctx), running);
+}
+
+/**
+ * How long after the audio clock the player hears a sound, s: the
+ * AudioContext's latency plus CONFIG.SKY.OFFSET_MS (0 plus that without one)
+ * @param {?AudioContext} ctx
+ */
+export function heardLatencySec(ctx) {
+  return (
     (ctx?.baseLatency ?? 0) +
     (ctx?.outputLatency ?? 0) +
-    CONFIG.SKY.OFFSET_MS / 1000;
-  return heardKick(beats, beatSec, latencySec, running);
+    CONFIG.SKY.OFFSET_MS / 1000
+  );
 }
 // Look-ahead buffer for sample-accurate scheduling.
 // 75ms balances glitch-free playback with minimal audio-visual desync.

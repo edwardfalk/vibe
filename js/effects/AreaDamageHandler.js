@@ -39,8 +39,8 @@ export function handleAreaDamageEvents(damageEvents, context) {
         audio,
         // No scoring once the player has died, this frame or earlier
         gameState,
-        onDeath: (e) =>
-          enemyDeathHandler?.handleEnemyDeath(e, e.type, e.x, e.y),
+        onDeath: (e, blow) =>
+          enemyDeathHandler?.handleEnemyDeath(e, e.type, e.x, e.y, blow),
         scorePoints: 10,
       },
       'area'
@@ -50,7 +50,9 @@ export function handleAreaDamageEvents(damageEvents, context) {
 
 /**
  * Damage every live enemy the circle touches; an enemy counts when its hit
- * radius reaches inside, not only its centre. ctx goes to handleDamageResult.
+ * radius reaches inside, not only its centre. ctx goes to handleDamageResult,
+ * with the blow: a blast, away from the circle's centre. The angle never goes
+ * to takeDamage: a null one is how a tank knows a blast from a shot.
  */
 export function damageEnemiesInRadius(event, enemies, ctx, source) {
   for (let i = enemies.length - 1; i >= 0; i--) {
@@ -60,10 +62,9 @@ export function damageEnemiesInRadius(event, enemies, ctx, source) {
     const dx = event.x - enemy.x;
     const dy = event.y - enemy.y;
     if (dx * dx + dy * dy > reach * reach) continue;
-    handleDamageResult(
-      enemy.takeDamage(event.damage, null, source),
-      enemy,
-      ctx
-    );
+    handleDamageResult(enemy.takeDamage(event.damage, null, source), enemy, {
+      ...ctx,
+      blow: { dir: Math.atan2(-dy, -dx), blast: true },
+    });
   }
 }

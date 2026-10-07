@@ -35,7 +35,8 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
     explosionManager,
     audio,
     gameState,
-    onDeath: (e) => handleEnemyDeath(e, enemyType, bullet.x, bullet.y),
+    onDeath: (e) =>
+      handleEnemyDeath(e, enemyType, bullet.x, bullet.y, { dir: bullet.angle }),
     killFeedback: {
       applyKillFeedback,
       beatClock,
@@ -85,11 +86,14 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
     enemy.maxHealth > 0 ? (enemy.health / enemy.maxHealth) * 30 : 0;
 
   // Kill the enemy and create explosion
-  handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
+  handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y, { dir: bullet.angle });
 
   if (audio) {
     audio.playSound('enemyFrying', enemy.x, enemy.y);
-    audio.playSound('explosion', enemy.x, enemy.y);
+    // A grunt's death is its pop, on the beat
+    if (enemy.type !== 'grunt') {
+      audio.playSound('explosion', enemy.x, enemy.y);
+    }
   }
 
   enemy.markedForRemoval = true;
@@ -150,8 +154,10 @@ export function handleRegularEnemyBulletHit(
       explosionManager,
       audio,
       gameState,
-      onDeath: (e) => handleEnemyDeath(e, e.type, e.x, e.y),
-      deathSound: 'explosion',
+      onDeath: (e) =>
+        handleEnemyDeath(e, e.type, e.x, e.y, { dir: bullet.angle }),
+      // A grunt's death is its pop, on the beat
+      deathSound: enemy.type === 'grunt' ? null : 'explosion',
       scorePoints: 8,
       hitX: bullet.x,
       hitY: bullet.y,

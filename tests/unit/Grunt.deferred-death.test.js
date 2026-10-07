@@ -68,8 +68,8 @@ describe('Grunt deferred stabber death', () => {
   });
 
   it('sets markedForRemoval after deferred timer expires in updateSpecificBehavior', () => {
-    // Trigger deferred death
-    grunt.takeDamage(5, null, 'stabber_melee');
+    // Trigger deferred death, by a stab from the left (its death flies right)
+    grunt.takeDamage(5, 0.4, 'stabber_melee');
     expect(grunt.pendingStabDeath).toBe(true);
     expect(grunt.pendingStabDeathTimer).toBe(12);
 
@@ -93,11 +93,13 @@ describe('Grunt deferred stabber death', () => {
 
     // collisionSystem.handleEnemyDeath should have been called exactly once
     expect(mockCollisionSystem.handleEnemyDeath).toHaveBeenCalledTimes(1);
+    // ...with the stab's angle, kept through the delay, for its death
     expect(mockCollisionSystem.handleEnemyDeath).toHaveBeenCalledWith(
       grunt,
       'grunt',
       grunt.x,
-      grunt.y
+      grunt.y,
+      { dir: 0.4 }
     );
   });
 

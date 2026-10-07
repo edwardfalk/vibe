@@ -103,7 +103,9 @@ class Grunt extends BaseEnemy {
             audio: this.getContextValue('audio'),
             gameState: this.getContextValue('gameState'),
             onDeath: (e) =>
-              collisionSystem?.handleEnemyDeath(e, e.type, e.x, e.y),
+              collisionSystem?.handleEnemyDeath(e, e.type, e.x, e.y, {
+                dir: bulletAngle,
+              }),
             scorePoints: STABBER_KILL_POINTS,
           }
         );

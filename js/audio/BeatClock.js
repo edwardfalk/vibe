@@ -49,6 +49,11 @@ export class BeatClock {
       : Date.now();
   }
 
+  /** Its clock now, in seconds: the AudioContext's once audio has started */
+  nowSec() {
+    return this._now() / 1000;
+  }
+
   // Get current beat number (0-based, resets every measure)
   getCurrentBeat() {
     this.update();

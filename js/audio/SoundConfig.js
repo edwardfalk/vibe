@@ -165,12 +165,6 @@ export const SOUND_CONFIG = {
     volume: 0.2,
     duration: 0.08,
   },
-  gruntPop: {
-    frequency: 1200,
-    waveform: 'triangle',
-    volume: 0.4,
-    duration: 0.08,
-  },
   enemyOhNo: {
     frequency: 800,
     waveform: 'sawtooth',

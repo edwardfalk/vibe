@@ -430,7 +430,12 @@ export class BaseEnemy {
     return this.health <= 0 ? DAMAGE_RESULT.DIED : DAMAGE_RESULT.DAMAGED;
   }
 
-  onNearbyDeath(deadEnemy) {
+  /**
+   * A neighbour of its kind died: it answers on the next eighth note, or,
+   * when the death pops (a grunt's, at popsAt on the audio clock), an
+   * eighth after the pop
+   */
+  onNearbyDeath(deadEnemy, popsAt = null) {
     if (!deadEnemy || deadEnemy.type !== this.type) return;
     if (this.markedForRemoval || this.health <= 0) return;
 
@@ -447,9 +452,13 @@ export class BaseEnemy {
 
     if (beatClock) {
       // Quantize response to next eighth-note
-      const delay = beatClock.getTimeToNextEighthNote
-        ? beatClock.getTimeToNextEighthNote()
-        : beatClock.getTimeToNextBeat() / 2;
+      const eighthMs = beatClock.beatInterval / 2;
+      const delay =
+        popsAt !== null
+          ? (popsAt - beatClock.nowSec()) * 1000 + eighthMs
+          : beatClock.getTimeToNextEighthNote
+            ? beatClock.getTimeToNextEighthNote()
+            : beatClock.getTimeToNextBeat() / 2;
       setTimeout(
         () => {
           audio.playSound(responseKey, this.x, this.y);
