@@ -39,6 +39,7 @@ import { Voicebox, startSpeechWorker } from './audio/speech/Voicebox.js';
 import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
 import { COUNTDOWN, getPlayerDialogueLine } from './audio/DialogueLines.js';
 import { playCrash, crashNoise } from './audio/CrashSynth.js';
+import { gruntPop, lastBreath, GRUNT_POP_SEC } from './audio/DeathSounds.js';
 import { Hum } from './audio/Hum.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
@@ -261,13 +262,21 @@ export class Audio {
     this.playTone(soundConfig, x, y, soundName);
   }
 
-  /** The rusher's crash (CrashSynth.js), quieter and panned with distance from the hero */
-  playCrashAt(config, x, y) {
+  // How loud (0..1) and where (pan -1..1) a sound from (x, y) is, heard from
+  // the hero; one with no position is beside him
+  placement(x, y) {
     const hx = Number.isFinite(this.player?.x) ? this.player.x : 0;
     const hy = Number.isFinite(this.player?.y) ? this.player.y : 0;
     const placed = x !== null && y !== null;
-    const near = placed ? calculateVolumeForPosition(x, y, hx, hy) : 1;
-    const pan = placed ? calculatePanForPosition(x, hx) : 0;
+    return {
+      near: placed ? calculateVolumeForPosition(x, y, hx, hy) : 1,
+      pan: placed ? calculatePanForPosition(x, hx) : 0,
+    };
+  }
+
+  /** The rusher's crash (CrashSynth.js), quieter and panned with distance from the hero */
+  playCrashAt(config, x, y) {
+    const { near, pan } = this.placement(x, y);
     playCrash(
       this.audioContext,
       this.masterGain,
@@ -275,6 +284,37 @@ export class Audio {
       config.volume * CONFIG.RUSHER.CRASH_VOLUME * near,
       pan
     );
+  }
+
+  /**
+   * A grunt's pop and whine (DeathSounds.js) from (x, y), at audio time `at`,
+   * landing on `note`; seed (0..1) picks its stretch of the noise
+   */
+  playGruntPop(x, y, at, note, seed) {
+    if (!this.ensureAudioContext()) return;
+    const { near, pan } = this.placement(x, y);
+    const noise = crashNoise(
+      this.audioContext,
+      SOUND_CONFIG.rusherCrash.duration
+    );
+    gruntPop(this.audioContext, this.masterGain, {
+      at,
+      note,
+      noise,
+      offset: seed * (noise.duration - GRUNT_POP_SEC),
+      volume: CONFIG.DEATHS.GRUNT_VOLUME * near,
+      pan,
+    });
+  }
+
+  /** The Dude's last breath (DeathSounds.js) at audio time `at` */
+  playLastBreath(at) {
+    if (!this.ensureAudioContext()) return;
+    lastBreath(this.audioContext, this.masterGain, {
+      at,
+      noise: crashNoise(this.audioContext, SOUND_CONFIG.rusherCrash.duration),
+      volume: CONFIG.DEATHS.BREATH_VOLUME,
+    });
   }
 
   playTone(config, x, y, soundName = '') {
