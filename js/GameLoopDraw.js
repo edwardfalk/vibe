@@ -38,6 +38,14 @@ export function runDraw(p, updateGame, drawGame) {
         break;
 
       case 'gameOver':
+        // His death scene, until GAME OVER: the world drawn as it was, only
+        // the bubbles and the screen effects fading
+        window.gameState.updateScene();
+        if (!window.gameState.overlayUp()) {
+          window.audio?.updateTexts();
+          window.visualEffectsManager?.update();
+          drawGame(p);
+        }
         break;
     }
   }

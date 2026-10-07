@@ -31,7 +31,7 @@ export class CollisionSystem {
     this.enemyDeathHandler = enemyDeathHandler;
     this.resolverDeps = {
       getContextValue: this.getContextValue,
-      handleEnemyDeath: (e, type, x, y) => this.handleEnemyDeath(e, type, x, y),
+      handleEnemyDeath: (...args) => this.handleEnemyDeath(...args),
       getContext: () => this.context,
     };
   }
@@ -148,8 +148,8 @@ export class CollisionSystem {
   }
 
   // Handle enemy death effects
-  handleEnemyDeath(enemy, enemyType, x, y) {
-    this.enemyDeathHandler.handleEnemyDeath(enemy, enemyType, x, y);
+  handleEnemyDeath(enemy, enemyType, x, y, blow) {
+    this.enemyDeathHandler.handleEnemyDeath(enemy, enemyType, x, y, blow);
   }
 
   // Handle rusher explosion collision

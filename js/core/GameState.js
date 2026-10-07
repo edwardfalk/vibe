@@ -3,6 +3,10 @@
  */
 
 import { CONFIG } from '../config.js';
+import { isWaiting } from '../audio/TextDisplay.js';
+
+// An end this close to an eighth (in eighths) counts as on it
+const ON_EIGHTH = 1e-6;
 
 export class GameState {
   constructor() {
@@ -16,6 +20,8 @@ export class GameState {
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
     this.gameState = 'playing'; // 'title', 'playing', 'gameOver', 'paused'
+    // His death scene, the first bar of 'gameOver' (startDeathScene)
+    this.scene = null;
     this.practiceRun = false; // set by ?tune jumps: no high score this run
 
     // Combat statistics
@@ -122,21 +128,72 @@ export class GameState {
 
   // Game state transitions
   setGameState(newState) {
+    // The run ends once: a second fatal hit in the frame that ended it
+    // changes nothing
+    if (newState === 'gameOver' && this.gameState === 'gameOver') return;
     this.gameState = newState;
 
     if (newState === 'gameOver') {
       this.resetKillStreak();
       this._flushHighScore();
-
-      if (window.audio) {
-        window.audio.playSound('gameOver');
-      }
-
-      // Game over speech
-      if (window.audio && window.player) {
-        window.audio.speakPlayerLine(window.player, 'death');
-      }
+      this.startDeathScene();
     }
+  }
+
+  /**
+   * The run is over, and for CONFIG.DEATHS.SCENE_BEATS the world holds still
+   * while he lies back (DudeDeath.js): his last breath now, his death line on
+   * the beat grid, past the speech cooldown and ahead of any line still
+   * waiting. Then GAME OVER, on an eighth note (updateScene). Times are on
+   * the audio clock, which a restart doesn't move.
+   */
+  startDeathScene() {
+    const clock = window.beatClock;
+    const audio = window.audio;
+    if (!clock) {
+      // Unit tests with no beat clock: GAME OVER at once
+      audio?.playSound('gameOver');
+      return;
+    }
+    // Audio first: starting it moves the clock onto audio time, and the
+    // scene's times must be on the clock it is read by
+    audio?.ensureAudioContext?.();
+    const at = clock.nowSec();
+    const eighth = clock.beatInterval / 2000;
+    const origin = clock.startTime / 1000;
+    const end = at + CONFIG.DEATHS.SCENE_BEATS * eighth * 2;
+    this.scene = {
+      at,
+      // The first eighth at least the scene's length after the hit
+      overlayAt:
+        origin + Math.ceil((end - origin) / eighth - ON_EIGHTH) * eighth,
+      shown: false,
+    };
+    if (!audio) return;
+    audio.playLastBreath(at);
+    audio.voicebox?.cancelPending();
+    const player = window.player;
+    if (!player) return;
+    // His death line takes over: his earlier bubbles go, and so do the
+    // bubbles of the lines just cancelled, still waiting to show
+    audio.activeTexts = audio.activeTexts.filter(
+      (t) => t.entity !== player && !isWaiting(t, audio.textTime)
+    );
+    audio.speakPlayerLine(player, 'death', true);
+  }
+
+  /** Every frame: GAME OVER comes up, with its sound, as his scene ends */
+  updateScene() {
+    const scene = this.scene;
+    if (this.gameState !== 'gameOver' || !scene || scene.shown) return;
+    if (window.beatClock.nowSec() < scene.overlayAt) return;
+    scene.shown = true;
+    window.audio?.playSound('gameOver');
+  }
+
+  /** Is GAME OVER up? The run is over and his death scene has played */
+  overlayUp() {
+    return this.gameState === 'gameOver' && (!this.scene || this.scene.shown);
   }
 
   // Hold on the title screen until the first user gesture; restart() starts the run.
@@ -164,6 +221,7 @@ export class GameState {
     // Reset game state
     this.practiceRun = false;
     this.gameState = 'playing';
+    this.scene = null;
 
     // Reset player
     if (window.player) {

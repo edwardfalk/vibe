@@ -10,10 +10,14 @@ export function handleKeyPress(
   if (!gameState) return false;
 
   if (key === 'r' || key === 'R') {
-    if (gameState.gameState === 'gameOver') {
+    // Once GAME OVER is up: a quick R can't cut his death scene short
+    if (gameState.overlayUp()) {
       gameState.restart();
       return true;
     }
+    // His scene runs on the audio clock: if the browser suspended it, a key
+    // press is the gesture that lets it run again
+    if (gameState.gameState === 'gameOver') audio?.wake?.();
   }
 
   if (key === 'p' || key === 'P') {

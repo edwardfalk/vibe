@@ -14,7 +14,8 @@ export const STABBER_KILL_POINTS = 15;
  * @param {object} enemy - The damaged enemy
  * @param {object} ctx - Context bag:
  *   Required: { explosionManager, audio }
- *   Death handling: { onDeath(enemy) }
+ *   Death handling: { onDeath(enemy, blow), blow } (blow: { dir, blast },
+ *       the way the killing blow sent it, for its death)
  *   Scoring: { gameState, scorePoints } (default 10)
  *   Kill feedback (optional): { killFeedback: { beatClock, floatingText,
  *       visualEffectsManager, cameraSystem, getHitStopFrames, setHitStopFrames } }
@@ -34,7 +35,7 @@ export function handleDamageResult(result, enemy, ctx) {
 
   if (result === DAMAGE_RESULT.DIED) {
     // Death effects (explosion + type-specific sound)
-    if (ctx.onDeath) ctx.onDeath(enemy);
+    if (ctx.onDeath) ctx.onDeath(enemy, ctx.blow);
 
     // Extra audio on death (e.g. friendly-fire explosion sound)
     if (ctx.deathSound && ctx.audio) {

@@ -177,16 +177,18 @@ export function updateBombs(context) {
       }
 
       if (damageResult === DAMAGE_RESULT.DIED) {
-        if (enemyDeathHandler) {
-          enemyDeathHandler.handleEnemyDeath(
-            enemy,
-            enemy.type,
-            enemy.x,
-            enemy.y
-          );
-        } else if (collisionSystem) {
-          collisionSystem.handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y);
-        }
+        // A blast, away from the bomb
+        const blow = {
+          dir: Math.atan2(enemy.y - bomb.y, enemy.x - bomb.x),
+          blast: true,
+        };
+        (enemyDeathHandler ?? collisionSystem)?.handleEnemyDeath(
+          enemy,
+          enemy.type,
+          enemy.x,
+          enemy.y,
+          blow
+        );
         enemy.markedForRemoval = true;
         if (gameState) {
           gameState.addKill();

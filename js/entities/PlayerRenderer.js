@@ -56,7 +56,7 @@ export function heroMuzzle(x, y, aimAngle, facing, s) {
 }
 
 // His palette, [r, g, b], frozen. Ink is the cast's
-const HERO_COLORS = Object.freeze(
+export const HERO_COLORS = Object.freeze(
   Object.fromEntries(
     Object.entries({
       ink: GRUNT_COLORS.ink,
@@ -101,13 +101,14 @@ const HERO_COLORS = Object.freeze(
   )
 );
 const C = HERO_COLORS;
-const BAND = [C.bandRust, C.bandTeal, C.bandOchre];
+export const BAND = Object.freeze([C.bandRust, C.bandTeal, C.bandOchre]);
 
 // ---- his numbers ------------------------------------------------------------
-const O = 2.2; // the ink round each part, px: the cast's
+// Exported ones are shared with his death (DudeDeath.js): one drawing of him
+export const O = 2.2; // the ink round each part, px: the cast's
 const HEAD_K = 0.9; // his head, scaled about his neck
 const NECK = [1.2, -10]; // that pivot
-const HIP_Y = 4; // he leans from here
+export const HIP_Y = 4; // he leans from here
 // The stride: a foot lands on every eighth note, two eighths to a loop
 const WALK_FRAMES = 12; // 24 a second at 120 BPM
 const DASH_FRAMES = 3;
@@ -121,7 +122,14 @@ const BACK_COS = 0.25; // dashing this much against his facing, he leaps back
 // His body's pictures, round his centre: the dash's leap reaches 19.4 px
 // ahead and the sandals 22.7 px down, plus ink (PlayerLook.test.js checks)
 const FLIPBOOK_BOX = [-21, -24, 21, 24];
-const DRINK_ARM_RAD = 0.9; // the glass by his belly, below his gun arm
+export const OFF_SHOULDER = Object.freeze([-3.6, -6.6]); // his drink arm's shoulder
+// His hips, [x, y]: far and near; his legs swing from them
+export const HIPS = Object.freeze([
+  Object.freeze([-2.4, 3.6]),
+  Object.freeze([1.6, 3.6]),
+]);
+export const HAIR_PIVOT = Object.freeze([-2.2, -19.5]); // his hair swings from here, in his head's frame
+export const DRINK_ARM_RAD = 0.9; // the glass by his belly, below his gun arm
 const DRINK_ARM_DASH_RAD = 0.5;
 // His shots
 const RECOIL_TAU_SEC = 0.06;
@@ -135,7 +143,7 @@ const NOD_BUSY_PX = 0.4;
 const HURT_TAU_SEC = 0.15;
 const FLASH_FROM = 0.3; // he brightens while the hurt envelope is above this
 const FLASH_K = 0.75;
-const FLINCH_PX = 3;
+export const FLINCH_PX = 3;
 const DUCK_PX = 0.8;
 const GRIT_SEC = 0.35;
 const ASKEW_HOLD_SEC = 0.18; // his shades, knocked crooked, are held
@@ -153,7 +161,7 @@ const GLARE_STEPS = 5;
 const GLARE_PX = 1.7; // his shades' top edge dips this far, at full anger
 const TREMBLE_PX = 4.4;
 const TREMBLE_HZ = 30;
-const STEAM_SEC = 1; // a puff rises this long
+export const STEAM_SEC = 1; // a puff rises this long
 // Under him
 const CRACK_SEC = 0.32;
 const CRACK_ANGER_K = 0.7; // cracks this much bigger at full anger
@@ -175,7 +183,9 @@ const easeOutBack = (k) =>
   1 + 2.4 * Math.pow(k - 1, 3) + 1.4 * Math.pow(k - 1, 2);
 
 // ---- drawing on the raw context ---------------------------------------------
-let ctx = null;
+// Exported, with the helpers below, for his death's parts: begin() or a
+// sprite's build sets it
+export let ctx = null;
 let SP = null; // his sprites, built at K
 let K = 1; // drawn px per prototype px
 let ghost = false; // drawing an afterimage: one flat colour, no details
@@ -184,17 +194,17 @@ const style = (c, a = 1) => {
   const k = ghost ? C.ghost : c;
   return `rgba(${k[0] | 0},${k[1] | 0},${k[2] | 0},${a})`;
 };
-const fillC = (c, a) => (ctx.fillStyle = style(c, a));
-const strokeC = (c, w, a) => {
+export const fillC = (c, a) => (ctx.fillStyle = style(c, a));
+export const strokeC = (c, w, a) => {
   ctx.strokeStyle = style(c, a);
   ctx.lineWidth = w;
 };
-const ell = (x, y, w, h) => {
+export const ell = (x, y, w, h) => {
   ctx.beginPath();
   ctx.ellipse(x, y, w / 2, h / 2, 0, 0, TWO_PI);
 };
 // A rounded rectangle path (no ctx.roundRect: it froze old Firefox and Safari)
-function rr(x, y, w, h, r1, r2 = r1, r3 = r1, r4 = r1) {
+export function rr(x, y, w, h, r1, r2 = r1, r3 = r1, r4 = r1) {
   const m = Math.min(w, h) / 2;
   [r1, r2, r3, r4] = [r1, r2, r3, r4].map((r) => Math.max(0, Math.min(m, r)));
   ctx.beginPath();
@@ -223,7 +233,7 @@ const ov = (x, y, w, h, c) => {
   ell(x, y, w, h);
   ctx.fill();
 };
-const bx = (x, y, w, h, r, c, r2 = r, r3 = r, r4 = r) => {
+export const bx = (x, y, w, h, r, c, r2 = r, r3 = r, r4 = r) => {
   const o = O / 2;
   fillC(C.ink);
   rr(x - o, y - o, w + O, h + O, r + o, r2 + o, r3 + o, r4 + o);
@@ -260,9 +270,8 @@ const sleeve = (skin) => {
   }
   bx(6.0, -2.1, 4.0, 4.2, 1.6, skin);
 };
-// The gun arm from the shoulder: the sleeve, the blaster, its grip, his fist
-const gunArm = () => {
-  sleeve(C.skin);
+// The blaster and its grip, in the gun arm's frame
+export const blaster = () => {
   bx(8.0, -3.4, 11.4, 4.8, 1.2, C.gun, 1.2, 1.2, 0.6);
   if (!ghost) {
     fillC(C.gunHi);
@@ -271,11 +280,16 @@ const gunArm = () => {
   }
   bx(18.9, -2.4, 4.6, 2.8, 0.6, C.gunDark);
   bx(9.6, 0.4, 3.2, 4.2, 1.0, C.gunDark);
+};
+// The gun arm from the shoulder: the sleeve, the blaster, his fist on its grip
+const gunArm = () => {
+  sleeve(C.skin);
+  blaster();
   ov(9.6, 0.4, 5.2, 5.2, C.skin);
 };
 // A bare, hairy shin and a jelly sandal, down from the hip; the robe hides
 // the rest
-const leg = (skin) => {
+export const leg = (skin) => {
   bx(-2.4, -1.2, 4.8, 14.6, 2.2, skin);
   bx(-2.6, 12.6, 8.0, 2.6, 1.3, skin, 1.0, 1.3, 1.0);
   if (!ghost) {
@@ -364,7 +378,7 @@ const head = (face) => () => {
   ov(7.6, -14.2, 2.4, 2.8, face);
 };
 // The long hair down his back to his shoulders
-const hairBack = () => {
+export const hairBack = () => {
   poly(
     [
       [-1.0, -23.6],
@@ -394,7 +408,7 @@ const hairBack = () => {
   ctx.stroke();
 };
 // A rocks glass of White Russian, ice and all
-const glass = () => {
+export const glass = () => {
   bx(-2.3, -3.0, 4.6, 5.2, 0.8, C.glass);
   if (ghost) return;
   fillC(C.drink);
@@ -446,7 +460,7 @@ const shades = (g) => () => {
 
 // The robe: its hem swings out with his stride (far: his far leg's swing)
 // and flares back on the dash's leap (flare)
-function robe(far, flare) {
+export function robe(far, flare) {
   const stride = Math.sin(Math.abs(far));
   const hemY = 10.8 - 2.4 * flare;
   const front = 8.0 + 4.5 * stride - 2 * flare;
@@ -531,7 +545,7 @@ function robe(far, flare) {
   ctx.stroke();
 }
 // The sash: tied at the front, its ends swinging back by `swing` rad
-function sash(swing) {
+export function sash(swing) {
   bx(-8.0, 1.8, 16.4, 2.4, 1.0, C.sash);
   for (const [len, off] of [
     [7.2, 0.15],
@@ -545,9 +559,11 @@ function sash(swing) {
   }
   ov(6.6, 3.0, 2.8, 2.4, C.sash);
 }
-// The head's frame: scaled about his neck, nodding (px) and ducking a hit
-function headFrame(nod, hurt) {
+// The head's frame: scaled about his neck, nodding (px), ducking a hit and
+// tilted by `tilt` rad
+export function headFrame(nod, hurt, tilt = 0) {
   ctx.translate(NECK[0], NECK[1] + nod - DUCK_PX * hurt);
+  if (tilt) ctx.rotate(tilt);
   ctx.scale(HEAD_K, HEAD_K);
   ctx.translate(-NECK[0], -NECK[1]);
 }
@@ -564,16 +580,16 @@ function body(b) {
   const armA = DRINK_ARM_RAD + (b.dash ? DRINK_ARM_DASH_RAD : 0);
   // Off arm, behind him, holding the drink by his belly
   ctx.save();
-  ctx.translate(-3.6, -6.6);
+  ctx.translate(OFF_SHOULDER[0], OFF_SHOULDER[1]);
   ctx.rotate(armA);
   sleeve(C.skinFar);
   ctx.restore();
-  for (const [hx, a, skin] of [
-    [-2.4, b.far, C.skinFar],
-    [1.6, b.near, C.skin],
+  for (const [[hx, hy], a, skin] of [
+    [HIPS[0], b.far, C.skinFar],
+    [HIPS[1], b.near, C.skin],
   ]) {
     ctx.save();
-    ctx.translate(hx, 3.6);
+    ctx.translate(hx, hy);
     ctx.rotate(-a);
     leg(skin);
     ctx.restore();
@@ -582,7 +598,7 @@ function body(b) {
   sash(0.35 * b.w + 0.12 * Math.sin(TWO_PI * b.ph) * b.w + 0.9 * leap);
   // His hand and the glass, in front of his belly, upright in this picture
   ctx.save();
-  ctx.translate(-3.6, -6.6);
+  ctx.translate(OFF_SHOULDER[0], OFF_SHOULDER[1]);
   ctx.rotate(armA);
   ov(9.6, 0, 5.0, 5.0, C.skinFar);
   ctx.translate(9.6, -0.6);
@@ -593,14 +609,15 @@ function body(b) {
   // The hair down his back, swaying with his stride, in his head's frame
   ctx.save();
   headFrame(0, 0);
-  ctx.translate(-2.2, -19.5);
+  ctx.translate(HAIR_PIVOT[0], HAIR_PIVOT[1]);
   ctx.rotate(0.16 * b.w + 0.05 * Math.sin(TWO_PI * b.ph) * b.w + 0.35 * leap);
-  ctx.translate(2.2, 19.5);
+  ctx.translate(-HAIR_PIVOT[0], -HAIR_PIVOT[1]);
   hairBack();
   ctx.restore();
-  // His neck
-  bx(-1.6, -11.6, 5.6, 4.0, 1.6, C.skin);
+  neck();
 }
+// His neck, under his head
+export const neck = () => bx(-1.6, -11.6, 5.6, 4.0, 1.6, C.skin);
 
 // The flipbook's poses: the walk's loop over two eighths, standing, the leap
 function walkPose(i) {
@@ -656,36 +673,45 @@ for (let i = 0; i < DASH_FRAMES; i++) {
   PARTS_PX[`dash${i}`] = [FLIPBOOK_BOX, () => body(dashPose(i))];
   PARTS_PX[`dashGhost${i}`] = [FLIPBOOK_BOX, asGhost(() => body(dashPose(i)))];
 }
-// spriteParts scales each box by the drawn scale; the parts draw in the
-// prototype's px under it, on the sprite's own context
-export const HERO_PARTS = Object.fromEntries(
-  Object.entries(PARTS_PX).map(([name, [box, draw]]) => [
-    name,
-    [
-      box,
-      (g, s) => {
-        g.scale(s);
-        const prev = ctx;
-        ctx = g.drawingContext;
-        try {
-          draw();
-        } finally {
-          ctx = prev;
-        }
-      },
-    ],
-  ])
-);
+/**
+ * A parts table for spriteParts from parts drawn in the prototype's px:
+ * spriteParts scales each box by the drawn scale, and the parts draw under
+ * it on the sprite's own context
+ */
+export const heroSprites = (partsPx) =>
+  Object.fromEntries(
+    Object.entries(partsPx).map(([name, [box, draw]]) => [
+      name,
+      [
+        box,
+        (g, s) => {
+          g.scale(s);
+          const prev = ctx;
+          ctx = g.drawingContext;
+          try {
+            draw();
+          } finally {
+            ctx = prev;
+          }
+        },
+      ],
+    ])
+  );
+export const HERO_PARTS = heroSprites(PARTS_PX);
 
-function begin(p, k) {
+/** Draw at k drawn px per prototype px, on p's canvas, with his sprites */
+export function begin(p, k) {
   K = k;
   SP = spriteParts(p, HERO_PARTS, k);
   ctx = p.drawingContext;
 }
-// A sprite, in the prototype's px; a flash stamps it again, added on, so
-// he brightens
-function stamp(name, flash = 0) {
-  const sp = SP[name];
+// A sprite (by name), in the prototype's px; a flash stamps it again, added
+// on, so he brightens
+export function stamp(name, flash = 0) {
+  stampSprite(SP[name], flash);
+}
+/** A sprite from spriteParts at the current K, as stamp() */
+export function stampSprite(sp, flash = 0) {
   ctx.drawImage(sp.g.elt, sp.x / K, sp.y / K, sp.w / K, sp.h / K);
   if (flash <= 0) return;
   ctx.save();
@@ -717,6 +743,29 @@ export function heroFrame(look) {
   return `walk${((i % WALK_FRAMES) + WALK_FRAMES) % WALK_FRAMES}`;
 }
 
+/** A hit's marks, age seconds after it: hurt 0..1, askew shades, grit teeth */
+export function heroHurt(age) {
+  return {
+    hurt: env(age, HURT_TAU_SEC),
+    askew:
+      age < ASKEW_HOLD_SEC + ASKEW_SLIDE_SEC
+        ? 1 - smooth(clamp01((age - ASKEW_HOLD_SEC) / ASKEW_SLIDE_SEC))
+        : 0,
+    grit: age < GRIT_SEC,
+  };
+}
+/** How much a hit brightens him, from its hurt (heroHurt) */
+export const heroFlash = (hurt) => (hurt > FLASH_FROM ? FLASH_K * hurt : 0);
+/** Past boiling he trembles, px, at time t (s) */
+export const heroTremble = (anger, t) =>
+  anger > TREMBLE_ANGER
+    ? (hash01(Math.floor(t * TREMBLE_HZ)) - 0.5) *
+      TREMBLE_PX *
+      (anger - TREMBLE_ANGER)
+    : 0;
+/** How red his face is, 0..1 */
+export const heroRed = (anger) => RED_K * Math.pow(anger, 1.15);
+
 /** What his drawing needs this frame, from his pose (Player#pose) */
 export function heroPose(look) {
   const dash = look.dash;
@@ -745,25 +794,16 @@ export function heroPose(look) {
     vein: anger > VEIN_ANGER,
     steam: anger > STEAM_ANGER,
     glow: anger > GLOW_ANGER,
-    hurt: env(look.hurtAge, HURT_TAU_SEC),
-    askew:
-      look.hurtAge < ASKEW_HOLD_SEC + ASKEW_SLIDE_SEC
-        ? 1 - smooth(clamp01((look.hurtAge - ASKEW_HOLD_SEC) / ASKEW_SLIDE_SEC))
-        : 0,
-    tremble:
-      anger > TREMBLE_ANGER
-        ? (hash01(Math.floor(look.t * TREMBLE_HZ)) - 0.5) *
-          TREMBLE_PX *
-          (anger - TREMBLE_ANGER)
-        : 0,
+    ...heroHurt(look.hurtAge),
+    tremble: heroTremble(anger, look.t),
     yell: look.firing,
-    grit: look.hurtAge < GRIT_SEC,
   };
 }
 
 // ---- live parts ----------------------------------------------------------------
-// Mouth: the smirk; a yell with teeth while he fires; a grimace when hit
-function mouth(P) {
+// Mouth: the smirk; a yell with teeth while he fires; a grimace when hit.
+// P: { grit, yell, anger, recoil }
+export function mouth(P) {
   if (P.grit) {
     fillC(C.mouth);
     rr(3.4, -12.5, 4.2, 2.2, 0.8);
@@ -786,8 +826,9 @@ function mouth(P) {
     ctx.stroke();
   }
 }
-// Shades, knocked crooked by a hit, glinting on a heard kick on beat 1
-function shadesOn(look, P) {
+// Shades, knocked crooked by a hit, glinting on a heard kick on beat 1.
+// look: { downbeatKick }; P: { askew, anger }
+export function shadesOn(look, P) {
   ctx.save();
   ctx.translate(3.6, -16.4);
   ctx.rotate(ASKEW_RAD * P.askew);
@@ -818,9 +859,10 @@ function shadesOn(look, P) {
   }
   ctx.restore();
 }
-// The anger vein at (x, y), throbbing on the kick
-function vein(look, P, x, y) {
-  const v = (2.2 + 1.8 * P.anger) * (1 + 0.3 * look.kick);
+// The anger vein at (x, y), throbbing on the kick; `fade` (0..1) shrinks and
+// fades it away
+export function vein(kick, anger, x, y, fade = 1) {
+  const v = (2.2 + 1.8 * anger) * (1 + 0.3 * kick) * fade;
   const gp = 0.36 * v;
   ctx.save();
   ctx.translate(x, y);
@@ -837,25 +879,42 @@ function vein(look, P, x, y) {
     ctx.lineTo(qx * gp, qy * gp);
     ctx.lineTo(qx * v, qy * gp);
   }
-  strokeC(C.ink, 2.8);
+  strokeC(C.ink, 2.8, fade);
   ctx.stroke();
-  strokeC(C.vein, 1.4);
+  strokeC(C.vein, 1.4, fade);
   ctx.stroke();
   ctx.restore();
 }
 // Steam from under his hair at (x, y): a puff on each of the last two kicks
 function steam(look, P, x, y) {
   const a = (P.anger - STEAM_ANGER) / (1 - STEAM_ANGER);
-  for (const age of [look.kickAge, look.prevKickAge]) {
-    const u = age / STEAM_SEC;
+  steamPuffs(x, y, [
+    { u: look.kickAge / STEAM_SEC, a },
+    { u: look.prevKickAge / STEAM_SEC, a },
+  ]);
+}
+/**
+ * Puffs of steam rising from (x, y): { u 0..1 through its rise, a its alpha,
+ * big its size, times }. up: the screen's up, rad, in the frame drawn in.
+ */
+export function steamPuffs(x, y, puffs, up = 0) {
+  if (up) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(up);
+    x = 0;
+    y = 0;
+  }
+  for (const { u, a, big = 1 } of puffs) {
     if (!(u >= 0 && u < 1)) continue;
     fillC(C.steam, 0.82 * (1 - u) * a);
-    const r = 2.2 + 5 * u;
-    ell(x - 2.2 - 7 * u, y - 1.4 - 9 * u, r, r);
+    const r = (2.2 + 5 * u) * big;
+    ell(x - 2.2 - 7 * u, y - 1.4 - 9 * u * big, r, r);
     ctx.fill();
-    ell(x - 1.0 - 5 * u, y - 3.9 - 11 * u, r * 0.7, r * 0.7);
+    ell(x - 1.0 - 5 * u, y - 3.9 - 11 * u * big, r * 0.7, r * 0.7);
     ctx.fill();
   }
+  if (up) ctx.restore();
 }
 // The muzzle flash, in the gun arm's frame
 function muzzle(P) {
@@ -911,7 +970,7 @@ function figure(look, P, flash) {
   headFrame(P.nod, P.hurt);
   stamp(ghost ? 'headGhost' : 'head', flash);
   if (!ghost) {
-    const red = RED_K * Math.pow(P.anger, 1.15);
+    const red = heroRed(P.anger);
     if (red > 0.02) {
       ctx.save();
       ctx.globalAlpha *= red;
@@ -922,7 +981,7 @@ function figure(look, P, flash) {
   }
   shadesOn(look, P);
   if (!ghost) {
-    if (P.vein) vein(look, P, 1.6, -24.2);
+    if (P.vein) vein(look.kick, P.anger, 1.6, -24.2);
     if (P.steam) steam(look, P, -4.6, -17.2);
   }
   ctx.restore();
@@ -972,8 +1031,12 @@ function cracks(look, P, player) {
 // His shadow on nothing
 function shadow(look) {
   const k = look.dash > 0 ? Math.sin(PI * look.dash) : 0;
-  fillC(C.ink, 0.42 * (1 - 0.6 * k));
-  ell(0, FEET_Y * K, 21 * K * (1 - 0.3 * k), 4.6 * K);
+  shadowAt(0, FEET_Y * K, 21 * K * (1 - 0.3 * k), 0.42 * (1 - 0.6 * k));
+}
+/** His shadow at (x, y), w wide (drawn px), alpha a */
+export function shadowAt(x, y, w, a) {
+  fillC(C.ink, a);
+  ell(x, y, w, 4.6 * K);
   ctx.fill();
 }
 function bubbleR(look) {
@@ -1104,7 +1167,7 @@ export function drawPlayer(p, player) {
   if (P.dash > 0) ghosts(look, P);
   ctx.save();
   ctx.scale(K * look.side, K);
-  figure(look, P, P.hurt > FLASH_FROM ? FLASH_K * P.hurt : 0);
+  figure(look, P, heroFlash(P.hurt));
   ctx.restore();
   bubbleFront(look);
   healthBar(look);

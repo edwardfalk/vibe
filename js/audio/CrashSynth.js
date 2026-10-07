@@ -81,8 +81,16 @@ export function playCrash(ctx, out, cfg, volume, pan) {
     src.stop(t + sec + TAIL_SEC);
   }
   // The metal rings longest: once it stops, everything is silent
-  sources[0][0].onended = () => {
-    for (const n of [...sources.map(([src]) => src), ...nodes]) {
+  disconnectWhenEnded(sources[0][0], [
+    ...sources.map(([src]) => src),
+    ...nodes,
+  ]);
+}
+
+/** Disconnect every node once `last` has ended: a sound's nodes, freed */
+export function disconnectWhenEnded(last, nodes) {
+  last.onended = () => {
+    for (const n of nodes) {
       try {
         n.disconnect();
       } catch {

@@ -37,8 +37,13 @@ import { CONFIG } from './config.js';
 import { createReverbImpulse } from './audio/speech/effects.js';
 import { Voicebox, startSpeechWorker } from './audio/speech/Voicebox.js';
 import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
-import { COUNTDOWN, getPlayerDialogueLine } from './audio/DialogueLines.js';
+import {
+  COUNTDOWN,
+  PLAYER_LINES,
+  getPlayerDialogueLine,
+} from './audio/DialogueLines.js';
 import { playCrash, crashNoise } from './audio/CrashSynth.js';
+import { gruntPop, lastBreath, GRUNT_POP_SEC } from './audio/DeathSounds.js';
 import { Hum } from './audio/Hum.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
@@ -140,9 +145,11 @@ export class Audio {
       // Speech goes straight to the limiter: the duck never touches it
       this.voicebox = this.createVoicebox(this.audioContext);
       this.voicebox.connect(this.masterLimiter);
-      // The bomb's count must land on its beats, so it can't wait for a
-      // render when it is due
-      for (const word of COUNTDOWN) this.voicebox.prepare('player', word);
+      // The bomb's count and his death lines can't wait for a render: the
+      // count must land on its beats, his death scene is too short
+      for (const line of [...COUNTDOWN, ...PLAYER_LINES.death]) {
+        this.voicebox.prepare('player', line);
+      }
       this.applyMix();
       // The universe's hum, behind masterGain so it mutes and ducks with the
       // effects; built before the beat track starts, which keeps its time.
@@ -178,6 +185,19 @@ export class Audio {
     if (this.audioContext) {
       this.getContextValue('beatClock')?.useAudioClock(this.audioContext);
     }
+  }
+
+  /**
+   * Bring back a context the browser suspended or interrupted, muted or not
+   * (mute is gains): his death scene's clock runs on it. Call from a key
+   * press, the gesture a browser asks for. Not while a pause holds it.
+   */
+  wake() {
+    const ctx = this.audioContext;
+    if (!ctx || ctx.state === 'running' || this._pausedByGame) return;
+    ctx.resume().catch((error) => {
+      console.warn('Audio context resume failed:', error);
+    });
   }
 
   // CENTRALIZED audio context resume - used by both sound and speech
@@ -261,13 +281,21 @@ export class Audio {
     this.playTone(soundConfig, x, y, soundName);
   }
 
-  /** The rusher's crash (CrashSynth.js), quieter and panned with distance from the hero */
-  playCrashAt(config, x, y) {
+  // How loud (0..1) and where (pan -1..1) a sound from (x, y) is, heard from
+  // the hero; one with no position is beside him
+  placement(x, y) {
     const hx = Number.isFinite(this.player?.x) ? this.player.x : 0;
     const hy = Number.isFinite(this.player?.y) ? this.player.y : 0;
     const placed = x !== null && y !== null;
-    const near = placed ? calculateVolumeForPosition(x, y, hx, hy) : 1;
-    const pan = placed ? calculatePanForPosition(x, hx) : 0;
+    return {
+      near: placed ? calculateVolumeForPosition(x, y, hx, hy) : 1,
+      pan: placed ? calculatePanForPosition(x, hx) : 0,
+    };
+  }
+
+  /** The rusher's crash (CrashSynth.js), quieter and panned with distance from the hero */
+  playCrashAt(config, x, y) {
+    const { near, pan } = this.placement(x, y);
     playCrash(
       this.audioContext,
       this.masterGain,
@@ -275,6 +303,37 @@ export class Audio {
       config.volume * CONFIG.RUSHER.CRASH_VOLUME * near,
       pan
     );
+  }
+
+  /**
+   * A grunt's pop and whine (DeathSounds.js) from (x, y), at audio time `at`,
+   * landing on `note`; seed (0..1) picks its stretch of the noise
+   */
+  playGruntPop(x, y, at, note, seed) {
+    if (!this.ensureAudioContext()) return;
+    const { near, pan } = this.placement(x, y);
+    const noise = crashNoise(
+      this.audioContext,
+      SOUND_CONFIG.rusherCrash.duration
+    );
+    gruntPop(this.audioContext, this.masterGain, {
+      at,
+      note,
+      noise,
+      offset: seed * (noise.duration - GRUNT_POP_SEC),
+      volume: CONFIG.DEATHS.GRUNT_VOLUME * near,
+      pan,
+    });
+  }
+
+  /** The Dude's last breath (DeathSounds.js) at audio time `at` */
+  playLastBreath(at) {
+    if (!this.ensureAudioContext()) return;
+    lastBreath(this.audioContext, this.masterGain, {
+      at,
+      noise: crashNoise(this.audioContext, SOUND_CONFIG.rusherCrash.duration),
+      volume: CONFIG.DEATHS.BREATH_VOLUME,
+    });
   }
 
   playTone(config, x, y, soundName = '') {
@@ -546,12 +605,14 @@ export class Audio {
     return true;
   }
 
-  // A random player line for `lineContext` ('start', 'levelUp', 'damage', 'lowHealth', 'death')
-  speakPlayerLine(entity, lineContext) {
+  // A random player line for `lineContext` ('start', 'levelUp', 'damage',
+  // 'lowHealth', 'death'); force: past the speech cooldown
+  speakPlayerLine(entity, lineContext, force = false) {
     this.speak(
       entity,
       getPlayerDialogueLine(lineContext, random, floor),
-      'player'
+      'player',
+      force
     );
   }
 

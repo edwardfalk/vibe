@@ -84,7 +84,9 @@ function handleStabberAttackResult(result, context) {
         gameState,
         onDeath: (e) => {
           if (collisionSystem) {
-            collisionSystem.handleEnemyDeath(e, e.type, e.x, e.y);
+            collisionSystem.handleEnemyDeath(e, e.type, e.x, e.y, {
+              dir: hit.angle,
+            });
           }
         },
         scorePoints: STABBER_KILL_POINTS,
@@ -152,7 +154,8 @@ function damageEnemiesInBlasts(blasts, context) {
         audio: context.audio,
         // No scoring from blasts in the frame the game ended
         gameState,
-        onDeath: (e) => collisionSystem?.handleEnemyDeath(e, e.type, e.x, e.y),
+        onDeath: (e, blow) =>
+          collisionSystem?.handleEnemyDeath(e, e.type, e.x, e.y, blow),
         scorePoints: 10,
       },
       'rusher-blast'

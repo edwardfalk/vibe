@@ -312,6 +312,19 @@ const CONFIG = {
     FLIP_COS: 0.3,
   },
 
+  // Deaths (js/entities/GruntDeath.js, DudeDeath.js, js/audio/DeathSounds.js).
+  // Volumes: 1 is the prototype page's level. LINGER: how long a grunt's
+  // remains and the Dude's milk trail stay, times. The Dude's scene: SCENE_BEATS
+  // from his fatal hit to GAME OVER (his choreography takes 2 s; past it he
+  // floats on), the camera easing in to SCENE_ZOOM (1: no ease).
+  DEATHS: {
+    GRUNT_VOLUME: 1,
+    BREATH_VOLUME: 1,
+    LINGER: 1,
+    SCENE_BEATS: 4,
+    SCENE_ZOOM: 1.45,
+  },
+
   // Tank armour plates (hits to break). Applies to tanks spawned after a
   // change. Front 45 / sides 30: about 25 s of held fire to kill one
   // head-on, as before the double-shot fix. Tune live with ?tune.

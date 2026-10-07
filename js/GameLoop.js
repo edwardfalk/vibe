@@ -20,6 +20,7 @@ import { Bullet } from './entities/bullet.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
 import { runSetup } from './GameLoopSetup.js';
 import { runDraw } from './GameLoopDraw.js';
+import { drawDudeScene, easeCameraIn } from './entities/DudeDeath.js';
 
 // Core game objects
 let player;
@@ -236,17 +237,26 @@ function compactBullets(arr) {
 
 function drawGame(p) {
   const cameraSystem = window.cameraSystem;
+  // His death scene, in GAME OVER's first bar: him lying back in a world
+  // that holds still, the camera easing in on him
+  const gameState = window.gameState;
+  const scene = gameState?.gameState === 'gameOver' ? gameState.scene : null;
+  const clock = window.beatClock;
   if (cameraSystem) {
     cameraSystem.applyTransform();
+    if (scene && player) easeCameraIn(p, cameraSystem, player, scene, clock);
   }
 
+  // One killed this frame leaves the array at the next update, which
+  // hitstop and his death scene skip: its death draws it now
   for (const enemy of enemies) {
-    enemy.draw(p);
+    if (!enemy.markedForRemoval) enemy.draw(p);
   }
   drawBombs(p, activeBombs);
 
   if (player) {
-    player.draw(p);
+    if (scene) drawDudeScene(p, player, scene, clock);
+    else player.draw(p);
   }
 
   for (const bullet of playerBullets) {
