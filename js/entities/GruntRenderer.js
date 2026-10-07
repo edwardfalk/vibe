@@ -328,14 +328,16 @@ export function gruntPose({
 // part's drawing as the other enemy renderers do. Numbers that set behaviour,
 // or recur, are named here; _PX ones are pixels.
 
-const OUTLINE_PX = 1.1; // ink round each inked part
+// Exported ones are shared with its death (GruntDeath.js), which takes it
+// apart: one drawing of the grunt, alive or bursting.
+export const OUTLINE_PX = 1.1; // ink round each inked part
 const INK = OUTLINE_PX * 2; // added to an inked part's width and height
 const PIVOT_Y = 0.05; // it squashes and leans round its middle: nothing to stand on
 const SQUASH_WIDEN = 0.8; // a squash widens it by this share of what it loses in height
 const NECK_Y = 0.1; // its head tilts round this point when it sulks
 const PLATE_SLIP_PX = Object.freeze([-2, 1.6]); // the coral plate's offset, the same on screen for every grunt
 const PLATE_ALPHA = 230;
-const GLINT_ALPHA = 200;
+export const GLINT_ALPHA = 200;
 const GLOW_ALPHA = 120; // the bobbles' glow at its brightest
 const GLOW_SIZE = 0.42;
 const CHARGE_ALPHA = 200;
@@ -355,7 +357,7 @@ const FLAME = {
   CORE_ALPHA: 230,
   MIN: 0.03, // no flame below this thrust
 };
-const JELLY = {
+export const JELLY = {
   POINTS: 18,
   RX: 0.46,
   RY: 0.42,
@@ -367,6 +369,24 @@ const JELLY = {
     [5, -7, 0.035],
   ],
 };
+// Where its head's parts sit, in s from its centre, before it sulks
+export const HEAD_AT = Object.freeze({
+  HELMET: Object.freeze([0.02, -0.4]), // the helmet's origin, its brim's middle
+  HELMET_TURN: 0.18, // it sits askew
+  // [x, y, size]: the big eye looks where it aims, the small one wanders
+  EYES: Object.freeze([
+    Object.freeze([0.08, -0.1, 0.26]),
+    Object.freeze([0.3, -0.04, 0.15]),
+  ]),
+  STALK_BASES: Object.freeze([
+    Object.freeze([-0.06, -0.56]),
+    Object.freeze([0.12, -0.54]),
+  ]),
+  STALK_TIPS: Object.freeze([
+    Object.freeze([-0.2, -0.78]),
+    Object.freeze([0.22, -0.78]),
+  ]),
+});
 
 // A part with an ink edge: a slightly larger ink copy behind it. Strokes cost
 // twice as much on Edward's laptop (measured in the prototype).
@@ -412,8 +432,8 @@ const PARTS = {
   helmet: [
     [-0.34, -0.66, 0.36, -0.3],
     (g, s) => {
-      g.translate(s * 0.02, -s * 0.4);
-      g.rotate(0.18);
+      g.translate(s * HEAD_AT.HELMET[0], s * HEAD_AT.HELMET[1]);
+      g.rotate(HEAD_AT.HELMET_TURN);
       g.fill(...GRUNT_COLORS.ink);
       g.arc(0, 0, s * 0.44 + INK, s * 0.38 + INK, PI, TWO_PI, g.CHORD);
       g.fill(...GRUNT_COLORS.helmet);
@@ -451,11 +471,12 @@ const PARTS = {
   ],
 };
 
-const partsFor = (p, s) => spriteParts(p, PARTS, s);
+/** Its sprites at drawn size s: plate, nozzle, helmet, gun */
+export const gruntParts = (p, s) => spriteParts(p, PARTS, s);
 
 // The body's transforms from its centre: float and hop; lean and squash round
 // its middle; mirror to face its target; then wind-up and knock-back
-function placeBody(p, s, pose) {
+export function placeBody(p, s, pose) {
   const pivot = s * PIVOT_Y;
   p.translate(0, pose.hover - pose.hop + pivot);
   p.rotate(pose.lean);
@@ -466,17 +487,24 @@ function placeBody(p, s, pose) {
   p.translate(0, -pivot);
 }
 
-// Where placeBody puts its shoulder: the same transforms applied to that one
-// point, innermost first. The gun hangs there but takes none of the body's turns.
-function shoulderAt(s, pose) {
+// Where placeBody puts a point of its body, [x, y] in s: the same transforms
+// applied to that one point, innermost first. A point on its head (head:
+// true) also tilts with it when it sulks. The gun hangs from its shoulder but
+// takes none of the body's turns.
+export function bodyPoint(s, pose, x, y, head = false) {
   const pivot = s * PIVOT_Y;
   const turn = ([x, y], a) => [
     x * Math.cos(a) - y * Math.sin(a),
     x * Math.sin(a) + y * Math.cos(a),
   ];
-  let pt = [
-    s * SHOULDER[0] * pose.puff * pose.kick[0],
-    (s * SHOULDER[1] - pivot) * pose.puff * pose.kick[1],
+  let pt = [s * x, s * y];
+  if (head && pose.headTilt) {
+    pt = turn([pt[0], pt[1] + s * NECK_Y], pose.headTilt);
+    pt[1] -= s * NECK_Y;
+  }
+  pt = [
+    pt[0] * pose.puff * pose.kick[0],
+    (pt[1] - pivot) * pose.puff * pose.kick[1],
   ];
   pt = turn(pt, pose.back);
   pt = [
@@ -489,7 +517,7 @@ function shoulderAt(s, pose) {
 
 // The jelly's outline: a droplet, heavier at the bottom, always rippling and
 // jiggling after each puff; grow pushes it out (for its ink edge)
-function jelly(p, s, pose, grow) {
+export function jelly(p, s, pose, grow) {
   p.beginShape();
   for (let i = 0; i < JELLY.POINTS; i++) {
     const a = (i / JELLY.POINTS) * TWO_PI;
@@ -530,62 +558,67 @@ function frown(p, s, pose) {
   p.arc(s * 0.2, s * 0.17, s * 0.22 * tremble, s * 0.2, PI, TWO_PI, p.CHORD);
 }
 
-// Two eyes of different sizes: the big one looks where it aims, the small
-// one wanders off by itself
-function eyes(p, s, pose) {
-  const lazy = pose.t * LAZY_EYE_RATE + pose.seed * DRAW_SEED_PHASE.LAZY_EYE;
-  const list = [
-    [0.08, -0.1, 0.26, pose.aim],
-    [0.3, -0.04, 0.15, lazy],
-  ];
-  for (const [x, y, d, look] of list) {
-    if (pose.blink) {
-      inkOval(
-        p,
-        s * x,
-        s * (y + d * 0.15),
-        s * d,
-        s * d * 0.3,
-        GRUNT_COLORS.lid
-      );
-      continue;
-    }
-    inkOval(p, s * x, s * y, s * d, s * d, GRUNT_COLORS.eye);
-    p.fill(...GRUNT_COLORS.ink);
-    p.ellipse(
-      s * (x + Math.cos(look) * d * 0.2),
-      s * (y + Math.sin(look) * d * 0.2),
-      s * d * 0.45
-    );
+/**
+ * One eye at (x, y), d across, in units of s; its pupil looks `look` (rad)
+ * and is `pupil` times its usual size. shut (0..1) closes it: from 0.5 on it
+ * is the blink's lid-coloured slit.
+ */
+export function eye(p, s, x, y, d, look, pupil = 1, shut = 0) {
+  if (shut >= 0.5) {
+    inkOval(p, s * x, s * (y + d * 0.15), s * d, s * d * 0.3, GRUNT_COLORS.lid);
+    return;
   }
+  const open = 1 - 1.4 * shut; // the share of its height still showing
+  inkOval(p, s * x, s * y, s * d, s * d * open, GRUNT_COLORS.eye);
+  p.fill(...GRUNT_COLORS.ink);
+  p.ellipse(
+    s * (x + Math.cos(look) * d * 0.2),
+    s * (y + Math.sin(look) * d * 0.2 * open),
+    s * d * 0.45 * pupil,
+    s * d * 0.45 * pupil * open
+  );
 }
 
-// Antennae from the helmet: the tips lag the dance and splay when it sulks;
-// the bobbles carry the wind-up's colours
-function antennae(p, s, pose) {
+// Two eyes of different sizes: the big one looks where it aims, the small
+// one wanders off by itself. size and pupil: times their usual size
+function eyes(p, s, pose, size = 1, pupil = 1) {
+  const lazy = pose.t * LAZY_EYE_RATE + pose.seed * DRAW_SEED_PHASE.LAZY_EYE;
+  const looks = [pose.aim, lazy];
+  HEAD_AT.EYES.forEach(([x, y, d], i) => {
+    eye(p, s, x, y, d * size, looks[i], pupil, pose.blink ? 1 : 0);
+  });
+}
+
+// Where its antennae's tips are, px: they lag the dance and splay when it sulks
+function antennaTips(s, pose) {
   const splay = pose.droop * s * 0.26;
-  const tips = [
-    [s * -0.2 + pose.tip[0] - splay, s * -0.78 + pose.tip[1] + splay],
-    [s * 0.22 + pose.tip[0] + splay, s * -0.78 + pose.tip[1] + splay],
+  const [a, b] = HEAD_AT.STALK_TIPS;
+  return [
+    [s * a[0] + pose.tip[0] - splay, s * a[1] + pose.tip[1] + splay],
+    [s * b[0] + pose.tip[0] + splay, s * b[1] + pose.tip[1] + splay],
   ];
-  const bases = [
-    [s * -0.06, s * -0.56],
-    [s * 0.12, s * -0.54],
-  ];
+}
+
+/**
+ * Antennae from the helmet to tips ([[x, y], [x, y]], px); bobbles in `bob`,
+ * glowing by `glow` (a wind-up), `grow` times their size
+ */
+export function antennae(p, s, tips, bob, glow = 0, grow = 1) {
   p.stroke(...GRUNT_COLORS.stalk);
   p.strokeWeight(STALK_PX);
   for (let i = 0; i < 2; i++) {
-    p.line(bases[i][0], bases[i][1], tips[i][0], tips[i][1]);
+    const base = HEAD_AT.STALK_BASES[i];
+    p.line(s * base[0], s * base[1], tips[i][0], tips[i][1]);
   }
   p.noStroke();
-  if (pose.bobGlow > 0) {
+  if (glow > 0) {
     p.blendMode(p.ADD);
-    p.fill(...pose.bob, GLOW_ALPHA * pose.bobGlow);
+    p.fill(...bob, GLOW_ALPHA * glow);
     for (const [x, y] of tips) p.ellipse(x, y, s * GLOW_SIZE);
     p.blendMode(p.BLEND);
   }
-  const d = s * 0.15 * pose.bobScale;
-  for (const [x, y] of tips) inkOval(p, x, y, d, d, pose.bob);
+  const d = s * 0.15 * grow;
+  for (const [x, y] of tips) inkOval(p, x, y, d, d, bob);
 }
 
 // The gun, from the shoulder along its aim; it recoils, charges and flashes
@@ -613,9 +646,11 @@ function gunArm(p, s, pose, gun) {
 /**
  * Draw a grunt in a pose (gruntPose), at the current origin, its centre.
  * s is its drawn size, px. Changes p's transform: wrap it in push/pop.
+ * look, for its death's frozen moment: eye and pupil (times their size),
+ * pale (0..1 of the way to white: a hit's flash).
  */
-export function drawGrunt(p, s, pose) {
-  const parts = partsFor(p, s);
+export function drawGrunt(p, s, pose, look = null) {
+  const parts = gruntParts(p, s);
   p.noStroke();
   // The plate's slip is on screen, so it goes before the body's transforms
   p.push();
@@ -630,9 +665,18 @@ export function drawGrunt(p, s, pose) {
   stamp(p, parts.nozzle);
   p.fill(...GRUNT_COLORS.ink);
   jelly(p, s, pose, OUTLINE_PX);
-  p.fill(...GRUNT_COLORS.body);
+  const pale = look?.pale ?? 0;
+  p.fill(
+    ...(pale
+      ? mix(GRUNT_COLORS.body, GRUNT_COLORS.white, pale)
+      : GRUNT_COLORS.body)
+  );
   jelly(p, s, pose, 0);
-  p.fill(...GRUNT_COLORS.belly);
+  p.fill(
+    ...(pale
+      ? mix(GRUNT_COLORS.belly, GRUNT_COLORS.white, pale)
+      : GRUNT_COLORS.belly)
+  );
   p.ellipse(s * 0.04, s * 0.18, s * 0.5, s * 0.34);
   p.fill(...GRUNT_COLORS.white, GLINT_ALPHA);
   p.ellipse(-s * 0.22, -s * 0.2, s * 0.11, s * 0.07);
@@ -643,7 +687,7 @@ export function drawGrunt(p, s, pose) {
   p.translate(0, -s * NECK_Y);
   p.rotate(pose.headTilt);
   p.translate(0, s * NECK_Y);
-  eyes(p, s, pose);
+  eyes(p, s, pose, look?.eye, look?.pupil);
   if (pose.droop > 0) {
     p.fill(...GRUNT_COLORS.tear, 255 * pose.droop);
     p.ellipse(
@@ -653,14 +697,14 @@ export function drawGrunt(p, s, pose) {
       s * 0.1
     );
   }
-  antennae(p, s, pose);
+  antennae(p, s, antennaTips(s, pose), pose.bob, pose.bobGlow, pose.bobScale);
   stamp(p, parts.helmet);
   p.pop();
   p.pop();
 
   // The gun hangs from the shoulder but takes none of the body's turns, so it
   // points where its shot goes
-  const [sx, sy] = shoulderAt(s, pose);
+  const [sx, sy] = bodyPoint(s, pose, SHOULDER[0], SHOULDER[1]);
   p.translate(sx, sy);
   p.scale(pose.face, 1);
   gunArm(p, s, pose, parts.gun);
