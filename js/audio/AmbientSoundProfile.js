@@ -1,9 +1,7 @@
 export const AMBIENT_SOUNDS = new Set([
   'enemyIdle',
-  'stabberChant',
   'gruntAdvance',
   'gruntRetreat',
-  'stabberStalk',
   'gruntMalfunction',
   'gruntBeep',
   'gruntWhir',

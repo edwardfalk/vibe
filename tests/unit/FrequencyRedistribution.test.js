@@ -1,6 +1,8 @@
 // tests/unit/FrequencyRedistribution.test.js
 import { describe, it, expect } from 'vitest';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
+import { CONFIG } from '../../js/config.js';
+import { hz, ROOTS } from '../../js/audio/Harmony.js';
 
 describe('Frequency redistribution', () => {
   it('player sounds should be in low-mid band (150-250Hz)', () => {
@@ -23,9 +25,17 @@ describe('Frequency redistribution', () => {
     expect(SOUND_CONFIG.tankCharging.frequency).toBe(70);
   });
 
-  it('stabber sounds should remain in high band (1800-2500Hz)', () => {
-    expect(SOUND_CONFIG.stabberChant.frequency).toBe(2000);
-    expect(SOUND_CONFIG.stabberKnife.frequency).toBe(2400);
+  it("stabber sounds stay in the high band: his strings' b5 in octave 6 is 1.8 to 2.5 kHz at every root", () => {
+    const root = CONFIG.HUM.ROOT;
+    try {
+      for (const r of Object.keys(ROOTS)) {
+        CONFIG.HUM.ROOT = r;
+        expect(hz(['b5', 6])).toBeGreaterThan(1800);
+        expect(hz(['b5', 6])).toBeLessThan(2500);
+      }
+    } finally {
+      CONFIG.HUM.ROOT = root;
+    }
   });
 
   it('grunt sounds should stay in mid band (300-500Hz)', () => {
