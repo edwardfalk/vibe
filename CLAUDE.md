@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 pnpm run dev              # Dev server at localhost:5500
-pnpm run test             # All tests (E2E + unit)
+pnpm run test             # Unit tests, then E2E
 pnpm run test:unit        # Vitest unit tests
 pnpm run test:unit:watch  # Vitest watch mode
 pnpm run test:e2e         # Playwright E2E (headless, auto-starts server)
@@ -15,7 +15,7 @@ pnpm run test:beats       # Enemies act on their beats (not in CI)
 pnpm run playtest         # Aim-bot plays; reports FPS, ms per frame and pacing
 pnpm run compare          # Refactor check: replays main vs working tree, frame by frame
 pnpm run screenshot       # Screenshots (screenshot:level for LEVEL=n)
-npx eslint "**/*.js"    # Lint
+npx eslint "**/*.js"    # Lint (fails on Prettier diffs too)
 npx prettier --write "**/*.{js,md,json}"  # Format
 ```
 
@@ -33,12 +33,12 @@ See [ARCHITECTURE.md](ARCHITECTURE.md): the game loop, folders, shared state, be
 
 ## Level Progression
 
-Score-based, not wave-based. Continuous spawning in beat-aligned waves (on any beat, interval in whole beats). All numbers live in `CONFIG.PACING` and are tunable live with `?tune`: level thresholds, wave interval (in beats, shrinking per level), and max enemies (`BASE_MAX_ENEMIES + floor(level/2)`, capped). Enemy introduction (`ENEMY_INTRO_LEVEL` in `SpawnSystem.js`): Level 1 grunts only, Level 2 + stabbers, Level 3 + rushers, Level 5 + tanks. Halfway through each level, one enemy of the next new type appears once per run as a preview.
+Score-based, not wave-based: enemies spawn continuously in beat-aligned waves. All numbers live in `CONFIG.PACING`, tunable live with `?tune`. Types come in by level (`ENEMY_INTRO_LEVEL` in `SpawnSystem.js`): grunts at 1, stabbers at 2, rushers at 3, tanks at 5. Each is previewed once per run, halfway through a level, as the next type still to come (the tank at level 3). Details in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Code Style
 
 - ES modules (`"type": "module"` in package.json)
-- Prettier: single quotes, trailing commas
+- Prettier: single quotes, `trailingComma: es5` (none in function arguments)
 - ESLint: prefer-const, no-var
 - World bounds: 1150x850 (`js/config.js`)
 - 120 BPM default, 4/4 time, beat interval 500ms

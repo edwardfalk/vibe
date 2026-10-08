@@ -61,8 +61,8 @@ const CONFIG = {
     MIN_SPAWN_INTERVAL_BEATS: 4,
     BASE_MAX_ENEMIES: 2, // on screen at level 1; +1 every second level
     MAX_ENEMIES_CAP: 6,
-    // A taste of what's coming: once per run, a single enemy of the next
-    // new type appears when this far through the level before it
+    // A taste of what's coming: once per run per type, a single enemy of the
+    // next type still to come appears when this far through a level
     PREVIEW_NEW_ENEMY: true,
     PREVIEW_AT_PROGRESS: 0.5,
     // Enemies appear this far (px) past an edge of the view: past a tank's
