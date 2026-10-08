@@ -9,6 +9,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # A whole run takes about 2 minutes; a hang fails here instead of
+    # holding the runner for GitHub's 6-hour default
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
 
@@ -29,6 +32,9 @@ jobs:
         run: pnpm run test:unit
 
       - name: Install Playwright browsers
+        # It once hung for 50 minutes extracting (PR #87): rerun the job if
+        # this times out
+        timeout-minutes: 10
         run: pnpm exec playwright install --with-deps chromium
 
       - name: E2E tests
