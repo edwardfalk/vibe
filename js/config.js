@@ -376,14 +376,6 @@ const CONFIG = {
     ART_SCALE: 1, // 1 = the prototype at game size (0.6 to 1.6)
   },
 
-  // Stabber-specific tunable parameters
-  STABBER_SETTINGS: {
-    MIN_STAB_DISTANCE: 200, // Minimum distance to initiate stab
-    MAX_STAB_DISTANCE: 350, // Maximum distance to initiate stab
-    MAX_WARNING_TIME: 40, // Frames for warning phase
-    KNOCKBACK_FORCE: 8, // px/frame per hit; about 53 px in total
-    MAX_KNOCKBACK: 20, // px/frame cap under steady fire
-  },
   // The game's own speech engines (js/audio/speech/): each speaker's engine,
   // voice and effect chain. Tune them in voices.html, then paste here.
   SPEECH: {

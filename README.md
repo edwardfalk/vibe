@@ -2,7 +2,7 @@
 
 **A space shooter where every enemy is an instrument.**
 
-Enemies attack on the beat, and each type plays a different part of the drum kit. The longer you survive, the more of them join, and the fight turns into the soundtrack.
+Enemies attack on the beat, and each type plays a different part of the band. The longer you survive, the more of them join, and the fight turns into the soundtrack.
 
 **[Play it in the browser](https://edwardfalk.github.io/vibe/)**. It needs a computer with a keyboard and mouse. Turn the sound on.
 
@@ -23,17 +23,17 @@ Enemies attack on the beat, and each type plays a different part of the drum kit
 
 Every sound an enemy makes is timed to one shared clock, so together they play a beat:
 
-| Who     | When                                                                  | Plays like      |
-| ------- | --------------------------------------------------------------------- | --------------- |
-| Player  | held fire snaps to eighth notes; the first shot of a burst is instant | hi-hat          |
-| Grunt   | fires on beats 2 and 4                                                | snare           |
-| Tank    | fires on beat 1                                                       | kick            |
-| Stabber | lunges on the "and" of 3                                              | off-beat accent |
-| Rusher  | explodes on beats 1 and 3                                             | crash           |
+| Who     | When                                                                  | Plays like                    |
+| ------- | --------------------------------------------------------------------- | ----------------------------- |
+| Player  | held fire snaps to eighth notes; the first shot of a burst is instant | hi-hat                        |
+| Grunt   | fires on beats 2 and 4                                                | snare                         |
+| Tank    | fires on beat 1                                                       | kick                          |
+| Stabber | lunges on the "and" of 3                                              | string stab (off-beat accent) |
+| Rusher  | explodes on beats 1 and 3                                             | crash                         |
 
 - **You** are the Dude, in a bathrobe with a White Russian, looking for his carpet. He walks on your hi-hat's eighth notes, and the more they hurt him, the less he abides.
 - **Grunts** keep their distance, stepping back when you get close and advancing when you run.
-- **Stabbers** wind up, flash a warning, then dash at you.
+- **Stabbers** wind up on beat 2, lock on beat 3 and lunge on the "and" of 3: a ring counts the eighths and a lane shows where they'll go. Shoot one before the lock and its stab is off; after it, dodge.
 - **Rushers** are stuntmen on rockets who steer only on the beat: dash aside and they shoot past. Shot or too close, they light, count down on the beat and blow up with a crash on beat 1 or 3, taking anything near with them, other rushers included. Your shots knock them along, so bat one into a crowd.
 - **Tanks** are big, slow bouncers who turn only on the kick. Their armour is on the side facing you and their back is bare: get behind one to plant your time bomb, which counts down on the beat and kills him. Stand in front of one and he shoves you.
 - **Everyone talks.** Enemies shout lines like "KILL HUMAN!" and "SLICE AND DICE!", each in its own synthesized voice, on the beat, and the mix dips the game under them so they're heard.

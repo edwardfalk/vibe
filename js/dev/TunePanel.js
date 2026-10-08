@@ -1,9 +1,9 @@
 /**
  * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK (the kick, and whether it is tuned to the hum), HUM, SKY, PACING,
- * MIX, the rusher's flight, fuse, push and blast (RUSHER) and look (RUSHER_LOOK), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
+ * MIX, the rusher's flight, fuse, push and blast (RUSHER) and look (RUSHER_LOOK), the stabber's stalk, lunge, rest,
+ * push, health and strings' volumes (STABBER) and size (STABBER_LOOK), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
- * while paused box (ticked here: the beat plays on while paused), the
- * stabber's knockback and the hero's
+ * while paused box (ticked here: the beat plays on while paused), the hero's
  * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK),
  * and the deaths (DEATHS): the grunt's pop and the Dude's last breath, how
  * long remains stay, and his death scene's length and camera zoom.
@@ -24,6 +24,7 @@ const HUM = 'HUM';
 const PACING = 'PACING';
 const MIX = 'MIX';
 const RUSHER = 'RUSHER';
+const STABBER = 'STABBER';
 const HITBOX = 'HITBOX';
 const SKY = 'SKY';
 const GRUNT = 'GRUNT_LOOK';
@@ -90,6 +91,31 @@ const KNOBS = [
   [RUSHER, 'EXPLOSION_RADIUS', [60, 300, 10]],
   [RUSHER, 'EXPLOSION_DAMAGE', [5, 100, 5]],
   [RUSHER, 'CRASH_VOLUME', [0, 2, 0.05]],
+  [STABBER, 'STALK_MIN_PX', [50, 500, 10]],
+  [STABBER, 'STALK_MAX_PX', [100, 600, 10]],
+  [STABBER, 'APPROACH_PX_S', [0, 400, 10]],
+  [STABBER, 'STALK_PX_S', [0, 200, 5]],
+  [STABBER, 'BACKOFF_PX_S', [0, 300, 10]],
+  [STABBER, 'REACH_SLACK', [1, 2, 0.05]],
+  [STABBER, 'DRAWBACK_PX_S', [0, 100, 5]],
+  [STABBER, 'LUNGE_SEC', [0.1, 0.6, 0.05]], // ends before his phrase does
+  [STABBER, 'OVERSHOOT_PX', [0, 200, 10]],
+  [STABBER, 'LUNGE_MIN_PX', [50, 400, 10]],
+  [STABBER, 'LUNGE_MAX_PX', [100, 700, 10]],
+  [STABBER, 'TIP_HIT_PX', [5, 40, 1]],
+  [STABBER, 'RECOIL_PX_S', [0, 2000, 50]],
+  [STABBER, 'COAST_PX_S', [0, 1000, 25]],
+  [STABBER, 'REST_BARS', [0, 3, 1]],
+  [STABBER, 'KNOCK_PX_S', [0, 1200, 20]],
+  [STABBER, 'KNOCK_MAX_PX_S', [0, 2400, 50]],
+  [STABBER, 'KNOCK_DECAY', [0, 0.98, 0.01]],
+  [STABBER, 'HEALTH', [1, 40, 1]], // stabbers spawned after a change
+  [STABBER, 'ARMOR', [0, 5, 1]],
+  [STABBER, 'ALIEN_STAB_DAMAGE', [0, 60, 1]],
+  [STABBER, 'TREMOLO_VOLUME', [0, 3, 0.05]],
+  [STABBER, 'STAB_VOLUME', [0, 3, 0.05]],
+  [STABBER, 'PLUCK_VOLUME', [0, 3, 0.05]],
+  ['STABBER_LOOK', 'ART_SCALE', [0.6, 1.6, 0.05]], // moves his reach too
   ['TANK_ARMOR', 'FRONT', [0, 200, 5]],
   ['TANK_ARMOR', 'SIDE', [0, 150, 5]],
   [TANK, 'HEALTH', [10, 200, 5]],
@@ -129,8 +155,6 @@ const KNOBS = [
   [GRUNT, 'COUGH_CHANCE', [0, 0.5, 0.01]],
   [GRUNT, 'TUMBLE_RAD', [0, 1, 0.05]],
   [GRUNT, 'FACING_DEADZONE', [0, 0.6, 0.01]],
-  ['STABBER_SETTINGS', 'KNOCKBACK_FORCE', [0, 20, 0.5]],
-  ['STABBER_SETTINGS', 'MAX_KNOCKBACK', [0, 40, 1]],
   ['PLAYER', 'SHIELD_RECHARGE_MS', [1000, 20000, 500]],
   ['PLAYER', 'REGEN_DELAY_MS', [0, 10000, 250]],
   ['PLAYER', 'REGEN_PER_SEC', [0, 10, 0.1]],

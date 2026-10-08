@@ -1,20 +1,20 @@
 # Design
 
-Vibe's one idea: **enemies are the band.** Every enemy attack is a drum hit on a shared beat, so the fight writes its own soundtrack. The more enemies you face, the bigger the band.
+Vibe's one idea: **enemies are the band.** Every enemy attack is a hit on a shared beat (the drums, and the stabber's strings), so the fight writes its own soundtrack. The more enemies you face, the bigger the band.
 
 ## Beat roles
 
 At 120 BPM in 4/4 time (a beat every 500 ms):
 
-| Who     | When                      | Plays like      |
-| ------- | ------------------------- | --------------- |
-| Player  | held fire on eighth notes | hi-hat          |
-| Grunt   | fires on beats 2 and 4    | snare           |
-| Tank    | fires on beat 1           | kick            |
-| Stabber | lunges on beat 3.5        | off-beat accent |
-| Rusher  | explodes on beats 1 and 3 | crash           |
+| Who     | When                      | Plays like                    |
+| ------- | ------------------------- | ----------------------------- |
+| Player  | held fire on eighth notes | hi-hat                        |
+| Grunt   | fires on beats 2 and 4    | snare                         |
+| Tank    | fires on beat 1           | kick                          |
+| Stabber | lunges on beat 3.5        | string stab (off-beat accent) |
+| Rusher  | explodes on beats 1 and 3 | crash                         |
 
-The attacks are also pitched apart so they don't mask each other: tank shots low (about 90 Hz), grunt shots in the middle (about 950 Hz) and stabber attacks high (about 2.2 kHz). The rusher's crash is a cymbal above them all: everything in it is high-passed at 5 kHz, so nothing sits in the kick's band. The tank's tones are square waves: laptop speakers can't play 90 Hz itself, but they do play its overtones. Its shot adds a short electric zap that falls from 1.2 kHz, below the stabbers. The presets are in `js/audio/SoundConfig.js`.
+The attacks are also pitched apart so they don't mask each other: tank shots low (about 90 Hz), grunt shots in the middle (about 950 Hz) and the stabber's strings high (about 2 kHz, on the sour note outside the hum's scale). The rusher's crash is a cymbal above them all: everything in it is high-passed at 5 kHz, so nothing sits in the kick's band. The tank's tones are square waves: laptop speakers can't play 90 Hz itself, but they do play its overtones. Its shot adds a short electric zap that falls from 1.2 kHz, below the stabbers. The presets are in `js/audio/SoundConfig.js`.
 
 A steady kick (four on the floor by default) keeps time under everything. Without it, enemy hits are just sounds. With it, you can hear that the hits land on the beat. The kick's sound and pattern are in `CONFIG.BEAT_TRACK`.
 
@@ -40,11 +40,13 @@ Every death is the character's own, and comic, never gory. A grunt bursts like a
 
 The rusher is the family's reckless little cousin, who thinks blowing up is the best party there is: a stuntman from space riding a hot-pink rocket like a motorbike, in a star-spangled helmet and a cape. He steers only on the beat. On every beat he boosts toward you, turning at most 100°, and between beats he flies dead straight: dash aside just after a boost and he shoots past and has to loop round. Shoot him, or let him get close, and he lights. He stops, pops a wheelie and waves to the crowd, and the ring at his blast's reach counts the beats to the first beat 1 or 3 at least two beats on, losing an arc a beat: amber for the last, white-hot for the last half-beat. Then he goes off with a crash. He is your firework too: his blast kills the grunts round him and lights any rusher it reaches, which goes off two beats later, crash … crash. Your shots knock him along their path, so you can bat a lit rusher into a crowd. The look and its numbers are in `js/entities/RusherRenderer.js`, `CONFIG.RUSHER` and `CONFIG.RUSHER_LOOK`.
 
+The stabber is the family's evil psycho, still funny: a strange thing from a strange world, built round one bone spike, and polite about it ("HOLD STILL, PLEASE!"). Seen from above, it is a pointed gold shell over rippling magenta flesh, with one slit-pupilled eye that watches you, two jointed claws it rows with and tendrils curling behind; nobody can say what animal it is. It stalks you at a distance and attacks in one phrase on the beat: on beat 2 it winds up, its spike growing a notch an eighth; on beat 3 its aim locks, its claws fold flat into a dart and the spike goes white-hot; on the "and" of 3 it lunges. A ring round it counts the eighths (gold, amber, white-hot) and a lane shows where it will go. Shoot it before the lock and the stab is off and it reels, dazed; after the lock it is committed, and only dodging helps. Its lunge hits whatever it meets first, you or a grunt in the way. Each phrase plays strings on its own sour note: a tremolo through the wind-up, a stab at the lock, a screech at the lunge, a pizzicato when the spike lands. The look and its numbers are in `js/entities/StabberRenderer.js`, `CONFIG.STABBER` and `CONFIG.STABBER_LOOK`.
+
 ## The sky
 
 The steady kick is the one instrument you also see. The sky is a nebula around a young star cluster. On every kick you hear, the cluster breathes and the dense gas lights up from inside; on beat 1 a pressure front also rolls out through the gas. On beats where the kick doesn't play, the sky only drifts. It grows with the level: sparse, cool teal at level 1; by level 8 the cluster has blown a bubble walled with rust and ochre gas.
 
-This is BeatTrack's steady kick, not the tank's beat-1 part. The older per-beat flashes are gone, so the sky is the one visual beat apart from the cast's own moves: the hero's stride on the eighths and his nod, with his anger and his bubble throbbing on the kick, the grunts' dance, the tank's kick, turn and swagger, and the rusher's boost on every beat (see The cast). Its numbers are in `CONFIG.SKY`.
+This is BeatTrack's steady kick, not the tank's beat-1 part. The older per-beat flashes are gone, so the sky is the one visual beat apart from the cast's own moves: the hero's stride on the eighths and his nod, with his anger and his bubble throbbing on the kick, the grunts' dance, the tank's kick, turn and swagger, the rusher's boost on every beat and the stabber's phrase (see The cast). Its numbers are in `CONFIG.SKY`.
 
 ## Player fire
 
