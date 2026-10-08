@@ -129,6 +129,25 @@ describe('Audio.speak', () => {
       'one',
       'NOT COOL, MAN.',
     ]);
+    // And the other way round
+    const hero = speakingAudio().audio;
+    expect(hero.speak(null, 'MY DRINK!', 'player')).toBe(true);
+    expect(hero.speak({ x: 0, y: 0 }, 'two', 'grunt')).toBe(true);
+  });
+
+  it("a line gets through once VOICE_GAP_SEC has passed since its side's last", () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(100000);
+    try {
+      const { audio } = speakingAudio();
+      const gapMs = CONFIG.SPEECH_SETTINGS.VOICE_GAP_SEC * 1000;
+      expect(audio.speak({ x: 0, y: 0 }, 'one', 'grunt')).toBe(true);
+      now.mockReturnValue(100000 + gapMs - 100);
+      expect(audio.speak({ x: 0, y: 0 }, 'two', 'grunt')).toBe(false);
+      now.mockReturnValue(100000 + gapMs);
+      expect(audio.speak({ x: 0, y: 0 }, 'three', 'grunt')).toBe(true);
+    } finally {
+      now.mockRestore();
+    }
   });
 
   it('the gap is CONFIG.SPEECH_SETTINGS.VOICE_GAP_SEC, read as each line comes', () => {

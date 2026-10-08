@@ -196,6 +196,22 @@ describe("the tank's charge", () => {
     expect(sounds).toContain('tankPowerUp');
   });
 
+  it('rolls his callout once per charge: FIRE! follows a called-out CHARGING!, and the next charge rolls again', () => {
+    CONFIG.SPEECH_SETTINGS.TANK.CALLOUT_CHANCE = 1;
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    w.frame(t, 4000); // CHARGING!
+    CONFIG.SPEECH_SETTINGS.TANK.CALLOUT_CHANCE = 0;
+    for (let ms = 5000; ms <= 16000; ms += 1000) w.frame(t, ms);
+    const charges = w.audio.playSound.mock.calls.filter(
+      ([name]) => name === 'tankCharging'
+    );
+    expect(charges).toHaveLength(2); // the second charge, silent
+    const lines = w.audio.speak.mock.calls.map(([, line]) => line);
+    expect(lines).toEqual(['CHARGING!', 'FIRE!']);
+  });
+
   it('holds his charge through bars the game sat out (a hidden tab), then fires on a beat 1', () => {
     const w = tankWorld({ hero: { x: 300, y: 0 } });
     const t = w.tank();
