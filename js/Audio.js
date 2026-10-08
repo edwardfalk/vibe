@@ -44,6 +44,7 @@ import {
 } from './audio/DialogueLines.js';
 import { playCrash, crashNoise } from './audio/CrashSynth.js';
 import { gruntPop, lastBreath, GRUNT_POP_SEC } from './audio/DeathSounds.js';
+import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
 import { Hum } from './audio/Hum.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
@@ -324,6 +325,39 @@ export class Audio {
       volume: CONFIG.DEATHS.GRUNT_VOLUME * near,
       pan,
     });
+  }
+
+  /**
+   * One of the stabber's strings (StabberStrings.js) from (x, y), now:
+   * 'tremolo' (opts.untilSec: how long to the lock; returns its handle),
+   * 'stab', 'screech' (opts.beatSec, for its echo) or 'pluck'. opts.seed
+   * (0..1) picks its stretch of the noise. Null when it plays nothing
+   * (muted, paused, no context)
+   */
+  playStabberStrings(part, x, y, opts = {}) {
+    if (!this.ensureAudioContext()) return null;
+    const S = CONFIG.STABBER;
+    const volume = {
+      tremolo: S.TREMOLO_VOLUME,
+      stab: S.STAB_VOLUME,
+      screech: S.STAB_VOLUME,
+      pluck: S.PLUCK_VOLUME,
+    }[part];
+    const { near, pan } = this.placement(x, y);
+    const noise = crashNoise(
+      this.audioContext,
+      SOUND_CONFIG.rusherCrash.duration
+    );
+    return (
+      STRING_PARTS[part](this.audioContext, this.masterGain, {
+        ...opts,
+        at: this.audioContext.currentTime,
+        volume: volume * near,
+        pan,
+        noise,
+        offset: (opts.seed ?? 0) * (noise.duration - STRINGS_NOISE_SEC),
+      }) ?? null
+    );
   }
 
   /** The Dude's last breath (DeathSounds.js) at audio time `at` */
