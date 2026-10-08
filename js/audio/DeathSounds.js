@@ -80,8 +80,8 @@ const EXHALE = {
   TAIL_SEC: 0.05,
 };
 
-// Into `out` at `volume`, panned -1..1
-function placed(ctx, out, volume, pan, at) {
+// Into `out` at `volume`, panned -1..1 (the stabber's strings use it too)
+export function placed(ctx, out, volume, pan, at) {
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(volume, at);
   const panner = ctx.createStereoPanner();

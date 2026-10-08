@@ -13,6 +13,7 @@ import { CONFIG } from '../../js/config.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { beatWorld } from './helpers/beatWorld.js';
 import { transformP5 } from './helpers/transformP5.js';
+import { strokeLog } from './helpers/strokeLog.js';
 
 const MS_PER_BEAT = 500;
 const FRAME_MS = 16;
@@ -238,6 +239,25 @@ describe("the rusher's look", () => {
       expect(log.litArcsAt(150)).toBe(left);
     }
   );
+
+  // The stabber counts his wind-up on the same ring, in his gold
+  it('lights its arcs in the colour it is given, amber from amberAt arcs left', () => {
+    const fuse = (left) => ({
+      age: 1,
+      beatsTotal: 3,
+      beatsLeft: left,
+      hot: false,
+      tick: 0,
+    });
+    const ring = (left, ...style) => {
+      const log = strokeLog();
+      drawCountRing(log.p, 0, 0, fuse(left), 34, ...style);
+      return log.colours();
+    };
+    expect(ring(3, 'gold', 2).has('gold')).toBe(true);
+    expect(ring(2, 'gold', 2)).toEqual(ring(1)); // the rusher's amber
+    expect(ring(2)).not.toEqual(ring(1)); // the rusher still goes amber at 1
+  });
 
   // [blind review 2026-10-02] the figure's scale is his size × ART_SCALE / 22,
   // the blast's is ART_SCALE: for some values they differ by a rounding

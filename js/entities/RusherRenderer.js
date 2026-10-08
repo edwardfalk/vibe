@@ -85,6 +85,11 @@ const HEAD_R = 6.2;
 const EYE = [3.2, -0.6];
 const MOUTH = [4.2, 3.2];
 const GAP = 0.24; // rad between the count ring's arcs: about 36 px at 150 px
+// The flash as an arc of the count ring goes out: this wide, plus POP at its peak
+const RING_FLASH_W = 4;
+const RING_FLASH_POP_W = 8;
+/** px the count ring reaches past its radius: half its widest stroke, the flash */
+export const COUNT_RING_EDGE_PX = (RING_FLASH_W + RING_FLASH_POP_W) / 2;
 
 /** His pitch in his own mirrored frame: drawn facing right, never upside down */
 export const rusherTilt = (heading, side) =>
@@ -690,15 +695,24 @@ export function ringArcs(fuse) {
 /**
  * The ring at his blast's reach, round (x, y) in the world: the arcs he lit
  * with, one going out with a flash on each beat and leaving a thin ghost,
- * so the whole reach still shows. The last is amber; the whole ring is
- * white-hot for the last half-beat. Each arc sits on ink, so it reads over
- * the rust gas
+ * so the whole reach still shows. The arcs are `lit` (his pink) until
+ * `amberAt` are left, then amber; the whole ring is white-hot once
+ * `fuse.hot`. Each arc sits on ink, so it reads over the rust gas. The
+ * stabber's wind-up counts on it too, in his gold
  */
-export function drawCountRing(p, x, y, fuse, radius) {
+export function drawCountRing(
+  p,
+  x,
+  y,
+  fuse,
+  radius,
+  lit = CS.count,
+  amberAt = 1
+) {
   ctx = p.drawingContext;
   A0 = ctx.globalAlpha;
   const { n, left } = ringArcs(fuse);
-  const style = fuse.hot ? CS.hot : left <= 1 ? CS.amber : CS.count;
+  const style = fuse.hot ? CS.hot : left <= amberAt ? CS.amber : lit;
   const grow = smooth(clamp01(fuse.age / 0.15)); // the arcs snap on when he lights
   const pop = fuse.tick;
   ctx.save();
@@ -738,7 +752,7 @@ export function drawCountRing(p, x, y, fuse, radius) {
       arcs(radius, n, left, left + 1);
       ctx.globalAlpha = A0 * pop;
       ctx.strokeStyle = CS.hot;
-      ctx.lineWidth = 4 + 8 * pop;
+      ctx.lineWidth = RING_FLASH_W + RING_FLASH_POP_W * pop;
       ctx.stroke();
     }
   }
