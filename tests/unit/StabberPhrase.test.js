@@ -15,6 +15,7 @@ import { createMockP5 } from './helpers/enemyMocks.js';
 import { beatWorld } from './helpers/beatWorld.js';
 import { strokeLog } from './helpers/strokeLog.js';
 import { transformP5 } from './helpers/transformP5.js';
+import { EnemyDeathHandler } from '../../js/systems/combat/EnemyDeathHandler.js';
 
 const S = CONFIG.STABBER;
 const DEFAULTS = { ...CONFIG.STABBER };
@@ -292,6 +293,25 @@ describe("the stabber's phrase", () => {
     expect(graphics).toHaveLength(12); // the new size, once the lunge is over
   });
 
+  it.each([0.85, 0.9, 1.55])(
+    'at ART_SCALE %s, a lunging stabber and a stalking one build their sprites once',
+    (scale) => {
+      CONFIG.STABBER_LOOK.ART_SCALE = scale;
+      const { p, graphics } = transformP5();
+      const lunging = shiv();
+      lunging.run(0, LOCK_MS + 20);
+      Object.assign(lunging.hero, { x: 0, y: 300 });
+      lunging.step(LUNGE_MS + 10);
+      expect(lunging.s.state).toBe('lunge');
+      const stalking = shiv({ hero: { x: 1000, y: 0 } }).s;
+      for (let i = 0; i < 3; i++) {
+        lunging.s.draw(p);
+        stalking.draw(p);
+      }
+      expect(graphics).toHaveLength(6);
+    }
+  );
+
   it('a lunge into a wall: his tip is tested from where the wall stops him', () => {
     // The hero beyond the wall, where only an unstopped lunge would reach
     const { s, run } = shiv({ x: 450, hero: { x: 700, y: 0 } });
@@ -414,6 +434,20 @@ describe('the stabber hit', () => {
     expect(tough.health).toBe(S.HEALTH - (5 - S.ARMOR));
   });
 
+  it('shot while spawning, he slides about as far as a spawned stabber', () => {
+    const slide = (spawning) => {
+      const { s, step } = shiv({ hero: { x: 0, y: 1000 } }); // far: no wind-up
+      if (spawning) Object.assign(s, { isSpawning: true, spawnTimer: 0 });
+      const x0 = s.x;
+      s.takeDamage(1, 0, 'player_bullet'); // along +x; he closes in along +y
+      for (let ms = 20; ms < 1600; ms += FRAME_MS) step(ms);
+      return s.x - x0;
+    };
+    const spawned = slide(false);
+    expect(spawned).toBeGreaterThan(30);
+    expect(slide(true)).toBeLessThan(spawned * 1.5);
+  });
+
   it('a hit pushes him along it at KNOCK_PX_S, capped at KNOCK_MAX_PX_S, fading', () => {
     const { s, step } = shiv({ hero: { x: 0, y: 1000 } });
     s.takeDamage(1, 0, 'player_bullet');
@@ -461,6 +495,26 @@ describe('his steps come on time or not at all', () => {
 });
 
 describe('his strings', () => {
+  it('a kill by any path stops his tremolo: the tank ball kills through the death handler, not takeDamage', () => {
+    const { s, run } = shiv();
+    run(0, 700);
+    expect(s.state).toBe('windup');
+    const handle = s.tremolo;
+    const values = {
+      audio: { playSound: vi.fn() },
+      explosionManager: { addFragmentExplosion: vi.fn() },
+      enemies: [],
+    };
+    new EnemyDeathHandler({ get: (k) => values[k] }).handleEnemyDeath(
+      s,
+      'stabber',
+      s.x,
+      s.y,
+      { dir: 0 }
+    );
+    expect(handle.stop).toHaveBeenCalledTimes(1);
+  });
+
   it('the tremolo starts at the wind-up and ends at the lock; the stab at the lock, the screech at the lunge, the pizzicato at the contact', () => {
     const { s, run, strings } = shiv();
     run(0, WINDUP_MS + 20);

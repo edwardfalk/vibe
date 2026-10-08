@@ -128,6 +128,12 @@ class Stabber extends BaseEnemy {
     this.poseBeats =
       this.getContextValue('beatClock')?.getBeatPosition() ?? null;
     const result = super.update(playerX, playerY, deltaTimeMs);
+    // While he spawns his behaviour doesn't run, but BaseEnemy still moves
+    // him: a shot's push fades then too, or it would carry him on unchecked
+    if (this.isSpawning) {
+      this.handOn();
+      this.fadePush(deltaTimeMs);
+    }
     this.aimAngle = this.aim;
     this.keepInWorld();
     return result;
@@ -251,7 +257,10 @@ class Stabber extends BaseEnemy {
 
   /** The "and" of 3: the lunge, its duration and his reach fixed now; the screech */
   startLunge(beats, beatSec) {
-    const reach = STABBER_REACH_PX * CONFIG.STABBER_LOOK.ART_SCALE;
+    // His size is kept as it is, not recovered from his reach: a size that
+    // differs by a rounding would rebuild his sprites every frame
+    const scale = CONFIG.STABBER_LOOK.ART_SCALE;
+    const reach = STABBER_REACH_PX * scale;
     this.enter('lunge', beats);
     this.lunge = {
       x: this.x,
@@ -259,6 +268,7 @@ class Stabber extends BaseEnemy {
       dir: this.lockAim,
       len: this.lockLen,
       sec: CONFIG.STABBER.LUNGE_SEC,
+      scale,
       reach,
       at: this.bar * BEATS_PER_BAR + LUNGE_AT, // its grid beat: timed from here
     };
@@ -380,10 +390,15 @@ class Stabber extends BaseEnemy {
     this.enter('recover', beats);
   }
 
-  /** Any hit before the lock: the stab is off and he is dazed to the next beat 1 */
-  daze() {
+  /** His strings stop with him: EnemyDeathHandler calls this on any death, a tank ball's included */
+  silence() {
     this.tremolo?.stop();
     this.tremolo = null;
+  }
+
+  /** Any hit before the lock: the stab is off and he is dazed to the next beat 1 */
+  daze() {
+    this.silence();
     this.enter('stunned', this.poseBeats);
   }
 
@@ -515,7 +530,7 @@ class Stabber extends BaseEnemy {
   /** His drawn size: ART_SCALE, but a lunge keeps the one it started with, so his drawn tip is where it hits */
   drawScale() {
     return this.state === 'lunge' && this.lunge
-      ? this.lunge.reach / STABBER_REACH_PX
+      ? this.lunge.scale
       : CONFIG.STABBER_LOOK.ART_SCALE;
   }
 

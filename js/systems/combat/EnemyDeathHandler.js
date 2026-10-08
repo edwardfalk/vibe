@@ -49,6 +49,8 @@ export class EnemyDeathHandler {
    * apart; without one it flies the way it faced.
    */
   handleEnemyDeath(enemy, enemyType, x, y, blow = null) {
+    // A sound it is still making stops with it (the stabber's tremolo)
+    enemy?.silence?.();
     const explosionManager = this.getContextValue('explosionManager');
     const audio = this.getContextValue('audio');
     const cameraSystem = this.getContextValue('cameraSystem');
