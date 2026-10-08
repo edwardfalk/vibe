@@ -16,6 +16,8 @@ import { beatWorld } from './helpers/beatWorld.js';
 import { strokeLog } from './helpers/strokeLog.js';
 import { transformP5 } from './helpers/transformP5.js';
 import { EnemyDeathHandler } from '../../js/systems/combat/EnemyDeathHandler.js';
+import { updateEnemiesAndResolveResults } from '../../js/systems/gameplay/EnemyUpdatePipeline.js';
+import { Grunt } from '../../js/entities/Grunt.js';
 
 const S = CONFIG.STABBER;
 const DEFAULTS = { ...CONFIG.STABBER };
@@ -74,6 +76,89 @@ const starts = (log, state) =>
     .filter((e, i) => e.state === state && log[i - 1]?.state !== state)
     .map((e) => e.ms);
 
+describe('his stab in the game', () => {
+  // The game's own enemy loop runs him, and the hero, with a real grunt
+  // that holds still where it is put; returns what the loop did
+  function inTheGame(withGrunt) {
+    const enemies = [];
+    const w = beatWorld({ enemies });
+    w.at(0);
+    const s = new Stabber(
+      0,
+      0,
+      'stabber',
+      { context: w.context },
+      createMockP5(),
+      w.audio
+    );
+    s.isSpawning = false;
+    enemies.push(s);
+    const player = {
+      x: 300,
+      y: 0,
+      hurt: vi.fn(() => false),
+      knockBack: vi.fn(),
+    };
+    let grunt = null;
+    if (withGrunt) {
+      grunt = new Grunt(
+        -500,
+        -500,
+        'grunt',
+        { context: w.context },
+        createMockP5(),
+        w.audio
+      );
+      grunt.isSpawning = false;
+      grunt.update = () => null; // it holds still
+      vi.spyOn(grunt, 'takeDamage');
+      enemies.push(grunt);
+    }
+    const context = {
+      enemies,
+      enemyBullets: [],
+      player,
+      deltaTimeMs: FRAME_MS,
+      audio: w.audio,
+      gameState: { gameState: 'playing', addKill: vi.fn(), addScore: vi.fn() },
+      collisionSystem: { handleEnemyDeath: vi.fn() },
+    };
+    for (let ms = 0; ms <= LUNGE_MS + 300; ms += FRAME_MS) {
+      w.at(ms);
+      updateEnemiesAndResolveResults(context);
+      // At the lock, the grunt goes into the lane, 200 px along it and 20 px
+      // aside: inside a grunt's hit radius (22), outside the hero's (18)
+      if (grunt && s.locked && grunt.x === -500) {
+        const [ux, uy] = [Math.cos(s.lockAim), Math.sin(s.lockAim)];
+        grunt.x = s.x + ux * 200 - uy * 20;
+        grunt.y = s.y + uy * 200 + ux * 20;
+      }
+    }
+    return { s, player, grunt };
+  }
+
+  it('hurts the hero in his lane and knocks him away from the stabber', () => {
+    const { s, player } = inTheGame(false);
+    expect(player.hurt).toHaveBeenCalledWith(
+      CONFIG.PLAYER.DAMAGE_STAB,
+      'stabber-melee'
+    );
+    const [fromX] = player.knockBack.mock.calls[0];
+    expect(fromX).toBeLessThan(player.x); // from his centre, behind the hero
+    expect(s.struck).toBe('hero');
+  });
+
+  it('a real grunt in the lane, within its own hit radius, takes ALIEN_STAB_DAMAGE and the hero is spared', () => {
+    const { s, player, grunt } = inTheGame(true);
+    expect(grunt.takeDamage).toHaveBeenCalledWith(
+      S.ALIEN_STAB_DAMAGE,
+      s.lockAim,
+      'stabber_melee'
+    );
+    expect(player.hurt).not.toHaveBeenCalled();
+  });
+});
+
 describe('sweepEntry', () => {
   it('finds where a sweep first enters a circle, or none', () => {
     expect(sweepEntry(0, 0, 100, 0, 50, 0, 18)).toBeCloseTo(0.32, 9);
@@ -100,6 +185,20 @@ describe("the stabber's phrase", () => {
     CONFIG.STABBER.REST_BARS = 0;
     const every = shiv();
     expect(starts(every.run(0, 4 * BAR_MS), 'windup')).toHaveLength(4);
+  });
+
+  it('the phrase is wind-up on 2, lock on 3, lunge on the "and" of 3', () => {
+    expect([WINDUP_AT, LOCK_AT, LUNGE_AT]).toEqual([1, 2, 2.5]);
+  });
+
+  it('winds up within STALK_MAX_PX × REACH_SLACK (402.5 px), not beyond', () => {
+    CONFIG.STABBER.APPROACH_PX_S = 0; // he holds his distance
+    const near = shiv({ hero: { x: 400, y: 0 } });
+    near.run(0, WINDUP_MS + 20);
+    expect(near.s.state).toBe('windup');
+    const far = shiv({ hero: { x: 405, y: 0 } });
+    far.run(0, WINDUP_MS + 20);
+    expect(far.s.state).toBe('stalk');
   });
 
   it('does not wind up out of range', () => {
@@ -312,6 +411,33 @@ describe("the stabber's phrase", () => {
     }
   );
 
+  it('a late first lunge update still sweeps from where his tip started: a hero close in the lane is hit', () => {
+    const { s, hero, run, step } = shiv();
+    run(0, LOCK_MS + 20);
+    hero.x = s.x + Math.cos(s.lockAim) * 120; // the hero steps in close, in the lane
+    hero.y = s.y + Math.sin(s.lockAim) * 120;
+    run(LOCK_MS + 36, LUNGE_MS - 10);
+    expect(step(LUNGE_MS + 100)?.playerHit).toBe(true);
+  });
+
+  it('after the lock his lane holds the locked aim and length, wherever the hero goes', () => {
+    const { s, hero, run } = shiv();
+    run(0, LOCK_MS + 20);
+    const { lockAim, lockLen } = s;
+    Object.assign(hero, { x: 0, y: 300 });
+    run(LOCK_MS + 36, LUNGE_MS - 10);
+    expect(s.pose().aim).toBe(lockAim);
+    expect(s.pose().windup.len).toBe(lockLen);
+  });
+
+  it('an alien marked for removal does not stop his lunge', () => {
+    const corpse = { x: 200, y: 0, hitRadius: 22, markedForRemoval: true };
+    const { run, step } = shiv({ values: { enemies: [corpse] } });
+    run(0, LUNGE_MS - 10);
+    step(LUNGE_MS);
+    expect(step(LUNGE_MS + 120)?.playerHit).toBe(true);
+  });
+
   it('a lunge into a wall: his tip is tested from where the wall stops him', () => {
     // The hero beyond the wall, where only an unstopped lunge would reach
     const { s, run } = shiv({ x: 450, hero: { x: 700, y: 0 } });
@@ -354,7 +480,9 @@ describe('the stabber hit', () => {
     s.takeDamage(1, null, 'rusher-blast'); // a hit with no direction cancels too
     expect(s.state).toBe('stunned');
     expect(handle.stop).toHaveBeenCalledTimes(1);
-    const log = run(716, BAR_MS + 20);
+    const log = run(716, BAR_MS - 10);
+    expect(s.state).toBe('stunned'); // dazed to the next beat 1, not before
+    log.push(...run(BAR_MS - 4, BAR_MS + 20));
     expect(starts(log, 'lunge')).toHaveLength(0);
     expect(strings('stab')).toHaveLength(0);
     expect(s.state).toBe('stalk');
