@@ -284,10 +284,11 @@ test('in a running game every line starts on the grid, and the count on its beat
     PLAYER_LINES.start,
     { timeout: 5000 }
   );
-  // The count was rendered ahead, when the audio started, not when it's due
+  // The shout and the count were rendered ahead, when the audio started,
+  // not when they're due
   expect(
     await page.evaluate(() =>
-      ['3', '2', '1'].every((w) =>
+      ['TIMEBOMB!', '3', '2', '1'].every((w) =>
         window.audio.voicebox.lines.has(`player:${w}`)
       )
     )
@@ -368,4 +369,10 @@ test('in a running game every line starts on the grid, and the count on its beat
   }
   expect(count[1].startsAt - count[0].startsAt).toBeCloseTo(2 * beat, 1);
   expect(count[2].startsAt - count[1].startsAt).toBeCloseTo(2 * beat, 1);
+  // "TIMEBOMB!" is said whole before the "3"
+  const shout = said.find((l) => l.text === 'TIMEBOMB!');
+  expect(shout?.dropped).toBeUndefined();
+  expect(shout.startsAt + shout.duration).toBeLessThanOrEqual(
+    count[0].startsAt
+  );
 });

@@ -2,7 +2,8 @@
  * The hero's bomb: his weapon against tanks. He plants it by touching a
  * tank's bare back (PlayerContactHandlers.js), shouting "TIMEBOMB!". It
  * rides there, counts down "3, 2, 1" on the beat in his voice from its beat
- * 0, the first beat at least a beat later, and blows on its beat
+ * 0, the first beat at least COUNT_LEAD_BEATS after his shout starts, and
+ * blows on its beat
  * CONFIG.BOMB.FUSE_BEATS,
  * hurting everything within reach: the tank it is on, other aliens and the
  * hero. Once its tank is gone it stays where he died and still blows.
@@ -17,6 +18,7 @@ import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
 import { BOMB_PLANTED, COUNTDOWN } from '../audio/DialogueLines.js';
+import { LEAD_SEC } from '../audio/speech/Voicebox.js';
 
 const COUNT_EVERY_BEATS = 2;
 const AMBER_LEFT = 0.34; // its light goes white-hot for the last third
@@ -42,9 +44,22 @@ const backOf = (tank) =>
     tank.facing
   );
 // Beats since its beat 0, the first whole beat at least COUNT_LEAD_BEATS
-// after it was planted
+// after his shout starts
 const fuseOf = (bomb, beats) =>
   beats - Math.ceil(bomb.plantedAt + CONFIG.BOMB.COUNT_LEAD_BEATS);
+// Voicebox looks at the clock for a line once the frame that asked for it is
+// done, not at the touch; the audio clock runs on meanwhile
+const SHOUT_CLOCK_SLACK_SEC = 0.05;
+const EIGHTHS_PER_BEAT = 2;
+// The latest beat position his "TIMEBOMB!" can start at. Voicebox starts a
+// line at once inside an eighth's window, else on the next eighth at least
+// LEAD_SEC ahead of its look at the clock (startTime): never after the first
+// eighth past that look + LEAD_SEC. Without a clock on audio time, at once.
+function shoutStart(clock, now) {
+  if (!clock.audioContext) return now;
+  const late = (SHOUT_CLOCK_SLACK_SEC + LEAD_SEC) / (clock.beatInterval / 1000);
+  return Math.ceil((now + late) * EIGHTHS_PER_BEAT) / EIGHTHS_PER_BEAT;
+}
 // Its damage at a point: from hi at its centre to lo at its reach, 0 beyond;
 // never above hi, so a max of 0 deals none
 function blastAt(bomb, x, y, lo, hi) {
@@ -66,7 +81,7 @@ export function plantBomb(activeBombs, tank, beatClock, audio = null) {
   activeBombs.push({
     ...backOf(tank),
     facing: tank.facing,
-    plantedAt: now,
+    plantedAt: shoutStart(beatClock, now), // its count is timed from here
     seenAt: now, // the beat position of its last update
     beatSec: beatClock.beatInterval / 1000,
     said: 0, // how many of "3, 2, 1" it has said

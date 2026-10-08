@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { handleContactCollisions } from '../../js/systems/combat/PlayerContactHandlers.js';
 import {
   plantBomb,
@@ -13,6 +13,11 @@ import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
 import { createMockAudio } from './helpers/enemyMocks.js';
 import { transformP5 } from './helpers/transformP5.js';
 import { tankWorld } from './helpers/tankWorld.js';
+import { BeatClock } from '../../js/audio/BeatClock.js';
+import { startTime, spoken } from '../../js/audio/speech/Voicebox.js';
+import { BOMB_PLANTED } from '../../js/audio/DialogueLines.js';
+import * as sam from '../../js/audio/speech/engines/sam.js';
+import * as espeak from '../../js/audio/speech/engines/espeak.js';
 
 const clockAt = (beats) => ({
   getBeatPosition: () => beats,
@@ -83,6 +88,11 @@ describe("planting the hero's bomb", () => {
 });
 
 describe('the bomb, on the beat', () => {
+  // Timed from a one-beat lead; the shipped lead is timed against his voice
+  // in '"TIMEBOMB!" and the count'
+  const LEAD = CONFIG.BOMB.COUNT_LEAD_BEATS;
+  beforeEach(() => (CONFIG.BOMB.COUNT_LEAD_BEATS = 1));
+  afterEach(() => (CONFIG.BOMB.COUNT_LEAD_BEATS = LEAD));
   // Planted at beat 10.3: its beat 0, the first whole beat at least a beat
   // later (room for "TIMEBOMB!"), is beat 12. Ticks come under a beat
   // apart, as frames do; a longer gap is a stall (see the last test)
@@ -294,6 +304,53 @@ describe('the bomb, on the beat', () => {
   });
 });
 
+describe('"TIMEBOMB!" and the count', () => {
+  it('his "TIMEBOMB!", in his voice as cast, ends before the "3", wherever in a beat he plants', async () => {
+    const cast = CONFIG.SPEECH.SPEAKERS.player;
+    const engine = { sam, espeak }[cast.engine];
+    const words = spoken(cast.engine, BOMB_PLANTED);
+    const { samples, sampleRate } = await engine.render(words, cast.voice);
+    const shoutSec = samples.length / sampleRate; // as Voicebox times it
+    // Frames come ~16 ms apart and one may land right on the "3"'s beat:
+    // step finely, or the "3" is found late and an overlap hides
+    const STEP_SEC = 0.0005;
+    const PLANTS = 200; // across a beat, so some fall just before an eighth
+    for (let k = 0; k < PLANTS; k++) {
+      // A clock on audio time from 0, as the game's: beat n at n × 0.5 s
+      const ctx = { currentTime: 0 };
+      const clock = new BeatClock(120, ctx);
+      const plantedAt = 10 + k / PLANTS;
+      ctx.currentTime = plantedAt * 0.5;
+      const audio = createMockAudio();
+      const activeBombs = [];
+      plantBomb(activeBombs, touchingTank('t'), clock, audio);
+      // It starts on the grid as Voicebox would start it, already rendered,
+      // from its look at the clock once the frame is done: at the touch, or
+      // one or two 60 fps frames later
+      const FRAME_SEC = 1 / 60;
+      const shoutEnds =
+        Math.max(
+          ...[0, FRAME_SEC, 2 * FRAME_SEC].map((late) =>
+            startTime(ctx.currentTime + late, clock)
+          )
+        ) + shoutSec;
+      let threeAt = null;
+      audio.speak.mockImplementation((_e, word) => {
+        if (word === '3') threeAt = ctx.currentTime;
+        return true;
+      });
+      while (threeAt === null) {
+        ctx.currentTime += STEP_SEC;
+        updateBombs({ activeBombs, enemies: [], audio, beatClock: clock });
+      }
+      expect(
+        shoutEnds,
+        `planted at beat ${plantedAt.toFixed(3)}: "TIMEBOMB!" (${shoutSec.toFixed(3)} s) ends at ${shoutEnds.toFixed(4)} s, "3" at ${threeAt.toFixed(4)} s; raise CONFIG.BOMB.COUNT_LEAD_BEATS`
+      ).toBeLessThanOrEqual(threeAt);
+    }
+  });
+});
+
 describe('a bomb kills the tank it is on', () => {
   it('the blast from his back, then the plasma it leaves, even with him moving at full drift', () => {
     const w = tankWorld({ hero: { x: 3000, y: 0 } }); // far away
@@ -305,9 +362,10 @@ describe('a bomb kills the tank it is on', () => {
         clouds.push(new HazardCloud(x, y, 'DEBRIS')),
       addPlasmaCloud: (x, y) => clouds.push(new HazardCloud(x, y, 'PLASMA')),
     };
-    w.at(4000); // beat 8: its beat 0 is 9, the bang on 15
+    w.at(4000);
     plantBomb(w.values.activeBombs, t, w.clock);
-    for (let ms = 4000; ms <= 7600; ms += 100) {
+    // On until it has blown
+    for (let ms = 4000; w.values.activeBombs.length && ms < 20000; ms += 100) {
       w.at(ms);
       updateBombs({
         activeBombs: w.values.activeBombs,

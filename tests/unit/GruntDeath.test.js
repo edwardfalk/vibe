@@ -492,7 +492,8 @@ describe('every way a grunt dies hands its death the blow', () => {
     w.at(4000);
     plantBomb(w.values.activeBombs, tank, w.clock);
     const enemyDeathHandler = { handleEnemyDeath: vi.fn() };
-    for (let ms = 4000; ms <= 7600; ms += 100) {
+    // On until it has blown
+    for (let ms = 4000; w.values.activeBombs.length && ms < 20000; ms += 100) {
       w.at(ms);
       updateBombs({
         activeBombs: w.values.activeBombs,

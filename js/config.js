@@ -276,7 +276,8 @@ const CONFIG = {
   // The hero's bomb (js/systems/BombSystem.js), planted on a tank's back
   // with a shout of "TIMEBOMB!". It counts "3, 2, 1" on the last three even
   // beats before it blows (beats 0, 2 and 4 of a 6-beat fuse; beat 0 is the
-  // first beat at least COUNT_LEAD_BEATS after planting, none said before it) and
+  // first beat at least COUNT_LEAD_BEATS after his shout starts, none said
+  // before it) and
   // blows on beat FUSE_BEATS, hurting everything in RADIUS_PX, the tank it
   // is on and the hero too. Damage falls from MAX at its centre to MIN at
   // its reach. Tune live with ?tune.
@@ -288,7 +289,10 @@ const CONFIG = {
     PLAYER_DAMAGE_MIN: 10,
     PLAYER_DAMAGE_MAX: 40,
     MAX_ACTIVE: 3,
-    COUNT_LEAD_BEATS: 1, // "TIMEBOMB!" gets at least this long before the count
+    // "TIMEBOMB!" gets at least this long before the count: at 1 the "3"
+    // came while he still said it (BombPlanting.test.js times his voice;
+    // at 2 a 0.75 s shout has a quarter second to spare)
+    COUNT_LEAD_BEATS: 2,
   },
 
   // The hero: a shield that takes one real hit whole, then recharges and
