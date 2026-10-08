@@ -50,12 +50,6 @@ export const SOUND_CONFIG = {
     sweep: { to: 92.7, curve: 'exponential' }, // 3% above the zap all the way
     frequencyVariationRange: 0.02,
   },
-  stabAttack: {
-    frequency: 2200,
-    waveform: 'triangle',
-    volume: 0.3,
-    duration: 0.05,
-  },
   explosion: {
     frequency: 180,
     waveform: 'sawtooth',
@@ -90,12 +84,6 @@ export const SOUND_CONFIG = {
     duration: 0.3,
     volume: 0.3,
   },
-  stabberDash: {
-    frequency: 2200,
-    waveform: 'triangle',
-    volume: 0.35,
-    duration: 0.05,
-  },
   plasmaCloud: {
     frequency: 75,
     waveform: 'sawtooth',
@@ -118,12 +106,6 @@ export const SOUND_CONFIG = {
     duration: 0.3,
     sweep: { to: 35, curve: 'exponential' },
   },
-  stabberChant: {
-    frequency: 2000,
-    waveform: 'triangle',
-    volume: 0.25,
-    duration: 0.08,
-  },
   gruntAdvance: {
     frequency: 400,
     waveform: 'square',
@@ -144,12 +126,6 @@ export const SOUND_CONFIG = {
     tremolo: true,
     sweep: { to: 120, curve: 'exponential' },
   },
-  stabberKnife: {
-    frequency: 2400,
-    waveform: 'triangle',
-    volume: 0.35,
-    duration: 0.05,
-  },
   enemyIdle: { frequency: 200, waveform: 'sine', volume: 0.2, duration: 0.8 },
   tankPowerUp: {
     frequency: 60,
@@ -158,12 +134,6 @@ export const SOUND_CONFIG = {
     duration: 0.4,
     tremolo: true,
     sweep: { to: 100, curve: 'exponential' },
-  },
-  stabberStalk: {
-    frequency: 1800,
-    waveform: 'triangle',
-    volume: 0.2,
-    duration: 0.08,
   },
   enemyOhNo: {
     frequency: 800,
@@ -260,19 +230,6 @@ export const SOUND_CONFIG = {
     waveform: 'sawtooth',
     volume: 0.3,
     duration: 0.08,
-  },
-  stabberKnifeExtend: {
-    frequency: 1800,
-    waveform: 'triangle',
-    volume: 0.3,
-    duration: 0.05,
-    sweep: { to: 2500, curve: 'linear' },
-  },
-  stabberKnifeHit: {
-    frequency: 2200,
-    waveform: 'triangle',
-    volume: 0.4,
-    duration: 0.05,
   },
   playerDash: {
     frequency: 200,

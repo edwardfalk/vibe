@@ -4,6 +4,7 @@ import { BaseEnemy } from '../../js/entities/BaseEnemy.js';
 import { Grunt } from '../../js/entities/Grunt.js';
 import { Tank } from '../../js/entities/Tank.js';
 import { Rusher } from '../../js/entities/Rusher.js';
+import { Stabber } from '../../js/entities/Stabber.js';
 import { HEALTH_BAR_HEIGHT_PX } from '../../js/entities/BaseEnemyHelpers.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { transformP5 } from './helpers/transformP5.js';
@@ -53,6 +54,15 @@ const rusherWith = (clock) => {
   r.isSpawning = false;
   return r;
 };
+const stabberWith = (clock) => {
+  const context = {
+    get: (k) => (k === 'beatClock' ? clock : undefined),
+    set() {},
+  };
+  const s = new Stabber(0, 0, 'stabber', { context }, createMockP5(), null);
+  s.isSpawning = false;
+  return s;
+};
 const KINDS = [
   {
     kind: 'grunt',
@@ -84,6 +94,21 @@ const KINDS = [
       r.pushed = true;
       r.pushAt = 16.4;
       r.pushDir = 1;
+    },
+  },
+  {
+    kind: 'stabber',
+    make: stabberWith,
+    base: ['stabber', { size: 28, health: 10, speed: 2.5, color: null }],
+    busy: (s) => {
+      s.state = 'windup'; // winding up in bar 4, shot and pushed
+      s.bar = 4;
+      s.stateAt = 17.02;
+      s.distance = 300;
+      s.hitAt = 17.1;
+      s.hitDir = 1;
+      s.push = { x: 200, y: 0 };
+      s.poseBeats = 17.3;
     },
   },
 ];

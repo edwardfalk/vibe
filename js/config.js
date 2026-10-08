@@ -200,7 +200,7 @@ const CONFIG = {
     SHOW: false,
     grunt: 22,
     rusher: 18, // the stuntman's rocket and rider
-    stabber: 18,
+    stabber: 19, // the shiv's shell and claws
     tank: 55, // the Bouncer's shoulders reach about 65 px
   },
 
@@ -333,14 +333,49 @@ const CONFIG = {
     SIDE: 30,
   },
 
-  // Stabber-specific tunable parameters
-  STABBER_SETTINGS: {
-    MIN_STAB_DISTANCE: 200, // Minimum distance to initiate stab
-    MAX_STAB_DISTANCE: 350, // Maximum distance to initiate stab
-    MAX_WARNING_TIME: 40, // Frames for warning phase
-    KNOCKBACK_FORCE: 8, // px/frame per hit; about 53 px in total
-    MAX_KNOCKBACK: 20, // px/frame cap under steady fire
+  // The stabber, the shiv (js/entities/Stabber.js). Speeds are px/s. He
+  // stalks the hero between STALK_MIN_PX and STALK_MAX_PX; in range on beat
+  // 2 (within REACH_SLACK of the band) he winds up, locks on 3 and lunges on
+  // the "and" of 3 for LUNGE_SEC, to OVERSHOOT_PX past where the hero stood,
+  // then rests REST_BARS whole bars. A hit before the lock cancels the stab.
+  // The volumes are his strings' (js/audio/StabberStrings.js), 1 = the
+  // prototype page's level. Tune live with ?tune.
+  STABBER: {
+    STALK_MIN_PX: 200,
+    STALK_MAX_PX: 350,
+    APPROACH_PX_S: 150, // closing in from further out
+    STALK_PX_S: 30, // circling the hero inside the band
+    BACKOFF_PX_S: 110, // nearer than the band
+    STEER_SEC: 0.25, // how fast his locomotion eases to what he wants
+    AIM_SEC: 0.08, // how fast his aim follows the hero (twitchy)
+    REACH_SLACK: 1.15, // he winds up within STALK_MAX_PX times this
+    DRAWBACK_PX_S: 25, // he eases back from the hero while winding up
+    LUNGE_SEC: 0.3, // the lunge, easing out (0.1 to 0.6)
+    OVERSHOOT_PX: 60, // past where the hero stood at the lock
+    LUNGE_MIN_PX: 160,
+    LUNGE_MAX_PX: 420,
+    TIP_HIT_PX: 18, // his tip hits the hero this close to his centre
+    RECOIL_PX_S: 900, // after a hit he springs back off it
+    COAST_PX_S: 300, // after a miss he coasts on
+    REST_BARS: 1, // whole bars after a stab's bar before the next wind-up
+    KNOCK_PX_S: 480, // a hit's push
+    KNOCK_MAX_PX_S: 1200, // capped under steady fire
+    KNOCK_DECAY: 0.85, // the push kept per 60 Hz frame
+    HEALTH: 10,
+    ARMOR: 2, // taken off each hit; at least 1 gets through
+    ALIEN_STAB_DAMAGE: 25, // what his stab does to an alien
+    TREMOLO_VOLUME: 1,
+    STAB_VOLUME: 1, // the stab at the lock and the screech at the lunge
+    PLUCK_VOLUME: 1,
   },
+
+  // How the stabber looks (js/entities/StabberRenderer.js). ART_SCALE scales
+  // his drawing, his reach, his count ring and his health bar's rise, so it
+  // moves where a stab lands; his hit circle is HITBOX.stabber, tuned apart.
+  STABBER_LOOK: {
+    ART_SCALE: 1, // 1 = the prototype at game size (0.6 to 1.6)
+  },
+
   // The game's own speech engines (js/audio/speech/): each speaker's engine,
   // voice and effect chain. Tune them in voices.html, then paste here.
   SPEECH: {

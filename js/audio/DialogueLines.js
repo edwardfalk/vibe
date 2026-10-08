@@ -115,6 +115,11 @@ export const STAB_WARNINGS = [
   'SLICE AND DICE!',
   'ACUPUNCTURE TIME!',
   'STABBY MCSTABFACE!',
+  // The shiv's, polite about it
+  'HOLD STILL, PLEASE!',
+  "THIS WON'T HURT!",
+  'ONE LITTLE POKE!',
+  'YOU LOOK SQUISHY!',
 ];
 
 export const TANK_ANGER_LINES = [

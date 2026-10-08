@@ -10,7 +10,8 @@ const NUM_BEATS = parseInt(process.env.BEATS) || 8;
  * enemy deciding to fire (which has random skips). This tells us whether
  * the timing system is correct. The tank has no gate: he acts on his first
  * update in each bar (Tank.onKick), so that is what is recorded for him.
- * The rusher is recorded by his blast, at its nearest beat.
+ * The rusher is recorded by his blast, at its nearest beat, and the stabber
+ * by his lunge, at the beat position of the update that started it.
  */
 const injectRecorder = async (page) => {
   await page.evaluate(async () => {
@@ -36,7 +37,6 @@ const injectRecorder = async (page) => {
     };
 
     wrap('canGruntShoot', 'grunt');
-    wrap('canStabberAttack', 'stabber');
 
     // The same module instance the game loaded, so its tanks use the patch
     const { Tank } = await import('/js/entities/Tank.js');
@@ -68,6 +68,22 @@ const injectRecorder = async (page) => {
         });
       }
       return result;
+    };
+
+    // The stabber counts beat positions too: record each lunge at the
+    // nearest eighth of the update that started it (0-indexed), which must
+    // be the "and" of 3
+    const { Stabber } = await import('/js/entities/Stabber.js');
+    const startLunge = Stabber.prototype.startLunge;
+    Stabber.prototype.startLunge = function (...args) {
+      window.__beatEvents.push({
+        type: 'lunge',
+        enemyType: 'stabber',
+        beat: (Math.round(this.poseBeats * 2) / 2) % 4,
+        totalBeats: bc.getTotalBeats(),
+        timestamp: Date.now(),
+      });
+      return startLunge.apply(this, args);
     };
   });
 };
@@ -114,6 +130,25 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
       throw new Error('lit rusher has no blast beat');
   });
 
+  // A stabber within reach, below and ahead of the hero: he walks right
+  // ('d') and fires at the mouse, parked top-left, so his shots never cancel
+  // the stabber's wind-up
+  await page.mouse.move(0, 0);
+  await page.evaluate(async () => {
+    // A phrase every bar: a hitstop that drops one must not fail the test
+    const { CONFIG } = await import('/js/config.js');
+    CONFIG.STABBER.REST_BARS = 0;
+    const hero = window.player;
+    const s = window.spawnSystem.createEnemy(
+      hero.x + 200,
+      hero.y + 250,
+      'stabber',
+      hero.p
+    );
+    s.isSpawning = false;
+    window.enemies.push(s);
+  });
+
   // Simulate some gameplay so enemies engage
   await page.keyboard.down('d');
   await page.keyboard.down(' ');
@@ -141,13 +176,13 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   // Expected beats (0-indexed):
   // Grunt: beats 1, 3 (canGruntShoot checks currentBeat === 1 || === 3)
   // Tank: beat 0 (he acts on his first update in each bar)
-  // Stabber: beats 2-3 boundary (canStabberAttack checks currentBeat === 2 or 3)
+  // Stabber: his lunge's nearest eighth, the "and" of 3 (2.5)
   // Rusher: his blast's nearest beat, 0 or 2 (beats 1 and 3)
 
   const expectedBeats = {
     grunt: [1, 3],
     tank: [0],
-    stabber: [2, 3], // straddles beat 3.5
+    stabber: [2.5],
     rusher: [0, 2],
   };
 
@@ -197,6 +232,12 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   expect(
     byType.rusher?.length ?? 0,
     'no rusher blast was recorded'
+  ).toBeGreaterThan(0);
+
+  // The planted stabber must have lunged, or the stabber's check proved nothing
+  expect(
+    byType.stabber?.length ?? 0,
+    'no stabber lunge was recorded'
   ).toBeGreaterThan(0);
 
   // Assert: we should have recorded at least some events

@@ -17,5 +17,9 @@ export function createMockAudio() {
   return {
     speak: vi.fn(() => true),
     playSound: vi.fn(),
+    // The stabber's strings: the tremolo hands back a handle
+    playStabberStrings: vi.fn((part) =>
+      part === 'tremolo' ? { stop: vi.fn() } : null
+    ),
   };
 }

@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { random, sin, cos, atan2, constrain } from '../mathUtils.js';
+import { random, sin, atan2, constrain } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import {
   getEnemyColors,
@@ -44,7 +44,6 @@ export class BaseEnemy {
 
     // Combat
     this.shootCooldown = 0;
-    this.muzzleFlash = 0;
     this.hitFlash = 0;
     this.hitFlashAlpha = 100; // how solid it is drawn just after a hit (of 255); a type may set its own
     this.markedForRemoval = false;
@@ -99,7 +98,6 @@ export class BaseEnemy {
     // Decrease cooldowns using deltaTime
     if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.hitFlash > 0) this.hitFlash -= dt;
-    if (this.muzzleFlash > 0) this.muzzleFlash -= dt;
     if (this.speechCooldown > 0) this.speechCooldown -= dt;
 
     // Spawn animation (frame-rate independent)
@@ -300,34 +298,11 @@ export class BaseEnemy {
   }
 
   /**
-   * The enemy's figure, drawn at its centre: it turns with its aim, bobs,
-   * shakes when hit, then draws body, head, arms and weapon. An enemy that
-   * draws some other way overrides this (the grunt does).
+   * The enemy's figure, drawn at its centre, inside the spawn's scale and
+   * alpha. Every enemy draws its own (the grunt, tank, rusher and stabber
+   * with their renderers); this draws nothing
    */
-  drawFigure(p, s) {
-    p.rotate(this.aimAngle);
-
-    let bobble = sin(this.animFrame) * 2;
-    let waddle = cos(this.animFrame * 0.8) * 1.5;
-
-    // Allow subclasses to modify animation
-    const animationMods = this.getAnimationModifications();
-    bobble += animationMods.bobble;
-    waddle += animationMods.waddle;
-
-    // Apply animation offsets
-    p.translate(waddle, bobble);
-
-    this.applyHitShake(p);
-
-    // Draw main body (subclasses implement specific shapes)
-    this.drawBody(s, p);
-
-    // Draw common elements
-    this.drawHead(s, p);
-    this.drawArms(s, p);
-    this.drawWeapon(s, p);
-  }
+  drawFigure(p, s) {}
 
   /** Shake and squash the figure for a few frames after a hit */
   applyHitShake(p) {
@@ -340,73 +315,6 @@ export class BaseEnemy {
     // Comical size distortion when hit
     const distortion = 1 + sin(p.frameCount * 2) * hitIntensity * 0.1;
     p.scale(distortion, 1 / distortion);
-  }
-
-  /**
-   * Get animation modifications - can be overridden by subclasses
-   */
-  getAnimationModifications() {
-    return { bobble: 0, waddle: 0 };
-  }
-
-  /**
-   * Draw main body - must be implemented by subclasses
-   */
-  drawBody(s, p) {
-    // Default body shape
-    p.fill(this.bodyColor);
-    p.noStroke();
-    p.ellipse(0, 0, s, s * 0.8);
-  }
-
-  /**
-   * Draw head
-   */
-  drawHead(s, p) {
-    // Head
-    p.fill(this.skinColor);
-    p.ellipse(s * 0.1, -s * 0.3, s * 0.6, s * 0.5);
-
-    // Helmet
-    p.fill(this.helmetColor);
-    p.arc(s * 0.1, -s * 0.35, s * 0.65, s * 0.4, p.PI, p.TWO_PI);
-
-    // Eyes
-    p.fill(this.eyeColor);
-    p.ellipse(s * 0.25, -s * 0.35, s * 0.12, s * 0.08);
-    p.ellipse(s * 0.05, -s * 0.35, s * 0.12, s * 0.08);
-
-    // Eye glow
-    p.fill(255, 255, 255, 120);
-    p.ellipse(s * 0.27, -s * 0.36, s * 0.06, s * 0.04);
-    p.ellipse(s * 0.07, -s * 0.36, s * 0.06, s * 0.04);
-  }
-
-  /**
-   * Draw arms
-   */
-  drawArms(s, p) {
-    // Left arm
-    p.fill(this.skinColor);
-    p.ellipse(-s * 0.25, s * 0.1, s * 0.2, s * 0.4);
-
-    // Right arm
-    p.ellipse(s * 0.45, s * 0.1, s * 0.2, s * 0.4);
-  }
-
-  /**
-   * Draw weapon - can be overridden by subclasses
-   */
-  drawWeapon(s, p) {
-    // Basic weapon
-    p.fill(this.weaponColor);
-    p.rect(s * 0.4, -s * 0.05, s * 0.3, s * 0.1);
-
-    // Muzzle flash
-    if (this.muzzleFlash > 0) {
-      p.fill(255, 255, 100, this.muzzleFlash * 30);
-      p.ellipse(s * 0.7, 0, s * 0.2, s * 0.1);
-    }
   }
 
   drawHealthBar(p) {
