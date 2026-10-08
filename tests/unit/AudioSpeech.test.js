@@ -101,6 +101,21 @@ describe('Audio.speak', () => {
     expect(audio.activeTexts).toHaveLength(0);
   });
 
+  it('onStart hears when a line was scheduled, and nothing of one dropped', async () => {
+    const { audio } = speakingAudio({ startsAt: 10.25, duration: 0.8 });
+    const started = vi.fn();
+    audio.speak(null, 'TIMEBOMB!', 'player', true, started);
+    await settle();
+    expect(started).toHaveBeenCalledWith(10.25);
+    for (const dropped of ['late', 'failed', 'cancelled']) {
+      const { audio } = speakingAudio({ dropped });
+      const heard = vi.fn();
+      audio.speak(null, 'TIMEBOMB!', 'player', true, heard);
+      await settle();
+      expect(heard, dropped).not.toHaveBeenCalled();
+    }
+  });
+
   it('a line dropped as late says so in the console, once per line', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { audio } = speakingAudio({ dropped: 'late' });

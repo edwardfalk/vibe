@@ -584,7 +584,9 @@ export class Audio {
   // its side's last line (the hero's or the enemies'; unless forced), for an
   // empty line, or without running audio
   // and a working speech engine (Grunt.sayOw then plays its sound instead).
-  speak(entity, text, voiceType = 'player', force = false) {
+  // onStart(startsAt) hears when a taken line was scheduled (audio seconds);
+  // not for one dropped
+  speak(entity, text, voiceType = 'player', force = false, onStart = null) {
     // Nobody speaks while a pause holds the sound
     if (this._pausedByGame) return false;
     if (!this.speechEnabled || !text) return false;
@@ -629,6 +631,7 @@ export class Audio {
             `Speech: "${text}" (${voiceType}) wasn't ready in ${CONFIG.SPEECH.MAX_WAIT_MS} ms; dropped`
           );
         }
+        if (!dropped) onStart?.(startsAt);
         // The bubble shows as the line starts; one that won't play, now
         const seconds = dropped ? text.split(' ').length * WORD_SEC : duration;
         this.showText(
