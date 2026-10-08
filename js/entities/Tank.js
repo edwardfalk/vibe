@@ -24,8 +24,6 @@ import {
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 
 const TANK_POWER_SOUND_CHANCE = 0.5; // per beat 1 while charging
-// Per attempt once the speech timer is up (= today's effective rate)
-const TANK_SPEECH_CHANCE = 0.025;
 const BEATS_PER_BAR = 4;
 const POWER_UP_BEATS = 4; // the charge's second bar opens with a power-up tone
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
@@ -84,6 +82,7 @@ class Tank extends BaseEnemy {
     this.chargeDurationBeats = CONFIG.TANK.CHARGE_BEATS;
     this._lastTankFireBeat = -Infinity;
     this.firedAt = null;
+    this.callsOut = false; // this charge says CHARGING! and FIRE!
     this.lastBeat = null; // the last beat he saw, for the shove
     this.lastShoveBeat = -Infinity;
     this.shovedAt = null;
@@ -217,7 +216,8 @@ class Tank extends BaseEnemy {
     if (!fire) return null;
     this.chargingShot = false;
     this.firedAt = beats;
-    this.getContextValue('audio')?.speak(this, TANK_FIRE, 'tank');
+    if (this.callsOut)
+      this.getContextValue('audio')?.speak(this, TANK_FIRE, 'tank');
     return this.createBullet();
   }
 
@@ -252,7 +252,7 @@ class Tank extends BaseEnemy {
         audio?.playSound('tankPower', this.x, this.y);
       }
       // A tone, no line: "CHARGING!" and "FIRE!" 4 s apart both clear the
-      // 2.5 s cooldown all voices share; the tones carry the attack
+      // gap between enemies' lines (VOICE_GAP_SEC); the tones carry the attack
       if (since === POWER_UP_BEATS) {
         audio?.playSound('tankPowerUp', this.x, this.y);
       }
@@ -264,7 +264,8 @@ class Tank extends BaseEnemy {
     ) {
       this.chargingShot = true;
       this.chargeStartBeat = kickBeat;
-      audio?.speak(this, TANK_CHARGING, 'tank');
+      this.callsOut = random() < CONFIG.SPEECH_SETTINGS.TANK.CALLOUT_CHANCE;
+      if (this.callsOut) audio?.speak(this, TANK_CHARGING, 'tank');
       audio?.playSound('tankCharging', this.x, this.y);
     }
     return false;
@@ -370,7 +371,7 @@ class Tank extends BaseEnemy {
     return {
       lines: TANK_LINES,
       gate: (beatClock) => !!beatClock?.isOnBeat([1]),
-      chance: TANK_SPEECH_CHANCE,
+      chance: CONFIG.SPEECH_SETTINGS.TANK.CHANCE,
     };
   }
 

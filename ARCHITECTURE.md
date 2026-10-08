@@ -77,7 +77,7 @@ Pausing suspends the `AudioContext` (`Audio.syncPause`, called when P is pressed
 
 ## Dev tools
 
-- **`?tune`**: live sliders for every knob in `KNOBS` in [`TunePanel.js`](js/dev/TunePanel.js) (the kick, the hum, the sky, the mix, pacing, each character's numbers and look, the deaths), plus Level +1 and "Sound while paused".
+- **`?tune`**: live sliders for every knob in `KNOBS` in [`TunePanel.js`](js/dev/TunePanel.js) (the kick, the hum, the sky, the mix, pacing, each character's numbers and look, the deaths, the chatter), plus Level +1 and "Sound while paused".
 - **Voice playground** (`voices.html`): any phrase in any speaker's voice and effect chain, with render time, loudness and ceiling readouts; "Copy config" for `js/config.js`.
 - The playtest, screenshots, the beat check and the replay compare are in [docs/TESTING.md](docs/TESTING.md).
 

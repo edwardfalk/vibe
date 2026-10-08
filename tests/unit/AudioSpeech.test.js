@@ -111,12 +111,55 @@ describe('Audio.speak', () => {
     warn.mockRestore();
   });
 
-  it('keeps the chatter cooldown, unless forced', () => {
+  it('keeps the gap between lines, unless forced', () => {
     const { audio, voicebox } = speakingAudio();
     expect(audio.speak({ x: 0, y: 0 }, 'one', 'grunt')).toBe(true);
-    expect(audio.speak({ x: 0, y: 0 }, 'two', 'grunt')).toBe(false);
-    expect(audio.speak({ x: 0, y: 0 }, '3', 'player', true)).toBe(true);
+    expect(audio.speak({ x: 0, y: 0 }, 'two', 'tank')).toBe(false);
+    expect(audio.speak({ x: 0, y: 0 }, '3', 'grunt', true)).toBe(true);
     expect(voicebox.say.mock.calls.map((c) => c[1])).toEqual(['one', '3']);
+  });
+
+  it("the hero's lines keep their own gap: an enemy's line can't hold him back, nor his an enemy's", () => {
+    const { audio, voicebox } = speakingAudio();
+    expect(audio.speak({ x: 0, y: 0 }, 'one', 'grunt')).toBe(true);
+    expect(audio.speak(null, 'NOT COOL, MAN.', 'player')).toBe(true);
+    expect(audio.speak(null, 'MY DRINK!', 'player')).toBe(false);
+    expect(audio.speak({ x: 0, y: 0 }, 'two', 'stabber')).toBe(false);
+    expect(voicebox.say.mock.calls.map((c) => c[1])).toEqual([
+      'one',
+      'NOT COOL, MAN.',
+    ]);
+    // And the other way round
+    const hero = speakingAudio().audio;
+    expect(hero.speak(null, 'MY DRINK!', 'player')).toBe(true);
+    expect(hero.speak({ x: 0, y: 0 }, 'two', 'grunt')).toBe(true);
+  });
+
+  it("a line gets through once VOICE_GAP_SEC has passed since its side's last", () => {
+    const now = vi.spyOn(Date, 'now').mockReturnValue(100000);
+    try {
+      const { audio } = speakingAudio();
+      const gapMs = CONFIG.SPEECH_SETTINGS.VOICE_GAP_SEC * 1000;
+      expect(audio.speak({ x: 0, y: 0 }, 'one', 'grunt')).toBe(true);
+      now.mockReturnValue(100000 + gapMs - 100);
+      expect(audio.speak({ x: 0, y: 0 }, 'two', 'grunt')).toBe(false);
+      now.mockReturnValue(100000 + gapMs);
+      expect(audio.speak({ x: 0, y: 0 }, 'three', 'grunt')).toBe(true);
+    } finally {
+      now.mockRestore();
+    }
+  });
+
+  it('the gap is CONFIG.SPEECH_SETTINGS.VOICE_GAP_SEC, read as each line comes', () => {
+    const gap = CONFIG.SPEECH_SETTINGS.VOICE_GAP_SEC;
+    try {
+      const { audio } = speakingAudio();
+      audio.speak({ x: 0, y: 0 }, 'one', 'grunt');
+      CONFIG.SPEECH_SETTINGS.VOICE_GAP_SEC = 0;
+      expect(audio.speak({ x: 0, y: 0 }, 'two', 'grunt')).toBe(true);
+    } finally {
+      CONFIG.SPEECH_SETTINGS.VOICE_GAP_SEC = gap;
+    }
   });
 
   it('refuses a line, untaken and unshown, without speech to say it', () => {
@@ -136,7 +179,7 @@ describe('Audio.speak', () => {
       );
       expect(voicebox.say, name).not.toHaveBeenCalled();
       // A refused line doesn't start the cooldown, nor show a bubble
-      expect(audio.lastSpeechTime, name).toBe(0);
+      expect(audio.lastSpeechTime, name).toEqual({ player: 0, enemies: 0 });
       expect(audio.activeTexts, name).toHaveLength(0);
     }
     const { audio } = speakingAudio();

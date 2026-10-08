@@ -4,8 +4,10 @@ import { tankMuzzle } from '../../js/entities/TankRenderer.js';
 import { tankWorld } from './helpers/tankWorld.js';
 
 const DEFAULTS = { ...CONFIG.TANK };
+const SPEECH = { ...CONFIG.SPEECH_SETTINGS.TANK };
 afterEach(() => {
   Object.assign(CONFIG.TANK, DEFAULTS);
+  Object.assign(CONFIG.SPEECH_SETTINGS.TANK, SPEECH);
   vi.restoreAllMocks();
 });
 // Pin him in place, so the angle to the hero stays put while he turns
@@ -166,6 +168,7 @@ describe('the lurch', () => {
 
 describe("the tank's charge", () => {
   it('starts on a beat 1 with the hero in range and fires two bars later, however late in that bar', () => {
+    CONFIG.SPEECH_SETTINGS.TANK.CALLOUT_CHANCE = 1;
     const w = tankWorld({ hero: { x: 300, y: 0 } });
     const t = w.tank();
     t.lastActedBar = 1;
@@ -176,6 +179,35 @@ describe("the tank's charge", () => {
     const shot = w.frame(t, 8600); // bar 4, after a 700 ms stall
     expect(shot?.owner).toBe('enemy-tank');
     expect(t.chargingShot).toBe(false);
+    const lines = w.audio.speak.mock.calls.map(([, line]) => line);
+    expect(lines).toEqual(['CHARGING!', 'FIRE!']);
+  });
+
+  it('calls out CHARGING! and FIRE! on CALLOUT_CHANCE of his charges; the rest are tones alone', () => {
+    CONFIG.SPEECH_SETTINGS.TANK.CALLOUT_CHANCE = 0;
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    for (const ms of [4000, 5000, 6000, 7000, 8000]) w.frame(t, ms);
+    expect(t.chargingShot).toBe(false); // he fired
+    expect(w.audio.speak).not.toHaveBeenCalled();
+    const sounds = w.audio.playSound.mock.calls.map(([name]) => name);
+    expect(sounds).toContain('tankCharging');
+    expect(sounds).toContain('tankPowerUp');
+  });
+
+  it('rolls his callout once per charge: FIRE! follows a called-out CHARGING!, and the next charge rolls again', () => {
+    CONFIG.SPEECH_SETTINGS.TANK.CALLOUT_CHANCE = 1;
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    w.frame(t, 4000); // CHARGING!
+    CONFIG.SPEECH_SETTINGS.TANK.CALLOUT_CHANCE = 0;
+    for (let ms = 5000; ms <= 16000; ms += 1000) w.frame(t, ms);
+    const charges = w.audio.playSound.mock.calls.filter(
+      ([name]) => name === 'tankCharging'
+    );
+    expect(charges).toHaveLength(2); // the second charge, silent
     const lines = w.audio.speak.mock.calls.map(([, line]) => line);
     expect(lines).toEqual(['CHARGING!', 'FIRE!']);
   });

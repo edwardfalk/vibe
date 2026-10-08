@@ -68,7 +68,9 @@ describe('espeak-ng', () => {
   it('changes its sound with the variant, pitch, range and speed', async () => {
     // espeak-ng varies each render slightly (no seed to pin), so measure what
     // each setting is for: the voice's pitch, how far it moves, the length
-    const base = { ...SPEAKERS.grunt.voice, pitch: 50 };
+    // A fixed voice, not a cast: the thresholds below were set against it,
+    // and retuning a speaker in config.js mustn't move them
+    const base = { variant: 'AnxiousAndy', pitch: 50, range: 70, speed: 175 };
     const line = 'Kill human! Destroy target! Hostile detected!';
     const measure = async (voice) => {
       const { samples, sampleRate } = await espeak.render(line, voice);

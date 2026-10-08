@@ -354,6 +354,17 @@ test.describe('Gameplay Probes', () => {
     ]) {
       await expect(page.locator('#tunePanel')).toContainText(`DEATHS.${key}:`);
     }
+    // So are the chatter's
+    for (const label of [
+      'SPEECH_SETTINGS.VOICE_GAP_SEC',
+      'GRUNT.CHANCE',
+      'STABBER.CHANCE',
+      'RUSHER.CHANCE',
+      'TANK.CHANCE',
+      'TANK.CALLOUT_CHANCE',
+    ]) {
+      await expect(page.locator('#tunePanel')).toContainText(`${label}:`);
+    }
   });
 
   test('?tune panel clicks during play do not shoot or keep focus', async ({

@@ -56,7 +56,7 @@ function blastAt(bomb, x, y, lo, hi) {
 
 /**
  * The hero plants his bomb on a tank's back (one each, MAX_ACTIVE at once)
- * and shouts "TIMEBOMB!", forced past the cooldown all voices share
+ * and shouts "TIMEBOMB!", forced past the gap between his lines
  */
 export function plantBomb(activeBombs, tank, beatClock, audio = null) {
   if (!activeBombs || !tank || !beatClock) return;
@@ -113,8 +113,8 @@ export function updateBombs(context) {
     const fuse = fuseOf(bomb, beats);
     if (fuse < B.FUSE_BEATS) {
       // "3", "2", "1" on the last three even beats before the bang, from its
-      // beat 0 on (a short fuse drops the first), forced past the cooldown
-      // all voices share; after a stall only the latest
+      // beat 0 on (a short fuse drops the first), forced past the gap
+      // between the hero's lines; after a stall only the latest
       const first = B.FUSE_BEATS - COUNTDOWN.length * COUNT_EVERY_BEATS;
       const due = Math.min(
         COUNTDOWN.length,

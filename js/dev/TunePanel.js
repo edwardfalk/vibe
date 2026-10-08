@@ -5,8 +5,10 @@
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the hero's
  * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK),
- * and the deaths (DEATHS): the grunt's pop and the Dude's last breath, how
- * long remains stay, and his death scene's length and camera zoom.
+ * the deaths (DEATHS): the grunt's pop and the Dude's last breath, how
+ * long remains stay, and his death scene's length and camera zoom, and the
+ * chatter (SPEECH_SETTINGS): the gap between lines, how often each enemy
+ * speaks, and the share of the tank's charges he calls out.
  * Voices are tuned in the voice playground (voices.html). Sound and spawn changes apply from the next
  * beat or wave; level thresholds from the next level-up (the first one after
  * a restart); armour on tanks spawned after the change (and the tank's health); the rest at once.
@@ -32,6 +34,7 @@ const TANK = 'TANK';
 const TANK_LOOK = 'TANK_LOOK';
 const BOMB = 'BOMB';
 const DEATHS = 'DEATHS';
+const SPEECH = 'SPEECH_SETTINGS';
 
 const KNOBS = [
   [KICK, 'ENABLED'],
@@ -173,6 +176,12 @@ const KNOBS = [
   [DEATHS, 'LINGER', [0.5, 2, 0.1]],
   [DEATHS, 'SCENE_BEATS', [4, 8, 1]],
   [DEATHS, 'SCENE_ZOOM', [1, 2, 0.05]],
+  [SPEECH, 'VOICE_GAP_SEC', [0, 8, 0.25]],
+  [`${SPEECH}.GRUNT`, 'CHANCE', [0, 1, 0.05]],
+  [`${SPEECH}.STABBER`, 'CHANCE', [0, 1, 0.05]],
+  [`${SPEECH}.RUSHER`, 'CHANCE', [0, 1, 0.05]],
+  [`${SPEECH}.TANK`, 'CHANCE', [0, 1, 0.05]],
+  [`${SPEECH}.TANK`, 'CALLOUT_CHANCE', [0, 1, 0.05]],
 ];
 
 // The top-level CONFIG groups the knobs live in, in order: the JSON to copy

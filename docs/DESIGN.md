@@ -74,6 +74,8 @@ Everyone speaks through the game's own speech engines, SAM and espeak-ng, each s
 
 The levels are in `CONFIG.MIX`. The kick, the hum, the mix and pacing can all be tuned live by opening the game with `?tune`.
 
+Who speaks how often is in `CONFIG.SPEECH_SETTINGS`, also on `?tune`. Each enemy chatters about once every 20 to 30 seconds, on its own beat. The tank calls out "CHARGING!" and "FIRE!" on a quarter of his charges; the rest are tones alone, so his boasts get a turn. A line within `VOICE_GAP_SEC` of the last is dropped, not queued. The hero and the enemies keep separate gaps, so an enemy's line never holds the hero back.
+
 ## Pausing
 
 Pausing (P) freezes the game, its sound and the sky. The audio is suspended, which stops the beat clock too, so on unpause the music, the kick and every enemy pick up exactly where they stopped. A line being spoken holds mid-word and finishes on unpause. With `?tune` the sound plays on while paused (its "Sound while paused" box), so the kick can be tuned by ear; untick it to hear a real pause.

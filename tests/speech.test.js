@@ -83,7 +83,14 @@ test('speech gate: both engines run in a worker, at level, every setting heard',
     // are compared directly
     const changed = {};
     const line = 'Kill human! Destroy target! Hostile detected!';
-    const grunt = { ...S.SPEAKERS.grunt.voice, pitch: 50 };
+    // A fixed voice, not a cast: the thresholds below were set against it,
+    // and retuning a speaker in config.js mustn't move them
+    const grunt = {
+      variant: 'AnxiousAndy',
+      pitch: 50,
+      range: 70,
+      speed: 175,
+    };
     const measure = async (voice) => {
       const out = await render(worker, 'grunt', line, voice);
       return {

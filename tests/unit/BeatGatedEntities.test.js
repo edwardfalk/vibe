@@ -3,11 +3,17 @@ import { createMockP5 } from './helpers/enemyMocks.js';
 import { Tank } from '../../js/entities/Tank.js';
 import { Stabber } from '../../js/entities/Stabber.js';
 import { Rusher } from '../../js/entities/Rusher.js';
+import { Grunt } from '../../js/entities/Grunt.js';
 import { beatWorld as world } from './helpers/beatWorld.js';
 import { CONFIG } from '../../js/config.js';
 
+const TANK_SPEECH = { ...CONFIG.SPEECH_SETTINGS.TANK };
+
 describe('Beat-gated entity behaviour', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    Object.assign(CONFIG.SPEECH_SETTINGS.TANK, TANK_SPEECH);
+  });
 
   it('tank charge-up sound plays once per beat 1, however many frames the window spans', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0); // every roll succeeds
@@ -56,15 +62,30 @@ describe('Beat-gated entity behaviour', () => {
     expect(charge.length).toBe(1);
   });
 
-  it('stabber chatter keeps its old rate: gate open 250 of 2000 ms x 0.2', () => {
-    const cfg = Object.create(Stabber.prototype).getAmbientSpeechConfig();
-    expect(cfg.chance).toBeCloseTo((250 / 2000) * 0.2, 5);
+  it("each enemy's chatter chance is CONFIG.SPEECH_SETTINGS' live value", () => {
+    for (const [Type, key] of [
+      [Grunt, 'GRUNT'],
+      [Rusher, 'RUSHER'],
+      [Stabber, 'STABBER'],
+      [Tank, 'TANK'],
+    ]) {
+      const settings = CONFIG.SPEECH_SETTINGS[key];
+      const chance = settings.CHANCE;
+      try {
+        settings.CHANCE = 0.37;
+        const cfg = Object.create(Type.prototype).getAmbientSpeechConfig();
+        expect(cfg.chance, key).toBe(0.37);
+      } finally {
+        settings.CHANCE = chance;
+      }
+    }
   });
 
   it('tank says CHARGING! at charge start and FIRE! 8 beats later, both clear of the speech cooldown', () => {
+    CONFIG.SPEECH_SETTINGS.TANK.CALLOUT_CHANCE = 1; // restored in afterEach
     const { audio, context, at } = world();
-    // Record when each line is said: every tank line must clear the 2.5 s
-    // cooldown all voices share (Audio.js), or the next one is dropped
+    // Record when each line is said: every tank line must clear the gap
+    // between enemies' lines (Audio.js), or the next one is dropped
     let now = 0;
     const said = [];
     audio.speak.mockImplementation(
@@ -82,7 +103,9 @@ describe('Beat-gated entity behaviour', () => {
     expect(audio.playSound).toHaveBeenCalledWith('tankCharging', 100, 100);
     expect(audio.playSound).toHaveBeenCalledWith('tankPowerUp', 100, 100);
     for (let i = 1; i < said.length; i++) {
-      expect(said[i].now - said[i - 1].now).toBeGreaterThanOrEqual(2500);
+      expect(said[i].now - said[i - 1].now).toBeGreaterThanOrEqual(
+        CONFIG.SPEECH_SETTINGS.VOICE_GAP_SEC * 1000
+      );
     }
   });
 

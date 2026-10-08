@@ -67,8 +67,8 @@ describe("planting the hero's bomb", () => {
     }
     expect(activeBombs).toHaveLength(1);
     // From the hero (no speaker is the hero), so the shout shows over him
-    // and not under the count on the bomb; forced past the cooldown all
-    // voices share, as the count is
+    // and not under the count on the bomb; forced past the gap between his
+    // lines, as the count is
     expect(audio.speak.mock.calls).toEqual([
       [null, 'TIMEBOMB!', 'player', true],
     ]);

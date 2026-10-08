@@ -104,8 +104,8 @@ export class Audio {
     } catch (_) {}
     this.voicebox = null; // built in initialize()
     this.speechEnabled = true;
-    this.lastSpeechTime = 0;
-    this.speechCooldown = 2500; // 2.5 seconds - reasonable cooldown to prevent excessive chatter
+    // When the hero's last line and the enemies' last line were taken (ms)
+    this.lastSpeechTime = { player: 0, enemies: 0 };
 
     // Speech bubbles and floating text
     this.activeTexts = [];
@@ -578,8 +578,9 @@ export class Audio {
   // ========================================================================
 
   // Say a line in the speaker's voice, on the beat grid (Voicebox). True
-  // when it is taken: false while paused or muted, inside the chatter
-  // cooldown (unless forced), for an empty line, or without running audio
+  // when it is taken: false while paused or muted, within VOICE_GAP_SEC of
+  // its side's last line (the hero's or the enemies'; unless forced), for an
+  // empty line, or without running audio
   // and a working speech engine (Grunt.sayOw then plays its sound instead).
   speak(entity, text, voiceType = 'player', force = false) {
     // Nobody speaks while a pause holds the sound
@@ -588,15 +589,16 @@ export class Audio {
     // A line with no speaker comes from the hero
     entity ??= this.player;
 
-    // Check cooldown unless force is true
+    const side = voiceType === 'player' ? 'player' : 'enemies';
     const now = Date.now();
-    if (!force && now - this.lastSpeechTime < this.speechCooldown) {
+    const gapMs = CONFIG.SPEECH_SETTINGS.VOICE_GAP_SEC * 1000;
+    if (!force && now - this.lastSpeechTime[side] < gapMs) {
       return false;
     }
     if (!this.ensureAudioContext() || !this.voicebox || this.voicebox.failed) {
       return false;
     }
-    this.lastSpeechTime = now;
+    this.lastSpeechTime[side] = now;
 
     // The hero hears it from where the speaker is; one without a position
     // speaks from where the hero is

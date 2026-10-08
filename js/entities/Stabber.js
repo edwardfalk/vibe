@@ -18,8 +18,6 @@ import {
 import { drawCountRing, COUNT_RING_EDGE_PX } from './RusherRenderer.js';
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 
-// Per attempt once the speech timer is up (= today's effective rate)
-const STABBER_SPEECH_CHANCE = 0.025;
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const BEATS_PER_BAR = 4;
 /** His phrase, in beats from its bar's start: wind up on beat 2 */
@@ -513,7 +511,7 @@ class Stabber extends BaseEnemy {
     return {
       lines: STABBER_LINES,
       gate: (beatClock) => !!beatClock?.canStabberAttack(),
-      chance: STABBER_SPEECH_CHANCE,
+      chance: CONFIG.SPEECH_SETTINGS.STABBER.CHANCE,
     };
   }
 
