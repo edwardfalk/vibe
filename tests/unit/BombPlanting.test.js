@@ -311,12 +311,16 @@ describe('"TIMEBOMB!" and the count', () => {
     const words = spoken(cast.engine, BOMB_PLANTED);
     const { samples, sampleRate } = await engine.render(words, cast.voice);
     const shoutSec = samples.length / sampleRate; // as Voicebox times it
-    const STEP_SEC = 0.005; // a frame is ~16 ms; finer finds the "3" sooner
-    for (let k = 0; k < 100; k++) {
+    // Frames come ~16 ms apart and one may land right on the "3"'s beat:
+    // step finely, or the "3" is found late and an overlap hides
+    const STEP_SEC = 0.0005;
+    const PLANTS = 200; // across a beat, so some fall just before an eighth
+    for (let k = 0; k < PLANTS; k++) {
       // A clock on audio time from 0, as the game's: beat n at n × 0.5 s
       const ctx = { currentTime: 0 };
       const clock = new BeatClock(120, ctx);
-      ctx.currentTime = (10 + k / 100) * 0.5;
+      const plantedAt = 10 + k / PLANTS;
+      ctx.currentTime = plantedAt * 0.5;
       const audio = createMockAudio();
       const activeBombs = [];
       plantBomb(activeBombs, touchingTank('t'), clock, audio);
@@ -333,7 +337,7 @@ describe('"TIMEBOMB!" and the count', () => {
       }
       expect(
         shoutEnds,
-        `planted at beat ${(10 + k / 100).toFixed(2)}: "TIMEBOMB!" (${shoutSec.toFixed(2)} s) ends at ${shoutEnds.toFixed(3)} s, "3" at ${threeAt.toFixed(3)} s; raise CONFIG.BOMB.COUNT_LEAD_BEATS`
+        `planted at beat ${plantedAt.toFixed(3)}: "TIMEBOMB!" (${shoutSec.toFixed(3)} s) ends at ${shoutEnds.toFixed(4)} s, "3" at ${threeAt.toFixed(4)} s; raise CONFIG.BOMB.COUNT_LEAD_BEATS`
       ).toBeLessThanOrEqual(threeAt);
     }
   });

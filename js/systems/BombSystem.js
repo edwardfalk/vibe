@@ -2,7 +2,7 @@
  * The hero's bomb: his weapon against tanks. He plants it by touching a
  * tank's bare back (PlayerContactHandlers.js), shouting "TIMEBOMB!". It
  * rides there, counts down "3, 2, 1" on the beat in his voice from its beat
- * 0, the first beat at least COUNT_LEAD_BEATS later (after the shout), and
+ * 0, the first beat at least COUNT_LEAD_BEATS after his shout starts, and
  * blows on its beat
  * CONFIG.BOMB.FUSE_BEATS,
  * hurting everything within reach: the tank it is on, other aliens and the
@@ -18,6 +18,7 @@ import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
 import { BOMB_PLANTED, COUNTDOWN } from '../audio/DialogueLines.js';
+import { startTime } from '../audio/speech/Voicebox.js';
 
 const COUNT_EVERY_BEATS = 2;
 const AMBER_LEFT = 0.34; // its light goes white-hot for the last third
@@ -43,9 +44,18 @@ const backOf = (tank) =>
     tank.facing
   );
 // Beats since its beat 0, the first whole beat at least COUNT_LEAD_BEATS
-// after it was planted
+// after his shout starts
 const fuseOf = (bomb, beats) =>
   beats - Math.ceil(bomb.plantedAt + CONFIG.BOMB.COUNT_LEAD_BEATS);
+// The beat position his "TIMEBOMB!" starts at: Voicebox starts a line on the
+// next eighth note, up to half a beat after the touch. Without a clock on
+// audio time, at once.
+function shoutStart(clock, now) {
+  const ctx = clock.audioContext;
+  if (!ctx) return now;
+  const sec = startTime(ctx.currentTime, clock) - clock.startTime / 1000;
+  return sec / (clock.beatInterval / 1000);
+}
 // Its damage at a point: from hi at its centre to lo at its reach, 0 beyond;
 // never above hi, so a max of 0 deals none
 function blastAt(bomb, x, y, lo, hi) {
@@ -67,7 +77,7 @@ export function plantBomb(activeBombs, tank, beatClock, audio = null) {
   activeBombs.push({
     ...backOf(tank),
     facing: tank.facing,
-    plantedAt: now,
+    plantedAt: shoutStart(beatClock, now), // its count is timed from here
     seenAt: now, // the beat position of its last update
     beatSec: beatClock.beatInterval / 1000,
     said: 0, // how many of "3, 2, 1" it has said
