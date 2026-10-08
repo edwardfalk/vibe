@@ -200,7 +200,7 @@ const CONFIG = {
     SHOW: false,
     grunt: 22,
     rusher: 18, // the stuntman's rocket and rider
-    stabber: 18,
+    stabber: 19, // the shiv's shell and claws
     tank: 55, // the Bouncer's shoulders reach about 65 px
   },
 

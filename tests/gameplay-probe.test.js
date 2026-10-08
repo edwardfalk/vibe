@@ -899,35 +899,41 @@ test.describe('Gameplay Probes', () => {
     expect(result.markedForRemoval).toBe(true);
   });
 
-  test('Stabber attack handler runs without error', async ({ page }) => {
+  test("The stabber's phrase runs in the game: wind-up, lock, lunge, recovery", async ({
+    page,
+  }) => {
     await bootGame(page);
-
-    const result = await page.evaluate(() => {
-      const p = window.player.p;
-      const spawnSystem = window.spawnSystem;
-
-      const stabber = spawnSystem.createEnemy(
-        window.player.x + 250,
-        window.player.y,
+    // One stabber beside a hero who can't die, the other enemies gone: every
+    // state he goes through is noted, frame by frame
+    await page.evaluate(() => {
+      window.player.takeDamage = () => false;
+      for (const e of window.enemies) e.markedForRemoval = true;
+      const h = window.player;
+      const s = window.spawnSystem.createEnemy(
+        h.x + 230,
+        h.y + 40,
         'stabber',
-        p
+        h.p
       );
-      window.enemies.push(stabber);
-
-      // Run several update cycles
-      for (let i = 0; i < 30; i++) {
-        stabber.update(window.player.x, window.player.y, 16.67);
-      }
-
-      return {
-        ok: true,
-        x: stabber.x,
-        y: stabber.y,
-        health: stabber.health,
+      s.isSpawning = false;
+      window.enemies.push(s);
+      window.__seen = new Set();
+      const update = s.update.bind(s);
+      s.update = (...args) => {
+        const result = update(...args);
+        window.__seen.add(s.state);
+        if (s.locked) window.__seen.add('locked');
+        return result;
       };
     });
-
-    expect(result.ok).toBe(true);
-    expect(result.health).toBeGreaterThan(0);
+    // Within three bars at 120 BPM he winds up, locks, lunges and recovers
+    await page.waitForFunction(
+      () =>
+        ['windup', 'locked', 'lunge', 'recover'].every((k) =>
+          window.__seen.has(k)
+        ),
+      null,
+      { timeout: 6000, polling: 100 }
+    );
   });
 });

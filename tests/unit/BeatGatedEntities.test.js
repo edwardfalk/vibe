@@ -3,7 +3,6 @@ import { createMockP5 } from './helpers/enemyMocks.js';
 import { Tank } from '../../js/entities/Tank.js';
 import { Stabber } from '../../js/entities/Stabber.js';
 import { Rusher } from '../../js/entities/Rusher.js';
-import { updateStabberBehavior } from '../../js/entities/StabberAttackHandler.js';
 import { beatWorld as world } from './helpers/beatWorld.js';
 import { CONFIG } from '../../js/config.js';
 
@@ -55,30 +54,6 @@ describe('Beat-gated entity behaviour', () => {
       ([n]) => n === 'rusherCharge'
     );
     expect(charge.length).toBe(1);
-  });
-
-  it('stabber warns on beat 3 and dashes on the off-beat 3.5', () => {
-    const { clock, audio, context, at } = world();
-    const s = new Stabber(
-      100,
-      100,
-      'stabber',
-      { context },
-      createMockP5(),
-      audio
-    );
-    s.isSpawning = false;
-    s.spawnTimer = s.spawnDuration;
-    s.stabPreparing = true;
-    s.stabPreparingTime = 30; // minimum prep already done
-    let dashAt = null;
-    for (let ms = 2600; ms < 4600 && dashAt === null; ms += 16) {
-      at(ms); // from beat 2 of bar 2
-      updateStabberBehavior(s, 400, 100, 16);
-      if (s.isStabbing) dashAt = ms % 2000;
-    }
-    expect(dashAt).toBeGreaterThanOrEqual(1250);
-    expect(dashAt).toBeLessThanOrEqual(1250 + clock.tolerance + 16);
   });
 
   it('stabber chatter keeps its old rate: gate open 250 of 2000 ms x 0.2', () => {

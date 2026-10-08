@@ -159,7 +159,11 @@ export class BeatClock {
     this.update(true);
   }
 
-  // Reset timing (for level transitions)
+  // Re-zero the grid. Only GameState's restart calls it, after the enemies
+  // are cleared: the tank's charge, the rusher's fuse, the bombs and the
+  // stabber's phrase, lunge and rest bar are beat positions on this grid,
+  // and a stabber kept across it would freeze mid-lunge or wait hundreds of
+  // bars. A caller with enemies alive must clear those first
   reset() {
     const now = this._now();
     // Snap to nearest beat boundary so the grid stays aligned
