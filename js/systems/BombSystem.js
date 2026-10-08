@@ -18,7 +18,7 @@ import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
 import { BOMB_PLANTED, COUNTDOWN } from '../audio/DialogueLines.js';
-import { startTime } from '../audio/speech/Voicebox.js';
+import { LEAD_SEC } from '../audio/speech/Voicebox.js';
 
 const COUNT_EVERY_BEATS = 2;
 const AMBER_LEFT = 0.34; // its light goes white-hot for the last third
@@ -47,14 +47,18 @@ const backOf = (tank) =>
 // after his shout starts
 const fuseOf = (bomb, beats) =>
   beats - Math.ceil(bomb.plantedAt + CONFIG.BOMB.COUNT_LEAD_BEATS);
-// The beat position his "TIMEBOMB!" starts at: Voicebox starts a line on the
-// next eighth note, up to half a beat after the touch. Without a clock on
-// audio time, at once.
+// Voicebox looks at the clock for a line once the frame that asked for it is
+// done, not at the touch; the audio clock runs on meanwhile
+const SHOUT_CLOCK_SLACK_SEC = 0.05;
+const EIGHTHS_PER_BEAT = 2;
+// The latest beat position his "TIMEBOMB!" can start at. Voicebox starts a
+// line at once inside an eighth's window, else on the next eighth at least
+// LEAD_SEC ahead of its look at the clock (startTime): never after the first
+// eighth past that look + LEAD_SEC. Without a clock on audio time, at once.
 function shoutStart(clock, now) {
-  const ctx = clock.audioContext;
-  if (!ctx) return now;
-  const sec = startTime(ctx.currentTime, clock) - clock.startTime / 1000;
-  return sec / (clock.beatInterval / 1000);
+  if (!clock.audioContext) return now;
+  const late = (SHOUT_CLOCK_SLACK_SEC + LEAD_SEC) / (clock.beatInterval / 1000);
+  return Math.ceil((now + late) * EIGHTHS_PER_BEAT) / EIGHTHS_PER_BEAT;
 }
 // Its damage at a point: from hi at its centre to lo at its reach, 0 beyond;
 // never above hi, so a max of 0 deals none

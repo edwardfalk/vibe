@@ -324,8 +324,16 @@ describe('"TIMEBOMB!" and the count', () => {
       const audio = createMockAudio();
       const activeBombs = [];
       plantBomb(activeBombs, touchingTank('t'), clock, audio);
-      // It starts on the grid as Voicebox would start it, already rendered
-      const shoutEnds = startTime(ctx.currentTime, clock) + shoutSec;
+      // It starts on the grid as Voicebox would start it, already rendered,
+      // from its look at the clock once the frame is done: at the touch, or
+      // one or two 60 fps frames later
+      const FRAME_SEC = 1 / 60;
+      const shoutEnds =
+        Math.max(
+          ...[0, FRAME_SEC, 2 * FRAME_SEC].map((late) =>
+            startTime(ctx.currentTime + late, clock)
+          )
+        ) + shoutSec;
       let threeAt = null;
       audio.speak.mockImplementation((_e, word) => {
         if (word === '3') threeAt = ctx.currentTime;
@@ -354,11 +362,10 @@ describe('a bomb kills the tank it is on', () => {
         clouds.push(new HazardCloud(x, y, 'DEBRIS')),
       addPlasmaCloud: (x, y) => clouds.push(new HazardCloud(x, y, 'PLASMA')),
     };
-    w.at(4000); // beat 8: its beat 0 is 8 + COUNT_LEAD_BEATS, then the fuse
+    w.at(4000);
     plantBomb(w.values.activeBombs, t, w.clock);
-    const bangMs =
-      (8 + CONFIG.BOMB.COUNT_LEAD_BEATS + CONFIG.BOMB.FUSE_BEATS) * 500;
-    for (let ms = 4000; ms <= bangMs + 100; ms += 100) {
+    // On until it has blown
+    for (let ms = 4000; w.values.activeBombs.length && ms < 20000; ms += 100) {
       w.at(ms);
       updateBombs({
         activeBombs: w.values.activeBombs,
