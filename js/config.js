@@ -20,8 +20,13 @@ const CONFIG = {
     EIGHTH_NOTE: 0.08, // 8% of eighth-note interval (40ms at 120 BPM)
   },
 
-  // Speech/Chatter Settings (per enemy type, in seconds)
+  // Speech/Chatter Settings (per enemy type, in seconds). Every AMBIENT_MIN
+  // to AMBIENT_MAX s an enemy waits for its beat, then speaks one of its
+  // lines on CHANCE: about one line each 20-30 s. Tune live with ?tune.
   SPEECH_SETTINGS: {
+    // A line within this of the last is dropped, unless forced. The hero
+    // and the enemies each keep their own gap, so neither holds the other back
+    VOICE_GAP_SEC: 2.5,
     DEFAULT: {
       AMBIENT_MIN: 5, // seconds
       AMBIENT_MAX: 15,
@@ -31,21 +36,28 @@ const CONFIG = {
       AMBIENT_MIN: 3,
       AMBIENT_MAX: 8,
       COOLDOWN: 4,
+      CHANCE: 0.25,
     },
     TANK: {
       AMBIENT_MIN: 8,
       AMBIENT_MAX: 20,
       COOLDOWN: 12,
+      CHANCE: 0.5,
+      // The share of his charges he calls out, "CHARGING!" then "FIRE!";
+      // the rest carry on their tones alone
+      CALLOUT_CHANCE: 0.25,
     },
     RUSHER: {
       AMBIENT_MIN: 4,
       AMBIENT_MAX: 10,
       COOLDOWN: 6,
+      CHANCE: 0.4,
     },
     STABBER: {
       AMBIENT_MIN: 6,
       AMBIENT_MAX: 14,
       COOLDOWN: 8,
+      CHANCE: 0.4,
     },
   },
 

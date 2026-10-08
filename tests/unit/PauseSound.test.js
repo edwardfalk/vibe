@@ -23,6 +23,7 @@ function fakeAudio() {
     // As the constructor sets them
     _pausedByGame: false,
     _resuming: false,
+    lastSpeechTime: { player: 0, enemies: 0 },
   });
   return { audio, ctx };
 }

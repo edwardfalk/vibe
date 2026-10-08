@@ -13,8 +13,6 @@ import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { RUSHER_LINES, RUSHER_BATTLE_CRIES } from '../audio/DialogueLines.js';
 import { turnStep, turnAt } from './TankRenderer.js';
 
-// Per attempt once the speech timer is up (= today's effective rate)
-const RUSHER_SPEECH_CHANCE = 0.03;
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const DEG = PI / 180;
 const STRONG_EVERY = 2; // beats 1 and 3: every second beat from a bar's start
@@ -290,7 +288,7 @@ class Rusher extends BaseEnemy {
     return {
       lines: RUSHER_LINES,
       gate: (beatClock) => !!beatClock?.isOnBeat([1, 3]),
-      chance: RUSHER_SPEECH_CHANCE,
+      chance: CONFIG.SPEECH_SETTINGS.RUSHER.CHANCE,
     };
   }
 

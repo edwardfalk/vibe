@@ -20,8 +20,6 @@ import {
 // Per-beat chances for beat-gated grunt sounds (rolled once per beat)
 const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
 const GRUNT_MOVE_SOUND_CHANCE = 0.5;
-// Per attempt once the speech timer is up (= today's effective rate)
-const GRUNT_SPEECH_CHANCE = 0.18;
 // Grunts only shoot at the hero from this close
 const GRUNT_FIRE_RANGE = 300;
 // Shown over a warned grunt that doesn't fire after all
@@ -307,7 +305,7 @@ class Grunt extends BaseEnemy {
     return {
       lines: GRUNT_LINES,
       gate: (beatClock) => !!beatClock?.isOnBeat([2, 4]),
-      chance: GRUNT_SPEECH_CHANCE,
+      chance: CONFIG.SPEECH_SETTINGS.GRUNT.CHANCE,
     };
   }
 
