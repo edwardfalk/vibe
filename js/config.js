@@ -408,10 +408,11 @@ const CONFIG = {
       },
       grunt: {
         engine: 'espeak',
-        voice: { variant: 'AnxiousAndy', pitch: 85, range: 70, speed: 175 },
+        voice: { variant: 'anika', pitch: 100, range: 41, speed: 80 },
         chain: [
-          { type: 'bandpass', freq: 1700, q: 0.9 },
-          { type: 'crush', levels: 15 },
+          { type: 'highpass', freq: 920, q: 20 },
+          { type: 'slapback', time: 0.09, feedback: 0.38, mix: 0.17 },
+          { type: 'tremolo', rate: 4, depth: 0.31 },
         ],
         levelDb: 0,
       },
