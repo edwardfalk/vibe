@@ -2,7 +2,8 @@
  * The hero's bomb: his weapon against tanks. He plants it by touching a
  * tank's bare back (PlayerContactHandlers.js), shouting "TIMEBOMB!". It
  * rides there, counts down "3, 2, 1" on the beat in his voice from its beat
- * 0, the first beat at least a beat later, and blows on its beat
+ * 0, the first beat at least COUNT_LEAD_BEATS later (after the shout), and
+ * blows on its beat
  * CONFIG.BOMB.FUSE_BEATS,
  * hurting everything within reach: the tank it is on, other aliens and the
  * hero. Once its tank is gone it stays where he died and still blows.

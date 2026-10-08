@@ -489,10 +489,12 @@ describe('every way a grunt dies hands its death the blow', () => {
     const w = tankWorld({ hero: { x: 9999, y: 0 } });
     const tank = w.tank(); // faces +x; the bomb rides on his back
     const grunt = dying({ x: tank.x - 40, y: tank.y + 30 });
-    w.at(4000);
+    w.at(4000); // beat 8: it blows COUNT_LEAD_BEATS + FUSE_BEATS on
     plantBomb(w.values.activeBombs, tank, w.clock);
     const enemyDeathHandler = { handleEnemyDeath: vi.fn() };
-    for (let ms = 4000; ms <= 7600; ms += 100) {
+    const bangMs =
+      (8 + CONFIG.BOMB.COUNT_LEAD_BEATS + CONFIG.BOMB.FUSE_BEATS) * 500;
+    for (let ms = 4000; ms <= bangMs + 100; ms += 100) {
       w.at(ms);
       updateBombs({
         activeBombs: w.values.activeBombs,

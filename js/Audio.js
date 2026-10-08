@@ -38,6 +38,7 @@ import { createReverbImpulse } from './audio/speech/effects.js';
 import { Voicebox, startSpeechWorker } from './audio/speech/Voicebox.js';
 import { SOUND_CONFIG, TONE_ATTACK_SEC } from './audio/SoundConfig.js';
 import {
+  BOMB_PLANTED,
   COUNTDOWN,
   PLAYER_LINES,
   getPlayerDialogueLine,
@@ -146,9 +147,10 @@ export class Audio {
       // Speech goes straight to the limiter: the duck never touches it
       this.voicebox = this.createVoicebox(this.audioContext);
       this.voicebox.connect(this.masterLimiter);
-      // The bomb's count and his death lines can't wait for a render: the
-      // count must land on its beats, his death scene is too short
-      for (const line of [...COUNTDOWN, ...PLAYER_LINES.death]) {
+      // The bomb's shout and count and his death lines can't wait for a
+      // render: the shout must end before the count, the count land on its
+      // beats, and his death scene is too short
+      for (const line of [BOMB_PLANTED, ...COUNTDOWN, ...PLAYER_LINES.death]) {
         this.voicebox.prepare('player', line);
       }
       this.applyMix();

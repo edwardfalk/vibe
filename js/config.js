@@ -288,7 +288,9 @@ const CONFIG = {
     PLAYER_DAMAGE_MIN: 10,
     PLAYER_DAMAGE_MAX: 40,
     MAX_ACTIVE: 3,
-    COUNT_LEAD_BEATS: 1, // "TIMEBOMB!" gets at least this long before the count
+    // "TIMEBOMB!" gets at least this long before the count: at 1 the "3"
+    // came while he still said it (BombPlanting.test.js times his voice)
+    COUNT_LEAD_BEATS: 2,
   },
 
   // The hero: a shield that takes one real hit whole, then recharges and
