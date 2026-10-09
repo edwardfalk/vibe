@@ -302,3 +302,116 @@ test('a volley of four grunt shots in one frame adds like random phases, not in 
   expect(overOne).toBeGreaterThan(4);
   expect(overOne).toBeLessThan(8);
 });
+
+// The band's instruments (audio PR 3) at the levels Edward heard on the
+// listening page: each matched there to the sound it replaced by
+// measure.mjs (docs/superpowers/specs/2026-10-09-band-studies), so each is
+// measured as it was: alone, centred, at volume 1, with no limiter, the
+// loudest 50 ms through a 250 Hz high-pass, the loudest of the page's
+// arguments. The targets are today's sounds measured that way on d677cd7;
+// the fuse replaced silence, so it matches the grunt's shot. Each lands on
+// its target plus its knob's default
+const BAND_TARGET_DB = {
+  gruntShot: -23.4,
+  tankShot: -13.7,
+  tankCharge: -19.5,
+  gruntChatter: -22.9,
+  rusherFuse: -23.4,
+};
+const BAND_TOLERANCE_DB = 1.5;
+
+test("the band's instruments sit at the levels Edward heard on the page", async ({
+  page,
+}) => {
+  await page.goto('/tests/helpers/speech-gate.html');
+  const levels = await page.evaluate(async () => {
+    const { CONFIG } = await import('/js/config.js');
+    const { SYNTHS } = await import('/js/audio/Instruments.js');
+    const RATE = 44100;
+    const AT = 0.05;
+    const WINDOW = Math.round(RATE * 0.05);
+    // dB of the loudest 50 ms that play() sends through a 250 Hz high-pass
+    async function loudest(play) {
+      const ctx = new OfflineAudioContext(1, 2 * RATE, RATE);
+      const highpass = new BiquadFilterNode(ctx, {
+        type: 'highpass',
+        frequency: 250,
+        Q: 0.7,
+      });
+      highpass.connect(ctx.destination);
+      play(ctx, highpass);
+      const data = (await ctx.startRendering()).getChannelData(0);
+      let loud = 0;
+      for (let i = 0; i + WINDOW <= data.length; i += WINDOW >> 2) {
+        let sum = 0;
+        for (let j = i; j < i + WINDOW; j++) sum += data[j] ** 2;
+        loud = Math.max(loud, sum / WINDOW);
+      }
+      return 10 * Math.log10(loud);
+    }
+    // Each sound: its synth, its ?tune choice, its knob, the page's arguments
+    const steps = (list, steps) => list.map((step) => ({ step, steps }));
+    const SOUNDS = {
+      'gruntShot stab': [
+        'gruntShot',
+        { GRUNT_SHOT: 'stab' },
+        'GRUNT_SHOT_DB',
+        [{ note: ['b3', 5] }],
+      ],
+      'gruntShot zap': [
+        'gruntShot',
+        { GRUNT_SHOT: 'zap' },
+        'GRUNT_SHOT_DB',
+        [{ note: ['b3', 5] }],
+      ],
+      tankShot: ['tankShot', {}, 'TANK_SHOT_DB', [{}]],
+      tankCharge: ['tankCharge', {}, 'CHARGE_DB', steps([0, 3, 7], 8)],
+      'gruntChatter whine': [
+        'gruntChatter',
+        { CHATTER: 'both' },
+        'CHATTER_DB',
+        [{ voice: 'whine' }],
+      ],
+      'gruntChatter squeak': [
+        'gruntChatter',
+        { CHATTER: 'both' },
+        'CHATTER_DB',
+        [{ voice: 'squeak' }],
+      ],
+      rusherFuse: [
+        'rusherFuse',
+        {},
+        'FUSE_DB',
+        [3, 2, 1].map((left) => ({ left })),
+      ],
+    };
+    const saved = { ...CONFIG.BAND };
+    const out = {};
+    for (const [name, [synth, band, knob, args]] of Object.entries(SOUNDS)) {
+      Object.assign(CONFIG.BAND, band);
+      let level = -Infinity;
+      for (const a of args) {
+        level = Math.max(
+          level,
+          await loudest((ctx, o) =>
+            SYNTHS[synth](ctx, o, {}, { volume: 1, pan: 0, at: AT, ...a })
+          )
+        );
+      }
+      out[name] = { synth, level, knobDb: saved[knob] };
+      Object.assign(CONFIG.BAND, saved);
+    }
+    return out;
+  });
+  console.log(
+    'band levels, dB:',
+    Object.fromEntries(
+      Object.entries(levels).map(([n, l]) => [n, +l.level.toFixed(1)])
+    )
+  );
+  for (const [name, { synth, level, knobDb }] of Object.entries(levels)) {
+    const want = BAND_TARGET_DB[synth] + knobDb;
+    expect(level, name).toBeGreaterThanOrEqual(want - BAND_TOLERANCE_DB);
+    expect(level, name).toBeLessThanOrEqual(want + BAND_TOLERANCE_DB);
+  }
+});
