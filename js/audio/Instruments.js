@@ -548,6 +548,31 @@ export function gruntChatter(ctx, out, _cfg, opts) {
   playBand(ctx, out, sound, CHATTER_DB, opts);
 }
 
+// The rusher's lit fuse: a clean triangle beep a beat, counting down. From
+// the end back: the root an octave up, his seventh, his root; a longer fuse
+// repeats the root
+const FUSE_NOTES = [
+  ['1', 5],
+  ['b7', 5],
+  ['1', 6],
+];
+const FUSE = {
+  trim: 0.4,
+  PEAK: 0.35,
+  ATTACK_SEC: 0.002,
+  SEC: 0.14,
+  STOP_SEC: 0.16,
+  // `left`: whole beats to his blast, 1 on the last beat before it. Any
+  // other (beepFuse never sends one) finds no note, and hz throws
+  notes: ({ left }) => [FUSE_NOTES[Math.max(0, FUSE_NOTES.length - left)]],
+  play(ctx, bus, at, [f], cents) {
+    const e = envelope(ctx, this.PEAK, this.ATTACK_SEC, this.SEC, at, bus);
+    const o = osc(ctx, 'triangle', f, at, e, cents);
+    o.start(at);
+    return [[o], [e], this.STOP_SEC];
+  },
+};
+
 /** Every synth by name; the crash keeps CONFIG.RUSHER.CRASH_VOLUME */
 export const SYNTHS = {
   crash: (ctx, out, cfg, { volume, pan }) =>
@@ -565,4 +590,6 @@ export const SYNTHS = {
   tankCharge: (ctx, out, _cfg, opts) =>
     playBand(ctx, out, TANK_CHARGE, CONFIG.BAND.CHARGE_DB, opts),
   gruntChatter,
+  rusherFuse: (ctx, out, _cfg, opts) =>
+    playBand(ctx, out, FUSE, CONFIG.BAND.FUSE_DB, opts),
 };

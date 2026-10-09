@@ -105,6 +105,8 @@ export const SOUND_CONFIG = {
     volume: 0.25,
     duration: 0.08,
   },
+  // The rusher's lit fuse: the band's countdown beeps (Instruments.js)
+  rusherFuse: { synth: 'rusherFuse' },
   rusherCharge: {
     voice: 'rusher',
     note: ['b7', 4],

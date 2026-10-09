@@ -140,6 +140,7 @@ const CONFIG = {
     CHARGE_DB: 0, // the tank's charge
     CHATTER: 'both', // both (each grunt his own voice), whine or squeak
     CHATTER_DB: 0,
+    FUSE_DB: 0, // the rusher's fuse
   },
 
   // Pausing (P) stops the sound: the audio is suspended, which also stops

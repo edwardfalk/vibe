@@ -101,6 +101,7 @@ const KNOBS = [
   [BAND, 'CHARGE_DB', [-24, 12, 1]],
   [BAND, 'CHATTER', CHATTER_CHOICES],
   [BAND, 'CHATTER_DB', [-24, 12, 1]],
+  [BAND, 'FUSE_DB', [-24, 12, 1]],
   [RUSHER, 'BOOST_PX_S', [0, 600, 10]],
   [RUSHER, 'CRUISE_PX_S', [0, 400, 10]],
   [RUSHER, 'BOOST_TAU_SEC', [0.02, 1, 0.01]],

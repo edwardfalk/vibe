@@ -53,6 +53,67 @@ function fused() {
 
 afterEach(() => Object.assign(CONFIG.RUSHER, DEFAULTS));
 
+// The beats left that each of his fuse's beeps told, in order
+const beeps = (w) =>
+  w.audio.playSound.mock.calls
+    .filter(([name]) => name === 'rusherFuse')
+    .map(([, , , { left }]) => left);
+
+describe("the rusher's fuse beeps", () => {
+  it('lit, he beeps each whole beat before his blast with the beats left, and not on the blast beat', () => {
+    const w = fused();
+    // Where the clock was at each beep
+    const at = [];
+    w.audio.playSound.mockImplementation((name) => {
+      if (name === 'rusherFuse') at.push(w.clock.getBeatPosition());
+    });
+    w.step(12.2);
+    w.r.takeDamage(1, null, 'hit'); // his blast is beat 16
+    const blast = w.run(12.2, 17);
+    expect(blast.beats).toBeLessThan(16.05);
+    expect(beeps(w)).toEqual([3, 2, 1]);
+    // Each on its own beat, 13, 14 and 15, in the first frame of it
+    at.forEach((beats, i) => {
+      expect(Math.floor(beats), `beep ${i}`).toBe(13 + i);
+      expect(beats - Math.floor(beats), `beep ${i}`).toBeLessThan(0.05);
+    });
+    for (const [name, , , opts] of w.audio.playSound.mock.calls) {
+      if (name === 'rusherFuse') expect(opts.seed).toBe(w.r.lookSeed);
+    }
+  });
+
+  it('a late frame that moves his blast on counts on to the new one', () => {
+    const w = fused();
+    w.step(12.0);
+    w.r.takeDamage(1, null, 'hit'); // his blast is beat 14
+    w.walk(12.0, 13.9);
+    w.step(14.6); // 0.6 beat late: on to 16, and no beep on 14
+    expect(w.r.lit.blastBeat).toBe(16);
+    expect(w.walk(14.6, 16)).toBeNull();
+    expect(w.step(16.01)?.type).toBe('rusher-explosion');
+    expect(beeps(w)).toEqual([1, 1]);
+  });
+
+  it('a stall that moves his blast on counts on to the new one', () => {
+    const w = fused();
+    w.step(14.0);
+    w.r.takeDamage(1, null, 'hit'); // his blast is beat 16
+    w.step(14.05);
+    w.step(15.1); // a beat the game sat out: on to 18
+    expect(w.r.lit.blastBeat).toBe(18);
+    expect(w.run(15.1, 18.1).beats).toBeLessThan(18.05);
+    expect(beeps(w)).toEqual([3, 2, 1]);
+  });
+
+  it("lit by a blast, his first beep is the beat after it, not the blast's own", () => {
+    const w = fused();
+    w.step(14.03); // the blast went off on beat 14, a frame late
+    w.r.takeDamage(R.EXPLOSION_DAMAGE, null, 'rusher-blast');
+    w.run(14.03, 17);
+    expect(beeps(w)).toEqual([1]);
+  });
+});
+
 describe("the rusher's fuse", () => {
   it('strongBeatAfter finds the first beat 1 or 3 at least that far on', () => {
     expect(strongBeatAfter(12, 2)).toBe(14);

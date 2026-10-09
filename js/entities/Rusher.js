@@ -142,7 +142,10 @@ class Rusher extends BaseEnemy {
       this.getContextValue('audio')?.playSound('rusherCharge', this.x, this.y);
     }
 
-    if (this.lit) return this.blowOnBeat(beats);
+    if (this.lit) {
+      if (newBeat) this.beepFuse(beats);
+      return this.blowOnBeat(beats);
+    }
 
     if (!this.cried && distance <= R.CRY_DIST_PX) {
       this.cried = true;
@@ -209,6 +212,23 @@ class Rusher extends BaseEnemy {
       }
     }
     this.seenBeats = beats;
+  }
+
+  /**
+   * His fuse's beep on a new whole beat, with the whole beats `left` to his
+   * blast: the last before the crash is the highest. A stall or a late frame
+   * moved his blast beat, and the count with it; none on the blast beat or
+   * after it, and none with no beat clock
+   */
+  beepFuse(beats) {
+    const { blastBeat } = this.lit;
+    if (blastBeat === null) return;
+    const left = blastBeat - Math.floor(beats);
+    if (left < 1) return;
+    this.getContextValue('audio')?.playSound('rusherFuse', this.x, this.y, {
+      left,
+      seed: this.lookSeed,
+    });
   }
 
   /**
