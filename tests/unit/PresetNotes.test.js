@@ -30,7 +30,7 @@ function atEveryRoot(check) {
 
 describe('presets name notes', () => {
   it('every pitched preset has a voice and a note, and no Hz, random range or stray type', () => {
-    expect(pitched.length).toBeGreaterThan(30);
+    expect(pitched.length).toBeGreaterThan(20);
     for (const [name, cfg] of pitched) {
       expect(Object.keys(VOICE_DEGREES), name).toContain(cfg.voice);
       expect(cfg.note, name).toHaveLength(2);
@@ -93,11 +93,6 @@ describe('presets name notes', () => {
 const TABLE = {
   gruntAdvance: [['b3', 4], null],
   gruntRetreat: [['5', 3], null],
-  gruntMalfunction: [['b3', 3], null],
-  gruntBeep: [['b3', 5], null],
-  gruntWhir: [['5', 3], null],
-  gruntError: [['b3', 3], null],
-  gruntGlitch: [['5', 2], null],
   gruntOw: [['5', 4], null],
   gruntHit: [['b3', 4], null],
   gruntResponse: [['b3', 4], null],
@@ -164,8 +159,8 @@ const TABLE = {
 };
 
 describe("every preset on the spec's note", () => {
-  it("each of the table's 31 presets plays its note and sweeps to its end", () => {
-    expect(Object.keys(TABLE)).toHaveLength(31);
+  it("each of the table's 26 presets plays its note and sweeps to its end", () => {
+    expect(Object.keys(TABLE)).toHaveLength(26);
     for (const [name, [note, to]] of Object.entries(TABLE)) {
       expect(SOUND_CONFIG[name]?.note, name).toEqual(note);
       expect(SOUND_CONFIG[name]?.sweep?.to ?? null, name).toEqual(to);
@@ -196,8 +191,6 @@ describe('every sound the game plays exists', () => {
     }
     // And the names that reach playSound through a variable
     for (const name of [
-      ...['gruntMalfunction', 'gruntBeep', 'gruntWhir', 'gruntError'],
-      'gruntGlitch', // the grunt's weird noises
       ...['gruntAdvance', 'gruntRetreat'], // his moveSound
       ...['stabberOhNo', 'rusherOhNo', 'enemyOhNo'], // EnemyDeathHandler
       'explosion', // BulletCollisionResolvers' deathSound

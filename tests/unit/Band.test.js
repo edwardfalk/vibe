@@ -1,7 +1,12 @@
 // The band's instruments: each enemy's own synth, from the 9 October
 // listening page (docs/superpowers/specs/2026-10-10-band-instruments-design.md)
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { SYNTHS, GRUNT_SHOT_SOUNDS } from '../../js/audio/Instruments.js';
+import {
+  SYNTHS,
+  GRUNT_SHOT_SOUNDS,
+  GRUNT_VOICES,
+  CHATTER_CHOICES,
+} from '../../js/audio/Instruments.js';
 import {
   SOUND_CONFIG,
   GRUNT_SHOT_NOTES,
@@ -144,23 +149,54 @@ describe("playSynth passes the caller's options through", () => {
   });
 });
 
-// Each of the band's synths, with what its creature passes, and its knob
+// Each of the band's sounds: its synth (by default its name), what its
+// creature passes, its knob, and any CONFIG.BAND choice it needs
 const BAND = {
   gruntShot: { opts: { note: ['b3', 5] }, knob: 'GRUNT_SHOT_DB' },
+  'gruntShot zap': {
+    synth: 'gruntShot',
+    band: { GRUNT_SHOT: 'zap' },
+    opts: { note: ['b3', 5] },
+    knob: 'GRUNT_SHOT_DB',
+  },
   tankShot: { opts: {}, knob: 'TANK_SHOT_DB' },
   tankCharge: { opts: { step: 0, steps: 8 }, knob: 'CHARGE_DB' },
+  gruntChatter: { opts: { voice: 'whine' }, knob: 'CHATTER_DB' },
+  'gruntChatter squeak': {
+    synth: 'gruntChatter',
+    opts: { voice: 'squeak' },
+    knob: 'CHATTER_DB',
+  },
 };
 const NAMES = Object.keys(BAND);
 
-// One play of a band synth on the stand-in: full volume, centred, at AT
+// Plays `name` with its choices set, then puts CONFIG.BAND back
+function playBandSound(name, ctx, out, opts) {
+  const { synth = name, band = {} } = BAND[name];
+  const saved = { ...CONFIG.BAND };
+  Object.assign(CONFIG.BAND, band);
+  try {
+    SYNTHS[synth](
+      ctx,
+      out,
+      {},
+      {
+        volume: 1,
+        pan: 0,
+        at: AT,
+        ...BAND[name].opts,
+        ...opts,
+      }
+    );
+  } finally {
+    Object.assign(CONFIG.BAND, saved);
+  }
+}
+
+// One play of a band sound on the stand-in: full volume, centred, at AT
 function play(name, opts = {}) {
   const { ctx, made } = fakeContext();
-  SYNTHS[name](
-    ctx,
-    { kind: 'out' },
-    {},
-    { volume: 1, pan: 0, at: AT, ...BAND[name].opts, ...opts }
-  );
+  playBandSound(name, ctx, { kind: 'out' }, opts);
   const of = (kind) => made.filter((n) => n.kind === kind);
   return { ctx, made, of };
 }
@@ -181,14 +217,7 @@ function withBand(key, value, fn) {
 // A play that must throw, and the nodes it made
 function failing(name, opts) {
   const { ctx, made } = fakeContext();
-  expect(() =>
-    SYNTHS[name](
-      ctx,
-      {},
-      {},
-      { volume: 1, pan: 0, at: AT, ...BAND[name].opts, ...opts }
-    )
-  ).toThrow();
+  expect(() => playBandSound(name, ctx, {}, opts)).toThrow();
   return made;
 }
 
@@ -440,4 +469,136 @@ describe("the tank's shot and charge", () => {
       expect(failing('tankCharge', { step, steps: 8 })).toHaveLength(0);
     }
   );
+});
+
+describe("the grunts' chatter", () => {
+  it('offers each grunt his own voice, or all one, and each his own by default', () => {
+    expect(GRUNT_VOICES).toEqual(['whine', 'squeak']);
+    expect(CHATTER_CHOICES).toEqual(['both', 'whine', 'squeak']);
+    expect(CONFIG.BAND.CHATTER).toBe('both');
+    expect(SOUND_CONFIG.gruntChatter).toEqual({ synth: 'gruntChatter' });
+  });
+
+  // The waveform each voice plays: the whine's triangle, the squeak's saw
+  const VOICE_WAVE = { whine: 'triangle', squeak: 'sawtooth' };
+  const waveOf = (voice) => play('gruntChatter', { voice }).of('osc')[0].type;
+
+  it("'both' plays the voice each grunt brings", () => {
+    withBand('CHATTER', 'both', () => {
+      for (const voice of GRUNT_VOICES) {
+        expect(waveOf(voice)).toBe(VOICE_WAVE[voice]);
+      }
+    });
+  });
+
+  it("'whine' or 'squeak' makes every grunt that voice", () => {
+    for (const forced of GRUNT_VOICES) {
+      withBand('CHATTER', forced, () => {
+        for (const voice of GRUNT_VOICES) {
+          expect(waveOf(voice)).toBe(VOICE_WAVE[forced]);
+        }
+      });
+    }
+  });
+
+  it('an unknown CHATTER, or an unknown voice, throws, naming it, before any node', () => {
+    const { ctx } = fakeContext();
+    withBand('CHATTER', 'yodel', () => {
+      expect(failing('gruntChatter')).toHaveLength(0);
+      expect(() => playBandSound('gruntChatter', ctx, {}, {})).toThrow(/yodel/);
+    });
+    withBand('CHATTER', 'both', () => {
+      expect(failing('gruntChatter', { voice: 'yodel' })).toHaveLength(0);
+      expect(() =>
+        playBandSound('gruntChatter', ctx, {}, { voice: 'yodel' })
+      ).toThrow(/yodel/);
+    });
+  });
+
+  it('the whine: a triangle sliding up a step into his minor third, wobbling 9 times a second', () => {
+    const { of } = play('gruntChatter', { voice: 'whine' });
+    const [o, wobble] = of('osc');
+    expect(o.type).toBe('triangle');
+    expect(o.frequency.setValueAtTime.mock.calls[0][0]).toBeCloseTo(
+      hz(['2', 5], AT),
+      6
+    );
+    expect(
+      o.frequency.exponentialRampToValueAtTime.mock.calls[0][0]
+    ).toBeCloseTo(hz(['b3', 5], AT), 6);
+    expect(wobble.frequency.setValueAtTime.mock.calls[0][0]).toBe(9);
+    // The wobble moves his pitch 30 cents either way
+    const depth = of('gain').find(
+      (g) => g.gain.setValueAtTime.mock.calls[0][0] === 30
+    );
+    expect(wobble.connect).toHaveBeenCalledWith(depth);
+    expect(depth.connect).toHaveBeenCalledWith(o.detune);
+  });
+
+  it('the squeak: a saw blipping up a sixth onto his minor third, through two vowel filters', () => {
+    const { of } = play('gruntChatter', { voice: 'squeak' });
+    const [o] = of('osc');
+    expect(o.type).toBe('sawtooth');
+    expect(o.frequency.setValueAtTime.mock.calls[0][0]).toBeCloseTo(
+      hz(['5', 4], AT),
+      6
+    );
+    expect(
+      o.frequency.exponentialRampToValueAtTime.mock.calls[0][0]
+    ).toBeCloseTo(hz(['b3', 5], AT), 6);
+    const bands = of('filter').map((f) => [
+      f.type,
+      f.frequency.setValueAtTime.mock.calls[0][0],
+    ]);
+    expect(bands).toEqual([
+      ['bandpass', 2800],
+      ['bandpass', 900],
+    ]);
+    for (const vowel of of('filter')) {
+      expect(o.connect).toHaveBeenCalledWith(vowel);
+    }
+  });
+});
+
+describe('a grunt chatters in his own voice', () => {
+  // A grunt with this look seed: his chatter's and his shot's calls
+  function grunt(seed) {
+    const audio = createMockAudio();
+    const context = {
+      get: (k) => (k === 'audio' ? audio : undefined),
+      set() {},
+    };
+    const g = new Grunt(0, 0, 'grunt', { context }, createMockP5(), audio);
+    g.lookSeed = seed;
+    return { g, audio };
+  }
+
+  it('every chatter of one grunt is one voice, with his seed', () => {
+    const { g, audio } = grunt(0.3);
+    for (let i = 0; i < 3; i++) g.makeGruntWeirdNoise();
+    expect(audio.playSound.mock.calls).toEqual(
+      Array(3).fill(['gruntChatter', 0, 0, { voice: 'squeak', seed: 0.3 }])
+    );
+  });
+
+  it('his voice goes with either note: four seeds, all four pairs', () => {
+    const pairs = [0.1, 0.3, 0.6, 0.8].map((seed) => {
+      const { g } = grunt(seed);
+      return [g.shotNote()[0], g.chatterVoice()];
+    });
+    expect(pairs).toEqual([
+      ['b3', 'whine'],
+      ['b3', 'squeak'],
+      ['5', 'whine'],
+      ['5', 'squeak'],
+    ]);
+  });
+
+  it("draws none of the game's random numbers", () => {
+    const random = vi.spyOn(Math, 'random');
+    const { g } = grunt(0.5);
+    random.mockClear();
+    g.makeGruntWeirdNoise();
+    expect(random).not.toHaveBeenCalled();
+  });
 });

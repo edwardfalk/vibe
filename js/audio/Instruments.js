@@ -296,11 +296,11 @@ function playBand(ctx, out, sound, knobDb, opts) {
   disconnectWhenEnded(sources[0], [...sources, ...nodes, bus, panner]);
 }
 
-// The sound `name` of a ?tune choice; an unknown one throws (playSound logs
-// it once and plays nothing)
-function chosen(sounds, name, knob) {
+// The sound `name` of a choice (`what`, for the error); an unknown one
+// throws, and playSound logs it once and plays nothing
+function chosen(sounds, name, what) {
   if (!Object.hasOwn(sounds, name)) {
-    throw new Error(`Unknown CONFIG.BAND.${knob}: ${name}`);
+    throw new Error(`Unknown ${what}: ${name}`);
   }
   return sounds[name];
 }
@@ -389,7 +389,7 @@ export const GRUNT_SHOT_SOUNDS = Object.keys(GRUNT_SHOTS);
 /** The grunt's shot: CONFIG.BAND.GRUNT_SHOT on his `note` */
 export function gruntShot(ctx, out, _cfg, opts) {
   const { GRUNT_SHOT, GRUNT_SHOT_DB } = CONFIG.BAND;
-  const sound = chosen(GRUNT_SHOTS, GRUNT_SHOT, 'GRUNT_SHOT');
+  const sound = chosen(GRUNT_SHOTS, GRUNT_SHOT, 'CONFIG.BAND.GRUNT_SHOT');
   playBand(ctx, out, sound, GRUNT_SHOT_DB, opts);
 }
 
@@ -472,6 +472,82 @@ const TANK_CHARGE = {
   },
 };
 
+// The grunts' chatter, now and then on 2 or 4: each grunt has one voice
+const CHATTER_VOICES = {
+  // A soft tone sliding up a step into his minor third, with a nervous
+  // wobble
+  whine: {
+    trim: -1.1,
+    PEAK: 0.35,
+    ATTACK_SEC: 0.01,
+    SEC: 0.2,
+    SLIDE_SEC: 0.06,
+    WOBBLE_HZ: 9,
+    WOBBLE_CENTS: 30,
+    STOP_SEC: 0.22,
+    notes: () => [
+      ['2', 5],
+      ['b3', 5],
+    ],
+    play(ctx, bus, at, [from, to], cents) {
+      const e = envelope(ctx, this.PEAK, this.ATTACK_SEC, this.SEC, at, bus);
+      const o = osc(ctx, 'triangle', from, at, e, cents);
+      o.frequency.exponentialRampToValueAtTime(to, at + this.SLIDE_SEC);
+      const wobble = osc(ctx, 'sine', this.WOBBLE_HZ, at, null, cents);
+      const depth = gainAt(ctx, this.WOBBLE_CENTS, at, o.detune);
+      wobble.connect(depth);
+      o.start(at);
+      wobble.start(at);
+      return [[o, wobble], [e, depth], this.STOP_SEC];
+    },
+  },
+  // A saw through two vowel filters, blipping up onto his minor third: a
+  // little "eep"
+  squeak: {
+    trim: 9.6,
+    PEAK: 0.5,
+    ATTACK_SEC: 0.005,
+    SEC: 0.13,
+    VOWELS: [
+      { HZ: 2800, Q: 6 },
+      { HZ: 900, Q: 5 },
+    ],
+    BLIP_SEC: 0.05,
+    STOP_SEC: 0.14,
+    notes: () => [
+      ['5', 4],
+      ['b3', 5],
+    ],
+    play(ctx, bus, at, [from, to], cents) {
+      const e = envelope(ctx, this.PEAK, this.ATTACK_SEC, this.SEC, at, bus);
+      const vowels = this.VOWELS.map((v) =>
+        filterAt(ctx, 'bandpass', v.HZ, v.Q, at, e)
+      );
+      const o = osc(ctx, 'sawtooth', from, at, null, cents);
+      o.frequency.exponentialRampToValueAtTime(to, at + this.BLIP_SEC);
+      for (const v of vowels) o.connect(v);
+      o.start(at);
+      return [[o], [e, ...vowels], this.STOP_SEC];
+    },
+  },
+};
+
+/** The grunts' chatter voices; a grunt has one for life (Grunt.chatterVoice) */
+export const GRUNT_VOICES = Object.keys(CHATTER_VOICES);
+/** CONFIG.BAND.CHATTER's choices, for ?tune: each his own, or all one */
+export const CHATTER_CHOICES = ['both', ...GRUNT_VOICES];
+
+/**
+ * A grunt's chatter: his own `voice`, or CONFIG.BAND.CHATTER's for every
+ * grunt; read live, so ?tune reaches grunts already alive
+ */
+export function gruntChatter(ctx, out, _cfg, opts) {
+  const { CHATTER, CHATTER_DB } = CONFIG.BAND;
+  const voice = CHATTER === 'both' ? opts.voice : CHATTER;
+  const sound = chosen(CHATTER_VOICES, voice, 'chatter voice');
+  playBand(ctx, out, sound, CHATTER_DB, opts);
+}
+
 /** Every synth by name; the crash keeps CONFIG.RUSHER.CRASH_VOLUME */
 export const SYNTHS = {
   crash: (ctx, out, cfg, { volume, pan }) =>
@@ -488,4 +564,5 @@ export const SYNTHS = {
     playBand(ctx, out, TANK_SHOT, CONFIG.BAND.TANK_SHOT_DB, opts),
   tankCharge: (ctx, out, _cfg, opts) =>
     playBand(ctx, out, TANK_CHARGE, CONFIG.BAND.CHARGE_DB, opts),
+  gruntChatter,
 };

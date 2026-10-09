@@ -138,41 +138,8 @@ export const SOUND_CONFIG = {
     duration: 0.5,
     sweep: { to: ['b7', 2], curve: 'exponential' },
   },
-  gruntMalfunction: {
-    voice: 'grunt',
-    note: ['b3', 3],
-    waveform: 'sawtooth',
-    volume: 0.25,
-    duration: 0.4,
-  },
-  gruntBeep: {
-    voice: 'grunt',
-    note: ['b3', 5],
-    waveform: 'triangle',
-    volume: 0.25,
-    duration: 0.15,
-  },
-  gruntWhir: {
-    voice: 'grunt',
-    note: ['5', 3],
-    waveform: 'sine',
-    volume: 0.25,
-    duration: 0.6,
-  },
-  gruntError: {
-    voice: 'grunt',
-    note: ['b3', 3],
-    waveform: 'square',
-    volume: 0.25,
-    duration: 0.2,
-  },
-  gruntGlitch: {
-    voice: 'grunt',
-    note: ['5', 2],
-    waveform: 'sawtooth',
-    volume: 0.25,
-    duration: 0.25,
-  },
+  // The grunts' chatter: the band's whine or squeak (Instruments.js)
+  gruntChatter: { synth: 'gruntChatter' },
   gruntOw: {
     voice: 'grunt',
     note: ['5', 4],

@@ -17,7 +17,11 @@
 
 import { CONFIG } from '../config.js';
 import { ROOTS } from '../audio/Harmony.js';
-import { HERO_SHOT_SOUNDS, GRUNT_SHOT_SOUNDS } from '../audio/Instruments.js';
+import {
+  HERO_SHOT_SOUNDS,
+  GRUNT_SHOT_SOUNDS,
+  CHATTER_CHOICES,
+} from '../audio/Instruments.js';
 
 // [group, key, options]: group is a path under CONFIG; options is
 // [min, max, step] for a slider or a list of choices for a dropdown;
@@ -95,6 +99,8 @@ const KNOBS = [
   [BAND, 'GRUNT_SHOT_DB', [-24, 12, 1]],
   [BAND, 'TANK_SHOT_DB', [-24, 12, 1]],
   [BAND, 'CHARGE_DB', [-24, 12, 1]],
+  [BAND, 'CHATTER', CHATTER_CHOICES],
+  [BAND, 'CHATTER_DB', [-24, 12, 1]],
   [RUSHER, 'BOOST_PX_S', [0, 600, 10]],
   [RUSHER, 'CRUISE_PX_S', [0, 400, 10]],
   [RUSHER, 'BOOST_TAU_SEC', [0.02, 1, 0.01]],

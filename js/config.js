@@ -138,6 +138,8 @@ const CONFIG = {
     GRUNT_SHOT_DB: -2, // Edward's, on the page
     TANK_SHOT_DB: 0,
     CHARGE_DB: 0, // the tank's charge
+    CHATTER: 'both', // both (each grunt his own voice), whine or squeak
+    CHATTER_DB: 0,
   },
 
   // Pausing (P) stops the sound: the audio is suspended, which also stops
