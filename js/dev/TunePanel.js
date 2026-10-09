@@ -121,6 +121,7 @@ const KNOBS = [
   ['STABBER_LOOK', 'ART_SCALE', [0.6, 1.6, 0.05]], // moves his reach too
   ['TANK_ARMOR', 'FRONT', [0, 200, 5]],
   ['TANK_ARMOR', 'SIDE', [0, 150, 5]],
+  ['TANK_ARMOR', 'CLANG_VOLUME', [0, 3, 0.05]],
   [TANK, 'HEALTH', [10, 200, 5]],
   [TANK, 'TURN_STEP_DEG', [5, 180, 5]],
   [TANK, 'TURN_SEC', [0.05, 1.9, 0.05]], // under one bar at 120 BPM
@@ -141,6 +142,8 @@ const KNOBS = [
   [BOMB, 'FUSE_BEATS', [2, 16, 1]],
   [BOMB, 'COUNT_LEAD_BEATS', [1, 4, 1]],
   [BOMB, 'RADIUS_PX', [80, 400, 10]],
+  [BOMB, 'BANG_VOLUME', [0, 3, 0.05]],
+  [BOMB, 'CLOUD_VOLUME', [0, 3, 0.05]],
   [BOMB, 'ENEMY_DAMAGE_MAX', [0, 100, 5]],
   [BOMB, 'PLAYER_DAMAGE_MAX', [0, 100, 5]],
   [HITBOX, 'SHOW'],
@@ -176,6 +179,8 @@ const KNOBS = [
   [DEATHS, 'LINGER', [0.5, 2, 0.1]],
   [DEATHS, 'SCENE_BEATS', [4, 8, 1]],
   [DEATHS, 'SCENE_ZOOM', [1, 2, 0.05]],
+  [DEATHS, 'TANK_VOLUME', [0, 3, 0.05]],
+  [DEATHS, 'TANK_ZIP_SEC', [0.5, 2, 0.05]], // the timing needs at least 0.5
   [SPEECH, 'VOICE_GAP_SEC', [0, 8, 0.25]],
   [`${SPEECH}.GRUNT`, 'CHANCE', [0, 1, 0.05]],
   [`${SPEECH}.STABBER`, 'CHANCE', [0, 1, 0.05]],

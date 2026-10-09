@@ -8,6 +8,7 @@ const CONFIG = {
   GAME_SETTINGS: {
     // Frame time at 60fps baseline, used to normalize deltaTimeMs
     FRAME_TIME_MS: 16.6667,
+    MAX_FRAME_MS: 50, // a longer frame (a lag spike, a tab switch) counts as this
 
     // Canonical world dimensions for all systems
     WORLD_WIDTH: 1150,
@@ -186,20 +187,17 @@ const CONFIG = {
     CRASH_VOLUME: 1, // the crash's level, times SoundConfig's rusherCrash
   },
 
-  // Hazard clouds. A tank's death leaves plasma; the hero's bomb leaves plasma and
-  // longer-lasting debris. Anything within RADIUS takes DAMAGE every
-  // DAMAGE_INTERVAL frames for DURATION frames; MAX_RADIUS is how far the
-  // cloud is drawn.
+  // Hazard clouds: the hero's bomb leaves plasma and longer-lasting debris,
+  // drawn as one cloud (BombSmoke.js). Anything within RADIUS takes DAMAGE
+  // every DAMAGE_INTERVAL frames for DURATION frames.
   PLASMA: {
     RADIUS: 80,
-    MAX_RADIUS: 120,
     DURATION: 300,
     DAMAGE_INTERVAL: 30,
     DAMAGE: 15,
   },
   DEBRIS: {
     RADIUS: 60,
-    MAX_RADIUS: 90,
     DURATION: 900,
     DAMAGE_INTERVAL: 45,
     DAMAGE: 8,
@@ -293,6 +291,8 @@ const CONFIG = {
     // came while he still said it (BombPlanting.test.js times his voice;
     // at 2 a 0.75 s shout has a quarter second to spare)
     COUNT_LEAD_BEATS: 2,
+    BANG_VOLUME: 1, // its bang, 1 = the studies page's level
+    CLOUD_VOLUME: 1, // its cloud's sound, 1 = the studies page's level
   },
 
   // The hero: a shield that takes one real hit whole, then recharges and
@@ -339,6 +339,9 @@ const CONFIG = {
     LINGER: 1,
     SCENE_BEATS: 4,
     SCENE_ZOOM: 1.45,
+    TANK_VOLUME: 1, // the tank's air, 1 = the studies page's level
+    // How long a dying tank darts about, s (0.5 to 2): shorter is less
+    TANK_ZIP_SEC: 0.95,
   },
 
   // Tank armour plates (hits to break). Applies to tanks spawned after a
@@ -347,6 +350,7 @@ const CONFIG = {
   TANK_ARMOR: {
     FRONT: 45,
     SIDE: 30,
+    CLANG_VOLUME: 1, // a plate breaking, 1 = the studies page's level
   },
 
   // The stabber, the shiv (js/entities/Stabber.js). Speeds are px/s. He

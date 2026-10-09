@@ -254,13 +254,8 @@ export class GameState {
     // Reset camera, including any screen shake
     if (window.cameraSystem) window.cameraSystem.reset();
 
-    // Reset explosion manager
-    if (window.explosionManager) {
-      window.explosionManager.explosions = [];
-      window.explosionManager.plasmaClouds = [];
-      window.explosionManager.radioactiveDebris = [];
-      window.explosionManager.fragmentExplosions = [];
-    }
+    // Every explosion, cloud and death of the last run
+    window.explosionManager?.reset();
 
     // Clear the last run's leftovers on screen
     if (window.floatingText) window.floatingText.texts = [];

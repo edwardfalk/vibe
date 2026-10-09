@@ -9,10 +9,7 @@ import {
   getParticleColor,
 } from './ExplosionConfig.js';
 
-/** Max alpha for shockwave stroke fade (100 = full opacity at center) */
-const SHOCKWAVE_ALPHA_SCALE = 100;
-/** How far every explosion's shockwave reaches, px */
-const SHOCKWAVE_RADIUS = 60;
+const MIN_FRAMES = 20; // an explosion shows at least this long
 
 export class Explosion {
   constructor(x, y, type) {
@@ -24,10 +21,6 @@ export class Explosion {
 
     const config = getExplosionConfig(type);
     this.maxTimer = config.maxTimer;
-
-    this.hasShockwave = config.hasShockwave;
-    this.shockwaveRadius = 0;
-    this.maxShockwaveRadius = SHOCKWAVE_RADIUS;
 
     const params = getParticleParams(type);
     const { vxRange, vyRange, sizeRange, lifeRange } = params;
@@ -57,13 +50,6 @@ export class Explosion {
   update() {
     this.timer++;
 
-    if (this.hasShockwave && this.shockwaveRadius < this.maxShockwaveRadius) {
-      this.shockwaveRadius += this.maxShockwaveRadius / 20;
-      if (this.shockwaveRadius >= this.maxShockwaveRadius) {
-        this.shockwaveRadius = this.maxShockwaveRadius;
-      }
-    }
-
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
       p.vx *= p.friction;
@@ -80,34 +66,16 @@ export class Explosion {
       if (p.life <= 0) this.particles.splice(i, 1);
     }
 
-    const shockwaveFinished =
-      !this.hasShockwave || this.shockwaveRadius >= this.maxShockwaveRadius;
     const timerExpired = this.timer >= this.maxTimer;
     const noParticles = this.particles.length === 0;
-
-    if (
-      (timerExpired && noParticles) ||
-      (shockwaveFinished && noParticles && this.timer > 20)
-    ) {
+    // Gone with its particles, once it has shown for MIN_FRAMES (or its timer)
+    if (noParticles && (timerExpired || this.timer > MIN_FRAMES)) {
       this.active = false;
     }
   }
 
   draw(p) {
     p.push();
-
-    if (this.hasShockwave && this.shockwaveRadius > 0) {
-      p.stroke(
-        255,
-        255,
-        255,
-        SHOCKWAVE_ALPHA_SCALE *
-          (1 - this.shockwaveRadius / this.maxShockwaveRadius)
-      );
-      p.strokeWeight(3);
-      p.noFill();
-      p.ellipse(this.x, this.y, this.shockwaveRadius * 2);
-    }
 
     for (const particle of this.particles) {
       const alpha = (particle.life / particle.maxLife) * 255;

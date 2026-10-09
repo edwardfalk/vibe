@@ -11,10 +11,15 @@
  * and his back. Local frame: +x is where he faces, +y is his right (y points
  * down). Sizes are in units of s, his drawn size (size × TANK_LOOK.ART_SCALE).
  * Ported from the prototype dir-bouncer.js in
- * docs/superpowers/specs/2026-10-01-tank-studies/ (main checkout only).
+ * docs/superpowers/specs/2026-10-01-tank-studies/ (main checkout only). His
+ * raised hands and let-go cannon (a reaction's) are ported from `uhOh` in
+ * docs/superpowers/specs/2026-10-08-explosion-studies/deaths-tank.js (the
+ * page is https://claude.ai/artifact/GHjWCySGwv8cVCtWDoE6nV); from the port
+ * on, these constants are the authority. His death (TankDeath.js) and his
+ * flinch (TankFlinch.js) read the geometry exported here.
  */
 import { CONFIG } from '../config.js';
-import { normalizeAngle, clamp01, smooth, env } from '../mathUtils.js';
+import { normalizeAngle, clamp01, smooth, env, lerp } from '../mathUtils.js';
 import { GRUNT_COLORS, AMBER, HOT } from './GruntRenderer.js';
 import { spriteParts, stamp } from './spriteCache.js';
 
@@ -55,6 +60,7 @@ export const TANK_COLORS = Object.freeze(
   )
 );
 
+export const TANK_SIZE = 50; // his size; drawn at this times TANK_LOOK.ART_SCALE
 export const CANNON_AT = 0.9; // the cannon's pivot ahead of his centre, in his fists
 export const MUZZLE = 0.62; // from that pivot to the muzzle
 export const BOMB_AT = 0.42; // where a bomb sits behind his centre
@@ -166,7 +172,7 @@ export function union(g, c, shapes, ink = true) {
   shapes.forEach((f) => f(g));
 }
 // A crescent: the band between two ellipse arcs, both centred on (cx, 0)
-const crescent = (cx, rxO, ryO, rxI, ryI, a) => (g) => {
+export const crescent = (cx, rxO, ryO, rxI, ryI, a) => (g) => {
   g.beginShape();
   for (let i = 0; i <= 16; i++) {
     const th = -a + (2 * a * i) / 16;
@@ -178,7 +184,7 @@ const crescent = (cx, rxO, ryO, rxI, ryI, a) => (g) => {
   }
   g.endShape(g.CLOSE);
 };
-const lines = (g, c, w, list) => {
+export const lines = (g, c, w, list) => {
   g.noFill();
   g.stroke(...c);
   g.strokeWeight(w);
@@ -205,13 +211,21 @@ const cap =
 // The slab, a wide bar of shoulders (about 2.5 times as wide as it is
 // deep): a huge dome at each end, his chest between them at the front
 // (where the guard sits) and his broad back, a smooth curve, behind
-const BALL = [0.0, 0.8, 0.9]; // a shoulder dome: x, |y|, diameter
-const SLAB = (s) => [
-  (g) => g.ellipse(-s * 0.12, 0, s * 1.0, s * 1.8),
-  (g) => g.ellipse(s * BALL[0], -s * BALL[1], s * BALL[2], s * BALL[2]),
-  (g) => g.ellipse(s * BALL[0], s * BALL[1], s * BALL[2], s * BALL[2]),
-  (g) => g.ellipse(s * 0.1, 0, s * 0.6, s * 1.1),
+export const BALL = [0.0, 0.8, 0.9]; // a shoulder dome: x, |y|, diameter
+// The slab's ellipses: centre x, y, width, height
+export const SLAB_ELLIPSES = [
+  [-0.12, 0, 1.0, 1.8],
+  [BALL[0], -BALL[1], BALL[2], BALL[2]],
+  [BALL[0], BALL[1], BALL[2], BALL[2]],
+  [0.1, 0, 0.6, 1.1],
 ];
+const SLAB = (s) =>
+  SLAB_ELLIPSES.map(
+    ([x, y, w, h]) =>
+      (g) =>
+        g.ellipse(s * x, s * y, s * w, s * h)
+  );
+export const BALL_SHINE = [BALL[0] + 0.08, BALL[1] - 0.05]; // the highlight on each dome, |y|
 const SLAB_BOX = [-0.7, -1.3, 0.5, 1.3];
 // His front is muscle, his back is bare: the front is what lies inside this
 // ellipse (its back edge bows behind his neck, like a collar line)
@@ -238,8 +252,8 @@ const GUARD_BOX = [0.2, -0.66, 0.66, 0.66];
 const PAD = (s) => cap(s * 0.54, s * 0.3, 1.0, s * 0.52, s * 0.34);
 const PAD_BOX = [-0.58, -0.05, 0.58, 0.58];
 const PAD_AT = [BALL[0], BALL[1]];
-const HEAD = [0.1, 0]; // where his head sits on the slab
-const HEAD_D = 0.44;
+export const HEAD = [0.1, 0]; // where his head sits on the slab
+export const HEAD_D = 0.44;
 const CHAIN_R = 0.36;
 const CHAIN_N = 8;
 const CHAIN_ARC = 1.35; // the chain hangs round the front of his neck, from his left to his right
@@ -252,30 +266,91 @@ const CANNON = (s) => [
   (g) => g.rect(s * 0.42, -s * 0.23, s * 0.2, s * 0.46, s * 0.07),
 ];
 const CANNON_BOX = [-0.24, -0.44, 0.68, 0.44];
-const GRIP = 0.25; // his fists sit this far either side of the cannon
-const SHOULDER = [0.3, 0.72]; // where his arms leave his shoulder domes
-const ARM_L = 0.8;
-const ARM_T = 0.34;
+export const GRIP = 0.25; // his fists sit this far either side of the cannon
+export const SHOULDER = [0.3, 0.72]; // where his arms leave his shoulder domes
+export const ARM_L = 0.8;
+export const ARM_T = 0.34;
 
+/** One fist at the origin, knuckles toward +y */
+export function fist(g, s) {
+  union(g, C.skinMid, [
+    (g) => g.rect(-s * 0.13, -s * 0.12, s * 0.26, s * 0.24, s * 0.09),
+  ]);
+  g.fill(...C.skinHi);
+  for (const x of [-0.07, 0, 0.07]) {
+    g.ellipse(s * x, s * 0.06, s * 0.065, s * 0.08);
+  }
+  lines(g, C.ink, s * 0.02, [
+    [-s * 0.035, s * 0.03, -s * 0.035, s * 0.11],
+    [s * 0.035, s * 0.03, s * 0.035, s * 0.11],
+  ]);
+}
 // His fists on the cannon, knuckles out
 function fists(g, s) {
   for (const side of [-1, 1]) {
     g.push();
     g.translate(0, s * GRIP * side);
     g.scale(1, side);
-    union(g, C.skinMid, [
-      (g) => g.rect(-s * 0.13, -s * 0.12, s * 0.26, s * 0.24, s * 0.09),
-    ]);
-    g.fill(...C.skinHi);
-    for (const x of [-0.07, 0, 0.07]) {
-      g.ellipse(s * x, s * 0.06, s * 0.065, s * 0.08);
-    }
-    lines(g, C.ink, s * 0.02, [
-      [-s * 0.035, s * 0.03, -s * 0.035, s * 0.11],
-      [s * 0.035, s * 0.03, s * 0.035, s * 0.11],
-    ]);
+    fist(g, s);
     g.pop();
   }
+}
+/** His bare head: the earpiece's coil, his scalp and ears, the folds of his neck */
+export function bareHead(g, s) {
+  const r = (s * HEAD_D) / 2;
+  // The earpiece's coil, from his left ear back into his collar
+  g.noFill();
+  g.stroke(...C.coil, 230);
+  g.strokeWeight(s * 0.025);
+  g.beginShape();
+  for (let i = 0; i <= 40; i++) {
+    const u = i / 40;
+    const x = -s * 0.02 - s * 0.3 * u;
+    const y = -r - s * 0.03 + s * 0.08 * u;
+    g.vertex(
+      x + Math.cos(u * 30) * s * 0.022,
+      y + Math.sin(u * 30) * s * 0.022
+    );
+  }
+  g.endShape();
+  g.noStroke();
+  g.fill(...C.ink, 70);
+  g.ellipse(-s * 0.03, 0, 2 * r + s * 0.08, 2 * r + s * 0.06); // sunk between his traps
+  union(g, C.scalp, [
+    (g) => g.ellipse(-s * 0.01, -r, s * 0.08, s * 0.07),
+    (g) => g.ellipse(-s * 0.01, r, s * 0.08, s * 0.07),
+    (g) => g.ellipse(0, 0, 2 * r, 2 * r),
+  ]);
+  // The folds at the back of his neck
+  g.noFill();
+  g.stroke(...C.ink, 170);
+  g.strokeWeight(s * 0.02);
+  g.arc(s * 0.0, 0, r * 1.6, r * 1.5, PI * 0.78, PI * 1.22);
+  g.noStroke();
+}
+/** His sunglasses where they sit on his head, their arms back to his ears */
+export function shades(g, s) {
+  const r = (s * HEAD_D) / 2;
+  lines(g, C.shades, s * 0.03, [
+    [s * 0.1, -r * 0.86, -s * 0.02, -r * 1.02],
+    [s * 0.1, r * 0.86, -s * 0.02, r * 1.02],
+  ]);
+  union(g, C.shades, [crescent(0, r * 1.06, r * 1.02, r * 0.76, r * 0.9, 0.8)]);
+  g.fill(170, 230, 240);
+  g.ellipse(r * 0.9, -r * 0.34, s * 0.05, s * 0.03);
+  g.ellipse(r * 0.9, r * 0.34, s * 0.05, s * 0.03);
+}
+/** His bone cannon, without his fists on it */
+function cannonShape(g, s) {
+  union(g, C.cannon, CANNON(s));
+  g.fill(...C.band);
+  g.rect(-s * 0.14, -s * 0.18, s * 0.08, s * 0.36);
+  g.rect(s * 0.42, -s * 0.23, s * 0.2, s * 0.46, s * 0.07);
+  lines(g, C.ink, s * 0.025, [
+    [s * 0.2, -s * 0.14, s * 0.2, s * 0.14],
+    [s * 0.28, -s * 0.14, s * 0.28, s * 0.14],
+    [s * 0.36, -s * 0.14, s * 0.36, s * 0.14],
+  ]);
 }
 
 // The parts that never change shape, cached as sprites (spriteCache.js)
@@ -310,12 +385,7 @@ export const TANK_PARTS = {
       SLAB(s).forEach((f) => f(g));
       for (const y of [-1, 1]) {
         g.fill(...C.skinMid);
-        g.ellipse(
-          s * (BALL[0] + 0.08),
-          s * (BALL[1] - 0.05) * y,
-          s * 0.58,
-          s * 0.54
-        );
+        g.ellipse(s * BALL_SHINE[0], s * BALL_SHINE[1] * y, s * 0.58, s * 0.54);
         g.fill(...C.skinHi);
         g.ellipse(
           s * (BALL[0] + 0.12),
@@ -525,47 +595,8 @@ export const TANK_PARTS = {
   head: [
     [-0.44, -0.34, 0.34, 0.34],
     (g, s) => {
-      const r = (s * HEAD_D) / 2;
-      // The earpiece's coil, from his left ear back into his collar
-      g.noFill();
-      g.stroke(...C.coil, 230);
-      g.strokeWeight(s * 0.025);
-      g.beginShape();
-      for (let i = 0; i <= 40; i++) {
-        const u = i / 40;
-        const x = -s * 0.02 - s * 0.3 * u;
-        const y = -r - s * 0.03 + s * 0.08 * u;
-        g.vertex(
-          x + Math.cos(u * 30) * s * 0.022,
-          y + Math.sin(u * 30) * s * 0.022
-        );
-      }
-      g.endShape();
-      g.noStroke();
-      g.fill(...C.ink, 70);
-      g.ellipse(-s * 0.03, 0, 2 * r + s * 0.08, 2 * r + s * 0.06); // sunk between his traps
-      union(g, C.scalp, [
-        (g) => g.ellipse(-s * 0.01, -r, s * 0.08, s * 0.07),
-        (g) => g.ellipse(-s * 0.01, r, s * 0.08, s * 0.07),
-        (g) => g.ellipse(0, 0, 2 * r, 2 * r),
-      ]);
-      // The folds at the back of his neck
-      g.noFill();
-      g.stroke(...C.ink, 170);
-      g.strokeWeight(s * 0.02);
-      g.arc(s * 0.0, 0, r * 1.6, r * 1.5, PI * 0.78, PI * 1.22);
-      g.noStroke();
-      // Sunglasses on the front of his head, their arms back to his ears
-      lines(g, C.shades, s * 0.03, [
-        [s * 0.1, -r * 0.86, -s * 0.02, -r * 1.02],
-        [s * 0.1, r * 0.86, -s * 0.02, r * 1.02],
-      ]);
-      union(g, C.shades, [
-        crescent(0, r * 1.06, r * 1.02, r * 0.76, r * 0.9, 0.8),
-      ]);
-      g.fill(170, 230, 240);
-      g.ellipse(r * 0.9, -r * 0.34, s * 0.05, s * 0.03);
-      g.ellipse(r * 0.9, r * 0.34, s * 0.05, s * 0.03);
+      bareHead(g, s);
+      shades(g, s);
     },
   ],
   headFlush: [
@@ -578,15 +609,7 @@ export const TANK_PARTS = {
   cannon: [
     CANNON_BOX,
     (g, s) => {
-      union(g, C.cannon, CANNON(s));
-      g.fill(...C.band);
-      g.rect(-s * 0.14, -s * 0.18, s * 0.08, s * 0.36);
-      g.rect(s * 0.42, -s * 0.23, s * 0.2, s * 0.46, s * 0.07);
-      lines(g, C.ink, s * 0.025, [
-        [s * 0.2, -s * 0.14, s * 0.2, s * 0.14],
-        [s * 0.28, -s * 0.14, s * 0.28, s * 0.14],
-        [s * 0.36, -s * 0.14, s * 0.36, s * 0.14],
-      ]);
+      cannonShape(g, s);
       fists(g, s);
     },
   ],
@@ -625,6 +648,42 @@ export const TANK_PARTS = {
 };
 
 export const tankParts = (p, s) => spriteParts(p, TANK_PARTS, s);
+
+// What only a reaction draws (an "uh oh"): his open hands, and his cannon
+// without his fists on it. Built on the first reaction, or at setup
+const RAISED_PARTS = {
+  // An open hand, fingers along +x, thumb toward -y
+  hand: [
+    [-0.16, -0.22, 0.32, 0.16],
+    (g, s) => {
+      union(g, C.skinMid, [
+        (g) => g.ellipse(0, 0, s * 0.22, s * 0.22),
+        (g) => g.ellipse(s * 0.15, -s * 0.075, s * 0.2, s * 0.065),
+        (g) => g.ellipse(s * 0.18, 0, s * 0.22, s * 0.065),
+        (g) => g.ellipse(s * 0.15, s * 0.075, s * 0.2, s * 0.065),
+        (g) => g.ellipse(s * 0.02, -s * 0.13, s * 0.08, s * 0.13),
+      ]);
+      g.fill(...C.skinHi);
+      g.ellipse(-s * 0.02, -s * 0.02, s * 0.1, s * 0.09);
+    },
+  ],
+  cannonBare: [CANNON_BOX, cannonShape],
+};
+export const tankRaisedParts = (p, s) => spriteParts(p, RAISED_PARTS, s);
+
+// A reaction drawTank can play on top of his pose (an "uh oh", the first
+// moments of his death). With none he is drawn as his pose says.
+// k: all of him bigger about his centre; turn: his head turned further;
+// shiver: px of shake; hands: 0 on the cannon .. 1 flung up and out, open;
+// drop: 0..1 his let-go cannon sags; head: a sprite drawn as his head;
+// onHead(p, ctx): drawn on his head, in its frame; chain, cannon: false
+// leaves them off; back(p): drawn on his back, in the slab's frame
+const NO_REACTION = Object.freeze({});
+// His hands, flung up and out, in his slab's frame (units of s)
+const RAISED = [0.75, 1.45];
+const HAND_GROW = 0.3; // his open hands are drawn this much bigger
+const SAG_TURN = 0.35; // a let-go cannon turns this far as it sags
+const SAG_SHRINK = 0.12; // and looks this much smaller, falling away from us
 
 // ---- live parts ----
 // A part with an ink edge on the live canvas: a slightly larger ink copy
@@ -685,8 +744,11 @@ function debris(p, s, x, y, nx, ny, age) {
  * from above, turned with his facing. BaseEnemy draws his glow, health bar
  * and spawn warp; BombSystem draws a bomb on his back.
  */
-export function drawTank(p, s, look) {
+export function drawTank(p, s, look, react = NO_REACTION) {
   const parts = tankParts(p, s);
+  const off = react.hands ?? 0;
+  const raised = off > 0 ? tankRaisedParts(p, s) : null;
+  const turn = react.turn ?? 0;
   const t = look.t;
   const ctx = p.drawingContext;
   // An overlay at a fraction of the alpha it is drawn at (a spawning tank
@@ -739,7 +801,7 @@ export function drawTank(p, s, look) {
   headA += 0.6 * neck * Math.sin(2 * PI * ph);
   // The charge: he strains; bar 2 trembles and steams
   const tremble = charging ? (bar2 ? 1.2 + 3.2 * (ch - 0.5) : 0.4 * ch) : 0;
-  const jit = tremble + 2.5 * look.hit + 0.7 * look.angry;
+  const jit = tremble + 2.5 * look.hit + 0.7 * look.angry + (react.shiver ?? 0);
   const swell =
     (bar2 ? 0.08 + 0.2 * (ch - 0.5) : 0.06 * ch) +
     0.05 * look.kick +
@@ -785,6 +847,7 @@ export function drawTank(p, s, look) {
     jit * Math.sin(t * 57 + 1.7) * 0.6
   );
   p.rotate(look.facing);
+  p.scale(react.k ?? 1);
 
   // ---- boosters under his back: flare backwards on the lurch ----
   p.push();
@@ -804,6 +867,7 @@ export function drawTank(p, s, look) {
   stamp(p, parts.slab);
   alpha(veins, () => stamp(p, parts.veins));
   alpha(0.9 * backHit, () => stamp(p, parts.backWhite));
+  react.back?.(p);
   p.push();
   p.rotate(packA - yokeA);
   stamp(p, parts.pack);
@@ -817,9 +881,10 @@ export function drawTank(p, s, look) {
   const gunA = aimRel + wring;
   const ca = Math.cos(gunA);
   const sa = Math.sin(gunA);
+  // His fists on the cannon, or flung up and out as he lets it go
   const fists = [-1, 1].map((side) => [
-    px - sa * s * GRIP * side,
-    ca * s * GRIP * side,
+    lerp(px - sa * s * GRIP * side, s * RAISED[0], off),
+    lerp(ca * s * GRIP * side, side * s * RAISED[1], off),
   ]);
   // The riot chest guard: his front plate
   const pl = look.plates;
@@ -880,7 +945,7 @@ export function drawTank(p, s, look) {
 
   // The gold chain counts the charge: a link a beat, from his left round
   // the front of his neck to his right; white-hot on the last half-beat
-  stamp(p, parts.chain);
+  if (react.chain !== false) stamp(p, parts.chain);
   if (charging) {
     const lit = last ? C.hot : C.amber;
     const pop = env(ph * look.beatSec, 0.08);
@@ -909,66 +974,93 @@ export function drawTank(p, s, look) {
         0.05 * neck * Math.cos(2 * PI * ph)),
     s * 0.05 * neck * Math.sin(2 * PI * ph)
   );
-  p.rotate(headA + gaze);
+  p.rotate(headA + gaze + turn);
   p.scale(1 - 0.14 * bulk - 0.12 * Math.max(wF, wL, wR));
-  stamp(p, parts.head);
+  stamp(p, react.head ?? parts.head);
   alpha(flush * 1.1, () => stamp(p, parts.headFlush));
+  react.onHead?.(p, ctx);
   // A shine that stays put on screen, whichever way he turns
-  p.rotate(-(look.facing + yokeA + headA + gaze));
+  p.rotate(-(look.facing + yokeA + headA + gaze + turn));
   p.fill(255, 255, 255, 230);
   p.ellipse(-s * 0.06, -s * 0.065, s * 0.13, s * 0.08);
   p.pop();
 
-  // The cannon, his fists on it
-  p.push();
-  p.translate(px, 0);
-  p.rotate(gunA);
-  stamp(p, parts.cannon);
-  if (crack > 0.5 && Math.floor(ph * 10) % 3 === 0) {
-    p.fill(255, 255, 255, 240);
-    for (const side of [-1, 1]) {
-      for (const [dx, dy] of [
-        [-0.06, 0.4],
-        [0.03, 0.43],
-        [0.12, 0.39],
-      ]) {
-        p.ellipse(s * dx, s * dy * side, s * 0.06);
+  // The cannon, his fists on it; or let go, sagging away from us
+  if (react.cannon !== false) {
+    p.push();
+    p.translate(px, 0);
+    p.rotate(gunA + SAG_TURN * (react.drop ?? 0));
+    if (off > 0) {
+      p.scale(1 - SAG_SHRINK * (react.drop ?? 0));
+      stamp(p, raised.cannonBare);
+    } else stamp(p, parts.cannon);
+    if (off === 0 && crack > 0.5 && Math.floor(ph * 10) % 3 === 0) {
+      p.fill(255, 255, 255, 240);
+      for (const side of [-1, 1]) {
+        for (const [dx, dy] of [
+          [-0.06, 0.4],
+          [0.03, 0.43],
+          [0.12, 0.39],
+        ]) {
+          p.ellipse(s * dx, s * dy * side, s * 0.06);
+        }
       }
     }
-  }
-  // Heat: amber through the charge, white-hot on its last half-beat, cooling after the shot
-  const cool = look.fireAge < 1 ? 1 - look.fireAge : 0;
-  alpha(Math.max(charging ? 0.15 + 0.85 * ch : 0, cool), () =>
-    stamp(p, parts.cannonAmber)
-  );
-  alpha(last ? 1 : fire > 0.3 ? fire : 0, () => stamp(p, parts.cannonHot));
-  const beatPop = env(ph * look.beatSec, 0.12);
-  const glow = Math.max(
-    charging
-      ? bar2
-        ? 0.75 + 0.25 * beatPop
-        : 0.25 + 0.6 * ch + 0.2 * beatPop
-      : 0,
-    last ? 1 : 0,
-    fire
-  );
-  if (glow > 0.02) {
-    // A halo round the cannon and his fists only, never over his body
-    p.fill(
-      ...(last || fire > 0.3 ? C.hot : C.amber),
-      (last ? 190 : 140) * glow
+    // Heat: amber through the charge, white-hot on its last half-beat, cooling after the shot
+    const cool = look.fireAge < 1 ? 1 - look.fireAge : 0;
+    // (their sprites carry his fists: not once he has let go)
+    if (off === 0) {
+      alpha(Math.max(charging ? 0.15 + 0.85 * ch : 0, cool), () =>
+        stamp(p, parts.cannonAmber)
+      );
+      alpha(last ? 1 : fire > 0.3 ? fire : 0, () => stamp(p, parts.cannonHot));
+    }
+    const beatPop = env(ph * look.beatSec, 0.12);
+    const glow = Math.max(
+      charging
+        ? bar2
+          ? 0.75 + 0.25 * beatPop
+          : 0.25 + 0.6 * ch + 0.2 * beatPop
+        : 0,
+      last ? 1 : 0,
+      fire
     );
-    p.ellipse(s * 0.26, 0, s * (0.95 + 0.25 * glow), s * (0.72 + 0.12 * glow));
-    p.fill(...(last ? C.hot : C.amber), 200 * glow);
-    p.ellipse(s * (MUZZLE + 0.06), 0, s * (0.3 + 0.3 * glow));
-    if (fire > 0.05) {
-      p.fill(255, 220, 140, 230 * fire);
-      p.ellipse(s * (MUZZLE + 0.35), 0, s * 1.1 * fire, s * 0.75 * fire);
-      p.fill(255, 255, 255, 255 * fire);
-      p.ellipse(s * (MUZZLE + 0.2), 0, s * 0.55 * fire);
+    if (glow > 0.02) {
+      // A halo round the cannon and his fists only, never over his body
+      p.fill(
+        ...(last || fire > 0.3 ? C.hot : C.amber),
+        (last ? 190 : 140) * glow
+      );
+      p.ellipse(
+        s * 0.26,
+        0,
+        s * (0.95 + 0.25 * glow),
+        s * (0.72 + 0.12 * glow)
+      );
+      p.fill(...(last ? C.hot : C.amber), 200 * glow);
+      p.ellipse(s * (MUZZLE + 0.06), 0, s * (0.3 + 0.3 * glow));
+      if (fire > 0.05) {
+        p.fill(255, 220, 140, 230 * fire);
+        p.ellipse(s * (MUZZLE + 0.35), 0, s * 1.1 * fire, s * 0.75 * fire);
+        p.fill(255, 255, 255, 255 * fire);
+        p.ellipse(s * (MUZZLE + 0.2), 0, s * 0.55 * fire);
+      }
+    }
+    p.pop();
+  }
+
+  // His open hands, up and out, palms to us
+  if (off > 0) {
+    for (const [i, [hx, hy]] of fists.entries()) {
+      const side = i ? 1 : -1;
+      p.push();
+      p.translate(hx, hy);
+      p.rotate(Math.atan2(hy - side * s * SHOULDER[1], hx - s * SHOULDER[0]));
+      p.scale(1 + HAND_GROW * off, (1 + HAND_GROW * off) * side);
+      stamp(p, raised.hand);
+      p.pop();
     }
   }
-  p.pop();
 
   // Steam from his ears: angry, or straining in bar 2
   const steam = Math.max(look.angry, bar2 ? 0.4 + 1.2 * (ch - 0.5) : 0);

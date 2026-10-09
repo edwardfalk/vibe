@@ -167,3 +167,24 @@ describe("another tank's shot", () => {
     expect(handleEnemyDeath).toHaveBeenCalled();
   });
 });
+
+describe('a plate breaking', () => {
+  it('plays its clang where he is, not the old sweep', () => {
+    const audio = createMockAudio();
+    audio.playPlateClang = vi.fn();
+    const values = { audio, enemies: [] };
+    const context = { get: (key) => values[key] };
+    const p = { color: () => ({ levels: [0, 0, 0, 255] }), TWO_PI: 7 };
+    const tank = new Tank(30, 40, 'tank', { context }, p, audio);
+    tank.facing = 0;
+    const FROM_FRONT = Math.PI; // flying -x into a tank facing +x
+    for (let i = 0; i < CONFIG.TANK_ARMOR.FRONT + 1; i++) {
+      tank.takeDamage(1, FROM_FRONT, 'player');
+    }
+    expect(tank.plates.front.destroyed).toBe(true);
+    expect(audio.playPlateClang).toHaveBeenCalledTimes(1);
+    expect(audio.playPlateClang).toHaveBeenCalledWith(30, 40);
+    const sounds = audio.playSound.mock.calls.map(([key]) => key);
+    expect(sounds).not.toContain('explosion');
+  });
+});

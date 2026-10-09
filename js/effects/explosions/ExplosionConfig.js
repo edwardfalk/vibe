@@ -1,11 +1,11 @@
 /**
- * ExplosionConfig - Particle, shockwave, and color config by explosion type.
+ * ExplosionConfig - Particle and color config by explosion type.
  * Extracted from Explosion.js for file-size split (~500 line guideline).
  */
 
 import { random } from '../../mathUtils.js';
 
-/** @typedef {{ particleCount: number, maxTimer: number, hasShockwave: boolean }} ExplosionTypeConfig */
+/** @typedef {{ particleCount: number, maxTimer: number }} ExplosionTypeConfig */
 /** @typedef {{ vxRange: [number, number], vyRange: [number, number], sizeRange: [number, number], lifeRange: [number, number] }} ParticleParams */
 
 const DEFAULT_PARTICLE_PARAMS = {
@@ -16,12 +16,6 @@ const DEFAULT_PARTICLE_PARAMS = {
 };
 
 const PARTICLE_PARAMS_BY_TYPE = {
-  'tank-plasma': {
-    vxRange: [-2, 2],
-    vyRange: [-2, 2],
-    sizeRange: [4, 10],
-    lifeRange: [50, 70],
-  },
   'armor-break': {
     vxRange: [-3, 3],
     vyRange: [-3, 3],
@@ -31,14 +25,6 @@ const PARTICLE_PARAMS_BY_TYPE = {
 };
 
 const COLOR_PALETTES = {
-  'tank-plasma': [
-    [138, 43, 226],
-    [64, 224, 208],
-    [255, 20, 147],
-    [255, 255, 255],
-    [0, 191, 255],
-    [255, 215, 0],
-  ],
   default: [
     [255, 69, 0],
     [255, 140, 0],
@@ -49,19 +35,17 @@ const COLOR_PALETTES = {
   ],
 };
 
-/** Particle count, lifetime (frames) and shockwave for each type */
+/** Particle count and lifetime (frames) for each type */
 const TYPE_CONFIG = {
-  'tank-plasma': { particleCount: 15, maxTimer: 50, hasShockwave: true },
-  'armor-break': { particleCount: 8, maxTimer: 30, hasShockwave: false },
+  'armor-break': { particleCount: 8, maxTimer: 30 },
 };
 const DEFAULT_TYPE_CONFIG = {
   particleCount: 3,
   maxTimer: 30,
-  hasShockwave: false,
 };
 
 /**
- * Get explosion type config (particle count, timer, shockwave).
+ * Get explosion type config (particle count, timer).
  * @param {string} type
  * @returns {ExplosionTypeConfig}
  */

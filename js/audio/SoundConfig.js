@@ -84,13 +84,6 @@ export const SOUND_CONFIG = {
     duration: 0.3,
     volume: 0.3,
   },
-  plasmaCloud: {
-    frequency: 75,
-    waveform: 'sawtooth',
-    volume: 0.8,
-    duration: 5.0,
-    tremolo: true,
-  },
   tankCharging: {
     frequency: 70,
     waveform: 'square',
@@ -155,13 +148,6 @@ export const SOUND_CONFIG = {
     volume: 0.4,
     duration: 0.5,
     sweep: { to: 150, curve: 'exponential' },
-  },
-  tankOhNo: {
-    frequency: 600,
-    waveform: 'sawtooth',
-    volume: 0.5,
-    duration: 0.6,
-    sweep: { to: 80, curve: 'exponential' },
   },
   gruntMalfunction: {
     frequency: 180,

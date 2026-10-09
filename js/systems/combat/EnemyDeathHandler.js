@@ -1,8 +1,12 @@
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
 import { CONFIG } from '../../config.js';
 import { GruntDeath } from '../../entities/GruntDeath.js';
+import { TankDeath, airDarts } from '../../entities/TankDeath.js';
 import { LEAD_SEC } from '../../audio/speech/Voicebox.js';
-import { heardLatencySec } from '../../audio/BeatTrack.js';
+import { heardLatencySec, heardKick } from '../../audio/BeatTrack.js';
+
+const TANK_SHAKE = [8, 15]; // a tank's death shakes the camera: px, frames
+const MS_PER_SEC = 1000;
 
 const DEATH_SOUND = {
   stabber: 'stabberOhNo',
@@ -60,18 +64,12 @@ export class EnemyDeathHandler {
     let popsAt = null;
     if (enemyType === 'grunt') {
       popsAt = this.gruntDies(enemy, blow, explosionManager, audio);
+    } else if (enemyType === 'tank') {
+      this.tankDies(enemy, blow, explosionManager, audio);
+      cameraSystem?.addShake(...TANK_SHAKE);
     } else {
       explosionManager.addFragmentExplosion(x, y, enemy);
-      if (enemyType === 'tank') {
-        explosionManager.addPlasmaCloud(x, y);
-        if (cameraSystem) {
-          cameraSystem.addShake(8, 15);
-        }
-        audio.playSound('tankOhNo', x, y);
-        audio.playSound('explosion', x, y);
-      } else {
-        audio.playSound(DEATH_SOUND[enemyType] ?? 'enemyOhNo', x, y);
-      }
+      audio.playSound(DEATH_SOUND[enemyType] ?? 'enemyOhNo', x, y);
     }
 
     // Call-and-response: notify nearby same-type enemies
@@ -125,5 +123,41 @@ export class EnemyDeathHandler {
       enemy.lookSeed
     );
     return at;
+  }
+
+  /**
+   * A tank's death, All air (TankDeath.js): with the bang when the bomb
+   * killed him, else on the next eighth (popTime), seen when it is heard.
+   */
+  tankDies(enemy, blow, explosionManager, audio) {
+    // Audio first, as for a grunt: the death's times are on the clock it is read by
+    audio.ensureAudioContext?.();
+    const clock = this.getContextValue('beatClock');
+    const now = () => clock.nowSec();
+    const diedAt = now();
+    const at = blow?.bomb ? diedAt : popTime(diedAt, clock);
+    const latency = () => heardLatencySec(audio.audioContext);
+    const beatSec = clock.beatInterval / MS_PER_SEC;
+    const death = new TankDeath({
+      x: enemy.x,
+      y: enemy.y,
+      size: enemy.size * CONFIG.TANK_LOOK.ART_SCALE,
+      pose: enemy.pose(),
+      dir: blow?.dir ?? enemy.facing,
+      seed: enemy.lookSeed,
+      diedAt,
+      startsAt: at + latency(),
+      now,
+      kickAge: () =>
+        heardKick(clock.getBeatPosition(), beatSec, latency(), true).kickAge,
+    });
+    explosionManager.fragmentExplosions.push(death);
+    audio.playTankDeath?.(
+      enemy.x,
+      enemy.y,
+      at,
+      death.timing,
+      airDarts(death.timing, enemy.lookSeed)
+    );
   }
 }

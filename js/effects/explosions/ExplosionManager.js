@@ -1,9 +1,14 @@
 import { Explosion } from './Explosion.js';
 import { RusherBlast } from './RusherBlast.js';
 import { HazardCloud } from './HazardCloud.js';
+import { BombSmoke } from './BombSmoke.js';
+import { BombBlast } from './BombBlast.js';
 import { EnemyFragmentExplosion } from './EnemyFragmentExplosion.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
 import { CONFIG } from '../../config.js';
+
+const MS_PER_SEC = 1000;
+const DEFAULT_BEAT_SEC = 0.5; // 120 BPM, with no beat clock (tests)
 
 export class ExplosionManager {
   constructor(context = null) {
@@ -12,9 +17,22 @@ export class ExplosionManager {
     this.plasmaClouds = [];
     this.radioactiveDebris = [];
     this.fragmentExplosions = [];
+    this.smokes = []; // how the bombs' clouds look, with their sounds
+    this.bangs = []; // the bombs' bangs: under and over everyone
   }
 
   getContextValue = createContextAccessor(() => this.context);
+
+  /** A new run: every explosion, cloud and death of the last one goes */
+  reset() {
+    for (const smoke of this.smokes) smoke.end();
+    this.smokes = [];
+    this.bangs = [];
+    this.explosions = [];
+    this.plasmaClouds = [];
+    this.radioactiveDebris = [];
+    this.fragmentExplosions = [];
+  }
 
   addExplosion(x, y, type, options = {}) {
     this.explosions.push(
@@ -24,16 +42,29 @@ export class ExplosionManager {
     );
   }
 
-  addPlasmaCloud(x, y) {
-    this.plasmaClouds.push(new HazardCloud(x, y, 'PLASMA'));
-    const audio = this.getContextValue('audio');
-    if (audio) audio.playSound('plasmaCloud', x, y);
+  /** The bang of the hero's bomb at (x, y); seed (0..1) is its own */
+  addBombBlast(x, y, seed) {
+    this.bangs.push(new BombBlast(x, y, seed));
   }
 
-  addRadioactiveDebris(x, y) {
+  /**
+   * The cloud the hero's bomb leaves at (x, y): its damage, a PLASMA and a
+   * DEBRIS HazardCloud, and how they look and sound together, one Smoke.
+   * seed (0..1) is the cloud's own.
+   */
+  addBombCloud(x, y, seed) {
+    this.plasmaClouds.push(new HazardCloud(x, y, 'PLASMA'));
     this.radioactiveDebris.push(new HazardCloud(x, y, 'DEBRIS'));
+    const clock = this.getContextValue('beatClock');
     const audio = this.getContextValue('audio');
-    if (audio) audio.playSound('plasmaCloud', x, y);
+    this.smokes.push(
+      new BombSmoke(x, y, {
+        seed,
+        beats: () => clock?.getBeatPosition?.() ?? 0,
+        beatSec: clock ? clock.beatInterval / MS_PER_SEC : DEFAULT_BEAT_SEC,
+        sound: audio?.playBombCloud?.(x, y, seed) ?? null,
+      })
+    );
   }
 
   addFragmentExplosion(x, y, enemy) {
@@ -51,7 +82,18 @@ export class ExplosionManager {
     this.fragmentExplosions.push(fragmentExplosion);
   }
 
+  /**
+   * The bombs' bangs age by a frame. Also in the hero's death scene, where
+   * the world holds still: a bang that killed him plays out rather than
+   * freezing over him
+   */
+  ageBangs(deltaTimeMs) {
+    for (const bang of this.bangs) bang.update(deltaTimeMs);
+    this.bangs = this.bangs.filter((bang) => bang.active);
+  }
+
   update(deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
+    this.ageBangs(deltaTimeMs);
     // Update explosions
     for (let i = this.explosions.length - 1; i >= 0; i--) {
       this.explosions[i].update(deltaTimeMs);
@@ -99,9 +141,19 @@ export class ExplosionManager {
         this.radioactiveDebris.pop();
       }
     }
+    // Their pictures, a frame on with them; an ended one is gone
+    for (const smoke of this.smokes) smoke.update();
+    this.smokes = this.smokes.filter((smoke) => smoke.active);
     return damageEvents;
   }
 
+  /** Under everyone, before the aliens: what lies on the ground */
+  drawUnder(p) {
+    for (const smoke of this.smokes) smoke.draw(p);
+    for (const bang of this.bangs) bang.drawUnder(p);
+  }
+
+  /** Over everyone */
   draw(p) {
     // Draw all explosions
     for (const explosion of this.explosions) {
@@ -111,13 +163,7 @@ export class ExplosionManager {
     for (const fragmentExplosion of this.fragmentExplosions) {
       fragmentExplosion.draw(p);
     }
-    // Draw all plasma clouds
-    for (const cloud of this.plasmaClouds) {
-      cloud.draw(p);
-    }
-    // Draw all radioactive debris
-    for (const debris of this.radioactiveDebris) {
-      debris.draw(p);
-    }
+    // The bangs' fireballs and rings, over everything, a death included
+    for (const bang of this.bangs) bang.draw(p);
   }
 }

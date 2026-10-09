@@ -173,6 +173,9 @@ export const TANK_CHARGING = 'CHARGING!';
 // its beats (BombSystem.js)
 export const BOMB_PLANTED = 'TIMEBOMB!';
 export const COUNTDOWN = ['3', '2', '1'];
+// The tank, the beat before the bomb on his back blows (the comma makes his
+// voice say it in two: "UH OH" slurs into one vowel)
+export const TANK_UH_OH = 'UH, OH';
 const distinct = (...lists) => [...new Set(lists.flat())];
 
 // Every fixed line, by the speaker who says it: the voice playground plays
@@ -185,5 +188,6 @@ export const SPEAKER_LINES = {
   tank: distinct(TANK_LINES, TANK_ANGER_LINES, TANK_CALM_LINES, [
     TANK_FIRE,
     TANK_CHARGING,
+    TANK_UH_OH,
   ]),
 };

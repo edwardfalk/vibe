@@ -17,9 +17,16 @@ import { floor, clamp01 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
-import { BOMB_PLANTED, COUNTDOWN } from '../audio/DialogueLines.js';
+import { hash01 } from '../entities/RusherRenderer.js';
+import { COMIC } from '../effects/explosions/BombBlast.js';
+import { BOMB_PLANTED, COUNTDOWN, TANK_UH_OH } from '../audio/DialogueLines.js';
 
 const COUNT_EVERY_BEATS = 2;
+const SEED_Y = 7.31; // folds y into a bang's seed, so bombs on one row differ
+// His "uh oh" comes this many beats before the bang: the eighth after the
+// hero's "1" ends (it lasts 0.45 s, measured 2026-10-09; "UH, OH" 0.77 s,
+// so its "OH" runs into the bang)
+const UH_OH_BEATS = 1;
 const AMBER_LEFT = 0.34; // its light goes white-hot for the last third
 // Its look, at size 50 (the prototype's numbers, in px): a halo, the body,
 // the hero's band, a glint, the light and the blink's ring
@@ -141,16 +148,27 @@ export function updateBombs(context) {
           audio?.speak?.(bomb, COUNTDOWN[due - 1], 'player', true);
         }
       }
+      // His "uh oh": his line, once, forced past the gap between the
+      // enemies' lines, and his flinch until the bang (Tank.js draws it);
+      // not once he is dead
+      const live = bomb.tankRef;
+      if (live && fuse >= B.FUSE_BEATS - UH_OH_BEATS) {
+        live.flinch = { bang: beats - fuse + B.FUSE_BEATS, beats: UH_OH_BEATS };
+        if (!bomb.uhOh) {
+          bomb.uhOh = true;
+          audio?.speak?.(live, TANK_UH_OH, 'tank', true);
+        }
+      }
       continue;
     }
 
-    if (explosionManager) {
-      explosionManager.addExplosion(bomb.x, bomb.y, 'tank-plasma');
-      explosionManager.addRadioactiveDebris(bomb.x, bomb.y);
-      explosionManager.addPlasmaCloud(bomb.x, bomb.y);
-    }
-    audio?.playSound?.('explosion', bomb.x, bomb.y);
-    cameraSystem?.addShake(20, 40);
+    // The bang (the Comic blast), and the cloud it leaves: the plasma and the
+    // debris, one picture and one sound
+    const seed = hash01(bomb.x + SEED_Y * bomb.y);
+    explosionManager?.addBombBlast(bomb.x, bomb.y, seed);
+    explosionManager?.addBombCloud(bomb.x, bomb.y, seed);
+    audio?.playBombBang?.(bomb.x, bomb.y);
+    cameraSystem?.addShake(...COMIC.SHAKE);
 
     if (player) {
       const hit = blastAt(
@@ -165,18 +183,23 @@ export function updateBombs(context) {
       }
     }
 
-    // Every live alien in reach, the tank it is on included
+    // Every live alien in reach; the tank it is on takes enough to die
     for (let j = enemies.length - 1; j >= 0; j--) {
       const enemy = enemies[j];
       if (enemy.markedForRemoval) continue; // killed last frame, not yet removed
-      const damage = blastAt(
+      const reached = blastAt(
         bomb,
         enemy.x,
         enemy.y,
         B.ENEMY_DAMAGE_MIN,
         B.ENEMY_DAMAGE_MAX
       );
-      if (!damage) continue;
+      // Its own tank dies whatever the damage sliders say
+      if (!reached && enemy.id !== bomb.tankId) continue;
+      const damage =
+        enemy.id === bomb.tankId
+          ? Math.max(reached, enemy.health || 0)
+          : reached;
       const damageResult = enemy.takeDamage(damage, null, 'bomb');
 
       if (damageResult === DAMAGE_RESULT.DAMAGED) {
@@ -190,10 +213,12 @@ export function updateBombs(context) {
       }
 
       if (damageResult === DAMAGE_RESULT.DIED) {
-        // A blast, away from the bomb
+        // A blast, away from the bomb, and the bomb's: a tank it kills starts
+        // dying with the bang
         const blow = {
           dir: Math.atan2(enemy.y - bomb.y, enemy.x - bomb.x),
           blast: true,
+          bomb: true,
         };
         (enemyDeathHandler ?? collisionSystem)?.handleEnemyDeath(
           enemy,
