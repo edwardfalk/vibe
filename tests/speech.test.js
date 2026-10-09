@@ -293,6 +293,17 @@ test('in a running game every line starts on the grid, and the count on its beat
       )
     )
   ).toBe(true);
+  // So was the tank's "UH, OH", keyed by what his engine says
+  expect(
+    await page.evaluate(async () => {
+      const { spoken } = await import('/js/audio/speech/Voicebox.js');
+      const { CONFIG } = await import('/js/config.js');
+      const { TANK_UH_OH } = await import('/js/audio/DialogueLines.js');
+      const { engine } = CONFIG.SPEECH.SPEAKERS.tank;
+      const words = spoken(engine, TANK_UH_OH, CONFIG.SPEECH.RESPELL);
+      return window.audio.voicebox.lines.has(`tank:${words}`);
+    })
+  ).toBe(true);
   const report = await page.evaluate(async () => {
     const { plantBomb } = await import('/js/systems/BombSystem.js');
     const { SPEAKER_LINES } = await import('/js/audio/DialogueLines.js');
@@ -315,7 +326,11 @@ test('in a running game every line starts on the grid, and the count on its beat
       audio
     );
     await wait(5000);
+    // It has blown by now: its cloud is drawn (a cloud takes its layer when
+    // it is first drawn)
+    const smokes = window.explosionManager.smokes;
     return {
+      cloudDrawn: smokes.length === 1 && !!smokes[0].layer,
       said: window.__said,
       started: window.__started,
       origin: clock.startTime / 1000,
@@ -336,6 +351,7 @@ test('in a running game every line starts on the grid, and the count on its beat
     said.map((l) => `${l.text} ${l.readyMs}`)
   );
   expect(errors).toEqual([]);
+  expect(report.cloudDrawn).toBe(true);
   // The session's first line played: the engines had loaded. Another line
   // may be dropped as late on a busy machine (MAX_WAIT_MS): dropping beats
   // playing off the beat

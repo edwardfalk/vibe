@@ -319,6 +319,13 @@ describe("the cloud's sound", () => {
     expect(side).toBeGreaterThan(0);
     const handle = audio.playBombCloud(300, 0, 0.5);
     expect(typeof handle.stop).toBe('function');
+    // It lasts as long as the cloud's damage: the debris's frames at 60 a second
+    const ends = made
+      .filter((n) => n.stop.mock.calls.length)
+      .map((n) => n.stop.mock.calls[0][0]);
+    const debrisEnd = ctx.currentTime + CONFIG.DEBRIS.DURATION / 60;
+    expect(Math.max(...ends)).toBeGreaterThan(debrisEnd - 0.5);
+    expect(Math.max(...ends)).toBeLessThan(debrisEnd + 1);
     const bus = made.find((n) => n.kind === 'gain');
     expect(bus.gain.setValueAtTime.mock.calls[0][0]).toBeCloseTo(2 * near, 9);
     const pan = made.find((n) => n.kind === 'pan');

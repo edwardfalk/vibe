@@ -103,7 +103,9 @@ describe("when the tank's death starts", () => {
     const [x, y, at, timing, darts] = w.audio.playTankDeath.mock.calls[0];
     expect([x, y, at]).toEqual([40, 60, 1.13]);
     expect(timing).toBe(death.timing);
+    // The picture darts on the same dice as the squeal
     expect(darts).toEqual(airDarts(death.timing, w.tank.lookSeed));
+    expect(darts).toEqual(airDarts(death.timing, death.seed));
   });
 
   it('on the next eighth for any other kill (a shot, a cloud, a stab)', () => {
@@ -113,6 +115,9 @@ describe("when the tank's death starts", () => {
     const at = popTime(1.13, clock);
     expect(at).toBeCloseTo(1.25, 9);
     expect(w.audio.playTankDeath.mock.calls[0][2]).toBeCloseTo(at, 9);
+    // The picture starts when that sound is heard, not before
+    const [death] = w.explosionManager.fragmentExplosions;
+    expect(death.startsAt).toBeCloseTo(at + 0.03, 9);
     w.kill({ dir: 0, blast: true }); // a cloud's or a rusher's blast
     expect(w.audio.playTankDeath.mock.calls[1][2]).toBeCloseTo(at, 9);
   });

@@ -246,8 +246,18 @@ describe('restart', () => {
     gs.gameContext.set('hitStopFrames', 7);
     // Its own reset empties every list, whichever kinds it holds
     window.explosionManager = new ExplosionManager();
-    const lists = ['explosions', 'plasmaClouds', 'fragmentExplosions'];
+    const lists = [
+      'explosions',
+      'plasmaClouds',
+      'radioactiveDebris',
+      'fragmentExplosions',
+      'smokes',
+      'bangs',
+    ];
     for (const list of lists) window.explosionManager[list].push({});
+    // A cloud still burning stops its sound
+    const smoke = { end: vi.fn() };
+    window.explosionManager.smokes[0] = smoke;
     window.floatingText = { texts: [{}] };
     const voicebox = { cancelPending: vi.fn() };
     window.audio = { activeTexts: [{}], speakPlayerLine: () => {}, voicebox };
@@ -259,6 +269,7 @@ describe('restart', () => {
     clearTimeout(gs.startSpeechTimer);
 
     for (const list of lists) expect(window.explosionManager[list]).toEqual([]);
+    expect(smoke.end).toHaveBeenCalledTimes(1);
     expect(window.floatingText.texts).toEqual([]);
     expect(window.audio.activeTexts).toEqual([]);
     expect(voicebox.cancelPending).toHaveBeenCalledTimes(1);
