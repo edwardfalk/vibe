@@ -273,6 +273,10 @@ describe("the bang's sound", () => {
       hz(['5', 2], at),
       6
     );
+    // Its noise loops, so no part of it runs out before its fade does
+    const noises = made.filter((n) => n.kind === 'source');
+    expect(noises.length).toBeGreaterThan(3);
+    for (const n of noises) expect(n.loop).toBe(true);
     // Every node lets go when its last source ends
     const last = made.find((n) => typeof n.onended === 'function');
     last.onended();

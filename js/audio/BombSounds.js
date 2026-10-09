@@ -335,6 +335,7 @@ export function bangSound(ctx, out, { at, noise, volume, pan }) {
     const when = o.at ?? at;
     const src = ctx.createBufferSource();
     src.buffer = noise;
+    src.loop = true; // a slow fade reads past the end of the 2 s noise
     const f = ctx.createBiquadFilter();
     f.type = type;
     f.Q.value = q;

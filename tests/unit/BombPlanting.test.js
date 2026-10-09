@@ -490,6 +490,21 @@ describe('the bang kills the tank it is on', () => {
     expect(gameState.addScore).toHaveBeenCalledWith(20);
   });
 
+  it('outright even with the damage slider at 0, which spares everyone else', () => {
+    const MAX = CONFIG.BOMB.ENEMY_DAMAGE_MAX;
+    CONFIG.BOMB.ENEMY_DAMAGE_MAX = 0;
+    try {
+      const w = tankWorld({ hero: { x: 3000, y: 0 } });
+      const t = w.tank(0, 0);
+      const other = w.tank(120, 0);
+      blowOn(w, t, [t, other]);
+      expect(t.health).toBeLessThanOrEqual(0);
+      expect(other.health).toBe(other.maxHealth);
+    } finally {
+      CONFIG.BOMB.ENEMY_DAMAGE_MAX = MAX;
+    }
+  });
+
   it('only him: another tank in reach takes the falloff, as today', () => {
     const w = tankWorld({ hero: { x: 3000, y: 0 } });
     const t = w.tank(0, 0);

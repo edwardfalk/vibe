@@ -194,7 +194,8 @@ export function updateBombs(context) {
         B.ENEMY_DAMAGE_MIN,
         B.ENEMY_DAMAGE_MAX
       );
-      if (!reached) continue;
+      // Its own tank dies whatever the damage sliders say
+      if (!reached && enemy.id !== bomb.tankId) continue;
       const damage =
         enemy.id === bomb.tankId
           ? Math.max(reached, enemy.health || 0)
