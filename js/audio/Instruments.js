@@ -1,10 +1,11 @@
 /**
  * Instruments.js - The sounds with a synth of their own (a preset's
  * `synth`): the rusher's crash and the hero's shot. Audio.playSound sends
- * them here placed and timed:
- *   SYNTHS[cfg.synth](ctx, out, cfg, { volume, pan, at, eighth })
+ * them here placed and timed, with its caller's options:
+ *   SYNTHS[cfg.synth](ctx, out, cfg, { ...opts, volume, pan, at, eighth })
  * volume is the distance's (and the hero's softening), at the audio time the
- * sound starts and eighth BeatClock's eighth note it plays on.
+ * sound starts and eighth BeatClock's eighth note it plays on. A seeded call
+ * also gets detuneCents (Audio.playSynth).
  */
 import { CONFIG } from '../config.js';
 import { hz } from './Harmony.js';
