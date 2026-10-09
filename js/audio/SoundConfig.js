@@ -149,13 +149,6 @@ export const SOUND_CONFIG = {
     duration: 0.5,
     sweep: { to: 150, curve: 'exponential' },
   },
-  tankOhNo: {
-    frequency: 600,
-    waveform: 'sawtooth',
-    volume: 0.5,
-    duration: 0.6,
-    sweep: { to: 80, curve: 'exponential' },
-  },
   gruntMalfunction: {
     frequency: 180,
     waveform: 'sawtooth',

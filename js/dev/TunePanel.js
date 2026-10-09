@@ -178,6 +178,8 @@ const KNOBS = [
   [DEATHS, 'LINGER', [0.5, 2, 0.1]],
   [DEATHS, 'SCENE_BEATS', [4, 8, 1]],
   [DEATHS, 'SCENE_ZOOM', [1, 2, 0.05]],
+  [DEATHS, 'TANK_VOLUME', [0, 3, 0.05]],
+  [DEATHS, 'TANK_ZIP_SEC', [0.5, 2, 0.05]], // the timing needs at least 0.5
   [SPEECH, 'VOICE_GAP_SEC', [0, 8, 0.25]],
   [`${SPEECH}.GRUNT`, 'CHANCE', [0, 1, 0.05]],
   [`${SPEECH}.STABBER`, 'CHANCE', [0, 1, 0.05]],

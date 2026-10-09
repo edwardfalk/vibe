@@ -156,8 +156,9 @@ export function handleRegularEnemyBulletHit(
       gameState,
       onDeath: (e) =>
         handleEnemyDeath(e, e.type, e.x, e.y, { dir: bullet.angle }),
-      // A grunt's death is its pop, on the beat
-      deathSound: enemy.type === 'grunt' ? null : 'explosion',
+      // A grunt's or a tank's death has its own sound, on the beat
+      deathSound:
+        enemy.type === 'grunt' || enemy.type === 'tank' ? null : 'explosion',
       scorePoints: 8,
       hitX: bullet.x,
       hitY: bullet.y,

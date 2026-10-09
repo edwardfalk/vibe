@@ -20,6 +20,7 @@ import {
   tankSide,
   drawTank,
   TANK_REACH,
+  TANK_SIZE,
 } from './TankRenderer.js';
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 
@@ -54,7 +55,7 @@ class Tank extends BaseEnemy {
   constructor(x, y, type, config, p, audio) {
     const tankConfig = {
       ...config,
-      size: 50,
+      size: TANK_SIZE,
       health: CONFIG.TANK.HEALTH,
       speed: CONFIG.TANK.DRIFT_PX_S / FRAMES_PER_SEC,
       color: p.color(...TANK_COLORS.skin),

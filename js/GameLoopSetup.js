@@ -7,6 +7,7 @@ import { Player } from './entities/player.js';
 import { prepareHeroLook } from './entities/PlayerRenderer.js';
 import { prepareDudeDeath } from './entities/DudeDeath.js';
 import { prepareBombSmoke } from './effects/explosions/BombSmoke.js';
+import { prepareTankDeath } from './entities/TankDeath.js';
 import { ExplosionManager } from './effects/explosions/ExplosionManager.js';
 import { GameState } from './core/GameState.js';
 import { CameraSystem } from './systems/CameraSystem.js';
@@ -52,6 +53,7 @@ export function runSetup(p, arrays) {
   prepareHeroLook(p, player); // his sprites, behind the title screen
   prepareDudeDeath(p, player); // and his death's
   prepareBombSmoke(p); // the bomb's cloud's sheets
+  prepareTankDeath(p); // the tank's, and his death's
   window.player = player;
 
   window.enemies = enemies;

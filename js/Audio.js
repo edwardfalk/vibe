@@ -45,7 +45,12 @@ import {
 } from './audio/DialogueLines.js';
 import { playCrash, crashNoise } from './audio/CrashSynth.js';
 import { cloudSound, bangSound } from './audio/BombSounds.js';
-import { gruntPop, lastBreath, GRUNT_POP_SEC } from './audio/DeathSounds.js';
+import {
+  gruntPop,
+  lastBreath,
+  tankAir,
+  GRUNT_POP_SEC,
+} from './audio/DeathSounds.js';
 import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
 import { Hum } from './audio/Hum.js';
 
@@ -58,6 +63,7 @@ const WORD_SEC = 0.4;
 const MS_PER_SEC = 1000;
 const DEFAULT_BEAT_MS = 500; // 120 BPM, with no beat clock
 const CLOUD_FRAME_SEC = 1 / 60; // a hazard cloud ticks once a frame
+const TANK_DEATH_NOTE = ['1', 2]; // the tank dies on the root
 
 /** The master limiter, so concurrent sounds can't clip (also the loudness test's) */
 export function createMasterLimiter(ctx) {
@@ -358,6 +364,24 @@ export class Audio {
         offset: (opts.seed ?? 0) * (noise.duration - STRINGS_NOISE_SEC),
       }) ?? null
     );
+  }
+
+  /**
+   * A tank's death, All air (DeathSounds.js), from (x, y) at audio time
+   * `at`, on his timing and darts (TankDeath.js)
+   */
+  playTankDeath(x, y, at, timing, darts) {
+    if (!this.ensureAudioContext()) return;
+    const { near, pan } = this.placement(x, y);
+    tankAir(this.audioContext, this.masterGain, {
+      at,
+      note: TANK_DEATH_NOTE,
+      noise: crashNoise(this.audioContext),
+      volume: CONFIG.DEATHS.TANK_VOLUME * near,
+      pan,
+      timing,
+      darts,
+    });
   }
 
   /** The bomb's bang (BombSounds.js) from (x, y), now */

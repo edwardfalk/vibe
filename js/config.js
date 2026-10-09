@@ -339,6 +339,9 @@ const CONFIG = {
     LINGER: 1,
     SCENE_BEATS: 4,
     SCENE_ZOOM: 1.45,
+    TANK_VOLUME: 1, // the tank's air, 1 = the studies page's level
+    // How long a dying tank darts about, s (0.5 to 2): shorter is less
+    TANK_ZIP_SEC: 0.95,
   },
 
   // Tank armour plates (hits to break). Applies to tanks spawned after a

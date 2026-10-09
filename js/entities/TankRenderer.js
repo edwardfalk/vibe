@@ -60,6 +60,7 @@ export const TANK_COLORS = Object.freeze(
   )
 );
 
+export const TANK_SIZE = 50; // his size; drawn at this times TANK_LOOK.ART_SCALE
 export const CANNON_AT = 0.9; // the cannon's pivot ahead of his centre, in his fists
 export const MUZZLE = 0.62; // from that pivot to the muzzle
 export const BOMB_AT = 0.42; // where a bomb sits behind his centre

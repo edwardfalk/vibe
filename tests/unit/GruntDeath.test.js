@@ -221,12 +221,12 @@ describe("a grunt's death", () => {
     expect(right.dir).toBe(0);
   });
 
-  it('leaves the tank, the stabber and the rusher their burst and sounds', () => {
+  it('leaves the stabber and the rusher their burst and sounds (the tank has his own death)', () => {
     const w = deathWorld(1.13);
-    for (const type of ['tank', 'stabber', 'rusher']) {
+    for (const type of ['stabber', 'rusher']) {
       w.kill({ type, x: 0, y: 0 });
     }
-    expect(w.explosionManager.addFragmentExplosion).toHaveBeenCalledTimes(3);
+    expect(w.explosionManager.addFragmentExplosion).toHaveBeenCalledTimes(2);
     expect(w.audio.playGruntPop).not.toHaveBeenCalled();
     expect(w.deaths()).toHaveLength(0);
   });
