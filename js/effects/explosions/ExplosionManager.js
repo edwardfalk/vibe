@@ -16,6 +16,14 @@ export class ExplosionManager {
 
   getContextValue = createContextAccessor(() => this.context);
 
+  /** A new run: every explosion, cloud and death of the last one goes */
+  reset() {
+    this.explosions = [];
+    this.plasmaClouds = [];
+    this.radioactiveDebris = [];
+    this.fragmentExplosions = [];
+  }
+
   addExplosion(x, y, type, options = {}) {
     this.explosions.push(
       type === 'rusher-explosion'
@@ -102,6 +110,10 @@ export class ExplosionManager {
     return damageEvents;
   }
 
+  /** Under everyone, before the aliens: what lies on the ground */
+  drawUnder() {}
+
+  /** Over everyone */
   draw(p) {
     // Draw all explosions
     for (const explosion of this.explosions) {

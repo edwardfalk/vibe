@@ -228,6 +228,8 @@ describe('game over screen', () => {
 });
 
 const { CameraSystem } = await import('../../js/systems/CameraSystem.js');
+const { ExplosionManager } =
+  await import('../../js/effects/explosions/ExplosionManager.js');
 const { GameContext } = await import('../../js/core/GameContext.js');
 
 describe('restart', () => {
@@ -242,7 +244,10 @@ describe('restart', () => {
     const gs = new GameState();
     gs.gameContext = new GameContext();
     gs.gameContext.set('hitStopFrames', 7);
-    window.explosionManager = { fragmentExplosions: [{}] };
+    // Its own reset empties every list, whichever kinds it holds
+    window.explosionManager = new ExplosionManager();
+    const lists = ['explosions', 'plasmaClouds', 'fragmentExplosions'];
+    for (const list of lists) window.explosionManager[list].push({});
     window.floatingText = { texts: [{}] };
     const voicebox = { cancelPending: vi.fn() };
     window.audio = { activeTexts: [{}], speakPlayerLine: () => {}, voicebox };
@@ -253,7 +258,7 @@ describe('restart', () => {
     gs.restart();
     clearTimeout(gs.startSpeechTimer);
 
-    expect(window.explosionManager.fragmentExplosions).toEqual([]);
+    for (const list of lists) expect(window.explosionManager[list]).toEqual([]);
     expect(window.floatingText.texts).toEqual([]);
     expect(window.audio.activeTexts).toEqual([]);
     expect(voicebox.cancelPending).toHaveBeenCalledTimes(1);

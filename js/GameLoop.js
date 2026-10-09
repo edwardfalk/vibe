@@ -247,6 +247,9 @@ function drawGame(p) {
     if (scene && player) easeCameraIn(p, cameraSystem, player, scene, clock);
   }
 
+  // What lies on the ground (the bomb's cloud), under everyone
+  explosionManager?.drawUnder(p);
+
   // One killed this frame leaves the array at the next update, which
   // hitstop and his death scene skip: its death draws it now
   for (const enemy of enemies) {
