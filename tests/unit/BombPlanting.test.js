@@ -361,6 +361,37 @@ describe('"TIMEBOMB!" and the count', () => {
       }
     }
   }, 60000);
+
+  it('a stall before the shout is scheduled delays the count once, not twice', () => {
+    // A clock on audio time; the bomb is planted at beat 10.3
+    const ORIGIN_SEC = 3.21;
+    const ctx = { currentTime: ORIGIN_SEC };
+    const clock = new BeatClock(120, ctx);
+    ctx.currentTime = ORIGIN_SEC + 10.3 * 0.5;
+    const audio = createMockAudio();
+    let onStart = null;
+    let threeAt = null;
+    audio.speak.mockImplementation((_e, word, _v, _f, started) => {
+      if (word === BOMB_PLANTED) onStart = started;
+      if (word === '3') threeAt = clock.getBeatPosition();
+      return true;
+    });
+    const activeBombs = [];
+    plantBomb(activeBombs, touchingTank('t'), clock, audio);
+    // A hidden tab: ten beats with no frame, and the shout is scheduled
+    // before the next one
+    ctx.currentTime += 10.2 * 0.5;
+    const shoutBeat = clock.getBeatPosition();
+    onStart(startTime(ctx.currentTime, clock));
+    while (threeAt === null && clock.getBeatPosition() < 40) {
+      ctx.currentTime += 0.01;
+      updateBombs({ activeBombs, enemies: [], audio, beatClock: clock });
+    }
+    // The count follows the shout, as without the stall
+    expect(threeAt - shoutBeat).toBeLessThanOrEqual(
+      CONFIG.BOMB.COUNT_LEAD_BEATS + 1
+    );
+  });
 });
 
 describe('a bomb kills the tank it is on', () => {

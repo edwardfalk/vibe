@@ -83,7 +83,11 @@ export function plantBomb(activeBombs, tank, beatClock, audio = null) {
   audio?.speak?.(null, BOMB_PLANTED, 'player', true, (startsAt) => {
     if (!beatClock.audioContext) return; // its beats aren't audio seconds
     const at = (startsAt - beatClock.startTime / 1000) / bomb.beatSec;
-    bomb.plantedAt = Math.max(bomb.plantedAt, at);
+    if (at <= bomb.plantedAt) return;
+    bomb.plantedAt = at;
+    // A stall before this (a hidden tab) is in that start already: the
+    // next update mustn't add its beats again as missed
+    bomb.seenAt = Math.max(bomb.seenAt, beatClock.getBeatPosition());
   });
 }
 
