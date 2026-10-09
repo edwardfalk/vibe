@@ -21,8 +21,10 @@ import { clamp01, smooth, env, mulberry32 } from '../../mathUtils.js';
 
 const TAU = Math.PI * 2;
 const MS_PER_SEC = 1000;
-// A bang's first frame already shows its first sixtieth of a second: at age 0
-// exactly, something that grows from nothing would show nothing
+// A bang's first frame already shows its first sixtieth of a second (at age 0
+// exactly, something that grows from nothing would show nothing). The game
+// gives it that frame: it is born in the bombs' update and aged once by the
+// explosion manager's, before it is first drawn
 const LEAD = 1 / 60;
 
 // [r, g, b]: the cast's ink and colours a little off, beside the sky's teal,
@@ -116,7 +118,10 @@ export const COMIC = {
   SHAKE: [32, 42], // the camera's shake at the bang: amplitude px, frames
 };
 
-/** When the ring is seen to land at the edge, from the bang (its sound's slam) */
+/**
+ * When the ring is seen to land at the edge, from the frame the bang was born
+ * in (its sound's slam): it lands at age ARRIVE, and its first frame is LEAD in
+ */
 export const RING_LANDS_SEC = COMIC.ARRIVE - LEAD;
 
 const SEED_STEPS = 1e6;
@@ -179,7 +184,7 @@ export class BombBlast {
   }
 
   get age() {
-    return this.ageMs / MS_PER_SEC + LEAD;
+    return this.ageMs / MS_PER_SEC;
   }
 
   /** The fireball and the ring, over everyone */

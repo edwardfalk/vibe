@@ -96,6 +96,20 @@ describe('the Comic bang', () => {
     expect(two.under).toBeGreaterThan(one.under + 0.3);
   });
 
+  it("lands its ring on the frame its thud is due, in the game's order: born, aged once, then drawn", () => {
+    const manager = new ExplosionManager();
+    manager.addBombBlast(0, 0, 0.5); // born in the bombs' update
+    const [bang] = manager.bangs;
+    let landed = null;
+    for (let f = 0; f < 30 && landed === null; f++) {
+      manager.update(FRAME_MS); // the explosion manager's, the same frame
+      if (f === 0) expect(bang.age).toBeCloseTo(1 / 60, 9); // its first frame
+      if (bang.age >= COMIC.ARRIVE - 1e-9) landed = f; // drawn landed this frame
+    }
+    // Frame f shows f frames after the bang's own
+    expect((landed * FRAME_MS) / 1000).toBeCloseTo(RING_LANDS_SEC, 3);
+  });
+
   it('holds still while the game does: it ages, and its picture moves, only when updated', () => {
     const bang = new BombBlast(0, 0, 0.5);
     bang.update(FRAME_MS);
