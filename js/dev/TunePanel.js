@@ -121,6 +121,7 @@ const KNOBS = [
   ['STABBER_LOOK', 'ART_SCALE', [0.6, 1.6, 0.05]], // moves his reach too
   ['TANK_ARMOR', 'FRONT', [0, 200, 5]],
   ['TANK_ARMOR', 'SIDE', [0, 150, 5]],
+  ['TANK_ARMOR', 'CLANG_VOLUME', [0, 3, 0.05]],
   [TANK, 'HEALTH', [10, 200, 5]],
   [TANK, 'TURN_STEP_DEG', [5, 180, 5]],
   [TANK, 'TURN_SEC', [0.05, 1.9, 0.05]], // under one bar at 120 BPM

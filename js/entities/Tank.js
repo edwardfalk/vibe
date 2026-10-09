@@ -523,7 +523,7 @@ class Tank extends BaseEnemy {
       armor.hp = 0;
       armor.destroyed = true;
       this.plateBrokeAt[side] = this.poseBeats;
-      if (audio) audio.playSound('explosion', this.x, this.y);
+      audio?.playPlateClang?.(this.x, this.y);
       this.breakArmor(side);
       this.trackAnger(damageSource);
       if (overflow <= 0) return DAMAGE_RESULT.DAMAGED;

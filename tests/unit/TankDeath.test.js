@@ -14,7 +14,7 @@ import {
 } from '../../js/systems/combat/EnemyDeathHandler.js';
 import { CollisionSystem } from '../../js/systems/CollisionSystem.js';
 import { Bullet } from '../../js/entities/bullet.js';
-import { tankAir } from '../../js/audio/DeathSounds.js';
+import { tankAir, plateClang } from '../../js/audio/DeathSounds.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { Audio } from '../../js/Audio.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
@@ -385,5 +385,80 @@ describe("the tank's air (his death's sound)", () => {
     audio._pausedByGame = true;
     audio.playTankDeath(0, 0, 4, timing, airDarts(timing, 0.5));
     expect(made).toHaveLength(count);
+  });
+});
+
+describe("a plate's clang", () => {
+  const clangAt = (at) => {
+    const { ctx, made } = fakeAudio();
+    plateClang(
+      ctx,
+      { kind: 'bus' },
+      { at, noise: { duration: 2 }, volume: 1, pan: 0 }
+    );
+    return made;
+  };
+  it("rings on the hum's F#, its higher partials dying first, over in under 0.8 s", () => {
+    const made = clangAt(2);
+    const partials = made.filter((n) => n.kind === 'osc');
+    expect(partials[0].frequency.value).toBeCloseTo(hz(['1', 5], 2), 6);
+    const ends = partials.map((o) => o.stop.mock.calls[0][0]);
+    for (let i = 1; i < ends.length; i++)
+      expect(ends[i]).toBeLessThan(ends[i - 1]);
+    // Silent by 0.8 s (each source stops a moment after its fade)
+    const fades = made
+      .filter((n) => n.kind === 'gain')
+      .flatMap((g) => g.gain.exponentialRampToValueAtTime.mock.calls)
+      .map(([, t]) => t);
+    expect(Math.max(...fades)).toBeLessThan(2 + 0.81);
+    partials[0].onended();
+    for (const n of made) expect(n.disconnect).toHaveBeenCalled();
+  });
+
+  it('differs a little from one break to the next', () => {
+    // Its partials' ratios to its note: the hum's drift moves the note, not these
+    const ratio = (made) => {
+      const [note, , upper] = made.filter((n) => n.kind === 'osc');
+      return upper.frequency.value / note.frequency.value;
+    };
+    expect(ratio(clangAt(2))).not.toBeCloseTo(ratio(clangAt(2.37)), 4);
+  });
+
+  it("the game's Audio plays it at its volume knob, placed, and not while a pause holds the sound", () => {
+    const { ctx, made } = fakeAudio();
+    const audio = Object.assign(Object.create(Audio.prototype), {
+      audioContext: ctx,
+      initialized: true,
+      enabled: true,
+      initialize() {},
+      sounds: { ...SOUND_CONFIG },
+      player: { x: 0, y: 0 },
+      masterGain: { kind: 'effects bus' },
+      _pausedByGame: false,
+      _resuming: false,
+    });
+    const saved = CONFIG.TANK_ARMOR.CLANG_VOLUME;
+    CONFIG.TANK_ARMOR.CLANG_VOLUME = 0.4;
+    try {
+      // Off to the hero's right: quieter and panned right
+      const { near, pan: side } = audio.placement(300, 0);
+      expect(near).toBeLessThan(1);
+      expect(side).toBeGreaterThan(0);
+      audio.playPlateClang(300, 0);
+      const bus = made.find((n) => n.kind === 'gain');
+      expect(bus.gain.setValueAtTime.mock.calls[0][0]).toBeCloseTo(
+        0.4 * near,
+        9
+      );
+      const pan = made.find((n) => n.kind === 'pan');
+      expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(side, 9);
+      expect(pan.connect).toHaveBeenCalledWith(audio.masterGain);
+      const count = made.length;
+      audio._pausedByGame = true;
+      audio.playPlateClang(0, 0);
+      expect(made).toHaveLength(count);
+    } finally {
+      CONFIG.TANK_ARMOR.CLANG_VOLUME = saved;
+    }
   });
 });

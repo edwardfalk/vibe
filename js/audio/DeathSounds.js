@@ -18,6 +18,7 @@
  */
 import { hz } from './Harmony.js';
 import { disconnectWhenEnded } from './CrashSynth.js';
+import { hash01 } from '../entities/RusherRenderer.js';
 
 const SILENT = 0.0001; // exponential ramps can't reach 0
 const OFF = 0.0005; // where a short sound's fade ends
@@ -375,4 +376,100 @@ export function tankAir(
   }
   nodes.push(o, flap, wob, am, depth, lp, g);
   disconnectWhenEnded(o, nodes);
+}
+
+// A plate breaking off under the hero's shots: a crack of bright noise, then
+// it rings like struck sheet metal, sines at a plate's out-of-tune ratios of
+// its note (the strongest on it), the high ones dying first, a click for
+// the strike. Each break differs a little, from its time: its upper
+// partials shift, its ring and crack vary
+const CLANG = {
+  NOTE: ['1', 5],
+  RATIOS: [1, 1.594, 2.136, 2.653, 3.156], // a plate's modes
+  AMPS: [1, 0.55, 0.42, 0.3, 0.2],
+  SHIFT: 0.08, // the upper partials move up to half this either way
+  LEVEL: 0.085,
+  RING_SEC: [0.55, 0.25], // its ring, and up to this much longer
+  HIGHER_DIES: 0.9, // each higher partial rings 1 / (1 + this × its index) as long
+  PARTIAL_ATTACK_SEC: 0.0015,
+  STRIKE_SEC: 0.004, // the ring starts this long after the crack
+  CLICK: 0.3,
+  CLICK_HZ_X: 4, // the click's band, times the note
+  CLICK_MAX_HZ: 9000,
+  CLICK_Q: 1.5,
+  CLICK_SEC: [0.001, 0.012], // attack, release
+  CRACK: [0.045, 0.03], // its level, and up to this much louder
+  CRACK_HP_HZ: 2500,
+  CRACK_SEC: [0.001, 0.004, 0.025], // attack, hold, release
+  NOISE_SEC: 0.05,
+  NOISE_TURNS: 7.3, // where in the noise it reads, from its time
+  TAIL_SEC: 0.05,
+};
+
+/**
+ * A plate breaking at audio time `at`, its ring on the hum's F#.
+ * @param {AudioContext} ctx
+ * @param {AudioNode} out the effects' bus
+ * @param {object} o { at, noise (an AudioBuffer), volume (1: the page's level), pan (-1..1) }
+ */
+export function plateClang(ctx, out, { at, noise, volume, pan }) {
+  const K = CLANG;
+  const [bus, panner] = placed(ctx, out, volume, pan, at);
+  const nodes = [bus, panner];
+  const v = hash01(at);
+  const burst = (from, sec) => {
+    const n = ctx.createBufferSource();
+    n.buffer = noise;
+    n.start(from, (from * K.NOISE_TURNS) % 1);
+    n.stop(from + sec);
+    nodes.push(n);
+    return n;
+  };
+  const band = (type, f, q) => {
+    const b = ctx.createBiquadFilter();
+    b.type = type;
+    b.frequency.value = f;
+    b.Q.value = q;
+    nodes.push(b);
+    return b;
+  };
+  const gain = (...a) => {
+    const g = heldGain(ctx, ...a);
+    nodes.push(g);
+    return g;
+  };
+  // The crack
+  const [ca, ch, cr] = K.CRACK_SEC;
+  burst(at, K.NOISE_SEC)
+    .connect(band('highpass', K.CRACK_HP_HZ, 0.7))
+    .connect(gain(at, K.CRACK[0] + K.CRACK[1] * v, ca, ch, cr))
+    .connect(bus);
+  // The ring
+  const t = at + K.STRIKE_SEC;
+  const f = hz(K.NOTE, at);
+  const ring = K.RING_SEC[0] + K.RING_SEC[1] * v;
+  const level = ctx.createGain();
+  level.gain.value = K.LEVEL;
+  level.connect(bus);
+  nodes.push(level);
+  let last = null;
+  K.RATIOS.forEach((r, i) => {
+    const ratio = i ? r * (1 + K.SHIFT * (v - 0.5)) : r;
+    const rel = ring / (1 + K.HIGHER_DIES * i);
+    const o = ctx.createOscillator();
+    o.frequency.value = f * ratio;
+    o.connect(gain(t, K.AMPS[i], K.PARTIAL_ATTACK_SEC, 0, rel)).connect(level);
+    o.start(t);
+    o.stop(t + rel + K.TAIL_SEC);
+    nodes.push(o);
+    if (i === 0) last = o; // the strongest rings longest
+  });
+  const [ka, kr] = K.CLICK_SEC;
+  burst(t, K.NOISE_SEC)
+    .connect(
+      band('bandpass', Math.min(K.CLICK_MAX_HZ, f * K.CLICK_HZ_X), K.CLICK_Q)
+    )
+    .connect(gain(t, K.CLICK, ka, 0, kr))
+    .connect(level);
+  disconnectWhenEnded(last, nodes);
 }

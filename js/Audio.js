@@ -50,6 +50,7 @@ import {
   gruntPop,
   lastBreath,
   tankAir,
+  plateClang,
   GRUNT_POP_SEC,
 } from './audio/DeathSounds.js';
 import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
@@ -384,6 +385,18 @@ export class Audio {
       pan,
       timing,
       darts,
+    });
+  }
+
+  /** A tank's plate breaking (DeathSounds.js) at (x, y), now */
+  playPlateClang(x, y) {
+    if (!this.ensureAudioContext()) return;
+    const { near, pan } = this.placement(x, y);
+    plateClang(this.audioContext, this.masterGain, {
+      at: this.audioContext.currentTime,
+      noise: crashNoise(this.audioContext),
+      volume: CONFIG.TANK_ARMOR.CLANG_VOLUME * near,
+      pan,
     });
   }
 

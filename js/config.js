@@ -350,6 +350,7 @@ const CONFIG = {
   TANK_ARMOR: {
     FRONT: 45,
     SIDE: 30,
+    CLANG_VOLUME: 1, // a plate breaking, 1 = the studies page's level
   },
 
   // The stabber, the shiv (js/entities/Stabber.js). Speeds are px/s. He
