@@ -44,7 +44,8 @@ import {
   TANK_UH_OH,
   getPlayerDialogueLine,
 } from './audio/DialogueLines.js';
-import { playCrash, crashNoise } from './audio/CrashSynth.js';
+import { crashNoise } from './audio/CrashSynth.js';
+import { SYNTHS } from './audio/Instruments.js';
 import { cloudSound, bangSound } from './audio/BombSounds.js';
 import {
   gruntPop,
@@ -70,6 +71,8 @@ const TANK_DEATH_NOTE = ['1', 2]; // the tank dies on the root
 const CENTS_PER_OCTAVE = 1200;
 // A tone starts at most this late (playTone), so copies don't add in phase
 const MAX_START_OFFSET_SEC = 0.005;
+// A hero shot this close (beats) to the last continues their run (heroRunLevel)
+const RUN_GAP_BEATS = 0.75;
 
 /** The master limiter, so concurrent sounds can't clip (also the loudness test's) */
 export function createMasterLimiter(ctx) {
@@ -297,8 +300,8 @@ export class Audio {
     // A sound that throws (a bad CONFIG.HUM.ROOT) warns once and plays
     // nothing: it can't stop the game loop
     try {
-      if (soundConfig.synth === 'crash') {
-        this.playCrashAt(soundConfig, x, y);
+      if (soundConfig.synth) {
+        this.playSynth(soundConfig, x, y);
       } else {
         this.playTone(soundConfig, x, y, soundName);
       }
@@ -324,16 +327,57 @@ export class Audio {
     };
   }
 
-  /** The rusher's crash (CrashSynth.js), quieter and panned with distance from the hero */
-  playCrashAt(config, x, y) {
+  /**
+   * A preset with a synth of its own (Instruments.js), quieter and panned
+   * with distance from the hero; the hero's shot is also timed and softened
+   */
+  playSynth(config, x, y) {
     const { near, pan } = this.placement(x, y);
-    playCrash(
-      this.audioContext,
-      this.masterGain,
-      config,
-      config.volume * CONFIG.RUSHER.CRASH_VOLUME * near,
-      pan
-    );
+    const clock = this.getContextValue('beatClock');
+    // Every synth is told the nearest eighth; the hero's shot may also wait
+    // for it, and softens in a burst
+    const { at, eighth, level } =
+      config.synth === 'heroShot'
+        ? this.heroShotTiming()
+        : {
+            at: this.audioContext.currentTime,
+            eighth: clock ? Math.round(clock.getBeatPosition() * 2) : 0,
+            level: 1,
+          };
+    SYNTHS[config.synth](this.audioContext, this.masterGain, config, {
+      volume: near * level,
+      pan,
+      at,
+      eighth,
+    });
+  }
+
+  /**
+   * When the hero's shot plays, the eighth it is told (BeatClock's nearest),
+   * and its level: shots in a row (held fire) soften (heroRunLevel)
+   */
+  heroShotTiming() {
+    const clock = this.getContextValue('beatClock');
+    const at = this.audioContext.currentTime;
+    const eighth = clock ? Math.round(clock.getBeatPosition() * 2) : 0;
+    return { at, eighth, level: this.heroRunLevel(at, clock) };
+  }
+
+  /**
+   * The level of a hero shot starting at audio time `at`. One within
+   * RUN_GAP_BEATS of the last continues their run, so held fire softens by
+   * HERO_SHOT.SOFTEN_DB over SOFTEN_SHOTS shots; the run's first is
+   * unsoftened. Audio time stops in a pause, so a burst goes on after one; a
+   * restart ends the run, since game over holds the fire for a bar.
+   */
+  heroRunLevel(at, clock) {
+    const beatSec = (clock?.beatInterval ?? DEFAULT_BEAT_MS) / MS_PER_SEC;
+    const last = this._heroRun;
+    const n = last && at - last.at <= RUN_GAP_BEATS * beatSec ? last.n + 1 : 0;
+    this._heroRun = { at, n };
+    const { SOFTEN_DB, SOFTEN_SHOTS } = CONFIG.HERO_SHOT;
+    if (SOFTEN_SHOTS <= 0) return 1;
+    return 10 ** ((-SOFTEN_DB * Math.min(n, SOFTEN_SHOTS)) / SOFTEN_SHOTS / 20);
   }
 
   /**

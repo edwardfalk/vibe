@@ -107,6 +107,17 @@ const CONFIG = {
     DETUNE_CENTS: 5,
   },
 
+  // The hero's shot (js/audio/Instruments.js): one of four sounds from the
+  // listening page, at its trim plus LEVEL_DB. Held fire softens: shot n of a
+  // run plays SOFTEN_DB x min(n, SOFTEN_SHOTS) / SOFTEN_SHOTS dB down (0 shots
+  // = off). Tune live with ?tune.
+  HERO_SHOT: {
+    SOUND: 'tick', // softHat, metalHat, tick or ghostArp
+    LEVEL_DB: 0,
+    SOFTEN_DB: 6,
+    SOFTEN_SHOTS: 8,
+  },
+
   // Pausing (P) stops the sound: the audio is suspended, which also stops
   // BeatClock, so everything picks up where it stopped. ?tune turns this on
   // (its "Sound while paused" box), so the kick can be tuned by ear while

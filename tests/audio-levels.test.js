@@ -10,8 +10,10 @@ import { test, expect } from '@playwright/test';
 // the filter fully open, 5.0 dB under (2026-10-04).
 const HUM_UNDER_KICK_DB = -5;
 const HUM_TOLERANCE_DB = 2;
+const HERO_UNDER_KICK_DB = -4;
+const HERO_TOLERANCE_DB = 1.5;
 
-test('the hum sits under the kick, quiet and on a full screen at level 5', async ({
+test("the hum and the hero's shots sit under the kick, the hum quiet and on a full screen at level 5", async ({
   page,
 }) => {
   // Any blank page on the test server will do; the speech gate's is one
@@ -77,10 +79,36 @@ test('the hum sits under the kick, quiet and on a full screen at level 5', async
         }
       });
 
+    // Each hero shot as the page played it: held fire on all 16 eighths of
+    // the window, accents on, softening off
+    const { heroShot, HERO_SHOT_SOUNDS } =
+      await import('/js/audio/Instruments.js');
+    const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
+    const heroes = {};
+    const saved = { ...CONFIG.HERO_SHOT };
+    // The page's conditions: no softening, no level offset of Edward's
+    CONFIG.HERO_SHOT.SOFTEN_SHOTS = 0;
+    CONFIG.HERO_SHOT.LEVEL_DB = 0;
+    for (const sound of HERO_SHOT_SOUNDS) {
+      CONFIG.HERO_SHOT.SOUND = sound;
+      heroes[sound] = await rms((ctx, out) => {
+        for (let n = 0; n < 16; n++) {
+          heroShot(ctx, out, SOUND_CONFIG.playerShoot, {
+            volume: 1,
+            pan: 0,
+            at: WINDOW_SEC + (n * BEAT_SEC) / 2,
+            eighth: n,
+          });
+        }
+      });
+    }
+    Object.assign(CONFIG.HERO_SHOT, saved);
+
     return {
       kick,
       quiet: await hum(1, 0),
       busy: await hum(5, CONFIG.PACING.MAX_ENEMIES_CAP),
+      heroes,
     };
   });
   console.log('dB RMS above 250 Hz:', levels);
@@ -91,6 +119,16 @@ test('the hum sits under the kick, quiet and on a full screen at level 5', async
     HUM_UNDER_KICK_DB + HUM_TOLERANCE_DB
   );
   expect(levels.busy).toBeLessThanOrEqual(levels.kick);
+  // Each hero shot where Edward judged it on the listening page: about 4 dB
+  // under the kick (the page measured -37.2 dB against the kick's -33)
+  for (const [sound, level] of Object.entries(levels.heroes)) {
+    expect(level - levels.kick, sound).toBeGreaterThanOrEqual(
+      HERO_UNDER_KICK_DB - HERO_TOLERANCE_DB
+    );
+    expect(level - levels.kick, sound).toBeLessThanOrEqual(
+      HERO_UNDER_KICK_DB + HERO_TOLERANCE_DB
+    );
+  }
 });
 
 test('a bad root costs only the hum and the pitched sounds: the kick plays on', async ({

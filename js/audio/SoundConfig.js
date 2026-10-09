@@ -16,14 +16,8 @@ export const VOICE_DEGREES = {
 };
 
 export const SOUND_CONFIG = {
-  // Today's saw, on the hero's root, until the hero's synth replaces it
-  playerShoot: {
-    voice: 'hero',
-    note: ['1', 3],
-    waveform: 'sawtooth',
-    volume: 0.2,
-    duration: 0.04,
-  },
+  // The hero's shot: one of four sounds (Instruments.js, CONFIG.HERO_SHOT)
+  playerShoot: { synth: 'heroShot' },
   alienShoot: {
     voice: 'grunt',
     note: ['b3', 5],
