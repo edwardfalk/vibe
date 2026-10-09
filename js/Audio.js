@@ -41,6 +41,7 @@ import {
   BOMB_PLANTED,
   COUNTDOWN,
   PLAYER_LINES,
+  TANK_UH_OH,
   getPlayerDialogueLine,
 } from './audio/DialogueLines.js';
 import { playCrash, crashNoise } from './audio/CrashSynth.js';
@@ -163,6 +164,8 @@ export class Audio {
       for (const line of [BOMB_PLANTED, ...COUNTDOWN, ...PLAYER_LINES.death]) {
         this.voicebox.prepare('player', line);
       }
+      // and the tank's "uh oh" has a beat
+      this.voicebox.prepare('tank', TANK_UH_OH);
       this.applyMix();
       // The universe's hum, behind masterGain so it mutes and ducks with the
       // effects; built before the beat track starts, which keeps its time.

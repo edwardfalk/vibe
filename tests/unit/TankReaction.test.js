@@ -6,6 +6,8 @@ import {
   tankParts,
   tankRaisedParts,
 } from '../../js/entities/TankRenderer.js';
+import { tankFlinch, UH } from '../../js/entities/TankFlinch.js';
+import { prepareTankDeath } from '../../js/entities/TankDeath.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { transformP5 } from './helpers/transformP5.js';
 
@@ -124,5 +126,48 @@ describe("the tank's reaction (an 'uh oh', his death's first moments)", () => {
     expect(imagesOf(shapes, parts.chain)).toHaveLength(0);
     expect(imagesOf(shapes, parts.cannon)).toHaveLength(0);
     expect(back).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('his "uh oh", the beat before a bomb on him blows (TankFlinch.js)', () => {
+  it("his flinch's sprites are built at setup with his death's, not mid-fight", () => {
+    const r = transformP5();
+    prepareTankDeath(r.p);
+    const built = r.graphics.length;
+    tankRaisedParts(r.p, S);
+    expect(r.graphics.length).toBe(built);
+  });
+
+  // A tank whose bomb blows on beat 19, drawn at a beat position
+  const flinchingAt = (beats) => {
+    const t = tankAt(beats);
+    t.flinch = { bang: 19, beats: 1 };
+    return t;
+  };
+  const handsOf = (t) => {
+    const { p, shapes } = transformP5();
+    t.draw(p);
+    return imagesOf(shapes, tankRaisedParts(p, S).hand).length;
+  };
+
+  it('looks round at the bomb first, and only lets go of the cannon on the eighth before the bang', () => {
+    expect(handsOf(flinchingAt(17.9))).toBe(0); // before his beat: nothing
+    expect(handsOf(flinchingAt(18.2))).toBe(0); // looking round
+    expect(handsOf(flinchingAt(18.8))).toBe(2); // the take: hands up and out
+    expect(handsOf(tankAt(18.8))).toBe(0); // no bomb on him
+  });
+
+  it('turns his head toward his back, then snaps it front with the take, all of him bigger', () => {
+    const flinch = (age) => tankFlinch(age, 0.5, 0.5, S, 0);
+    expect(flinch(-0.51)).toBeNull();
+    expect(flinch(0)).toBeNull(); // the bang: his death takes over
+    const looking = flinch(-0.35).react;
+    expect(looking.turn).toBeCloseTo(UH.LOOK, 6);
+    expect(looking.hands).toBe(0);
+    expect(looking.k).toBe(1);
+    const take = flinch(-0.1).react;
+    expect(Math.abs(take.turn)).toBeLessThan(1e-6);
+    expect(take.hands).toBe(1);
+    expect(take.k).toBeGreaterThan(1);
   });
 });

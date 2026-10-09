@@ -36,6 +36,7 @@ import {
   BALL_SHINE,
   SLAB_ELLIPSES,
   tankParts,
+  tankRaisedParts,
   drawTank,
   union,
   lines,
@@ -132,10 +133,14 @@ const DEATH_PARTS = {
 };
 const deathParts = (p, s) => spriteParts(p, DEATH_PARTS, s);
 
-/** His death's sprites at his drawn size, built before the first run (setup) */
+/**
+ * His sprites at his drawn size, built before the first run (setup): his
+ * own, his flinch's (open hands, the bare cannon) and his death's
+ */
 export function prepareTankDeath(p) {
   const s = TANK_SIZE * CONFIG.TANK_LOOK.ART_SCALE;
   tankParts(p, s);
+  tankRaisedParts(p, s);
   deathParts(p, s);
 }
 

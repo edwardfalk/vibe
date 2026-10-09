@@ -22,6 +22,7 @@ import {
   TANK_REACH,
   TANK_SIZE,
 } from './TankRenderer.js';
+import { tankFlinch } from './TankFlinch.js';
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 
 const TANK_POWER_SOUND_CHANCE = 0.5; // per beat 1 while charging
@@ -113,6 +114,9 @@ class Tank extends BaseEnemy {
 
     this.hitFlashAlpha = 255; // he stays solid when hit: his own parts flash
     this.lookSeed = this.animFrame / p.TWO_PI; // his swagger's phase
+    // While a bomb on his back is about to blow, BombSystem sets when (the
+    // bang's beat) and for how many beats before it he flinches
+    this.flinch = null;
   }
 
   /** @override He keeps the beat position he is drawn at, and his gun is his aim */
@@ -376,10 +380,30 @@ class Tank extends BaseEnemy {
     };
   }
 
-  /** @override He turns with his facing; drawn from his pose (TankRenderer.js) */
+  /**
+   * @override He turns with his facing; drawn from his pose (TankRenderer.js),
+   * flinching while a bomb on him is about to blow (TankFlinch.js)
+   */
   drawFigure(p, s) {
     this.applyHitShake(p);
-    drawTank(p, s * CONFIG.TANK_LOOK.ART_SCALE, this.pose());
+    const size = s * CONFIG.TANK_LOOK.ART_SCALE;
+    const flinch = this.flinchNow(size);
+    drawTank(p, size, this.pose(), flinch?.react);
+    flinch?.sweat(p);
+  }
+
+  /** His "uh oh" at the beat update() last kept, while BombSystem has set one */
+  flinchNow(size) {
+    if (!this.flinch || this.poseBeats === null) return null;
+    const clock = this.getContextValue('beatClock');
+    const beatSec = (clock?.beatInterval ?? 0) / 1000;
+    return tankFlinch(
+      (this.poseBeats - this.flinch.bang) * beatSec,
+      this.flinch.beats * beatSec,
+      beatSec,
+      size,
+      this.facing
+    );
   }
 
   /** His health bar clears his body, shoulders and cannon (TANK_REACH) */

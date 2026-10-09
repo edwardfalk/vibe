@@ -19,10 +19,14 @@ import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
 import { hash01 } from '../entities/RusherRenderer.js';
 import { COMIC } from '../effects/explosions/BombBlast.js';
-import { BOMB_PLANTED, COUNTDOWN } from '../audio/DialogueLines.js';
+import { BOMB_PLANTED, COUNTDOWN, TANK_UH_OH } from '../audio/DialogueLines.js';
 
 const COUNT_EVERY_BEATS = 2;
 const SEED_Y = 7.31; // folds y into a bang's seed, so bombs on one row differ
+// His "uh oh" comes this many beats before the bang: the eighth after the
+// hero's "1" ends (it lasts 0.45 s, measured 2026-10-09; "UH, OH" 0.77 s,
+// so its "OH" runs into the bang)
+const UH_OH_BEATS = 1;
 const AMBER_LEFT = 0.34; // its light goes white-hot for the last third
 // Its look, at size 50 (the prototype's numbers, in px): a halo, the body,
 // the hero's band, a glint, the light and the blink's ring
@@ -142,6 +146,17 @@ export function updateBombs(context) {
         const wordAt = first + (due - 1) * COUNT_EVERY_BEATS;
         if (wordAt >= 0) {
           audio?.speak?.(bomb, COUNTDOWN[due - 1], 'player', true);
+        }
+      }
+      // His "uh oh": his line, once, forced past the gap between the
+      // enemies' lines, and his flinch until the bang (Tank.js draws it);
+      // not once he is dead
+      const live = bomb.tankRef;
+      if (live && fuse >= B.FUSE_BEATS - UH_OH_BEATS) {
+        live.flinch = { bang: beats - fuse + B.FUSE_BEATS, beats: UH_OH_BEATS };
+        if (!bomb.uhOh) {
+          bomb.uhOh = true;
+          audio?.speak?.(live, TANK_UH_OH, 'tank', true);
         }
       }
       continue;

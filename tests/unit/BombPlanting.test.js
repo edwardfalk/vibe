@@ -13,7 +13,7 @@ import { transformP5 } from './helpers/transformP5.js';
 import { tankWorld } from './helpers/tankWorld.js';
 import { BeatClock } from '../../js/audio/BeatClock.js';
 import { startTime, spoken } from '../../js/audio/speech/Voicebox.js';
-import { BOMB_PLANTED } from '../../js/audio/DialogueLines.js';
+import { BOMB_PLANTED, COUNTDOWN } from '../../js/audio/DialogueLines.js';
 import * as sam from '../../js/audio/speech/engines/sam.js';
 import * as espeak from '../../js/audio/speech/engines/espeak.js';
 
@@ -131,17 +131,20 @@ describe('the bomb, on the beat', () => {
     const now = () => beats;
     return { tank, activeBombs, audio, explosionManager, tick, ticks, now };
   };
+  // What the hero says (the count): the tank's "uh oh" is tested on its own
   const said = (audio) =>
-    audio.speak.mock.calls.map(([, word, voice, force]) => [
-      word,
-      voice,
-      force,
-    ]);
+    audio.speak.mock.calls
+      .filter(([, , voice]) => voice === 'player')
+      .map(([, word, voice, force]) => [word, voice, force]);
+  const heroSays = (at, now) => (_e, _w, voice) => (
+    voice === 'player' && at.push(now()),
+    true
+  );
 
   it('counts 3, 2, 1 on its beats 0, 2 and 4, each forced past the voice cooldown, and blows on beat 6', () => {
     const { activeBombs, audio, ticks, tick, now } = setup();
     const at = [];
-    audio.speak.mockImplementation(() => (at.push(now()), true));
+    audio.speak.mockImplementation(heroSays(at, now));
     ticks(10.5, 17.75);
     expect(said(audio)).toEqual([
       ['3', 'player', true],
@@ -167,7 +170,7 @@ describe('the bomb, on the beat', () => {
       try {
         const { activeBombs, audio, ticks, now } = setup();
         const at = [];
-        audio.speak.mockImplementation(() => (at.push(now()), true));
+        audio.speak.mockImplementation(heroSays(at, now));
         ticks(10.5, bang - 0.25);
         expect(
           said(audio).map(([w]) => w),
@@ -242,6 +245,46 @@ describe('the bomb, on the beat', () => {
       2 * CONFIG.BOMB.RADIUS_PX,
       2 * CONFIG.BOMB.RADIUS_PX,
     ]);
+  });
+
+  it('the tank says "UH, OH" once, forced, in his voice, the beat before the bang, and flinches until it', () => {
+    const { tank, audio, ticks, tick } = setup();
+    ticks(10.5, 16.75);
+    const uhOh = () =>
+      audio.speak.mock.calls.filter(([, , voice]) => voice === 'tank');
+    expect(uhOh()).toEqual([]);
+    expect(tank.flinch ?? null).toBeNull();
+    tick(17); // the bang is on 18
+    expect(uhOh()).toEqual([[tank, 'UH, OH', 'tank', true]]);
+    expect(tank.flinch).toEqual({ bang: 18, beats: 1 });
+    ticks(17.25, 17.75);
+    expect(uhOh()).toHaveLength(1);
+  });
+
+  it('the hero\'s "1", in his voice as cast, has ended when the tank says "UH, OH"', async () => {
+    const cast = CONFIG.SPEECH.SPEAKERS.player;
+    const engine = { sam, espeak }[cast.engine];
+    const { samples, sampleRate } = await engine.render(
+      spoken(cast.engine, COUNTDOWN.at(-1)),
+      cast.voice
+    );
+    const oneSec = samples.length / sampleRate;
+    const { audio, ticks, now } = setup();
+    const at = {};
+    audio.speak.mockImplementation((_e, word) => ((at[word] = now()), true));
+    ticks(10.5, 17.75);
+    expect(oneSec).toBeLessThanOrEqual((at['UH, OH'] - at['1']) * 0.5);
+  });
+
+  it('a bomb whose tank is dead says nothing and flinches no one', () => {
+    const { tank, audio, ticks } = setup();
+    ticks(10.5, 14);
+    tank.markedForRemoval = true;
+    ticks(14.25, 17.75);
+    expect(
+      audio.speak.mock.calls.filter(([, , voice]) => voice === 'tank')
+    ).toEqual([]);
+    expect(tank.flinch ?? null).toBeNull();
   });
 
   it('hurts the tank it is on', () => {
