@@ -2,6 +2,7 @@ import { Explosion } from './Explosion.js';
 import { RusherBlast } from './RusherBlast.js';
 import { HazardCloud } from './HazardCloud.js';
 import { BombSmoke } from './BombSmoke.js';
+import { BombBlast } from './BombBlast.js';
 import { EnemyFragmentExplosion } from './EnemyFragmentExplosion.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
 import { CONFIG } from '../../config.js';
@@ -17,6 +18,7 @@ export class ExplosionManager {
     this.radioactiveDebris = [];
     this.fragmentExplosions = [];
     this.smokes = []; // how the bombs' clouds look, with their sounds
+    this.bangs = []; // the bombs' bangs: under and over everyone
   }
 
   getContextValue = createContextAccessor(() => this.context);
@@ -25,6 +27,7 @@ export class ExplosionManager {
   reset() {
     for (const smoke of this.smokes) smoke.end();
     this.smokes = [];
+    this.bangs = [];
     this.explosions = [];
     this.plasmaClouds = [];
     this.radioactiveDebris = [];
@@ -37,6 +40,11 @@ export class ExplosionManager {
         ? new RusherBlast(x, y, options)
         : new Explosion(x, y, type)
     );
+  }
+
+  /** The bang of the hero's bomb at (x, y); seed (0..1) is its own */
+  addBombBlast(x, y, seed) {
+    this.bangs.push(new BombBlast(x, y, seed));
   }
 
   /**
@@ -74,7 +82,18 @@ export class ExplosionManager {
     this.fragmentExplosions.push(fragmentExplosion);
   }
 
+  /**
+   * The bombs' bangs age by a frame. Also in the hero's death scene, where
+   * the world holds still: a bang that killed him plays out rather than
+   * freezing over him
+   */
+  ageBangs(deltaTimeMs) {
+    for (const bang of this.bangs) bang.update(deltaTimeMs);
+    this.bangs = this.bangs.filter((bang) => bang.active);
+  }
+
   update(deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
+    this.ageBangs(deltaTimeMs);
     // Update explosions
     for (let i = this.explosions.length - 1; i >= 0; i--) {
       this.explosions[i].update(deltaTimeMs);
@@ -131,6 +150,7 @@ export class ExplosionManager {
   /** Under everyone, before the aliens: what lies on the ground */
   drawUnder(p) {
     for (const smoke of this.smokes) smoke.draw(p);
+    for (const bang of this.bangs) bang.drawUnder(p);
   }
 
   /** Over everyone */
@@ -143,5 +163,7 @@ export class ExplosionManager {
     for (const fragmentExplosion of this.fragmentExplosions) {
       fragmentExplosion.draw(p);
     }
+    // The bangs' fireballs and rings, over everything, a death included
+    for (const bang of this.bangs) bang.draw(p);
   }
 }

@@ -2,6 +2,7 @@
  * GameLoopDraw - Top-level draw loop and state dispatch.
  * Extracted from GameLoop.js for file-size split (~500 line guideline).
  */
+import { CONFIG } from './config.js';
 
 /**
  * Run main draw loop. Calls updateGame and drawGame when appropriate.
@@ -42,6 +43,9 @@ export function runDraw(p, updateGame, drawGame) {
         // the bubbles and the screen effects fading
         window.gameState.updateScene();
         if (!window.gameState.overlayUp()) {
+          window.explosionManager?.ageBangs(
+            Math.min(p.deltaTime, CONFIG.GAME_SETTINGS.MAX_FRAME_MS)
+          );
           window.audio?.updateTexts();
           window.visualEffectsManager?.update();
           drawGame(p);

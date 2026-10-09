@@ -499,6 +499,7 @@ describe('every way a grunt dies hands its death the blow', () => {
         enemies: [tank, grunt],
         explosionManager: {
           addExplosion() {},
+          addBombBlast() {},
           addBombCloud() {},
         },
         enemyDeathHandler,

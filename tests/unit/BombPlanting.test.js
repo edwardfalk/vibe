@@ -6,8 +6,6 @@ import {
   drawBombs,
 } from '../../js/systems/BombSystem.js';
 import { tankBackPoint } from '../../js/entities/TankRenderer.js';
-import { HazardCloud } from '../../js/effects/explosions/HazardCloud.js';
-import { damageEnemiesInRadius } from '../../js/effects/AreaDamageHandler.js';
 import { CONFIG } from '../../js/config.js';
 import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
 import { createMockAudio } from './helpers/enemyMocks.js';
@@ -114,6 +112,7 @@ describe('the bomb, on the beat', () => {
     plantBomb(activeBombs, tank, clock);
     const explosionManager = {
       addExplosion: vi.fn(),
+      addBombBlast: vi.fn(),
       addBombCloud: vi.fn(),
     };
     const tick = (b) => {
@@ -295,10 +294,10 @@ describe('the bomb, on the beat', () => {
       )
     ).toBe(true);
     ticks(14.25, 18);
-    expect(explosionManager.addExplosion).toHaveBeenCalledWith(
+    expect(explosionManager.addBombBlast).toHaveBeenCalledWith(
       died.x,
       died.y,
-      'tank-plasma'
+      expect.any(Number)
     );
   });
 });
@@ -393,42 +392,101 @@ describe('"TIMEBOMB!" and the count', () => {
   });
 });
 
-describe('a bomb kills the tank it is on', () => {
-  it('the blast from his back, then the plasma it leaves, even with him moving at full drift', () => {
-    const w = tankWorld({ hero: { x: 3000, y: 0 } }); // far away
-    const t = w.tank(); // full health, facing +x
-    const clouds = [];
+describe('the bang kills the tank it is on', () => {
+  // A bomb planted on t, run until it has blown, with whatever else is about
+  function blowOn(w, t, enemies, o = {}) {
     const explosionManager = {
-      addExplosion() {},
-      addBombCloud: (x, y) =>
-        clouds.push(
-          new HazardCloud(x, y, 'PLASMA'),
-          new HazardCloud(x, y, 'DEBRIS')
-        ),
+      addExplosion: vi.fn(),
+      addBombBlast: vi.fn(),
+      addBombCloud: vi.fn(),
     };
+    const audio = { playBombBang: vi.fn(), speak: vi.fn() };
+    const cameraSystem = { addShake: vi.fn() };
+    const gameState = { addKill: vi.fn(), addScore: vi.fn() };
+    const enemyDeathHandler = { handleEnemyDeath: vi.fn() };
     w.at(4000);
     plantBomb(w.values.activeBombs, t, w.clock);
-    // On until it has blown
+    o.beforeBang?.();
     for (let ms = 4000; w.values.activeBombs.length && ms < 20000; ms += 100) {
       w.at(ms);
       updateBombs({
         activeBombs: w.values.activeBombs,
-        enemies: [t],
+        enemies,
         explosionManager,
+        audio,
+        cameraSystem,
+        gameState,
+        enemyDeathHandler,
         beatClock: w.clock,
       });
     }
+    return {
+      explosionManager,
+      audio,
+      cameraSystem,
+      gameState,
+      enemyDeathHandler,
+    };
+  }
+
+  it("outright, on his body (not his plates), with the bomb's blow; the kill scores the bomb's 20", () => {
+    const w = tankWorld({ hero: { x: 3000, y: 0 } }); // far away
+    const t = w.tank(); // full health, facing +x
+    const plates = JSON.stringify(t.plates);
+    const { enemyDeathHandler, gameState } = blowOn(w, t, [t]);
     expect(w.values.activeBombs).toHaveLength(0);
-    expect(t.health).toBeLessThan(t.maxHealth);
-    let frames = 0;
-    while (t.health > 0 && frames < 120) {
-      t.x += CONFIG.TANK.DRIFT_PX_S / 60; // drifting off at full speed
-      for (const cloud of clouds) {
-        const event = cloud.update();
-        if (event) damageEnemiesInRadius(event, [t], {}, 'area');
-      }
-      frames++;
-    }
     expect(t.health).toBeLessThanOrEqual(0);
+    expect(JSON.stringify(t.plates)).toBe(plates);
+    const [dead, type, , , blow] =
+      enemyDeathHandler.handleEnemyDeath.mock.calls[0];
+    expect(dead).toBe(t);
+    expect(type).toBe('tank');
+    expect(blow).toMatchObject({ blast: true, bomb: true });
+    // From his back outward: his facing
+    expect(Math.cos(blow.dir - t.facing)).toBeCloseTo(1, 6);
+    expect(gameState.addScore).toHaveBeenCalledWith(20);
+  });
+
+  it('only him: another tank in reach takes the falloff, as today', () => {
+    const w = tankWorld({ hero: { x: 3000, y: 0 } });
+    const t = w.tank(0, 0);
+    const other = w.tank(120, 0);
+    blowOn(w, t, [t, other]);
+    expect(t.health).toBeLessThanOrEqual(0);
+    expect(other.health).toBeGreaterThan(0);
+    expect(other.health).toBeLessThan(other.maxHealth);
+  });
+
+  it('a bomb whose tank died first still blows where he was, with no lethal hit for anyone', () => {
+    const w = tankWorld({ hero: { x: 3000, y: 0 } });
+    const t = w.tank(0, 0);
+    const passer = w.tank(-60, 0); // drifted in behind where he died
+    const { explosionManager } = blowOn(w, t, [passer], {
+      beforeBang: () => (t.markedForRemoval = true),
+    });
+    expect(explosionManager.addBombBlast).toHaveBeenCalledTimes(1);
+    expect(passer.health).toBeGreaterThan(0);
+  });
+
+  it('the Comic bang, its sound and its shake; no old plasma burst, no old sawtooth', () => {
+    const w = tankWorld({ hero: { x: 3000, y: 0 } });
+    const t = w.tank(0, 0);
+    const s = 50 * CONFIG.TANK_LOOK.ART_SCALE;
+    const back = tankBackPoint(t.x, t.y, s, t.facing);
+    const { explosionManager, audio, cameraSystem } = blowOn(w, t, [t]);
+    const [bx, by, seed] = explosionManager.addBombBlast.mock.calls[0];
+    expect(bx).toBeCloseTo(back.x);
+    expect(by).toBeCloseTo(back.y);
+    expect(seed).toBeGreaterThanOrEqual(0);
+    expect(seed).toBeLessThan(1);
+    // The cloud it leaves, with the same seed
+    expect(explosionManager.addBombCloud).toHaveBeenCalledWith(bx, by, seed);
+    expect(audio.playBombBang).toHaveBeenCalledWith(bx, by);
+    expect(cameraSystem.addShake).toHaveBeenCalledWith(32, 42);
+    expect(explosionManager.addExplosion).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      'tank-plasma'
+    );
   });
 });

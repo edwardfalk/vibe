@@ -8,6 +8,7 @@ const CONFIG = {
   GAME_SETTINGS: {
     // Frame time at 60fps baseline, used to normalize deltaTimeMs
     FRAME_TIME_MS: 16.6667,
+    MAX_FRAME_MS: 50, // a longer frame (a lag spike, a tab switch) counts as this
 
     // Canonical world dimensions for all systems
     WORLD_WIDTH: 1150,
@@ -290,6 +291,7 @@ const CONFIG = {
     // came while he still said it (BombPlanting.test.js times his voice;
     // at 2 a 0.75 s shout has a quarter second to spare)
     COUNT_LEAD_BEATS: 2,
+    BANG_VOLUME: 1, // its bang, 1 = the studies page's level
     CLOUD_VOLUME: 1, // its cloud's sound, 1 = the studies page's level
   },
 

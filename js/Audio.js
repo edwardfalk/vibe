@@ -44,7 +44,7 @@ import {
   getPlayerDialogueLine,
 } from './audio/DialogueLines.js';
 import { playCrash, crashNoise } from './audio/CrashSynth.js';
-import { cloudSound } from './audio/BombSounds.js';
+import { cloudSound, bangSound } from './audio/BombSounds.js';
 import { gruntPop, lastBreath, GRUNT_POP_SEC } from './audio/DeathSounds.js';
 import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
 import { Hum } from './audio/Hum.js';
@@ -358,6 +358,18 @@ export class Audio {
         offset: (opts.seed ?? 0) * (noise.duration - STRINGS_NOISE_SEC),
       }) ?? null
     );
+  }
+
+  /** The bomb's bang (BombSounds.js) from (x, y), now */
+  playBombBang(x, y) {
+    if (!this.ensureAudioContext()) return;
+    const { near, pan } = this.placement(x, y);
+    bangSound(this.audioContext, this.masterGain, {
+      at: this.audioContext.currentTime,
+      noise: crashNoise(this.audioContext),
+      volume: CONFIG.BOMB.BANG_VOLUME * near,
+      pan,
+    });
   }
 
   /**

@@ -18,6 +18,7 @@ import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
 import { hash01 } from '../entities/RusherRenderer.js';
+import { COMIC } from '../effects/explosions/BombBlast.js';
 import { BOMB_PLANTED, COUNTDOWN } from '../audio/DialogueLines.js';
 
 const COUNT_EVERY_BEATS = 2;
@@ -146,17 +147,13 @@ export function updateBombs(context) {
       continue;
     }
 
-    if (explosionManager) {
-      explosionManager.addExplosion(bomb.x, bomb.y, 'tank-plasma');
-      // Its cloud: the plasma and the debris, one picture and one sound
-      explosionManager.addBombCloud(
-        bomb.x,
-        bomb.y,
-        hash01(bomb.x + SEED_Y * bomb.y)
-      );
-    }
-    audio?.playSound?.('explosion', bomb.x, bomb.y);
-    cameraSystem?.addShake(20, 40);
+    // The bang (the Comic blast), and the cloud it leaves: the plasma and the
+    // debris, one picture and one sound
+    const seed = hash01(bomb.x + SEED_Y * bomb.y);
+    explosionManager?.addBombBlast(bomb.x, bomb.y, seed);
+    explosionManager?.addBombCloud(bomb.x, bomb.y, seed);
+    audio?.playBombBang?.(bomb.x, bomb.y);
+    cameraSystem?.addShake(...COMIC.SHAKE);
 
     if (player) {
       const hit = blastAt(
@@ -171,18 +168,22 @@ export function updateBombs(context) {
       }
     }
 
-    // Every live alien in reach, the tank it is on included
+    // Every live alien in reach; the tank it is on takes enough to die
     for (let j = enemies.length - 1; j >= 0; j--) {
       const enemy = enemies[j];
       if (enemy.markedForRemoval) continue; // killed last frame, not yet removed
-      const damage = blastAt(
+      const reached = blastAt(
         bomb,
         enemy.x,
         enemy.y,
         B.ENEMY_DAMAGE_MIN,
         B.ENEMY_DAMAGE_MAX
       );
-      if (!damage) continue;
+      if (!reached) continue;
+      const damage =
+        enemy.id === bomb.tankId
+          ? Math.max(reached, enemy.health || 0)
+          : reached;
       const damageResult = enemy.takeDamage(damage, null, 'bomb');
 
       if (damageResult === DAMAGE_RESULT.DAMAGED) {
@@ -196,10 +197,12 @@ export function updateBombs(context) {
       }
 
       if (damageResult === DAMAGE_RESULT.DIED) {
-        // A blast, away from the bomb
+        // A blast, away from the bomb, and the bomb's: a tank it kills starts
+        // dying with the bang
         const blow = {
           dir: Math.atan2(enemy.y - bomb.y, enemy.x - bomb.x),
           blast: true,
+          bomb: true,
         };
         (enemyDeathHandler ?? collisionSystem)?.handleEnemyDeath(
           enemy,

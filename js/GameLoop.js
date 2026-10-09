@@ -9,6 +9,7 @@
  * - Rushers = crash (beats 1 & 3)
  */
 
+import { CONFIG } from './config.js';
 import { initializeInputHandlers } from './core/InputHandlers.js';
 import { createTunePanel } from './dev/TunePanel.js';
 import {
@@ -99,7 +100,7 @@ function updateGame(p) {
   }
 
   // Cap frame time to prevent teleportation after lag spikes or tab switches
-  const dt = Math.min(p.deltaTime, 50);
+  const dt = Math.min(p.deltaTime, CONFIG.GAME_SETTINGS.MAX_FRAME_MS);
 
   // Update BeatClock every frame for accurate rhythm timing
   if (window.beatClock && typeof window.beatClock.update === 'function') {
