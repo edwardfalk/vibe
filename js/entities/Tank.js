@@ -25,9 +25,7 @@ import {
 import { tankFlinch } from './TankFlinch.js';
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 
-const TANK_POWER_SOUND_CHANCE = 0.5; // per beat 1 while charging
 const BEATS_PER_BAR = 4;
-const POWER_UP_BEATS = 4; // the charge's second bar opens with a power-up tone
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const DEG = PI / 180;
 
@@ -209,11 +207,13 @@ class Tank extends BaseEnemy {
         Math.cos(toTarget) * side) /
       FRAMES_PER_SEC;
 
-    // Any new beat: a hero in front of him gets shoved
+    // Any new beat: a hero in front of him gets shoved, and his charge
+    // plucks its next note (on his first update ever, too)
     if (beats !== null) {
       const beat = Math.floor(beats);
-      if (this.lastBeat !== null && beat !== this.lastBeat) {
-        this.tryShove(beat, beats);
+      if (beat !== this.lastBeat) {
+        if (this.lastBeat !== null) this.tryShove(beat, beats);
+        if (this.chargingShot) this.chargeNote(beat);
       }
       this.lastBeat = beat;
     }
@@ -247,19 +247,13 @@ class Tank extends BaseEnemy {
       };
     }
     const audio = this.getContextValue('audio');
+    // "CHARGING!" and "FIRE!" 4 s apart both clear the gap between enemies'
+    // lines (VOICE_GAP_SEC); between them his charge's plucks carry it
     if (this.chargingShot) {
       const since = kickBeat - this.chargeStartBeat;
       if (since >= this.chargeDurationBeats) {
         this._lastTankFireBeat = kickBeat;
         return true;
-      }
-      if (random() < TANK_POWER_SOUND_CHANCE) {
-        audio?.playSound('tankPower', this.x, this.y);
-      }
-      // A tone, no line: "CHARGING!" and "FIRE!" 4 s apart both clear the
-      // gap between enemies' lines (VOICE_GAP_SEC); the tones carry the attack
-      if (since === POWER_UP_BEATS) {
-        audio?.playSound('tankPowerUp', this.x, this.y);
       }
       return false;
     }
@@ -271,9 +265,24 @@ class Tank extends BaseEnemy {
       this.chargeStartBeat = kickBeat;
       this.callsOut = random() < CONFIG.SPEECH_SETTINGS.TANK.CALLOUT_CHANCE;
       if (this.callsOut) audio?.speak(this, TANK_CHARGING, 'tank');
-      audio?.playSound('tankCharging', this.x, this.y);
     }
     return false;
+  }
+
+  /**
+   * His charge's note on whole beat `beat`: step 0 on the beat it started,
+   * one step up a beat, none on the beat his shot is due. A stalled bar
+   * moved chargeStartBeat on, and the steps with it
+   */
+  chargeNote(beat) {
+    const step = beat - this.chargeStartBeat;
+    const steps = this.chargeDurationBeats;
+    if (step >= steps) return;
+    this.getContextValue('audio')?.playSound('tankCharge', this.x, this.y, {
+      step,
+      steps,
+      seed: this.lookSeed,
+    });
   }
 
   /**
@@ -488,14 +497,9 @@ class Tank extends BaseEnemy {
     const { pivotX } = tankCannon(s, this.gunRel);
     bullet.prevX = this.x + pivotX * cos(this.facing);
     bullet.prevY = this.y + pivotX * sin(this.facing);
-    // Three layers: a deep boom with a reverb tail, and two detuned zaps
-    // whose beating makes the electric buzz
-    const audio = this.getContextValue('audio');
-    if (audio) {
-      for (const name of ['tankEnergy', 'tankZap', 'tankArc']) {
-        audio.playSound(name, this.x, this.y);
-      }
-    }
+    this.getContextValue('audio')?.playSound('tankShot', this.x, this.y, {
+      seed: this.lookSeed,
+    });
     bullet.ownerId = this.id; // Track which tank fired this
     return bullet;
   }

@@ -136,6 +136,8 @@ const CONFIG = {
   BAND: {
     GRUNT_SHOT: 'stab', // stab or zap
     GRUNT_SHOT_DB: -2, // Edward's, on the page
+    TANK_SHOT_DB: 0,
+    CHARGE_DB: 0, // the tank's charge
   },
 
   // Pausing (P) stops the sound: the audio is suspended, which also stops

@@ -195,25 +195,6 @@ describe('playTone plays notes', () => {
     );
   });
 
-  it("the tank's arc rides 3% above his zap at both ends", () => {
-    const ends = (name) => {
-      vi.spyOn(Math, 'random').mockReturnValue(0.5);
-      const { audio, made } = gameAudio();
-      audio.playSound(name);
-      const osc = toneOf(made);
-      const both = [
-        startHzOf(osc),
-        osc.frequency.exponentialRampToValueAtTime.mock.calls[0][0],
-      ];
-      vi.restoreAllMocks(); // also clears the fake's recorded calls
-      return both;
-    };
-    const zap = ends('tankZap');
-    const arc = ends('tankArc');
-    expect(arc[0] / zap[0]).toBeCloseTo(1.03, 2);
-    expect(arc[1] / zap[1]).toBeCloseTo(1.03, 2);
-  });
-
   it('a note that cannot resolve (a bad root) logs an error once per sound, plays nothing and throws nothing', () => {
     const root = CONFIG.HUM.ROOT;
     // An error, not a warning: the browser tests fail on console errors

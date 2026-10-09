@@ -93,6 +93,8 @@ const KNOBS = [
   [HITS, 'CLIMB_STEPS', [0, 14, 1]],
   [BAND, 'GRUNT_SHOT', GRUNT_SHOT_SOUNDS],
   [BAND, 'GRUNT_SHOT_DB', [-24, 12, 1]],
+  [BAND, 'TANK_SHOT_DB', [-24, 12, 1]],
+  [BAND, 'CHARGE_DB', [-24, 12, 1]],
   [RUSHER, 'BOOST_PX_S', [0, 600, 10]],
   [RUSHER, 'CRUISE_PX_S', [0, 400, 10]],
   [RUSHER, 'BOOST_TAU_SEC', [0.02, 1, 0.01]],

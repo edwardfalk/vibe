@@ -7,7 +7,7 @@ import {
   GRUNT_SHOT_NOTES,
   VOICE_DEGREES,
 } from '../../js/audio/SoundConfig.js';
-import { hz } from '../../js/audio/Harmony.js';
+import { hz, stepUp } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 import { Audio } from '../../js/Audio.js';
 import { Grunt } from '../../js/entities/Grunt.js';
@@ -147,6 +147,8 @@ describe("playSynth passes the caller's options through", () => {
 // Each of the band's synths, with what its creature passes, and its knob
 const BAND = {
   gruntShot: { opts: { note: ['b3', 5] }, knob: 'GRUNT_SHOT_DB' },
+  tankShot: { opts: {}, knob: 'TANK_SHOT_DB' },
+  tankCharge: { opts: { step: 0, steps: 8 }, knob: 'CHARGE_DB' },
 };
 const NAMES = Object.keys(BAND);
 
@@ -376,4 +378,66 @@ describe('a grunt shoots his own note', () => {
       ['5', 5],
     ]);
   });
+});
+
+describe("the tank's shot and charge", () => {
+  // Where an oscillator starts and where its first ramp ends
+  const ends = (o) => [
+    o.frequency.setValueAtTime.mock.calls[0][0],
+    o.frequency.exponentialRampToValueAtTime.mock.calls[0][0],
+  ];
+
+  it('the shot: a sine boom dropping onto his low root, under a saw and a square zap falling from his fifth to his root, 3% apart', () => {
+    const { of } = play('tankShot');
+    const [boom, saw, square] = of('osc');
+    expect([boom.type, saw.type, square.type]).toEqual([
+      'sine',
+      'sawtooth',
+      'square',
+    ]);
+    const [from, to] = ends(boom);
+    expect(from).toBeCloseTo(hz(['1', 3], AT), 6);
+    expect(to).toBeCloseTo(hz(['1', 1], AT), 6);
+    expect(ends(saw)[0]).toBeCloseTo(hz(['5', 5], AT), 6);
+    expect(ends(square)[0] / ends(saw)[0]).toBeCloseTo(1.03, 6);
+    for (const z of [saw, square]) {
+      expect(ends(z)[1]).toBeCloseTo(hz(['1', 2], AT), 6);
+    }
+    // The boom is driven: through a soft clipper on its way to the bus
+    const [shaper] = of('shaper');
+    expect(boom.connect).toHaveBeenCalledWith(shaper);
+    expect(shaper.connect).toHaveBeenCalledWith(of('gain')[1]);
+    expect(shaper.curve.at(0)).toBeCloseTo(-1, 6);
+    expect(shaper.curve.at(-1)).toBeCloseTo(1, 6);
+    expect(shaper.curve[600]).toBeGreaterThan((600 / 1023) * 2 - 1);
+  });
+
+  it('the charge climbs a scale step a beat from his root, to the octave on the eighth', () => {
+    const at = (step) =>
+      play('tankCharge', { step, steps: 8 }).of('osc')[0].frequency
+        .setValueAtTime.mock.calls[0][0];
+    for (let step = 0; step < 8; step++) {
+      expect(at(step), `step ${step}`).toBeCloseTo(
+        hz(stepUp(['1', 3], step), AT),
+        6
+      );
+    }
+    expect(at(7)).toBeCloseTo(hz(['1', 4], AT), 6);
+  });
+
+  it('the charge swells as he strains: each pluck louder than the last', () => {
+    const peak = (step) =>
+      play('tankCharge', { step, steps: 8 }).of('gain')[1].gain
+        .linearRampToValueAtTime.mock.calls[0][0];
+    const peaks = Array.from({ length: 8 }, (_, step) => peak(step));
+    peaks.slice(1).forEach((p, i) => expect(p).toBeGreaterThan(peaks[i]));
+    expect(peaks[7] / peaks[0]).toBeCloseTo(1 / 0.55, 6);
+  });
+
+  it.each([[-1], [8], [1.5], [undefined]])(
+    'a charge step of %s out of 0..steps-1 throws before any node',
+    (step) => {
+      expect(failing('tankCharge', { step, steps: 8 })).toHaveLength(0);
+    }
+  );
 });

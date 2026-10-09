@@ -9,7 +9,7 @@
  * also gets detuneCents (Audio.playSynth).
  */
 import { CONFIG } from '../config.js';
-import { hz } from './Harmony.js';
+import { hz, stepUp } from './Harmony.js';
 import { crashNoise, disconnectWhenEnded, playCrash } from './CrashSynth.js';
 import { SOUND_CONFIG } from './SoundConfig.js';
 
@@ -247,6 +247,20 @@ function noiseAt(ctx, at, out, offset) {
   return s;
 }
 
+// A soft clipper: tanh(amount·x), scaled back to full range
+const DRIVE_POINTS = 1024;
+function drive(ctx, amount) {
+  const curve = new Float32Array(DRIVE_POINTS);
+  for (let i = 0; i < DRIVE_POINTS; i++) {
+    const x = (i / (DRIVE_POINTS - 1)) * 2 - 1;
+    curve[i] = Math.tanh(amount * x) / Math.tanh(amount);
+  }
+  const w = ctx.createWaveShaper();
+  w.curve = curve;
+  w.oversample = '2x';
+  return w;
+}
+
 /**
  * One of the band's sounds into `out`, panned and at its trim plus its
  * knob, times `volume`. Its notes and its level come first, so a bad root,
@@ -379,6 +393,85 @@ export function gruntShot(ctx, out, _cfg, opts) {
   playBand(ctx, out, sound, GRUNT_SHOT_DB, opts);
 }
 
+// The tank's shot on beat 1: an 808 boom dropping onto his root and
+// ringing, driven, with today's falling zap shortened on top (two layers 3%
+// apart, whose beating is the electric buzz)
+const TANK_SHOT = {
+  trim: 1.5,
+  DRIVE: 2.5,
+  PEAK: 0.75,
+  ATTACK_SEC: 0.002,
+  SEC: 0.95,
+  DROP_SEC: 0.06,
+  ZAP: { PEAK: 0.16, ATTACK_SEC: 0.002, SEC: 0.3, SWEEP_SEC: 0.3, BEAT: 1.03 },
+  STOP_SEC: 1,
+  // The boom from his root two octaves up to his low root; the zap from his
+  // fifth to his root
+  notes: () => [
+    ['1', 3],
+    ['1', 1],
+    ['5', 5],
+    ['1', 2],
+  ],
+  play(ctx, bus, at, [boomHz, rootHz, zapHz, zapToHz], cents) {
+    const Z = this.ZAP;
+    const e = envelope(ctx, this.PEAK, this.ATTACK_SEC, this.SEC, at, bus);
+    const sat = drive(ctx, this.DRIVE);
+    sat.connect(e);
+    const boom = osc(ctx, 'sine', boomHz, at, sat, cents);
+    boom.frequency.exponentialRampToValueAtTime(rootHz, at + this.DROP_SEC);
+    const zapEnv = envelope(ctx, Z.PEAK, Z.ATTACK_SEC, Z.SEC, at, bus);
+    const zaps = [
+      osc(ctx, 'sawtooth', zapHz, at, zapEnv, cents),
+      osc(ctx, 'square', zapHz * Z.BEAT, at, zapEnv, cents),
+    ];
+    for (const z of zaps) {
+      z.frequency.exponentialRampToValueAtTime(zapToHz, at + Z.SWEEP_SEC);
+    }
+    const sources = [boom, ...zaps];
+    for (const o of sources) o.start(at);
+    return [sources, [e, sat, zapEnv], this.STOP_SEC];
+  },
+};
+
+// The tank's charge: a short square pluck a beat, a scale step up each beat
+// from his root (the octave on the eighth), louder as he strains
+const TANK_CHARGE = {
+  trim: -1.9,
+  FROM: ['1', 3],
+  PEAK: 0.4,
+  // The first pluck at this share of PEAK, the last at all of it
+  SWELL_FROM: 0.55,
+  ATTACK_SEC: 0.003,
+  SEC: 0.16,
+  LOWPASS: { FROM_HZ: 2400, TO_HZ: 500, Q: 3, SWEEP_SEC: 0.12 },
+  STOP_SEC: 0.18,
+  notes({ step, steps }) {
+    if (!(Number.isInteger(step) && step >= 0 && step < steps)) {
+      throw new Error(`Step ${step} is not one of 0..${steps - 1}`);
+    }
+    return [stepUp(this.FROM, step)];
+  },
+  play(ctx, bus, at, [f], cents, { step, steps }) {
+    const L = this.LOWPASS;
+    const swell =
+      this.SWELL_FROM + ((1 - this.SWELL_FROM) * step) / Math.max(1, steps - 1);
+    const e = envelope(
+      ctx,
+      this.PEAK * swell,
+      this.ATTACK_SEC,
+      this.SEC,
+      at,
+      bus
+    );
+    const lp = filterAt(ctx, 'lowpass', L.FROM_HZ, L.Q, at, e);
+    lp.frequency.exponentialRampToValueAtTime(L.TO_HZ, at + L.SWEEP_SEC);
+    const o = osc(ctx, 'square', f, at, lp, cents);
+    o.start(at);
+    return [[o], [e, lp], this.STOP_SEC];
+  },
+};
+
 /** Every synth by name; the crash keeps CONFIG.RUSHER.CRASH_VOLUME */
 export const SYNTHS = {
   crash: (ctx, out, cfg, { volume, pan }) =>
@@ -391,4 +484,8 @@ export const SYNTHS = {
     ),
   heroShot,
   gruntShot,
+  tankShot: (ctx, out, _cfg, opts) =>
+    playBand(ctx, out, TANK_SHOT, CONFIG.BAND.TANK_SHOT_DB, opts),
+  tankCharge: (ctx, out, _cfg, opts) =>
+    playBand(ctx, out, TANK_CHARGE, CONFIG.BAND.CHARGE_DB, opts),
 };
