@@ -12,18 +12,22 @@ const SILENT = 0.0001; // exponential ramps can't reach 0
 const ATTACK_SEC = 0.004;
 const TAIL_SEC = 0.05; // sources stop this long after they fade out
 const noiseByContext = new WeakMap(); // AudioContext → its noise buffer
+// The noise's length: every sound that draws from it (the crash, the deaths,
+// the bomb's bang and cloud) reads at most this far in
+export const NOISE_SEC = 2;
 
 /**
- * The crash's noise, built once per context from a fixed seed (Audio.js calls
- * this when audio starts), so a crash draws none of the game's random numbers
+ * The crash's noise, NOISE_SEC long, built once per context from a fixed
+ * seed (Audio.js calls this when audio starts), so a crash draws none of the
+ * game's random numbers
  */
-export function crashNoise(ctx, sec) {
+export function crashNoise(ctx) {
   let buffer = noiseByContext.get(ctx);
   if (!buffer) {
     const rand = mulberry32(NOISE_SEED);
     buffer = ctx.createBuffer(
       1,
-      Math.ceil(ctx.sampleRate * sec),
+      Math.ceil(ctx.sampleRate * NOISE_SEC),
       ctx.sampleRate
     );
     const data = buffer.getChannelData(0);
@@ -63,7 +67,7 @@ export function playCrash(ctx, out, cfg, volume, pan) {
     osc.connect(metal);
     return [osc, cfg.duration];
   });
-  const buffer = crashNoise(ctx, cfg.duration);
+  const buffer = crashNoise(ctx);
   for (const [level, sec] of [
     [cfg.wash, cfg.washSec],
     [cfg.bang, cfg.bangSec],

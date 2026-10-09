@@ -63,7 +63,6 @@ export class EnemyDeathHandler {
     } else {
       explosionManager.addFragmentExplosion(x, y, enemy);
       if (enemyType === 'tank') {
-        explosionManager.addPlasmaCloud(x, y);
         if (cameraSystem) {
           cameraSystem.addShake(8, 15);
         }

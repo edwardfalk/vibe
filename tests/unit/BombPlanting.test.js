@@ -114,8 +114,7 @@ describe('the bomb, on the beat', () => {
     plantBomb(activeBombs, tank, clock);
     const explosionManager = {
       addExplosion: vi.fn(),
-      addRadioactiveDebris: vi.fn(),
-      addPlasmaCloud: vi.fn(),
+      addBombCloud: vi.fn(),
     };
     const tick = (b) => {
       beats = b;
@@ -401,9 +400,11 @@ describe('a bomb kills the tank it is on', () => {
     const clouds = [];
     const explosionManager = {
       addExplosion() {},
-      addRadioactiveDebris: (x, y) =>
-        clouds.push(new HazardCloud(x, y, 'DEBRIS')),
-      addPlasmaCloud: (x, y) => clouds.push(new HazardCloud(x, y, 'PLASMA')),
+      addBombCloud: (x, y) =>
+        clouds.push(
+          new HazardCloud(x, y, 'PLASMA'),
+          new HazardCloud(x, y, 'DEBRIS')
+        ),
     };
     w.at(4000);
     plantBomb(w.values.activeBombs, t, w.clock);

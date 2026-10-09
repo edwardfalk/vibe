@@ -17,9 +17,11 @@ import { floor, clamp01 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
+import { hash01 } from '../entities/RusherRenderer.js';
 import { BOMB_PLANTED, COUNTDOWN } from '../audio/DialogueLines.js';
 
 const COUNT_EVERY_BEATS = 2;
+const SEED_Y = 7.31; // folds y into a bang's seed, so bombs on one row differ
 const AMBER_LEFT = 0.34; // its light goes white-hot for the last third
 // Its look, at size 50 (the prototype's numbers, in px): a halo, the body,
 // the hero's band, a glint, the light and the blink's ring
@@ -146,8 +148,12 @@ export function updateBombs(context) {
 
     if (explosionManager) {
       explosionManager.addExplosion(bomb.x, bomb.y, 'tank-plasma');
-      explosionManager.addRadioactiveDebris(bomb.x, bomb.y);
-      explosionManager.addPlasmaCloud(bomb.x, bomb.y);
+      // Its cloud: the plasma and the debris, one picture and one sound
+      explosionManager.addBombCloud(
+        bomb.x,
+        bomb.y,
+        hash01(bomb.x + SEED_Y * bomb.y)
+      );
     }
     audio?.playSound?.('explosion', bomb.x, bomb.y);
     cameraSystem?.addShake(20, 40);

@@ -44,6 +44,7 @@ import {
   getPlayerDialogueLine,
 } from './audio/DialogueLines.js';
 import { playCrash, crashNoise } from './audio/CrashSynth.js';
+import { cloudSound } from './audio/BombSounds.js';
 import { gruntPop, lastBreath, GRUNT_POP_SEC } from './audio/DeathSounds.js';
 import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
 import { Hum } from './audio/Hum.js';
@@ -54,6 +55,9 @@ const DUCK_ATTACK_SEC = 0.05;
 // whose line won't play shows for as long as it takes at 150 words a minute
 const bubbleFrames = (seconds) => Math.max(90, Math.round(seconds * 60));
 const WORD_SEC = 0.4;
+const MS_PER_SEC = 1000;
+const DEFAULT_BEAT_MS = 500; // 120 BPM, with no beat clock
+const CLOUD_FRAME_SEC = 1 / 60; // a hazard cloud ticks once a frame
 
 /** The master limiter, so concurrent sounds can't clip (also the loudness test's) */
 export function createMasterLimiter(ctx) {
@@ -168,7 +172,7 @@ export class Audio {
 
       this.createEffects();
       // The crash's noise, once, from a fixed seed (CrashSynth.js)
-      crashNoise(this.audioContext, SOUND_CONFIG.rusherCrash.duration);
+      crashNoise(this.audioContext);
 
       // Start drum machine now that audio context is available
       if (window.beatTrack && !window.beatTrack.isPlaying) {
@@ -315,10 +319,7 @@ export class Audio {
   playGruntPop(x, y, at, note, seed) {
     if (!this.ensureAudioContext()) return;
     const { near, pan } = this.placement(x, y);
-    const noise = crashNoise(
-      this.audioContext,
-      SOUND_CONFIG.rusherCrash.duration
-    );
+    const noise = crashNoise(this.audioContext);
     gruntPop(this.audioContext, this.masterGain, {
       at,
       note,
@@ -346,10 +347,7 @@ export class Audio {
       pluck: S.PLUCK_VOLUME,
     }[part];
     const { near, pan } = this.placement(x, y);
-    const noise = crashNoise(
-      this.audioContext,
-      SOUND_CONFIG.rusherCrash.duration
-    );
+    const noise = crashNoise(this.audioContext);
     return (
       STRING_PARTS[part](this.audioContext, this.masterGain, {
         ...opts,
@@ -362,12 +360,33 @@ export class Audio {
     );
   }
 
+  /**
+   * The bomb's cloud (BombSounds.js) from (x, y), from now to the end of its
+   * debris; seed (0..1) is the cloud's own. Returns its handle (stop()), or
+   * null when it plays nothing (muted, paused, no context)
+   */
+  playBombCloud(x, y, seed) {
+    if (!this.ensureAudioContext()) return null;
+    const { near, pan } = this.placement(x, y);
+    const clock = this.getContextValue('beatClock');
+    return cloudSound(this.audioContext, this.masterGain, {
+      at: this.audioContext.currentTime,
+      noise: crashNoise(this.audioContext),
+      volume: CONFIG.BOMB.CLOUD_VOLUME * near,
+      pan,
+      beatSec: (clock?.beatInterval ?? DEFAULT_BEAT_MS) / MS_PER_SEC,
+      plasmaSec: CONFIG.PLASMA.DURATION * CLOUD_FRAME_SEC,
+      debrisSec: CONFIG.DEBRIS.DURATION * CLOUD_FRAME_SEC,
+      seed,
+    });
+  }
+
   /** The Dude's last breath (DeathSounds.js) at audio time `at` */
   playLastBreath(at) {
     if (!this.ensureAudioContext()) return;
     lastBreath(this.audioContext, this.masterGain, {
       at,
-      noise: crashNoise(this.audioContext, SOUND_CONFIG.rusherCrash.duration),
+      noise: crashNoise(this.audioContext),
       volume: CONFIG.DEATHS.BREATH_VOLUME,
     });
   }

@@ -8,6 +8,7 @@ import { hz } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { Audio } from '../../js/Audio.js';
+import { NOISE_SEC } from '../../js/audio/CrashSynth.js';
 
 const DEATHS = { ...CONFIG.DEATHS };
 afterEach(() => {
@@ -160,9 +161,7 @@ describe("the game's Audio plays them", () => {
     expect(nearPan.connect).toHaveBeenCalledWith(near.audio.masterGain);
     const source = near.made.find((n) => n.kind === 'source');
     const [, offset] = source.start.mock.calls[0];
-    expect(offset + GRUNT_POP_SEC).toBeLessThanOrEqual(
-      SOUND_CONFIG.rusherCrash.duration
-    );
+    expect(offset + GRUNT_POP_SEC).toBeLessThanOrEqual(NOISE_SEC);
     const far = gameAudio();
     far.audio.playGruntPop(600, 0, 3, ['b3', 5], 0.5);
     expect(far.busGain()).toBeLessThan(2);

@@ -69,7 +69,6 @@ function deathWorld(t = 0, enemies = []) {
   const explosionManager = {
     fragmentExplosions: [],
     addFragmentExplosion: vi.fn(),
-    addPlasmaCloud: vi.fn(),
   };
   const values = { beatClock: clock, audio, explosionManager, enemies };
   const handler = new EnemyDeathHandler({ get: (k) => values[k] });
@@ -500,8 +499,7 @@ describe('every way a grunt dies hands its death the blow', () => {
         enemies: [tank, grunt],
         explosionManager: {
           addExplosion() {},
-          addRadioactiveDebris() {},
-          addPlasmaCloud() {},
+          addBombCloud() {},
         },
         enemyDeathHandler,
         beatClock: w.clock,

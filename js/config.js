@@ -186,20 +186,17 @@ const CONFIG = {
     CRASH_VOLUME: 1, // the crash's level, times SoundConfig's rusherCrash
   },
 
-  // Hazard clouds. A tank's death leaves plasma; the hero's bomb leaves plasma and
-  // longer-lasting debris. Anything within RADIUS takes DAMAGE every
-  // DAMAGE_INTERVAL frames for DURATION frames; MAX_RADIUS is how far the
-  // cloud is drawn.
+  // Hazard clouds: the hero's bomb leaves plasma and longer-lasting debris,
+  // drawn as one cloud (BombSmoke.js). Anything within RADIUS takes DAMAGE
+  // every DAMAGE_INTERVAL frames for DURATION frames.
   PLASMA: {
     RADIUS: 80,
-    MAX_RADIUS: 120,
     DURATION: 300,
     DAMAGE_INTERVAL: 30,
     DAMAGE: 15,
   },
   DEBRIS: {
     RADIUS: 60,
-    MAX_RADIUS: 90,
     DURATION: 900,
     DAMAGE_INTERVAL: 45,
     DAMAGE: 8,
@@ -293,6 +290,7 @@ const CONFIG = {
     // came while he still said it (BombPlanting.test.js times his voice;
     // at 2 a 0.75 s shout has a quarter second to spare)
     COUNT_LEAD_BEATS: 2,
+    CLOUD_VOLUME: 1, // its cloud's sound, 1 = the studies page's level
   },
 
   // The hero: a shield that takes one real hit whole, then recharges and

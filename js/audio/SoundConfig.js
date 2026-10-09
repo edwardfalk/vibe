@@ -84,13 +84,6 @@ export const SOUND_CONFIG = {
     duration: 0.3,
     volume: 0.3,
   },
-  plasmaCloud: {
-    frequency: 75,
-    waveform: 'sawtooth',
-    volume: 0.8,
-    duration: 5.0,
-    tremolo: true,
-  },
   tankCharging: {
     frequency: 70,
     waveform: 'square',
