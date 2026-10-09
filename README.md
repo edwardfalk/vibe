@@ -46,7 +46,7 @@ New enemy types join as you level up: grunts from the start, then stabbers at le
 
 ## Tuning
 
-Open the game with [`?tune`](https://edwardfalk.github.io/vibe/?tune) in the URL for a panel of live sliders: the kick, the hum, the sky, the mix, the tones' detune, the hero's shot (which sound, its level, how much a burst softens), the hits (their level and how they climb), pacing, every character's numbers and look, the deaths, and how often everyone talks. There's also a **Level +1** button (a run that used it can't set a high score) and a box that keeps the sound playing through a pause. The panel shows the current values as JSON, ready to paste into [`js/config.js`](js/config.js), where every setting lives.
+Open the game with [`?tune`](https://edwardfalk.github.io/vibe/?tune) in the URL for a panel of live sliders: the kick, the hum, the sky, the mix, the tones' detune, the hero's shot (which sound, its level, how much a burst softens), the hits (their level and how they climb), the band (the grunts' shot and chatter, and each instrument's level), pacing, every character's numbers and look, the deaths, and how often everyone talks. There's also a **Level +1** button (a run that used it can't set a high score) and a box that keeps the sound playing through a pause. The panel shows the current values as JSON, ready to paste into [`js/config.js`](js/config.js), where every setting lives.
 
 The [voice playground](https://edwardfalk.github.io/vibe/voices.html) is for the speakers' voices. Type any phrase, pick a speaker, and change its engine (SAM or espeak-ng), its voice and its effect chain. "Copy config" gives you the settings for `js/config.js`. The game speaks in these voices.
 
