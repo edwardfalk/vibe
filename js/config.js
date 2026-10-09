@@ -130,6 +130,14 @@ const CONFIG = {
     SOFTEN_SHOTS: 8,
   },
 
+  // The band: each enemy's instrument (Instruments.js), from the 9 October
+  // listening page. Each level knob adds dB to its sound's own trim, which
+  // matches it to the sound it replaced. Tune live with ?tune.
+  BAND: {
+    GRUNT_SHOT: 'stab', // stab or zap
+    GRUNT_SHOT_DB: -2, // Edward's, on the page
+  },
+
   // Pausing (P) stops the sound: the audio is suspended, which also stops
   // BeatClock, so everything picks up where it stopped. ?tune turns this on
   // (its "Sound while paused" box), so the kick can be tuned by ear while

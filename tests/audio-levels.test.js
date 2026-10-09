@@ -242,9 +242,10 @@ test('the dash and the frying, now noise, keep their level against the kick', as
 });
 
 // Copies of one sound started in one frame (grunts firing together on 2 or
-// 4) must not add in phase: four in phase are 12 dB over one, four at random
-// phases 6 dB on average. Averaged over many volleys, so chance alignment in
-// one can't fail it
+// 4, on one note) must not add in phase: four in phase are 12 dB over one,
+// four at random phases 6 dB on average. Each grunt's seed spreads his copy
+// (Audio.playSynth). Averaged over many volleys, so chance alignment in one
+// can't fail it
 test('a volley of four grunt shots in one frame adds like random phases, not in phase', async ({
   page,
 }) => {
@@ -261,7 +262,7 @@ test('a volley of four grunt shots in one frame adds like random phases, not in 
         Math.ceil(RATE * (VOLLEYS * GAP_SEC + 0.5)),
         RATE
       );
-      // playTone reads the clock from its context: this one says when
+      // playSynth reads the clock from its context: this one says when
       const clock = { t: 0 };
       const timed = new Proxy(ctx, {
         get: (target, key) =>
@@ -277,11 +278,17 @@ test('a volley of four grunt shots in one frame adds like random phases, not in 
         effects: { reverb: null },
         player: { x: 0, y: 0 },
         context: null,
+        getContextValue: () => undefined,
       });
+      // Each volley's grunts are new ones on one note: fresh seeds from the
+      // half that picks it (Grunt.shotNote)
       for (let v = 0; v < VOLLEYS; v++) {
         clock.t = v * GAP_SEC;
         for (let c = 0; c < copies; c++) {
-          audio.playTone(SOUND_CONFIG.alienShoot, null, null, 'alienShoot');
+          audio.playSynth(SOUND_CONFIG.alienShoot, null, null, {
+            note: ['b3', 5],
+            seed: Math.random() * 0.5,
+          });
         }
       }
       const data = (await ctx.startRendering()).getChannelData(0);

@@ -3,7 +3,11 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { SOUND_CONFIG, VOICE_DEGREES } from '../../js/audio/SoundConfig.js';
+import {
+  SOUND_CONFIG,
+  VOICE_DEGREES,
+  GRUNT_SHOT_NOTES,
+} from '../../js/audio/SoundConfig.js';
 import { CONFIG } from '../../js/config.js';
 import { hz, ROOTS } from '../../js/audio/Harmony.js';
 
@@ -53,7 +57,7 @@ describe('presets name notes', () => {
   it("the attacks keep their registers apart: the tank's shot under the grunt's, under the stabber's strings", () => {
     atEveryRoot((r) => {
       const tank = hz(SOUND_CONFIG.tankEnergy.note);
-      const grunt = hz(SOUND_CONFIG.alienShoot.note);
+      const grunt = hz(GRUNT_SHOT_NOTES[0]); // the lower of his two
       const strings = hz(['b5', 6]); // StabberStrings.js's stab and screech
       expect(tank, r).toBeLessThan(grunt);
       expect(grunt, r).toBeLessThan(strings);
@@ -94,7 +98,6 @@ describe('presets name notes', () => {
 // The spec's table (2026-10-09-audio-pr2-design.md): each preset's note and
 // sweep end, so no sound drifts out of its register unnoticed
 const TABLE = {
-  alienShoot: [['b3', 5], null],
   gruntAdvance: [['b3', 4], null],
   gruntRetreat: [['5', 3], null],
   gruntMalfunction: [['b3', 3], null],
@@ -192,8 +195,8 @@ const TABLE = {
 };
 
 describe("every preset on the spec's note", () => {
-  it("each of the table's 38 presets plays its note and sweeps to its end", () => {
-    expect(Object.keys(TABLE)).toHaveLength(38);
+  it("each of the table's 37 presets plays its note and sweeps to its end", () => {
+    expect(Object.keys(TABLE)).toHaveLength(37);
     for (const [name, [note, to]] of Object.entries(TABLE)) {
       expect(SOUND_CONFIG[name]?.note, name).toEqual(note);
       expect(SOUND_CONFIG[name]?.sweep?.to ?? null, name).toEqual(to);

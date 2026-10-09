@@ -1,10 +1,20 @@
 // The band's instruments: each enemy's own synth, from the 9 October
 // listening page (docs/superpowers/specs/2026-10-10-band-instruments-design.md)
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { SYNTHS } from '../../js/audio/Instruments.js';
-import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
+import { SYNTHS, GRUNT_SHOT_SOUNDS } from '../../js/audio/Instruments.js';
+import {
+  SOUND_CONFIG,
+  GRUNT_SHOT_NOTES,
+  VOICE_DEGREES,
+} from '../../js/audio/SoundConfig.js';
+import { hz } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 import { Audio } from '../../js/Audio.js';
+import { Grunt } from '../../js/entities/Grunt.js';
+import { createMockP5, createMockAudio } from './helpers/enemyMocks.js';
+
+const AT = 2.5;
+const dB = (d) => 10 ** (d / 20);
 
 // A Web Audio stand-in that records the nodes a sound makes
 function fakeContext() {
@@ -131,5 +141,239 @@ describe("playSynth passes the caller's options through", () => {
     const got = told({});
     expect(got.at).toBe(2);
     expect(got).not.toHaveProperty('detuneCents');
+  });
+});
+
+// Each of the band's synths, with what its creature passes, and its knob
+const BAND = {
+  gruntShot: { opts: { note: ['b3', 5] }, knob: 'GRUNT_SHOT_DB' },
+};
+const NAMES = Object.keys(BAND);
+
+// One play of a band synth on the stand-in: full volume, centred, at AT
+function play(name, opts = {}) {
+  const { ctx, made } = fakeContext();
+  SYNTHS[name](
+    ctx,
+    { kind: 'out' },
+    {},
+    { volume: 1, pan: 0, at: AT, ...BAND[name].opts, ...opts }
+  );
+  const of = (kind) => made.filter((n) => n.kind === kind);
+  return { ctx, made, of };
+}
+
+// Every source made, and the level its bus (the first gain) was set to
+const sourcesOf = (made) => made.filter((n) => n.start.mock.calls.length);
+const busLevel = (of) => of('gain')[0].gain.setValueAtTime.mock.calls[0][0];
+// Run `fn` with CONFIG.BAND[key] set to `value`, then put it back
+function withBand(key, value, fn) {
+  const saved = CONFIG.BAND[key];
+  CONFIG.BAND[key] = value;
+  try {
+    return fn();
+  } finally {
+    CONFIG.BAND[key] = saved;
+  }
+}
+// A play that must throw, and the nodes it made
+function failing(name, opts) {
+  const { ctx, made } = fakeContext();
+  expect(() =>
+    SYNTHS[name](
+      ctx,
+      {},
+      {},
+      { volume: 1, pan: 0, at: AT, ...BAND[name].opts, ...opts }
+    )
+  ).toThrow();
+  return made;
+}
+
+describe("every one of the band's synths", () => {
+  it.each(NAMES)('%s starts every source at `at`', (name) => {
+    const sources = sourcesOf(play(name).made);
+    expect(sources.length).toBeGreaterThan(0);
+    for (const s of sources) expect(s.start.mock.calls[0][0]).toBe(AT);
+  });
+
+  it.each(NAMES)(
+    '%s lets every node go when its sources end: all stop together',
+    (name) => {
+      const { made } = play(name);
+      const ends = made.filter((n) => n.onended);
+      expect(ends).toHaveLength(1);
+      const stops = sourcesOf(made).map((n) => n.stop.mock.calls[0][0]);
+      expect(new Set(stops).size).toBe(1);
+      ends[0].onended();
+      for (const n of made) expect(n.disconnect, n.kind).toHaveBeenCalled();
+    }
+  );
+
+  it.each(NAMES)("%s draws none of the game's random numbers", (name) => {
+    const random = vi.spyOn(Math, 'random');
+    play(name);
+    expect(random).not.toHaveBeenCalled();
+  });
+
+  it.each(NAMES)(
+    '%s plays at its trim plus its knob, times the volume, panned by `pan`',
+    (name) => {
+      const { knob } = BAND[name];
+      const at0 = withBand(knob, 0, () => busLevel(play(name).of));
+      const down = withBand(knob, -6, () => busLevel(play(name).of));
+      expect(down / at0).toBeCloseTo(dB(-6), 6);
+      const half = withBand(knob, 0, () =>
+        busLevel(play(name, { volume: 0.5 }).of)
+      );
+      expect(half / at0).toBeCloseTo(0.5, 6);
+      const { of } = play(name, { pan: -0.4 });
+      const [panner] = of('pan');
+      expect(panner.pan.setValueAtTime).toHaveBeenCalledWith(-0.4, AT);
+      // Everything goes through the bus, the bus through the panner
+      expect(of('gain')[0].connect).toHaveBeenCalledWith(panner);
+      expect(panner.connect).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'out' })
+      );
+    }
+  );
+
+  it.each(NAMES)('%s adds its detuneCents to every oscillator', (name) => {
+    const cents = (made) =>
+      made
+        .filter((n) => n.kind === 'osc')
+        .map((o) => o.detune.setValueAtTime.mock.calls[0][0]);
+    const plain = cents(play(name).made);
+    const shifted = cents(play(name, { detuneCents: 3 }).made);
+    expect(plain.length).toBeGreaterThan(0);
+    shifted.forEach((c, i) => expect(c - plain[i]).toBeCloseTo(3, 9));
+  });
+
+  it.each(NAMES)(
+    '%s throws before any node on a bad root, or a knob or detune that is not a finite number',
+    (name) => {
+      const root = CONFIG.HUM.ROOT;
+      try {
+        CONFIG.HUM.ROOT = 'H';
+        expect(failing(name)).toHaveLength(0);
+      } finally {
+        CONFIG.HUM.ROOT = root;
+      }
+      for (const bad of [NaN, '6', null, -Infinity]) {
+        withBand(BAND[name].knob, bad, () =>
+          expect(failing(name), String(bad)).toHaveLength(0)
+        );
+      }
+      expect(failing(name, { detuneCents: NaN })).toHaveLength(0);
+    }
+  );
+});
+
+describe("the grunt's shot", () => {
+  it('offers the stab and the zap, and plays the stab by default', () => {
+    expect(GRUNT_SHOT_SOUNDS).toEqual(['stab', 'zap']);
+    expect(CONFIG.BAND.GRUNT_SHOT).toBe('stab');
+  });
+
+  it('the stab: two saws either side of his note, 9 cents apart each way', () => {
+    withBand('GRUNT_SHOT', 'stab', () => {
+      const oscs = play('gruntShot', { note: ['5', 5] }).of('osc');
+      expect(oscs.map((o) => o.type)).toEqual(['sawtooth', 'sawtooth']);
+      for (const o of oscs) {
+        expect(o.frequency.setValueAtTime.mock.calls[0][0]).toBeCloseTo(
+          hz(['5', 5], AT),
+          6
+        );
+      }
+      const cents = oscs.map((o) => o.detune.setValueAtTime.mock.calls[0][0]);
+      expect(cents).toEqual([-9, 9]);
+    });
+  });
+
+  it('the zap: a square dropping an octave onto his note', () => {
+    withBand('GRUNT_SHOT', 'zap', () => {
+      const [o, ...rest] = play('gruntShot', { note: ['b3', 5] }).of('osc');
+      expect(rest).toHaveLength(0);
+      expect(o.type).toBe('square');
+      const f = hz(['b3', 5], AT);
+      expect(o.frequency.setValueAtTime.mock.calls[0][0]).toBeCloseTo(2 * f, 6);
+      expect(
+        o.frequency.exponentialRampToValueAtTime.mock.calls[0][0]
+      ).toBeCloseTo(f, 6);
+    });
+  });
+
+  it('an unknown GRUNT_SHOT throws, naming the knob, before any node', () => {
+    withBand('GRUNT_SHOT', 'cowbell', () => {
+      expect(failing('gruntShot')).toHaveLength(0);
+      const { ctx } = fakeContext();
+      const opts = { volume: 1, pan: 0, at: AT, note: ['b3', 5] };
+      expect(() => SYNTHS.gruntShot(ctx, {}, {}, opts)).toThrow(/GRUNT_SHOT/);
+    });
+  });
+
+  it('a shot with no note throws before any node', () => {
+    expect(failing('gruntShot', { note: undefined })).toHaveLength(0);
+  });
+
+  it("alienShoot is the grunt's shot", () => {
+    expect(SOUND_CONFIG.alienShoot).toEqual({ synth: 'gruntShot' });
+  });
+
+  it("two grunts' shots in one frame don't start together or sound the same", () => {
+    const { audio, made } = gameAudio();
+    withBand('GRUNT_SHOT', 'stab', () => {
+      for (const seed of [0.2, 0.3]) {
+        audio.playSound('alienShoot', 0, 0, { note: ['b3', 5], seed });
+      }
+    });
+    const saws = made.filter((n) => n.kind === 'osc');
+    expect(saws).toHaveLength(4);
+    const [a, , b] = saws;
+    expect(a.start.mock.calls[0][0]).not.toBe(b.start.mock.calls[0][0]);
+    expect(a.detune.setValueAtTime.mock.calls[0][0]).not.toBe(
+      b.detune.setValueAtTime.mock.calls[0][0]
+    );
+  });
+});
+
+describe('a grunt shoots his own note', () => {
+  // A grunt with this look seed, its shots' playSound calls
+  function shots(seed, n = 3) {
+    const audio = createMockAudio();
+    const context = { get: () => undefined, set() {} };
+    const g = new Grunt(0, 0, 'grunt', { context }, createMockP5(), audio);
+    g.lookSeed = seed;
+    for (let i = 0; i < n; i++) g.createBullet();
+    return audio.playSound.mock.calls;
+  }
+
+  it("his notes are the grunt's minor third and fifth, in octave 5", () => {
+    expect(GRUNT_SHOT_NOTES).toEqual([
+      ['b3', 5],
+      ['5', 5],
+    ]);
+    for (const [degree] of GRUNT_SHOT_NOTES) {
+      expect(VOICE_DEGREES.grunt).toContain(degree);
+    }
+  });
+
+  it('every shot of one grunt plays one note, with his seed', () => {
+    const calls = shots(0.3);
+    expect(calls).toHaveLength(3);
+    for (const [name, , , opts] of calls) {
+      expect(name).toBe('alienShoot');
+      expect(opts).toEqual({ note: ['b3', 5], seed: 0.3 });
+    }
+  });
+
+  it('grunts with different seeds play both notes', () => {
+    const notes = [0.1, 0.4, 0.6, 0.9].map((seed) => shots(seed, 1)[0][3].note);
+    expect(notes).toEqual([
+      ['b3', 5],
+      ['b3', 5],
+      ['5', 5],
+      ['5', 5],
+    ]);
   });
 });

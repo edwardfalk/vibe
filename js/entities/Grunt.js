@@ -8,6 +8,7 @@ import {
 } from '../shared/DamageResultHandler.js';
 import { GRUNT_LINES, GRUNT_OW } from '../audio/DialogueLines.js';
 import { Bullet } from './bullet.js';
+import { GRUNT_SHOT_NOTES } from '../audio/SoundConfig.js';
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 import {
   GRUNT_COLORS,
@@ -366,8 +367,18 @@ class Grunt extends BaseEnemy {
       'enemy-grunt'
     );
     bullet.ownerId = this.id; // so it can't shoot itself
-    this.audio?.playSound('alienShoot', this.x, this.y);
+    this.audio?.playSound('alienShoot', this.x, this.y, {
+      note: this.shotNote(),
+      seed: this.lookSeed,
+    });
     return bullet;
+  }
+
+  /** His shot's note for life, by his look's seed: a crowd plays both */
+  shotNote() {
+    return GRUNT_SHOT_NOTES[
+      Math.floor(this.lookSeed * GRUNT_SHOT_NOTES.length)
+    ];
   }
 
   /**

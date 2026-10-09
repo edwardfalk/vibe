@@ -17,7 +17,7 @@
 
 import { CONFIG } from '../config.js';
 import { ROOTS } from '../audio/Harmony.js';
-import { HERO_SHOT_SOUNDS } from '../audio/Instruments.js';
+import { HERO_SHOT_SOUNDS, GRUNT_SHOT_SOUNDS } from '../audio/Instruments.js';
 
 // [group, key, options]: group is a path under CONFIG; options is
 // [min, max, step] for a slider or a list of choices for a dropdown;
@@ -29,6 +29,7 @@ const MIX = 'MIX';
 const TONES = 'TONES';
 const HERO_SHOT = 'HERO_SHOT';
 const HITS = 'HITS';
+const BAND = 'BAND';
 const RUSHER = 'RUSHER';
 const STABBER = 'STABBER';
 const HITBOX = 'HITBOX';
@@ -90,6 +91,8 @@ const KNOBS = [
   [HERO_SHOT, 'SOFTEN_SHOTS', [0, 32, 1]],
   [HITS, 'LEVEL_DB', [-24, 6, 0.5]],
   [HITS, 'CLIMB_STEPS', [0, 14, 1]],
+  [BAND, 'GRUNT_SHOT', GRUNT_SHOT_SOUNDS],
+  [BAND, 'GRUNT_SHOT_DB', [-24, 12, 1]],
   [RUSHER, 'BOOST_PX_S', [0, 600, 10]],
   [RUSHER, 'CRUISE_PX_S', [0, 400, 10]],
   [RUSHER, 'BOOST_TAU_SEC', [0.02, 1, 0.01]],
