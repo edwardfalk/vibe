@@ -93,7 +93,7 @@ test('the hum sits under the kick, quiet and on a full screen at level 5', async
   expect(levels.busy).toBeLessThanOrEqual(levels.kick);
 });
 
-test('a bad root costs only the hum: the kick and the effects play on', async ({
+test('a bad root costs only the hum and the pitched sounds: the kick plays on', async ({
   page,
 }) => {
   const errors = [];
@@ -201,4 +201,59 @@ test('the dash and the frying, now noise, keep their level against the kick', as
     );
     expect(overKick[name], name).toBeLessThanOrEqual(db + NOISE_TOLERANCE_DB);
   }
+});
+
+// Copies of one sound started in one frame (grunts firing together on 2 or
+// 4) must not add in phase: four in phase are 12 dB over one, four at random
+// phases 6 dB on average. Averaged over many volleys, so chance alignment in
+// one can't fail it
+test('a volley of four grunt shots in one frame adds like random phases, not in phase', async ({
+  page,
+}) => {
+  await page.goto('/tests/helpers/speech-gate.html');
+  const overOne = await page.evaluate(async () => {
+    const { Audio } = await import('/js/Audio.js');
+    const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
+    const RATE = 44100;
+    const VOLLEYS = 64;
+    const GAP_SEC = 0.25; // longer than the shot
+    async function energy(copies) {
+      const ctx = new OfflineAudioContext(
+        1,
+        Math.ceil(RATE * (VOLLEYS * GAP_SEC + 0.5)),
+        RATE
+      );
+      // playTone reads the clock from its context: this one says when
+      const clock = { t: 0 };
+      const timed = new Proxy(ctx, {
+        get: (target, key) =>
+          key === 'currentTime'
+            ? clock.t
+            : typeof target[key] === 'function'
+              ? target[key].bind(target)
+              : target[key],
+      });
+      const audio = Object.assign(Object.create(Audio.prototype), {
+        audioContext: timed,
+        masterGain: ctx.destination,
+        effects: { reverb: null },
+        player: { x: 0, y: 0 },
+        context: null,
+      });
+      for (let v = 0; v < VOLLEYS; v++) {
+        clock.t = v * GAP_SEC;
+        for (let c = 0; c < copies; c++) {
+          audio.playTone(SOUND_CONFIG.alienShoot, null, null, 'alienShoot');
+        }
+      }
+      const data = (await ctx.startRendering()).getChannelData(0);
+      let sum = 0;
+      for (const x of data) sum += x * x;
+      return sum;
+    }
+    return 10 * Math.log10((await energy(4)) / (await energy(1)));
+  });
+  console.log('four grunt shots over one, dB:', overOne);
+  expect(overOne).toBeGreaterThan(4);
+  expect(overOne).toBeLessThan(8);
 });

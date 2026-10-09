@@ -55,6 +55,7 @@ import {
 } from './audio/DeathSounds.js';
 import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
 import { Hum } from './audio/Hum.js';
+import { hz } from './audio/Harmony.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
 const DUCK_ATTACK_SEC = 0.05;
@@ -66,6 +67,9 @@ const MS_PER_SEC = 1000;
 const DEFAULT_BEAT_MS = 500; // 120 BPM, with no beat clock
 const CLOUD_FRAME_SEC = 1 / 60; // a hazard cloud ticks once a frame
 const TANK_DEATH_NOTE = ['1', 2]; // the tank dies on the root
+const CENTS_PER_OCTAVE = 1200;
+// A tone starts at most this late (playTone), so copies don't add in phase
+const MAX_START_OFFSET_SEC = 0.005;
 
 /** The master limiter, so concurrent sounds can't clip (also the loudness test's) */
 export function createMasterLimiter(ctx) {
@@ -290,12 +294,22 @@ export class Audio {
       console.warn(`❌ Sound not found: ${soundName}`);
       return;
     }
-    if (soundConfig.synth === 'crash') {
-      this.playCrashAt(soundConfig, x, y);
-      return;
+    // A sound that throws (a bad CONFIG.HUM.ROOT) warns once and plays
+    // nothing: it can't stop the game loop
+    try {
+      if (soundConfig.synth === 'crash') {
+        this.playCrashAt(soundConfig, x, y);
+      } else {
+        this.playTone(soundConfig, x, y, soundName);
+      }
+    } catch (error) {
+      // An error, not a warning, so the browser tests catch a broken sound
+      const failed = (this._failedSounds ??= new Set());
+      if (!failed.has(soundName)) {
+        failed.add(soundName);
+        console.error(`Sound ${soundName} failed and plays nothing:`, error);
+      }
     }
-
-    this.playTone(soundConfig, x, y, soundName);
   }
 
   // How loud (0..1) and where (pan -1..1) a sound from (x, y) is, heard from
@@ -444,54 +458,48 @@ export class Audio {
   }
 
   playTone(config, x, y, soundName = '') {
+    const ctx = this.audioContext;
     // Noise (the dash, the frying) is the shared noise through a band-pass
     const noise = config.waveform === 'noise';
-    const oscillator = noise
-      ? this.audioContext.createBufferSource()
-      : this.audioContext.createOscillator();
-    const gainNode = this.audioContext.createGain();
-    const panNode = this.audioContext.createStereoPanner();
-
-    // Add subtle randomness to frequency and volume for variety
-    const freqVarRange = config.frequencyVariationRange || 0.1;
-    const frequencyVariation = 1 + (random() - 0.5) * freqVarRange;
+    // The notes first, so one that can't resolve (a bad root) throws before
+    // any node is made. A small random detune keeps copies of one sound
+    // apart, plus the preset's own (the tank's arc rides 3% above his zap)
+    const cents =
+      (random() - 0.5) * 2 * CONFIG.TONES.DETUNE_CENTS +
+      (config.detuneCents ?? 0);
+    const detune = 2 ** (cents / CENTS_PER_OCTAVE);
+    const now = ctx.currentTime;
+    const startHz = noise ? null : hz(config.note, now) * detune;
+    const endHz =
+      config.sweep && !noise ? hz(config.sweep.to, now) * detune : null;
     const volumeVariation = 1 + (random() - 0.5) * 0.15;
     const durationVariation = 1 + (random() - 0.5) * 0.2;
+    // Copies started in one frame would add in phase: each starts up to
+    // MAX_START_OFFSET_SEC late (one period of the note isn't enough: Chrome
+    // still added four copies 7 dB over one, not the 6 of random phases)
+    const at = now + random() * MAX_START_OFFSET_SEC;
+    const sec = config.duration * durationVariation;
+
+    const oscillator = noise
+      ? ctx.createBufferSource()
+      : ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    const panNode = ctx.createStereoPanner();
 
     let band = null;
     if (noise) {
-      oscillator.buffer = crashNoise(this.audioContext);
-      band = this.audioContext.createBiquadFilter();
+      oscillator.buffer = crashNoise(ctx);
+      band = ctx.createBiquadFilter();
       band.type = 'bandpass';
-      band.frequency.setValueAtTime(
-        config.bandHz,
-        this.audioContext.currentTime
-      );
+      band.frequency.setValueAtTime(config.bandHz, at);
     } else {
       oscillator.type = config.waveform;
-      oscillator.frequency.setValueAtTime(
-        config.frequency * frequencyVariation,
-        this.audioContext.currentTime
-      );
-    }
-
-    // Optional pitch sweep (e.g. the falling "oh no!" sounds)
-    if (config.sweep && !noise) {
-      const endFreq = config.sweep.to * frequencyVariation;
-      const sweepDuration = config.duration * durationVariation;
-
-      if (config.sweep.curve === 'exponential') {
-        // Exponential sweep for dramatic "oh no!" effect
-        oscillator.frequency.exponentialRampToValueAtTime(
-          Math.max(0.1, endFreq), // Ensure positive value for exponential ramp
-          this.audioContext.currentTime + sweepDuration
-        );
-      } else {
-        // Linear sweep as fallback
-        oscillator.frequency.linearRampToValueAtTime(
-          endFreq,
-          this.audioContext.currentTime + sweepDuration
-        );
+      oscillator.frequency.setValueAtTime(startHz, at);
+      // Optional pitch sweep (e.g. the falling "oh no!" sounds)
+      if (config.sweep?.curve === 'exponential') {
+        oscillator.frequency.exponentialRampToValueAtTime(endHz, at + sec);
+      } else if (config.sweep) {
+        oscillator.frequency.linearRampToValueAtTime(endHz, at + sec);
       }
     }
 
@@ -529,21 +537,15 @@ export class Audio {
       // If it's a player sound, keep full volume and center panning (defaults above)
     }
 
-    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(
-      volume,
-      this.audioContext.currentTime + TONE_ATTACK_SEC
-    );
-    gainNode.gain.exponentialRampToValueAtTime(
-      0.001,
-      this.audioContext.currentTime + config.duration * durationVariation
-    );
+    gainNode.gain.setValueAtTime(0, at);
+    gainNode.gain.linearRampToValueAtTime(volume, at + TONE_ATTACK_SEC);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, at + sec);
 
     // Configure panning
-    panNode.pan.setValueAtTime(panValue, this.audioContext.currentTime);
+    panNode.pan.setValueAtTime(panValue, at);
 
     // Connect nodes - add reverb for ambient enemy sounds
-    const tremoloGain = this.audioContext.createGain();
+    const tremoloGain = ctx.createGain();
     if (band) {
       oscillator.connect(band);
       band.connect(tremoloGain);
@@ -555,12 +557,7 @@ export class Audio {
 
     if (config.tremolo) {
       const beatClock = this.getContextValue('beatClock');
-      applyBeatTremoloEffect(
-        this.audioContext,
-        beatClock,
-        tremoloGain,
-        config.duration * durationVariation
-      );
+      applyBeatTremoloEffect(this.audioContext, beatClock, tremoloGain, sec);
     }
 
     // Check if this is an ambient enemy sound that should have reverb
@@ -585,27 +582,21 @@ export class Audio {
       );
       const normalizedDistance = Math.max(0, Math.min(distance / 600, 1)); // 0 = close, 1 = far; clamp to avoid negative
 
-      reverbGainNode = this.audioContext.createGain();
-      lowPassFilter = this.audioContext.createBiquadFilter();
+      reverbGainNode = ctx.createGain();
+      lowPassFilter = ctx.createBiquadFilter();
 
       // Reverb 15% close to 30% far
       const reverbIntensity = 0.15 + normalizedDistance * 0.15;
-      reverbGainNode.gain.setValueAtTime(
-        reverbIntensity,
-        this.audioContext.currentTime
-      );
+      reverbGainNode.gain.setValueAtTime(reverbIntensity, at);
 
       // Farther sounds are more muffled: 1400 Hz close to 800 Hz far
       const lowpassFreq = 1400 - normalizedDistance * 600;
       lowPassFilter.type = 'lowpass';
-      lowPassFilter.frequency.setValueAtTime(
-        lowpassFreq,
-        this.audioContext.currentTime
-      );
-      lowPassFilter.Q.setValueAtTime(0.5, this.audioContext.currentTime);
+      lowPassFilter.frequency.setValueAtTime(lowpassFreq, at);
+      lowPassFilter.Q.setValueAtTime(0.5, at);
 
       // A light otherworldly distortion
-      distortionNode = this.audioContext.createWaveShaper();
+      distortionNode = ctx.createWaveShaper();
       distortionNode.curve = this.ambientDistortionCurve;
       distortionNode.oversample = '2x';
 
@@ -617,9 +608,9 @@ export class Audio {
       this.effects.reverb.connect(this.masterGain);
 
       // Dry path: 90% close to 75% far, so the reverb stays subtle
-      dryGain = this.audioContext.createGain();
+      dryGain = ctx.createGain();
       const dryMix = 0.9 - normalizedDistance * 0.15;
-      dryGain.gain.setValueAtTime(dryMix, this.audioContext.currentTime);
+      dryGain.gain.setValueAtTime(dryMix, at);
 
       panNode.connect(dryGain);
       dryGain.connect(this.masterGain);
@@ -630,10 +621,8 @@ export class Audio {
 
     // Play
     try {
-      oscillator.start(this.audioContext.currentTime);
-      oscillator.stop(
-        this.audioContext.currentTime + config.duration * durationVariation
-      );
+      oscillator.start(at);
+      oscillator.stop(at + sec);
 
       // Clean up all audio nodes when oscillator ends to prevent graph accumulation
       oscillator.onended = () => {

@@ -25,6 +25,7 @@ const KICK = 'BEAT_TRACK.KICK';
 const HUM = 'HUM';
 const PACING = 'PACING';
 const MIX = 'MIX';
+const TONES = 'TONES';
 const RUSHER = 'RUSHER';
 const STABBER = 'STABBER';
 const HITBOX = 'HITBOX';
@@ -79,6 +80,7 @@ const KNOBS = [
   [MIX, 'DUCK_SFX_DB', [-24, 0, 1]],
   [MIX, 'DUCK_BEAT_DB', [-24, 0, 1]],
   [MIX, 'DUCK_RELEASE_SEC', [0.05, 1.5, 0.05]],
+  [TONES, 'DETUNE_CENTS', [0, 25, 1]],
   [RUSHER, 'BOOST_PX_S', [0, 600, 10]],
   [RUSHER, 'CRUISE_PX_S', [0, 400, 10]],
   [RUSHER, 'BOOST_TAU_SEC', [0.02, 1, 0.01]],

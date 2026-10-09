@@ -99,6 +99,14 @@ const CONFIG = {
     DUCK_MAX_HOLD_MS: 5000, // never stay ducked longer than this after a line starts
   },
 
+  // Every playTone sound (js/audio/SoundConfig.js) plays its note with a
+  // random detune of up to this many cents either way: in tune, a little
+  // wider, so copies of one sound don't sit exactly on each other. Tune live
+  // with ?tune.
+  TONES: {
+    DETUNE_CENTS: 5,
+  },
+
   // Pausing (P) stops the sound: the audio is suspended, which also stops
   // BeatClock, so everything picks up where it stopped. ?tune turns this on
   // (its "Sound while paused" box), so the kick can be tuned by ear while
