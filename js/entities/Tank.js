@@ -515,9 +515,11 @@ class Tank extends BaseEnemy {
     if (armor && !armor.destroyed) {
       armor.hp -= amount;
       this.plateHitAt[side] = this.poseBeats;
-      if (audio) audio.playSound('hit', this.x, this.y);
       this.hitFlash = 8;
-      if (armor.hp > 0) return DAMAGE_RESULT.DAMAGED; // the plate took it all
+      if (armor.hp > 0) {
+        audio?.playSound('tankPlateHit', this.x, this.y);
+        return DAMAGE_RESULT.DAMAGED; // the plate took it all
+      }
 
       const overflow = -armor.hp;
       armor.hp = 0;
@@ -526,8 +528,10 @@ class Tank extends BaseEnemy {
       audio?.playPlateClang?.(this.x, this.y);
       this.breakArmor(side);
       this.trackAnger(damageSource);
+      // One impact sound besides the clang: his, if damage is left over
+      const impact = overflow > 0 ? 'tankHit' : 'tankPlateHit';
+      audio?.playSound(impact, this.x, this.y);
       if (overflow <= 0) return DAMAGE_RESULT.DAMAGED;
-      if (audio) audio.playSound('tankHit', this.x, this.y);
       return super.takeDamage(overflow, bulletAngle, damageSource);
     }
 

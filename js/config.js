@@ -107,6 +107,14 @@ const CONFIG = {
     DETUNE_CENTS: 5,
   },
 
+  // The enemies' hit sounds (SoundConfig's presets with hit: true): one per
+  // hit, on the enemy's note. Tune live with ?tune.
+  HITS: {
+    // On each hit preset's volume: each enemy's hit 4.6-7.4 dB under today's
+    // two-sound hit (measured offline, loudest 50 ms above 250 Hz)
+    LEVEL_DB: -2.5,
+  },
+
   // The hero's shot (js/audio/Instruments.js): one of four sounds from the
   // listening page, at its trim plus LEVEL_DB. Held fire softens: shot n of a
   // run plays SOFTEN_DB x min(n, SOFTEN_SHOTS) / SOFTEN_SHOTS dB down (0 shots

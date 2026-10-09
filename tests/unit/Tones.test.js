@@ -232,3 +232,37 @@ describe('playTone plays notes', () => {
     }
   });
 });
+
+describe("the enemies' hits share one level knob", () => {
+  // The peak playTone's envelope rose to
+  const peak = (name) => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const { audio, made } = gameAudio();
+    audio.playSound(name);
+    const gain = made.find((n) => n.kind === 'gain');
+    const value = gain.gain.linearRampToValueAtTime.mock.calls[0][0];
+    vi.restoreAllMocks(); // also clears the fake's recorded calls
+    return value;
+  };
+
+  it('every hit preset is marked, and only those', () => {
+    const hits = Object.keys(SOUND_CONFIG).filter((k) => SOUND_CONFIG[k].hit);
+    expect(hits.sort()).toEqual(
+      ['gruntHit', 'rusherHit', 'stabberHit', 'tankHit', 'tankPlateHit'].sort()
+    );
+  });
+
+  it('HITS.LEVEL_DB scales a hit, and nothing else', () => {
+    const saved = CONFIG.HITS.LEVEL_DB;
+    try {
+      CONFIG.HITS.LEVEL_DB = 0;
+      const hit0 = peak('stabberHit');
+      const other0 = peak('gruntOw');
+      CONFIG.HITS.LEVEL_DB = -6;
+      expect(peak('stabberHit') / hit0).toBeCloseTo(10 ** (-6 / 20), 6);
+      expect(peak('gruntOw')).toBeCloseTo(other0, 9);
+    } finally {
+      CONFIG.HITS.LEVEL_DB = saved;
+    }
+  });
+});

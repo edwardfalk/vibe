@@ -579,8 +579,13 @@ export class Audio {
       playerY = this.player.y;
     }
 
-    // Configure gain envelope with proper volume calculation and randomness
-    let volume = config.volume * volumeVariation;
+    // Configure gain envelope with proper volume calculation and randomness;
+    // the enemies' hits share one level knob
+    const level =
+      config.volume *
+      volumeVariation *
+      (config.hit ? 10 ** (CONFIG.HITS.LEVEL_DB / 20) : 1);
+    let volume = level;
     let panValue = 0;
 
     // Only calculate distance-based volume and panning for positioned sounds (enemies)
@@ -591,10 +596,7 @@ export class Audio {
 
       if (!isPlayerSound) {
         // This is an enemy sound - calculate distance-based volume and panning
-        volume =
-          config.volume *
-          volumeVariation *
-          calculateVolumeForPosition(x, y, playerX, playerY);
+        volume = level * calculateVolumeForPosition(x, y, playerX, playerY);
         panValue = calculatePanForPosition(x, playerX);
       }
       // If it's a player sound, keep full volume and center panning (defaults above)

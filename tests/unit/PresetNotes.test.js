@@ -138,7 +138,7 @@ const TABLE = {
     ['5', 1],
   ],
   tankHit: [['1', 1], null],
-  hit: [['5', 5], null],
+  tankPlateHit: [['5', 5], null],
   tankResponse: [['5', 1], null],
   stabberHit: [['5', 6], null],
   stabberOhNo: [

@@ -28,6 +28,7 @@ const PACING = 'PACING';
 const MIX = 'MIX';
 const TONES = 'TONES';
 const HERO_SHOT = 'HERO_SHOT';
+const HITS = 'HITS';
 const RUSHER = 'RUSHER';
 const STABBER = 'STABBER';
 const HITBOX = 'HITBOX';
@@ -87,6 +88,7 @@ const KNOBS = [
   [HERO_SHOT, 'LEVEL_DB', [-24, 12, 1]],
   [HERO_SHOT, 'SOFTEN_DB', [0, 24, 1]],
   [HERO_SHOT, 'SOFTEN_SHOTS', [0, 32, 1]],
+  [HITS, 'LEVEL_DB', [-24, 6, 0.5]],
   [RUSHER, 'BOOST_PX_S', [0, 600, 10]],
   [RUSHER, 'CRUISE_PX_S', [0, 400, 10]],
   [RUSHER, 'BOOST_TAU_SEC', [0.02, 1, 0.01]],

@@ -70,12 +70,15 @@ export const SOUND_CONFIG = {
     duration: 0.4,
     sweep: { to: ['b3', 1], curve: 'exponential' },
   },
-  hit: {
+  // A shot on one of the tank's intact plates: his fifth, high (his root up
+  // there is the hero's tick)
+  tankPlateHit: {
     voice: 'tank',
     note: ['5', 5],
     waveform: 'triangle',
     duration: 0.05,
     volume: 0.4,
+    hit: true,
   },
   shieldBreak: {
     voice: 'hero',
@@ -230,6 +233,7 @@ export const SOUND_CONFIG = {
     waveform: 'square',
     volume: 0.2,
     duration: 0.06,
+    hit: true,
   },
   // The bouncer's shove: a whump falling from the hero's band into the
   // tank's, so it stands apart from the kick it often lands with and from
@@ -248,6 +252,7 @@ export const SOUND_CONFIG = {
     waveform: 'square',
     volume: 0.35,
     duration: 0.2,
+    hit: true,
   },
   stabberHit: {
     voice: 'stabber',
@@ -255,6 +260,7 @@ export const SOUND_CONFIG = {
     waveform: 'triangle',
     volume: 0.3,
     duration: 0.04,
+    hit: true,
   },
   rusherHit: {
     voice: 'rusher',
@@ -262,6 +268,7 @@ export const SOUND_CONFIG = {
     waveform: 'sawtooth',
     volume: 0.3,
     duration: 0.08,
+    hit: true,
   },
   playerDash: {
     waveform: 'noise',
