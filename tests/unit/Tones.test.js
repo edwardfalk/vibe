@@ -1,10 +1,10 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { AMBIENT_SOUNDS } from '../../js/audio/AmbientSoundProfile.js';
 import { crashNoise } from '../../js/audio/CrashSynth.js';
 import { Audio } from '../../js/Audio.js';
 import { CONFIG } from '../../js/config.js';
-import { hz } from '../../js/audio/Harmony.js';
+import { hz, stepUp } from '../../js/audio/Harmony.js';
 
 // A Web Audio stand-in that records the nodes playTone makes
 function fakeAudio() {
@@ -263,6 +263,88 @@ describe("the enemies' hits share one level knob", () => {
       expect(peak('gruntOw')).toBeCloseTo(other0, 9);
     } finally {
       CONFIG.HITS.LEVEL_DB = saved;
+    }
+  });
+});
+
+describe('stepUp walks natural minor', () => {
+  it('steps through the seven degrees and wraps into the next octave', () => {
+    expect(stepUp(['1', 4], 0)).toEqual(['1', 4]);
+    expect(stepUp(['1', 4], 1)).toEqual(['2', 4]);
+    expect(stepUp(['b3', 4], 2)).toEqual(['5', 4]);
+    expect(stepUp(['b7', 4], 1)).toEqual(['1', 5]);
+    expect(stepUp(['5', 6], 5)).toEqual(['b3', 7]);
+    expect(stepUp(['5', 6], 7)).toEqual(['5', 7]);
+    expect(stepUp(['1', 1], 14)).toEqual(['1', 3]);
+  });
+
+  it('throws on the sour b5 and on unknown degrees, as hz does', () => {
+    expect(() => stepUp(['b5', 6], 1)).toThrow();
+    expect(() => stepUp(['3', 4], 1)).toThrow();
+  });
+});
+
+describe('a hit climbs the scale as its enemy weakens', () => {
+  // At 8 steps over a health bar, whatever ?tune or config sets it to
+  let saved;
+  beforeEach(() => {
+    saved = CONFIG.HITS.CLIMB_STEPS;
+    CONFIG.HITS.CLIMB_STEPS = 8;
+  });
+  afterEach(() => {
+    CONFIG.HITS.CLIMB_STEPS = saved;
+  });
+  // The note an enemy's hit plays at `health` of `maxHealth`
+  const startHz = (name, health, maxHealth) => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // no detune
+    const { audio, made } = gameAudio();
+    audio.playSound(name, null, null, { health, maxHealth });
+    const osc = made.find((n) => n.kind === 'osc');
+    const f = osc.frequency.setValueAtTime.mock.calls[0][0];
+    vi.restoreAllMocks(); // also clears the fake's recorded calls
+    return f;
+  };
+  const steppedHz = (name, k) => hz(stepUp(SOUND_CONFIG[name].note, k), 2);
+
+  it('every climbing hit plays its own note at full health', () => {
+    for (const [name, max] of [
+      ['gruntHit', 2],
+      ['tankHit', 60],
+      ['stabberHit', 10],
+    ]) {
+      expect(startHz(name, max, max), name).toBeCloseTo(steppedHz(name, 0), 6);
+    }
+  });
+
+  it("CLIMB_STEPS 8: the stabber's eighth hit (health 3 before it) is 5 steps up, his tenth 7", () => {
+    expect(startHz('stabberHit', 3, 10)).toBeCloseTo(
+      steppedHz('stabberHit', 5),
+      6
+    );
+    expect(startHz('stabberHit', 1, 10)).toBeCloseTo(
+      steppedHz('stabberHit', 7),
+      6
+    );
+  });
+
+  it("the tank's back climbs a step each 7.5 health", () => {
+    expect(startHz('tankHit', 52.5, 60)).toBeCloseTo(
+      steppedHz('tankHit', 1),
+      6
+    );
+    expect(startHz('tankHit', 53, 60)).toBeCloseTo(steppedHz('tankHit', 0), 6);
+  });
+
+  it('CLIMB_STEPS 0 keeps every hit on its note', () => {
+    const saved = CONFIG.HITS.CLIMB_STEPS;
+    try {
+      CONFIG.HITS.CLIMB_STEPS = 0;
+      expect(startHz('stabberHit', 1, 10)).toBeCloseTo(
+        steppedHz('stabberHit', 0),
+        6
+      );
+    } finally {
+      CONFIG.HITS.CLIMB_STEPS = saved;
     }
   });
 });

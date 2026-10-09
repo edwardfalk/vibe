@@ -504,8 +504,11 @@ class Tank extends BaseEnemy {
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     const audio = this.getContextValue('audio');
     this.hitAt = this.poseBeats;
+    // His own hit climbs from his health before it (Audio.playTone); a
+    // plate's never does: three steps up is the hero's tick
+    const before = { health: this.health, maxHealth: this.maxHealth };
     if (bulletAngle === null) {
-      if (audio) audio.playSound('tankHit', this.x, this.y);
+      audio?.playSound('tankHit', this.x, this.y, before);
       return super.takeDamage(amount, bulletAngle, damageSource);
     }
 
@@ -529,14 +532,14 @@ class Tank extends BaseEnemy {
       this.breakArmor(side);
       this.trackAnger(damageSource);
       // One impact sound besides the clang: his, if damage is left over
-      const impact = overflow > 0 ? 'tankHit' : 'tankPlateHit';
-      audio?.playSound(impact, this.x, this.y);
+      if (overflow > 0) audio?.playSound('tankHit', this.x, this.y, before);
+      else audio?.playSound('tankPlateHit', this.x, this.y);
       if (overflow <= 0) return DAMAGE_RESULT.DAMAGED;
       return super.takeDamage(overflow, bulletAngle, damageSource);
     }
 
     this.backHitAt = this.poseBeats; // his bare back, or skin under a broken plate
-    if (audio) audio.playSound('tankHit', this.x, this.y);
+    audio?.playSound('tankHit', this.x, this.y, before);
     this.trackAnger(damageSource);
     return super.takeDamage(amount, bulletAngle, damageSource);
   }

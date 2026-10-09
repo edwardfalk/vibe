@@ -62,3 +62,20 @@ export function hz([degree, octave], t = 0) {
     2 ** (driftCents(t) / CENTS_PER_OCTAVE)
   );
 }
+
+/** Natural minor's seven degrees in order: the steps a climb walks */
+const SCALE = ['1', '2', 'b3', '4', '5', 'b6', 'b7'];
+
+/**
+ * The note k steps of natural minor above `note`, wrapping into the next
+ * octave. Throws on a degree outside the seven (the sour b5 included), as
+ * hz does on an unknown one.
+ * @param {[string, number]} note [degree, octave]
+ * @param {number} k a whole number of steps, 0 or more
+ */
+export function stepUp([degree, octave], k) {
+  const i = SCALE.indexOf(degree);
+  if (i < 0) throw new Error(`Not a degree of the scale: ${degree}`);
+  const j = i + k;
+  return [SCALE[j % SCALE.length], octave + Math.floor(j / SCALE.length)];
+}

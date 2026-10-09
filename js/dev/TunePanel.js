@@ -89,6 +89,7 @@ const KNOBS = [
   [HERO_SHOT, 'SOFTEN_DB', [0, 24, 1]],
   [HERO_SHOT, 'SOFTEN_SHOTS', [0, 32, 1]],
   [HITS, 'LEVEL_DB', [-24, 6, 0.5]],
+  [HITS, 'CLIMB_STEPS', [0, 14, 1]],
   [RUSHER, 'BOOST_PX_S', [0, 600, 10]],
   [RUSHER, 'CRUISE_PX_S', [0, 400, 10]],
   [RUSHER, 'BOOST_TAU_SEC', [0.02, 1, 0.01]],

@@ -395,6 +395,8 @@ class Grunt extends BaseEnemy {
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     // Reject further damage while deferred death is pending
     if (this.pendingStabDeath) return DAMAGE_RESULT.DAMAGED;
+    // His hit climbs from his health before it (Audio.playTone)
+    const before = { health: this.health, maxHealth: this.maxHealth };
 
     if (
       damageSource === 'stabber_melee' &&
@@ -417,7 +419,7 @@ class Grunt extends BaseEnemy {
     const died = result === DAMAGE_RESULT.DIED;
     const audioSurv = this.getContextValue('audio');
     if (damageSource !== 'stabber_melee' && !died && audioSurv) {
-      audioSurv.playSound('gruntHit', this.x, this.y);
+      audioSurv.playSound('gruntHit', this.x, this.y, before);
     }
     if (
       damageSource === 'stabber_melee' &&

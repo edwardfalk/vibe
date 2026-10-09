@@ -108,11 +108,15 @@ const CONFIG = {
   },
 
   // The enemies' hit sounds (SoundConfig's presets with hit: true): one per
-  // hit, on the enemy's note. Tune live with ?tune.
+  // hit, on the enemy's note, climbing as he weakens. Tune live with ?tune.
   HITS: {
     // On each hit preset's volume: each enemy's hit 4.6-7.4 dB under today's
-    // two-sound hit (measured offline, loudest 50 ms above 250 Hz)
+    // two-sound hit at his own note, the tank's back 4.2 dB under at the top
+    // of his climb (measured offline, loudest 50 ms above 250 Hz)
     LEVEL_DB: -2.5,
+    // A hit climbs this many steps of the scale over its enemy's whole
+    // health bar, so it rises as he weakens; 0 = always his note
+    CLIMB_STEPS: 8,
   },
 
   // The hero's shot (js/audio/Instruments.js): one of four sounds from the

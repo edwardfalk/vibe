@@ -56,7 +56,7 @@ import {
 } from './audio/DeathSounds.js';
 import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
 import { Hum } from './audio/Hum.js';
-import { hz } from './audio/Harmony.js';
+import { hz, stepUp } from './audio/Harmony.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
 const DUCK_ATTACK_SEC = 0.05;
@@ -293,7 +293,12 @@ export class Audio {
   // SOUND EFFECTS
   // ========================================================================
 
-  playSound(soundName, x = null, y = null) {
+  /**
+   * A preset by name from (x, y); an enemy's hit also passes its health
+   * before the hit, `{ health, maxHealth }`, and climbs the scale as it
+   * weakens (playTone)
+   */
+  playSound(soundName, x = null, y = null, opts = null) {
     if (!this.ensureAudioContext()) return;
 
     const soundConfig = this.sounds[soundName];
@@ -307,7 +312,7 @@ export class Audio {
       if (soundConfig.synth) {
         this.playSynth(soundConfig, x, y);
       } else {
-        this.playTone(soundConfig, x, y, soundName);
+        this.playTone(soundConfig, x, y, soundName, opts);
       }
     } catch (error) {
       // An error, not a warning, so the browser tests catch a broken sound
@@ -520,7 +525,7 @@ export class Audio {
     });
   }
 
-  playTone(config, x, y, soundName = '') {
+  playTone(config, x, y, soundName = '', opts = null) {
     const ctx = this.audioContext;
     // Noise (the dash, the frying) is the shared noise through a band-pass
     const noise = config.waveform === 'noise';
@@ -532,7 +537,14 @@ export class Audio {
       (config.detuneCents ?? 0);
     const detune = 2 ** (cents / CENTS_PER_OCTAVE);
     const now = ctx.currentTime;
-    const startHz = noise ? null : hz(config.note, now) * detune;
+    // An enemy's hit climbs CLIMB_STEPS steps over its whole health bar
+    let note = config.note;
+    if (opts?.maxHealth > 0) {
+      const lost = Math.max(0, opts.maxHealth - opts.health);
+      const k = Math.floor((CONFIG.HITS.CLIMB_STEPS * lost) / opts.maxHealth);
+      note = stepUp(note, k);
+    }
+    const startHz = noise ? null : hz(note, now) * detune;
     const endHz =
       config.sweep && !noise ? hz(config.sweep.to, now) * detune : null;
     const volumeVariation = 1 + (random() - 0.5) * 0.15;
