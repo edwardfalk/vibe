@@ -397,3 +397,96 @@ describe("the hero's shot in the game", () => {
     });
   });
 });
+
+describe('the shot booked on its eighth', () => {
+  // The tick: its oscillator's start and its accent are what is read
+  let savedSound;
+  beforeEach(() => {
+    savedSound = CONFIG.HERO_SHOT.SOUND;
+    CONFIG.HERO_SHOT.SOUND = 'tick';
+  });
+  afterEach(() => (CONFIG.HERO_SHOT.SOUND = savedSound));
+
+  // The game's Audio at audio time `now`, its beat clock on the same context
+  // (grid from 1 s, an eighth every 0.25 s: eighth 8 is at 3 s) unless
+  // `otherClock`; 48 kHz, so a render quantum is 2.7 ms
+  function at(now, { otherClock = false } = {}) {
+    const { audio, ctx, made } = gameAudio();
+    ctx.sampleRate = 48000;
+    ctx.currentTime = now;
+    const clock = {
+      audioContext: otherClock ? {} : ctx,
+      startTime: 1000,
+      beatInterval: 500,
+      getBeatPosition: () => (ctx.currentTime * 1000 - 1000) / 500,
+    };
+    audio.getContextValue = (key) => (key === 'beatClock' ? clock : undefined);
+    audio.playSound('playerShoot', 0, 0);
+    const [osc] = made.filter((n) => n.kind === 'osc');
+    const env = made.filter((n) => n.kind === 'gain')[1];
+    return { start: osc.start.mock.calls[0][0], accent: peakOf(env) / 0.2 };
+  }
+
+  it('a shot 10 ms before an eighth starts exactly on it', () => {
+    expect(at(2.99).start).toBe(3);
+  });
+
+  it('one 25 ms before still does; one 40 ms before plays now', () => {
+    expect(at(2.975).start).toBe(3);
+    expect(at(2.96).start).toBe(2.96);
+  });
+
+  it('one closer than a render quantum (1 ms) plays now, not in the past', () => {
+    expect(at(2.999).start).toBe(2.999);
+  });
+
+  it('one 5 ms after its eighth plays now, and is told that eighth', () => {
+    const shot = at(3.005);
+    expect(shot.start).toBe(3.005);
+    expect(shot.accent).toBeCloseTo(0.65, 6); // eighth 8: on the beat
+  });
+
+  it('it is told the eighth it lands on: the "and" for 3.25 s', () => {
+    expect(at(3.24).accent).toBeCloseTo(1, 6);
+    expect(at(3.24).start).toBe(3.25);
+  });
+
+  it('a beat clock on another AudioContext books nothing', () => {
+    expect(at(2.99, { otherClock: true }).start).toBe(2.99);
+  });
+
+  it('every one of the four sounds starts on the booked eighth, sources and envelopes alike', () => {
+    for (const sound of HERO_SHOT_SOUNDS) {
+      CONFIG.HERO_SHOT.SOUND = sound;
+      const { audio, ctx, made } = gameAudio();
+      ctx.sampleRate = 48000;
+      ctx.currentTime = 2.99; // 10 ms before eighth 8, at 3 s
+      const clock = {
+        audioContext: ctx,
+        startTime: 1000,
+        beatInterval: 500,
+        getBeatPosition: () => (ctx.currentTime * 1000 - 1000) / 500,
+      };
+      audio.getContextValue = (key) =>
+        key === 'beatClock' ? clock : undefined;
+      audio.playSound('playerShoot', 0, 0);
+      const sources = made.filter((n) => n.start.mock.calls.length);
+      expect(sources.length, sound).toBeGreaterThan(0);
+      for (const n of sources) {
+        expect(n.start.mock.calls[0][0], `${sound} ${n.kind}`).toBe(3);
+      }
+      for (const n of made.filter((m) => m.kind === 'gain')) {
+        expect(n.gain.setValueAtTime.mock.calls[0][1], sound).toBe(3);
+      }
+    }
+  });
+
+  it('with no beat clock it plays now', () => {
+    const { audio, ctx, made } = gameAudio();
+    ctx.currentTime = 2.99;
+    audio.getContextValue = () => undefined;
+    audio.playSound('playerShoot', 0, 0);
+    const [osc] = made.filter((n) => n.kind === 'osc');
+    expect(osc.start).toHaveBeenCalledWith(2.99);
+  });
+});

@@ -73,6 +73,10 @@ const CENTS_PER_OCTAVE = 1200;
 const MAX_START_OFFSET_SEC = 0.005;
 // A hero shot this close (beats) to the last continues their run (heroRunLevel)
 const RUN_GAP_BEATS = 0.75;
+// A hero shot this far (s) before its eighth is booked on it (heroShotTiming)
+const SNAP_SEC = 0.03;
+// Web Audio renders in blocks of this many frames
+const RENDER_QUANTUM_FRAMES = 128;
 
 /** The master limiter, so concurrent sounds can't clip (also the loudness test's) */
 export function createMasterLimiter(ctx) {
@@ -353,14 +357,29 @@ export class Audio {
   }
 
   /**
-   * When the hero's shot plays, the eighth it is told (BeatClock's nearest),
-   * and its level: shots in a row (held fire) soften (heroRunLevel)
+   * When the hero's shot plays, the eighth it is told, its level (shots in a
+   * row soften: heroRunLevel), and the audio time it decided at (`now`). Held fire fires up to 20 ms before its
+   * eighth (BeatClock.isOnEighthNote), so a shot whose nearest eighth is
+   * still ahead, by at least one render quantum (or it would land in the
+   * past) and at most SNAP_SEC, is booked on that eighth; any other plays
+   * now. It books only on a beat clock that runs on this AudioContext (as
+   * BeatTrack checks before every kick). It is told the nearest eighth.
    */
   heroShotTiming() {
     const clock = this.getContextValue('beatClock');
-    const at = this.audioContext.currentTime;
-    const eighth = clock ? Math.round(clock.getBeatPosition() * 2) : 0;
-    return { at, eighth, level: this.heroRunLevel(at, clock) };
+    const ctx = this.audioContext;
+    const now = ctx.currentTime;
+    let at = now;
+    let eighth = clock ? Math.round(clock.getBeatPosition() * 2) : 0;
+    if (clock?.audioContext === ctx) {
+      const origin = clock.startTime / MS_PER_SEC;
+      const step = clock.beatInterval / 2 / MS_PER_SEC;
+      eighth = Math.round((now - origin) / step);
+      const ahead = origin + eighth * step - now;
+      const quantum = RENDER_QUANTUM_FRAMES / ctx.sampleRate;
+      if (ahead >= quantum && ahead <= SNAP_SEC) at = origin + eighth * step;
+    }
+    return { now, at, eighth, level: this.heroRunLevel(at, clock) };
   }
 
   /**
