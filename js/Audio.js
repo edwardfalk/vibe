@@ -444,7 +444,11 @@ export class Audio {
   }
 
   playTone(config, x, y, soundName = '') {
-    const oscillator = this.audioContext.createOscillator();
+    // Noise (the dash, the frying) is the shared noise through a band-pass
+    const noise = config.waveform === 'noise';
+    const oscillator = noise
+      ? this.audioContext.createBufferSource()
+      : this.audioContext.createOscillator();
     const gainNode = this.audioContext.createGain();
     const panNode = this.audioContext.createStereoPanner();
 
@@ -454,17 +458,25 @@ export class Audio {
     const volumeVariation = 1 + (random() - 0.5) * 0.15;
     const durationVariation = 1 + (random() - 0.5) * 0.2;
 
-    // Configure oscillator with randomness
-    oscillator.type =
-      config.waveform === 'noise' ? 'sawtooth' : config.waveform;
-    const startFreq = config.frequency * frequencyVariation;
-    oscillator.frequency.setValueAtTime(
-      startFreq,
-      this.audioContext.currentTime
-    );
+    let band = null;
+    if (noise) {
+      oscillator.buffer = crashNoise(this.audioContext);
+      band = this.audioContext.createBiquadFilter();
+      band.type = 'bandpass';
+      band.frequency.setValueAtTime(
+        config.bandHz,
+        this.audioContext.currentTime
+      );
+    } else {
+      oscillator.type = config.waveform;
+      oscillator.frequency.setValueAtTime(
+        config.frequency * frequencyVariation,
+        this.audioContext.currentTime
+      );
+    }
 
     // Optional pitch sweep (e.g. the falling "oh no!" sounds)
-    if (config.sweep) {
+    if (config.sweep && !noise) {
       const endFreq = config.sweep.to * frequencyVariation;
       const sweepDuration = config.duration * durationVariation;
 
@@ -532,7 +544,12 @@ export class Audio {
 
     // Connect nodes - add reverb for ambient enemy sounds
     const tremoloGain = this.audioContext.createGain();
-    oscillator.connect(tremoloGain);
+    if (band) {
+      oscillator.connect(band);
+      band.connect(tremoloGain);
+    } else {
+      oscillator.connect(tremoloGain);
+    }
     tremoloGain.connect(gainNode);
     gainNode.connect(panNode);
 
@@ -622,6 +639,7 @@ export class Audio {
       oscillator.onended = () => {
         try {
           oscillator.disconnect();
+          band?.disconnect();
           tremoloGain.disconnect();
           gainNode.disconnect();
           panNode.disconnect();

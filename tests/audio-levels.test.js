@@ -129,3 +129,76 @@ test('a bad root costs only the hum: the kick and the effects play on', async ({
   // Audio's and the kick's, each logged once
   expect(errors.filter((e) => e.includes('The hum failed'))).toHaveLength(2);
 });
+
+// The dash and the frying became noise through a band-pass (audio PR 2).
+// They keep their old saw's level against the kick, as laptop speakers hear
+// it (loudest 50 ms above 250 Hz), measured on 59b8f7d
+const NOISE_OVER_KICK_DB = { playerDash: 0.1, enemyFrying: 2.7 };
+const NOISE_TOLERANCE_DB = 1.5;
+
+test('the dash and the frying, now noise, keep their level against the kick', async ({
+  page,
+}) => {
+  await page.goto('/tests/helpers/speech-gate.html');
+  const overKick = await page.evaluate(async (names) => {
+    Math.random = () => 0.5; // no random level or length
+    const { CONFIG } = await import('/js/config.js');
+    const { Audio } = await import('/js/Audio.js');
+    const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
+    const { BeatTrack, clickNoise } = await import('/js/audio/BeatTrack.js');
+    const RATE = 44100;
+    const AT = 0.05;
+    const WINDOW = Math.round(RATE * 0.05);
+    // dB of the loudest 50 ms that play() sends through a 250 Hz high-pass
+    async function loudest(play) {
+      const ctx = new OfflineAudioContext(1, RATE, RATE);
+      const highpass = new BiquadFilterNode(ctx, {
+        type: 'highpass',
+        frequency: 250,
+        Q: 0.7,
+      });
+      highpass.connect(ctx.destination);
+      play(ctx, highpass);
+      const data = (await ctx.startRendering()).getChannelData(0);
+      let loud = 0;
+      for (let i = 0; i + WINDOW <= data.length; i += WINDOW >> 2) {
+        let sum = 0;
+        for (let j = i; j < i + WINDOW; j++) sum += data[j] ** 2;
+        loud = Math.max(loud, sum / WINDOW);
+      }
+      return 10 * Math.log10(loud);
+    }
+    const kick = await loudest((ctx, out) => {
+      const track = new BeatTrack({});
+      track.ctx = ctx;
+      track.masterGain = new GainNode(ctx, {
+        gain: CONFIG.MIX.BEAT_TRACK_VOLUME,
+      });
+      track.masterGain.connect(out);
+      track._noiseBuffer = clickNoise(ctx);
+      track._playKick(AT);
+    });
+    const over = {};
+    for (const name of names) {
+      const level = await loudest((ctx, out) => {
+        const audio = Object.assign(Object.create(Audio.prototype), {
+          audioContext: ctx,
+          masterGain: out,
+          effects: { reverb: null },
+          player: { x: 0, y: 0 },
+          context: null,
+        });
+        audio.playTone(SOUND_CONFIG[name], null, null, name);
+      });
+      over[name] = level - kick;
+    }
+    return over;
+  }, Object.keys(NOISE_OVER_KICK_DB));
+  console.log('noise over the kick, dB:', overKick);
+  for (const [name, db] of Object.entries(NOISE_OVER_KICK_DB)) {
+    expect(overKick[name], name).toBeGreaterThanOrEqual(
+      db - NOISE_TOLERANCE_DB
+    );
+    expect(overKick[name], name).toBeLessThanOrEqual(db + NOISE_TOLERANCE_DB);
+  }
+});

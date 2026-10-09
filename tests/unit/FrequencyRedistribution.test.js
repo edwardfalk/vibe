@@ -7,7 +7,7 @@ import { hz, ROOTS } from '../../js/audio/Harmony.js';
 describe('Frequency redistribution', () => {
   it('player sounds should be in low-mid band (150-250Hz)', () => {
     expect(SOUND_CONFIG.playerShoot.frequency).toBe(220);
-    expect(SOUND_CONFIG.playerDash.frequency).toBe(200);
+    expect(SOUND_CONFIG.playerDash.bandHz).toBe(200);
   });
 
   it('rusher sounds: the charge in the upper mids, the crash above the stabbers and the kick click', () => {

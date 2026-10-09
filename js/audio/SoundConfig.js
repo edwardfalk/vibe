@@ -78,11 +78,14 @@ export const SOUND_CONFIG = {
     volume: 0.4,
     duration: 0.3,
   },
+  // Noise through a band-pass at bandHz (Audio.playTone). The band keeps a
+  // small share of the noise, so the volume is set to keep the old saw's
+  // level against the kick (tests/audio-levels.test.js)
   enemyFrying: {
-    frequency: 1400,
     waveform: 'noise',
+    bandHz: 1400,
     duration: 0.3,
-    volume: 0.3,
+    volume: 0.8,
   },
   tankCharging: {
     frequency: 70,
@@ -119,7 +122,6 @@ export const SOUND_CONFIG = {
     tremolo: true,
     sweep: { to: 120, curve: 'exponential' },
   },
-  enemyIdle: { frequency: 200, waveform: 'sine', volume: 0.2, duration: 0.8 },
   tankPowerUp: {
     frequency: 60,
     waveform: 'square',
@@ -218,9 +220,9 @@ export const SOUND_CONFIG = {
     duration: 0.08,
   },
   playerDash: {
-    frequency: 200,
     waveform: 'noise',
-    volume: 0.3,
+    bandHz: 200,
+    volume: 1.65, // see enemyFrying
     duration: 0.15,
   },
   levelUp: {
