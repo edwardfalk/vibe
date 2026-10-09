@@ -18,7 +18,6 @@ import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
 import { BOMB_PLANTED, COUNTDOWN } from '../audio/DialogueLines.js';
-import { LEAD_SEC } from '../audio/speech/Voicebox.js';
 
 const COUNT_EVERY_BEATS = 2;
 const AMBER_LEFT = 0.34; // its light goes white-hot for the last third
@@ -44,22 +43,9 @@ const backOf = (tank) =>
     tank.facing
   );
 // Beats since its beat 0, the first whole beat at least COUNT_LEAD_BEATS
-// after his shout starts
+// after his shout starts (after the touch until Voicebox has scheduled it)
 const fuseOf = (bomb, beats) =>
   beats - Math.ceil(bomb.plantedAt + CONFIG.BOMB.COUNT_LEAD_BEATS);
-// Voicebox looks at the clock for a line once the frame that asked for it is
-// done, not at the touch; the audio clock runs on meanwhile
-const SHOUT_CLOCK_SLACK_SEC = 0.05;
-const EIGHTHS_PER_BEAT = 2;
-// The latest beat position his "TIMEBOMB!" can start at. Voicebox starts a
-// line at once inside an eighth's window, else on the next eighth at least
-// LEAD_SEC ahead of its look at the clock (startTime): never after the first
-// eighth past that look + LEAD_SEC. Without a clock on audio time, at once.
-function shoutStart(clock, now) {
-  if (!clock.audioContext) return now;
-  const late = (SHOUT_CLOCK_SLACK_SEC + LEAD_SEC) / (clock.beatInterval / 1000);
-  return Math.ceil((now + late) * EIGHTHS_PER_BEAT) / EIGHTHS_PER_BEAT;
-}
 // Its damage at a point: from hi at its centre to lo at its reach, 0 beyond;
 // never above hi, so a max of 0 deals none
 function blastAt(bomb, x, y, lo, hi) {
@@ -78,19 +64,31 @@ export function plantBomb(activeBombs, tank, beatClock, audio = null) {
   if (activeBombs.length >= CONFIG.BOMB.MAX_ACTIVE) return;
   if (activeBombs.some((bomb) => bomb.tankId === tank.id)) return; // one each
   const now = beatClock.getBeatPosition();
-  activeBombs.push({
+  const bomb = {
     ...backOf(tank),
     facing: tank.facing,
-    plantedAt: shoutStart(beatClock, now), // its count is timed from here
+    plantedAt: now, // its count is timed from here, then from his shout
     seenAt: now, // the beat position of its last update
     beatSec: beatClock.beatInterval / 1000,
     said: 0, // how many of "3, 2, 1" it has said
     tankId: tank.id,
     tankRef: tank,
-  });
+  };
+  activeBombs.push(bomb);
   // From the hero (no speaker is the hero), so it shows over him and not
-  // under the count on the bomb
-  audio?.speak?.(null, BOMB_PLANTED, 'player', true);
+  // under the count on the bomb. Its count waits for the shout's real start:
+  // Voicebox schedules it after this frame, or after a render, and it lands
+  // on the eighth after that. Its news comes within MAX_WAIT_MS, before the
+  // count's beat 0; a dropped shout leaves the count timed from the touch.
+  audio?.speak?.(null, BOMB_PLANTED, 'player', true, (startsAt) => {
+    if (!beatClock.audioContext) return; // its beats aren't audio seconds
+    const at = (startsAt - beatClock.startTime / 1000) / bomb.beatSec;
+    if (at <= bomb.plantedAt) return;
+    bomb.plantedAt = at;
+    // A stall before this (a hidden tab) is in that start already: the
+    // next update mustn't add its beats again as missed
+    bomb.seenAt = Math.max(bomb.seenAt, beatClock.getBeatPosition());
+  });
 }
 
 export function updateBombs(context) {

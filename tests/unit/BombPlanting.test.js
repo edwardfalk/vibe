@@ -75,7 +75,7 @@ describe("planting the hero's bomb", () => {
     // and not under the count on the bomb; forced past the gap between his
     // lines, as the count is
     expect(audio.speak.mock.calls).toEqual([
-      [null, 'TIMEBOMB!', 'player', true],
+      [null, 'TIMEBOMB!', 'player', true, expect.any(Function)],
     ]);
   });
 
@@ -305,7 +305,7 @@ describe('the bomb, on the beat', () => {
 });
 
 describe('"TIMEBOMB!" and the count', () => {
-  it('his "TIMEBOMB!", in his voice as cast, ends before the "3", wherever in a beat he plants', async () => {
+  it('his "TIMEBOMB!", in his voice as cast, ends before the "3", wherever in a beat he plants and however late it is scheduled', async () => {
     const cast = CONFIG.SPEECH.SPEAKERS.player;
     const engine = { sam, espeak }[cast.engine];
     const words = spoken(cast.engine, BOMB_PLANTED);
@@ -315,39 +315,82 @@ describe('"TIMEBOMB!" and the count', () => {
     // step finely, or the "3" is found late and an overlap hides
     const STEP_SEC = 0.0005;
     const PLANTS = 200; // across a beat, so some fall just before an eighth
-    for (let k = 0; k < PLANTS; k++) {
-      // A clock on audio time from 0, as the game's: beat n at n × 0.5 s
-      const ctx = { currentTime: 0 };
-      const clock = new BeatClock(120, ctx);
-      const plantedAt = 10 + k / PLANTS;
-      ctx.currentTime = plantedAt * 0.5;
-      const audio = createMockAudio();
-      const activeBombs = [];
-      plantBomb(activeBombs, touchingTank('t'), clock, audio);
-      // It starts on the grid as Voicebox would start it, already rendered,
-      // from its look at the clock once the frame is done: at the touch, or
-      // one or two 60 fps frames later
-      const FRAME_SEC = 1 / 60;
-      const shoutEnds =
-        Math.max(
-          ...[0, FRAME_SEC, 2 * FRAME_SEC].map((late) =>
-            startTime(ctx.currentTime + late, clock)
-          )
-        ) + shoutSec;
-      let threeAt = null;
-      audio.speak.mockImplementation((_e, word) => {
-        if (word === '3') threeAt = ctx.currentTime;
-        return true;
-      });
-      while (threeAt === null) {
-        ctx.currentTime += STEP_SEC;
-        updateBombs({ activeBombs, enemies: [], audio, beatClock: clock });
+    // Voicebox looks at the clock once the frame is done, or once a render
+    // it waited for is ready (up to MAX_WAIT_MS); then it tells the bomb
+    const LOOKS_LATE_SEC = [0, 1 / 60, 0.1, 0.5];
+    const ORIGIN_SEC = 3.21;
+    for (const late of LOOKS_LATE_SEC) {
+      for (let k = 0; k < PLANTS; k++) {
+        // A clock on audio time, as the game's, started a while after the
+        // audio was: beat n at ORIGIN_SEC + n × 0.5 s
+        const ctx = { currentTime: ORIGIN_SEC };
+        const clock = new BeatClock(120, ctx);
+        const plantedAt = 10 + k / PLANTS;
+        const touchSec = ORIGIN_SEC + plantedAt * 0.5;
+        ctx.currentTime = touchSec;
+        const audio = createMockAudio();
+        let onStart = null;
+        let shoutAt = null;
+        let threeAt = null;
+        audio.speak.mockImplementation((_e, word, _v, _f, started) => {
+          if (word === BOMB_PLANTED) onStart = started;
+          if (word === '3') threeAt = ctx.currentTime;
+          return true;
+        });
+        const activeBombs = [];
+        plantBomb(activeBombs, touchingTank('t'), clock, audio);
+        while (threeAt === null) {
+          if (shoutAt === null && ctx.currentTime >= touchSec + late) {
+            shoutAt = startTime(ctx.currentTime, clock); // as Voicebox does
+            onStart?.(shoutAt);
+          }
+          ctx.currentTime += STEP_SEC;
+          updateBombs({ activeBombs, enemies: [], audio, beatClock: clock });
+        }
+        const shoutEnds = shoutAt + shoutSec;
+        expect(
+          shoutEnds,
+          `planted at beat ${plantedAt.toFixed(3)}, scheduled ${late * 1000} ms later: "TIMEBOMB!" (${shoutSec.toFixed(3)} s) ends at ${shoutEnds.toFixed(4)} s, "3" at ${threeAt.toFixed(4)} s; raise CONFIG.BOMB.COUNT_LEAD_BEATS`
+        ).toBeLessThanOrEqual(threeAt);
+        // and no later than it must: the first whole beat at least the
+        // lead after the shout starts
+        const latestSec = (CONFIG.BOMB.COUNT_LEAD_BEATS + 1) * 0.5 + STEP_SEC;
+        expect(threeAt - shoutAt, 'the "3" comes late').toBeLessThanOrEqual(
+          latestSec
+        );
       }
-      expect(
-        shoutEnds,
-        `planted at beat ${plantedAt.toFixed(3)}: "TIMEBOMB!" (${shoutSec.toFixed(3)} s) ends at ${shoutEnds.toFixed(4)} s, "3" at ${threeAt.toFixed(4)} s; raise CONFIG.BOMB.COUNT_LEAD_BEATS`
-      ).toBeLessThanOrEqual(threeAt);
     }
+  }, 60000);
+
+  it('a stall before the shout is scheduled delays the count once, not twice', () => {
+    // A clock on audio time; the bomb is planted at beat 10.3
+    const ORIGIN_SEC = 3.21;
+    const ctx = { currentTime: ORIGIN_SEC };
+    const clock = new BeatClock(120, ctx);
+    ctx.currentTime = ORIGIN_SEC + 10.3 * 0.5;
+    const audio = createMockAudio();
+    let onStart = null;
+    let threeAt = null;
+    audio.speak.mockImplementation((_e, word, _v, _f, started) => {
+      if (word === BOMB_PLANTED) onStart = started;
+      if (word === '3') threeAt = clock.getBeatPosition();
+      return true;
+    });
+    const activeBombs = [];
+    plantBomb(activeBombs, touchingTank('t'), clock, audio);
+    // A hidden tab: ten beats with no frame, and the shout is scheduled
+    // before the next one
+    ctx.currentTime += 10.2 * 0.5;
+    const shoutBeat = clock.getBeatPosition();
+    onStart(startTime(ctx.currentTime, clock));
+    while (threeAt === null && clock.getBeatPosition() < 40) {
+      ctx.currentTime += 0.01;
+      updateBombs({ activeBombs, enemies: [], audio, beatClock: clock });
+    }
+    // The count follows the shout, as without the stall
+    expect(threeAt - shoutBeat).toBeLessThanOrEqual(
+      CONFIG.BOMB.COUNT_LEAD_BEATS + 1
+    );
   });
 });
 
