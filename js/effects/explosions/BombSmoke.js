@@ -116,6 +116,7 @@ const GLOW_CELL = 64;
 // outside; wisps breaking off the edge and drifting away; a small hot core.
 // Dirty rust-orange when fresh, cooling to an ash smoulder.
 const SMOKE = {
+  PUFF_R: 80, // px: the cloud's radius its puffs' sizes are drawn for; they scale with its real one
   EDGE_N: 26,
   EDGE_PR: [9, 25], // puff radius, px, most of them small
   EDGE_SINK: 0.95, // an edge puff's centre sits this many radii inside the edge
@@ -211,10 +212,10 @@ function smokePlace(puffs, k) {
       pr =
         pf.pr *
         (1 + SMOKE.BILLOW * k.kick * (0.6 + 0.4 * Math.sin(pf.ph))) *
-        (0.8 + 0.2 * (k.R / 80));
+        (0.8 + 0.2 * (k.R / SMOKE.PUFF_R));
       d = k.R - pr * SMOKE.EDGE_SINK + pf.j;
     } else {
-      pr = pf.pr * (k.R / 80) * (1 + 0.04 * k.kick);
+      pr = pf.pr * (k.R / SMOKE.PUFF_R) * (1 + 0.04 * k.kick);
       d = pf.d * k.R;
     }
     out.push({ x: Math.cos(a) * d, y: Math.sin(a) * d, pr });
