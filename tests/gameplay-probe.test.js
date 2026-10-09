@@ -459,9 +459,11 @@ test.describe('Gameplay Probes', () => {
     expect(bullets).toBeGreaterThanOrEqual(1);
   });
 
-  test('Held keyboard fire lands on eighth notes', async ({ page }) => {
+  test('Held keyboard fire lands on eighth notes, and its sound exactly on them', async ({
+    page,
+  }) => {
     await bootGame(page);
-    const offsets = await page.evaluate(async () => {
+    const { offsets, sounds } = await page.evaluate(async () => {
       const p = window.player;
       const clock = window.beatClock;
       const fire = p.fireBullet.bind(p);
@@ -472,19 +474,88 @@ test.describe('Gameplay Probes', () => {
         out.push(Math.min(t % eighth, eighth - (t % eighth)));
         return fire(...a);
       };
+      // Each shot's sound: when it was handed to Web Audio, and the start
+      // times its sources were given
+      const { SYNTHS } = await import('/js/audio/Instruments.js');
+      const synth = SYNTHS.heroShot;
+      const proto = AudioScheduledSourceNode.prototype;
+      const start = proto.start;
+      const sounds = [];
+      let shot = null;
+      // The audio time each shot was decided at, as heroShotTiming read it:
+      // the clock moves within a task, so it is never read a second time
+      const audio = window.audio;
+      const timing = audio.heroShotTiming.bind(audio);
+      let decided = null;
+      audio.heroShotTiming = () => (decided = timing());
+      SYNTHS.heroShot = (ctx, ...rest) => {
+        shot = {
+          handedAt: decided.now,
+          starts: [],
+          origin: clock.startTime / 1000,
+          step: clock.beatInterval / 2000,
+          quantum: 128 / ctx.sampleRate,
+        };
+        try {
+          return synth(ctx, ...rest);
+        } finally {
+          sounds.push(shot);
+          shot = null;
+        }
+      };
+      proto.start = function (when = 0, ...rest) {
+        shot?.starts.push(when);
+        return start.call(this, when, ...rest);
+      };
       window.dispatchEvent(
         new KeyboardEvent('keydown', { code: 'ShiftLeft', shiftKey: true })
       );
       await new Promise((r) => setTimeout(r, 2000));
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'ShiftLeft' }));
       p.fireBullet = fire;
-      return out;
+      SYNTHS.heroShot = synth;
+      audio.heroShotTiming = timing;
+      proto.start = start;
+      return { offsets: out, sounds };
     });
     // The first shot is immediate; every later one is on an eighth note
     const sustained = offsets.slice(1);
     expect(sustained.length).toBeGreaterThanOrEqual(4);
     const tol = await page.evaluate(() => window.beatClock.eighthNoteTolerance);
     for (const o of sustained) expect(o).toBeLessThanOrEqual(tol + 17); // + one frame
+
+    // A held shot that fired just before its eighth (by at least one render
+    // quantum, at most 30 ms) has its sound booked on that eighth; any other
+    // plays at once. Held fire may also fire up to 20 ms after its eighth
+    // (the window is open both sides), so not every shot can be booked
+    const held = sounds.slice(1);
+    expect(held.length).toBe(sustained.length);
+    const signedOff = (s, t) => {
+      const n = Math.round((t - s.origin) / s.step);
+      return t - (s.origin + n * s.step);
+    };
+    const booked = held.filter((s) => s.starts[0] > s.handedAt);
+    const rest = held.filter((s) => !booked.includes(s));
+    console.log(
+      `${booked.length} of ${held.length} held shots booked; the rest fired`,
+      rest.map((s) => `${(signedOff(s, s.handedAt) * 1000).toFixed(1)} ms`)
+    );
+    // Booked shots start on their eighth, handed over in time
+    for (const s of booked) {
+      for (const t of s.starts) {
+        expect(Math.abs(signedOff(s, t))).toBeLessThanOrEqual(0.003);
+        expect(t - s.handedAt).toBeGreaterThanOrEqual(s.quantum - 1e-9);
+      }
+    }
+    // None that played at once could have been booked
+    for (const s of rest) {
+      const off = signedOff(s, s.handedAt);
+      expect(off > -0.03 && off <= -s.quantum, `${off}`).toBe(false);
+    }
+    // And the test can't pass on late shots alone. How many fire after
+    // their eighth depends on the frame rate: on a GPU at 60 fps about 5%,
+    // in software rendering half or more
+    expect(booked.length).toBeGreaterThanOrEqual(1);
   });
 
   test("Kick locks to the enemies' beat, including after a restart", async ({

@@ -79,11 +79,9 @@ export function handleDamageResult(result, enemy, ctx) {
   return result;
 }
 
+// The hit's spark; its sound is the enemy's own, played in its takeDamage
 function addHitEffect(ctx, x, y) {
   if (ctx.explosionManager) {
     ctx.explosionManager.addExplosion(x, y, 'hit');
-  }
-  if (ctx.audio) {
-    ctx.audio.playSound('hit', x, y);
   }
 }

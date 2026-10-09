@@ -44,7 +44,8 @@ import {
   TANK_UH_OH,
   getPlayerDialogueLine,
 } from './audio/DialogueLines.js';
-import { playCrash, crashNoise } from './audio/CrashSynth.js';
+import { crashNoise } from './audio/CrashSynth.js';
+import { SYNTHS } from './audio/Instruments.js';
 import { cloudSound, bangSound } from './audio/BombSounds.js';
 import {
   gruntPop,
@@ -55,6 +56,7 @@ import {
 } from './audio/DeathSounds.js';
 import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
 import { Hum } from './audio/Hum.js';
+import { hz, stepUp } from './audio/Harmony.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
 const DUCK_ATTACK_SEC = 0.05;
@@ -66,6 +68,15 @@ const MS_PER_SEC = 1000;
 const DEFAULT_BEAT_MS = 500; // 120 BPM, with no beat clock
 const CLOUD_FRAME_SEC = 1 / 60; // a hazard cloud ticks once a frame
 const TANK_DEATH_NOTE = ['1', 2]; // the tank dies on the root
+const CENTS_PER_OCTAVE = 1200;
+// A tone starts at most this late (playTone), so copies don't add in phase
+const MAX_START_OFFSET_SEC = 0.005;
+// A hero shot this close (beats) to the last continues their run (heroRunLevel)
+const RUN_GAP_BEATS = 0.75;
+// A hero shot this far (s) before its eighth is booked on it (heroShotTiming)
+const SNAP_SEC = 0.03;
+// Web Audio renders in blocks of this many frames
+const RENDER_QUANTUM_FRAMES = 128;
 
 /** The master limiter, so concurrent sounds can't clip (also the loudness test's) */
 export function createMasterLimiter(ctx) {
@@ -282,7 +293,12 @@ export class Audio {
   // SOUND EFFECTS
   // ========================================================================
 
-  playSound(soundName, x = null, y = null) {
+  /**
+   * A preset by name from (x, y); an enemy's hit also passes its health
+   * before the hit, `{ health, maxHealth }`, and climbs the scale as it
+   * weakens (playTone)
+   */
+  playSound(soundName, x = null, y = null, opts = null) {
     if (!this.ensureAudioContext()) return;
 
     const soundConfig = this.sounds[soundName];
@@ -290,12 +306,22 @@ export class Audio {
       console.warn(`❌ Sound not found: ${soundName}`);
       return;
     }
-    if (soundConfig.synth === 'crash') {
-      this.playCrashAt(soundConfig, x, y);
-      return;
+    // A sound that throws (a bad CONFIG.HUM.ROOT) warns once and plays
+    // nothing: it can't stop the game loop
+    try {
+      if (soundConfig.synth) {
+        this.playSynth(soundConfig, x, y);
+      } else {
+        this.playTone(soundConfig, x, y, soundName, opts);
+      }
+    } catch (error) {
+      // An error, not a warning, so the browser tests catch a broken sound
+      const failed = (this._failedSounds ??= new Set());
+      if (!failed.has(soundName)) {
+        failed.add(soundName);
+        console.error(`Sound ${soundName} failed and plays nothing:`, error);
+      }
     }
-
-    this.playTone(soundConfig, x, y, soundName);
   }
 
   // How loud (0..1) and where (pan -1..1) a sound from (x, y) is, heard from
@@ -310,16 +336,72 @@ export class Audio {
     };
   }
 
-  /** The rusher's crash (CrashSynth.js), quieter and panned with distance from the hero */
-  playCrashAt(config, x, y) {
+  /**
+   * A preset with a synth of its own (Instruments.js), quieter and panned
+   * with distance from the hero; the hero's shot is also timed and softened
+   */
+  playSynth(config, x, y) {
     const { near, pan } = this.placement(x, y);
-    playCrash(
-      this.audioContext,
-      this.masterGain,
-      config,
-      config.volume * CONFIG.RUSHER.CRASH_VOLUME * near,
-      pan
-    );
+    const clock = this.getContextValue('beatClock');
+    // Every synth is told the nearest eighth; the hero's shot may also wait
+    // for it, and softens in a burst
+    const { at, eighth, level } =
+      config.synth === 'heroShot'
+        ? this.heroShotTiming()
+        : {
+            at: this.audioContext.currentTime,
+            eighth: clock ? Math.round(clock.getBeatPosition() * 2) : 0,
+            level: 1,
+          };
+    SYNTHS[config.synth](this.audioContext, this.masterGain, config, {
+      volume: near * level,
+      pan,
+      at,
+      eighth,
+    });
+  }
+
+  /**
+   * When the hero's shot plays, the eighth it is told, its level (shots in a
+   * row soften: heroRunLevel), and the audio time it decided at (`now`). Held fire fires up to 20 ms before its
+   * eighth (BeatClock.isOnEighthNote), so a shot whose nearest eighth is
+   * still ahead, by at least one render quantum (or it would land in the
+   * past) and at most SNAP_SEC, is booked on that eighth; any other plays
+   * now. It books only on a beat clock that runs on this AudioContext (as
+   * BeatTrack checks before every kick). It is told the nearest eighth.
+   */
+  heroShotTiming() {
+    const clock = this.getContextValue('beatClock');
+    const ctx = this.audioContext;
+    const now = ctx.currentTime;
+    let at = now;
+    let eighth = clock ? Math.round(clock.getBeatPosition() * 2) : 0;
+    if (clock?.audioContext === ctx) {
+      const origin = clock.startTime / MS_PER_SEC;
+      const step = clock.beatInterval / 2 / MS_PER_SEC;
+      eighth = Math.round((now - origin) / step);
+      const ahead = origin + eighth * step - now;
+      const quantum = RENDER_QUANTUM_FRAMES / ctx.sampleRate;
+      if (ahead >= quantum && ahead <= SNAP_SEC) at = origin + eighth * step;
+    }
+    return { now, at, eighth, level: this.heroRunLevel(at, clock) };
+  }
+
+  /**
+   * The level of a hero shot starting at audio time `at`. One within
+   * RUN_GAP_BEATS of the last continues their run, so held fire softens by
+   * HERO_SHOT.SOFTEN_DB over SOFTEN_SHOTS shots; the run's first is
+   * unsoftened. Audio time stops in a pause, so a burst goes on after one; a
+   * restart ends the run, since game over holds the fire for a bar.
+   */
+  heroRunLevel(at, clock) {
+    const beatSec = (clock?.beatInterval ?? DEFAULT_BEAT_MS) / MS_PER_SEC;
+    const last = this._heroRun;
+    const n = last && at - last.at <= RUN_GAP_BEATS * beatSec ? last.n + 1 : 0;
+    this._heroRun = { at, n };
+    const { SOFTEN_DB, SOFTEN_SHOTS } = CONFIG.HERO_SHOT;
+    if (SOFTEN_SHOTS <= 0) return 1;
+    return 10 ** ((-SOFTEN_DB * Math.min(n, SOFTEN_SHOTS)) / SOFTEN_SHOTS / 20);
   }
 
   /**
@@ -443,43 +525,56 @@ export class Audio {
     });
   }
 
-  playTone(config, x, y, soundName = '') {
-    const oscillator = this.audioContext.createOscillator();
-    const gainNode = this.audioContext.createGain();
-    const panNode = this.audioContext.createStereoPanner();
-
-    // Add subtle randomness to frequency and volume for variety
-    const freqVarRange = config.frequencyVariationRange || 0.1;
-    const frequencyVariation = 1 + (random() - 0.5) * freqVarRange;
+  playTone(config, x, y, soundName = '', opts = null) {
+    const ctx = this.audioContext;
+    // Noise (the dash, the frying) is the shared noise through a band-pass
+    const noise = config.waveform === 'noise';
+    // The notes first, so one that can't resolve (a bad root) throws before
+    // any node is made. A small random detune keeps copies of one sound
+    // apart, plus the preset's own (the tank's arc rides 3% above his zap)
+    const cents =
+      (random() - 0.5) * 2 * CONFIG.TONES.DETUNE_CENTS +
+      (config.detuneCents ?? 0);
+    const detune = 2 ** (cents / CENTS_PER_OCTAVE);
+    const now = ctx.currentTime;
+    // An enemy's hit climbs CLIMB_STEPS steps over its whole health bar
+    let note = config.note;
+    if (opts?.maxHealth > 0) {
+      const lost = Math.max(0, opts.maxHealth - opts.health);
+      const k = Math.floor((CONFIG.HITS.CLIMB_STEPS * lost) / opts.maxHealth);
+      note = stepUp(note, k);
+    }
+    const startHz = noise ? null : hz(note, now) * detune;
+    const endHz =
+      config.sweep && !noise ? hz(config.sweep.to, now) * detune : null;
     const volumeVariation = 1 + (random() - 0.5) * 0.15;
     const durationVariation = 1 + (random() - 0.5) * 0.2;
+    // Copies started in one frame would add in phase: each starts up to
+    // MAX_START_OFFSET_SEC late (one period of the note isn't enough: Chrome
+    // still added four copies 7 dB over one, not the 6 of random phases)
+    const at = now + random() * MAX_START_OFFSET_SEC;
+    const sec = config.duration * durationVariation;
 
-    // Configure oscillator with randomness
-    oscillator.type =
-      config.waveform === 'noise' ? 'sawtooth' : config.waveform;
-    const startFreq = config.frequency * frequencyVariation;
-    oscillator.frequency.setValueAtTime(
-      startFreq,
-      this.audioContext.currentTime
-    );
+    const oscillator = noise
+      ? ctx.createBufferSource()
+      : ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    const panNode = ctx.createStereoPanner();
 
-    // Optional pitch sweep (e.g. the falling "oh no!" sounds)
-    if (config.sweep) {
-      const endFreq = config.sweep.to * frequencyVariation;
-      const sweepDuration = config.duration * durationVariation;
-
-      if (config.sweep.curve === 'exponential') {
-        // Exponential sweep for dramatic "oh no!" effect
-        oscillator.frequency.exponentialRampToValueAtTime(
-          Math.max(0.1, endFreq), // Ensure positive value for exponential ramp
-          this.audioContext.currentTime + sweepDuration
-        );
-      } else {
-        // Linear sweep as fallback
-        oscillator.frequency.linearRampToValueAtTime(
-          endFreq,
-          this.audioContext.currentTime + sweepDuration
-        );
+    let band = null;
+    if (noise) {
+      oscillator.buffer = crashNoise(ctx);
+      band = ctx.createBiquadFilter();
+      band.type = 'bandpass';
+      band.frequency.setValueAtTime(config.bandHz, at);
+    } else {
+      oscillator.type = config.waveform;
+      oscillator.frequency.setValueAtTime(startHz, at);
+      // Optional pitch sweep (e.g. the falling "oh no!" sounds)
+      if (config.sweep?.curve === 'exponential') {
+        oscillator.frequency.exponentialRampToValueAtTime(endHz, at + sec);
+      } else if (config.sweep) {
+        oscillator.frequency.linearRampToValueAtTime(endHz, at + sec);
       }
     }
 
@@ -496,8 +591,13 @@ export class Audio {
       playerY = this.player.y;
     }
 
-    // Configure gain envelope with proper volume calculation and randomness
-    let volume = config.volume * volumeVariation;
+    // Configure gain envelope with proper volume calculation and randomness;
+    // the enemies' hits share one level knob
+    const level =
+      config.volume *
+      volumeVariation *
+      (config.hit ? 10 ** (CONFIG.HITS.LEVEL_DB / 20) : 1);
+    let volume = level;
     let panValue = 0;
 
     // Only calculate distance-based volume and panning for positioned sounds (enemies)
@@ -508,42 +608,33 @@ export class Audio {
 
       if (!isPlayerSound) {
         // This is an enemy sound - calculate distance-based volume and panning
-        volume =
-          config.volume *
-          volumeVariation *
-          calculateVolumeForPosition(x, y, playerX, playerY);
+        volume = level * calculateVolumeForPosition(x, y, playerX, playerY);
         panValue = calculatePanForPosition(x, playerX);
       }
       // If it's a player sound, keep full volume and center panning (defaults above)
     }
 
-    gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
-    gainNode.gain.linearRampToValueAtTime(
-      volume,
-      this.audioContext.currentTime + TONE_ATTACK_SEC
-    );
-    gainNode.gain.exponentialRampToValueAtTime(
-      0.001,
-      this.audioContext.currentTime + config.duration * durationVariation
-    );
+    gainNode.gain.setValueAtTime(0, at);
+    gainNode.gain.linearRampToValueAtTime(volume, at + TONE_ATTACK_SEC);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, at + sec);
 
     // Configure panning
-    panNode.pan.setValueAtTime(panValue, this.audioContext.currentTime);
+    panNode.pan.setValueAtTime(panValue, at);
 
     // Connect nodes - add reverb for ambient enemy sounds
-    const tremoloGain = this.audioContext.createGain();
-    oscillator.connect(tremoloGain);
+    const tremoloGain = ctx.createGain();
+    if (band) {
+      oscillator.connect(band);
+      band.connect(tremoloGain);
+    } else {
+      oscillator.connect(tremoloGain);
+    }
     tremoloGain.connect(gainNode);
     gainNode.connect(panNode);
 
     if (config.tremolo) {
       const beatClock = this.getContextValue('beatClock');
-      applyBeatTremoloEffect(
-        this.audioContext,
-        beatClock,
-        tremoloGain,
-        config.duration * durationVariation
-      );
+      applyBeatTremoloEffect(this.audioContext, beatClock, tremoloGain, sec);
     }
 
     // Check if this is an ambient enemy sound that should have reverb
@@ -568,27 +659,21 @@ export class Audio {
       );
       const normalizedDistance = Math.max(0, Math.min(distance / 600, 1)); // 0 = close, 1 = far; clamp to avoid negative
 
-      reverbGainNode = this.audioContext.createGain();
-      lowPassFilter = this.audioContext.createBiquadFilter();
+      reverbGainNode = ctx.createGain();
+      lowPassFilter = ctx.createBiquadFilter();
 
       // Reverb 15% close to 30% far
       const reverbIntensity = 0.15 + normalizedDistance * 0.15;
-      reverbGainNode.gain.setValueAtTime(
-        reverbIntensity,
-        this.audioContext.currentTime
-      );
+      reverbGainNode.gain.setValueAtTime(reverbIntensity, at);
 
       // Farther sounds are more muffled: 1400 Hz close to 800 Hz far
       const lowpassFreq = 1400 - normalizedDistance * 600;
       lowPassFilter.type = 'lowpass';
-      lowPassFilter.frequency.setValueAtTime(
-        lowpassFreq,
-        this.audioContext.currentTime
-      );
-      lowPassFilter.Q.setValueAtTime(0.5, this.audioContext.currentTime);
+      lowPassFilter.frequency.setValueAtTime(lowpassFreq, at);
+      lowPassFilter.Q.setValueAtTime(0.5, at);
 
       // A light otherworldly distortion
-      distortionNode = this.audioContext.createWaveShaper();
+      distortionNode = ctx.createWaveShaper();
       distortionNode.curve = this.ambientDistortionCurve;
       distortionNode.oversample = '2x';
 
@@ -600,9 +685,9 @@ export class Audio {
       this.effects.reverb.connect(this.masterGain);
 
       // Dry path: 90% close to 75% far, so the reverb stays subtle
-      dryGain = this.audioContext.createGain();
+      dryGain = ctx.createGain();
       const dryMix = 0.9 - normalizedDistance * 0.15;
-      dryGain.gain.setValueAtTime(dryMix, this.audioContext.currentTime);
+      dryGain.gain.setValueAtTime(dryMix, at);
 
       panNode.connect(dryGain);
       dryGain.connect(this.masterGain);
@@ -613,15 +698,14 @@ export class Audio {
 
     // Play
     try {
-      oscillator.start(this.audioContext.currentTime);
-      oscillator.stop(
-        this.audioContext.currentTime + config.duration * durationVariation
-      );
+      oscillator.start(at);
+      oscillator.stop(at + sec);
 
       // Clean up all audio nodes when oscillator ends to prevent graph accumulation
       oscillator.onended = () => {
         try {
           oscillator.disconnect();
+          band?.disconnect();
           tremoloGain.disconnect();
           gainNode.disconnect();
           panNode.disconnect();

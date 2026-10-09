@@ -497,7 +497,10 @@ class Stabber extends BaseEnemy {
     this.hitAt = this.poseBeats;
     if (this.state === 'windup' && !this.locked) this.daze();
     if (bulletAngle !== null && this.state !== 'lunge') this.shove(bulletAngle);
-    this.getContextValue('audio')?.playSound('stabberHit', this.x, this.y);
+    this.getContextValue('audio')?.playSound('stabberHit', this.x, this.y, {
+      health: this.health,
+      maxHealth: this.maxHealth,
+    });
     const armour = CONFIG.STABBER.ARMOR;
     return super.takeDamage(
       Math.max(1, amount - armour),

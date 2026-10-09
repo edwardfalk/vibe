@@ -276,9 +276,10 @@ class Rusher extends BaseEnemy {
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     this.hitFlash = 8;
     if (bulletAngle !== null && CONFIG.RUSHER.PUSH) this.push(bulletAngle);
+    // Every hit sounds, lit or not: batting a lit one must too
+    this.getContextValue('audio')?.playSound('rusherHit', this.x, this.y);
     if (this.lit) return DAMAGE_RESULT.EXPLODING;
     this.hitAt = this.poseBeats;
-    this.getContextValue('audio')?.playSound('rusherHit', this.x, this.y);
     this.light(damageSource === 'rusher-blast' ? 'blast' : 'hit');
     return DAMAGE_RESULT.EXPLODING;
   }

@@ -18,7 +18,7 @@ const CONFIG = {
   // Beat timing tolerances (fraction of beat/subdivision interval)
   BEAT_TOLERANCES: {
     ON_BEAT: 0.2, // 20% of beat interval (100ms at 120 BPM)
-    EIGHTH_NOTE: 0.08, // 8% of eighth-note interval (40ms at 120 BPM)
+    EIGHTH_NOTE: 0.08, // 8% of eighth-note interval (20ms at 120 BPM)
   },
 
   // Speech/Chatter Settings (per enemy type, in seconds). Every AMBIENT_MIN
@@ -97,6 +97,37 @@ const CONFIG = {
     DUCK_BEAT_DB: -3, // the kick dips less: it keeps time
     DUCK_RELEASE_SEC: 0.3,
     DUCK_MAX_HOLD_MS: 5000, // never stay ducked longer than this after a line starts
+  },
+
+  // Every playTone sound (js/audio/SoundConfig.js) plays its note with a
+  // random detune of up to this many cents either way: in tune, a little
+  // wider, so copies of one sound don't sit exactly on each other. Tune live
+  // with ?tune.
+  TONES: {
+    DETUNE_CENTS: 5,
+  },
+
+  // The enemies' hit sounds (SoundConfig's presets with hit: true): one per
+  // hit, on the enemy's note, climbing as he weakens. Tune live with ?tune.
+  HITS: {
+    // On each hit preset's volume: each enemy's hit 4.6-7.4 dB under today's
+    // two-sound hit at his own note, the tank's back 4.2 dB under at the top
+    // of his climb (measured offline, loudest 50 ms above 250 Hz)
+    LEVEL_DB: -2.5,
+    // A hit climbs this many steps of the scale over its enemy's whole
+    // health bar, so it rises as he weakens; 0 = always his note
+    CLIMB_STEPS: 8,
+  },
+
+  // The hero's shot (js/audio/Instruments.js): one of four sounds from the
+  // listening page, at its trim plus LEVEL_DB. Held fire softens: shot n of a
+  // run plays SOFTEN_DB x min(n, SOFTEN_SHOTS) / SOFTEN_SHOTS dB down (0 shots
+  // = off). Tune live with ?tune.
+  HERO_SHOT: {
+    SOUND: 'tick', // softHat, metalHat, tick or ghostArp
+    LEVEL_DB: 0,
+    SOFTEN_DB: 6,
+    SOFTEN_SHOTS: 8,
   },
 
   // Pausing (P) stops the sound: the audio is suspended, which also stops

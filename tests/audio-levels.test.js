@@ -10,8 +10,10 @@ import { test, expect } from '@playwright/test';
 // the filter fully open, 5.0 dB under (2026-10-04).
 const HUM_UNDER_KICK_DB = -5;
 const HUM_TOLERANCE_DB = 2;
+const HERO_UNDER_KICK_DB = -4;
+const HERO_TOLERANCE_DB = 1.5;
 
-test('the hum sits under the kick, quiet and on a full screen at level 5', async ({
+test("the hum and the hero's shots sit under the kick, the hum quiet and on a full screen at level 5", async ({
   page,
 }) => {
   // Any blank page on the test server will do; the speech gate's is one
@@ -77,10 +79,36 @@ test('the hum sits under the kick, quiet and on a full screen at level 5', async
         }
       });
 
+    // Each hero shot as the page played it: held fire on all 16 eighths of
+    // the window, accents on, softening off
+    const { heroShot, HERO_SHOT_SOUNDS } =
+      await import('/js/audio/Instruments.js');
+    const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
+    const heroes = {};
+    const saved = { ...CONFIG.HERO_SHOT };
+    // The page's conditions: no softening, no level offset of Edward's
+    CONFIG.HERO_SHOT.SOFTEN_SHOTS = 0;
+    CONFIG.HERO_SHOT.LEVEL_DB = 0;
+    for (const sound of HERO_SHOT_SOUNDS) {
+      CONFIG.HERO_SHOT.SOUND = sound;
+      heroes[sound] = await rms((ctx, out) => {
+        for (let n = 0; n < 16; n++) {
+          heroShot(ctx, out, SOUND_CONFIG.playerShoot, {
+            volume: 1,
+            pan: 0,
+            at: WINDOW_SEC + (n * BEAT_SEC) / 2,
+            eighth: n,
+          });
+        }
+      });
+    }
+    Object.assign(CONFIG.HERO_SHOT, saved);
+
     return {
       kick,
       quiet: await hum(1, 0),
       busy: await hum(5, CONFIG.PACING.MAX_ENEMIES_CAP),
+      heroes,
     };
   });
   console.log('dB RMS above 250 Hz:', levels);
@@ -91,9 +119,19 @@ test('the hum sits under the kick, quiet and on a full screen at level 5', async
     HUM_UNDER_KICK_DB + HUM_TOLERANCE_DB
   );
   expect(levels.busy).toBeLessThanOrEqual(levels.kick);
+  // Each hero shot where Edward judged it on the listening page: about 4 dB
+  // under the kick (the page measured -37.2 dB against the kick's -33)
+  for (const [sound, level] of Object.entries(levels.heroes)) {
+    expect(level - levels.kick, sound).toBeGreaterThanOrEqual(
+      HERO_UNDER_KICK_DB - HERO_TOLERANCE_DB
+    );
+    expect(level - levels.kick, sound).toBeLessThanOrEqual(
+      HERO_UNDER_KICK_DB + HERO_TOLERANCE_DB
+    );
+  }
 });
 
-test('a bad root costs only the hum: the kick and the effects play on', async ({
+test('a bad root costs only the hum and the pitched sounds: the kick plays on', async ({
   page,
 }) => {
   const errors = [];
@@ -128,4 +166,132 @@ test('a bad root costs only the hum: the kick and the effects play on', async ({
   expect(after.enabled).toBe(true);
   // Audio's and the kick's, each logged once
   expect(errors.filter((e) => e.includes('The hum failed'))).toHaveLength(2);
+});
+
+// The dash and the frying became noise through a band-pass (audio PR 2).
+// They keep their old saw's level against the kick, as laptop speakers hear
+// it (loudest 50 ms above 250 Hz), measured on 59b8f7d
+const NOISE_OVER_KICK_DB = { playerDash: 0.1, enemyFrying: 2.7 };
+const NOISE_TOLERANCE_DB = 1.5;
+
+test('the dash and the frying, now noise, keep their level against the kick', async ({
+  page,
+}) => {
+  await page.goto('/tests/helpers/speech-gate.html');
+  const overKick = await page.evaluate(async (names) => {
+    Math.random = () => 0.5; // no random level or length
+    const { CONFIG } = await import('/js/config.js');
+    const { Audio } = await import('/js/Audio.js');
+    const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
+    const { BeatTrack, clickNoise } = await import('/js/audio/BeatTrack.js');
+    const RATE = 44100;
+    const AT = 0.05;
+    const WINDOW = Math.round(RATE * 0.05);
+    // dB of the loudest 50 ms that play() sends through a 250 Hz high-pass
+    async function loudest(play) {
+      const ctx = new OfflineAudioContext(1, RATE, RATE);
+      const highpass = new BiquadFilterNode(ctx, {
+        type: 'highpass',
+        frequency: 250,
+        Q: 0.7,
+      });
+      highpass.connect(ctx.destination);
+      play(ctx, highpass);
+      const data = (await ctx.startRendering()).getChannelData(0);
+      let loud = 0;
+      for (let i = 0; i + WINDOW <= data.length; i += WINDOW >> 2) {
+        let sum = 0;
+        for (let j = i; j < i + WINDOW; j++) sum += data[j] ** 2;
+        loud = Math.max(loud, sum / WINDOW);
+      }
+      return 10 * Math.log10(loud);
+    }
+    const kick = await loudest((ctx, out) => {
+      const track = new BeatTrack({});
+      track.ctx = ctx;
+      track.masterGain = new GainNode(ctx, {
+        gain: CONFIG.MIX.BEAT_TRACK_VOLUME,
+      });
+      track.masterGain.connect(out);
+      track._noiseBuffer = clickNoise(ctx);
+      track._playKick(AT);
+    });
+    const over = {};
+    for (const name of names) {
+      const level = await loudest((ctx, out) => {
+        const audio = Object.assign(Object.create(Audio.prototype), {
+          audioContext: ctx,
+          masterGain: out,
+          effects: { reverb: null },
+          player: { x: 0, y: 0 },
+          context: null,
+        });
+        audio.playTone(SOUND_CONFIG[name], null, null, name);
+      });
+      over[name] = level - kick;
+    }
+    return over;
+  }, Object.keys(NOISE_OVER_KICK_DB));
+  console.log('noise over the kick, dB:', overKick);
+  for (const [name, db] of Object.entries(NOISE_OVER_KICK_DB)) {
+    expect(overKick[name], name).toBeGreaterThanOrEqual(
+      db - NOISE_TOLERANCE_DB
+    );
+    expect(overKick[name], name).toBeLessThanOrEqual(db + NOISE_TOLERANCE_DB);
+  }
+});
+
+// Copies of one sound started in one frame (grunts firing together on 2 or
+// 4) must not add in phase: four in phase are 12 dB over one, four at random
+// phases 6 dB on average. Averaged over many volleys, so chance alignment in
+// one can't fail it
+test('a volley of four grunt shots in one frame adds like random phases, not in phase', async ({
+  page,
+}) => {
+  await page.goto('/tests/helpers/speech-gate.html');
+  const overOne = await page.evaluate(async () => {
+    const { Audio } = await import('/js/Audio.js');
+    const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
+    const RATE = 44100;
+    const VOLLEYS = 64;
+    const GAP_SEC = 0.25; // longer than the shot
+    async function energy(copies) {
+      const ctx = new OfflineAudioContext(
+        1,
+        Math.ceil(RATE * (VOLLEYS * GAP_SEC + 0.5)),
+        RATE
+      );
+      // playTone reads the clock from its context: this one says when
+      const clock = { t: 0 };
+      const timed = new Proxy(ctx, {
+        get: (target, key) =>
+          key === 'currentTime'
+            ? clock.t
+            : typeof target[key] === 'function'
+              ? target[key].bind(target)
+              : target[key],
+      });
+      const audio = Object.assign(Object.create(Audio.prototype), {
+        audioContext: timed,
+        masterGain: ctx.destination,
+        effects: { reverb: null },
+        player: { x: 0, y: 0 },
+        context: null,
+      });
+      for (let v = 0; v < VOLLEYS; v++) {
+        clock.t = v * GAP_SEC;
+        for (let c = 0; c < copies; c++) {
+          audio.playTone(SOUND_CONFIG.alienShoot, null, null, 'alienShoot');
+        }
+      }
+      const data = (await ctx.startRendering()).getChannelData(0);
+      let sum = 0;
+      for (const x of data) sum += x * x;
+      return sum;
+    }
+    return 10 * Math.log10((await energy(4)) / (await energy(1)));
+  });
+  console.log('four grunt shots over one, dB:', overOne);
+  expect(overOne).toBeGreaterThan(4);
+  expect(overOne).toBeLessThan(8);
 });
