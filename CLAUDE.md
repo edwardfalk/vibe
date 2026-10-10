@@ -33,7 +33,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md): the game loop, folders, shared state, be
 
 ## Level Progression
 
-Score-based, not wave-based: enemies spawn continuously in beat-aligned waves. All numbers live in `CONFIG.PACING`, tunable live with `?tune`. Types come in by level (`ENEMY_INTRO_LEVEL` in `SpawnSystem.js`): grunts at 1, stabbers at 2, rushers at 3, tanks at 5. Each is previewed once per run, halfway through a level, as the next type still to come (the tank at level 3). Details in [docs/DESIGN.md](docs/DESIGN.md).
+Score-based, not wave-based: grunts come a swarm at a time (`CONFIG.SWARM`, `js/systems/GruntSwarm.js`), the other types in beat-aligned waves. All numbers live in `CONFIG.PACING` and `CONFIG.SWARM`, tunable live with `?tune`. Types come in by level (`ENEMY_INTRO_LEVEL` in `SpawnSystem.js`): grunts at 1, stabbers at 2, rushers at 3, tanks at 5. Each is previewed once per run, halfway through a level, as the next type still to come (the tank at level 3). Details in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Code Style
 

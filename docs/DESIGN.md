@@ -34,7 +34,9 @@ The hero is the Dude: a long-haired, bearded slacker in a bathrobe and jelly san
 
 The aliens live in space. There is no ground, so they never walk: they hover, on boosters or whatever else they have. Grunts are stupid, whiny and clumsy: each is a droplet of jelly in a helmet far too small, its eyes pointing two different ways, hovering on one jet that now and then coughs.
 
-Grunts dance together. Every grunt crouches as 2 and 4 come, the beats they fire on. One that fires hops on its jet's puff and squashes as it lands; the rest give a small hop and slump back. Through the beat before a shot a grunt winds up (its antennae go amber, then white-hot); when it holds its fire instead, it sulks. Its shot is a synthwave stab, each grunt on his own note, and now and then one chatters in his own voice, a whine or a squeak. They stop while the game is paused. The look and its numbers are in `js/entities/GruntRenderer.js` and `CONFIG.GRUNT_LOOK`.
+Grunts are the alien's cannon fodder, and it throws them in by the swarm: a loose, jostling cloud that drifts after the hero, 5 strong at level 1 and up to 12 from level 5. A swarm plays the snare as a section: on each 2 and 4 a few of it fire, about a third, nearest the hero first and never through a friend, each shot quieter as more fire together, so a volley sounds fuller, not louder. Kill all of a swarm and the snare drops out for a moment; the next swarm comes at once, and its first volley no sooner than a bar later (`CONFIG.SWARM`, `js/systems/GruntSwarm.js`). A swarm makes one move call at a time, one chatter a bar, and one of it speaks; a grunt is worth less than the others (`PACING.GRUNT_KILL_POINTS`).
+
+Grunts dance together. Every grunt crouches as 2 and 4 come, the beats they fire on. One that fires hops on its jet's puff and squashes as it lands; the rest give a small hop and slump back. Through the beat before a shot the grunts picked to fire wind up (their antennae go amber, then white-hot); one whose line is blocked by then holds his fire, and sulks. Its shot is a synthwave stab, each grunt on his own note, and now and then one chatters in his own voice, a whine or a squeak. They stop while the game is paused. The look and its numbers are in `js/entities/GruntRenderer.js` and `CONFIG.GRUNT_LOOK`.
 
 The tank is a vain muscle bully, the grunts' big brother: a bouncer from space, seen from above, all shoulders, with a small shiny bald head, sunglasses and a gold chain. His armour (a chest guard and two shoulder pads) sits on the side he faces; his back is bare. He turns only on beat 1, his kick, a heavy step of at most 60°, and lurches forward on it; between kicks he holds his facing, so you can get round him. Stand in front of him and he shoves you on the beat, with a whump of its own. His charge takes two bars and fires on beat 1: his chain lights a link a beat while a pluck climbs a step of the scale a beat, louder as he strains, and the cannon goes amber, then white-hot for the last half-beat. His shot is an 808 boom with a zap on top. His ball kills any smaller alien in its way, but another tank only takes a dent: tanks are inconvenienced by each other, not killed, so you can't just wait for them to shoot each other. They try not to, too: a tank with another in his line of fire steps sideways, so around a hero who stays put they spread round him, each with a clear shot. The look and its numbers are in `js/entities/TankRenderer.js`, `CONFIG.TANK` and `CONFIG.TANK_LOOK`.
 
@@ -60,13 +62,13 @@ Its sound lands exactly on the eighth: held fire fires up to 20 ms, plus the gam
 
 ## Level progression
 
-Levels come from score, not waves. Enemies spawn continuously in waves that land on a beat.
+Levels come from score, not waves. Grunts come a swarm at a time (above); the other types trickle in, in waves that land on a beat.
 
 All the numbers are in `CONFIG.PACING`:
 
-- the score needed for each level;
+- the score needed for each level, and what a grunt is worth;
 - the beats between waves, which shrink as levels go up;
-- how many enemies can be on screen, which grows every second level up to a cap.
+- how many of the other types can be on screen: the cap grows every second level up to its top, times their share of each level's mix before swarms (none at level 1).
 
 New types join by level: grunts from level 1, stabbers at 2, rushers at 3 and tanks at 5. Each is previewed once per run: halfway through a level, one enemy of the next type still to come appears (`PREVIEW_AT_PROGRESS`). The tank's preview comes at level 3, and level 4 has none.
 
