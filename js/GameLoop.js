@@ -158,6 +158,9 @@ function updateGame(p) {
     beatClock: window.beatClock,
   });
 
+  // The swarm steers its grunts before they move
+  window.spawnSystem?.updateSwarm();
+
   // Update enemies and resolve their emitted combat results
   updateEnemiesAndResolveResults({
     enemies,

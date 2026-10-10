@@ -21,7 +21,6 @@ import {
 
 // Per-beat chances for beat-gated grunt sounds (rolled once per beat)
 const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
-const GRUNT_MOVE_SOUND_CHANCE = 0.5;
 // Grunts only shoot at the hero from this close
 export const GRUNT_FIRE_RANGE = 300;
 // Shown over a warned grunt that doesn't fire after all
@@ -39,8 +38,8 @@ const ANTENNA_REACH = 1.1;
 const GRUNT_SHOT_SPEED = 4; // px per frame
 
 /**
- * Grunt class - Tactical ranged combat AI
- * Maintains tactical distance, uses friendly fire avoidance, confused personality
+ * A grunt: the alien's cannon fodder, one of a swarm (GruntSwarm.js) that
+ * moves him; he fires on 2 and 4, his own note, his own look and death
  */
 class Grunt extends BaseEnemy {
   constructor(x, y, type, config, p, audio) {
@@ -127,7 +126,6 @@ class Grunt extends BaseEnemy {
 
     // Handle grunt weird noise (beat-gated)
     const beatClock = this.getContextValue('beatClock');
-    const audio = this.getContextValue('audio');
     if (
       this.onBeatOnce(beatClock, 'weirdNoise', beatClock?.isOnBeat([2, 4])) &&
       random() < GRUNT_WEIRD_NOISE_CHANCE
@@ -135,48 +133,8 @@ class Grunt extends BaseEnemy {
       this.makeGruntWeirdNoise();
     }
 
-    // Grunts maintain tactical distance (150-250 pixels)
-    const tooClose = 150;
-    const tooFar = 250;
-
-    this.velocity.x = 0;
-    this.velocity.y = 0;
-
-    let moveSound = null;
-    if (distance > 0) {
-      const unitX = dx / distance;
-      const unitY = dy / distance;
-
-      if (distance < tooClose) {
-        // Too close - retreat while maintaining line of sight
-        this.velocity.x = -unitX * this.speed * 0.8;
-        this.velocity.y = -unitY * this.speed * 0.8;
-
-        // Tactical side-step 40% of the time
-        if (random() < 0.4) {
-          this.velocity.x += random(-0.5, 0.5);
-          this.velocity.y += random(-0.5, 0.5);
-        }
-        moveSound = 'gruntRetreat';
-      } else if (distance > tooFar) {
-        // Too far - advance but maintain tactical spacing
-        this.velocity.x = unitX * this.speed * 0.6;
-        this.velocity.y = unitY * this.speed * 0.6;
-        moveSound = 'gruntAdvance';
-      } else {
-        // At ideal distance - maintain position with small movements
-        this.velocity.x = random(-0.3, 0.3);
-        this.velocity.y = random(-0.3, 0.3);
-      }
-    }
-    if (
-      moveSound &&
-      audio &&
-      this.onBeatOnce(beatClock, 'moveSound', beatClock?.isOnBeat([2, 4])) &&
-      random() < GRUNT_MOVE_SOUND_CHANCE
-    ) {
-      audio.playSound(moveSound, this.x, this.y);
-    }
+    // His swarm steers him (GruntSwarm.steer, before the enemies move);
+    // BaseEnemy.update has moved him by it. A grunt with no swarm stands.
 
     // BEAT-ALIGNED GRUNT SHOOTING: once per beat 2 or 4, with random skip
     const rhythmFX = this.getContextValue('rhythmFX');
@@ -313,6 +271,8 @@ class Grunt extends BaseEnemy {
   /** @override Turns to face its target once it has moved and aimed */
   update(playerX, playerY, deltaTimeMs) {
     const bullet = super.update(playerX, playerY, deltaTimeMs);
+    // A swarm's push can carry a grunt at its edge past the world's
+    this.keepInWorld();
     this.facing = nextFacing(this.facing, this.aimAngle);
     // After super.update(), so a shot it just fired is never in the future
     this.poseBeats =

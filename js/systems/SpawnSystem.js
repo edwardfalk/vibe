@@ -9,6 +9,7 @@ import { Stabber } from '../entities/Stabber.js';
 import { CONFIG } from '../config.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { max, min, floor, random, sqrt } from '../mathUtils.js';
+import { GruntSwarm, swarmSize, cloudRadius } from './GruntSwarm.js';
 
 // Level at which each enemy type joins the regular mix
 const ENEMY_CLASSES = {
@@ -37,7 +38,57 @@ export class SpawnSystem {
     // Beat-aligned spawning; intervals and caps come from CONFIG.PACING
     this.lastSpawnBeat = -Infinity;
     this.previewed = new Set(); // types already given a one-off taste
+    // The grunts come only in swarms, one at a time (GruntSwarm.js)
+    this.swarm = null;
     this.getContextValue = createContextAccessor(() => this.context);
+  }
+
+  /** Before the enemies move: the swarm steers its grunts */
+  updateSwarm() {
+    const enemies = this.getContextValue('enemies');
+    const player = this.getContextValue('player');
+    if (!this.swarm || !enemies || !player) return;
+    this.swarm.steer(this.swarm.members(enemies), player);
+  }
+
+  /**
+   * A swarm of the level's size, round a spot off screen, its grunts on the
+   * far side of it from the view and inside the world; all are placed
+   * before any is added. Its first volley comes no sooner than beat
+   * `quietUntil` (GruntSwarm)
+   */
+  spawnSwarm(quietUntil) {
+    const enemies = this.getContextValue('enemies');
+    if (!enemies) return;
+    const gameState = this.getContextValue('gameState');
+    const player = this.getContextValue('player');
+    const size = swarmSize(gameState ? gameState.level : 1);
+    const centre = this.findSpawnPosition();
+    const swarm = new GruntSwarm({ size, ...centre });
+    swarm.quietUntil = quietUntil;
+    const made = this.cloudSpots(centre, size).map(({ x, y }) => {
+      const grunt = this.createEnemy(x, y, 'grunt', player && player.p);
+      grunt.swarm = swarm;
+      grunt.keepInWorld();
+      return grunt;
+    });
+    enemies.push(...made);
+    this.swarm = swarm;
+  }
+
+  // n spots within a cloud's radius of `centre`, on its far side from the
+  // hero (the view's centre)
+  cloudSpots(centre, n) {
+    const player = this.getContextValue('player');
+    const away = player
+      ? Math.atan2(centre.y - player.y, centre.x - player.x)
+      : random(0, Math.PI * 2);
+    const r = cloudRadius(n);
+    return Array.from({ length: n }, () => {
+      const a = away + random(-Math.PI / 2, Math.PI / 2);
+      const d = r * sqrt(random());
+      return { x: centre.x + d * Math.cos(a), y: centre.y + d * Math.sin(a) };
+    });
   }
 
   // Update spawning system (beat-aligned)
@@ -47,6 +98,17 @@ export class SpawnSystem {
 
     const beatClock = this.getContextValue('beatClock');
     if (!beatClock) return;
+
+    // A run's first swarm comes on its first update; the next at once when
+    // all of the last are dead, its first volley no sooner than GAP_BEATS
+    // after (counted from the clear's beat rounded up)
+    const all = this.getContextValue('enemies');
+    if (all && (!this.swarm || this.swarm.isCleared(all))) {
+      const quietUntil = this.swarm
+        ? Math.ceil(beatClock.getBeatPosition()) + CONFIG.SWARM.GAP_BEATS
+        : -Infinity;
+      this.spawnSwarm(quietUntil);
+    }
 
     // Waves land on any beat, so the interval counts whole beats (fractions
     // round up). Restricting waves to beat 1 rounded every interval up to a
@@ -81,14 +143,23 @@ export class SpawnSystem {
       return;
     }
 
+    // The trickle of the other types; the swarm's grunts never hold it back
     const enemies = this.getContextValue('enemies');
-    const maxEnemies = this.getMaxEnemiesForLevel(gameState.level);
-    const currentEnemyCount = enemies ? enemies.length : 0;
-
-    if (currentEnemyCount < maxEnemies) {
-      const enemiesToSpawn = min(2, maxEnemies - currentEnemyCount);
-      this.spawnEnemies(enemiesToSpawn);
+    const maxOthers = this.getMaxOthersForLevel(gameState.level);
+    const others = enemies
+      ? enemies.filter((e) => e.type !== 'grunt').length
+      : 0;
+    if (others < maxOthers) {
+      this.spawnEnemies(min(2, maxOthers - others));
     }
+  }
+
+  // The others' cap: today's cap times today's share of non-grunts in the
+  // level's list
+  getMaxOthersForLevel(level) {
+    const list = this.weightedTypesForLevel(level);
+    const share = list.filter((t) => t !== 'grunt').length / list.length;
+    return Math.round(this.getMaxEnemiesForLevel(level) * share);
   }
 
   // Get maximum enemies allowed for current level
@@ -107,6 +178,7 @@ export class SpawnSystem {
     const p = player && player.p;
     for (let i = 0; i < count; i++) {
       const enemyType = forcedType ?? this.getEnemyTypeForLevel(level);
+      if (!enemyType) return; // the level has no type of its own to trickle
       const spawnPos = this.findSpawnPosition();
       enemies.push(this.createEnemy(spawnPos.x, spawnPos.y, enemyType, p));
     }
@@ -118,8 +190,18 @@ export class SpawnSystem {
     return new ENEMY_CLASSES[type](x, y, type, config, p, audio);
   }
 
-  // Determine enemy type based on level
+  // The trickle's type at a level: one of the level's list without grunts
+  // (they come in swarms), or null when nothing is left
   getEnemyTypeForLevel(level) {
+    const others = this.weightedTypesForLevel(level).filter(
+      (t) => t !== 'grunt'
+    );
+    return others.length > 0 ? random(others) : null;
+  }
+
+  // Each level's mix before swarms, grunts included: the others keep their
+  // weights and their share of the cap
+  weightedTypesForLevel(level) {
     let weightedTypes = [];
 
     if (level < ENEMY_INTRO_LEVEL.rusher) {
@@ -134,7 +216,7 @@ export class SpawnSystem {
       weightedTypes = ['grunt', 'stabber', 'rusher', 'tank'];
     }
 
-    return random(weightedTypes);
+    return weightedTypes;
   }
 
   // Find a good spawn position away from player
@@ -227,5 +309,6 @@ export class SpawnSystem {
   reset() {
     this.lastSpawnBeat = -Infinity;
     this.previewed.clear();
+    this.swarm = null;
   }
 }

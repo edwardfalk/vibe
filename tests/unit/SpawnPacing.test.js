@@ -24,6 +24,8 @@ function waves({ level, progress }, count) {
   vi.spyOn(system, 'spawnEnemies').mockImplementation((n, type = null) => {
     spawned.push(type ?? 'regular');
   });
+  // The swarms come on their own (SpawnSwarms.test.js)
+  vi.spyOn(system, 'spawnSwarm').mockImplementation(() => {});
   for (let i = 0; i < count; i++) {
     system.update();
     beats += 100; // always past the spawn interval
@@ -48,16 +50,9 @@ describe('Spawn pacing', () => {
   });
 
   it('previews the next new type once, halfway through the level', () => {
-    expect(waves({ level: 1, progress: 0.3 }, 3)).toEqual([
-      'regular',
-      'regular',
-      'regular',
-    ]);
-    expect(waves({ level: 1, progress: 0.6 }, 3)).toEqual([
-      'stabber',
-      'regular',
-      'regular',
-    ]);
+    // Level 1 has only its swarms: nothing else trickles in
+    expect(waves({ level: 1, progress: 0.3 }, 3)).toEqual([]);
+    expect(waves({ level: 1, progress: 0.6 }, 3)).toEqual(['stabber']);
     expect(waves({ level: 2, progress: 0.6 }, 2)).toEqual([
       'rusher',
       'regular',
@@ -80,6 +75,7 @@ describe('Spawn pacing', () => {
     vi.spyOn(system, 'spawnEnemies').mockImplementation((n, type = null) => {
       spawned.push(type ?? 'regular');
     });
+    vi.spyOn(system, 'spawnSwarm').mockImplementation(() => {});
     system.update();
     system.reset();
     beats += 100;
@@ -107,11 +103,14 @@ describe('Spawn pacing', () => {
       });
       const waveBeats = [];
       system.spawnEnemies = () => waveBeats.push(beatClock.getTotalBeats());
+      system.spawnSwarm = () => {};
       for (ms = 0; ms < 30000; ms += 1000 / 60) system.update();
       return [...new Set(waveBeats.slice(1).map((b, i) => b - waveBeats[i]))];
     }
-    // 6 beats, 0.5 sooner per level, whole beats, minimum 4
-    expect(waveGaps(1)).toEqual([6]);
+    // 6 beats, 0.5 sooner per level, whole beats, minimum 4 (level 1 has
+    // no trickle, only its swarms)
+    expect(waveGaps(1)).toEqual([]);
+    expect(waveGaps(2)).toEqual([6]);
     expect(waveGaps(3)).toEqual([5]);
     expect(waveGaps(5)).toEqual([4]);
     expect(waveGaps(9)).toEqual([4]);
@@ -119,7 +118,7 @@ describe('Spawn pacing', () => {
 
   it('previews nothing when switched off or when every type is in', () => {
     CONFIG.PACING.PREVIEW_NEW_ENEMY = false;
-    expect(waves({ level: 1, progress: 0.9 }, 2)).toEqual([
+    expect(waves({ level: 2, progress: 0.9 }, 2)).toEqual([
       'regular',
       'regular',
     ]);
