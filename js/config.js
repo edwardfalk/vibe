@@ -99,6 +99,13 @@ const CONFIG = {
     SFX_VOLUME: 1, // game sound effects master
     BEAT_TRACK_VOLUME: 0.22, // the kick, after the drive (was 0.4)
     SPEECH_VOLUME: 1, // multiplies every voice's volume
+    // Each group of sounds' level, in dB on its bus (Audio.buses): the drums
+    // (the rusher's crash, the hero's shot; the kick keeps BEAT_TRACK_VOLUME),
+    // the band (the enemies' parts) and feedback (hits, events, deaths).
+    // Each group is levelled inside; these set the groups against each other
+    DRUMS_DB: 0,
+    BAND_DB: 0,
+    FEEDBACK_DB: 0,
     SPEECH_DISTANCE_FLOOR: 0.7, // far-off enemies still this loud (was 0.4)
     DUCK_SFX_DB: -6, // effects dip while someone speaks
     DUCK_BEAT_DB: -3, // the kick dips less: it keeps time

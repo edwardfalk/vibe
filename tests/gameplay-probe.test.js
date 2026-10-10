@@ -266,6 +266,48 @@ test.describe('Gameplay Probes', () => {
     await expect.poll(gains).toEqual([sfxOn, musicOn, speechOn]);
   });
 
+  test('each group of sounds plays through its own bus, at its knob from the start', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const connect = AudioNode.prototype.connect;
+      AudioNode.prototype.connect = function (destination, ...rest) {
+        (this.__to ??= []).push(destination);
+        return connect.call(this, destination, ...rest);
+      };
+    });
+    await page.goto('/');
+    await page.waitForFunction(() => window.gameState?.gameState === 'title');
+    // Set before the first key, which starts the audio
+    const knobs = { DRUMS_DB: -2, BAND_DB: -4, FEEDBACK_DB: 3 };
+    await page.evaluate(async (k) => {
+      const { CONFIG } = await import('/js/config.js');
+      Object.assign(CONFIG.MIX, k);
+    }, knobs);
+    await page.keyboard.press(' ');
+    await page.waitForFunction(() => window.audio?.initialized);
+    const buses = await page.evaluate(() =>
+      Object.fromEntries(
+        Object.entries(window.audio.buses).map(([group, bus]) => [
+          group,
+          {
+            gain: bus.gain.value,
+            toMaster: bus.__to?.includes(window.audio.masterGain) ?? false,
+          },
+        ])
+      )
+    );
+    expect(Object.keys(buses).sort()).toEqual(['band', 'drums', 'feedback']);
+    for (const [group, db] of [
+      ['drums', knobs.DRUMS_DB],
+      ['band', knobs.BAND_DB],
+      ['feedback', knobs.FEEDBACK_DB],
+    ]) {
+      expect(buses[group].gain, group).toBeCloseTo(10 ** (db / 20), 5);
+      expect(buses[group].toMaster, group).toBe(true);
+    }
+  });
+
   test('Named keys like arrows and Escape start the run', async ({ page }) => {
     for (const key of ['ArrowUp', 'Escape']) {
       await page.goto('/');

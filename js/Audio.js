@@ -80,6 +80,9 @@ const RUN_GAP_BEATS = 0.75;
 export const SNAP_SEC = 0.03;
 // Web Audio renders in blocks of this many frames
 const RENDER_QUANTUM_FRAMES = 128;
+// The groups every sound plays in, each through its own bus at its knob,
+// CONFIG.MIX.<GROUP>_DB (applyMix)
+const GROUPS = ['drums', 'band', 'feedback'];
 
 /** The master limiter, so concurrent sounds can't clip (also the loudness test's) */
 export function createMasterLimiter(ctx) {
@@ -104,6 +107,7 @@ export class Audio {
     // Core audio setup
     this.audioContext = null;
     this.masterGain = null;
+    this.buses = null; // a gain per group, into masterGain (initialize)
     this.hum = null; // the universe's hum, built in initialize()
     this.initialized = false;
     this.enabled = true;
@@ -157,6 +161,14 @@ export class Audio {
         window.AudioContext || window.webkitAudioContext
       )();
       this.masterGain = this.audioContext.createGain();
+      // Before applyMix() below, which sets their gains
+      this.buses = Object.fromEntries(
+        GROUPS.map((group) => {
+          const bus = this.audioContext.createGain();
+          bus.connect(this.masterGain);
+          return [group, bus];
+        })
+      );
 
       this.masterLimiter = createMasterLimiter(this.audioContext);
 
@@ -924,6 +936,12 @@ export class Audio {
     this.volume = CONFIG.MIX.SFX_VOLUME;
     if (this.masterGain) {
       this.masterGain.gain.value = this.enabled ? this.volume : 0;
+    }
+    if (this.buses) {
+      for (const group of GROUPS) {
+        const db = CONFIG.MIX[`${group.toUpperCase()}_DB`];
+        this.buses[group].gain.value = 10 ** (db / 20);
+      }
     }
     window.beatTrack?.setVolume(CONFIG.MIX.BEAT_TRACK_VOLUME);
     if (this.voicebox) {
