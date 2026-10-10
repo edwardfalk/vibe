@@ -116,6 +116,7 @@ Calls and smaller work:
 - **call: tune the hero's, the rusher's and the tank's voices.** They are still first guesses; the grunt's (#89) and the stabber's (#94) are tuned.
 - **call: enemies can talk over the bomb's countdown** (since #89). If it clutters, hold their gap through the count. Also set the chatter odds by ear.
 - **check: a second bomb's "TIMEBOMB!" can land on the first bomb's count** (#90 doesn't cover it).
+- **build, low: speech told the start of the sound it goes with,** so "FIRE!" starts with the tank's shot itself, not on the eighth found again when its render ends. (beat-lead spec)
 - **build: speech minors:**
   - a failed line logs a warning, which no test sees;
   - worker errors carry no file or line;
