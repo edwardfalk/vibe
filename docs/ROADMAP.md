@@ -19,7 +19,6 @@ The audio overhaul's two next steps; Edward picks the order:
 
 Calls and smaller work:
 
-- **call: the bomb's cloud, left out of the mix pass.** It measures 11.9 dB under the kick, but it is a 20 s bed under the fight, and a 50 ms peak understates a sound that long. Raise `BOMB.CLOUD_VOLUME` only if it's heard as too quiet. (mix pass spec)
 - **check: the kick's level depends on where in a 128-frame render block it starts:** above 250 Hz it is 2.3 dB louder half a block in than on a block's start, smoothly, and the tank's shot 1.5 dB the same way; most tones don't move. In play each beat lands at a different place in a block, so the kick may swing up to ±1.2 dB from beat to beat. Cause not found; the window tests average over a block. (mix pass)
 - **call: the hero's final shot sound** (softHat, metalHat, tick, ghostArp; tick is the default). Then the other three and the `HERO_SHOT.SOUND` knob go.
 - **build: delete the grunt shot's zap option and its `BAND.GRUNT_SHOT` knob.** Edward kept the stab (#94); ask before deleting.

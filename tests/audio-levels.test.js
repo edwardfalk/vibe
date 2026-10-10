@@ -240,10 +240,12 @@ test('a volley of four grunt shots in one frame adds like random phases, not in 
 // through a 250 Hz high-pass (laptop speakers play little below it). Each
 // is rendered alone, before the limiter, centred and near, the group knobs
 // at 0 and every other knob at its default, Math.random at 0.5, in the
-// default key; the kick in the same run. Where in a 128-frame render block
+// default key, the band's dB knobs at 0; the kick in the same run. Where in
+// a 128-frame render block
 // a sound starts moves some by up to 2.3 dB (the kick most), and in play
 // they start anywhere: each level is its mean over START_FRAMES. A group's
-// offset is Edward's, by ear: the windows check each group's inside
+// offset, and a band sound's dB knob, are Edward's by ear on top: the
+// windows check the levelling inside each group
 const WINDOWS_DB = {
   drums: [0, 3],
   band: [-3, 3],
@@ -276,6 +278,10 @@ async function overKick(page, tiers) {
       const { airTiming, airDarts } = await import('/js/entities/TankDeath.js');
       const { GRUNT_CHORD } =
         await import('/js/systems/combat/EnemyDeathHandler.js');
+      // Edward's dB knobs on the band's sounds, at 0 (this page is the test's)
+      for (const knob of Object.keys(CONFIG.BAND)) {
+        if (knob.endsWith('_DB')) CONFIG.BAND[knob] = 0;
+      }
       const RATE = 44100;
       const WINDOW = Math.round(RATE * 0.05);
       let AT = 0; // the start of the render under way (loudest)

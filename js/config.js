@@ -150,7 +150,7 @@ const CONFIG = {
   BAND: {
     GRUNT_SHOT: 'stab', // stab or zap
     GRUNT_SHOT_DB: -2, // Edward's, on the page
-    TANK_SHOT_DB: 0,
+    TANK_SHOT_DB: 3, // Edward's, at the mix pass's play-test
     CHARGE_DB: 0, // the tank's charge
     CHATTER: 'both', // both (each grunt his own voice), whine or squeak
     CHATTER_DB: 0,
@@ -350,7 +350,9 @@ const CONFIG = {
     // at 2 a 0.75 s shout has a quarter second to spare)
     COUNT_LEAD_BEATS: 2,
     BANG_VOLUME: 1, // its bang, 1 = the studies page's level
-    CLOUD_VOLUME: 1, // its cloud's sound, 1 = the studies page's level
+    // its cloud's sound, 1 = the studies page's level; 3 dB up, Edward's at the
+    // mix pass's play-test
+    CLOUD_VOLUME: 1.41,
   },
 
   // The hero: a shield that takes one real hit whole, then recharges and
