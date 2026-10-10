@@ -147,6 +147,7 @@ describe('startTime', () => {
 
     it('inside the window, once its eighth has passed on the audio, at once', () => {
       expect(startTime(1.03, led)).toBe(1.03); // the game at 1.055
+      expect(startTime(1.06, led)).toBe(1.06); // the game at 1.085
     });
 
     it('otherwise the next eighth at least 20 ms ahead of the audio', () => {

@@ -495,6 +495,7 @@ test.describe('Gameplay Probes', () => {
           origin: clock.startTime / 1000,
           step: clock.beatInterval / 2000,
           quantum: 128 / ctx.sampleRate,
+          ahead: clock.aheadSec,
         };
         try {
           return synth(ctx, ...rest);
@@ -524,10 +525,12 @@ test.describe('Gameplay Probes', () => {
     const tol = await page.evaluate(() => window.beatClock.eighthNoteTolerance);
     for (const o of sustained) expect(o).toBeLessThanOrEqual(tol + 17); // + one frame
 
-    // A held shot that fired just before its eighth (by at least one render
-    // quantum, at most 30 ms) has its sound booked on that eighth; any other
-    // plays at once. Held fire may also fire up to 20 ms after its eighth
-    // (the window is open both sides), so not every shot can be booked
+    // A held shot that fired just before its eighth on the game's clock (at
+    // most 30 ms, and so up to 30 ms plus the clock's lead before it on the
+    // audio's, by at least one render quantum) has its sound booked on that
+    // eighth; any other plays at once. Held fire may also fire up to 20 ms
+    // after its eighth (the window is open both sides), so not every shot
+    // can be booked
     const held = sounds.slice(1);
     expect(held.length).toBe(sustained.length);
     const signedOff = (s, t) => {
@@ -550,7 +553,8 @@ test.describe('Gameplay Probes', () => {
     // None that played at once could have been booked
     for (const s of rest) {
       const off = signedOff(s, s.handedAt);
-      expect(off > -0.03 && off <= -s.quantum, `${off}`).toBe(false);
+      const could = off > -(0.03 + s.ahead) && off <= -s.quantum;
+      expect(could, `${off}`).toBe(false);
     }
     // And the test can't pass on late shots alone. How many fire after
     // their eighth depends on the frame rate: on a GPU at 60 fps about 5%,
@@ -663,9 +667,17 @@ test.describe('Gameplay Probes', () => {
     await page.waitForFunction(() => window.gameState.gameState === 'playing');
     const after = await record();
     check(after);
-    // And the test can't pass on late frames alone
+    // And the test can't pass on late frames alone. A slow runner books few
+    // (a frame later than the lead plays at once): it records up to two
+    // more rounds before it gives up; at lead 0 none ever books
     const all = [...before.shotStarts, ...after.shotStarts];
-    expect(all.filter((s) => s.at > s.now).length).toBeGreaterThanOrEqual(1);
+    const booked = () => all.filter((s) => s.at > s.now).length;
+    for (let round = 0; round < 2 && booked() === 0; round++) {
+      const more = await record();
+      check(more);
+      all.push(...more.shotStarts);
+    }
+    expect(booked()).toBeGreaterThanOrEqual(1);
   });
 
   test('Pausing stops the sound and the beat; unpausing picks them up again', async ({

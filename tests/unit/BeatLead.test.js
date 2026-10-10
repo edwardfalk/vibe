@@ -60,6 +60,16 @@ describe('the beat clock runs ahead of what you hear', () => {
     expect(clock.startTime).toBeCloseTo(origin + 10, 9);
   });
 
+  it("reads the new lead first thing after a live change, the game's time carried on", () => {
+    CONFIG.BEAT_CLOCK.AHEAD_MS = 0;
+    const clock = new BeatClock(120, ctxAt(1.3));
+    clock.startTime = 0;
+    CONFIG.BEAT_CLOCK.AHEAD_MS = 25;
+    expect(clock.nowSec()).toBeCloseTo(1.325, 9);
+    clock.update(true);
+    expect(clock.cache.elapsed).toBeCloseTo(1300, 6);
+  });
+
   // No _now() in between: BeatTrack's timer or a speech line reads these,
   // either one first
   it('hands a reader the new origin after a change, read first', () => {

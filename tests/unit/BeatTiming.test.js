@@ -225,6 +225,20 @@ describe('every beat sound books on its eighth through playSound', () => {
     expect(start).toBeLessThanOrEqual(3.025 + SPREAD);
   });
 
+  // Only the hero's shot has an early window: a sound just before its
+  // eighth on the game's clock belongs to the eighth before, long past
+  it.each([['gruntAdvance'], ['alienShoot']])(
+    '%s just before its eighth plays now, not on it',
+    (name) => {
+      const { made, game } = ledAudio();
+      game(2.995).playSound(name, 100, 0, { note: ['b3', 5], seed: 0.3 });
+      const [osc] = made.filter((n) => n.kind === 'osc');
+      const start = osc.start.mock.calls[0][0];
+      expect(start).toBeGreaterThanOrEqual(2.97);
+      expect(start).toBeLessThanOrEqual(2.97 + SPREAD);
+    }
+  );
+
   it("a tone's pitch is read at its booked start, before its spread", () => {
     // The hum's drift moves every pitch: it is read where the tone starts
     const { made, game } = ledAudio();
@@ -423,5 +437,11 @@ describe('a tank the bomb kills dies with the bang', () => {
     });
     const [, , at] = audio.playTankDeath.mock.calls[0];
     expect(at).toBe(3); // not the game's now, 3.01
+    // and he is seen to start dying as the bang is heard
+    const [death] = values.explosionManager.fragmentExplosions;
+    expect(death.startsAt).toBeCloseTo(
+      3 + CONFIG.SKY.OFFSET_MS / 1000 + 0.025,
+      9
+    );
   });
 });
