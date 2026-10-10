@@ -3,12 +3,15 @@ import {
   gruntPop,
   lastBreath,
   GRUNT_POP_SEC,
+  BREATH_MIX_DB,
 } from '../../js/audio/DeathSounds.js';
+import { dB } from '../../js/mathUtils.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { Audio } from '../../js/Audio.js';
 import { NOISE_SEC } from '../../js/audio/CrashSynth.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 const DEATHS = { ...CONFIG.DEATHS };
 afterEach(() => {
@@ -142,6 +145,7 @@ describe("the game's Audio plays them", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
+      buses: fakeBuses(),
       _pausedByGame: false,
       _resuming: false,
     });
@@ -158,7 +162,7 @@ describe("the game's Audio plays them", () => {
     expect(near.busGain()).toBeCloseTo(2, 9);
     // Into the effects' bus, so it mutes and ducks with them
     const nearPan = near.made.find((n) => n.kind === 'pan');
-    expect(nearPan.connect).toHaveBeenCalledWith(near.audio.masterGain);
+    expect(nearPan.connect).toHaveBeenCalledWith(near.audio.buses.feedback);
     const source = near.made.find((n) => n.kind === 'source');
     const [, offset] = source.start.mock.calls[0];
     expect(offset + GRUNT_POP_SEC).toBeLessThanOrEqual(NOISE_SEC);
@@ -169,13 +173,13 @@ describe("the game's Audio plays them", () => {
     expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeGreaterThan(0);
   });
 
-  it('his last breath at its volume knob', () => {
+  it('his last breath at its volume knob, times its mix trim', () => {
     CONFIG.DEATHS.BREATH_VOLUME = 0.5;
     const { audio, made, busGain } = gameAudio();
     audio.playLastBreath(4);
-    expect(busGain()).toBeCloseTo(0.5, 9);
+    expect(busGain()).toBeCloseTo(0.5 * dB(BREATH_MIX_DB), 9);
     const pan = made.find((n) => n.kind === 'pan');
-    expect(pan.connect).toHaveBeenCalledWith(audio.masterGain);
+    expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
   });
 
   it('neither while a pause holds the sound', () => {

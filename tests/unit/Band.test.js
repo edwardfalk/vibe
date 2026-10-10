@@ -17,6 +17,7 @@ import { CONFIG } from '../../js/config.js';
 import { Audio } from '../../js/Audio.js';
 import { Grunt } from '../../js/entities/Grunt.js';
 import { createMockP5, createMockAudio } from './helpers/enemyMocks.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 const AT = 2.5;
 const dB = (d) => 10 ** (d / 20);
@@ -75,6 +76,7 @@ function gameAudio(beats = 1) {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
+    buses: fakeBuses(),
     effects: { reverb: null },
     getContextValue: (key) => (key === 'beatClock' ? clock : undefined),
     _pausedByGame: false,
@@ -88,7 +90,7 @@ function told(opts) {
   const { audio } = gameAudio(3.6); // eighth 7.2: the nearest is 7
   const got = [];
   SYNTHS.probe = (_ctx, _out, _cfg, o) => got.push(o);
-  audio.sounds.probe = { synth: 'probe' };
+  audio.sounds.probe = { synth: 'probe', group: 'band' };
   try {
     audio.playSound('probe', 0, 0, opts);
   } finally {
@@ -150,7 +152,8 @@ describe("playSynth passes the caller's options through", () => {
 });
 
 // Each of the band's sounds: its synth (by default its name), what its
-// creature passes, its knob, its trim (the spec's, from the page), and the
+// creature passes, its knob, its trim (the spec's, from the page, plus the
+// mix pass's move), and the
 // CONFIG.BAND choices it plays under, whatever the defaults are
 const BAND = {
   gruntShot: {
@@ -166,8 +169,12 @@ const BAND = {
     knob: 'GRUNT_SHOT_DB',
     trim: 0.2,
   },
-  tankShot: { opts: {}, knob: 'TANK_SHOT_DB', trim: 1.5 },
-  tankCharge: { opts: { step: 0, steps: 8 }, knob: 'CHARGE_DB', trim: -1.9 },
+  tankShot: { opts: {}, knob: 'TANK_SHOT_DB', trim: 1.5 - 9.41 },
+  tankCharge: {
+    opts: { step: 0, steps: 8 },
+    knob: 'CHARGE_DB',
+    trim: -1.9 - 3.8,
+  },
   gruntChatter: {
     band: { CHATTER: 'both' },
     opts: { voice: 'whine' },
@@ -386,7 +393,10 @@ describe("the grunt's shot", () => {
   });
 
   it("alienShoot is the grunt's shot", () => {
-    expect(SOUND_CONFIG.alienShoot).toEqual({ synth: 'gruntShot' });
+    expect(SOUND_CONFIG.alienShoot).toEqual({
+      synth: 'gruntShot',
+      group: 'band',
+    });
   });
 
   it("two grunts' shots in one frame don't start together or sound the same", () => {
@@ -514,7 +524,10 @@ describe("the grunts' chatter", () => {
     expect(GRUNT_VOICES).toEqual(['whine', 'squeak']);
     expect(CHATTER_CHOICES).toEqual(['both', 'whine', 'squeak']);
     expect(CONFIG.BAND.CHATTER).toBe('both');
-    expect(SOUND_CONFIG.gruntChatter).toEqual({ synth: 'gruntChatter' });
+    expect(SOUND_CONFIG.gruntChatter).toEqual({
+      synth: 'gruntChatter',
+      group: 'band',
+    });
   });
 
   // The waveform each voice plays: the whine's triangle, the squeak's saw

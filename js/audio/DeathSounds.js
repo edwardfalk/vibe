@@ -19,6 +19,7 @@
 import { hz } from './Harmony.js';
 import { disconnectWhenEnded } from './CrashSynth.js';
 import { hash01 } from '../entities/RusherRenderer.js';
+import { dB } from '../mathUtils.js';
 
 const SILENT = 0.0001; // exponential ramps can't reach 0
 const OFF = 0.0005; // where a short sound's fade ends
@@ -53,6 +54,10 @@ const WHINE = {
 };
 /** How long a grunt's pop lasts, s, for a noise offset that stays in the buffer */
 export const GRUNT_POP_SEC = WHINE.DELAY_SEC + WHINE.SLIDE_SEC + WHINE.HOLD_SEC;
+// The mix pass: the last breath over the page's level, in dB, to the top of
+// the events' window: his death line ducks it 6 dB, and Edward never heard
+// it (docs/superpowers/specs/2026-10-10-mix-pass-design.md)
+export const BREATH_MIX_DB = 14.56;
 
 // The Dude's last breath: a soft pad an octave under his note, gliding down
 // a whole tone, and a breath out under it
@@ -180,11 +185,12 @@ export function gruntPop(ctx, out, { at, note, noise, offset, volume, pan }) {
 /**
  * The Dude's last breath at audio time `at`, with the hum's drift then.
  * @param {AudioContext} ctx
- * @param {AudioNode} out the effects' bus
- * @param {object} o { at, noise (an AudioBuffer), volume (1: the page's level) }
+ * @param {AudioNode} out its group's bus
+ * @param {object} o { at, noise (an AudioBuffer), volume (1: the page's level,
+ *   plus the mix pass's BREATH_MIX_DB) }
  */
 export function lastBreath(ctx, out, { at, noise, volume }) {
-  const [bus, panner] = placed(ctx, out, volume, 0, at);
+  const [bus, panner] = placed(ctx, out, volume * dB(BREATH_MIX_DB), 0, at);
   const nodes = [bus, panner];
   const end = at + PAD.SEC;
   const pad = ctx.createGain();

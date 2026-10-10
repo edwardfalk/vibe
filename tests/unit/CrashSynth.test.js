@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { playCrash } from '../../js/audio/CrashSynth.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { Audio } from '../../js/Audio.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 // A Web Audio stand-in that records the nodes it makes
 function fakeAudio() {
@@ -50,6 +51,7 @@ function gameAudio() {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
+    buses: fakeBuses(),
     getContextValue: () => undefined, // no beat clock
     // As the constructor sets them
     _pausedByGame: false,
@@ -106,7 +108,7 @@ describe('the crash through playSound', () => {
     expect(squares.map((o) => o.type)).toEqual(Array(6).fill('square'));
     const pan = near.made.find((n) => n.kind === 'pan');
     expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeGreaterThan(0);
-    expect(pan.connect).toHaveBeenCalledWith(near.audio.masterGain);
+    expect(pan.connect).toHaveBeenCalledWith(near.audio.buses.drums);
     const far = gameAudio();
     far.audio.playSound('rusherCrash', 2000, 0);
     const peak = ({ made }) =>

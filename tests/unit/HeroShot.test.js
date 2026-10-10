@@ -11,6 +11,7 @@ import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 import { Audio } from '../../js/Audio.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 const AT = 2.5;
 const dB = (d) => 10 ** (d / 20);
@@ -271,6 +272,7 @@ function gameAudio(beats = 1) {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
+    buses: fakeBuses(),
     effects: { reverb: null },
     getContextValue: (key) => (key === 'beatClock' ? clock : undefined),
     _pausedByGame: false,
@@ -313,7 +315,7 @@ describe("the hero's shot in the game", () => {
     const { audio } = gameAudio(3.6); // eighth 7.2: the nearest is 7
     const told = [];
     SYNTHS.probe = (_ctx, _out, _cfg, opts) => told.push(opts);
-    audio.sounds.probe = { synth: 'probe' };
+    audio.sounds.probe = { synth: 'probe', group: 'band' };
     try {
       audio.playSound('probe', 0, 0);
     } finally {
@@ -328,7 +330,7 @@ describe("the hero's shot in the game", () => {
     SYNTHS.broken = () => {
       throw new Error('a bad root');
     };
-    audio.sounds.broken = { synth: 'broken' };
+    audio.sounds.broken = { synth: 'broken', group: 'band' };
     try {
       expect(() => {
         audio.playSound('broken');

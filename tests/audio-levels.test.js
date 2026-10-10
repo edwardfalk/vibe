@@ -168,80 +168,6 @@ test('a bad root costs only the hum and the pitched sounds: the kick plays on', 
   expect(errors.filter((e) => e.includes('The hum failed'))).toHaveLength(2);
 });
 
-// The dash and the frying became noise through a band-pass (audio PR 2).
-// They keep their old saw's level against the kick, as laptop speakers hear
-// it (loudest 50 ms above 250 Hz), measured on 59b8f7d
-const NOISE_OVER_KICK_DB = { playerDash: 0.1, enemyFrying: 2.7 };
-const NOISE_TOLERANCE_DB = 1.5;
-
-test('the dash and the frying, now noise, keep their level against the kick', async ({
-  page,
-}) => {
-  await page.goto('/tests/helpers/speech-gate.html');
-  const overKick = await page.evaluate(async (names) => {
-    Math.random = () => 0.5; // no random level or length
-    const { CONFIG } = await import('/js/config.js');
-    const { Audio } = await import('/js/Audio.js');
-    const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
-    const { BeatTrack, clickNoise } = await import('/js/audio/BeatTrack.js');
-    const RATE = 44100;
-    const AT = 0.05;
-    const WINDOW = Math.round(RATE * 0.05);
-    // dB of the loudest 50 ms that play() sends through a 250 Hz high-pass
-    async function loudest(play) {
-      const ctx = new OfflineAudioContext(1, RATE, RATE);
-      const highpass = new BiquadFilterNode(ctx, {
-        type: 'highpass',
-        frequency: 250,
-        Q: 0.7,
-      });
-      highpass.connect(ctx.destination);
-      play(ctx, highpass);
-      const data = (await ctx.startRendering()).getChannelData(0);
-      let loud = 0;
-      for (let i = 0; i + WINDOW <= data.length; i += WINDOW >> 2) {
-        let sum = 0;
-        for (let j = i; j < i + WINDOW; j++) sum += data[j] ** 2;
-        loud = Math.max(loud, sum / WINDOW);
-      }
-      return 10 * Math.log10(loud);
-    }
-    const kick = await loudest((ctx, out) => {
-      const track = new BeatTrack({});
-      track.ctx = ctx;
-      track.masterGain = new GainNode(ctx, {
-        gain: CONFIG.MIX.BEAT_TRACK_VOLUME,
-      });
-      track.masterGain.connect(out);
-      track._noiseBuffer = clickNoise(ctx);
-      track._playKick(AT);
-    });
-    const over = {};
-    for (const name of names) {
-      const level = await loudest((ctx, out) => {
-        const audio = Object.assign(Object.create(Audio.prototype), {
-          audioContext: ctx,
-          masterGain: out,
-          effects: { reverb: null },
-          player: { x: 0, y: 0 },
-          context: null,
-          getContextValue: () => undefined, // no beat clock: now
-        });
-        audio.playTone(SOUND_CONFIG[name], null, null, name);
-      });
-      over[name] = level - kick;
-    }
-    return over;
-  }, Object.keys(NOISE_OVER_KICK_DB));
-  console.log('noise over the kick, dB:', overKick);
-  for (const [name, db] of Object.entries(NOISE_OVER_KICK_DB)) {
-    expect(overKick[name], name).toBeGreaterThanOrEqual(
-      db - NOISE_TOLERANCE_DB
-    );
-    expect(overKick[name], name).toBeLessThanOrEqual(db + NOISE_TOLERANCE_DB);
-  }
-});
-
 // Copies of one sound started in one frame (grunts firing together on 2 or
 // 4, on one note) must not add in phase: four in phase are 12 dB over one,
 // four at random phases 6 dB on average. Each grunt's seed spreads his copy
@@ -276,6 +202,11 @@ test('a volley of four grunt shots in one frame adds like random phases, not in 
       const audio = Object.assign(Object.create(Audio.prototype), {
         audioContext: timed,
         masterGain: ctx.destination,
+        buses: {
+          drums: ctx.destination,
+          band: ctx.destination,
+          feedback: ctx.destination,
+        },
         effects: { reverb: null },
         player: { x: 0, y: 0 },
         context: null,
@@ -304,115 +235,326 @@ test('a volley of four grunt shots in one frame adds like random phases, not in 
   expect(overOne).toBeLessThan(8);
 });
 
-// The band's instruments (audio PR 3) at the levels Edward heard on the
-// listening page: each matched there to the sound it replaced by
-// measure.mjs (docs/superpowers/specs/2026-10-09-band-studies), so each is
-// measured as it was: alone, centred, at volume 1, with no limiter, the
-// loudest 50 ms through a 250 Hz high-pass, the loudest of the page's
-// arguments. The targets are today's sounds measured that way on d677cd7;
-// the fuse replaced silence, so it matches the grunt's shot. Each lands on
-// its target plus its knob's default
-const BAND_TARGET_DB = {
-  gruntShot: -23.4,
-  tankShot: -13.7,
-  tankCharge: -19.5,
-  gruntChatter: -22.9,
-  rusherFuse: -23.4,
+// The mix pass (docs/superpowers/specs/2026-10-10-mix-pass-design.md): each
+// sound sits in its group's window against the kick, by the loudest 50 ms
+// through a 250 Hz high-pass (laptop speakers play little below it). Each
+// is rendered alone, before the limiter, centred and near, the group knobs
+// at 0 and every other knob at its default, Math.random at 0.5, in the
+// default key, the band's dB knobs at 0; the kick in the same run. Where in
+// a 128-frame render block
+// a sound starts moves some by up to 2.3 dB (the kick most), and in play
+// they start anywhere: each level is its mean over START_FRAMES. A group's
+// offset, and a band sound's dB knob, are Edward's by ear on top: the
+// windows check the levelling inside each group
+const WINDOWS_DB = {
+  drums: [0, 3],
+  band: [-3, 3],
+  frequent: [-6, 0],
+  events: [0, 6],
 };
-const BAND_TOLERANCE_DB = 1.5;
+const WINDOW_TOLERANCE_DB = 0.5;
+// The tank's charge rises over its eight steps, more than a window: its top
+// step sits in the band's, and the whole charge keeps its rise
+const CHARGE_RISE_DB = 8.6;
+// Where each render starts: through one render block, after a first one
+const START_FRAMES = [0, 16, 32, 48, 64, 80, 96, 112].map((f) => 128 + f);
+const WINDOW_TEST_MS = 120000;
 
-test("the band's instruments sit at the levels Edward heard on the page", async ({
+// Every case of every sound in `tiers`, in dB over the kick
+async function overKick(page, tiers) {
+  await page.goto('/tests/helpers/speech-gate.html');
+  return page.evaluate(
+    async ([tiers, startFrames]) => {
+      Math.random = () => 0.5;
+      const { CONFIG } = await import('/js/config.js');
+      const { Audio } = await import('/js/Audio.js');
+      const { BeatTrack, clickNoise } = await import('/js/audio/BeatTrack.js');
+      const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
+      const { bangSound } = await import('/js/audio/BombSounds.js');
+      const { tankAir, plateClang, gruntPop, lastBreath } =
+        await import('/js/audio/DeathSounds.js');
+      const { crashNoise } = await import('/js/audio/CrashSynth.js');
+      const { STRING_PARTS } = await import('/js/audio/StabberStrings.js');
+      const { airTiming, airDarts } = await import('/js/entities/TankDeath.js');
+      const { GRUNT_CHORD } =
+        await import('/js/systems/combat/EnemyDeathHandler.js');
+      // Edward's dB knobs on the band's sounds, at 0 (this page is the test's)
+      for (const knob of Object.keys(CONFIG.BAND)) {
+        if (knob.endsWith('_DB')) CONFIG.BAND[knob] = 0;
+      }
+      const RATE = 44100;
+      const WINDOW = Math.round(RATE * 0.05);
+      let AT = 0; // the start of the render under way (loudest)
+      // The loudest 50 ms of play() started at `at`, as energy
+      async function loudestAt(play, sec, at) {
+        AT = at;
+        const ctx = new OfflineAudioContext(
+          1,
+          Math.ceil(RATE * (at + sec)),
+          RATE
+        );
+        const highpass = new BiquadFilterNode(ctx, {
+          type: 'highpass',
+          frequency: 250,
+          Q: 0.7,
+        });
+        highpass.connect(ctx.destination);
+        play(ctx, highpass);
+        const data = (await ctx.startRendering()).getChannelData(0);
+        let loud = 0;
+        for (let i = 0; i + WINDOW <= data.length; i += WINDOW >> 2) {
+          let sum = 0;
+          for (let j = i; j < i + WINDOW; j++) sum += data[j] ** 2;
+          loud = Math.max(loud, sum / WINDOW);
+        }
+        return loud;
+      }
+      // dB of its loudest 50 ms, the mean over the start frames
+      async function loudest(play, sec = 2) {
+        let sum = 0;
+        for (const f of startFrames)
+          sum += await loudestAt(play, sec, f / RATE);
+        return 10 * Math.log10(sum / startFrames.length);
+      }
+      // The game's Audio on one context, every bus straight to `out`, playing
+      // at the render's start
+      const gameAudio = (ctx, out) => {
+        const audio = Object.assign(Object.create(Audio.prototype), {
+          audioContext: ctx,
+          masterGain: out,
+          buses: { drums: out, band: out, feedback: out },
+          effects: { reverb: null },
+          player: { x: 0, y: 0 },
+          context: null,
+          getContextValue: () => undefined,
+          beatTiming: () => ({ now: AT, at: AT, eighth: 0, game: AT }),
+        });
+        audio.createEffects(); // the ambient sounds' reverb
+        return audio;
+      };
+      const preset =
+        (name, opts = null) =>
+        (ctx, out) => {
+          const audio = gameAudio(ctx, out);
+          const config = SOUND_CONFIG[name];
+          if (config.synth) audio.playSynth(config, null, null, opts);
+          else audio.playTone(config, null, null, name, opts);
+        };
+      const withBand = (band, play) => (ctx, out) => {
+        const saved = { ...CONFIG.BAND };
+        Object.assign(CONFIG.BAND, band);
+        try {
+          play(ctx, out);
+        } finally {
+          Object.assign(CONFIG.BAND, saved);
+        }
+      };
+      const S = CONFIG.STABBER;
+      const strings = (part, volume) => (ctx, out) =>
+        STRING_PARTS[part](ctx, out, {
+          at: AT,
+          untilSec: 0.5,
+          beatSec: 0.5,
+          volume,
+          pan: 0,
+          noise: crashNoise(ctx),
+          offset: 0,
+        });
+      const hits = (name) => ({
+        [`${name} full`]: preset(name, { health: 10, maxHealth: 10 }),
+        [`${name} last`]: preset(name, { health: 1, maxHealth: 10 }),
+      });
+      const steps = CONFIG.TANK.CHARGE_BEATS;
+      // Each case is its play, or [play, seconds]; the tiers' members are the
+      // spec's section 1
+      const CASES = {
+        drums: { rusherCrash: preset('rusherCrash') },
+        band: {
+          ...Object.fromEntries(
+            ['stab', 'zap'].flatMap((shot) =>
+              [
+                ['b3', 5],
+                ['5', 5],
+              ].map((note) => [
+                `alienShoot ${shot} ${note[0]}`,
+                withBand({ GRUNT_SHOT: shot }, preset('alienShoot', { note })),
+              ])
+            )
+          ),
+          tankShot: preset('tankShot'),
+          'tankCharge top': preset('tankCharge', { step: steps - 1, steps }),
+          ...Object.fromEntries(
+            ['whine', 'squeak'].map((voice) => [
+              `gruntChatter ${voice}`,
+              withBand({ CHATTER: 'both' }, preset('gruntChatter', { voice })),
+            ])
+          ),
+          ...Object.fromEntries(
+            [3, 2, 1].map((left) => [
+              `rusherFuse ${left}`,
+              preset('rusherFuse', { left }),
+            ])
+          ),
+          ...Object.fromEntries(
+            [
+              'rusherCharge',
+              'gruntAdvance',
+              'gruntRetreat',
+              'gruntResponse',
+              'tankResponse',
+              'stabberResponse',
+              'rusherResponse',
+            ].map((name) => [name, preset(name)])
+          ),
+          'strings tremolo': strings('tremolo', S.TREMOLO_VOLUME),
+          'strings stab': strings('stab', S.STAB_VOLUME),
+          'strings screech': strings('screech', S.STAB_VOLUME),
+          'strings pluck': strings('pluck', S.PLUCK_VOLUME),
+        },
+        frequent: {
+          ...hits('gruntHit'),
+          ...hits('tankHit'),
+          ...hits('stabberHit'),
+          ...hits('rusherHit'),
+          ...hits('tankPlateHit'),
+          plateClang: (ctx, out) =>
+            plateClang(ctx, out, {
+              at: AT,
+              noise: crashNoise(ctx),
+              volume: CONFIG.TANK_ARMOR.CLANG_VOLUME,
+              pan: 0,
+            }),
+          gruntPop: (ctx, out) =>
+            gruntPop(ctx, out, {
+              at: AT,
+              note: GRUNT_CHORD[0],
+              noise: crashNoise(ctx),
+              offset: 0.3,
+              volume: CONFIG.DEATHS.GRUNT_VOLUME,
+              pan: 0,
+            }),
+          ...Object.fromEntries(
+            ['gruntOw', 'enemyFrying', 'stabberOhNo', 'rusherOhNo'].map(
+              (name) => [name, preset(name)]
+            )
+          ),
+        },
+        events: {
+          ...Object.fromEntries(
+            [
+              'levelUp',
+              'gameOver',
+              'killStreak',
+              'explosion',
+              'tankBallKill',
+              'tankShove',
+              'shieldBreak',
+              'shieldUp',
+              'playerHit',
+              'lowHealthWarning',
+              'playerDash',
+            ].map((name) => [name, preset(name)])
+          ),
+          bombBang: [
+            (ctx, out) =>
+              bangSound(ctx, out, {
+                at: AT,
+                noise: crashNoise(ctx),
+                volume: CONFIG.BOMB.BANG_VOLUME,
+                pan: 0,
+              }),
+            3,
+          ],
+          tankAir: [
+            (ctx, out) => {
+              const timing = airTiming(CONFIG.DEATHS.TANK_ZIP_SEC);
+              tankAir(ctx, out, {
+                at: AT,
+                note: ['1', 2],
+                noise: crashNoise(ctx),
+                volume: CONFIG.DEATHS.TANK_VOLUME,
+                pan: 0,
+                timing,
+                darts: airDarts(timing, 0.5),
+              });
+            },
+            3,
+          ],
+          lastBreath: [
+            (ctx, out) =>
+              lastBreath(ctx, out, {
+                at: AT,
+                noise: crashNoise(ctx),
+                volume: CONFIG.DEATHS.BREATH_VOLUME,
+              }),
+            3,
+          ],
+        },
+      };
+      const kick = await loudest((ctx, out) => {
+        const track = new BeatTrack({});
+        track.ctx = ctx;
+        track.masterGain = new GainNode(ctx, {
+          gain: CONFIG.MIX.BEAT_TRACK_VOLUME,
+        });
+        track.masterGain.connect(out);
+        track._noiseBuffer = clickNoise(ctx);
+        track._playKick(AT);
+      });
+      const out = {};
+      for (const tier of tiers) {
+        out[tier] = {};
+        for (const [name, c] of Object.entries(CASES[tier])) {
+          const [play, sec] = Array.isArray(c) ? c : [c];
+          out[tier][name] = (await loudest(play, sec)) - kick;
+        }
+      }
+      if (tiers.includes('band')) {
+        const charge = (step) => loudest(preset('tankCharge', { step, steps }));
+        out.chargeRise = (await charge(steps - 1)) - (await charge(0));
+      }
+      return out;
+    },
+    [tiers, START_FRAMES]
+  );
+}
+
+function expectInWindows(levels) {
+  for (const [tier, sounds] of Object.entries(levels)) {
+    if (!WINDOWS_DB[tier]) continue;
+    const [low, high] = WINDOWS_DB[tier];
+    for (const [name, db] of Object.entries(sounds)) {
+      expect(db, `${tier}: ${name}`).toBeGreaterThanOrEqual(
+        low - WINDOW_TOLERANCE_DB
+      );
+      expect(db, `${tier}: ${name}`).toBeLessThanOrEqual(
+        high + WINDOW_TOLERANCE_DB
+      );
+    }
+  }
+}
+
+// For the log: every level to 0.01 dB
+const rounded = (levels) =>
+  JSON.stringify(levels, (_, v) => (typeof v === 'number' ? +v.toFixed(2) : v));
+
+test('the drums and the band each sit in their window against the kick', async ({
   page,
 }) => {
-  await page.goto('/tests/helpers/speech-gate.html');
-  const levels = await page.evaluate(async () => {
-    const { CONFIG } = await import('/js/config.js');
-    const { SYNTHS } = await import('/js/audio/Instruments.js');
-    const RATE = 44100;
-    const AT = 0.05;
-    const WINDOW = Math.round(RATE * 0.05);
-    // dB of the loudest 50 ms that play() sends through a 250 Hz high-pass
-    async function loudest(play) {
-      const ctx = new OfflineAudioContext(1, 2 * RATE, RATE);
-      const highpass = new BiquadFilterNode(ctx, {
-        type: 'highpass',
-        frequency: 250,
-        Q: 0.7,
-      });
-      highpass.connect(ctx.destination);
-      play(ctx, highpass);
-      const data = (await ctx.startRendering()).getChannelData(0);
-      let loud = 0;
-      for (let i = 0; i + WINDOW <= data.length; i += WINDOW >> 2) {
-        let sum = 0;
-        for (let j = i; j < i + WINDOW; j++) sum += data[j] ** 2;
-        loud = Math.max(loud, sum / WINDOW);
-      }
-      return 10 * Math.log10(loud);
-    }
-    // Each sound: its synth, its ?tune choice, its knob, the page's arguments
-    const steps = (list, steps) => list.map((step) => ({ step, steps }));
-    const SOUNDS = {
-      'gruntShot stab': [
-        'gruntShot',
-        { GRUNT_SHOT: 'stab' },
-        'GRUNT_SHOT_DB',
-        [{ note: ['b3', 5] }],
-      ],
-      'gruntShot zap': [
-        'gruntShot',
-        { GRUNT_SHOT: 'zap' },
-        'GRUNT_SHOT_DB',
-        [{ note: ['b3', 5] }],
-      ],
-      tankShot: ['tankShot', {}, 'TANK_SHOT_DB', [{}]],
-      tankCharge: ['tankCharge', {}, 'CHARGE_DB', steps([0, 3, 7], 8)],
-      'gruntChatter whine': [
-        'gruntChatter',
-        { CHATTER: 'both' },
-        'CHATTER_DB',
-        [{ voice: 'whine' }],
-      ],
-      'gruntChatter squeak': [
-        'gruntChatter',
-        { CHATTER: 'both' },
-        'CHATTER_DB',
-        [{ voice: 'squeak' }],
-      ],
-      rusherFuse: [
-        'rusherFuse',
-        {},
-        'FUSE_DB',
-        [3, 2, 1].map((left) => ({ left })),
-      ],
-    };
-    const saved = { ...CONFIG.BAND };
-    const out = {};
-    for (const [name, [synth, band, knob, args]] of Object.entries(SOUNDS)) {
-      Object.assign(CONFIG.BAND, band);
-      let level = -Infinity;
-      for (const a of args) {
-        level = Math.max(
-          level,
-          await loudest((ctx, o) =>
-            SYNTHS[synth](ctx, o, {}, { volume: 1, pan: 0, at: AT, ...a })
-          )
-        );
-      }
-      out[name] = { synth, level, knobDb: saved[knob] };
-      Object.assign(CONFIG.BAND, saved);
-    }
-    return out;
-  });
-  console.log(
-    'band levels, dB:',
-    Object.fromEntries(
-      Object.entries(levels).map(([n, l]) => [n, +l.level.toFixed(1)])
-    )
+  test.setTimeout(WINDOW_TEST_MS); // eight renders of every sound
+  const levels = await overKick(page, ['drums', 'band']);
+  console.log('drums and band over the kick, dB:', rounded(levels));
+  expectInWindows(levels);
+  expect(Math.abs(levels.chargeRise - CHARGE_RISE_DB)).toBeLessThanOrEqual(
+    WINDOW_TOLERANCE_DB
   );
-  for (const [name, { synth, level, knobDb }] of Object.entries(levels)) {
-    const want = BAND_TARGET_DB[synth] + knobDb;
-    expect(level, name).toBeGreaterThanOrEqual(want - BAND_TOLERANCE_DB);
-    expect(level, name).toBeLessThanOrEqual(want + BAND_TOLERANCE_DB);
-  }
+});
+
+test('feedback sits in its windows: frequent sounds under the band, events a little above', async ({
+  page,
+}) => {
+  test.setTimeout(WINDOW_TEST_MS); // eight renders of every sound
+  const levels = await overKick(page, ['frequent', 'events']);
+  console.log('feedback over the kick, dB:', rounded(levels));
+  expectInWindows(levels);
 });

@@ -99,6 +99,13 @@ const CONFIG = {
     SFX_VOLUME: 1, // game sound effects master
     BEAT_TRACK_VOLUME: 0.22, // the kick, after the drive (was 0.4)
     SPEECH_VOLUME: 1, // multiplies every voice's volume
+    // Each group of sounds' level, in dB on its bus (Audio.buses): the drums
+    // (the rusher's crash, the hero's shot; the kick keeps BEAT_TRACK_VOLUME),
+    // the band (the enemies' parts) and feedback (hits, events, deaths).
+    // Each group is levelled inside; these set the groups against each other
+    DRUMS_DB: 0,
+    BAND_DB: 0,
+    FEEDBACK_DB: 0,
     SPEECH_DISTANCE_FLOOR: 0.7, // far-off enemies still this loud (was 0.4)
     DUCK_SFX_DB: -6, // effects dip while someone speaks
     DUCK_BEAT_DB: -3, // the kick dips less: it keeps time
@@ -143,7 +150,7 @@ const CONFIG = {
   BAND: {
     GRUNT_SHOT: 'stab', // stab or zap
     GRUNT_SHOT_DB: -2, // Edward's, on the page
-    TANK_SHOT_DB: 0,
+    TANK_SHOT_DB: 3, // Edward's, at the mix pass's play-test
     CHARGE_DB: 0, // the tank's charge
     CHATTER: 'both', // both (each grunt his own voice), whine or squeak
     CHATTER_DB: 0,
@@ -343,7 +350,9 @@ const CONFIG = {
     // at 2 a 0.75 s shout has a quarter second to spare)
     COUNT_LEAD_BEATS: 2,
     BANG_VOLUME: 1, // its bang, 1 = the studies page's level
-    CLOUD_VOLUME: 1, // its cloud's sound, 1 = the studies page's level
+    // its cloud's sound, 1 = the studies page's level; 3 dB up, Edward's at the
+    // mix pass's play-test
+    CLOUD_VOLUME: 1.41,
   },
 
   // The hero: a shield that takes one real hit whole, then recharges and
@@ -380,7 +389,8 @@ const CONFIG = {
   },
 
   // Deaths (js/entities/GruntDeath.js, DudeDeath.js, js/audio/DeathSounds.js).
-  // Volumes: 1 is the prototype page's level. LINGER: how long a grunt's
+  // Volumes: 1 is the prototype page's level (the last breath's plus the mix
+  // pass, DeathSounds.js's BREATH_MIX_DB). LINGER: how long a grunt's
   // remains and the Dude's milk trail stay, times. The Dude's scene: SCENE_BEATS
   // from his fatal hit to GAME OVER (his choreography takes 2 s; past it he
   // floats on), the camera easing in to SCENE_ZOOM (1: no ease).
@@ -410,7 +420,8 @@ const CONFIG = {
   // the "and" of 3 for LUNGE_SEC, to OVERSHOOT_PX past where the hero stood,
   // then rests REST_BARS whole bars. A hit before the lock cancels the stab.
   // The volumes are his strings' (js/audio/StabberStrings.js), 1 = the
-  // prototype page's level. Tune live with ?tune.
+  // prototype page's level plus the mix pass (STRINGS_MIX_DB). Tune live
+  // with ?tune.
   STABBER: {
     STALK_MIN_PX: 200,
     STALK_MAX_PX: 350,

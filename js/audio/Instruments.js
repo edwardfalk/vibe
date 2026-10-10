@@ -12,9 +12,9 @@ import { CONFIG } from '../config.js';
 import { hz, stepUp } from './Harmony.js';
 import { crashNoise, disconnectWhenEnded, playCrash } from './CrashSynth.js';
 import { SOUND_CONFIG } from './SoundConfig.js';
+import { dB } from '../mathUtils.js';
 
 const SILENT = 0.0001; // exponential ramps can't reach 0
-const dB = (d) => 10 ** (d / 20);
 
 // The hero's shots, from the 4 October listening page
 // (docs/superpowers/specs/2026-10-04-hum-studies/index.html, HEROES): each
@@ -227,7 +227,8 @@ export function heroShot(ctx, out, _cfg, { volume, at, eighth }) {
 // From the 9 October listening page
 // (docs/superpowers/specs/2026-10-09-band-studies/candidates.js): each
 // sound's numbers as Edward heard them, and its trim (dB) matching it to the
-// sound it replaced, measured there by measure.mjs
+// sound it replaced, measured there by measure.mjs, plus the mix pass's move
+// into the band's window (docs/superpowers/specs/2026-10-10-mix-pass-design.md)
 
 function osc(ctx, type, f, at, out, cents) {
   const o = ctx.createOscillator();
@@ -397,7 +398,7 @@ export function gruntShot(ctx, out, _cfg, opts) {
 // ringing, driven, with today's falling zap shortened on top (two layers 3%
 // apart, whose beating is the electric buzz)
 const TANK_SHOT = {
-  trim: 1.5,
+  trim: 1.5 - 9.41, // the mix pass
   DRIVE: 2.5,
   PEAK: 0.75,
   ATTACK_SEC: 0.002,
@@ -437,7 +438,7 @@ const TANK_SHOT = {
 // The tank's charge: a short square pluck a beat, a scale step up each beat
 // from his root (the octave on the eighth), louder as he strains
 const TANK_CHARGE = {
-  trim: -1.9,
+  trim: -1.9 - 3.8, // the mix pass, by its top step
   FROM: ['1', 3],
   PEAK: 0.4,
   // The first pluck at this share of PEAK, the last at all of it

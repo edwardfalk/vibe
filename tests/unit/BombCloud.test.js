@@ -10,6 +10,7 @@ import { cloudSound } from '../../js/audio/BombSounds.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { Audio } from '../../js/Audio.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 const BOMB = { ...CONFIG.BOMB };
 afterEach(() => {
@@ -308,6 +309,7 @@ describe("the cloud's sound", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
+      buses: fakeBuses(),
       _pausedByGame: false,
       _resuming: false,
       getContextValue: () => null,
@@ -330,7 +332,7 @@ describe("the cloud's sound", () => {
     expect(bus.gain.setValueAtTime.mock.calls[0][0]).toBeCloseTo(2 * near, 9);
     const pan = made.find((n) => n.kind === 'pan');
     expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(side, 9);
-    expect(pan.connect).toHaveBeenCalledWith(audio.masterGain);
+    expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
     audio._pausedByGame = true;
     expect(audio.playBombCloud(0, 0, 0.5)).toBeNull();
   });

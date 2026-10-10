@@ -12,6 +12,7 @@ import { bangSound } from '../../js/audio/BombSounds.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { Audio } from '../../js/Audio.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 const BOMB = { ...CONFIG.BOMB };
 const DEATHS = { ...CONFIG.DEATHS };
@@ -324,6 +325,7 @@ describe("the bang's sound", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
+      buses: fakeBuses(),
       getContextValue: () => undefined, // no beat clock: now
       _pausedByGame: false,
       _resuming: false,
@@ -338,7 +340,7 @@ describe("the bang's sound", () => {
     expect(bus.gain.setValueAtTime.mock.calls[0][0]).toBeCloseTo(0.5 * near, 9);
     const pan = made.find((n) => n.kind === 'pan');
     expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(side, 9);
-    expect(pan.connect).toHaveBeenCalledWith(audio.masterGain);
+    expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
     const count = made.length;
     audio._pausedByGame = true;
     audio.playBombBang(0, 0);
