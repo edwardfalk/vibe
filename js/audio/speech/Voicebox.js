@@ -27,16 +27,21 @@ export function spoken(engine, text, respell = CONFIG.SPEECH.RESPELL) {
   });
 }
 
-// When a line ready at `now` (audio seconds) starts: at once inside the
-// on-beat window after a grid line (so "FIRE!" lands with the tank's shot),
-// else on the next eighth note at least LEAD_SEC ahead. Before BeatClock runs
-// on audio time there is no grid to land on, so at once.
+// When a line ready at `now` (audio seconds) starts. Inside the on-beat
+// window after a grid line, on the game's clock (which runs the beat clock's
+// lead ahead of the audio), it starts on that line while it is still ahead,
+// else at once: so "FIRE!" lands with the tank's shot. Otherwise on the next
+// eighth note at least LEAD_SEC ahead of the audio. Before BeatClock runs on
+// audio time there is no grid to land on, so at once.
 export function startTime(now, clock) {
   if (!clock?.audioContext) return now;
   const origin = clock.startTime / 1000;
   const eighth = clock.beatInterval / 2000;
-  const sinceEighth = (((now - origin) % eighth) + eighth) % eighth;
-  if (sinceEighth <= clock.tolerance / 1000) return now;
+  const game = now + (clock.aheadSec ?? 0);
+  const sinceEighth = (((game - origin) % eighth) + eighth) % eighth;
+  if (sinceEighth <= clock.tolerance / 1000) {
+    return Math.max(now, game - sinceEighth);
+  }
   return origin + Math.ceil((now + LEAD_SEC - origin) / eighth) * eighth;
 }
 

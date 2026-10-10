@@ -134,6 +134,27 @@ describe('startTime', () => {
     expect(startTime(1.15, { ...clock, audioContext: null })).toBe(1.15);
     expect(startTime(1.15, null)).toBe(1.15);
   });
+
+  // The game runs 25 ms ahead of the audio (BeatClock): its now is `now`
+  // plus that, and the grid's lines are when they are heard
+  describe('with the game running ahead', () => {
+    const led = { ...clock, aheadSec: 0.025 };
+
+    it('a line the game starts just after its eighth starts on it, not an eighth later', () => {
+      expect(startTime(0.99, led)).toBe(1); // the game at 1.015
+      expect(startTime(0.99, clock)).toBeCloseTo(1.25, 9); // with no lead
+    });
+
+    it('inside the window, once its eighth has passed on the audio, at once', () => {
+      expect(startTime(1.03, led)).toBe(1.03); // the game at 1.055
+    });
+
+    it('otherwise the next eighth at least 20 ms ahead of the audio', () => {
+      expect(startTime(1.13, led)).toBeCloseTo(1.25, 9);
+      expect(startTime(1.214, led)).toBeCloseTo(1.25, 9); // 36 ms ahead
+      expect(startTime(1.37, led)).toBeCloseTo(1.5, 9);
+    });
+  });
 });
 
 describe('Voicebox', () => {
