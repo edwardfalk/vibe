@@ -72,8 +72,8 @@ export function heardKick(beats, beatSec, latencySec, running) {
 
 /**
  * The heard kick at beat position `beats`, from this track's own state: its
- * AudioContext's latency plus CONFIG.SKY.OFFSET_MS, and whether it is
- * playing. A pause that holds the sound (held) keeps the glow the stopped
+ * AudioContext's latency plus CONFIG.SKY.OFFSET_MS and its beat clock's lead,
+ * and whether it is playing. A pause that holds the sound (held) keeps the glow the stopped
  * beat had. The sky and the hero's pulses both read it.
  * @param {?BeatTrack} beatTrack
  * @param {number} beats BeatClock's position in beats
@@ -83,19 +83,25 @@ export function heardKick(beats, beatSec, latencySec, running) {
 export function heardKickOf(beatTrack, beats, beatSec, held = false) {
   const ctx = beatTrack?.ctx;
   const running = !!beatTrack?.isPlaying && (ctx?.state === 'running' || held);
-  return heardKick(beats, beatSec, heardLatencySec(ctx), running);
+  const clock = beatTrack?.getContextValue?.('beatClock');
+  return heardKick(beats, beatSec, heardLatencySec(ctx, clock), running);
 }
 
 /**
- * How long after the audio clock the player hears a sound, s: the
- * AudioContext's latency plus CONFIG.SKY.OFFSET_MS (0 plus that without one)
+ * How long after the beat clock the player hears a sound, s: the
+ * AudioContext's latency plus CONFIG.SKY.OFFSET_MS (0 plus that without one),
+ * plus the lead the game runs ahead of what you hear when `clock` runs on
+ * that context
  * @param {?AudioContext} ctx
+ * @param {?BeatClock} [clock]
  */
-export function heardLatencySec(ctx) {
+export function heardLatencySec(ctx, clock = null) {
+  const ahead = ctx && clock?.audioContext === ctx ? (clock.aheadSec ?? 0) : 0;
   return (
     (ctx?.baseLatency ?? 0) +
     (ctx?.outputLatency ?? 0) +
-    CONFIG.SKY.OFFSET_MS / 1000
+    CONFIG.SKY.OFFSET_MS / 1000 +
+    ahead
   );
 }
 // Look-ahead buffer for sample-accurate scheduling.

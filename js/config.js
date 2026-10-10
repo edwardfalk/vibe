@@ -21,6 +21,13 @@ const CONFIG = {
     EIGHTH_NOTE: 0.08, // 8% of eighth-note interval (20ms at 120 BPM)
   },
 
+  // The game runs this far ahead of what you hear (BeatClock), so a creature
+  // acting on the first frame after its beat can still book its sound on it
+  // (Audio.beatTiming). 0 is no lead. Tune live with ?tune.
+  BEAT_CLOCK: {
+    AHEAD_MS: 0,
+  },
+
   // Speech/Chatter Settings (per enemy type, in seconds). Every AMBIENT_MIN
   // to AMBIENT_MAX s an enemy waits for its beat, then speaks one of its
   // lines on CHANCE: about one line each 20-30 s. Tune live with ?tune.

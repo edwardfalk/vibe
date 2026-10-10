@@ -26,6 +26,7 @@ import {
 // [group, key, options]: group is a path under CONFIG; options is
 // [min, max, step] for a slider or a list of choices for a dropdown;
 // booleans get a checkbox.
+const BEAT_CLOCK = 'BEAT_CLOCK';
 const KICK = 'BEAT_TRACK.KICK';
 const HUM = 'HUM';
 const PACING = 'PACING';
@@ -46,6 +47,7 @@ const DEATHS = 'DEATHS';
 const SPEECH = 'SPEECH_SETTINGS';
 
 const KNOBS = [
+  [BEAT_CLOCK, 'AHEAD_MS', [0, 60, 1]],
   [KICK, 'ENABLED'],
   [KICK, 'PATTERN', ['four', 'oneThree']],
   [KICK, 'VOLUME', [0, 1.5, 0.01]],
