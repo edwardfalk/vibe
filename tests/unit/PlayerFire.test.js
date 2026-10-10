@@ -40,6 +40,36 @@ describe('Player held fire', () => {
     expect(fired).toBe(2);
   });
 
+  // Its sound reads the mark: a first shot never waits long for the grid
+  it('marks the first shot of a press as not held, and the rest as held (Audio.heroShotTiming)', () => {
+    let onEighth = false;
+    const beatClock = {
+      isOnEighthNote: () => onEighth,
+      getTimeToNextEighthNote: () => 30,
+    };
+    const player = new Player(p, 100, 100, null, {
+      playerBullets: [],
+      beatClock,
+    });
+    player.shoot(); // first shot: immediate
+    expect(player.shotHeld).toBe(false);
+    player.update(250);
+    onEighth = true;
+    player.shoot(); // held fire, on the grid
+    expect(player.shotHeld).toBe(true);
+    window.playerIsShooting = false;
+    player.update(16); // released
+    window.playerIsShooting = true;
+    player.update(250);
+    onEighth = false;
+    player.shoot(); // a new press: its first shot again
+    expect(player.shotHeld).toBe(false);
+    player.update(250);
+    player.shoot(); // off the grid: queued
+    player.update(40); // the queued shot fires
+    expect(player.shotHeld).toBe(true);
+  });
+
   it("a new burst does not also fire the last burst's queued shot", () => {
     const beatClock = {
       isOnEighthNote: () => false,

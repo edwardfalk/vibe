@@ -147,24 +147,35 @@ describe('a sound played now starts on its eighth when it can', () => {
 });
 
 describe("the hero's shot", () => {
+  // The hero marks each shot held or not (Player.fireBullet)
+  const hero = (held) => {
+    const w = ledAudio();
+    w.audio.player.shotHeld = held;
+    return w;
+  };
+
   // 45 ms before the heard eighth at 3 s: 20 ms before it on the game's clock
   it('held fire books its eighth up to SNAP_SEC ahead of the game', () => {
-    const { audio, game } = ledAudio();
-    audio._heroRun = { at: 2.73, n: 1 }; // his last shot, an eighth before
-    expect(game(2.98).heroShotTiming().at).toBe(3);
+    expect(hero(true).game(2.98).heroShotTiming().at).toBe(3);
   });
 
-  it("the first shot of a run never waits more than SNAP_SEC from the audio's now", () => {
-    const { game } = ledAudio();
-    expect(game(2.98).heroShotTiming().at).toBeCloseTo(2.955, 9);
+  it("the first shot of a press never waits more than SNAP_SEC from the audio's now", () => {
+    expect(hero(false).game(2.98).heroShotTiming().at).toBeCloseTo(2.955, 9);
     // 20 ms before the heard eighth: within SNAP_SEC, so on it
-    expect(game(3.005).heroShotTiming().at).toBe(3);
+    expect(hero(false).game(3.005).heroShotTiming().at).toBe(3);
   });
 
-  it('a shot long after the last starts a new run', () => {
-    const { audio, game } = ledAudio();
-    audio._heroRun = { at: 2.5, n: 3 }; // 455 ms before: over RUN_GAP_BEATS
+  it('a rapid tap, 300 ms after the last shot, is a first shot all the same', () => {
+    const { audio, game } = hero(false);
+    audio._heroRun = { at: 2.655, n: 0 }; // inside RUN_GAP_BEATS: one run
     expect(game(2.98).heroShotTiming().at).toBeCloseTo(2.955, 9);
+  });
+
+  it('a shot with no mark is taken as a first shot', () => {
+    expect(hero(undefined).game(2.98).heroShotTiming().at).toBeCloseTo(
+      2.955,
+      9
+    );
   });
 });
 

@@ -415,18 +415,15 @@ export class Audio {
    * When the hero's shot plays (beatTiming), and its level (shots in a row
    * soften: heroRunLevel). Held fire fires up to 20 ms before its eighth on
    * the game's clock (BeatClock.isOnEighthNote), so it may book an eighth up
-   * to SNAP_SEC ahead of the game. The first shot of a run fires the moment
-   * the key goes down, so it measures that from the audio's now, as before
-   * the lead: it never waits more than SNAP_SEC.
+   * to SNAP_SEC ahead of the game. The first shot of a press fires the
+   * moment the key goes down (the hero marks it: Player.fireBullet), so it
+   * measures that from the audio's now, as before the lead: it never waits
+   * more than SNAP_SEC. So does a shot with no mark.
    */
   heroShotTiming() {
     const clock = this.getContextValue('beatClock');
-    const beatSec = (clock?.beatInterval ?? DEFAULT_BEAT_MS) / MS_PER_SEC;
-    const last = this._heroRun;
-    const first =
-      !last ||
-      this.audioContext.currentTime - last.at > RUN_GAP_BEATS * beatSec;
-    const timing = this.beatTiming({ early: SNAP_SEC, fromAudio: first });
+    const held = this.player?.shotHeld === true;
+    const timing = this.beatTiming({ early: SNAP_SEC, fromAudio: !held });
     return { ...timing, level: this.heroRunLevel(timing.at, clock) };
   }
 
