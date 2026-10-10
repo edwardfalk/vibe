@@ -57,7 +57,6 @@ const voiceLevels = (hum) =>
   hum.voices.map((v) => lastTarget(v.gain.gain)?.[0] ?? v.gain.gain.value);
 
 const original = structuredClone(CONFIG.HUM);
-const originalCap = CONFIG.PACING.MAX_ENEMIES_CAP;
 
 describe('Hum', () => {
   let ctx;
@@ -65,25 +64,24 @@ describe('Hum', () => {
   beforeEach(() => {
     CONFIG.HUM = structuredClone(original);
     CONFIG.HUM.DRIFT_CENTS = 0;
-    CONFIG.PACING.MAX_ENEMIES_CAP = 6;
+    CONFIG.HUM.FULL_SCREEN_ENEMIES = 6;
     ctx = fakeAudioContext(1);
     hum = new Hum(ctx, ctx.createGain());
   });
   afterEach(() => {
     CONFIG.HUM = structuredClone(original);
-    CONFIG.PACING.MAX_ENEMIES_CAP = originalCap;
   });
 
-  it('opens the filter as enemies fill the screen, up to the cap', () => {
+  it('opens the filter as enemies fill the screen, up to its full screen (HUM.FULL_SCREEN_ENEMIES)', () => {
     CONFIG.HUM.CUTOFF_HZ = 400;
     expect(filterTarget(0)).toBe(400);
     expect(filterTarget(3)).toBe(600);
     expect(filterTarget(6)).toBe(800);
-    // A preview enemy, or the cap lowered on ?tune mid-fight
+    // A preview enemy, or the full screen lowered on ?tune mid-fight
     expect(filterTarget(9)).toBe(800);
-    CONFIG.PACING.MAX_ENEMIES_CAP = 0;
+    CONFIG.HUM.FULL_SCREEN_ENEMIES = 0;
     expect(filterTarget(3)).toBe(400);
-    CONFIG.PACING.MAX_ENEMIES_CAP = 6;
+    CONFIG.HUM.FULL_SCREEN_ENEMIES = 6;
     CONFIG.HUM.FIGHT_OPEN = 0;
     expect(filterTarget(6)).toBe(400);
   });

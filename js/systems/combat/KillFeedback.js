@@ -1,3 +1,4 @@
+import { killPoints } from '../../shared/DamageResultHandler.js';
 export function applyKillFeedback({
   gameState,
   enemy,
@@ -13,7 +14,7 @@ export function applyKillFeedback({
 
   gameState.addKill();
 
-  let points = 10;
+  let points = killPoints(enemy, 10);
   if (gameState.killStreak >= 10) points *= 3;
   else if (gameState.killStreak >= 5) points *= 2;
   gameState.addScore(points);

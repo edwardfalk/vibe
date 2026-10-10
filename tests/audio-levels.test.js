@@ -107,7 +107,7 @@ test("the hum and the hero's shots sit under the kick, the hum quiet and on a fu
     return {
       kick,
       quiet: await hum(1, 0),
-      busy: await hum(5, CONFIG.PACING.MAX_ENEMIES_CAP),
+      busy: await hum(5, CONFIG.HUM.FULL_SCREEN_ENEMIES),
       heroes,
     };
   });

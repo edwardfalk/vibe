@@ -1,7 +1,17 @@
 import { DAMAGE_RESULT } from './DamageResult.js';
+import { CONFIG } from '../config.js';
 
 // What an enemy killed by a stabber's stab is worth
 export const STABBER_KILL_POINTS = 15;
+
+/**
+ * A kill's base points: what its route gives (`points`), but a grunt's are
+ * PACING.GRUNT_KILL_POINTS whatever killed him, since the victim sets the
+ * base, not the killer. Each route keeps its own streak bonus.
+ */
+export function killPoints(enemy, points) {
+  return enemy?.type === 'grunt' ? CONFIG.PACING.GRUNT_KILL_POINTS : points;
+}
 
 /**
  * Handles an enemy's takeDamage result (DAMAGE_RESULT) with standard effects.
@@ -55,8 +65,7 @@ export function handleDamageResult(result, enemy, ctx) {
       });
     } else if (ctx.gameState) {
       ctx.gameState.addKill();
-      const points = ctx.scorePoints ?? 10;
-      ctx.gameState.addScore(points);
+      ctx.gameState.addScore(killPoints(enemy, ctx.scorePoints ?? 10));
     }
 
     return result;

@@ -402,6 +402,12 @@ test.describe('Gameplay Probes', () => {
     )) {
       await expect(page.locator('#tunePanel')).toContainText(`SWARM.${key}:`);
     }
+    for (const label of [
+      'PACING.GRUNT_KILL_POINTS',
+      'HUM.FULL_SCREEN_ENEMIES',
+    ]) {
+      await expect(page.locator('#tunePanel')).toContainText(`${label}:`);
+    }
     // So are the chatter's
     for (const label of [
       'SPEECH_SETTINGS.VOICE_GAP_SEC',

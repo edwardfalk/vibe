@@ -5,7 +5,10 @@
 
 import { CONFIG } from '../../config.js';
 import { Bullet } from '../../entities/bullet.js';
-import { handleDamageResult } from '../../shared/DamageResultHandler.js';
+import {
+  handleDamageResult,
+  killPoints,
+} from '../../shared/DamageResultHandler.js';
 import { applyKillFeedback } from '../combat/KillFeedback.js';
 
 /**
@@ -102,7 +105,7 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
     gameState.addKill();
 
     // Energy ball kills get bonus points
-    let points = 12;
+    let points = killPoints(enemy, 12);
     if (gameState.killStreak >= 5) points *= 2;
     if (gameState.killStreak >= 10) points *= 1.5;
 

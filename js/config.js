@@ -85,6 +85,9 @@ const CONFIG = {
     // next type still to come appears when this far through a level
     PREVIEW_NEW_ENEMY: true,
     PREVIEW_AT_PROGRESS: 0.5,
+    // A grunt is cannon fodder, a swarm of them at a time: his kill's base
+    // points, whatever killed him (each route keeps its streak bonus)
+    GRUNT_KILL_POINTS: 3,
     // Enemies appear this far (px) past an edge of the view: past a tank's
     // spawn ring (1.5 × its size of 50) plus the biggest screen shake (15).
     // At most 125: with the view centred, that's the world beyond the top
@@ -200,6 +203,9 @@ const CONFIG = {
     BREATH: 0.3, // how far the filter opens and closes over two bars
     CUTOFF_HZ: 420, // the filter's resting brightness
     FIGHT_OPEN: 1, // a full screen opens the filter this much more (1 = twice as bright)
+    // A full screen (Hum.filterTarget): SWARM.SIZE_MAX plus the others' top
+    // cap (5); move it with SIZE_MAX
+    FULL_SCREEN_ENEMIES: 17,
   },
 
   // Beat track: the steady kick. The hum under it is CONFIG.HUM.
