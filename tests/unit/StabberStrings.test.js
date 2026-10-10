@@ -16,6 +16,7 @@ import {
   calculatePanForPosition,
   calculateVolumeForPosition,
 } from '../../js/audio/SpatialAudio.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 const STABBER = { ...CONFIG.STABBER };
 afterEach(() => {
@@ -237,11 +238,7 @@ function gameAudio() {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
-    buses: {
-      drums: { kind: 'drums bus' },
-      band: { kind: 'band bus' },
-      feedback: { kind: 'feedback bus' },
-    },
+    buses: fakeBuses(),
     getContextValue: () => undefined, // no beat clock: now
     _pausedByGame: false,
     _resuming: false,

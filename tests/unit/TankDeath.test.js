@@ -21,6 +21,7 @@ import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { transformP5 } from './helpers/transformP5.js';
 import { tankWorld } from './helpers/tankWorld.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 const DEATHS = { ...CONFIG.DEATHS };
 afterEach(() => {
@@ -368,11 +369,7 @@ describe("the tank's air (his death's sound)", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
-      buses: {
-        drums: { kind: 'drums bus' },
-        band: { kind: 'band bus' },
-        feedback: { kind: 'feedback bus' },
-      },
+      buses: fakeBuses(),
       getContextValue: () => undefined, // no beat clock: now
       _pausedByGame: false,
       _resuming: false,
@@ -445,11 +442,7 @@ describe("a plate's clang", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
-      buses: {
-        drums: { kind: 'drums bus' },
-        band: { kind: 'band bus' },
-        feedback: { kind: 'feedback bus' },
-      },
+      buses: fakeBuses(),
       getContextValue: () => undefined, // no beat clock: now
       _pausedByGame: false,
       _resuming: false,

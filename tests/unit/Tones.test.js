@@ -5,6 +5,7 @@ import { crashNoise } from '../../js/audio/CrashSynth.js';
 import { Audio } from '../../js/Audio.js';
 import { CONFIG } from '../../js/config.js';
 import { hz, stepUp } from '../../js/audio/Harmony.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 // A Web Audio stand-in that records the nodes playTone makes
 function fakeAudio() {
@@ -57,11 +58,7 @@ function gameAudio() {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
-    buses: {
-      drums: { kind: 'drums bus' },
-      band: { kind: 'band bus' },
-      feedback: { kind: 'feedback bus' },
-    },
+    buses: fakeBuses(),
     effects: { reverb: null },
     context: null,
     getContextValue: () => undefined,

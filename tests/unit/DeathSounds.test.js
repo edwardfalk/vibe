@@ -11,6 +11,7 @@ import { CONFIG } from '../../js/config.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { Audio } from '../../js/Audio.js';
 import { NOISE_SEC } from '../../js/audio/CrashSynth.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 const DEATHS = { ...CONFIG.DEATHS };
 afterEach(() => {
@@ -144,11 +145,7 @@ describe("the game's Audio plays them", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
-      buses: {
-        drums: { kind: 'drums bus' },
-        band: { kind: 'band bus' },
-        feedback: { kind: 'feedback bus' },
-      },
+      buses: fakeBuses(),
       _pausedByGame: false,
       _resuming: false,
     });

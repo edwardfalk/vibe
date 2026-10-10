@@ -5,6 +5,15 @@ import { bootGame } from './helpers/boot.js';
 // stay above this: a black or NaN shader leaves a flat buffer
 const SKY_GAS_STD_FLOOR = 0.025; // real 0.0498, black shader 0
 
+// Every Web Audio connection, on the node it leaves (node.__to), in the page
+const recordConnections = () => {
+  const connect = AudioNode.prototype.connect;
+  AudioNode.prototype.connect = function (destination, ...rest) {
+    (this.__to ??= []).push(destination);
+    return connect.call(this, destination, ...rest);
+  };
+};
+
 test.describe('Gameplay Probes', () => {
   test('The sky draws in every state and its shader links', async ({
     page,
@@ -223,13 +232,7 @@ test.describe('Gameplay Probes', () => {
 
   test('M mutes sound effects and music, and says so', async ({ page }) => {
     // Record every Web Audio connection, so the hum's route can be checked
-    await page.addInitScript(() => {
-      const connect = AudioNode.prototype.connect;
-      AudioNode.prototype.connect = function (destination, ...rest) {
-        (this.__to ??= []).push(destination);
-        return connect.call(this, destination, ...rest);
-      };
-    });
+    await page.addInitScript(recordConnections);
     await bootGame(page);
     await page.waitForFunction(() => window.beatTrack?.masterGain);
     // The hum plays through the effects' masterGain, so M (and the speech
@@ -269,13 +272,7 @@ test.describe('Gameplay Probes', () => {
   test('each group of sounds plays through its own bus, at its knob from the start', async ({
     page,
   }) => {
-    await page.addInitScript(() => {
-      const connect = AudioNode.prototype.connect;
-      AudioNode.prototype.connect = function (destination, ...rest) {
-        (this.__to ??= []).push(destination);
-        return connect.call(this, destination, ...rest);
-      };
-    });
+    await page.addInitScript(recordConnections);
     await page.goto('/');
     await page.waitForFunction(() => window.gameState?.gameState === 'title');
     // Set before the first key, which starts the audio

@@ -12,6 +12,7 @@ import { plantBomb, updateBombs } from '../../js/systems/BombSystem.js';
 import { Tank } from '../../js/entities/Tank.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { tankWorld } from './helpers/tankWorld.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 const DEFAULT_AHEAD_MS = CONFIG.BEAT_CLOCK.AHEAD_MS;
 const AHEAD = 0.025;
@@ -85,11 +86,7 @@ function ledAudio({ ahead = AHEAD, otherClock = false } = {}) {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
-    buses: {
-      drums: { kind: 'drums bus' },
-      band: { kind: 'band bus' },
-      feedback: { kind: 'feedback bus' },
-    },
+    buses: fakeBuses(),
     effects: { reverb: null },
     getContextValue: (key) => (key === 'beatClock' ? clock : undefined),
     _pausedByGame: false,

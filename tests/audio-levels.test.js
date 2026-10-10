@@ -528,17 +528,9 @@ function expectInWindows(levels) {
   }
 }
 
+// For the log: every level to 0.01 dB
 const rounded = (levels) =>
-  Object.fromEntries(
-    Object.entries(levels).map(([tier, sounds]) => [
-      tier,
-      typeof sounds === 'number'
-        ? +sounds.toFixed(2)
-        : Object.fromEntries(
-            Object.entries(sounds).map(([n, db]) => [n, +db.toFixed(2)])
-          ),
-    ])
-  );
+  JSON.stringify(levels, (_, v) => (typeof v === 'number' ? +v.toFixed(2) : v));
 
 test('the drums and the band each sit in their window against the kick', async ({
   page,

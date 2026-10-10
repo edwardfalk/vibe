@@ -13,7 +13,7 @@
  */
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
-import { random, floor } from './mathUtils.js';
+import { random, floor, dB } from './mathUtils.js';
 import { createContextAccessor } from './shared/ContextAccessor.js';
 import { drawGlow } from './effects/glowUtils.js';
 import {
@@ -951,8 +951,9 @@ export class Audio {
     }
     if (this.buses) {
       for (const group of GROUPS) {
-        const db = CONFIG.MIX[`${group.toUpperCase()}_DB`];
-        this.buses[group].gain.value = 10 ** (db / 20);
+        this.buses[group].gain.value = dB(
+          CONFIG.MIX[`${group.toUpperCase()}_DB`]
+        );
       }
     }
     window.beatTrack?.setVolume(CONFIG.MIX.BEAT_TRACK_VOLUME);

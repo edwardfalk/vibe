@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Audio } from '../../js/Audio.js';
 import { CONFIG } from '../../js/config.js';
+import { dB } from '../../js/mathUtils.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { AMBIENT_SOUNDS } from '../../js/audio/AmbientSoundProfile.js';
 import { STRING_PARTS } from '../../js/audio/StabberStrings.js';
@@ -12,8 +13,6 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
-
-const dB = (d) => 10 ** (d / 20);
 
 // The game's Audio with its three buses, sound on, a beat track to hear
 // what the mix tells it

@@ -11,6 +11,7 @@ import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 import { Audio } from '../../js/Audio.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 const AT = 2.5;
 const dB = (d) => 10 ** (d / 20);
@@ -271,11 +272,7 @@ function gameAudio(beats = 1) {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
-    buses: {
-      drums: { kind: 'drums bus' },
-      band: { kind: 'band bus' },
-      feedback: { kind: 'feedback bus' },
-    },
+    buses: fakeBuses(),
     effects: { reverb: null },
     getContextValue: (key) => (key === 'beatClock' ? clock : undefined),
     _pausedByGame: false,

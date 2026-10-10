@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { playCrash } from '../../js/audio/CrashSynth.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { Audio } from '../../js/Audio.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 
 // A Web Audio stand-in that records the nodes it makes
 function fakeAudio() {
@@ -50,11 +51,7 @@ function gameAudio() {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
-    buses: {
-      drums: { kind: 'drums bus' },
-      band: { kind: 'band bus' },
-      feedback: { kind: 'feedback bus' },
-    },
+    buses: fakeBuses(),
     getContextValue: () => undefined, // no beat clock
     // As the constructor sets them
     _pausedByGame: false,
