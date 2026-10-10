@@ -18,7 +18,8 @@ export class BeatClock {
     this.bpm = bpm;
     this.audioContext = audioContext ?? null;
     this.beatInterval = (60 / bpm) * 1000; // milliseconds per beat
-    this.startTime = this._now();
+    this._ahead = this.audioContext ? CONFIG.BEAT_CLOCK.AHEAD_MS : 0;
+    this._startTime = this._now();
     this._updateTolerances();
 
     // Beat pattern tracking (4/4 time signature)
@@ -42,14 +43,48 @@ export class BeatClock {
       (this.beatInterval / 2) * CONFIG.BEAT_TOLERANCES.EIGHTH_NOTE;
   }
 
-  // Internal clock source: AudioContext (seconds->ms) or Date.now fallback
+  // Internal clock source: AudioContext (seconds->ms) plus the lead the game
+  // runs ahead of what you hear, or Date.now with no lead before audio starts
   _now() {
+    this._syncLead();
     return this.audioContext
-      ? this.audioContext.currentTime * 1000
+      ? this.audioContext.currentTime * 1000 + this._ahead
       : Date.now();
   }
 
-  /** Its clock now, in seconds: the AudioContext's once audio has started */
+  // A new CONFIG.BEAT_CLOCK.AHEAD_MS moves the grid's origin with it, so the
+  // elapsed time and the beat count carry on: only the heard grid moves. Every
+  // reader of the origin or the lead calls this first, so it gets the pair
+  // as written together
+  _syncLead() {
+    const ahead = this.audioContext ? CONFIG.BEAT_CLOCK.AHEAD_MS : 0;
+    if (ahead === this._ahead) return;
+    this._startTime += ahead - this._ahead;
+    this._ahead = ahead;
+  }
+
+  /** The grid's origin, ms on this clock: a grid time is when it is heard */
+  get startTime() {
+    this._syncLead();
+    return this._startTime;
+  }
+
+  set startTime(ms) {
+    this._syncLead();
+    this._startTime = ms;
+  }
+
+  /** How far (s) the game runs ahead of the AudioContext; 0 before audio */
+  get aheadSec() {
+    this._syncLead();
+    return this._ahead / 1000;
+  }
+
+  /**
+   * The game's time now, in seconds: once audio has started, the
+   * AudioContext's plus the lead (aheadSec). A sound booked at it is heard one
+   * lead from now; book through Audio.beatTiming(), or at grid times
+   */
   nowSec() {
     return this._now() / 1000;
   }
@@ -138,16 +173,17 @@ export class BeatClock {
     return sinceHalf >= 0 && sinceHalf <= this.tolerance;
   }
 
-  // Move from Date.now() to the AudioContext's clock once audio starts,
-  // keeping the elapsed time so the grid doesn't jump. Only the first call
-  // switches; later calls do nothing.
+  // Move from Date.now() to the AudioContext's clock, led, once audio
+  // starts, keeping the elapsed time so the grid doesn't jump. Only the first
+  // call switches; later calls do nothing.
   useAudioClock(audioContext) {
     if (this.audioContext) return;
     // Read both clocks back to back so they agree as closely as possible
     const audioNow = audioContext.currentTime * 1000;
-    const elapsed = Date.now() - this.startTime;
+    const elapsed = Date.now() - this._startTime;
     this.audioContext = audioContext;
-    this.startTime = audioNow - elapsed;
+    this._ahead = CONFIG.BEAT_CLOCK.AHEAD_MS;
+    this._startTime = audioNow + this._ahead - elapsed;
     this.update(true);
   }
 

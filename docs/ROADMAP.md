@@ -12,9 +12,8 @@ Everything still open, by area: work to build, and calls only Edward can make by
 
 ## Audio
 
-The audio overhaul's four next steps; Edward picks the order:
+The audio overhaul's three next steps; Edward picks the order:
 
-- **build: enemy sounds ahead of their beats.** Every enemy sound starts on the frame its creature sees the beat, 8–13 ms after the kick: a slight flam. Booking them ahead, as the hero's shot is, puts them on it. (audio evaluation 2026-10-09; #94 "Outside")
 - **build: a mix pass by group** (drums, band, feedback). #93 and #94 levelled sounds one by one; the evaluation found 37 of 50 sounds louder than the kick.
 - **build: a ghost snare on the grunts' 2 and 4,** so the backbeat is heard when grunts hold their fire.
 - **build: the level-up sound on the bar line.** Today it plays the moment the score crosses (`GameState.js`).
@@ -34,12 +33,18 @@ Calls and smaller work:
   - no test for a late frame in the middle of a fuse;
   - no test that the `BAND` knobs show on `?tune`;
   - PresetNotes compares the tank's note as a literal.
+- **build: the beat lead's deferred minors** (its review round, 2026-10-10):
+  - the plate clang and the stabber's pluck are never tested just before an eighth, so an early window given to them would pass;
+  - speech can be booked less than one render quantum ahead of the audio, so a line's reported start can be up to 3 ms early;
+  - `Voicebox.startTime` doesn't check that the clock runs on its own context (it always does today);
+  - "on the audio clock" comments in `TankDeath.js`, `GruntDeath.js`, `GameState.js` and `BaseEnemy.js` describe clock times, now one lead ahead of `currentTime`.
 - **build: #84's deferred minors:**
   - the hum's log-once flag hides a later, different error;
   - a first bar that throws leaves the hum silent;
   - a NaN `DRIFT_CENTS` leaks a node;
   - a failed `Audio.initialize` leaves its context alive;
   - pasting a `?tune` JSON from before #84 crashes the `KICK.TUNED` knob.
+- **build: a lead that adapts to the frame rate.** The game runs a fixed `CONFIG.BEAT_CLOCK.AHEAD_MS` ahead of what you hear; a 30 fps machine needs about 40 ms. It can't use the live slider's change, which moves the kick: it would apply at a restart, where the grid snaps anyway. (beat-lead spec)
 - **check: a restart that moves beat 1 earlier doesn't restart the hum's breathing,** so its filter eases toward the old bar line for up to a breath. (Codex on #84; `Hum.js` accepts the bend in a comment)
 - **build, trivial:** `config.js`'s HUM comment still says "Provisional … (PR 2)"; PR 2 is merged and the hum is settled.
 
@@ -55,6 +60,7 @@ Calls and smaller work:
   - a glow knob;
   - his idle chant back as a pizzicato;
   - a beat-grid epoch, so a mid-run grid reset can't strand him.
+- **call: the cast's beat moves run one lead ahead of their sounds.** The Dude's nod and steps, the grunts' crouch, the tank's lurch, the rusher's boost and the stabber's count ring read the game's clock, which runs `CONFIG.BEAT_CLOCK.AHEAD_MS` ahead of what you hear. If it shows, move them to the heard beat, as the sky and the Dude's kick pulse already are. (beat-lead spec)
 - **call (deferred by Edward): the Dude's speech text sits on his health bar.** The fix is a text offset per speaker.
 - **build: a bomb-planting pose for the Dude:** his drink hand is full. (#83's spec)
 - **build: lines that fit the new cast.** Grunts still shout soldier lines ("KILL HUMAN!"), and the tank's anger and calm lines are robotic, not a vain bully's. The rusher's were redone in #82.
@@ -115,6 +121,7 @@ Calls and smaller work:
 - **call: tune the hero's, the rusher's and the tank's voices.** They are still first guesses; the grunt's (#89) and the stabber's (#94) are tuned.
 - **call: enemies can talk over the bomb's countdown** (since #89). If it clutters, hold their gap through the count. Also set the chatter odds by ear.
 - **check: a second bomb's "TIMEBOMB!" can land on the first bomb's count** (#90 doesn't cover it).
+- **build, low: speech told the start of the sound it goes with,** so "FIRE!" starts with the tank's shot itself, not on the eighth found again when its render ends. (beat-lead spec)
 - **build: speech minors:**
   - a failed line logs a warning, which no test sees;
   - worker errors carry no file or line;
@@ -132,7 +139,7 @@ Calls and smaller work:
 
 - **build: fail on console errors during real play.** `playtest.js` only counts them, so a sound that breaks in play leaves every suite green. (#94)
 - **build: one shared fake-audio helper for the unit tests.** Nine test files each define their own.
-- **check: known flakes under full-suite load:** "Kick locks to the enemies' beat" (about 1 in 10), and "Held keyboard fire lands on eighth notes".
+- **check: known flakes under full-suite load:** "Kick locks to the enemies' beat" (about 1 in 10), and "Held keyboard fire lands on eighth notes". Run alone on the desktop (2026-10-10) the first failed 3 times in 60 on main and 7 in 60 with the beat lead, always "no grunt shot in a 3 s recording": the grunts' random skips, the same on both.
 
 ## The README
 

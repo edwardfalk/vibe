@@ -77,7 +77,7 @@ const SEED_SCRAMBLE = 1009;
 // A hero shot this close (beats) to the last continues their run (heroRunLevel)
 const RUN_GAP_BEATS = 0.75;
 // A hero shot this far (s) before its eighth is booked on it (heroShotTiming)
-const SNAP_SEC = 0.03;
+export const SNAP_SEC = 0.03;
 // Web Audio renders in blocks of this many frames
 const RENDER_QUANTUM_FRAMES = 128;
 
@@ -349,17 +349,12 @@ export class Audio {
    */
   playSynth(config, x, y, opts = null) {
     const { near, pan } = this.placement(x, y);
-    const clock = this.getContextValue('beatClock');
-    // Every synth is told the nearest eighth; the hero's shot may also wait
-    // for it, and softens in a burst
+    // Every synth starts on its eighth when it can (beatTiming) and is told
+    // it; the hero's shot has its own window, and softens in a burst
     const { at, eighth, level } =
       config.synth === 'heroShot'
         ? this.heroShotTiming()
-        : {
-            at: this.audioContext.currentTime,
-            eighth: clock ? Math.round(clock.getBeatPosition() * 2) : 0,
-            level: 1,
-          };
+        : { ...this.beatTiming(), level: 1 };
     // Scrambled: a creature picks its note and voice from its seed's top
     // bits, and copies on one note must still spread over the whole range
     const spreadBy =
@@ -382,29 +377,54 @@ export class Audio {
   }
 
   /**
-   * When the hero's shot plays, the eighth it is told, its level (shots in a
-   * row soften: heroRunLevel), and the audio time it decided at (`now`). Held fire fires up to 20 ms before its
-   * eighth (BeatClock.isOnEighthNote), so a shot whose nearest eighth is
-   * still ahead, by at least one render quantum (or it would land in the
-   * past) and at most SNAP_SEC, is booked on that eighth; any other plays
-   * now. It books only on a beat clock that runs on this AudioContext (as
-   * BeatTrack checks before every kick). It is told the nearest eighth.
+   * When a sound played now starts, the eighth it is told, the audio time
+   * it decided at (`now`), and the game's time then (`game`). The game runs
+   * the beat clock's lead ahead of the audio (BeatClock), so a sound played
+   * in the frame after its eighth is still in time to start on it. Its
+   * eighth is the last one at or before the game's now plus `early` (s), or
+   * the one at clock time `target` when its caller aimed at one; it starts
+   * there when that is at least one render quantum ahead of the audio (or it
+   * would land in the past), and else now. `fromAudio` measures from the
+   * audio's now instead (the hero's first shot). It books only on a beat
+   * clock that runs on this AudioContext, as BeatTrack checks before every
+   * kick. It is told the eighth it is booked on, else the nearest one.
+   */
+  beatTiming({ early = 0, fromAudio = false, target } = {}) {
+    const clock = this.getContextValue('beatClock');
+    const ctx = this.audioContext;
+    const now = ctx.currentTime; // once: it moves within a task
+    const nearest = clock ? Math.round(clock.getBeatPosition() * 2) : 0;
+    if (clock?.audioContext !== ctx) {
+      return { now, game: now, at: now, eighth: nearest };
+    }
+    const origin = clock.startTime / MS_PER_SEC;
+    const step = clock.beatInterval / 2 / MS_PER_SEC;
+    const game = now + (clock.aheadSec ?? 0);
+    const from = fromAudio ? now : game;
+    const eighth =
+      target === undefined
+        ? Math.floor((from + early - origin) / step)
+        : Math.round((target - origin) / step);
+    const at = origin + eighth * step;
+    const quantum = RENDER_QUANTUM_FRAMES / ctx.sampleRate;
+    if (at - now >= quantum) return { now, game, at, eighth };
+    return { now, game, at: now, eighth: nearest };
+  }
+
+  /**
+   * When the hero's shot plays (beatTiming), and its level (shots in a row
+   * soften: heroRunLevel). Held fire fires up to 20 ms before its eighth on
+   * the game's clock (BeatClock.isOnEighthNote), so it may book an eighth up
+   * to SNAP_SEC ahead of the game. The first shot of a press fires the
+   * moment the key goes down (the hero marks it: Player.fireBullet), so it
+   * measures that from the audio's now, as before the lead: it never waits
+   * more than SNAP_SEC. So does a shot with no mark.
    */
   heroShotTiming() {
     const clock = this.getContextValue('beatClock');
-    const ctx = this.audioContext;
-    const now = ctx.currentTime;
-    let at = now;
-    let eighth = clock ? Math.round(clock.getBeatPosition() * 2) : 0;
-    if (clock?.audioContext === ctx) {
-      const origin = clock.startTime / MS_PER_SEC;
-      const step = clock.beatInterval / 2 / MS_PER_SEC;
-      eighth = Math.round((now - origin) / step);
-      const ahead = origin + eighth * step - now;
-      const quantum = RENDER_QUANTUM_FRAMES / ctx.sampleRate;
-      if (ahead >= quantum && ahead <= SNAP_SEC) at = origin + eighth * step;
-    }
-    return { now, at, eighth, level: this.heroRunLevel(at, clock) };
+    const held = this.player?.shotHeld === true;
+    const timing = this.beatTiming({ early: SNAP_SEC, fromAudio: !held });
+    return { ...timing, level: this.heroRunLevel(timing.at, clock) };
   }
 
   /**
@@ -443,8 +463,9 @@ export class Audio {
   }
 
   /**
-   * One of the stabber's strings (StabberStrings.js) from (x, y), now:
-   * 'tremolo' (opts.untilSec: how long to the lock; returns its handle),
+   * One of the stabber's strings (StabberStrings.js) from (x, y), on its
+   * eighth when it can be (beatTiming), else now: 'tremolo' (opts.untilSec:
+   * how long from the game's now to the lock; returns its handle),
    * 'stab', 'screech' (opts.beatSec, for its echo) or 'pluck'. opts.seed
    * (0..1) picks its stretch of the noise. Null when it plays nothing
    * (muted, paused, no context)
@@ -460,10 +481,15 @@ export class Audio {
     }[part];
     const { near, pan } = this.placement(x, y);
     const noise = crashNoise(this.audioContext);
+    const { game, at } = this.beatTiming();
+    // The tremolo ends on the lock, however late it starts
+    const untilSec =
+      opts.untilSec === undefined ? undefined : game + opts.untilSec - at;
     return (
       STRING_PARTS[part](this.audioContext, this.masterGain, {
         ...opts,
-        at: this.audioContext.currentTime,
+        at,
+        untilSec,
         volume: volume * near,
         pan,
         noise,
@@ -490,33 +516,39 @@ export class Audio {
     });
   }
 
-  /** A tank's plate breaking (DeathSounds.js) at (x, y), now */
+  /** A tank's plate breaking (DeathSounds.js) at (x, y), now (beatTiming) */
   playPlateClang(x, y) {
     if (!this.ensureAudioContext()) return;
     const { near, pan } = this.placement(x, y);
     plateClang(this.audioContext, this.masterGain, {
-      at: this.audioContext.currentTime,
+      at: this.beatTiming().at,
       noise: crashNoise(this.audioContext),
       volume: CONFIG.TANK_ARMOR.CLANG_VOLUME * near,
       pan,
     });
   }
 
-  /** The bomb's bang (BombSounds.js) from (x, y), now */
+  /**
+   * The bomb's bang (BombSounds.js) from (x, y), now (beatTiming); returns
+   * the audio time it starts at, for the tank it kills to die with it, or
+   * null when it plays nothing
+   */
   playBombBang(x, y) {
-    if (!this.ensureAudioContext()) return;
+    if (!this.ensureAudioContext()) return null;
     const { near, pan } = this.placement(x, y);
+    const { at } = this.beatTiming();
     bangSound(this.audioContext, this.masterGain, {
-      at: this.audioContext.currentTime,
+      at,
       noise: crashNoise(this.audioContext),
       volume: CONFIG.BOMB.BANG_VOLUME * near,
       pan,
     });
+    return at;
   }
 
   /**
-   * The bomb's cloud (BombSounds.js) from (x, y), from now to the end of its
-   * debris; seed (0..1) is the cloud's own. Returns its handle (stop()), or
+   * The bomb's cloud (BombSounds.js) from (x, y), from now (beatTiming) to
+   * the end of its debris; seed (0..1) is the cloud's own. Returns its handle (stop()), or
    * null when it plays nothing (muted, paused, no context)
    */
   playBombCloud(x, y, seed) {
@@ -524,7 +556,7 @@ export class Audio {
     const { near, pan } = this.placement(x, y);
     const clock = this.getContextValue('beatClock');
     return cloudSound(this.audioContext, this.masterGain, {
-      at: this.audioContext.currentTime,
+      at: this.beatTiming().at,
       noise: crashNoise(this.audioContext),
       volume: CONFIG.BOMB.CLOUD_VOLUME * near,
       pan,
@@ -556,7 +588,9 @@ export class Audio {
       (random() - 0.5) * 2 * CONFIG.TONES.DETUNE_CENTS +
       (config.detuneCents ?? 0);
     const detune = 2 ** (cents / CENTS_PER_OCTAVE);
-    const now = ctx.currentTime;
+    // On its eighth when it can be (beatTiming), or on the one its caller
+    // aimed at (a neighbour's answer to a death); else now
+    const { at: start } = this.beatTiming({ target: opts?.at });
     // An enemy's hit climbs CLIMB_STEPS steps over its whole health bar
     let note = config.note;
     if (opts?.maxHealth > 0) {
@@ -564,15 +598,15 @@ export class Audio {
       const k = Math.floor((CONFIG.HITS.CLIMB_STEPS * lost) / opts.maxHealth);
       note = stepUp(note, k);
     }
-    const startHz = noise ? null : hz(note, now) * detune;
+    const startHz = noise ? null : hz(note, start) * detune;
     const endHz =
-      config.sweep && !noise ? hz(config.sweep.to, now) * detune : null;
+      config.sweep && !noise ? hz(config.sweep.to, start) * detune : null;
     const volumeVariation = 1 + (random() - 0.5) * 0.15;
     const durationVariation = 1 + (random() - 0.5) * 0.2;
     // Copies started in one frame would add in phase: each starts up to
     // MAX_START_OFFSET_SEC late (one period of the note isn't enough: Chrome
     // still added four copies 7 dB over one, not the 6 of random phases)
-    const at = now + random() * MAX_START_OFFSET_SEC;
+    const at = start + random() * MAX_START_OFFSET_SEC;
     const sec = config.duration * durationVariation;
 
     const oscillator = noise

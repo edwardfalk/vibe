@@ -63,6 +63,7 @@ export class Player {
     // Burst state: the first shot is immediate, held fire snaps to eighth notes
     this.isCurrentlyShooting = false;
     this.firstShotFired = false;
+    this.shotHeld = false; // his last shot was held fire (fireBullet)
 
     // Dash ability
     this.isDashing = false;
@@ -441,7 +442,7 @@ export class Player {
       // First shot: always immediate
       if (!this.firstShotFired) {
         this.firstShotFired = true;
-        const bullet = this.fireBullet();
+        const bullet = this.fireBullet(false);
         this.shootCooldownMs = 200; // Tap cooldown (~8th note)
         return bullet;
       }
@@ -468,8 +469,14 @@ export class Player {
     return null;
   }
 
-  fireBullet() {
+  /**
+   * One shot. `held` is false for the first shot of a press, which fires the
+   * moment the key goes down; its sound never waits for the grid as long as
+   * held fire's does (Audio.heroShotTiming)
+   */
+  fireBullet(held = true) {
     // Cooldown is set by the caller (shoot method) after this returns
+    this.shotHeld = held;
     this.shotAt = this.poseBeats;
     this.queuedShot = null; // any shot replaces a pending one, or both fire
 

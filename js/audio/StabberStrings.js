@@ -78,6 +78,9 @@ const TREM = {
   PEAK_DB: 7,
   END_SEC: 0.01, // it peaks this long before the lock
   FADE_SEC: 0.015, // and fades out over this, at the lock or when cut
+  // Cut this far before its start, it never sounds; this thread's clock
+  // trails the audio thread's, so a cut nearer its start fades instead
+  EARLY_CUT_SEC: 0.02,
   STOP_SEC: 0.03, // its sources stop this long after the lock
 };
 // The spike lands: a plucked saw closing fast, and a tick
@@ -304,6 +307,13 @@ export function tremolo(ctx, out, o) {
       const now = ctx.currentTime;
       if (stopped || now >= until) return;
       stopped = true;
+      // Booked on its beat and well before it: it never sounds
+      if (at - now > TREM.EARLY_CUT_SEC) {
+        for (const s of sources) s.stop(at);
+        return;
+      }
+      // Its booked start, if still ahead, mustn't reopen the gain after the fade
+      if (at > now) cut.gain.cancelScheduledValues(now);
       cut.gain.setValueAtTime(1, now);
       cut.gain.linearRampToValueAtTime(0, now + TREM.FADE_SEC);
       for (const s of sources) s.stop(now + TREM.FADE_SEC + TAIL_SEC);

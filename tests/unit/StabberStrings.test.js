@@ -30,6 +30,7 @@ function fakeAudio() {
     setValueAtTime: vi.fn(),
     exponentialRampToValueAtTime: vi.fn(),
     linearRampToValueAtTime: vi.fn(),
+    cancelScheduledValues: vi.fn(),
   });
   const node = (kind, extra = {}) => {
     const n = {
@@ -234,6 +235,7 @@ function gameAudio() {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
+    getContextValue: () => undefined, // no beat clock: now
     _pausedByGame: false,
     _resuming: false,
   });

@@ -111,7 +111,7 @@ export class EnemyDeathHandler {
         blast: !!blow?.blast,
         seed: enemy.lookSeed,
         diedAt,
-        popsAt: at + heardLatencySec(audio.audioContext),
+        popsAt: at + heardLatencySec(audio.audioContext, clock),
         now,
       })
     );
@@ -135,8 +135,8 @@ export class EnemyDeathHandler {
     const clock = this.getContextValue('beatClock');
     const now = () => clock.nowSec();
     const diedAt = now();
-    const at = blow?.bomb ? diedAt : popTime(diedAt, clock);
-    const latency = () => heardLatencySec(audio.audioContext);
+    const at = blow?.bomb ? (blow.at ?? diedAt) : popTime(diedAt, clock);
+    const latency = () => heardLatencySec(audio.audioContext, clock);
     const beatSec = clock.beatInterval / MS_PER_SEC;
     const death = new TankDeath({
       x: enemy.x,

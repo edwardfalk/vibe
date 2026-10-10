@@ -260,7 +260,10 @@ describe("a grunt's death", () => {
       vi.advanceTimersByTime(369);
       expect(audio.playSound).not.toHaveBeenCalled();
       vi.advanceTimersByTime(2);
-      expect(audio.playSound).toHaveBeenCalledWith('gruntResponse', 0, 0);
+      // Aimed at that eighth, which it books on however its timer wakes
+      const [name, x, y, opts] = audio.playSound.mock.calls[0];
+      expect([name, x, y]).toEqual(['gruntResponse', 0, 0]);
+      expect(opts.at).toBeCloseTo(1.5, 9);
     });
   });
 });

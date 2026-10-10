@@ -126,7 +126,9 @@ describe('Player shield', () => {
         clock.update(true);
         player.update(16);
       }
-      const sinceBeat = (ms - clock.startTime) % clock.beatInterval;
+      // On the game's clock, which runs the lead ahead of the audio's
+      const sinceBeat =
+        (clock.nowSec() * 1000 - clock.startTime) % clock.beatInterval;
       expect(sinceBeat, `broke at ${breakAt}`).toBeLessThanOrEqual(
         clock.tolerance
       );

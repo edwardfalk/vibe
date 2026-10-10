@@ -367,9 +367,12 @@ export class BaseEnemy {
           : beatClock.getTimeToNextEighthNote
             ? beatClock.getTimeToNextEighthNote()
             : beatClock.getTimeToNextBeat() / 2;
+      // It books on the eighth it aims at, however early or late the timer
+      // wakes; one already past plays at once (Audio.beatTiming)
+      const at = beatClock.nowSec() + delay / 1000;
       setTimeout(
         () => {
-          audio.playSound(responseKey, this.x, this.y);
+          audio.playSound(responseKey, this.x, this.y, { at });
         },
         Math.max(0, delay)
       );
