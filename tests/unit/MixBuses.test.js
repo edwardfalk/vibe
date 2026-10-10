@@ -103,7 +103,12 @@ function recordingContext() {
     });
   };
   const ctx = new Proxy(
-    { currentTime: 2, sampleRate: 8000, state: 'running' },
+    {
+      currentTime: 2,
+      sampleRate: 8000,
+      state: 'running',
+      destination: node('destination'),
+    },
     {
       get(t, k) {
         if (k in t) return t[k];
@@ -151,15 +156,17 @@ function routedAudio() {
     _pausedByGame: false,
     _resuming: false,
   });
-  // Where the sound's nodes lead: the buses and masterGain they reach
+  // Every way out of the sound's own nodes: its bus, or anything else it
+  // reaches (masterGain, the speakers, the duck); a param it moves is its own
   const reached = () => {
+    const own = new Set(made);
     const ends = new Set();
     for (const n of made) {
       for (const d of n.to) {
-        if (d === audio.masterGain) ends.add('masterGain');
-        for (const [group, bus] of Object.entries(buses)) {
-          if (d === bus) ends.add(group);
-        }
+        if (own.has(d)) continue;
+        if (d !== undefined && typeof d.kind !== 'string') continue; // a param
+        const group = Object.keys(buses).find((g) => buses[g] === d);
+        ends.add(group ?? `elsewhere: ${d?.kind}`);
       }
     }
     return [...ends];
