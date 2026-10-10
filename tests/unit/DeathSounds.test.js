@@ -3,7 +3,9 @@ import {
   gruntPop,
   lastBreath,
   GRUNT_POP_SEC,
+  BREATH_MIX_DB,
 } from '../../js/audio/DeathSounds.js';
+import { dB } from '../../js/mathUtils.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
@@ -174,11 +176,11 @@ describe("the game's Audio plays them", () => {
     expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeGreaterThan(0);
   });
 
-  it('his last breath at its volume knob', () => {
+  it('his last breath at its volume knob, times its mix trim', () => {
     CONFIG.DEATHS.BREATH_VOLUME = 0.5;
     const { audio, made, busGain } = gameAudio();
     audio.playLastBreath(4);
-    expect(busGain()).toBeCloseTo(0.5, 9);
+    expect(busGain()).toBeCloseTo(0.5 * dB(BREATH_MIX_DB), 9);
     const pan = made.find((n) => n.kind === 'pan');
     expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
   });
