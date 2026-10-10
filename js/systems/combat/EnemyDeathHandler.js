@@ -72,15 +72,22 @@ export class EnemyDeathHandler {
       audio.playSound(DEATH_SOUND[enemyType] ?? 'enemyOhNo', x, y);
     }
 
-    // Call-and-response: notify nearby same-type enemies
+    // Call-and-response: notify nearby same-type enemies. Grunts popping
+    // together share one neighbour's answer, given for the chord's first;
+    // one who turns it down (too far, dead) doesn't use it up, and if he
+    // dies before it plays, another still alive near the pop gives it
     const enemies = this.getContextValue('enemies');
-    if (enemies) {
+    const firstOfChord = enemyType !== 'grunt' || this.chord.n === 1;
+    const answers = enemyType === 'grunt' ? 1 : 2;
+    if (enemies && firstOfChord) {
       let responseCount = 0;
       for (const other of enemies) {
-        if (responseCount >= 2) break;
+        if (responseCount >= answers) break;
         if (other === enemy || other.markedForRemoval) continue;
-        if (other.type === enemyType && other.onNearbyDeath) {
-          other.onNearbyDeath(enemy, popsAt);
+        if (
+          other.type === enemyType &&
+          other.onNearbyDeath?.(enemy, popsAt, enemyType === 'grunt')
+        ) {
           responseCount++;
         }
       }
@@ -115,12 +122,15 @@ export class EnemyDeathHandler {
         now,
       })
     );
+    // A crowd popping together (a blast through a swarm) doesn't stack up:
+    // each later pop of a chord is quieter, 1/sqrt of its place in it
     audio.playGruntPop(
       enemy.x,
       enemy.y,
       at + k * STRUM_SEC,
       GRUNT_CHORD[k % GRUNT_CHORD.length],
-      enemy.lookSeed
+      enemy.lookSeed,
+      1 / Math.sqrt(k + 1)
     );
     return at;
   }

@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { random, sqrt, atan2 } from '../mathUtils.js';
+import { sqrt, atan2 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import {
@@ -19,8 +19,6 @@ import {
   nextFacing,
 } from './GruntRenderer.js';
 
-// Per-beat chances for beat-gated grunt sounds (rolled once per beat)
-const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
 // Grunts only shoot at the hero from this close
 export const GRUNT_FIRE_RANGE = 300;
 // A friend this close and this near his aim blocks his shot
@@ -124,15 +122,7 @@ class Grunt extends BaseEnemy {
       return null;
     }
 
-    // Handle grunt weird noise (beat-gated)
     const beatClock = this.getContextValue('beatClock');
-    if (
-      this.onBeatOnce(beatClock, 'weirdNoise', beatClock?.isOnBeat([2, 4])) &&
-      random() < GRUNT_WEIRD_NOISE_CHANCE
-    ) {
-      this.makeGruntWeirdNoise();
-    }
-
     // His swarm steers him and picks who fires (GruntSwarm, before the
     // enemies move); BaseEnemy.update has moved him. A grunt with no swarm
     // stands and never fires.
@@ -215,8 +205,9 @@ class Grunt extends BaseEnemy {
     return GRUNT_VOICES[Math.floor(rest * GRUNT_VOICES.length)];
   }
 
-  /** @override */
+  /** @override One grunt speaks for his swarm (GruntSwarm.speaker) */
   getAmbientSpeechConfig() {
+    if (this.swarm && this.swarm.speaker !== this) return null;
     return {
       lines: GRUNT_LINES,
       gate: (beatClock) => !!beatClock?.isOnBeat([2, 4]),

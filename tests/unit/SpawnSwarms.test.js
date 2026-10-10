@@ -194,3 +194,15 @@ describe('the trickle of other types', () => {
     expect(enemies.filter((e) => e.type !== 'grunt')).toHaveLength(3);
   });
 });
+
+describe('a swarm’s grunts speak as one', () => {
+  it('only its speaker has a line to say; a grunt in no swarm speaks for himself', () => {
+    const { system, enemies } = world();
+    system.update();
+    system.updateSwarm();
+    const speakers = enemies.filter((g) => g.getAmbientSpeechConfig() !== null);
+    expect(speakers).toEqual([system.swarm.speaker]);
+    enemies[1].swarm = null;
+    expect(enemies[1].getAmbientSpeechConfig()).not.toBe(null);
+  });
+});

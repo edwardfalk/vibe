@@ -48,7 +48,12 @@ export class SpawnSystem {
     const enemies = this.getContextValue('enemies');
     const player = this.getContextValue('player');
     if (!this.swarm || !enemies || !player) return;
-    this.swarm.update(enemies, player, this.getContextValue('beatClock'));
+    this.swarm.update(
+      enemies,
+      player,
+      this.getContextValue('beatClock'),
+      this.getContextValue('audio')
+    );
   }
 
   /**

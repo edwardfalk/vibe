@@ -318,3 +318,74 @@ describe('a swarm’s snare', () => {
     }
   });
 });
+
+describe('a swarm’s other sounds', () => {
+  // A beat clock at total beat `total`, on a 2 or 4 or not
+  const onTwoOrFour = (total, on = true) => ({
+    getTotalBeats: () => total,
+    getCurrentBeat: () => total % 4,
+    canGruntShoot: () => false,
+    isOnBeat: (beats) => on && beats?.includes((total % 4) + 1),
+  });
+  const audio = () => ({ playSound: vi.fn() });
+  const chatty = (swarm, x) =>
+    grunt(swarm, x, 0, { makeGruntWeirdNoise: vi.fn() });
+
+  it('one move call each 2 and 4 at most, from its centre, while it moves', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1); // under every chance
+    const swarm = new GruntSwarm({ size: 2, x: 0, y: 0 });
+    const members = [chatty(swarm, 0), chatty(swarm, 10)];
+    const a = audio();
+    swarm.x = 5;
+    swarm.y = 0;
+    swarm.heading = 'advance';
+    swarm.sounds(members, onTwoOrFour(9), a);
+    swarm.sounds(members, onTwoOrFour(9), a); // again in the same beat
+    const calls = a.playSound.mock.calls.filter(([n]) =>
+      n.startsWith('gruntAdvance')
+    );
+    expect(calls).toEqual([['gruntAdvance', 5, 0]]);
+    swarm.heading = 'retreat';
+    swarm.sounds(members, onTwoOrFour(11), a);
+    expect(a.playSound).toHaveBeenLastCalledWith('gruntRetreat', 5, 0);
+    swarm.heading = null; // at its stand-off: no call
+    a.playSound.mockClear();
+    swarm.sounds(members, onTwoOrFour(13), a);
+    expect(a.playSound).not.toHaveBeenCalled();
+    // and nothing off the 2s and 4s
+    swarm.heading = 'advance';
+    swarm.sounds(members, onTwoOrFour(16, false), a);
+    expect(a.playSound).not.toHaveBeenCalled();
+  });
+
+  it('one grunt’s chatter a bar at most, however many grunts', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    const swarm = new GruntSwarm({ size: 12, x: 0, y: 0 });
+    const members = Array.from({ length: 12 }, (_, i) => chatty(swarm, i * 40));
+    const a = audio();
+    swarm.sounds(members, onTwoOrFour(9), a); // beat 2 of bar 2
+    swarm.sounds(members, onTwoOrFour(11), a); // beat 4 of bar 2
+    const chats = () =>
+      members.reduce((n, g) => n + g.makeGruntWeirdNoise.mock.calls.length, 0);
+    expect(chats()).toBe(1);
+    swarm.sounds(members, onTwoOrFour(13), a); // the next bar
+    expect(chats()).toBe(2);
+  });
+
+  it('one of its grunts speaks for it; when he dies the next takes over', () => {
+    const swarm = new GruntSwarm({ size: 3, x: 0, y: 0 });
+    const enemies = [
+      grunt(swarm, 0, 0),
+      grunt(swarm, 40, 0),
+      grunt(swarm, 80, 0),
+    ];
+    swarm.update(enemies, { x: 0, y: 0 }, null);
+    expect(swarm.speaker).toBe(enemies[0]);
+    enemies[0].markedForRemoval = true;
+    swarm.update(enemies, { x: 0, y: 0 }, null);
+    expect(swarm.speaker).toBe(enemies[1]);
+    enemies.length = 0;
+    swarm.update(enemies, { x: 0, y: 0 }, null);
+    expect(swarm.speaker).toBe(null);
+  });
+});

@@ -18,6 +18,11 @@ const IDLE_JITTER = 0.3;
 // Grunts backing off move at this share of the swarm's speed (as a lone
 // grunt retreated a little slower than he advanced)
 const RETREAT_SHARE = 0.8;
+// Its sounds, rolled once each 2 or 4 (a lone grunt's chances): the move
+// call while it moves, and one grunt's chatter, at most one a bar
+const MOVE_CALL_CHANCE = 0.5;
+const CHATTER_CHANCE = 0.2;
+const BEATS_PER_BAR = 4;
 
 /** A swarm's size at a level: SIZE_FIRST, SIZE_PER_LEVEL more a level, up to SIZE_MAX */
 export function swarmSize(level) {
@@ -50,13 +55,44 @@ export class GruntSwarm {
     this.settledBeat = null;
     // Each shot of its last volley plays at this share of a lone shot's level
     this.volleyGain = 1;
+    // The one grunt of it who speaks (Grunt.getAmbientSpeechConfig)
+    this.speaker = null;
+    // The beat it last made its sounds on, and the bar its last chatter was in
+    this.soundBeat = null;
+    this.chatterBar = null;
   }
 
-  /** Each frame, before its grunts move: it steers them, then picks and fires */
-  update(enemies, hero, beatClock) {
+  /**
+   * Each frame, before its grunts move: it steers them, picks and fires,
+   * and makes its sounds; one of them speaks for it
+   */
+  update(enemies, hero, beatClock, audio = null) {
     const members = this.members(enemies);
+    if (!members.includes(this.speaker)) this.speaker = members[0] ?? null;
     this.steer(members, hero);
-    if (beatClock) this.beat(members, hero, beatClock);
+    if (!beatClock) return;
+    this.beat(members, hero, beatClock);
+    if (audio) this.sounds(members, beatClock, audio);
+  }
+
+  /**
+   * On each 2 and 4, once: its move call from its centre while it moves,
+   * and one grunt's chatter, at most one a bar
+   */
+  sounds(members, beatClock, audio) {
+    if (!beatClock.isOnBeat([2, 4]) || members.length === 0) return;
+    const total = beatClock.getTotalBeats();
+    if (this.soundBeat === total) return;
+    this.soundBeat = total;
+    if (this.heading && random() < MOVE_CALL_CHANCE) {
+      const call = this.heading === 'advance' ? 'gruntAdvance' : 'gruntRetreat';
+      audio.playSound(call, this.x, this.y);
+    }
+    const bar = Math.floor(total / BEATS_PER_BAR);
+    if (this.chatterBar !== bar && random() < CHATTER_CHANCE) {
+      this.chatterBar = bar;
+      random(members).makeGruntWeirdNoise();
+    }
   }
 
   /** How many fire on a 2 or 4: a share of its grunts, up to SHOOTERS_MAX */

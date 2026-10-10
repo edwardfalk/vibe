@@ -473,7 +473,7 @@ export class Audio {
    * A grunt's pop and whine (DeathSounds.js) from (x, y), at audio time `at`,
    * landing on `note`; seed (0..1) picks its stretch of the noise
    */
-  playGruntPop(x, y, at, note, seed) {
+  playGruntPop(x, y, at, note, seed, gain = 1) {
     if (!this.ensureAudioContext()) return;
     const { near, pan } = this.placement(x, y);
     const noise = crashNoise(this.audioContext);
@@ -482,7 +482,7 @@ export class Audio {
       note,
       noise,
       offset: seed * (noise.duration - GRUNT_POP_SEC),
-      volume: CONFIG.DEATHS.GRUNT_VOLUME * near,
+      volume: CONFIG.DEATHS.GRUNT_VOLUME * near * gain,
       pan,
     });
   }

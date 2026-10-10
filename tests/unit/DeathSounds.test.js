@@ -173,6 +173,13 @@ describe("the game's Audio plays them", () => {
     expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeGreaterThan(0);
   });
 
+  it('a later pop of a chord at its gain, times its volume knob', () => {
+    CONFIG.DEATHS.GRUNT_VOLUME = 2;
+    const { audio, busGain } = gameAudio();
+    audio.playGruntPop(0, 0, 3, ['b3', 5], 1, 0.5);
+    expect(busGain()).toBeCloseTo(1, 9);
+  });
+
   it('his last breath at its volume knob, times its mix trim', () => {
     CONFIG.DEATHS.BREATH_VOLUME = 0.5;
     const { audio, made, busGain } = gameAudio();
