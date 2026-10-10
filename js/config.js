@@ -470,12 +470,12 @@ const CONFIG = {
       },
       stabber: {
         engine: 'sam',
-        voice: { pitch: 64, speed: 88, mouth: 200, throat: 150 },
+        voice: { pitch: 25, speed: 99, mouth: 173, throat: 97 },
         chain: [
-          { type: 'highpass', freq: 480 },
-          { type: 'slapback', time: 0.085, feedback: 0.32, mix: 0.29 },
+          { type: 'tremolo', rate: 8, depth: 0.32 },
+          { type: 'reverb', seconds: 1, mix: 0.56 },
         ],
-        levelDb: 0,
+        levelDb: -6,
       },
       rusher: {
         engine: 'espeak',
@@ -498,7 +498,10 @@ const CONFIG = {
     },
     // Words an engine mispronounces, respelled for that engine only; the
     // speech bubble always shows the real word
-    RESPELL: { sam: { death: 'deth' }, espeak: {} },
+    RESPELL: {
+      sam: { death: 'deth', heavy: 'hevy', mcstabface: 'MACSTABFACE' },
+      espeak: { it: 'it' },
+    },
   },
 };
 

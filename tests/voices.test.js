@@ -21,9 +21,10 @@ test('the playground renders a typed phrase and shows the readout', async ({
   page,
 }) => {
   const errors = await open(page);
-  await sayWith(page, 'tank', 'Heavy artillery!');
+  // No word in it is respelled (CONFIG.SPEECH.RESPELL), so the engine hears it as typed
+  await sayWith(page, 'tank', 'Siege mode!');
   const readout = page.locator('#readout');
-  await expect(readout).toContainText('engine hears: Heavy artillery!');
+  await expect(readout).toContainText('engine hears: Siege mode!');
   await expect(readout).toContainText(/render [\d.]+ ms \+ chain [\d.]+ ms/);
   await expect(readout).toContainText('ceiling cost');
   expect(errors).toEqual([]);
