@@ -149,6 +149,86 @@ test('playtest session', async ({ page }) => {
       }
     }, 100);
   });
+  // The grunts' swarms (GruntSwarm.js): which 2s and 4s had a grunt shot
+  // while a swarm had a grunt in range, the beats from each clear to the
+  // next swarm's first volley, each swarm's size, the others' arrivals by
+  // type, and how the grunts died
+  await page.evaluate(async () => {
+    const { Grunt, GRUNT_FIRE_RANGE } = await import('/js/entities/Grunt.js');
+    const clock = window.beatClock;
+    const s = (window.__swarms = {
+      inRange: new Set(),
+      shot: new Set(),
+      sizes: [],
+      gaps: [],
+      arrivals: {},
+      deaths: {},
+    });
+    let cleared = null; // the beat the last swarm was cleared on
+    let swarm = null;
+    const createBullet = Grunt.prototype.createBullet;
+    Grunt.prototype.createBullet = function (...args) {
+      const beat = clock.getTotalBeats();
+      s.shot.add(beat);
+      if (cleared !== null) {
+        s.gaps.push(beat - cleared);
+        cleared = null;
+      }
+      return createBullet.apply(this, args);
+    };
+    // Every grunt death, whatever the route (a stab's deferred death and a
+    // tank's ball never return through takeDamage's kill), counted once at
+    // the death handler, by the last hit's source; none means a tank's ball
+    const takeDamage = Grunt.prototype.takeDamage;
+    Grunt.prototype.takeDamage = function (amount, angle, source) {
+      this.lastHitBy = source ?? 'shot';
+      return takeDamage.call(this, amount, angle, source);
+    };
+    const handler = window.enemyDeathHandler;
+    const handleEnemyDeath = handler.handleEnemyDeath.bind(handler);
+    const dead = new WeakSet();
+    handler.handleEnemyDeath = (e, ...rest) => {
+      if (e.type === 'grunt' && !dead.has(e)) {
+        dead.add(e);
+        const cause = e.lastHitBy ?? "a tank's ball";
+        s.deaths[cause] = (s.deaths[cause] ?? 0) + 1;
+      }
+      return handleEnemyDeath(e, ...rest);
+    };
+    const seen = new Set();
+    setInterval(() => {
+      const system = window.spawnSystem;
+      if (system.swarm !== swarm) {
+        if (swarm) cleared = clock.getTotalBeats();
+        swarm = system.swarm;
+        if (swarm) s.sizes.push(swarm.size);
+      }
+      const hero = window.player;
+      const beat = clock.getTotalBeats();
+      // A 2 or 4 the swarm could fire on: past its quiet, a grunt of it in
+      // range and done materialising
+      if (
+        swarm &&
+        clock.getCurrentBeat() % 2 === 1 &&
+        beat >= swarm.quietUntil
+      ) {
+        const near = window.enemies.some(
+          (e) =>
+            e.swarm === swarm &&
+            !e.markedForRemoval &&
+            !e.isSpawning &&
+            Math.hypot(e.x - hero.x, e.y - hero.y) < GRUNT_FIRE_RANGE
+        );
+        if (near) s.inRange.add(beat);
+      }
+      for (const e of window.enemies) {
+        if (e.type === 'grunt' || seen.has(e)) continue;
+        seen.add(e);
+        s.arrivals[e.type] = (s.arrivals[e.type] ?? 0) + 1;
+      }
+    }, 50);
+  });
+
   const box = await page.locator('canvas').first().boundingBox();
   await page.mouse.down();
 
@@ -207,6 +287,20 @@ test('playtest session', async ({ page }) => {
     renderer: window.backgroundRenderer?.sky?.renderer,
   }));
   const pacing = await page.evaluate(() => window.__pacing);
+  const swarms = await page.evaluate(() => {
+    const s = window.__swarms;
+    const covered = [...s.inRange].filter((b) => s.shot.has(b)).length;
+    return {
+      snareShare: s.inRange.size
+        ? +(covered / s.inRange.size).toFixed(2)
+        : null,
+      beatsInRange: s.inRange.size,
+      gapsBeats: s.gaps,
+      sizes: s.sizes,
+      arrivals: s.arrivals,
+      gruntDeaths: s.deaths,
+    };
+  });
   const { frameMs, frameGapMs, longTasks } = await page.evaluate(() => {
     const stats = (list) => {
       const ms = list.toSorted((a, b) => a - b);
@@ -252,6 +346,7 @@ test('playtest session', async ({ page }) => {
     sampleCount: samples.length,
     levelUps: pacing.levelUps,
     firstSeen: pacing.firstSeen,
+    swarms,
   };
 
   // Print summary
@@ -276,6 +371,12 @@ test('playtest session', async ({ page }) => {
   console.log(`   Survived: ${survived ? 'yes' : 'no'}`);
   console.log(
     `   Level-ups [level, s]: ${JSON.stringify(pacing.levelUps)} | first seen (s): ${JSON.stringify(pacing.firstSeen)}`
+  );
+  console.log(
+    `   Swarms: sizes ${JSON.stringify(swarms.sizes)} | snare on ${swarms.snareShare} of ${swarms.beatsInRange} 2s and 4s in range | gaps (beats) ${JSON.stringify(swarms.gapsBeats)}`
+  );
+  console.log(
+    `   Others' arrivals: ${JSON.stringify(swarms.arrivals)} | grunt deaths by cause: ${JSON.stringify(swarms.gruntDeaths)}`
   );
   if (errors.length > 0) {
     console.log(`   ⚠️ Console errors: ${errors.length}`);
