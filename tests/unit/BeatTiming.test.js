@@ -2,8 +2,8 @@
 // it, because the game runs a lead ahead of the audio (the beat-lead spec,
 // section 2)
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { Audio } from '../../js/Audio.js';
-import { BeatClock, SNAP_SEC } from '../../js/audio/BeatClock.js';
+import { Audio, SNAP_SEC } from '../../js/Audio.js';
+import { BeatClock } from '../../js/audio/BeatClock.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { CONFIG } from '../../js/config.js';
 import { hz } from '../../js/audio/Harmony.js';
@@ -126,7 +126,7 @@ describe('a sound played now starts on its eighth when it can', () => {
     expect(game(3.23).beatTiming().at).toBeCloseTo(3.205, 9);
   });
 
-  it('a timer aimed at an eighth that wakes just before it books it, given an early window', () => {
+  it("the hero's early window books an eighth just ahead of the game", () => {
     const { game } = ledAudio();
     expect(game(2.995).beatTiming({ early: SNAP_SEC }).at).toBe(3);
     expect(game(2.995).beatTiming().at).toBeCloseTo(2.97, 9);
@@ -181,10 +181,10 @@ describe('every beat sound books on its eighth through playSound', () => {
     ['rusherCharge', {}],
     ['rusherFuse', { left: 2, seed: 0.3 }],
     ['rusherCrash', {}],
-    ['gruntResponse', { early: SNAP_SEC }],
-    ['tankResponse', { early: SNAP_SEC }],
-    ['stabberResponse', { early: SNAP_SEC }],
-    ['rusherResponse', { early: SNAP_SEC }],
+    ['gruntResponse', { at: 3 }],
+    ['tankResponse', { at: 3 }],
+    ['stabberResponse', { at: 3 }],
+    ['rusherResponse', { at: 3 }],
     ['shieldUp', {}],
     ['gameOver', {}],
   ])('%s', (name, opts) => {
@@ -227,13 +227,35 @@ describe('every beat sound books on its eighth through playSound', () => {
     expect(at).toBeCloseTo(3 + SPREAD / 2, 9);
   });
 
-  it("a neighbour's answer whose timer wakes just before its eighth still lands on it", () => {
-    const { made, game } = ledAudio();
-    game(2.995).playSound('gruntResponse', 100, 0, { early: SNAP_SEC });
+  // A neighbour's answer to a death aims at an eighth (BaseEnemy.onNearbyDeath)
+  const answerStart = (ahead, t) => {
+    const { made, game } = ledAudio({ ahead });
+    game(t).playSound('gruntResponse', 100, 0, { at: 3 });
     const [osc] = made.filter((n) => n.kind === 'osc');
-    const start = osc.start.mock.calls[0][0];
+    return osc.start.mock.calls[0][0];
+  };
+
+  it("a neighbour's answer whose timer wakes just before its eighth still lands on it", () => {
+    const start = answerStart(AHEAD, 2.995);
     expect(start).toBeGreaterThanOrEqual(3);
     expect(start).toBeLessThanOrEqual(3 + SPREAD);
+  });
+
+  it('an answer whose timer wakes late plays at once, not on the next eighth', () => {
+    // At 3.23 the next eighth, 3.25, is 45 ms ahead of the audio: not its own
+    const start = answerStart(AHEAD, 3.23);
+    expect(start).toBeGreaterThanOrEqual(3.205);
+    expect(start).toBeLessThanOrEqual(3.205 + SPREAD);
+  });
+
+  it('at lead 0 an answer books only when its timer wakes a render quantum or more before its eighth', () => {
+    expect(answerStart(0, 2.99)).toBeGreaterThanOrEqual(3);
+    const late = answerStart(0, 3.001);
+    expect(late).toBeGreaterThanOrEqual(3.001);
+    expect(late).toBeLessThanOrEqual(3.001 + SPREAD);
+    const close = answerStart(0, 2.999); // 1 ms ahead: inside one quantum
+    expect(close).toBeGreaterThanOrEqual(2.999);
+    expect(close).toBeLessThanOrEqual(2.999 + SPREAD);
   });
 });
 

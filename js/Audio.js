@@ -56,7 +56,6 @@ import {
 } from './audio/DeathSounds.js';
 import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
 import { Hum } from './audio/Hum.js';
-import { SNAP_SEC } from './audio/BeatClock.js';
 import { hz, stepUp } from './audio/Harmony.js';
 
 // How fast the game dips when speech starts (the release is in CONFIG.MIX)
@@ -77,6 +76,8 @@ const MAX_START_OFFSET_SEC = 0.005;
 const SEED_SCRAMBLE = 1009;
 // A hero shot this close (beats) to the last continues their run (heroRunLevel)
 const RUN_GAP_BEATS = 0.75;
+// A hero shot this far (s) before its eighth is booked on it (heroShotTiming)
+export const SNAP_SEC = 0.03;
 // Web Audio renders in blocks of this many frames
 const RENDER_QUANTUM_FRAMES = 128;
 
@@ -377,17 +378,18 @@ export class Audio {
 
   /**
    * When a sound played now starts, the eighth it is told, the audio time
-   * it decided at (`now`), and the game's time then (`game`). The game runs the beat clock's lead ahead
-   * of the audio (BeatClock), so a sound played in the frame after its
-   * eighth is still in time to start on it. Its eighth is the last one at or
-   * before the game's now plus `early` (s); it starts there when that is at
-   * least one render quantum ahead of the audio (or it would land in the
-   * past), and else now. `fromAudio` measures from the audio's now instead
-   * (the hero's first shot). It books only on a beat clock that runs on
-   * this AudioContext, as BeatTrack checks before every kick. It is told the
-   * eighth it is booked on, else the nearest one.
+   * it decided at (`now`), and the game's time then (`game`). The game runs
+   * the beat clock's lead ahead of the audio (BeatClock), so a sound played
+   * in the frame after its eighth is still in time to start on it. Its
+   * eighth is the last one at or before the game's now plus `early` (s), or
+   * the one at clock time `target` when its caller aimed at one; it starts
+   * there when that is at least one render quantum ahead of the audio (or it
+   * would land in the past), and else now. `fromAudio` measures from the
+   * audio's now instead (the hero's first shot). It books only on a beat
+   * clock that runs on this AudioContext, as BeatTrack checks before every
+   * kick. It is told the eighth it is booked on, else the nearest one.
    */
-  beatTiming({ early = 0, fromAudio = false } = {}) {
+  beatTiming({ early = 0, fromAudio = false, target } = {}) {
     const clock = this.getContextValue('beatClock');
     const ctx = this.audioContext;
     const now = ctx.currentTime; // once: it moves within a task
@@ -399,7 +401,10 @@ export class Audio {
     const step = clock.beatInterval / 2 / MS_PER_SEC;
     const game = now + (clock.aheadSec ?? 0);
     const from = fromAudio ? now : game;
-    const eighth = Math.floor((from + early - origin) / step);
+    const eighth =
+      target === undefined
+        ? Math.floor((from + early - origin) / step)
+        : Math.round((target - origin) / step);
     const at = origin + eighth * step;
     const quantum = RENDER_QUANTUM_FRAMES / ctx.sampleRate;
     if (at - now >= quantum) return { now, game, at, eighth };
@@ -586,8 +591,9 @@ export class Audio {
       (random() - 0.5) * 2 * CONFIG.TONES.DETUNE_CENTS +
       (config.detuneCents ?? 0);
     const detune = 2 ** (cents / CENTS_PER_OCTAVE);
-    // On its eighth when it can be (beatTiming), else now
-    const { at: start } = this.beatTiming({ early: opts?.early });
+    // On its eighth when it can be (beatTiming), or on the one its caller
+    // aimed at (a neighbour's answer to a death); else now
+    const { at: start } = this.beatTiming({ target: opts?.at });
     // An enemy's hit climbs CLIMB_STEPS steps over its whole health bar
     let note = config.note;
     if (opts?.maxHealth > 0) {

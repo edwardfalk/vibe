@@ -21,7 +21,6 @@ import { CollisionSystem } from '../../js/systems/CollisionSystem.js';
 import { plantBomb, updateBombs } from '../../js/systems/BombSystem.js';
 import { Bullet } from '../../js/entities/bullet.js';
 import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
-import { SNAP_SEC } from '../../js/audio/BeatClock.js';
 import { transformP5 } from './helpers/transformP5.js';
 import { tankWorld } from './helpers/tankWorld.js';
 
@@ -261,10 +260,10 @@ describe("a grunt's death", () => {
       vi.advanceTimersByTime(369);
       expect(audio.playSound).not.toHaveBeenCalled();
       vi.advanceTimersByTime(2);
-      // Waking a little early on the clock, it still books on its eighth
-      expect(audio.playSound).toHaveBeenCalledWith('gruntResponse', 0, 0, {
-        early: SNAP_SEC,
-      });
+      // Aimed at that eighth, which it books on however its timer wakes
+      const [name, x, y, opts] = audio.playSound.mock.calls[0];
+      expect([name, x, y]).toEqual(['gruntResponse', 0, 0]);
+      expect(opts.at).toBeCloseTo(1.5, 9);
     });
   });
 });

@@ -9,7 +9,6 @@ import {
 } from './BaseEnemyHelpers.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
-import { SNAP_SEC } from '../audio/BeatClock.js';
 
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
@@ -368,11 +367,12 @@ export class BaseEnemy {
           : beatClock.getTimeToNextEighthNote
             ? beatClock.getTimeToNextEighthNote()
             : beatClock.getTimeToNextBeat() / 2;
-      // It may wake a little before the clock reaches its eighth: it books
-      // on that eighth all the same (Audio.beatTiming)
+      // It books on the eighth it aims at, however early or late the timer
+      // wakes; one already past plays at once (Audio.beatTiming)
+      const at = beatClock.nowSec() + delay / 1000;
       setTimeout(
         () => {
-          audio.playSound(responseKey, this.x, this.y, { early: SNAP_SEC });
+          audio.playSound(responseKey, this.x, this.y, { at });
         },
         Math.max(0, delay)
       );
