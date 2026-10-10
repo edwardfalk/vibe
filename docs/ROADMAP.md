@@ -33,6 +33,11 @@ Calls and smaller work:
   - no test for a late frame in the middle of a fuse;
   - no test that the `BAND` knobs show on `?tune`;
   - PresetNotes compares the tank's note as a literal.
+- **build: the beat lead's deferred minors** (its review round, 2026-10-10):
+  - the plate clang and the stabber's pluck are never tested just before an eighth, so an early window given to them would pass;
+  - speech can be booked less than one render quantum ahead of the audio, so a line's reported start can be up to 3 ms early;
+  - `Voicebox.startTime` doesn't check that the clock runs on its own context (it always does today);
+  - "on the audio clock" comments in `TankDeath.js`, `GruntDeath.js`, `GameState.js` and `BaseEnemy.js` describe clock times, now one lead ahead of `currentTime`.
 - **build: #84's deferred minors:**
   - the hum's log-once flag hides a later, different error;
   - a first bar that throws leaves the hum silent;
@@ -134,7 +139,7 @@ Calls and smaller work:
 
 - **build: fail on console errors during real play.** `playtest.js` only counts them, so a sound that breaks in play leaves every suite green. (#94)
 - **build: one shared fake-audio helper for the unit tests.** Nine test files each define their own.
-- **check: known flakes under full-suite load:** "Kick locks to the enemies' beat" (about 1 in 10), and "Held keyboard fire lands on eighth notes".
+- **check: known flakes under full-suite load:** "Kick locks to the enemies' beat" (about 1 in 10), and "Held keyboard fire lands on eighth notes". Run alone on the desktop (2026-10-10) the first failed 3 times in 60 on main and 7 in 60 with the beat lead, always "no grunt shot in a 3 s recording": the grunts' random skips, the same on both.
 
 ## The README
 
