@@ -78,6 +78,8 @@ Everyone speaks through the game's own speech engines, SAM and espeak-ng, each s
 - the beat dips less (`DUCK_BEAT_DB`), because it keeps time;
 - both come back over `DUCK_RELEASE_SEC`.
 
+The game's sounds play in three groups, each with its own level on `?tune` (`MIX.DRUMS_DB`, `BAND_DB`, `FEEDBACK_DB`): the drums (the kit that keeps time: the hero's click and the rusher's crash; the kick has its own knob), the band (the enemies' parts and calls) and feedback (hits, deaths and events). Inside a group each sound sits within a few dB of the kick, which ties them together without standing out: the band around it, feedback heard on every hit a little under the band, and one-off events a little above it, so you notice them without a blast.
+
 The levels are in `CONFIG.MIX`. The kick, the hum, the mix and pacing can all be tuned live by opening the game with `?tune`.
 
 Who speaks how often is in `CONFIG.SPEECH_SETTINGS`, also on `?tune`. Each enemy chatters about once every 20 to 30 seconds, on its own beat. The tank calls out "CHARGING!" and "FIRE!" on a quarter of his charges; the rest are his plucks alone, so his boasts get a turn. A line within `VOICE_GAP_SEC` of the last is dropped, not queued. The hero and the enemies keep separate gaps, so an enemy's line never holds the hero back.

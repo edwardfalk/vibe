@@ -12,14 +12,14 @@ Everything still open, by area: work to build, and calls only Edward can make by
 
 ## Audio
 
-The audio overhaul's three next steps; Edward picks the order:
+The audio overhaul's two next steps; Edward picks the order:
 
-- **build: a mix pass by group** (drums, band, feedback). #93 and #94 levelled sounds one by one; the evaluation found 37 of 50 sounds louder than the kick.
 - **build: a ghost snare on the grunts' 2 and 4,** so the backbeat is heard when grunts hold their fire.
 - **build: the level-up sound on the bar line.** Today it plays the moment the score crosses (`GameState.js`).
 
 Calls and smaller work:
 
+- **call: the bomb's cloud, left out of the mix pass.** It measures 11.9 dB under the kick, but it is a 20 s bed under the fight, and a 50 ms peak understates a sound that long. Raise `BOMB.CLOUD_VOLUME` only if it's heard as too quiet. (mix pass spec)
 - **call: the hero's final shot sound** (softHat, metalHat, tick, ghostArp; tick is the default). Then the other three and the `HERO_SHOT.SOUND` knob go.
 - **build: delete the grunt shot's zap option and its `BAND.GRUNT_SHOT` knob.** Edward kept the stab (#94); ask before deleting.
 - **build: tune the speech voices to the hum's scale,** and give the voice playground the hum. (universe-hum spec)
@@ -53,7 +53,7 @@ Calls and smaller work:
 - **call: tune by eye on `?tune`, and put the values in `config.js`:** the grunt (`GRUNT_LOOK`); the tank; the rusher (boost, turn, fuse, push, size, crash volume). No values have come back for any of them.
 - **call: the stabber's play-test** (#87). Points to judge:
   - does he read as a beetle or a crab from above, and how is the magenta, his gaze at game size, his glow;
-  - the strings' levels, alone and two or three at once;
+  - the strings' levels, alone and two or three at once (raised 1.4–5.4 dB by the mix pass);
   - ten shots to kill;
   - the gold flakes after a lunge.
 - **call: the stabber's proposals not taken** (#87):
