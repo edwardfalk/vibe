@@ -75,6 +75,11 @@ function gameAudio(beats = 1) {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
+    buses: {
+      drums: { kind: 'drums bus' },
+      band: { kind: 'band bus' },
+      feedback: { kind: 'feedback bus' },
+    },
     effects: { reverb: null },
     getContextValue: (key) => (key === 'beatClock' ? clock : undefined),
     _pausedByGame: false,
@@ -88,7 +93,7 @@ function told(opts) {
   const { audio } = gameAudio(3.6); // eighth 7.2: the nearest is 7
   const got = [];
   SYNTHS.probe = (_ctx, _out, _cfg, o) => got.push(o);
-  audio.sounds.probe = { synth: 'probe' };
+  audio.sounds.probe = { synth: 'probe', group: 'band' };
   try {
     audio.playSound('probe', 0, 0, opts);
   } finally {
@@ -386,7 +391,10 @@ describe("the grunt's shot", () => {
   });
 
   it("alienShoot is the grunt's shot", () => {
-    expect(SOUND_CONFIG.alienShoot).toEqual({ synth: 'gruntShot' });
+    expect(SOUND_CONFIG.alienShoot).toEqual({
+      synth: 'gruntShot',
+      group: 'band',
+    });
   });
 
   it("two grunts' shots in one frame don't start together or sound the same", () => {
@@ -514,7 +522,10 @@ describe("the grunts' chatter", () => {
     expect(GRUNT_VOICES).toEqual(['whine', 'squeak']);
     expect(CHATTER_CHOICES).toEqual(['both', 'whine', 'squeak']);
     expect(CONFIG.BAND.CHATTER).toBe('both');
-    expect(SOUND_CONFIG.gruntChatter).toEqual({ synth: 'gruntChatter' });
+    expect(SOUND_CONFIG.gruntChatter).toEqual({
+      synth: 'gruntChatter',
+      group: 'band',
+    });
   });
 
   // The waveform each voice plays: the whine's triangle, the squeak's saw

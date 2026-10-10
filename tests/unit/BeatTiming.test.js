@@ -85,6 +85,11 @@ function ledAudio({ ahead = AHEAD, otherClock = false } = {}) {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
+    buses: {
+      drums: { kind: 'drums bus' },
+      band: { kind: 'band bus' },
+      feedback: { kind: 'feedback bus' },
+    },
     effects: { reverb: null },
     getContextValue: (key) => (key === 'beatClock' ? clock : undefined),
     _pausedByGame: false,

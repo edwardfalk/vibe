@@ -308,6 +308,11 @@ describe("the cloud's sound", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
+      buses: {
+        drums: { kind: 'drums bus' },
+        band: { kind: 'band bus' },
+        feedback: { kind: 'feedback bus' },
+      },
       _pausedByGame: false,
       _resuming: false,
       getContextValue: () => null,
@@ -330,7 +335,7 @@ describe("the cloud's sound", () => {
     expect(bus.gain.setValueAtTime.mock.calls[0][0]).toBeCloseTo(2 * near, 9);
     const pan = made.find((n) => n.kind === 'pan');
     expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(side, 9);
-    expect(pan.connect).toHaveBeenCalledWith(audio.masterGain);
+    expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
     audio._pausedByGame = true;
     expect(audio.playBombCloud(0, 0, 0.5)).toBeNull();
   });

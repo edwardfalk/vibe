@@ -50,6 +50,11 @@ function gameAudio() {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
+    buses: {
+      drums: { kind: 'drums bus' },
+      band: { kind: 'band bus' },
+      feedback: { kind: 'feedback bus' },
+    },
     getContextValue: () => undefined, // no beat clock
     // As the constructor sets them
     _pausedByGame: false,
@@ -106,7 +111,7 @@ describe('the crash through playSound', () => {
     expect(squares.map((o) => o.type)).toEqual(Array(6).fill('square'));
     const pan = near.made.find((n) => n.kind === 'pan');
     expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeGreaterThan(0);
-    expect(pan.connect).toHaveBeenCalledWith(near.audio.masterGain);
+    expect(pan.connect).toHaveBeenCalledWith(near.audio.buses.drums);
     const far = gameAudio();
     far.audio.playSound('rusherCrash', 2000, 0);
     const peak = ({ made }) =>

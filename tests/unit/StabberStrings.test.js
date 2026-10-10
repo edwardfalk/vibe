@@ -235,6 +235,11 @@ function gameAudio() {
     sounds: { ...SOUND_CONFIG },
     player: { x: 0, y: 0 },
     masterGain: { kind: 'effects bus' },
+    buses: {
+      drums: { kind: 'drums bus' },
+      band: { kind: 'band bus' },
+      feedback: { kind: 'feedback bus' },
+    },
     getContextValue: () => undefined, // no beat clock: now
     _pausedByGame: false,
     _resuming: false,
@@ -258,7 +263,7 @@ describe('Audio.playStabberStrings', () => {
       ctx.currentTime
     );
     expect(calculatePanForPosition(300, 0)).not.toBe(0);
-    expect(pan.connect).toHaveBeenCalledWith(audio.masterGain);
+    expect(pan.connect).toHaveBeenCalledWith(audio.buses.band);
     const src = made.find((n) => n.kind === 'source');
     const buffer = src.buffer;
     expect(src.start).toHaveBeenCalledWith(

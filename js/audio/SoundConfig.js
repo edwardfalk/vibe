@@ -24,16 +24,17 @@ export const GRUNT_SHOT_NOTES = [
 
 export const SOUND_CONFIG = {
   // The hero's shot: one of four sounds (Instruments.js, CONFIG.HERO_SHOT)
-  playerShoot: { synth: 'heroShot' },
+  playerShoot: { synth: 'heroShot', group: 'drums' },
   // The grunt's shot: the band's synth stab or laser zap (Instruments.js,
   // CONFIG.BAND.GRUNT_SHOT), on his own note
-  alienShoot: { synth: 'gruntShot' },
+  alienShoot: { synth: 'gruntShot', group: 'band' },
   // The tank's shot and his charge: the band's 808 boom with its zap, and a
   // rising pluck a beat (Instruments.js)
-  tankShot: { synth: 'tankShot' },
-  tankCharge: { synth: 'tankCharge' },
+  tankShot: { synth: 'tankShot', group: 'band' },
+  tankCharge: { synth: 'tankCharge', group: 'band' },
   // A tank ball killing an enemy on its way: short, dry, not the shot's boom
   tankBallKill: {
+    group: 'feedback',
     voice: 'tank',
     note: ['1', 2],
     waveform: 'square',
@@ -42,6 +43,7 @@ export const SOUND_CONFIG = {
     sweep: { to: ['1', 1], curve: 'exponential' },
   },
   explosion: {
+    group: 'feedback',
     voice: 'game',
     note: ['1', 3],
     waveform: 'sawtooth',
@@ -52,6 +54,7 @@ export const SOUND_CONFIG = {
   // A shot on one of the tank's intact plates: his fifth, high (his root up
   // there is the hero's tick)
   tankPlateHit: {
+    group: 'feedback',
     voice: 'tank',
     note: ['5', 5],
     waveform: 'triangle',
@@ -60,6 +63,7 @@ export const SOUND_CONFIG = {
     hit: true,
   },
   shieldBreak: {
+    group: 'feedback',
     voice: 'hero',
     note: ['1', 6],
     waveform: 'square',
@@ -68,6 +72,7 @@ export const SOUND_CONFIG = {
     sweep: { to: ['5', 3], curve: 'exponential' },
   },
   shieldUp: {
+    group: 'feedback',
     voice: 'hero',
     note: ['1', 4],
     waveform: 'triangle',
@@ -76,6 +81,7 @@ export const SOUND_CONFIG = {
     sweep: { to: ['1', 6], curve: 'exponential' },
   },
   playerHit: {
+    group: 'feedback',
     voice: 'hero',
     note: ['5', 3],
     waveform: 'sawtooth',
@@ -86,12 +92,14 @@ export const SOUND_CONFIG = {
   // small share of the noise, so the volume is set to keep the old saw's
   // level against the kick (tests/audio-levels.test.js)
   enemyFrying: {
+    group: 'feedback',
     waveform: 'noise',
     bandHz: 1400,
     duration: 0.3,
     volume: 0.8,
   },
   gruntAdvance: {
+    group: 'band',
     voice: 'grunt',
     note: ['b3', 4],
     waveform: 'square',
@@ -99,6 +107,7 @@ export const SOUND_CONFIG = {
     duration: 0.2,
   },
   gruntRetreat: {
+    group: 'band',
     voice: 'grunt',
     note: ['5', 3],
     waveform: 'square',
@@ -106,8 +115,9 @@ export const SOUND_CONFIG = {
     duration: 0.08,
   },
   // The rusher's lit fuse: the band's countdown beeps (Instruments.js)
-  rusherFuse: { synth: 'rusherFuse' },
+  rusherFuse: { synth: 'rusherFuse', group: 'band' },
   rusherCharge: {
+    group: 'band',
     voice: 'rusher',
     note: ['b7', 4],
     waveform: 'sawtooth',
@@ -117,6 +127,7 @@ export const SOUND_CONFIG = {
     sweep: { to: ['1', 2], curve: 'exponential' },
   },
   enemyOhNo: {
+    group: 'feedback',
     voice: 'game',
     note: ['1', 5],
     waveform: 'sawtooth',
@@ -125,6 +136,7 @@ export const SOUND_CONFIG = {
     sweep: { to: ['1', 3], curve: 'exponential' },
   },
   stabberOhNo: {
+    group: 'feedback',
     voice: 'stabber',
     note: ['b7', 5],
     waveform: 'triangle',
@@ -133,6 +145,7 @@ export const SOUND_CONFIG = {
     sweep: { to: ['b6', 3], curve: 'exponential' },
   },
   rusherOhNo: {
+    group: 'feedback',
     voice: 'rusher',
     note: ['b7', 5],
     waveform: 'sawtooth',
@@ -141,8 +154,9 @@ export const SOUND_CONFIG = {
     sweep: { to: ['b7', 2], curve: 'exponential' },
   },
   // The grunts' chatter: the band's whine or squeak (Instruments.js)
-  gruntChatter: { synth: 'gruntChatter' },
+  gruntChatter: { synth: 'gruntChatter', group: 'band' },
   gruntOw: {
+    group: 'feedback',
     voice: 'grunt',
     note: ['5', 4],
     waveform: 'triangle',
@@ -150,6 +164,7 @@ export const SOUND_CONFIG = {
     duration: 0.18,
   },
   gruntHit: {
+    group: 'feedback',
     voice: 'grunt',
     note: ['b3', 4],
     waveform: 'square',
@@ -161,6 +176,7 @@ export const SOUND_CONFIG = {
   // tank's, so it stands apart from the kick it often lands with and from
   // the hero's own hit
   tankShove: {
+    group: 'feedback',
     voice: 'tank',
     note: ['5', 3],
     waveform: 'triangle',
@@ -169,6 +185,7 @@ export const SOUND_CONFIG = {
     sweep: { to: ['5', 1], curve: 'exponential' },
   },
   tankHit: {
+    group: 'feedback',
     voice: 'tank',
     note: ['1', 1],
     waveform: 'square',
@@ -177,6 +194,7 @@ export const SOUND_CONFIG = {
     hit: true,
   },
   stabberHit: {
+    group: 'feedback',
     voice: 'stabber',
     note: ['5', 6],
     waveform: 'triangle',
@@ -185,6 +203,7 @@ export const SOUND_CONFIG = {
     hit: true,
   },
   rusherHit: {
+    group: 'feedback',
     voice: 'rusher',
     note: ['b7', 4],
     waveform: 'sawtooth',
@@ -193,12 +212,14 @@ export const SOUND_CONFIG = {
     hit: true,
   },
   playerDash: {
+    group: 'feedback',
     waveform: 'noise',
     bandHz: 200,
     volume: 1.65, // see enemyFrying
     duration: 0.15,
   },
   levelUp: {
+    group: 'feedback',
     voice: 'game',
     note: ['1', 4],
     waveform: 'triangle',
@@ -207,6 +228,7 @@ export const SOUND_CONFIG = {
     sweep: { to: ['1', 5], curve: 'exponential' },
   },
   gameOver: {
+    group: 'feedback',
     voice: 'game',
     note: ['1', 4],
     waveform: 'sawtooth',
@@ -215,6 +237,7 @@ export const SOUND_CONFIG = {
     sweep: { to: ['1', 1], curve: 'exponential' },
   },
   lowHealthWarning: {
+    group: 'feedback',
     voice: 'hero',
     note: ['1', 3],
     waveform: 'square',
@@ -222,6 +245,7 @@ export const SOUND_CONFIG = {
     duration: 0.3,
   },
   killStreak: {
+    group: 'feedback',
     voice: 'game',
     note: ['b3', 5],
     waveform: 'triangle',
@@ -230,6 +254,7 @@ export const SOUND_CONFIG = {
     sweep: { to: ['5', 5], curve: 'linear' },
   },
   gruntResponse: {
+    group: 'band',
     voice: 'grunt',
     note: ['b3', 4],
     waveform: 'square',
@@ -237,6 +262,7 @@ export const SOUND_CONFIG = {
     duration: 0.1,
   },
   tankResponse: {
+    group: 'band',
     voice: 'tank',
     note: ['5', 1],
     waveform: 'square',
@@ -244,6 +270,7 @@ export const SOUND_CONFIG = {
     duration: 0.3,
   },
   stabberResponse: {
+    group: 'band',
     voice: 'stabber',
     note: ['b6', 6],
     waveform: 'triangle',
@@ -251,6 +278,7 @@ export const SOUND_CONFIG = {
     duration: 0.06,
   },
   rusherResponse: {
+    group: 'band',
     voice: 'rusher',
     note: ['1', 5],
     waveform: 'sawtooth',
@@ -263,6 +291,7 @@ export const SOUND_CONFIG = {
   // 1.7; one high-pass above the stabbers and the kick's click; a noise wash
   // and a short bright burst for the bang. CONFIG.RUSHER.CRASH_VOLUME scales it
   rusherCrash: {
+    group: 'drums',
     synth: 'crash',
     partialsHz: [349, 517, 628, 889, 918, 1360],
     highpassHz: 5000,

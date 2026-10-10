@@ -142,6 +142,11 @@ describe("the game's Audio plays them", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
+      buses: {
+        drums: { kind: 'drums bus' },
+        band: { kind: 'band bus' },
+        feedback: { kind: 'feedback bus' },
+      },
       _pausedByGame: false,
       _resuming: false,
     });
@@ -158,7 +163,7 @@ describe("the game's Audio plays them", () => {
     expect(near.busGain()).toBeCloseTo(2, 9);
     // Into the effects' bus, so it mutes and ducks with them
     const nearPan = near.made.find((n) => n.kind === 'pan');
-    expect(nearPan.connect).toHaveBeenCalledWith(near.audio.masterGain);
+    expect(nearPan.connect).toHaveBeenCalledWith(near.audio.buses.feedback);
     const source = near.made.find((n) => n.kind === 'source');
     const [, offset] = source.start.mock.calls[0];
     expect(offset + GRUNT_POP_SEC).toBeLessThanOrEqual(NOISE_SEC);
@@ -175,7 +180,7 @@ describe("the game's Audio plays them", () => {
     audio.playLastBreath(4);
     expect(busGain()).toBeCloseTo(0.5, 9);
     const pan = made.find((n) => n.kind === 'pan');
-    expect(pan.connect).toHaveBeenCalledWith(audio.masterGain);
+    expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
   });
 
   it('neither while a pause holds the sound', () => {

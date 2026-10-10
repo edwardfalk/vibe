@@ -339,6 +339,14 @@ export class Audio {
     }
   }
 
+  // The bus a group's sounds play through; any other name throws, before
+  // its sound has made a node
+  bus(group) {
+    if (!GROUPS.includes(group))
+      throw new Error(`Unknown sound group ${group}`);
+    return this.buses[group];
+  }
+
   // How loud (0..1) and where (pan -1..1) a sound from (x, y) is, heard from
   // the hero; one with no position is beside him
   placement(x, y) {
@@ -360,6 +368,7 @@ export class Audio {
    * note, or tanks on one beat 1, would otherwise add in phase
    */
   playSynth(config, x, y, opts = null) {
+    const out = this.bus(config.group);
     const { near, pan } = this.placement(x, y);
     // Every synth starts on its eighth when it can (beatTiming) and is told
     // it; the hero's shot has its own window, and softens in a burst
@@ -378,7 +387,7 @@ export class Audio {
             at: at + spreadBy * MAX_START_OFFSET_SEC,
             detuneCents: (2 * spreadBy - 1) * CONFIG.TONES.DETUNE_CENTS,
           };
-    SYNTHS[config.synth](this.audioContext, this.masterGain, config, {
+    SYNTHS[config.synth](this.audioContext, out, config, {
       ...opts,
       volume: near * level,
       pan,
@@ -464,7 +473,7 @@ export class Audio {
     if (!this.ensureAudioContext()) return;
     const { near, pan } = this.placement(x, y);
     const noise = crashNoise(this.audioContext);
-    gruntPop(this.audioContext, this.masterGain, {
+    gruntPop(this.audioContext, this.bus('feedback'), {
       at,
       note,
       noise,
@@ -498,7 +507,7 @@ export class Audio {
     const untilSec =
       opts.untilSec === undefined ? undefined : game + opts.untilSec - at;
     return (
-      STRING_PARTS[part](this.audioContext, this.masterGain, {
+      STRING_PARTS[part](this.audioContext, this.bus('band'), {
         ...opts,
         at,
         untilSec,
@@ -517,7 +526,7 @@ export class Audio {
   playTankDeath(x, y, at, timing, darts) {
     if (!this.ensureAudioContext()) return;
     const { near, pan } = this.placement(x, y);
-    tankAir(this.audioContext, this.masterGain, {
+    tankAir(this.audioContext, this.bus('feedback'), {
       at,
       note: TANK_DEATH_NOTE,
       noise: crashNoise(this.audioContext),
@@ -532,7 +541,7 @@ export class Audio {
   playPlateClang(x, y) {
     if (!this.ensureAudioContext()) return;
     const { near, pan } = this.placement(x, y);
-    plateClang(this.audioContext, this.masterGain, {
+    plateClang(this.audioContext, this.bus('feedback'), {
       at: this.beatTiming().at,
       noise: crashNoise(this.audioContext),
       volume: CONFIG.TANK_ARMOR.CLANG_VOLUME * near,
@@ -549,7 +558,7 @@ export class Audio {
     if (!this.ensureAudioContext()) return null;
     const { near, pan } = this.placement(x, y);
     const { at } = this.beatTiming();
-    bangSound(this.audioContext, this.masterGain, {
+    bangSound(this.audioContext, this.bus('feedback'), {
       at,
       noise: crashNoise(this.audioContext),
       volume: CONFIG.BOMB.BANG_VOLUME * near,
@@ -567,7 +576,7 @@ export class Audio {
     if (!this.ensureAudioContext()) return null;
     const { near, pan } = this.placement(x, y);
     const clock = this.getContextValue('beatClock');
-    return cloudSound(this.audioContext, this.masterGain, {
+    return cloudSound(this.audioContext, this.bus('feedback'), {
       at: this.beatTiming().at,
       noise: crashNoise(this.audioContext),
       volume: CONFIG.BOMB.CLOUD_VOLUME * near,
@@ -582,7 +591,7 @@ export class Audio {
   /** The Dude's last breath (DeathSounds.js) at audio time `at` */
   playLastBreath(at) {
     if (!this.ensureAudioContext()) return;
-    lastBreath(this.audioContext, this.masterGain, {
+    lastBreath(this.audioContext, this.bus('feedback'), {
       at,
       noise: crashNoise(this.audioContext),
       volume: CONFIG.DEATHS.BREATH_VOLUME,
@@ -591,6 +600,7 @@ export class Audio {
 
   playTone(config, x, y, soundName = '', opts = null) {
     const ctx = this.audioContext;
+    const out = this.bus(config.group);
     // Noise (the dash, the frying) is the shared noise through a band-pass
     const noise = config.waveform === 'noise';
     // The notes first, so one that can't resolve (a bad root) throws before
@@ -748,7 +758,7 @@ export class Audio {
       lowPassFilter.connect(distortionNode);
       distortionNode.connect(reverbGainNode);
       reverbGainNode.connect(this.effects.reverb);
-      this.effects.reverb.connect(this.masterGain);
+      this.effects.reverb.connect(out);
 
       // Dry path: 90% close to 75% far, so the reverb stays subtle
       dryGain = ctx.createGain();
@@ -756,10 +766,10 @@ export class Audio {
       dryGain.gain.setValueAtTime(dryMix, at);
 
       panNode.connect(dryGain);
-      dryGain.connect(this.masterGain);
+      dryGain.connect(out);
     } else {
       // Normal connection for non-ambient sounds
-      panNode.connect(this.masterGain);
+      panNode.connect(out);
     }
 
     // Play

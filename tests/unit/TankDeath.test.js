@@ -368,6 +368,11 @@ describe("the tank's air (his death's sound)", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
+      buses: {
+        drums: { kind: 'drums bus' },
+        band: { kind: 'band bus' },
+        feedback: { kind: 'feedback bus' },
+      },
       getContextValue: () => undefined, // no beat clock: now
       _pausedByGame: false,
       _resuming: false,
@@ -386,7 +391,7 @@ describe("the tank's air (his death's sound)", () => {
     );
     const pan = made.find((n) => n.kind === 'pan');
     expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(side, 9);
-    expect(pan.connect).toHaveBeenCalledWith(audio.masterGain);
+    expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
     const count = made.length;
     audio._pausedByGame = true;
     audio.playTankDeath(0, 0, 4, timing, airDarts(timing, 0.5));
@@ -440,6 +445,11 @@ describe("a plate's clang", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
+      buses: {
+        drums: { kind: 'drums bus' },
+        band: { kind: 'band bus' },
+        feedback: { kind: 'feedback bus' },
+      },
       getContextValue: () => undefined, // no beat clock: now
       _pausedByGame: false,
       _resuming: false,
@@ -459,7 +469,7 @@ describe("a plate's clang", () => {
       );
       const pan = made.find((n) => n.kind === 'pan');
       expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(side, 9);
-      expect(pan.connect).toHaveBeenCalledWith(audio.masterGain);
+      expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
       const count = made.length;
       audio._pausedByGame = true;
       audio.playPlateClang(0, 0);

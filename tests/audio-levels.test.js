@@ -222,6 +222,7 @@ test('the dash and the frying, now noise, keep their level against the kick', as
         const audio = Object.assign(Object.create(Audio.prototype), {
           audioContext: ctx,
           masterGain: out,
+          buses: { drums: out, band: out, feedback: out },
           effects: { reverb: null },
           player: { x: 0, y: 0 },
           context: null,
@@ -276,6 +277,11 @@ test('a volley of four grunt shots in one frame adds like random phases, not in 
       const audio = Object.assign(Object.create(Audio.prototype), {
         audioContext: timed,
         masterGain: ctx.destination,
+        buses: {
+          drums: ctx.destination,
+          band: ctx.destination,
+          feedback: ctx.destination,
+        },
         effects: { reverb: null },
         player: { x: 0, y: 0 },
         context: null,
