@@ -29,7 +29,7 @@ A p5.js geometric space shooter where enemy actions sync to musical beats, creat
 
 ## Architecture
 
-See [ARCHITECTURE.md](ARCHITECTURE.md): the game loop, folders, shared state, beat system, audio graph, damage flow, dev tools and known debt. Design intent is in [docs/DESIGN.md](docs/DESIGN.md); the test suites are in [docs/TESTING.md](docs/TESTING.md).
+See [ARCHITECTURE.md](ARCHITECTURE.md): the game loop, folders, shared state, beat system, audio graph, damage flow, dev tools and known debt. Design intent is in [docs/DESIGN.md](docs/DESIGN.md); the test suites are in [docs/TESTING.md](docs/TESTING.md). Open work is in [docs/ROADMAP.md](docs/ROADMAP.md): a PR that defers an item adds it there, and the PR that does one deletes it.
 
 ## Level Progression
 

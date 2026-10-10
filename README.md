@@ -56,7 +56,7 @@ The [voice playground](https://edwardfalk.github.io/vibe/voices.html) is for the
 - Plain ES modules with no build step, served as static files on GitHub Pages.
 - Unit tests with [Vitest](https://vitest.dev/), and browser tests with [Playwright](https://playwright.dev/), including checks that the kick and enemy shots land on the beat. GitHub Actions runs lint, the unit tests and the browser tests on every pull request and every push to main.
 
-For how the code fits together, see [ARCHITECTURE.md](ARCHITECTURE.md). The game design is in [docs/DESIGN.md](docs/DESIGN.md), and the tests are described in [docs/TESTING.md](docs/TESTING.md).
+For how the code fits together, see [ARCHITECTURE.md](ARCHITECTURE.md). The game design is in [docs/DESIGN.md](docs/DESIGN.md), and the tests are described in [docs/TESTING.md](docs/TESTING.md). What's still to do is in [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Run it locally
 
