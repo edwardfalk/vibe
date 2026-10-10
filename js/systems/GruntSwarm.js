@@ -42,6 +42,79 @@ export class GruntSwarm {
     this.entering = true;
     // Which way its centre went last frame: 'advance', 'retreat' or null
     this.heading = null;
+    // No volley before this beat (SpawnSystem: GAP_BEATS after the last
+    // swarm's clear; none for a run's first)
+    this.quietUntil = -Infinity;
+    // The beats it last picked shooters on, and last settled a volley on
+    this.pickedBeat = null;
+    this.settledBeat = null;
+    // Each shot of its last volley plays at this share of a lone shot's level
+    this.volleyGain = 1;
+  }
+
+  /** Each frame, before its grunts move: it steers them, then picks and fires */
+  update(enemies, hero, beatClock) {
+    const members = this.members(enemies);
+    this.steer(members, hero);
+    if (beatClock) this.beat(members, hero, beatClock);
+  }
+
+  /** How many fire on a 2 or 4: a share of its grunts, up to SHOOTERS_MAX */
+  shooterQuota(n) {
+    const { SHOOTERS_MAX, GRUNTS_PER_SHOOTER } = CONFIG.SWARM;
+    return min(SHOOTERS_MAX, Math.ceil(n / GRUNTS_PER_SHOOTER));
+  }
+
+  /**
+   * On its first update in beat 1 or 3 it picks who fires on the 2 or 4
+   * after (pick); inside the 2-or-4 window it settles the volley (settle).
+   * A window it never saw (hitstop, a pause with the sound on) holds: a
+   * volley is never replayed.
+   */
+  beat(members, hero, beatClock) {
+    const total = beatClock.getTotalBeats();
+    if (beatClock.getCurrentBeat() % 2 === 0 && this.pickedBeat !== total) {
+      this.pickedBeat = total;
+      if (total + 1 >= this.quietUntil) this.pick(members, hero, total);
+    }
+    if (beatClock.canGruntShoot() && this.settledBeat !== total) {
+      this.settledBeat = total;
+      this.settle(members, total);
+    }
+  }
+
+  /**
+   * Its shooters for the next 2 or 4: grunts in range, nearest the hero
+   * first, with a clear line of fire; each is stamped with the beat it was
+   * warned on (warnedOnBeat), so only they wind up
+   */
+  pick(members, hero, total) {
+    const near = (g) => Math.hypot(hero.x - g.x, hero.y - g.y);
+    const ready = members
+      .filter((g) => !g.isSpawning && near(g) < GRUNT_FIRE_RANGE)
+      .filter((g) => !g.lineBlocked())
+      .sort((a, b) => near(a) - near(b));
+    for (const g of ready.slice(0, this.shooterQuota(this.size))) {
+      g.warnedOnBeat = total;
+    }
+  }
+
+  /**
+   * The volley: a pick still in the swarm, warned on the beat before and
+   * with a clear line fires (fireOnBeat); the rest hold. Each shot plays at
+   * VOLLEY_DB_PER_DOUBLING a doubling of the n that fire, so a volley
+   * carries about one shot's energy; a volley of one is a lone shot.
+   */
+  settle(members, total) {
+    const shooters = members.filter(
+      (g) => g.warnedOnBeat === total - 1 && !g.lineBlocked()
+    );
+    for (const g of shooters) g.fireOnBeat = total;
+    const n = shooters.length;
+    this.volleyGain =
+      n > 1
+        ? 10 ** ((CONFIG.SWARM.VOLLEY_DB_PER_DOUBLING * Math.log2(n)) / 20)
+        : 1;
   }
 
   /** Its grunts, found in the enemies array: its own, live, not pending a death */

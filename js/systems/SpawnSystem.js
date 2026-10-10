@@ -43,12 +43,12 @@ export class SpawnSystem {
     this.getContextValue = createContextAccessor(() => this.context);
   }
 
-  /** Before the enemies move: the swarm steers its grunts */
+  /** Before the enemies move: the swarm steers its grunts, picks and fires */
   updateSwarm() {
     const enemies = this.getContextValue('enemies');
     const player = this.getContextValue('player');
     if (!this.swarm || !enemies || !player) return;
-    this.swarm.steer(this.swarm.members(enemies), player);
+    this.swarm.update(enemies, player, this.getContextValue('beatClock'));
   }
 
   /**

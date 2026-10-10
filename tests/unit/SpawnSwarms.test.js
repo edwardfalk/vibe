@@ -40,6 +40,8 @@ function world({ level = 1, beats = 0, hero = { x: 0, y: 0 } } = {}) {
       isOnBeat: () => false,
       getTotalBeats: () => clock.beats,
       getBeatPosition: () => clock.beats,
+      getCurrentBeat: () => clock.beats % 4,
+      canGruntShoot: () => false,
     },
   };
   const system = new SpawnSystem(context);

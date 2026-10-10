@@ -615,17 +615,26 @@ test.describe('Gameplay Probes', () => {
   }) => {
     await bootGame(page);
     await page.waitForFunction(() => window.beatTrack?.isPlaying);
-    const record = () =>
-      page.evaluate(async () => {
+    const record = async () => {
+      // A run's swarm comes on the spawn system's first update
+      await page.waitForFunction(() => window.spawnSystem?.swarm);
+      return page.evaluate(async () => {
         const track = window.beatTrack;
         const clock = window.beatClock;
         const audio = window.audio;
-        // Bring a grunt within firing range (grunts fire only within 300 px)
-        const grunt = window.enemies.find((e) => e.type === 'grunt');
-        if (grunt) {
-          grunt.x = window.player.x + 200;
-          grunt.y = window.player.y;
-        }
+        // The swarm in range (300 px) of the still hero, settled in, its
+        // line clear: it fires on its next 2 and 4 (the line rule is
+        // TelegraphRings.test.js's)
+        const hero = window.player;
+        window.enemies
+          .filter((e) => e.type === 'grunt')
+          .forEach((g, i) => {
+            g.x = hero.x + 200 + (i % 4) * 30;
+            g.y = hero.y - 30 + Math.floor(i / 4) * 30;
+            g.isSpawning = false;
+            g.lineBlocked = () => false;
+          });
+        window.spawnSystem.swarm.entering = false;
         const schedule = track._scheduleNote.bind(track);
         const playSound = audio.playSound.bind(audio);
         const kicks = [];
@@ -677,6 +686,7 @@ test.describe('Gameplay Probes', () => {
         SYNTHS.gruntShot = gruntShot;
         return { kicks, shotOffsets, shotStarts, tolerance: clock.tolerance };
       });
+    };
     const check = ({ kicks, shotOffsets, shotStarts, tolerance }) => {
       expect(kicks.length).toBeGreaterThanOrEqual(3);
       for (const k of kicks) {

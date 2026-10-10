@@ -119,6 +119,11 @@ describe("playSynth passes the caller's options through", () => {
     expect(got).toMatchObject({ volume: 1, pan: 0, at: 2, eighth: 7 });
   });
 
+  it("a caller's gain scales its volume (a swarm's volley shares one shot's energy)", () => {
+    expect(told({ gain: 0.5 }).volume).toBeCloseTo(0.5, 12);
+    expect(told({}).volume).toBe(1);
+  });
+
   it("creatures' seeds start their copies up to 5 ms late and detune them up to DETUNE_CENTS either way, over the whole range", () => {
     const saved = CONFIG.TONES.DETUNE_CENTS;
     try {
@@ -417,12 +422,13 @@ describe("the grunt's shot", () => {
 });
 
 describe('a grunt shoots his own note', () => {
-  // A grunt with this look seed, its shots' playSound calls
-  function shots(seed, n = 3) {
+  // A grunt with this look seed (in this swarm), its shots' playSound calls
+  function shots(seed, n = 3, swarm = null) {
     const audio = createMockAudio();
     const context = { get: () => undefined, set() {} };
     const g = new Grunt(0, 0, 'grunt', { context }, createMockP5(), audio);
     g.lookSeed = seed;
+    g.swarm = swarm;
     for (let i = 0; i < n; i++) g.createBullet();
     return audio.playSound.mock.calls;
   }
@@ -442,8 +448,13 @@ describe('a grunt shoots his own note', () => {
     expect(calls).toHaveLength(3);
     for (const [name, , , opts] of calls) {
       expect(name).toBe('alienShoot');
-      expect(opts).toEqual({ note: ['b3', 5], seed: 0.3 });
+      // a grunt in no swarm fires a lone shot's level
+      expect(opts).toEqual({ note: ['b3', 5], seed: 0.3, gain: 1 });
     }
+  });
+
+  it("a grunt in a swarm fires at its volley's gain", () => {
+    expect(shots(0.3, 1, { volleyGain: 0.5 })[0][3].gain).toBe(0.5);
   });
 
   it('grunts with different seeds play both notes', () => {

@@ -392,7 +392,8 @@ export class Audio {
           };
     SYNTHS[config.synth](this.audioContext, out, config, {
       ...opts,
-      volume: near * level,
+      // A caller's gain: a swarm's volley shares one shot's energy
+      volume: near * level * (opts?.gain ?? 1),
       pan,
       at,
       eighth,
