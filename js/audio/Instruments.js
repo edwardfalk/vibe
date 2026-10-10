@@ -398,7 +398,7 @@ export function gruntShot(ctx, out, _cfg, opts) {
 // ringing, driven, with today's falling zap shortened on top (two layers 3%
 // apart, whose beating is the electric buzz)
 const TANK_SHOT = {
-  trim: 1.5 - 8.84, // the mix pass
+  trim: 1.5 - 9.41, // the mix pass
   DRIVE: 2.5,
   PEAK: 0.75,
   ATTACK_SEC: 0.002,

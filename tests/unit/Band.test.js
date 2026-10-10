@@ -172,7 +172,7 @@ const BAND = {
     knob: 'GRUNT_SHOT_DB',
     trim: 0.2,
   },
-  tankShot: { opts: {}, knob: 'TANK_SHOT_DB', trim: 1.5 - 8.84 },
+  tankShot: { opts: {}, knob: 'TANK_SHOT_DB', trim: 1.5 - 9.41 },
   tankCharge: {
     opts: { step: 0, steps: 8 },
     knob: 'CHARGE_DB',

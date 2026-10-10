@@ -29,7 +29,7 @@ const TREM_PLUCK_NOTE = ['b5', 6];
 const SILENT = 0.0001; // exponential ramps can't reach 0
 // The mix pass: each part over the page's level, in dB, so he is heard in
 // the band (docs/superpowers/specs/2026-10-10-mix-pass-design.md)
-export const STRINGS_MIX_DB = { bowed: 4.35, pluck: 1.35, tremolo: 5.4 };
+export const STRINGS_MIX_DB = { bowed: 4.35, pluck: 1.41, tremolo: 4.69 };
 const TAIL_SEC = 0.02; // sources stop this long after they fade out
 const CENTS_PER_OCTAVE = 1200;
 const NOISE_END = 0.001; // a noise burst fades to this
