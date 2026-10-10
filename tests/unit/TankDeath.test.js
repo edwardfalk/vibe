@@ -368,6 +368,7 @@ describe("the tank's air (his death's sound)", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
+      getContextValue: () => undefined, // no beat clock: now
       _pausedByGame: false,
       _resuming: false,
     });
@@ -439,6 +440,7 @@ describe("a plate's clang", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
+      getContextValue: () => undefined, // no beat clock: now
       _pausedByGame: false,
       _resuming: false,
     });

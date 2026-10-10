@@ -324,6 +324,7 @@ describe("the bang's sound", () => {
       sounds: { ...SOUND_CONFIG },
       player: { x: 0, y: 0 },
       masterGain: { kind: 'effects bus' },
+      getContextValue: () => undefined, // no beat clock: now
       _pausedByGame: false,
       _resuming: false,
     });

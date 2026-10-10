@@ -167,7 +167,7 @@ export function updateBombs(context) {
     const seed = hash01(bomb.x + SEED_Y * bomb.y);
     explosionManager?.addBombBlast(bomb.x, bomb.y, seed);
     explosionManager?.addBombCloud(bomb.x, bomb.y, seed);
-    audio?.playBombBang?.(bomb.x, bomb.y);
+    const bangAt = audio?.playBombBang?.(bomb.x, bomb.y) ?? null;
     cameraSystem?.addShake(...COMIC.SHAKE);
 
     if (player) {
@@ -214,11 +214,12 @@ export function updateBombs(context) {
 
       if (damageResult === DAMAGE_RESULT.DIED) {
         // A blast, away from the bomb, and the bomb's: a tank it kills starts
-        // dying with the bang
+        // dying with the bang, at its start
         const blow = {
           dir: Math.atan2(enemy.y - bomb.y, enemy.x - bomb.x),
           blast: true,
           bomb: true,
+          at: bangAt,
         };
         (enemyDeathHandler ?? collisionSystem)?.handleEnemyDeath(
           enemy,

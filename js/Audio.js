@@ -376,8 +376,8 @@ export class Audio {
   }
 
   /**
-   * When a sound played now starts, the eighth it is told, and the audio
-   * time it decided at (`now`). The game runs the beat clock's lead ahead
+   * When a sound played now starts, the eighth it is told, the audio time
+   * it decided at (`now`), and the game's time then (`game`). The game runs the beat clock's lead ahead
    * of the audio (BeatClock), so a sound played in the frame after its
    * eighth is still in time to start on it. Its eighth is the last one at or
    * before the game's now plus `early` (s); it starts there when that is at
@@ -392,15 +392,18 @@ export class Audio {
     const ctx = this.audioContext;
     const now = ctx.currentTime; // once: it moves within a task
     const nearest = clock ? Math.round(clock.getBeatPosition() * 2) : 0;
-    if (clock?.audioContext !== ctx) return { now, at: now, eighth: nearest };
+    if (clock?.audioContext !== ctx) {
+      return { now, game: now, at: now, eighth: nearest };
+    }
     const origin = clock.startTime / MS_PER_SEC;
     const step = clock.beatInterval / 2 / MS_PER_SEC;
-    const from = now + (fromAudio ? 0 : (clock.aheadSec ?? 0));
+    const game = now + (clock.aheadSec ?? 0);
+    const from = fromAudio ? now : game;
     const eighth = Math.floor((from + early - origin) / step);
     const at = origin + eighth * step;
     const quantum = RENDER_QUANTUM_FRAMES / ctx.sampleRate;
-    if (at - now >= quantum) return { now, at, eighth };
-    return { now, at: now, eighth: nearest };
+    if (at - now >= quantum) return { now, game, at, eighth };
+    return { now, game, at: now, eighth: nearest };
   }
 
   /**
@@ -458,8 +461,9 @@ export class Audio {
   }
 
   /**
-   * One of the stabber's strings (StabberStrings.js) from (x, y), now:
-   * 'tremolo' (opts.untilSec: how long to the lock; returns its handle),
+   * One of the stabber's strings (StabberStrings.js) from (x, y), on its
+   * eighth when it can be (beatTiming), else now: 'tremolo' (opts.untilSec:
+   * how long from the game's now to the lock; returns its handle),
    * 'stab', 'screech' (opts.beatSec, for its echo) or 'pluck'. opts.seed
    * (0..1) picks its stretch of the noise. Null when it plays nothing
    * (muted, paused, no context)
@@ -475,10 +479,15 @@ export class Audio {
     }[part];
     const { near, pan } = this.placement(x, y);
     const noise = crashNoise(this.audioContext);
+    const { game, at } = this.beatTiming();
+    // The tremolo ends on the lock, however late it starts
+    const untilSec =
+      opts.untilSec === undefined ? undefined : game + opts.untilSec - at;
     return (
       STRING_PARTS[part](this.audioContext, this.masterGain, {
         ...opts,
-        at: this.audioContext.currentTime,
+        at,
+        untilSec,
         volume: volume * near,
         pan,
         noise,
@@ -505,33 +514,39 @@ export class Audio {
     });
   }
 
-  /** A tank's plate breaking (DeathSounds.js) at (x, y), now */
+  /** A tank's plate breaking (DeathSounds.js) at (x, y), now (beatTiming) */
   playPlateClang(x, y) {
     if (!this.ensureAudioContext()) return;
     const { near, pan } = this.placement(x, y);
     plateClang(this.audioContext, this.masterGain, {
-      at: this.audioContext.currentTime,
+      at: this.beatTiming().at,
       noise: crashNoise(this.audioContext),
       volume: CONFIG.TANK_ARMOR.CLANG_VOLUME * near,
       pan,
     });
   }
 
-  /** The bomb's bang (BombSounds.js) from (x, y), now */
+  /**
+   * The bomb's bang (BombSounds.js) from (x, y), now (beatTiming); returns
+   * the audio time it starts at, for the tank it kills to die with it, or
+   * null when it plays nothing
+   */
   playBombBang(x, y) {
-    if (!this.ensureAudioContext()) return;
+    if (!this.ensureAudioContext()) return null;
     const { near, pan } = this.placement(x, y);
+    const { at } = this.beatTiming();
     bangSound(this.audioContext, this.masterGain, {
-      at: this.audioContext.currentTime,
+      at,
       noise: crashNoise(this.audioContext),
       volume: CONFIG.BOMB.BANG_VOLUME * near,
       pan,
     });
+    return at;
   }
 
   /**
-   * The bomb's cloud (BombSounds.js) from (x, y), from now to the end of its
-   * debris; seed (0..1) is the cloud's own. Returns its handle (stop()), or
+   * The bomb's cloud (BombSounds.js) from (x, y), from now (beatTiming) to
+   * the end of its debris; seed (0..1) is the cloud's own. Returns its handle (stop()), or
    * null when it plays nothing (muted, paused, no context)
    */
   playBombCloud(x, y, seed) {
@@ -539,7 +554,7 @@ export class Audio {
     const { near, pan } = this.placement(x, y);
     const clock = this.getContextValue('beatClock');
     return cloudSound(this.audioContext, this.masterGain, {
-      at: this.audioContext.currentTime,
+      at: this.beatTiming().at,
       noise: crashNoise(this.audioContext),
       volume: CONFIG.BOMB.CLOUD_VOLUME * near,
       pan,

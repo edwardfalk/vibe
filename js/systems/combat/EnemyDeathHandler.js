@@ -135,7 +135,7 @@ export class EnemyDeathHandler {
     const clock = this.getContextValue('beatClock');
     const now = () => clock.nowSec();
     const diedAt = now();
-    const at = blow?.bomb ? diedAt : popTime(diedAt, clock);
+    const at = blow?.bomb ? (blow.at ?? diedAt) : popTime(diedAt, clock);
     const latency = () => heardLatencySec(audio.audioContext, clock);
     const beatSec = clock.beatInterval / MS_PER_SEC;
     const death = new TankDeath({

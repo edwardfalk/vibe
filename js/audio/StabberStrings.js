@@ -304,6 +304,11 @@ export function tremolo(ctx, out, o) {
       const now = ctx.currentTime;
       if (stopped || now >= until) return;
       stopped = true;
+      // Booked on its beat and not begun: it never sounds
+      if (now < at) {
+        for (const s of sources) s.stop(at);
+        return;
+      }
       cut.gain.setValueAtTime(1, now);
       cut.gain.linearRampToValueAtTime(0, now + TREM.FADE_SEC);
       for (const s of sources) s.stop(now + TREM.FADE_SEC + TAIL_SEC);

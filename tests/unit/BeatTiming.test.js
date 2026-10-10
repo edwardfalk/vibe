@@ -7,6 +7,11 @@ import { BeatClock, SNAP_SEC } from '../../js/audio/BeatClock.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { CONFIG } from '../../js/config.js';
 import { hz } from '../../js/audio/Harmony.js';
+import { EnemyDeathHandler } from '../../js/systems/combat/EnemyDeathHandler.js';
+import { plantBomb, updateBombs } from '../../js/systems/BombSystem.js';
+import { Tank } from '../../js/entities/Tank.js';
+import { createMockP5 } from './helpers/enemyMocks.js';
+import { tankWorld } from './helpers/tankWorld.js';
 
 const DEFAULT_AHEAD_MS = CONFIG.BEAT_CLOCK.AHEAD_MS;
 const AHEAD = 0.025;
@@ -55,6 +60,7 @@ function fakeContext() {
       node('source', { playbackRate: param(), detune: param() }),
     createConstantSource: () => node('constant', { offset: param() }),
     createWaveShaper: () => node('shaper'),
+    createConvolver: () => node('convolver'),
     createBuffer: vi.fn((_channels, length) => {
       const data = new Float32Array(length);
       return { duration: length / 48000, getChannelData: () => data };
@@ -228,5 +234,138 @@ describe('every beat sound books on its eighth through playSound', () => {
     const start = osc.start.mock.calls[0][0];
     expect(start).toBeGreaterThanOrEqual(3);
     expect(start).toBeLessThanOrEqual(3 + SPREAD);
+  });
+});
+
+describe('the sounds outside playSound book on their eighth too', () => {
+  const starts = (made) =>
+    made
+      .filter((n) => n.start.mock.calls.length)
+      .map((n) => n.start.mock.calls[0][0]);
+
+  it.each([['tremolo'], ['stab'], ['screech'], ['pluck']])(
+    "the stabber's %s",
+    (part) => {
+      const { audio, made, game } = ledAudio();
+      game(3.01);
+      audio.playStabberStrings(part, 100, 0, {
+        untilSec: 0.49,
+        beatSec: 0.5,
+        seed: 0.3,
+      });
+      expect(Math.min(...starts(made))).toBe(3);
+    }
+  );
+
+  it("the stabber's tremolo ends on the lock, however late it starts", () => {
+    // Played 10 ms after its eighth, the lock 0.49 s on from the game's now
+    const { audio, made, game } = ledAudio();
+    game(3.01);
+    audio.playStabberStrings('tremolo', 100, 0, { untilSec: 0.49, seed: 0.3 });
+    const stops = made
+      .filter((n) => n.stop.mock.calls.length)
+      .map((n) => n.stop.mock.calls[0][0]);
+    // Its sources stop TREM.STOP_SEC (30 ms) after the lock, at 3.5 s
+    for (const t of stops) expect(t).toBeCloseTo(3.53, 9);
+  });
+
+  it("the stabber's tremolo, stopped before it starts, never sounds", () => {
+    const { audio, ctx, made, game } = ledAudio();
+    game(3.01);
+    const handle = audio.playStabberStrings('tremolo', 100, 0, {
+      untilSec: 0.49,
+      seed: 0.3,
+    });
+    ctx.currentTime = 2.99; // a hit 5 ms later: still before its start at 3
+    handle.stop();
+    for (const n of made.filter((m) => m.stop.mock.calls.length)) {
+      const [last] = n.stop.mock.calls.at(-1);
+      expect(last).toBeLessThanOrEqual(n.start.mock.calls[0][0]);
+    }
+  });
+
+  it("the bomb's bang, which hands back its start, and its cloud", () => {
+    const { audio, made, game } = ledAudio();
+    expect(game(3.01).playBombBang(100, 0)).toBe(3);
+    expect(Math.min(...starts(made))).toBe(3);
+    made.length = 0;
+    audio.playBombCloud(100, 0, 0.3);
+    expect(Math.min(...starts(made))).toBe(3);
+  });
+
+  it("a tank's plate breaking", () => {
+    const { audio, made, game } = ledAudio();
+    game(3.01);
+    audio.playPlateClang(100, 0);
+    expect(Math.min(...starts(made))).toBe(3);
+  });
+});
+
+describe('a tank the bomb kills dies with the bang', () => {
+  it('the bomb hands its bang start to the kill', () => {
+    const w = tankWorld({ hero: { x: 9999, y: 0 } });
+    const tank = w.tank();
+    w.at(4000);
+    plantBomb(w.values.activeBombs, tank, w.clock);
+    const enemyDeathHandler = { handleEnemyDeath: vi.fn() };
+    const audio = { playBombBang: vi.fn(() => 12.5) };
+    for (let ms = 4000; w.values.activeBombs.length && ms < 20000; ms += 100) {
+      w.at(ms);
+      updateBombs({
+        activeBombs: w.values.activeBombs,
+        enemies: [tank],
+        explosionManager: {
+          addExplosion() {},
+          addBombBlast() {},
+          addBombCloud() {},
+        },
+        enemyDeathHandler,
+        audio,
+        beatClock: w.clock,
+      });
+    }
+    expect(audio.playBombBang).toHaveBeenCalledTimes(1);
+    const [[enemy, , , , blow]] = enemyDeathHandler.handleEnemyDeath.mock.calls;
+    expect(enemy).toBe(tank);
+    expect(blow.at).toBe(12.5);
+  });
+
+  it('his air starts at that start, not when the game saw him die', () => {
+    CONFIG.BEAT_CLOCK.AHEAD_MS = 25;
+    const ctx = { currentTime: 2.985, baseLatency: 0, outputLatency: 0 };
+    const clock = new BeatClock(120, ctx);
+    clock.startTime = 0;
+    const audio = {
+      audioContext: ctx,
+      playTankDeath: vi.fn(),
+      playSound: vi.fn(),
+      ensureAudioContext: vi.fn(),
+    };
+    const values = {
+      beatClock: clock,
+      audio,
+      explosionManager: { fragmentExplosions: [] },
+      cameraSystem: { addShake: vi.fn() },
+    };
+    const handler = new EnemyDeathHandler({ get: (k) => values[k] });
+    const tank = new Tank(
+      0,
+      0,
+      'tank',
+      { context: { get: () => clock } },
+      createMockP5(),
+      null
+    );
+    tank.isSpawning = false;
+    tank.turn = { from: 0, to: 0, at: null };
+    tank.poseBeats = 6;
+    handler.handleEnemyDeath(tank, 'tank', 0, 0, {
+      dir: 0,
+      blast: true,
+      bomb: true,
+      at: 3,
+    });
+    const [, , at] = audio.playTankDeath.mock.calls[0];
+    expect(at).toBe(3); // not the game's now, 3.01
   });
 });
