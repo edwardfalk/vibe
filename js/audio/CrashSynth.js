@@ -48,10 +48,9 @@ function fade(ctx, peak, sec, t) {
 
 /**
  * One crash into `out`, at `volume` (times its recipe's levels), panned -1..1,
- * starting at audio time `at` (now by default)
+ * starting at audio time `t` (now by default)
  */
-export function playCrash(ctx, out, cfg, volume, pan, at = ctx.currentTime) {
-  const t = at;
+export function playCrash(ctx, out, cfg, volume, pan, t = ctx.currentTime) {
   const panner = ctx.createStereoPanner();
   panner.pan.setValueAtTime(pan, t);
   panner.connect(out);
