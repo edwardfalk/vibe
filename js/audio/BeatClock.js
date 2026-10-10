@@ -80,7 +80,11 @@ export class BeatClock {
     return this._ahead / 1000;
   }
 
-  /** Its clock now, in seconds: the AudioContext's once audio has started */
+  /**
+   * The game's time now, in seconds: once audio has started, the
+   * AudioContext's plus the lead (aheadSec). A sound booked at it is heard one
+   * lead from now; book through Audio.beatTiming(), or at grid times
+   */
   nowSec() {
     return this._now() / 1000;
   }
