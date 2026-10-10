@@ -393,6 +393,15 @@ test.describe('Gameplay Probes', () => {
     ]) {
       await expect(page.locator('#tunePanel')).toContainText(`DEATHS.${key}:`);
     }
+    // So are the grunts' swarms'
+    for (const key of Object.keys(
+      await page.evaluate(async () => {
+        const { CONFIG } = await import('/js/config.js');
+        return CONFIG.SWARM;
+      })
+    )) {
+      await expect(page.locator('#tunePanel')).toContainText(`SWARM.${key}:`);
+    }
     // So are the chatter's
     for (const label of [
       'SPEECH_SETTINGS.VOICE_GAP_SEC',

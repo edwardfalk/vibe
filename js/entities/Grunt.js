@@ -23,7 +23,7 @@ import {
 const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
 const GRUNT_MOVE_SOUND_CHANCE = 0.5;
 // Grunts only shoot at the hero from this close
-const GRUNT_FIRE_RANGE = 300;
+export const GRUNT_FIRE_RANGE = 300;
 // Shown over a warned grunt that doesn't fire after all
 // (lift: px above its health bar's top)
 const SHOT_CANCELLED = {

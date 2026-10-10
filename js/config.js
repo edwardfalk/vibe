@@ -92,6 +92,28 @@ const CONFIG = {
     SPAWN_MARGIN: 95,
   },
 
+  // The grunts' swarms (js/systems/GruntSwarm.js): the alien throws its
+  // cannon fodder in as one loose, jostling cloud that drifts after the hero
+  // and plays the snare as a section. Tune live with ?tune; sizes apply from
+  // the next swarm, the rest at once.
+  SWARM: {
+    SIZE_FIRST: 5, // grunts in a swarm at level 1
+    SIZE_PER_LEVEL: 2, // more each level
+    SIZE_MAX: 12,
+    SHOOTERS_MAX: 4, // the most that fire on one 2 or 4
+    GRUNTS_PER_SHOOTER: 3, // a third of the swarm fires, up to SHOOTERS_MAX
+    GAP_BEATS: 4, // a new swarm's first volley comes no sooner after the clear
+    // Its centre holds this plus the cloud's radius from the hero, so its
+    // nearest grunt keeps a lone grunt's old distance (150-250 px)
+    STANDOFF_PX: 200,
+    DRIFT_SHARE: 0.6, // of a grunt's speed, once in range (full speed coming in)
+    PULL: 0.02, // toward the centre, a share of the way a frame
+    SPACING_PX: 34, // grunts closer than this push apart
+    // Each shot of a volley of n is this many dB down per doubling of n, so
+    // a volley carries about one shot's energy (-3: 1/sqrt(n))
+    VOLLEY_DB_PER_DOUBLING: -3,
+  },
+
   // Mix. Speech runs outside Web Audio and can't go above full volume, so it
   // sits on top by keeping the beat lower and dipping the game while anyone
   // speaks. Tune live with ?tune.
