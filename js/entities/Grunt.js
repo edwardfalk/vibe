@@ -8,6 +8,8 @@ import {
 } from '../shared/DamageResultHandler.js';
 import { GRUNT_LINES, GRUNT_OW } from '../audio/DialogueLines.js';
 import { Bullet } from './bullet.js';
+import { GRUNT_SHOT_NOTES } from '../audio/SoundConfig.js';
+import { GRUNT_VOICES } from '../audio/Instruments.js';
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 import {
   GRUNT_COLORS,
@@ -282,22 +284,21 @@ class Grunt extends BaseEnemy {
     return false;
   }
 
-  /**
-   * Make weird grunt noises (separate from speech)
-   */
+  /** His chatter (separate from speech), in his own voice */
   makeGruntWeirdNoise() {
-    const audio = this.getContextValue('audio');
-    if (audio) {
-      const weirdSounds = [
-        'gruntMalfunction',
-        'gruntBeep',
-        'gruntWhir',
-        'gruntError',
-        'gruntGlitch',
-      ];
-      const randomSound = random(weirdSounds);
-      audio.playSound(randomSound, this.x, this.y);
-    }
+    this.getContextValue('audio')?.playSound('gruntChatter', this.x, this.y, {
+      voice: this.chatterVoice(),
+      seed: this.lookSeed,
+    });
+  }
+
+  /**
+   * His chatter's voice for life, by his look's seed: what is left of it
+   * once his shot's note is picked, so the two don't go together
+   */
+  chatterVoice() {
+    const rest = (this.lookSeed * GRUNT_SHOT_NOTES.length) % 1;
+    return GRUNT_VOICES[Math.floor(rest * GRUNT_VOICES.length)];
   }
 
   /** @override */
@@ -366,8 +367,18 @@ class Grunt extends BaseEnemy {
       'enemy-grunt'
     );
     bullet.ownerId = this.id; // so it can't shoot itself
-    this.audio?.playSound('alienShoot', this.x, this.y);
+    this.audio?.playSound('alienShoot', this.x, this.y, {
+      note: this.shotNote(),
+      seed: this.lookSeed,
+    });
     return bullet;
+  }
+
+  /** His shot's note for life, by his look's seed: a crowd plays both */
+  shotNote() {
+    return GRUNT_SHOT_NOTES[
+      Math.floor(this.lookSeed * GRUNT_SHOT_NOTES.length)
+    ];
   }
 
   /**

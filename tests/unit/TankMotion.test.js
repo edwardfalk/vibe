@@ -192,8 +192,8 @@ describe("the tank's charge", () => {
     expect(t.chargingShot).toBe(false); // he fired
     expect(w.audio.speak).not.toHaveBeenCalled();
     const sounds = w.audio.playSound.mock.calls.map(([name]) => name);
-    expect(sounds).toContain('tankCharging');
-    expect(sounds).toContain('tankPowerUp');
+    expect(sounds).toContain('tankCharge');
+    expect(sounds).toContain('tankShot');
   });
 
   it('rolls his callout once per charge: FIRE! follows a called-out CHARGING!, and the next charge rolls again', () => {
@@ -204,8 +204,9 @@ describe("the tank's charge", () => {
     w.frame(t, 4000); // CHARGING!
     CONFIG.SPEECH_SETTINGS.TANK.CALLOUT_CHANCE = 0;
     for (let ms = 5000; ms <= 16000; ms += 1000) w.frame(t, ms);
+    // A charge starts with its first pluck
     const charges = w.audio.playSound.mock.calls.filter(
-      ([name]) => name === 'tankCharging'
+      ([name, , , opts]) => name === 'tankCharge' && opts.step === 0
     );
     expect(charges).toHaveLength(2); // the second charge, silent
     const lines = w.audio.speak.mock.calls.map(([, line]) => line);
@@ -237,6 +238,85 @@ describe("the tank's charge", () => {
     // still has bar 3 to run, so it fires on bar 8's beat 1
     expect(w.frame(t, 14600)).toBeNull();
     expect(w.frame(t, 16000)?.owner).toBe('enemy-tank');
+  });
+
+  // His charge's plucks: [step, steps] in the order played
+  const plucks = (w) =>
+    w.audio.playSound.mock.calls
+      .filter(([name]) => name === 'tankCharge')
+      .map(([, , , { step, steps }]) => [step, steps]);
+
+  it('plucks steps 0 to 7 on beats 0 to 7 of his charge, once a beat, then the shot once on the next beat 1', () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    // Where the clock was at each pluck
+    const at = [];
+    w.audio.playSound.mockImplementation((name) => {
+      if (name === 'tankCharge') at.push(w.clock.getBeatPosition());
+    });
+    let shot = null;
+    for (let ms = 4000; ms <= 8100 && !shot; ms += 16) shot = w.frame(t, ms);
+    expect(shot?.owner).toBe('enemy-tank');
+    expect(plucks(w)).toEqual(
+      Array.from({ length: 8 }, (_, step) => [step, 8])
+    );
+    // Each on its own beat (the charge starts on beat 8), in the first frame
+    at.forEach((beats, step) => {
+      expect(Math.floor(beats), `step ${step}`).toBe(8 + step);
+      expect(beats - Math.floor(beats), `step ${step}`).toBeLessThan(0.05);
+    });
+    const names = w.audio.playSound.mock.calls.map(([name]) => name);
+    expect(names.filter((n) => n === 'tankShot')).toHaveLength(1);
+    // The shot's beat plays the shot, not a ninth pluck
+    expect(names.at(-1)).toBe('tankShot');
+    // Nothing of his old growl, power and power-up tones, or layered shot
+    const gone = ['tankCharging', 'tankPower', 'tankPowerUp'];
+    gone.push('tankEnergy', 'tankZap', 'tankArc');
+    expect(names.filter((n) => gone.includes(n))).toEqual([]);
+    for (const [, , , opts] of w.audio.playSound.mock.calls) {
+      expect(opts.seed).toBe(t.lookSeed);
+    }
+  });
+
+  it('a charge he starts on his very first update plucks its step 0', () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    w.frame(t, 4000); // his first update, on bar 2's beat 1
+    expect(t.chargingShot).toBe(true);
+    expect(plucks(w)).toEqual([[0, 8]]);
+  });
+
+  it("his plucks count his own charge's length", () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    t.chargeDurationBeats = 4;
+    for (let ms = 4000; ms <= 6000; ms += 500) w.frame(t, ms);
+    expect(plucks(w)).toEqual([
+      [0, 4],
+      [1, 4],
+      [2, 4],
+      [3, 4],
+    ]);
+  });
+
+  it('a stalled bar moves his plucks on with his charge: the last still comes the beat before the shot', () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    w.frame(t, 4000); // beat 8: the charge starts, step 0
+    w.frame(t, 4500); // beat 9: step 1
+    // Four bars go by without a frame. Back on beat 25 his charge has run
+    // one beat, so it counts from beat 24: step 1 again
+    w.frame(t, 12600);
+    let shot = null;
+    for (let ms = 13000; ms <= 16000 && !shot; ms += 500) shot = w.frame(t, ms);
+    expect(shot?.owner).toBe('enemy-tank');
+    expect(w.clock.getBeatPosition()).toBe(32); // the shot, on bar 8's beat 1
+    expect(plucks(w).map(([step]) => step)).toEqual([
+      0, 1, 1, 2, 3, 4, 5, 6, 7,
+    ]);
   });
 
   it('waits RECHARGE_BEATS after a shot before charging again', () => {

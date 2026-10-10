@@ -15,23 +15,6 @@ describe('Beat-gated entity behaviour', () => {
     Object.assign(CONFIG.SPEECH_SETTINGS.TANK, TANK_SPEECH);
   });
 
-  it('tank charge-up sound plays once per beat 1, however many frames the window spans', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0); // every roll succeeds
-    const { audio, context, at } = world();
-    const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
-    t.isSpawning = false;
-    t.spawnTimer = t.spawnDuration;
-    t.chargingShot = true;
-    t.chargeStartBeat = 0;
-    t.chargeDurationBeats = 99;
-    for (let ms = 4000; ms < 4120; ms += 10) {
-      at(ms); // ~12 frames across beat 1's window
-      t.updateSpecificBehavior(700, 100, 10);
-    }
-    const power = audio.playSound.mock.calls.filter(([n]) => n === 'tankPower');
-    expect(power.length).toBe(1);
-  });
-
   it('tank says its calm-down line once, on the next beat 1 after its anger ends', () => {
     const { audio, context, at } = world();
     const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
@@ -100,8 +83,13 @@ describe('Beat-gated entity behaviour', () => {
       t.updateSpecificBehavior(300, 100, 16);
     }
     expect(said.map((s) => s.line)).toEqual(['CHARGING!', 'FIRE!']);
-    expect(audio.playSound).toHaveBeenCalledWith('tankCharging', 100, 100);
-    expect(audio.playSound).toHaveBeenCalledWith('tankPowerUp', 100, 100);
+    // His charge's first pluck marks its start
+    expect(audio.playSound).toHaveBeenCalledWith(
+      'tankCharge',
+      100,
+      100,
+      expect.objectContaining({ step: 0 })
+    );
     for (let i = 1; i < said.length; i++) {
       expect(said[i].now - said[i - 1].now).toBeGreaterThanOrEqual(
         CONFIG.SPEECH_SETTINGS.VOICE_GAP_SEC * 1000
@@ -109,27 +97,18 @@ describe('Beat-gated entity behaviour', () => {
     }
   });
 
-  it("tank's shot layers a nuclear boom and an electric zap", async () => {
-    const { AMBIENT_SOUNDS } =
-      await import('../../js/audio/AmbientSoundProfile.js');
+  it("tank's shot is the band's boom and zap, once, with his seed", () => {
     const { audio, context } = world();
     const t = new Tank(100, 100, 'tank', { context }, createMockP5(), audio);
     t.createBullet();
-    const played = audio.playSound.mock.calls.map(([name]) => name);
-    expect(played).toEqual(['tankEnergy', 'tankZap', 'tankArc']);
-    expect(AMBIENT_SOUNDS.has('tankEnergy')).toBe(true); // reverb tail
+    expect(audio.playSound.mock.calls).toEqual([
+      ['tankShot', 100, 100, { seed: t.lookSeed }],
+    ]);
   });
 
   it('tank tones are not pure sines (inaudible on laptop speakers)', async () => {
     const { SOUND_CONFIG } = await import('../../js/audio/SoundConfig.js');
-    for (const name of [
-      'tankEnergy',
-      'tankCharging',
-      'tankPower',
-      'tankPowerUp',
-      'tankHit',
-      'tankResponse',
-    ]) {
+    for (const name of ['tankHit', 'tankResponse']) {
       expect(SOUND_CONFIG[name].waveform, name).not.toBe('sine');
     }
   });

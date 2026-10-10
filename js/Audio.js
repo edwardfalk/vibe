@@ -69,8 +69,11 @@ const DEFAULT_BEAT_MS = 500; // 120 BPM, with no beat clock
 const CLOUD_FRAME_SEC = 1 / 60; // a hazard cloud ticks once a frame
 const TANK_DEATH_NOTE = ['1', 2]; // the tank dies on the root
 const CENTS_PER_OCTAVE = 1200;
-// A tone starts at most this late (playTone), so copies don't add in phase
+// A tone starts at most this late (playTone), and a seeded synth by its seed
+// (playSynth), so copies don't add in phase
 const MAX_START_OFFSET_SEC = 0.005;
+// A seed times this, mod 1, is all but independent of the seed's top bits
+const SEED_SCRAMBLE = 1009;
 // A hero shot this close (beats) to the last continues their run (heroRunLevel)
 const RUN_GAP_BEATS = 0.75;
 // A hero shot this far (s) before its eighth is booked on it (heroShotTiming)
@@ -310,7 +313,7 @@ export class Audio {
     // nothing: it can't stop the game loop
     try {
       if (soundConfig.synth) {
-        this.playSynth(soundConfig, x, y);
+        this.playSynth(soundConfig, x, y, opts);
       } else {
         this.playTone(soundConfig, x, y, soundName, opts);
       }
@@ -338,9 +341,13 @@ export class Audio {
 
   /**
    * A preset with a synth of its own (Instruments.js), quieter and panned
-   * with distance from the hero; the hero's shot is also timed and softened
+   * with distance from the hero; the hero's shot is also timed and softened.
+   * The caller's `opts` reach the synth beside what this computes, which
+   * wins. A creature's `seed` (0..1), scrambled, spreads its copy as
+   * playTone's random numbers spread tones: grunts firing together on one
+   * note, or tanks on one beat 1, would otherwise add in phase
    */
-  playSynth(config, x, y) {
+  playSynth(config, x, y, opts = null) {
     const { near, pan } = this.placement(x, y);
     const clock = this.getContextValue('beatClock');
     // Every synth is told the nearest eighth; the hero's shot may also wait
@@ -353,11 +360,24 @@ export class Audio {
             eighth: clock ? Math.round(clock.getBeatPosition() * 2) : 0,
             level: 1,
           };
+    // Scrambled: a creature picks its note and voice from its seed's top
+    // bits, and copies on one note must still spread over the whole range
+    const spreadBy =
+      opts?.seed === undefined ? null : (opts.seed * SEED_SCRAMBLE) % 1;
+    const spread =
+      spreadBy === null
+        ? null
+        : {
+            at: at + spreadBy * MAX_START_OFFSET_SEC,
+            detuneCents: (2 * spreadBy - 1) * CONFIG.TONES.DETUNE_CENTS,
+          };
     SYNTHS[config.synth](this.audioContext, this.masterGain, config, {
+      ...opts,
       volume: near * level,
       pan,
       at,
       eighth,
+      ...spread,
     });
   }
 

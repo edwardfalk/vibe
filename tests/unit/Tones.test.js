@@ -59,6 +59,7 @@ function gameAudio() {
     masterGain: { kind: 'effects bus' },
     effects: { reverb: null },
     context: null,
+    getContextValue: () => undefined,
     _pausedByGame: false,
     _resuming: false,
   });
@@ -174,8 +175,8 @@ describe('playTone plays notes', () => {
     const draws = [0.1, 0.5, 0.5, 0.2, 0.9, 0.5, 0.5, 0.8];
     vi.spyOn(Math, 'random').mockImplementation(() => draws[i++ % 8]);
     const { audio, made } = gameAudio();
-    audio.playSound('alienShoot');
-    audio.playSound('alienShoot');
+    audio.playSound('gruntHit');
+    audio.playSound('gruntHit');
     const [a, b] = made.filter((n) => n.kind === 'osc');
     expect(startOf(a)).not.toBe(startOf(b));
     expect(startHzOf(a)).not.toBe(startHzOf(b));
@@ -194,25 +195,6 @@ describe('playTone plays notes', () => {
     );
   });
 
-  it("the tank's arc rides 3% above his zap at both ends", () => {
-    const ends = (name) => {
-      vi.spyOn(Math, 'random').mockReturnValue(0.5);
-      const { audio, made } = gameAudio();
-      audio.playSound(name);
-      const osc = toneOf(made);
-      const both = [
-        startHzOf(osc),
-        osc.frequency.exponentialRampToValueAtTime.mock.calls[0][0],
-      ];
-      vi.restoreAllMocks(); // also clears the fake's recorded calls
-      return both;
-    };
-    const zap = ends('tankZap');
-    const arc = ends('tankArc');
-    expect(arc[0] / zap[0]).toBeCloseTo(1.03, 2);
-    expect(arc[1] / zap[1]).toBeCloseTo(1.03, 2);
-  });
-
   it('a note that cannot resolve (a bad root) logs an error once per sound, plays nothing and throws nothing', () => {
     const root = CONFIG.HUM.ROOT;
     // An error, not a warning: the browser tests fail on console errors
@@ -223,7 +205,7 @@ describe('playTone plays notes', () => {
       expect(() => {
         audio.playSound('gruntHit');
         audio.playSound('gruntHit');
-        audio.playSound('alienShoot');
+        audio.playSound('alienShoot', null, null, { note: ['b3', 5] });
       }).not.toThrow();
       expect(made).toHaveLength(0);
       expect(warn).toHaveBeenCalledTimes(2);

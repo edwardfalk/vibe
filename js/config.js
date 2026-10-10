@@ -130,6 +130,19 @@ const CONFIG = {
     SOFTEN_SHOTS: 8,
   },
 
+  // The band: each enemy's instrument (Instruments.js), from the 9 October
+  // listening page. Each level knob adds dB to its sound's own trim, which
+  // matches it to the sound it replaced. Tune live with ?tune.
+  BAND: {
+    GRUNT_SHOT: 'stab', // stab or zap
+    GRUNT_SHOT_DB: -2, // Edward's, on the page
+    TANK_SHOT_DB: 0,
+    CHARGE_DB: 0, // the tank's charge
+    CHATTER: 'both', // both (each grunt his own voice), whine or squeak
+    CHATTER_DB: 0,
+    FUSE_DB: 0, // the rusher's fuse
+  },
+
   // Pausing (P) stops the sound: the audio is suspended, which also stops
   // BeatClock, so everything picks up where it stopped. ?tune turns this on
   // (its "Sound while paused" box), so the kick can be tuned by ear while
@@ -457,12 +470,12 @@ const CONFIG = {
       },
       stabber: {
         engine: 'sam',
-        voice: { pitch: 64, speed: 88, mouth: 200, throat: 150 },
+        voice: { pitch: 25, speed: 99, mouth: 173, throat: 97 },
         chain: [
-          { type: 'highpass', freq: 480 },
-          { type: 'slapback', time: 0.085, feedback: 0.32, mix: 0.29 },
+          { type: 'tremolo', rate: 8, depth: 0.32 },
+          { type: 'reverb', seconds: 1, mix: 0.56 },
         ],
-        levelDb: 0,
+        levelDb: -6,
       },
       rusher: {
         engine: 'espeak',
@@ -485,7 +498,10 @@ const CONFIG = {
     },
     // Words an engine mispronounces, respelled for that engine only; the
     // speech bubble always shows the real word
-    RESPELL: { sam: { death: 'deth' }, espeak: {} },
+    RESPELL: {
+      sam: { death: 'deth', heavy: 'hevy', mcstabface: 'MACSTABFACE' },
+      espeak: { it: 'it' },
+    },
   },
 };
 

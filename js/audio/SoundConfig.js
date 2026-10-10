@@ -15,27 +15,23 @@ export const VOICE_DEGREES = {
   game: ['1', 'b3', '5', 'b7'],
 };
 
+// A grunt shoots one of these for life, by his look's seed (Grunt.shotNote):
+// a crowd plays both
+export const GRUNT_SHOT_NOTES = [
+  ['b3', 5],
+  ['5', 5],
+];
+
 export const SOUND_CONFIG = {
   // The hero's shot: one of four sounds (Instruments.js, CONFIG.HERO_SHOT)
   playerShoot: { synth: 'heroShot' },
-  alienShoot: {
-    voice: 'grunt',
-    note: ['b3', 5],
-    waveform: 'square',
-    volume: 0.25,
-    duration: 0.08,
-  },
-  // The tank's shot: a nuclear boom (reverb tail via AMBIENT_SOUNDS) plus
-  // two zaps 3% apart, whose beating is the electric buzz. The zaps start on
-  // his fifth at 1.1 kHz, below the stabbers' band, and fall fast
-  tankEnergy: {
-    voice: 'tank',
-    note: ['1', 2],
-    waveform: 'square',
-    volume: 0.8,
-    duration: 0.7,
-    sweep: { to: ['5', 0], curve: 'exponential' },
-  },
+  // The grunt's shot: the band's synth stab or laser zap (Instruments.js,
+  // CONFIG.BAND.GRUNT_SHOT), on his own note
+  alienShoot: { synth: 'gruntShot' },
+  // The tank's shot and his charge: the band's 808 boom with its zap, and a
+  // rising pluck a beat (Instruments.js)
+  tankShot: { synth: 'tankShot' },
+  tankCharge: { synth: 'tankCharge' },
   // A tank ball killing an enemy on its way: short, dry, not the shot's boom
   tankBallKill: {
     voice: 'tank',
@@ -44,23 +40,6 @@ export const SOUND_CONFIG = {
     volume: 0.7,
     duration: 0.3,
     sweep: { to: ['1', 1], curve: 'exponential' },
-  },
-  tankZap: {
-    voice: 'tank',
-    note: ['5', 5],
-    waveform: 'sawtooth',
-    volume: 0.3,
-    duration: 0.45,
-    sweep: { to: ['1', 2], curve: 'exponential' },
-  },
-  tankArc: {
-    voice: 'tank',
-    note: ['5', 5],
-    waveform: 'square',
-    volume: 0.2,
-    duration: 0.45,
-    sweep: { to: ['1', 2], curve: 'exponential' },
-    detuneCents: 51, // 3% above the zap, both ends, so the two beat
   },
   explosion: {
     voice: 'game',
@@ -112,23 +91,6 @@ export const SOUND_CONFIG = {
     duration: 0.3,
     volume: 0.8,
   },
-  tankCharging: {
-    voice: 'tank',
-    note: ['5', 1],
-    waveform: 'square',
-    volume: 0.4,
-    duration: 0.8,
-    tremolo: true,
-    sweep: { to: ['1', 1], curve: 'exponential' },
-  },
-  tankPower: {
-    voice: 'tank',
-    note: ['5', 1],
-    waveform: 'square',
-    volume: 0.5,
-    duration: 0.3,
-    sweep: { to: ['5', 0], curve: 'exponential' },
-  },
   gruntAdvance: {
     voice: 'grunt',
     note: ['b3', 4],
@@ -143,19 +105,12 @@ export const SOUND_CONFIG = {
     volume: 0.25,
     duration: 0.08,
   },
+  // The rusher's lit fuse: the band's countdown beeps (Instruments.js)
+  rusherFuse: { synth: 'rusherFuse' },
   rusherCharge: {
     voice: 'rusher',
     note: ['b7', 4],
     waveform: 'sawtooth',
-    volume: 0.5,
-    duration: 0.4,
-    tremolo: true,
-    sweep: { to: ['1', 2], curve: 'exponential' },
-  },
-  tankPowerUp: {
-    voice: 'tank',
-    note: ['5', 1],
-    waveform: 'square',
     volume: 0.5,
     duration: 0.4,
     tremolo: true,
@@ -185,41 +140,8 @@ export const SOUND_CONFIG = {
     duration: 0.5,
     sweep: { to: ['b7', 2], curve: 'exponential' },
   },
-  gruntMalfunction: {
-    voice: 'grunt',
-    note: ['b3', 3],
-    waveform: 'sawtooth',
-    volume: 0.25,
-    duration: 0.4,
-  },
-  gruntBeep: {
-    voice: 'grunt',
-    note: ['b3', 5],
-    waveform: 'triangle',
-    volume: 0.25,
-    duration: 0.15,
-  },
-  gruntWhir: {
-    voice: 'grunt',
-    note: ['5', 3],
-    waveform: 'sine',
-    volume: 0.25,
-    duration: 0.6,
-  },
-  gruntError: {
-    voice: 'grunt',
-    note: ['b3', 3],
-    waveform: 'square',
-    volume: 0.25,
-    duration: 0.2,
-  },
-  gruntGlitch: {
-    voice: 'grunt',
-    note: ['5', 2],
-    waveform: 'sawtooth',
-    volume: 0.25,
-    duration: 0.25,
-  },
+  // The grunts' chatter: the band's whine or squeak (Instruments.js)
+  gruntChatter: { synth: 'gruntChatter' },
   gruntOw: {
     voice: 'grunt',
     note: ['5', 4],

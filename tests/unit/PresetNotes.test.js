@@ -3,7 +3,11 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { SOUND_CONFIG, VOICE_DEGREES } from '../../js/audio/SoundConfig.js';
+import {
+  SOUND_CONFIG,
+  VOICE_DEGREES,
+  GRUNT_SHOT_NOTES,
+} from '../../js/audio/SoundConfig.js';
 import { CONFIG } from '../../js/config.js';
 import { hz, ROOTS } from '../../js/audio/Harmony.js';
 
@@ -26,7 +30,7 @@ function atEveryRoot(check) {
 
 describe('presets name notes', () => {
   it('every pitched preset has a voice and a note, and no Hz, random range or stray type', () => {
-    expect(pitched.length).toBeGreaterThan(30);
+    expect(pitched.length).toBeGreaterThan(20);
     for (const [name, cfg] of pitched) {
       expect(Object.keys(VOICE_DEGREES), name).toContain(cfg.voice);
       expect(cfg.note, name).toHaveLength(2);
@@ -52,11 +56,11 @@ describe('presets name notes', () => {
 
   it("the attacks keep their registers apart: the tank's shot under the grunt's, under the stabber's strings", () => {
     atEveryRoot((r) => {
-      const tank = hz(SOUND_CONFIG.tankEnergy.note);
-      const grunt = hz(SOUND_CONFIG.alienShoot.note);
+      const tank = hz(['1', 1]); // his shot's boom lands here (Band.test.js)
+      const grunts = GRUNT_SHOT_NOTES.map((n) => hz(n));
       const strings = hz(['b5', 6]); // StabberStrings.js's stab and screech
-      expect(tank, r).toBeLessThan(grunt);
-      expect(grunt, r).toBeLessThan(strings);
+      expect(tank, r).toBeLessThan(Math.min(...grunts));
+      expect(Math.max(...grunts), r).toBeLessThan(strings);
     });
   });
 
@@ -82,56 +86,19 @@ describe('presets name notes', () => {
     expect(SOUND_CONFIG.killStreak.sweep.to).toEqual(['5', 5]);
     expect(SOUND_CONFIG.gameOver.sweep.to[0]).toBe('1');
   });
-
-  it("the tank's arc rides 3% above his zap, on the same notes", () => {
-    const { tankZap, tankArc } = SOUND_CONFIG;
-    expect(tankArc.note).toEqual(tankZap.note);
-    expect(tankArc.sweep.to).toEqual(tankZap.sweep.to);
-    expect(2 ** (tankArc.detuneCents / 1200)).toBeCloseTo(1.03, 2);
-  });
 });
 
 // The spec's table (2026-10-09-audio-pr2-design.md): each preset's note and
 // sweep end, so no sound drifts out of its register unnoticed
 const TABLE = {
-  alienShoot: [['b3', 5], null],
   gruntAdvance: [['b3', 4], null],
   gruntRetreat: [['5', 3], null],
-  gruntMalfunction: [['b3', 3], null],
-  gruntBeep: [['b3', 5], null],
-  gruntWhir: [['5', 3], null],
-  gruntError: [['b3', 3], null],
-  gruntGlitch: [['5', 2], null],
   gruntOw: [['5', 4], null],
   gruntHit: [['b3', 4], null],
   gruntResponse: [['b3', 4], null],
-  tankEnergy: [
-    ['1', 2],
-    ['5', 0],
-  ],
   tankBallKill: [
     ['1', 2],
     ['1', 1],
-  ],
-  tankZap: [
-    ['5', 5],
-    ['1', 2],
-  ],
-  tankArc: [
-    ['5', 5],
-    ['1', 2],
-  ],
-  tankCharging: [
-    ['5', 1],
-    ['1', 1],
-  ],
-  tankPower: [
-    ['5', 1],
-    ['5', 0],
-  ],
-  tankPowerUp: [
-    ['5', 1],
-    ['1', 2],
   ],
   tankShove: [
     ['5', 3],
@@ -192,8 +159,8 @@ const TABLE = {
 };
 
 describe("every preset on the spec's note", () => {
-  it("each of the table's 38 presets plays its note and sweeps to its end", () => {
-    expect(Object.keys(TABLE)).toHaveLength(38);
+  it("each of the table's 26 presets plays its note and sweeps to its end", () => {
+    expect(Object.keys(TABLE)).toHaveLength(26);
     for (const [name, [note, to]] of Object.entries(TABLE)) {
       expect(SOUND_CONFIG[name]?.note, name).toEqual(note);
       expect(SOUND_CONFIG[name]?.sweep?.to ?? null, name).toEqual(to);
@@ -224,9 +191,6 @@ describe('every sound the game plays exists', () => {
     }
     // And the names that reach playSound through a variable
     for (const name of [
-      ...['tankEnergy', 'tankZap', 'tankArc'], // Tank.createBullet's layers
-      ...['gruntMalfunction', 'gruntBeep', 'gruntWhir', 'gruntError'],
-      'gruntGlitch', // the grunt's weird noises
       ...['gruntAdvance', 'gruntRetreat'], // his moveSound
       ...['stabberOhNo', 'rusherOhNo', 'enemyOhNo'], // EnemyDeathHandler
       'explosion', // BulletCollisionResolvers' deathSound

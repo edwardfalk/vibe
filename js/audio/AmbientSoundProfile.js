@@ -1,13 +1,4 @@
-export const AMBIENT_SOUNDS = new Set([
-  'gruntAdvance',
-  'gruntRetreat',
-  'gruntMalfunction',
-  'gruntBeep',
-  'gruntWhir',
-  'gruntError',
-  'gruntGlitch',
-  'tankEnergy', // the tank shot's boom: reverb and grit make it nuclear
-]);
+export const AMBIENT_SOUNDS = new Set(['gruntAdvance', 'gruntRetreat']);
 
 export function resolveSoundSourcePosition(x, y, playerX, playerY) {
   const hasValidPosition = Number.isFinite(x) && Number.isFinite(y);
