@@ -25,7 +25,7 @@ const CONFIG = {
   // acting on the first frame after its beat can still book its sound on it
   // (Audio.beatTiming). 0 is no lead. Tune live with ?tune.
   BEAT_CLOCK: {
-    AHEAD_MS: 0,
+    AHEAD_MS: 25,
   },
 
   // Speech/Chatter Settings (per enemy type, in seconds). Every AMBIENT_MIN

@@ -578,6 +578,25 @@ test.describe('Gameplay Probes', () => {
         const playSound = audio.playSound.bind(audio);
         const kicks = [];
         const shotOffsets = [];
+        // Each grunt shot's start as its synth was handed it, and the
+        // timing it was decided on (the clock moves within a task, so it is
+        // never read a second time)
+        const { SYNTHS } = await import('/js/audio/Instruments.js');
+        const gruntShot = SYNTHS.gruntShot;
+        const timing = audio.beatTiming.bind(audio);
+        let decided = null;
+        const shotStarts = [];
+        audio.beatTiming = (...a) => (decided = timing(...a));
+        SYNTHS.gruntShot = (ctx, out, cfg, o) => {
+          shotStarts.push({
+            ...decided,
+            handed: o.at,
+            origin: clock.startTime / 1000,
+            step: clock.beatInterval / 2000,
+            quantum: 128 / ctx.sampleRate,
+          });
+          return gruntShot(ctx, out, cfg, o);
+        };
         track._scheduleNote = (time, eighth) => {
           if (eighth % 2 === 0) {
             const rel = time * 1000 - clock.startTime;
@@ -602,9 +621,11 @@ test.describe('Gameplay Probes', () => {
         await new Promise((r) => setTimeout(r, 3000));
         track._scheduleNote = schedule;
         audio.playSound = playSound;
-        return { kicks, shotOffsets, tolerance: clock.tolerance };
+        audio.beatTiming = timing;
+        SYNTHS.gruntShot = gruntShot;
+        return { kicks, shotOffsets, shotStarts, tolerance: clock.tolerance };
       });
-    const check = ({ kicks, shotOffsets, tolerance }) => {
+    const check = ({ kicks, shotOffsets, shotStarts, tolerance }) => {
       expect(kicks.length).toBeGreaterThanOrEqual(3);
       for (const k of kicks) {
         expect(k.off).toBeLessThan(2); // on BeatClock's beat
@@ -615,14 +636,36 @@ test.describe('Gameplay Probes', () => {
       expect(shotOffsets.length).toBeGreaterThan(0);
       for (const o of shotOffsets)
         expect(o).toBeLessThanOrEqual(tolerance + 20);
+      // Its sound starts on the eighth it came after, when its frame came
+      // within the lead (BeatClock.aheadSec), plus its seed's spread of up to
+      // 5 ms; a later frame's plays at once
+      const SPREAD = 0.005 + 1e-9;
+      expect(shotStarts.length).toBe(shotOffsets.length);
+      for (const s of shotStarts) {
+        const n = Math.floor((s.game - s.origin) / s.step);
+        const last = s.origin + n * s.step;
+        const bookable = last - s.now >= s.quantum;
+        const from = bookable ? last : s.now;
+        expect(s.at, `booked ${bookable}`).toBeCloseTo(from, 9);
+        expect(s.handed - s.at).toBeGreaterThanOrEqual(0);
+        expect(s.handed - s.at).toBeLessThanOrEqual(SPREAD);
+      }
+      console.log(
+        `${shotStarts.filter((s) => s.at > s.now).length} of ${shotStarts.length} grunt shots booked on their eighth`
+      );
     };
-    check(await record());
+    const before = await record();
+    check(before);
     await page.evaluate(() => window.gameState.setGameState('gameOver'));
     // R restarts once GAME OVER is up, after his death scene
     await page.waitForFunction(() => window.gameState.overlayUp());
     await page.keyboard.press('r');
     await page.waitForFunction(() => window.gameState.gameState === 'playing');
-    check(await record());
+    const after = await record();
+    check(after);
+    // And the test can't pass on late frames alone
+    const all = [...before.shotStarts, ...after.shotStarts];
+    expect(all.filter((s) => s.at > s.now).length).toBeGreaterThanOrEqual(1);
   });
 
   test('Pausing stops the sound and the beat; unpausing picks them up again', async ({

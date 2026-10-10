@@ -12,9 +12,8 @@ Everything still open, by area: work to build, and calls only Edward can make by
 
 ## Audio
 
-The audio overhaul's four next steps; Edward picks the order:
+The audio overhaul's three next steps; Edward picks the order:
 
-- **build: enemy sounds ahead of their beats.** Every enemy sound starts on the frame its creature sees the beat, 8–13 ms after the kick: a slight flam. Booking them ahead, as the hero's shot is, puts them on it. (audio evaluation 2026-10-09; #94 "Outside")
 - **build: a mix pass by group** (drums, band, feedback). #93 and #94 levelled sounds one by one; the evaluation found 37 of 50 sounds louder than the kick.
 - **build: a ghost snare on the grunts' 2 and 4,** so the backbeat is heard when grunts hold their fire.
 - **build: the level-up sound on the bar line.** Today it plays the moment the score crosses (`GameState.js`).
@@ -40,6 +39,7 @@ Calls and smaller work:
   - a NaN `DRIFT_CENTS` leaks a node;
   - a failed `Audio.initialize` leaves its context alive;
   - pasting a `?tune` JSON from before #84 crashes the `KICK.TUNED` knob.
+- **build: a lead that adapts to the frame rate.** The game runs a fixed `CONFIG.BEAT_CLOCK.AHEAD_MS` ahead of what you hear; a 30 fps machine needs about 40 ms. It can't use the live slider's change, which moves the kick: it would apply at a restart, where the grid snaps anyway. (beat-lead spec)
 - **check: a restart that moves beat 1 earlier doesn't restart the hum's breathing,** so its filter eases toward the old bar line for up to a breath. (Codex on #84; `Hum.js` accepts the bend in a comment)
 - **build, trivial:** `config.js`'s HUM comment still says "Provisional … (PR 2)"; PR 2 is merged and the hum is settled.
 
@@ -55,6 +55,7 @@ Calls and smaller work:
   - a glow knob;
   - his idle chant back as a pizzicato;
   - a beat-grid epoch, so a mid-run grid reset can't strand him.
+- **call: the cast's beat moves run one lead ahead of their sounds.** The Dude's nod and steps, the grunts' crouch, the tank's lurch, the rusher's boost and the stabber's count ring read the game's clock, which runs `CONFIG.BEAT_CLOCK.AHEAD_MS` ahead of what you hear. If it shows, move them to the heard beat, as the sky and the Dude's kick pulse already are. (beat-lead spec)
 - **call (deferred by Edward): the Dude's speech text sits on his health bar.** The fix is a text offset per speaker.
 - **build: a bomb-planting pose for the Dude:** his drink hand is full. (#83's spec)
 - **build: lines that fit the new cast.** Grunts still shout soldier lines ("KILL HUMAN!"), and the tank's anger and calm lines are robotic, not a vain bully's. The rusher's were redone in #82.
