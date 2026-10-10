@@ -266,6 +266,17 @@ describe('every beat sound books on its eighth through playSound', () => {
     expect(start).toBeLessThanOrEqual(3 + SPREAD);
   });
 
+  it('an answer aimed a hair under its eighth, as clock arithmetic leaves it, books that eighth', () => {
+    // BaseEnemy works the target out from nowSec() plus a delay: float noise
+    // can land it just under the line
+    const { made, game } = ledAudio();
+    game(2.995).playSound('gruntResponse', 100, 0, { at: 3 - 1e-12 });
+    const [osc] = made.filter((n) => n.kind === 'osc');
+    const start = osc.start.mock.calls[0][0];
+    expect(start).toBeGreaterThanOrEqual(3);
+    expect(start).toBeLessThanOrEqual(3 + SPREAD);
+  });
+
   it('an answer whose timer wakes late plays at once, not on the next eighth', () => {
     // At 3.23 the next eighth, 3.25, is 45 ms ahead of the audio: not its own
     const start = answerStart(AHEAD, 3.23);
