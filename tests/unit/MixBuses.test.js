@@ -177,6 +177,32 @@ const OPTS = {
   rusherFuse: { left: 2, seed: 0.3 },
 };
 
+describe('the buses at start-up', () => {
+  it('take their knobs from the start: a knob set before initialize() is on its bus after it', () => {
+    const { ctx } = recordingContext();
+    vi.stubGlobal('window', {
+      AudioContext: function () {
+        return ctx;
+      },
+    });
+    const audio = new Audio(null, { x: 0, y: 0 });
+    audio.createVoicebox = () => ({
+      connect() {},
+      prepare() {},
+      output: { gain: { value: 1 } },
+    });
+    Object.assign(CONFIG.MIX, { DRUMS_DB: -2, BAND_DB: -4, FEEDBACK_DB: 3 });
+    audio.initialize();
+    expect(audio.initialized).toBe(true);
+    expect(audio.buses.drums.gain.value).toBeCloseTo(dB(-2), 9);
+    expect(audio.buses.band.gain.value).toBeCloseTo(dB(-4), 9);
+    expect(audio.buses.feedback.gain.value).toBeCloseTo(dB(3), 9);
+    for (const [group, bus] of Object.entries(audio.buses)) {
+      expect(bus.to, group).toEqual([audio.masterGain]);
+    }
+  });
+});
+
 describe('every sound plays in its group', () => {
   it("every preset reaches its own group's bus, and no other way out", () => {
     const error = vi.spyOn(console, 'error');
