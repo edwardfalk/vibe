@@ -20,12 +20,16 @@
 import { hz } from './Harmony.js';
 import { placed } from './DeathSounds.js';
 import { disconnectWhenEnded } from './CrashSynth.js';
+import { dB } from '../mathUtils.js';
 
 const NOTE = ['b5', 6]; // the stab and the screech
 // The tremolo and the pizzicato: an octave above the page's (its
 // STRINGS.LOW); set this to ['b5', 5] to move them back
 const TREM_PLUCK_NOTE = ['b5', 6];
 const SILENT = 0.0001; // exponential ramps can't reach 0
+// The mix pass: each part over the page's level, in dB, so he is heard in
+// the band (docs/superpowers/specs/2026-10-10-mix-pass-design.md)
+export const STRINGS_MIX_DB = { bowed: 4.35, pluck: 1.35, tremolo: 5.4 };
 const TAIL_SEC = 0.02; // sources stop this long after they fade out
 const CENTS_PER_OCTAVE = 1200;
 const NOISE_END = 0.001; // a noise burst fades to this
@@ -128,7 +132,8 @@ function noiseBurst(ctx, into, nodes, o, type, freq, peak, sec) {
 // The stab's recipe at o.at, peaking at `peak`, `sec` long, bent up by `gliss`
 function bowed(ctx, out, o, peak, sec, gliss) {
   const { at } = o;
-  const [bus, panner] = placed(ctx, out, o.volume, o.pan, at);
+  const volume = o.volume * dB(STRINGS_MIX_DB.bowed);
+  const [bus, panner] = placed(ctx, out, volume, o.pan, at);
   const nodes = [bus, panner];
   const f = hz(NOTE, at);
   const env = ctx.createGain();
@@ -217,7 +222,8 @@ export function screech(ctx, out, o) {
 /** The pizzicato when the spike lands */
 export function pluck(ctx, out, o) {
   const { at } = o;
-  const [bus, panner] = placed(ctx, out, o.volume, o.pan, at);
+  const volume = o.volume * dB(STRINGS_MIX_DB.pluck);
+  const [bus, panner] = placed(ctx, out, volume, o.pan, at);
   const nodes = [bus, panner];
   const osc = ctx.createOscillator();
   osc.type = 'sawtooth';
@@ -257,7 +263,8 @@ export function pluck(ctx, out, o) {
 export function tremolo(ctx, out, o) {
   const { at } = o;
   const until = at + o.untilSec;
-  const [bus, panner] = placed(ctx, out, o.volume, o.pan, at);
+  const volume = o.volume * dB(STRINGS_MIX_DB.tremolo);
+  const [bus, panner] = placed(ctx, out, volume, o.pan, at);
   const cut = ctx.createGain();
   cut.gain.setValueAtTime(1, at);
   cut.connect(bus);

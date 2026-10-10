@@ -1,4 +1,5 @@
 import { DEGREES } from './Harmony.js';
+import { dB } from '../mathUtils.js';
 
 // playTone's fade-in. Every tone must be comfortably longer than this, or the
 // decay's end lands before the attack's and the tone is silent or clicks.
@@ -22,6 +23,9 @@ export const GRUNT_SHOT_NOTES = [
   ['5', 5],
 ];
 
+// Each preset plays in its group (Audio.buses): the drums, the band or
+// feedback. A volume `× dB(n)` is the mix pass's move into its group's window
+// (docs/superpowers/specs/2026-10-10-mix-pass-design.md), on the level it had
 export const SOUND_CONFIG = {
   // The hero's shot: one of four sounds (Instruments.js, CONFIG.HERO_SHOT)
   playerShoot: { synth: 'heroShot', group: 'drums' },
@@ -103,7 +107,7 @@ export const SOUND_CONFIG = {
     voice: 'grunt',
     note: ['b3', 4],
     waveform: 'square',
-    volume: 0.2,
+    volume: 0.2 * dB(-0.78),
     duration: 0.2,
   },
   gruntRetreat: {
@@ -121,7 +125,7 @@ export const SOUND_CONFIG = {
     voice: 'rusher',
     note: ['b7', 4],
     waveform: 'sawtooth',
-    volume: 0.5,
+    volume: 0.5 * dB(-5.8),
     duration: 0.4,
     tremolo: true,
     sweep: { to: ['1', 2], curve: 'exponential' },
@@ -300,7 +304,7 @@ export const SOUND_CONFIG = {
     washSec: 1.3,
     bang: 0.5, // the burst's level
     bangSec: 0.06,
-    volume: 1,
+    volume: 1 * dB(-4.94),
     duration: 1.6, // the metal's ring, the longest part
   },
 };

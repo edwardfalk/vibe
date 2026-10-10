@@ -5,7 +5,9 @@ import {
   pluck,
   tremolo,
   STRINGS_NOISE_SEC,
+  STRINGS_MIX_DB,
 } from '../../js/audio/StabberStrings.js';
+import { dB } from '../../js/mathUtils.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
@@ -248,13 +250,13 @@ function gameAudio() {
 }
 
 describe('Audio.playStabberStrings', () => {
-  it('plays a part now, at its volume times nearness, panned, into the effects bus, from its seed in the noise', () => {
+  it("plays a part now, at its volume times nearness and its mix trim, panned, into the band's bus, from its seed in the noise", () => {
     const { audio, ctx, made } = gameAudio();
     CONFIG.STABBER.PLUCK_VOLUME = 0.5;
     audio.playStabberStrings('pluck', 300, 0, { seed: 1 }); // the hero is at (0, 0)
     const out = made.find((n) => n.kind === 'gain');
     expect(out.gain.setValueAtTime).toHaveBeenCalledWith(
-      0.5 * calculateVolumeForPosition(300, 0, 0, 0),
+      0.5 * calculateVolumeForPosition(300, 0, 0, 0) * dB(STRINGS_MIX_DB.pluck),
       ctx.currentTime
     );
     const pan = made.find((n) => n.kind === 'pan');
@@ -272,7 +274,7 @@ describe('Audio.playStabberStrings', () => {
     );
   });
 
-  it("gives the stab and the screech STAB_VOLUME, the tremolo TREMOLO_VOLUME, and hands back the tremolo's handle", () => {
+  it("gives the stab and the screech STAB_VOLUME, the tremolo TREMOLO_VOLUME, each times its mix trim, and hands back the tremolo's handle", () => {
     const { audio, made } = gameAudio();
     Object.assign(CONFIG.STABBER, {
       STAB_VOLUME: 0.3,
@@ -281,14 +283,14 @@ describe('Audio.playStabberStrings', () => {
     const level = () =>
       made.find((n) => n.kind === 'gain').gain.setValueAtTime.mock.calls[0][0];
     audio.playStabberStrings('screech', 0, 0, { beatSec: 0.5 });
-    expect(level()).toBe(0.3);
+    expect(level()).toBeCloseTo(0.3 * dB(STRINGS_MIX_DB.bowed), 12);
     made.length = 0;
     const handle = audio.playStabberStrings('tremolo', 0, 0, { untilSec: 0.5 });
-    expect(level()).toBe(0.7);
+    expect(level()).toBeCloseTo(0.7 * dB(STRINGS_MIX_DB.tremolo), 12);
     expect(typeof handle.stop).toBe('function');
     made.length = 0;
     expect(audio.playStabberStrings('stab', 0, 0)).toBeNull();
-    expect(level()).toBe(0.3);
+    expect(level()).toBeCloseTo(0.3 * dB(STRINGS_MIX_DB.bowed), 12);
   });
 
   it('plays nothing and hands back null while muted or paused', () => {

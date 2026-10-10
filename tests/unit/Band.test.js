@@ -155,7 +155,8 @@ describe("playSynth passes the caller's options through", () => {
 });
 
 // Each of the band's sounds: its synth (by default its name), what its
-// creature passes, its knob, its trim (the spec's, from the page), and the
+// creature passes, its knob, its trim (the spec's, from the page, plus the
+// mix pass's move), and the
 // CONFIG.BAND choices it plays under, whatever the defaults are
 const BAND = {
   gruntShot: {
@@ -171,8 +172,12 @@ const BAND = {
     knob: 'GRUNT_SHOT_DB',
     trim: 0.2,
   },
-  tankShot: { opts: {}, knob: 'TANK_SHOT_DB', trim: 1.5 },
-  tankCharge: { opts: { step: 0, steps: 8 }, knob: 'CHARGE_DB', trim: -1.9 },
+  tankShot: { opts: {}, knob: 'TANK_SHOT_DB', trim: 1.5 - 8.84 },
+  tankCharge: {
+    opts: { step: 0, steps: 8 },
+    knob: 'CHARGE_DB',
+    trim: -1.9 - 3.8,
+  },
   gruntChatter: {
     band: { CHATTER: 'both' },
     opts: { voice: 'whine' },

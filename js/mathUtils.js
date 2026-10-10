@@ -11,6 +11,8 @@ export const atan2 = Math.atan2;
 export const sqrt = Math.sqrt;
 export const PI = Math.PI;
 export const TWO_PI = Math.PI * 2;
+/** A level in dB as a gain */
+export const dB = (d) => 10 ** (d / 20);
 
 /**
  * p5-compatible random(). Supports:
