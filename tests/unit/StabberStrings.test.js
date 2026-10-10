@@ -30,6 +30,7 @@ function fakeAudio() {
     setValueAtTime: vi.fn(),
     exponentialRampToValueAtTime: vi.fn(),
     linearRampToValueAtTime: vi.fn(),
+    cancelScheduledValues: vi.fn(),
   });
   const node = (kind, extra = {}) => {
     const n = {

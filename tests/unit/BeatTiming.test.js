@@ -302,18 +302,41 @@ describe('the sounds outside playSound book on their eighth too', () => {
     for (const t of stops) expect(t).toBeCloseTo(3.53, 9);
   });
 
-  it("the stabber's tremolo, stopped before it starts, never sounds", () => {
+  // A hit before the lock, or a death, cuts it (Stabber.daze, silence)
+  const cutAt = (now) => {
     const { audio, ctx, made, game } = ledAudio();
-    game(3.01);
+    game(3.01); // booked on its eighth, at 3
     const handle = audio.playStabberStrings('tremolo', 100, 0, {
       untilSec: 0.49,
       seed: 0.3,
     });
-    ctx.currentTime = 2.99; // a hit 5 ms later: still before its start at 3
+    ctx.currentTime = now;
     handle.stop();
+    return made;
+  };
+
+  it("the stabber's tremolo, cut over 20 ms before it starts, never sounds", () => {
+    const made = cutAt(2.97);
     for (const n of made.filter((m) => m.stop.mock.calls.length)) {
       const [last] = n.stop.mock.calls.at(-1);
       expect(last).toBeLessThanOrEqual(n.start.mock.calls[0][0]);
+    }
+  });
+
+  it('cut nearer its start, it fades, and its booked start cannot reopen it', () => {
+    // This thread's clock trails the audio thread's: it may have begun
+    const made = cutAt(2.99);
+    const cleared = made.filter(
+      (n) => n.kind === 'gain' && n.gain.cancelScheduledValues.mock.calls.length
+    );
+    expect(cleared).toHaveLength(1);
+    const [cut] = cleared;
+    expect(cut.gain.cancelScheduledValues).toHaveBeenCalledWith(2.99);
+    const [to, by] = cut.gain.linearRampToValueAtTime.mock.calls.at(-1);
+    expect(to).toBe(0);
+    expect(by).toBeCloseTo(2.99 + 0.015, 9);
+    for (const n of made.filter((m) => m.stop.mock.calls.length)) {
+      expect(n.stop.mock.calls.at(-1)[0]).toBeCloseTo(2.99 + 0.035, 9);
     }
   });
 
