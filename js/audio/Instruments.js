@@ -575,13 +575,14 @@ const FUSE = {
 
 /** Every synth by name; the crash keeps CONFIG.RUSHER.CRASH_VOLUME */
 export const SYNTHS = {
-  crash: (ctx, out, cfg, { volume, pan }) =>
+  crash: (ctx, out, cfg, { volume, pan, at }) =>
     playCrash(
       ctx,
       out,
       cfg,
       cfg.volume * CONFIG.RUSHER.CRASH_VOLUME * volume,
-      pan
+      pan,
+      at
     ),
   heroShot,
   gruntShot,

@@ -225,6 +225,7 @@ test('the dash and the frying, now noise, keep their level against the kick', as
           effects: { reverb: null },
           player: { x: 0, y: 0 },
           context: null,
+          getContextValue: () => undefined, // no beat clock: now
         });
         audio.playTone(SOUND_CONFIG[name], null, null, name);
       });

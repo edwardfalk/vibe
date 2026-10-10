@@ -13,6 +13,11 @@
 
 import { CONFIG } from '../config.js';
 
+// A hero shot this far (s) before its eighth is booked on it
+// (Audio.heroShotTiming); a timer aimed at an eighth may wake this early on
+// the clock too, and is booked on it (BaseEnemy.onNearbyDeath)
+export const SNAP_SEC = 0.03;
+
 export class BeatClock {
   constructor(bpm = 120, audioContext = null) {
     this.bpm = bpm;
