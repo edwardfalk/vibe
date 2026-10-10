@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Audio } from '../../js/Audio.js';
 import { CONFIG } from '../../js/config.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
+import { AMBIENT_SOUNDS } from '../../js/audio/AmbientSoundProfile.js';
 import { STRING_PARTS } from '../../js/audio/StabberStrings.js';
 import { airTiming, airDarts } from '../../js/entities/TankDeath.js';
 
@@ -177,12 +178,6 @@ const OPTS = {
 };
 
 describe('every sound plays in its group', () => {
-  it("every preset names the spec's group for it", () => {
-    for (const [name, config] of Object.entries(SOUND_CONFIG)) {
-      expect(config.group, name).toBe(groupOf(name));
-    }
-  });
-
   it("every preset reaches its own group's bus, and no other way out", () => {
     const error = vi.spyOn(console, 'error');
     for (const [name, config] of Object.entries(SOUND_CONFIG)) {
@@ -194,12 +189,15 @@ describe('every sound plays in its group', () => {
     }
   });
 
-  it("the ambient sounds' reverb goes to the band, never past it", () => {
-    for (const name of ['gruntAdvance', 'gruntRetreat']) {
-      const { audio } = routedAudio();
+  it("the ambient sounds' shared reverb leads only to the band's bus, and every ambient sound is band", () => {
+    const { audio } = routedAudio();
+    audio.createEffects();
+    for (const name of AMBIENT_SOUNDS) {
+      expect(SOUND_CONFIG[name].group, name).toBe('band');
       audio.playSound(name, 300, 0);
-      expect(audio.effects.reverb.to, name).toEqual([audio.buses.band]);
+      audio.playSound(name, 300, 0);
     }
+    expect(audio.effects.reverb.to).toEqual([audio.buses.band]);
   });
 
   it("every direct sound reaches its own group's bus, and no other way out", () => {

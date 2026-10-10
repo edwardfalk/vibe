@@ -271,6 +271,8 @@ export class Audio {
       3.5,
       0.5
     ); // Longer, more atmospheric reverb
+    // Its only output, once: every ambient sound is band
+    this.effects.reverb.connect(this.bus('band'));
 
     // One curve shared by every ambient sound's light distortion
     this.ambientDistortionCurve = this.createDistortionCurve(
@@ -754,12 +756,11 @@ export class Audio {
       distortionNode.curve = this.ambientDistortionCurve;
       distortionNode.oversample = '2x';
 
-      // Wet path: pan -> lowpass -> distortion -> reverb -> master
+      // Wet path: pan -> lowpass -> distortion -> the shared reverb (-> band)
       panNode.connect(lowPassFilter);
       lowPassFilter.connect(distortionNode);
       distortionNode.connect(reverbGainNode);
       reverbGainNode.connect(this.effects.reverb);
-      this.effects.reverb.connect(out);
 
       // Dry path: 90% close to 75% far, so the reverb stays subtle
       dryGain = ctx.createGain();
