@@ -387,7 +387,8 @@ const CONFIG = {
   },
 
   // Deaths (js/entities/GruntDeath.js, DudeDeath.js, js/audio/DeathSounds.js).
-  // Volumes: 1 is the prototype page's level. LINGER: how long a grunt's
+  // Volumes: 1 is the prototype page's level (the last breath's plus the mix
+  // pass, DeathSounds.js's BREATH_MIX_DB). LINGER: how long a grunt's
   // remains and the Dude's milk trail stay, times. The Dude's scene: SCENE_BEATS
   // from his fatal hit to GAME OVER (his choreography takes 2 s; past it he
   // floats on), the camera easing in to SCENE_ZOOM (1: no ease).
@@ -417,7 +418,8 @@ const CONFIG = {
   // the "and" of 3 for LUNGE_SEC, to OVERSHOOT_PX past where the hero stood,
   // then rests REST_BARS whole bars. A hit before the lock cancels the stab.
   // The volumes are his strings' (js/audio/StabberStrings.js), 1 = the
-  // prototype page's level. Tune live with ?tune.
+  // prototype page's level plus the mix pass (STRINGS_MIX_DB). Tune live
+  // with ?tune.
   STABBER: {
     STALK_MIN_PX: 200,
     STALK_MAX_PX: 350,

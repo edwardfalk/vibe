@@ -56,7 +56,7 @@ The game runs `CONFIG.BEAT_CLOCK.AHEAD_MS` ahead of what you hear: BeatClock rea
 One `AudioContext`, shared by the effects and the beat track:
 
 ```
-effects    -> its group's bus -> masterGain (mute) -> duckGain -> masterLimiter -> out
+effects    -> drums | band | feedback -> masterGain (mute) -> duckGain -> masterLimiter -> out
 hum        -> masterGain
 beat track -> its masterGain    -> beatDuckGain -> masterLimiter
 speech     -> Voicebox: each line's gain and pan -> speech gain -> masterLimiter

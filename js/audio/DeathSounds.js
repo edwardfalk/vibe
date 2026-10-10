@@ -185,8 +185,9 @@ export function gruntPop(ctx, out, { at, note, noise, offset, volume, pan }) {
 /**
  * The Dude's last breath at audio time `at`, with the hum's drift then.
  * @param {AudioContext} ctx
- * @param {AudioNode} out the effects' bus
- * @param {object} o { at, noise (an AudioBuffer), volume (1: the page's level) }
+ * @param {AudioNode} out its group's bus
+ * @param {object} o { at, noise (an AudioBuffer), volume (1: the page's level,
+ *   plus the mix pass's BREATH_MIX_DB) }
  */
 export function lastBreath(ctx, out, { at, noise, volume }) {
   const [bus, panner] = placed(ctx, out, volume * dB(BREATH_MIX_DB), 0, at);

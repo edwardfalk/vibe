@@ -2,7 +2,7 @@
  * Audio: synthesized sound effects (SoundConfig.js) and enemy/player speech.
  *
  * Signal flow (one AudioContext, shared with BeatTrack):
- *   effects    -> its group's bus (drums, band, feedback: CONFIG.MIX.*_DB)
+ *   effects    -> drums | band | feedback (CONFIG.MIX.*_DB)
  *              -> masterGain (mute) -> duckGain     -> masterLimiter -> out
  *   hum        -> masterGain (Hum.js; BeatTrack keeps its time)
  *   beat track -> its masterGain    -> beatDuckGain -> masterLimiter

@@ -198,7 +198,8 @@ function bowed(ctx, out, o, peak, sec, gliss) {
  * The stab at the lock.
  * @param {AudioContext} ctx
  * @param {AudioNode} out the effects' bus
- * @param {object} o { at, volume (1: the page's level), pan (-1..1), noise
+ * @param {object} o { at, volume (1: the page's level, plus the mix pass's
+ *   STRINGS_MIX_DB), pan (-1..1), noise
  *   (an AudioBuffer), offset (s into it) }
  */
 export function stab(ctx, out, o) {
