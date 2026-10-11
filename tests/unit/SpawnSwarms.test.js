@@ -102,6 +102,18 @@ describe('a run starts with its first swarm', () => {
     }
   });
 
+  it('pushed past the world’s edge as they move, its grunts are held inside it', () => {
+    const { system, enemies } = world();
+    system.update();
+    const g = grunts(enemies)[0];
+    g.isSpawning = false;
+    g.x = halfW - 1;
+    g.y = 0;
+    g.velocity = { x: 5, y: 0 }; // his swarm's push, outward
+    g.update(0, 0, CONFIG.GAME_SETTINGS.FRAME_TIME_MS);
+    expect(g.x).toBeLessThanOrEqual(halfW - g.size / 2);
+  });
+
   it('is never added half-made: a grunt that can’t be made adds none', () => {
     const { system, enemies } = world();
     const make = system.createEnemy.bind(system);
