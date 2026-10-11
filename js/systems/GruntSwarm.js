@@ -16,7 +16,7 @@ export const STANDOFF_BAND_PX = 50;
 const IDLE_JITTER = 0.3;
 // Grunts backing off move at this share of the swarm's pace (a lone grunt,
 // before swarms, backed off at 0.8 of his speed)
-const RETREAT_SHARE = 0.8;
+export const RETREAT_SHARE = 0.8;
 // Its sounds, rolled once each 2 or 4 (a lone grunt's chances): the move
 // call while it moves, and one grunt's chatter, at most one a bar
 const MOVE_CALL_CHANCE = 0.5;

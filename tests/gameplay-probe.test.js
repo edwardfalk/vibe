@@ -180,6 +180,39 @@ test.describe('Gameplay Probes', () => {
     expect(after.playerAlive).toBe(true);
   });
 
+  test('Each frame the swarm steers its grunts before they move', async ({
+    page,
+  }) => {
+    await bootGame(page);
+    await page.waitForFunction(() => window.spawnSystem?.swarm);
+    const frames = await page.evaluate(async () => {
+      const { Grunt } = await import('/js/entities/Grunt.js');
+      const log = [];
+      const system = window.spawnSystem;
+      const updateSwarm = system.updateSwarm;
+      system.updateSwarm = function () {
+        log.push(['swarm', window.frameCount]);
+        return updateSwarm.call(this);
+      };
+      const update = Grunt.prototype.update;
+      Grunt.prototype.update = function (...args) {
+        log.push(['grunt', window.frameCount]);
+        return update.apply(this, args);
+      };
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      Grunt.prototype.update = update;
+      system.updateSwarm = updateSwarm;
+      // What each frame that moved grunts did, in order
+      const byFrame = new Map();
+      for (const [what, frame] of log) {
+        byFrame.set(frame, [...(byFrame.get(frame) ?? []), what]);
+      }
+      return [...byFrame.values()].filter((done) => done.includes('grunt'));
+    });
+    expect(frames.length).toBeGreaterThan(5);
+    for (const done of frames) expect(done[0]).toBe('swarm');
+  });
+
   test('Screen flashes fade out in the running game', async ({ page }) => {
     await bootGame(page);
     await page.evaluate(() => {

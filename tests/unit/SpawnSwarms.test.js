@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { SpawnSystem } from '../../js/systems/SpawnSystem.js';
-import { GruntSwarm, swarmSize } from '../../js/systems/GruntSwarm.js';
+import {
+  GruntSwarm,
+  swarmSize,
+  cloudRadius,
+} from '../../js/systems/GruntSwarm.js';
 import { CONFIG } from '../../js/config.js';
 import { CameraSystem } from '../../js/systems/CameraSystem.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
@@ -63,7 +67,6 @@ describe('a run starts with its first swarm', () => {
         expect(Math.abs(g.x)).toBeLessThanOrEqual(halfW);
         expect(Math.abs(g.y)).toBeLessThanOrEqual(halfH);
       }
-      // the first swarm of a run has no gap before its first volley
     }
   });
 
@@ -85,6 +88,18 @@ describe('a run starts with its first swarm', () => {
         );
         expect(off).toBeLessThanOrEqual(Math.PI / 2 + 1e-9);
       }
+    }
+  });
+
+  it('its grunts start within its cloud’s radius of its centre, spread out', () => {
+    for (let run = 0; run < 20; run++) {
+      const { system, enemies } = world({ level: 6 });
+      vi.spyOn(system, 'findSpawnPosition').mockReturnValue({ x: 300, y: 0 });
+      system.update();
+      const r = cloudRadius(swarmSize(6));
+      const out = enemies.map((g) => Math.hypot(g.x - 300, g.y));
+      for (const d of out) expect(d).toBeLessThanOrEqual(r + 1e-9);
+      expect(Math.max(...out)).toBeGreaterThan(r / 4);
     }
   });
 

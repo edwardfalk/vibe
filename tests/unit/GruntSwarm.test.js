@@ -5,6 +5,7 @@ import {
   swarmSize,
   cloudRadius,
   STANDOFF_BAND_PX,
+  RETREAT_SHARE,
 } from '../../js/systems/GruntSwarm.js';
 
 const SWARM = { ...CONFIG.SWARM };
@@ -157,7 +158,11 @@ describe('a swarm’s movement', () => {
     swarm.entering = false;
     const g = grunt(swarm, 50, 0);
     swarm.steer([g], hero);
-    expect(g.velocity.x).toBeGreaterThan(0); // away from the hero at 0
+    // away from the hero at 0, at RETREAT_SHARE of its pace
+    expect(g.velocity.x).toBeCloseTo(
+      SPEED * CONFIG.SWARM.DRIFT_SHARE * RETREAT_SHARE,
+      9
+    );
     expect(swarm.heading).toBe('retreat');
     const D = CONFIG.SWARM.STANDOFF_PX + cloudRadius(1);
     // anywhere in the band round the stand-off plus its radius: still
@@ -172,6 +177,23 @@ describe('a swarm’s movement', () => {
     g.x = D + STANDOFF_BAND_PX + 1;
     swarm.steer([g], hero);
     expect(swarm.heading).toBe('advance');
+  });
+
+  it('at its stand-off its grunts jitter, as a lone one did; moving, they don’t', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.9);
+    CONFIG.SWARM.DRIFT_SHARE = 0.5; // under a grunt's speed: nothing capped
+    const swarm = new GruntSwarm({ size: 1, x: 0, y: 0 });
+    swarm.entering = false;
+    const D = CONFIG.SWARM.STANDOFF_PX + cloudRadius(1);
+    const g = grunt(swarm, D, 0);
+    swarm.steer([g], hero);
+    expect(swarm.heading).toBe(null);
+    expect(g.velocity.x).toBeGreaterThan(0);
+    expect(g.velocity.y).toBeGreaterThan(0);
+    g.x = D + STANDOFF_BAND_PX + 100;
+    swarm.steer([g], hero);
+    expect(swarm.heading).toBe('advance');
+    expect(g.velocity).toEqual({ x: -0.5 * SPEED, y: 0 });
   });
 
   it('pulls a grunt knocked out of the cloud back into it, as hard as PULL says', () => {
@@ -308,6 +330,36 @@ describe('a swarm’s snare', () => {
       expect(g.fireOnBeat ?? null).toBe(null);
     // a volley of one is a lone shot
     expect(swarm.volleyGain).toBe(1);
+  });
+
+  it('a volley of one after a bigger one is a lone shot again', () => {
+    const swarm = new GruntSwarm({ size: 12, x: 0, y: 0 });
+    const four = [0, 1, 2, 3].map((i) =>
+      shooter(swarm, 100 + i, { warnedOnBeat: 8 })
+    );
+    swarm.beat(swarm.members(four), hero, clockAt(9, 1, true));
+    expect(swarm.volleyGain).toBeLessThan(1);
+    const one = [shooter(swarm, 100, { warnedOnBeat: 10 })];
+    swarm.beat(swarm.members(one), hero, clockAt(11, 3, true));
+    expect(swarm.volleyGain).toBe(1);
+  });
+
+  it('picks, when it updates, only from its own live grunts', () => {
+    const swarm = new GruntSwarm({ size: 6, x: 0, y: 0 });
+    const another = new GruntSwarm({ size: 6, x: 0, y: 0 });
+    const enemies = [
+      shooter(swarm, 100, { health: 0 }),
+      shooter(another, 110),
+      shooter(swarm, 120, { markedForRemoval: true }),
+      shooter(swarm, 200),
+    ];
+    swarm.update(enemies, hero, clockAt(8, 0));
+    expect(enemies.map((g) => g.warnedOnBeat ?? null)).toEqual([
+      null,
+      null,
+      null,
+      8,
+    ]);
   });
 
   it('a window it never saw is never replayed', () => {
