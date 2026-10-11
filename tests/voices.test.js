@@ -27,6 +27,15 @@ test('the playground renders a typed phrase and shows the readout', async ({
   await expect(readout).toContainText('engine hears: Siege mode!');
   await expect(readout).toContainText(/render [\d.]+ ms \+ chain [\d.]+ ms/);
   await expect(readout).toContainText('ceiling cost');
+  // Tuned onto the scale by default; the box turns it off
+  await expect(readout).toContainText(
+    /pitch: dry median [\d.]+ Hz \(\w#?\d\) → the scale's \w+ in octave \d, [\d.]+ Hz \(\w#?\d\): [+−]\d+ cents/
+  );
+  await page.uncheck('#tune');
+  await page.click('#play-now');
+  await expect(readout).toContainText(
+    /pitch: dry median [\d.]+ Hz .*, not tuned/
+  );
   expect(errors).toEqual([]);
 });
 

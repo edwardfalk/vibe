@@ -183,6 +183,17 @@ function renderVoice() {
   for (const [key, range] of Object.entries(VOICE_PARAMS[s.engine])) {
     box.append(slider(key, s.voice, key, range));
   }
+  if (s.engine === 'sam') {
+    const sing = element('input', {
+      type: 'checkbox',
+      checked: s.voice.sing === true,
+    });
+    sing.onchange = () => {
+      s.voice.sing = sing.checked;
+      edited();
+    };
+    box.append(element('label', {}, sing, 'sing (one steady pitch)'));
+  }
 }
 
 function renderChain() {
@@ -216,6 +227,7 @@ function renderChain() {
   s.levelDb ??= 0;
   $('level').value = s.levelDb;
   $('level-value').textContent = s.levelDb;
+  $('tune').checked = s.tune !== false;
 }
 
 function renderRespell() {
@@ -286,11 +298,31 @@ function ensureAudio() {
   return audioReady;
 }
 
-function readout(line, words) {
+const NOTE_NAMES = 'C C# D D# E F F# G G# A A# B'.split(' ');
+
+// The equal-tempered name nearest f Hz, as a label: "A4"
+function noteName(f) {
+  const fromC0 = Math.round(12 * Math.log2(f / 440)) + 57;
+  return `${NOTE_NAMES[fromC0 % 12]}${Math.floor(fromC0 / 12)}`;
+}
+
+function pitchReadout(line, played) {
+  if (!line.f0)
+    return 'pitch: none found (no voiced frames), played as rendered';
+  const dry = `pitch: dry median ${line.f0.toFixed(1)} Hz (${noteName(line.f0)})`;
+  if (!played.note) return `${dry}, not tuned`;
+  const [degree, octave] = played.note;
+  const target = line.f0 * 2 ** (played.cents / 1200);
+  const sign = played.cents < 0 ? '−' : '+';
+  return `${dry} → the scale's ${degree} in octave ${octave}, ${target.toFixed(1)} Hz (${noteName(target)}): ${sign}${Math.abs(played.cents).toFixed(0)} cents`;
+}
+
+function readout(line, words, played) {
   const f = (n) => n.toFixed(1);
   const hot = line.reductionDb > CONFIG.SPEECH.REDUCTION_WARN_DB;
   return [
     `engine hears: ${words}`,
+    pitchReadout(line, played),
     `render ${f(line.renderMs)} ms + chain ${f(line.chainMs)} ms + level ${f(line.levelMs)} ms · spoken ${f(line.spokenSec)} s, ${f(line.buffer.duration)} s with the tail`,
     `loudness: in ${f(line.loudnessIn)} dB → after the chain ${f(line.loudnessChain)} dB → out ${f(line.loudnessOut)} dB`,
     `ceiling cost ${f(line.reductionDb)} dB` +
@@ -300,7 +332,8 @@ function readout(line, words) {
   ].join('\n');
 }
 
-// Render and play one line. `how` is 'now', 'grid' or 'game'.
+// Render and play one line. `how` is 'now', 'grid' or 'game'. Resolves
+// what play() returned, or null if it didn't play.
 async function playLine(how, text, myRun) {
   if (!text) {
     show('Type a phrase first.', 'error');
@@ -322,13 +355,13 @@ async function playLine(how, text, myRun) {
     const line = await audio.voicebox.renderLine(version.setup, words);
     if (myRun !== run) return null;
     const now = audio.ctx.currentTime;
-    audio.voicebox.play(
+    const played = audio.voicebox.play(
       line,
       how === 'grid' ? startTime(now, audio.beatClock) : now
     );
     const hot = line.reductionDb > CONFIG.SPEECH.REDUCTION_WARN_DB;
-    show(readout(line, words), hot ? 'warn' : '');
-    return line;
+    show(readout(line, words, played), hot ? 'warn' : '');
+    return played;
   } catch (error) {
     if (myRun !== run) return null;
     const off = audio?.voicebox.failed;
@@ -350,13 +383,10 @@ async function playAll() {
     if (myRun !== run) return;
     $('phrase').value = line;
     renderHears();
-    const rendered = await playLine('now', line, myRun);
-    if (!rendered || myRun !== run) return;
+    const played = await playLine('now', line, myRun);
+    if (!played || myRun !== run) return;
     await new Promise((resolve) =>
-      setTimeout(
-        resolve,
-        rendered.buffer.duration * 1000 + PAUSE_BETWEEN_LINES_MS
-      )
+      setTimeout(resolve, played.totalDuration * 1000 + PAUSE_BETWEEN_LINES_MS)
     );
   }
 }
@@ -395,6 +425,12 @@ $('stage-add').onclick = () => {
   const type = $('stage-type').value;
   setup().chain.push({ type, ...stageDefaults(type) });
   changed();
+};
+// Tuning is on unless a setup says tune: false, so only that is written
+$('tune').onchange = () => {
+  if ($('tune').checked) delete setup().tune;
+  else setup().tune = false;
+  edited();
 };
 $('level').oninput = () => {
   setup().levelDb = Number($('level').value);
