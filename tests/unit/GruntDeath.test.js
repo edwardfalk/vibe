@@ -301,6 +301,10 @@ describe("a grunt's death", () => {
       expect(neighbour.onNearbyDeath.mock.calls.map(([d]) => d.x)).toEqual([
         0, 620,
       ]);
+      // the next eighth's chord is asked afresh
+      w.clock.t = 1.38;
+      w.kill(aGrunt({ x: 640 }));
+      expect(neighbour.onNearbyDeath).toHaveBeenCalledTimes(3);
     });
 
     it('a neighbour who turns it down (too far, dead) leaves it to the next', () => {
