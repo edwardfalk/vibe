@@ -144,8 +144,8 @@ export class BeatTrack {
     this._enemyCount = 0;
     this.level = 1;
 
-    // The hum Audio.initialize made; start() picks it up (the voice
-    // playground has none)
+    // The hum Audio.initialize (or the voice playground) made; start() picks
+    // it up
     this.hum = null;
     this._humFailed = false;
   }

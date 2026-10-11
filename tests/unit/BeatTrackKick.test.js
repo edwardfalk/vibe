@@ -74,7 +74,7 @@ describe('BeatTrack kick', () => {
     CONFIG.HUM = structuredClone(originalHum);
   });
 
-  it('plays four on the floor by default, with no hum as in the voice playground', () => {
+  it('plays four on the floor by default, with no hum', () => {
     expect(playMeasure()).toEqual([0, 1, 2, 3]);
   });
 

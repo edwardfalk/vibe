@@ -7,6 +7,7 @@ import { CONFIG } from '../config.js';
 import { SPEAKER_LINES } from '../audio/DialogueLines.js';
 import { BeatClock } from '../audio/BeatClock.js';
 import { BeatTrack } from '../audio/BeatTrack.js';
+import { Hum } from '../audio/Hum.js';
 import {
   STAGE_PARAMS,
   stageDefaults,
@@ -275,18 +276,31 @@ async function startAudio() {
   const beatClock = new BeatClock(BPM, ctx);
   const kickBus = ctx.createGain();
   kickBus.connect(ctx.destination);
+  // The game's hum at level 1 with no enemies, at the effects' volume (the
+  // game also ducks it while someone speaks); the beat track keeps its time
+  const humBus = ctx.createGain();
+  humBus.connect(ctx.destination);
   const beatTrack = new BeatTrack({
-    audio: { audioContext: ctx, beatDuckGain: kickBus },
+    audio: {
+      audioContext: ctx,
+      beatDuckGain: kickBus,
+      hum: new Hum(ctx, humBus),
+    },
     beatClock,
   });
   beatTrack.setMuted(!$('kick').checked);
+  applyHum(humBus);
   const voicebox = new Voicebox({ audioContext: ctx });
   voicebox.connect(ctx.destination);
   await ctx.resume();
   await beatTrack.start();
   variants = await voicebox.variants().catch(() => []);
   renderVoice();
-  return { ctx, beatClock, beatTrack, voicebox };
+  return { ctx, beatClock, beatTrack, voicebox, humBus };
+}
+
+function applyHum(humBus) {
+  humBus.gain.value = $('hum').checked ? CONFIG.MIX.SFX_VOLUME : 0;
 }
 
 // One audio setup per page; a failed start can be retried by the next click
@@ -449,6 +463,10 @@ $('play-all').onclick = playAll;
 $('kick').onchange = async () => {
   if (!audioReady) return; // the first play applies the box
   (await audioReady).beatTrack.setMuted(!$('kick').checked);
+};
+$('hum').onchange = async () => {
+  if (!audioReady) return; // the first play applies the box
+  applyHum((await audioReady).humBus);
 };
 $('copy').onclick = async () => {
   const text = [

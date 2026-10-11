@@ -55,6 +55,42 @@ test('a SAM voice can sing, and the box keeps its edit', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('the hum box plays the hum under the voices, and unticked it is silent', async ({
+  page,
+}) => {
+  // Everything that reaches the speakers also feeds one analyser (lines
+  // render offline, on contexts of their own)
+  await page.addInitScript(() => {
+    const connect = AudioNode.prototype.connect;
+    AudioNode.prototype.connect = function (to, ...rest) {
+      if (
+        to instanceof AudioDestinationNode &&
+        this.context instanceof AudioContext
+      ) {
+        window.tap ??= this.context.createAnalyser();
+        connect.call(this, window.tap);
+      }
+      return connect.call(this, to, ...rest);
+    };
+  });
+  const errors = await open(page);
+  const rms = () =>
+    page.evaluate(() => {
+      const x = new Float32Array(window.tap.fftSize);
+      window.tap.getFloatTimeDomainData(x);
+      return Math.sqrt(x.reduce((sum, v) => sum + v * v, 0) / x.length);
+    });
+  // The first play starts the audio, kick and hum both off
+  await sayWith(page, 'grunt', 'Hi.');
+  await expect(page.locator('#readout')).toContainText('engine hears');
+  await expect.poll(rms, { timeout: 5000 }).toBe(0);
+  await page.check('#hum');
+  await expect.poll(rms).toBeGreaterThan(0.001);
+  await page.uncheck('#hum');
+  await expect.poll(rms).toBe(0);
+  expect(errors).toEqual([]);
+});
+
 test('a respelling changes only what the engine hears', async ({ page }) => {
   await open(page);
   await page.selectOption('#speaker', 'tank');
