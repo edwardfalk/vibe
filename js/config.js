@@ -107,8 +107,11 @@ const CONFIG = {
     GRUNTS_PER_SHOOTER: 3, // a third of the swarm fires, up to SHOOTERS_MAX
     BREAK_BEATS: 14, // the next swarm comes this long after a clear (7 s at 120 BPM)
     FIRE_RANGE_PX: 280, // a grunt fires only with the hero this close
-    // Its centre holds this plus the cloud's radius from the hero, so its
-    // nearest grunt keeps a lone grunt's old distance (150-250 px)
+    // Its centre comes in to this plus the cloud's radius, give or take
+    // STANDOFF_BAND_PX (50), from the hero, and parks at the far edge: its
+    // nearest grunt stops 60-130 px further out than this, more for a big
+    // or wide cloud. Keep that inside FIRE_RANGE_PX, or a hero who stands
+    // still is never shot at
     STANDOFF_PX: 260,
     DRIFT_SHARE: 1, // of a grunt's speed, once in range (full speed coming in)
     PULL: 0.02, // toward the centre, a share of the way a frame

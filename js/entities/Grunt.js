@@ -68,12 +68,11 @@ class Grunt extends BaseEnemy {
     // A grunt can be drawn once before its first update.
     this.poseBeats =
       this.getContextValue('beatClock')?.getBeatPosition() ?? null;
-
-    // Grunt weird noises are now beat-gated (no timer needed)
   }
 
   /**
-   * Update specific grunt behavior - tactical ranged combat
+   * Each frame, after he moved: a stabbed grunt's delayed death, else his
+   * wind-up ring and the shot his swarm settled
    * @param {number} playerX - Player X position
    * @param {number} playerY - Player Y position
    * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds

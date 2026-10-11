@@ -401,9 +401,10 @@ export class BaseEnemy {
   }
 
   /**
-   * Keep inside the world, where the camera never goes past. The tank and
-   * the rusher call it: a sidestep, or a rusher shooting past near a wall,
-   * could otherwise carry them out
+   * Keep inside the world, where the camera never goes past. Each type calls
+   * it after it moves (a tank's sidestep, a rusher shooting past near a
+   * wall, a stabber's lunge, a grunt his swarm pushes), and the spawn system
+   * on a swarm's grunts as they are placed
    */
   keepInWorld() {
     const halfW = CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2 - this.size / 2;

@@ -14,8 +14,8 @@ import { random, sqrt, min, max } from '../mathUtils.js';
 export const STANDOFF_BAND_PX = 50;
 // Each grunt's idle jitter a frame, either way (a lone grunt's, before swarms)
 const IDLE_JITTER = 0.3;
-// Grunts backing off move at this share of the swarm's speed (as a lone
-// grunt retreated a little slower than he advanced)
+// Grunts backing off move at this share of the swarm's pace (a lone grunt,
+// before swarms, backed off at 0.8 of his speed)
 const RETREAT_SHARE = 0.8;
 // Its sounds, rolled once each 2 or 4 (a lone grunt's chances): the move
 // call while it moves, and one grunt's chatter, at most one a bar

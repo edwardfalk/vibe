@@ -7,7 +7,7 @@ A map of the code for someone opening it for the first time. For what the game i
 [`index.html`](index.html) loads p5.js from a CDN and [`js/GameLoop.js`](js/GameLoop.js) as an ES module. p5 runs in instance mode: every drawing call goes through the `p` instance, never through globals.
 
 - [`GameLoopSetup.js`](js/GameLoopSetup.js) creates the systems once.
-- [`GameLoop.js`](js/GameLoop.js) runs each frame's update: the beat clock, the player and his fire, bullets, bombs, enemies, collisions, spawning, explosions and area damage. Input arrives through event handlers ([`InputHandlers.js`](js/core/InputHandlers.js)).
+- [`GameLoop.js`](js/GameLoop.js) runs each frame's update: the beat clock, the player and his fire, bullets, bombs, the grunts' swarm (it steers them and picks who fires: `SpawnSystem.updateSwarm`), enemies, collisions, spawning, explosions and area damage. Input arrives through event handlers ([`InputHandlers.js`](js/core/InputHandlers.js)).
 - [`GameLoopDraw.js`](js/GameLoopDraw.js) draws whichever state the game is in.
 
 The states are `title → playing ⇄ paused → gameOver → playing`. The title screen is an HTML overlay in `index.html`. The first click or key press starts the game and unlocks audio (`startFromTitle` in `GameLoop.js`). After that, the HUD and all other screens are drawn on the canvas by [`UIRenderer`](js/systems/UIRenderer.js).
