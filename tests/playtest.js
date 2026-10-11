@@ -151,8 +151,8 @@ test('playtest session', async ({ page }) => {
   });
   // The grunts' swarms (GruntSwarm.js): which 2s and 4s had a grunt shot
   // while a swarm had a grunt in range, the silences over a bar between
-  // grunt shots, each swarm's size, the others' arrivals by type, and how
-  // the grunts died
+  // grunt shots, each swarm's size, how far apart round the hero they are,
+  // the others' arrivals by type, and how the grunts died
   await page.evaluate(async () => {
     const { Grunt } = await import('/js/entities/Grunt.js');
     const { CONFIG } = await import('/js/config.js');
@@ -162,6 +162,7 @@ test('playtest session', async ({ page }) => {
       shot: new Set(),
       sizes: [],
       gaps: [],
+      apart: [],
       arrivals: {},
       deaths: {},
     });
@@ -216,6 +217,19 @@ test('playtest session', async ({ page }) => {
       }
       const hero = window.player;
       const beat = clock.getTotalBeats();
+      // The least angle round the hero between two swarms' centres
+      if (swarms.length >= 2) {
+        const at = swarms.map((w) => Math.atan2(w.y - hero.y, w.x - hero.x));
+        let least = Math.PI;
+        for (let i = 0; i < at.length; i++) {
+          for (let j = i + 1; j < at.length; j++) {
+            const d = at[i] - at[j];
+            const a = Math.abs(Math.atan2(Math.sin(d), Math.cos(d)));
+            least = Math.min(least, a);
+          }
+        }
+        s.apart.push((least * 180) / Math.PI);
+      }
       // A 2 or 4 a swarm could fire on: a grunt of it in range and done
       // materialising
       if (swarms.length && clock.getCurrentBeat() % 2 === 1) {
@@ -303,6 +317,14 @@ test('playtest session', async ({ page }) => {
         : null,
       beatsInRange: s.inRange.size,
       gapsBeats: s.gaps,
+      apartMedianDeg: s.apart.length
+        ? Math.round(
+            s.apart.toSorted((a, b) => a - b)[Math.floor(s.apart.length / 2)]
+          )
+        : null,
+      apartUnder45: s.apart.length
+        ? +(s.apart.filter((a) => a < 45).length / s.apart.length).toFixed(2)
+        : null,
       sizes: s.sizes,
       arrivals: s.arrivals,
       gruntDeaths: s.deaths,
@@ -381,6 +403,9 @@ test('playtest session', async ({ page }) => {
   );
   console.log(
     `   Swarms: sizes ${JSON.stringify(swarms.sizes)} | snare on ${swarms.snareShare} of ${swarms.beatsInRange} 2s and 4s in range | silences over a bar (beats) ${JSON.stringify(swarms.gapsBeats)}`
+  );
+  console.log(
+    `   Swarms apart round the hero: median ${swarms.apartMedianDeg}°, under 45° ${swarms.apartUnder45} of the time two were up`
   );
   console.log(
     `   Others' arrivals: ${JSON.stringify(swarms.arrivals)} | grunt deaths by cause: ${JSON.stringify(swarms.gruntDeaths)}`
