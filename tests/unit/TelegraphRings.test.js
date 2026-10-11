@@ -51,22 +51,28 @@ function world() {
   };
 }
 
-// Question marks shown over the grunt through one bar, the hero at x
-function questionMarks(heroXAt, blockerAt = () => null) {
+// One bar of the grunt, the hero at x: the question marks shown over him,
+// the shots he fired and the frames his ring was drawn in
+function oneBar(heroXAt, blockerAt = () => null) {
   vi.spyOn(Math, 'random').mockReturnValue(0.99); // no chatter
-  const { floatingText, at, enemies, frame, grunt } = world();
+  const { floatingText, rhythmFX, at, enemies, frame, grunt } = world();
+  const add = vi.spyOn(rhythmFX, 'addAttackTelegraph');
   const blocker = { x: 0, y: 0, markedForRemoval: false };
+  let shots = 0;
   for (let ms = 0; ms < 2000; ms += 10) {
     at(ms);
     const spot = blockerAt(ms);
     enemies.length = 1;
     if (spot) enemies.push(Object.assign(blocker, spot));
     grunt.aimAngle = 0; // at the hero, to his right
-    frame(heroXAt(ms));
+    if (frame(heroXAt(ms))) shots++;
   }
-  return floatingText.addText.mock.calls.filter(([, , text]) => text === '?')
-    .length;
+  const marks = floatingText.addText.mock.calls.filter(
+    ([, , text]) => text === '?'
+  ).length;
+  return { marks, shots, rings: add.mock.calls.length };
 }
+const questionMarks = (...args) => oneBar(...args).marks;
 
 describe('his line of fire', () => {
   // Another enemy `deg` degrees off his aim and `d` px away; the grunt at
@@ -164,7 +170,7 @@ describe('attack warning rings', () => {
   it('a pick fires on its 2 or 4 even if the hero has run out of range since: range is judged at the pick', () => {
     // In range through beats 1 and 3, out of range as 2 and 4 land
     const heroX = (ms) => (ms % 1000 < 500 ? 150 : 900);
-    expect(questionMarks(heroX)).toBe(0);
+    expect(oneBar(heroX)).toMatchObject({ marks: 0, shots: 2 });
   });
 
   it('a warning whose fire window was missed shows no ? a bar later, and fires nothing', () => {
