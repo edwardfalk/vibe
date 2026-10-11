@@ -192,7 +192,7 @@ function renderVoice() {
       s.voice.sing = sing.checked;
       edited();
     };
-    box.append(element('label', {}, sing, 'sing (one steady pitch)'));
+    box.append(element('label', {}, sing, 'sing'));
   }
 }
 

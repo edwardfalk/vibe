@@ -6,8 +6,8 @@ import SamJs from '../../../vendor/sam/samjs.esm.min.js';
 
 const SAMPLE_RATE = 22050;
 
-// sing holds one pitch, f0 = 6800 / pitch Hz (measured), where SAM's speech
-// lifts its stressed syllables
+// sing drops SAM's lift on stressed syllables. A sung vowel sits at about
+// 6800 / pitch Hz (measured); sentence ends still fall, and some words wander
 export async function render(text, { pitch, speed, mouth, throat, sing }) {
   // SAM crashes on text with nothing to pronounce
   if (!/[a-z0-9]/i.test(text)) throw new Error('SAM: nothing to say');

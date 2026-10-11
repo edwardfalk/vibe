@@ -5,11 +5,11 @@ const RATE = 22050;
 const cents = (a, b) => 1200 * Math.log2(a / b);
 
 // A buzzy voiced tone: up to 20 harmonics falling off as 1/k, like a voice
-function voiced(hz, seconds = 1) {
-  return Float32Array.from({ length: Math.round(RATE * seconds) }, (_, i) => {
+function voiced(hz, seconds = 1, rate = RATE) {
+  return Float32Array.from({ length: Math.round(rate * seconds) }, (_, i) => {
     let sum = 0;
-    for (let k = 1; k <= 20 && k * hz < RATE / 2; k++) {
-      sum += Math.sin((2 * Math.PI * k * hz * i) / RATE) / k;
+    for (let k = 1; k <= 20 && k * hz < rate / 2; k++) {
+      sum += Math.sin((2 * Math.PI * k * hz * i) / rate) / k;
     }
     return 0.1 * sum;
   });
@@ -20,6 +20,11 @@ describe('medianHz', () => {
     for (const hz of [47.3, 91.7, 213.4, 477.1]) {
       expect(Math.abs(cents(medianHz(voiced(hz), RATE), hz))).toBeLessThan(5);
     }
+  });
+
+  it('reads at any sample rate', () => {
+    const tone = voiced(213.4, 1, 44100);
+    expect(Math.abs(cents(medianHz(tone, 44100), 213.4))).toBeLessThan(5);
   });
 
   it('reads the fundamental when a harmonic is louder', () => {

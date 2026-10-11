@@ -189,8 +189,17 @@ describe('Voicebox', () => {
     afterEach(() => {
       CONFIG.HUM = structuredClone(hum);
     });
+    // The chain adds a tail, so the spoken part and the whole differ
+    const TAIL = 5000;
+    const WHOLE_SEC = 0.5 + TAIL / RATE;
+    const withTail = async (s) => {
+      const out = new Float32Array(s.length + TAIL);
+      out.set(s);
+      out.fill(0.01, s.length);
+      return out;
+    };
     const tuned = async (setupFor, f0) => {
-      const { voicebox, ctx, reply } = setup();
+      const { voicebox, ctx, reply } = setup({ chain: withTail });
       const rendering = voicebox.renderLine(setupFor, 'Kill human!');
       reply({ f0 });
       return { voicebox, ctx, line: await rendering };
@@ -208,7 +217,7 @@ describe('Voicebox', () => {
       expect(played.cents).toBeCloseTo(cents, 1);
       const rate = 2 ** (played.cents / 1200);
       expect(played.duration).toBeCloseTo(0.5 / rate, 9);
-      expect(played.totalDuration).toBeCloseTo(line.buffer.duration / rate, 9);
+      expect(played.totalDuration).toBeCloseTo(WHOLE_SEC / rate, 9);
       expect([...voicebox.playing][0].duration).toBe(played.duration);
     });
 
@@ -237,7 +246,7 @@ describe('Voicebox', () => {
         const played = voicebox.play(line, 5);
         expect(ctx.sources[0].detune.value).toBe(0);
         expect(played).toMatchObject({ cents: 0, duration: 0.5 });
-        expect(played.totalDuration).toBe(line.buffer.duration);
+        expect(played.totalDuration).toBeCloseTo(WHOLE_SEC, 9);
       }
     });
   });

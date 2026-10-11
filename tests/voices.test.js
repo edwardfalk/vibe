@@ -39,6 +39,22 @@ test('the playground renders a typed phrase and shows the readout', async ({
   expect(errors).toEqual([]);
 });
 
+test('a SAM voice can sing, and the box keeps its edit', async ({ page }) => {
+  const errors = await open(page);
+  await page.selectOption('#speaker', 'tank');
+  const sing = page.getByLabel('sing', { exact: true });
+  await expect(sing).not.toBeChecked();
+  await sing.check();
+  await page.reload();
+  await expect(page.locator('#speaker option')).toHaveCount(5);
+  await page.selectOption('#speaker', 'tank');
+  await expect(page.getByLabel('sing', { exact: true })).toBeChecked();
+  // espeak-ng voices have no such box
+  await page.selectOption('#speaker', 'player');
+  await expect(page.getByLabel('sing', { exact: true })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('a respelling changes only what the engine hears', async ({ page }) => {
   await open(page);
   await page.selectOption('#speaker', 'tank');
