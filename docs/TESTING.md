@@ -20,7 +20,7 @@ The browser tests start their own server on port 5500, or reuse a dev server tha
 
 These run through Playwright too. They're for measuring and looking, so CI doesn't run them:
 
-- `pnpm run playtest`: a bot plays and reports frame rate, the work per frame in ms (avg, p50, p95) and pacing. Fps is capped at 60, so compare the ms figures to see whether a change made frames cheaper. It runs Chromium on the machine's real GPU, so the sky draws its shader; ms figures from before the sky (September 2026) don't compare. `LEVEL=8` starts it at level 8. It prints the sky's mode, and its numbers count only in `full`.
+- `pnpm run playtest`: a bot plays and reports frame rate, the work per frame in ms (avg, p50, p95) and pacing. Fps is capped at 60, so compare the ms figures to see whether a change made frames cheaper. It runs Chromium on the machine's real GPU, so the sky draws its shader; ms figures from before the sky (September 2026) don't compare. `LEVEL=8` starts it at level 8, and `DURATION` sets how long it plays in ms (30000 by default: pacing past level 2 needs `DURATION=90000`). It prints the sky's mode, and its numbers count only in `full`.
 - `pnpm run screenshot`: screenshots of a running game.
 - `pnpm run test:beats`: records when enemies act and checks each lands on its beat.
 
