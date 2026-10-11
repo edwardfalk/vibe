@@ -175,6 +175,23 @@ describe('a swarm’s movement', () => {
     expect(swarm.heading).toBe('advance');
   });
 
+  it('pulls a grunt knocked out of the cloud back into it, as hard as PULL says', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // no jitter
+    // Five at the stand-off from the hero, a sixth 200 px past them
+    const strayAfter = (pull) => {
+      CONFIG.SWARM.PULL = pull;
+      const swarm = new GruntSwarm({ size: 6, x: 0, y: 0 });
+      swarm.entering = false;
+      const D = CONFIG.SWARM.STANDOFF_PX + cloudRadius(6);
+      const enemies = [...cloud(swarm, 5, D, 0), grunt(swarm, D + 200, 0)];
+      run(swarm, enemies, hero, 300);
+      return dist(enemies[5], centroid(enemies));
+    };
+    expect(strayAfter(SWARM.PULL)).toBeLessThan(2 * cloudRadius(6));
+    // nothing else brings him back
+    expect(strayAfter(0)).toBeGreaterThan(2 * cloudRadius(6));
+  });
+
   it('no grunt moves faster than a grunt can', () => {
     const swarm = new GruntSwarm({ size: 12, x: 900, y: 0 });
     // all piled on one spot, the pull and the push at their largest
