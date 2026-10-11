@@ -389,6 +389,17 @@ describe('a swarm’s other sounds', () => {
     expect(chats()).toBe(2);
   });
 
+  it('one whose last grunt died after its update (a bomb’s cloud) makes no sound, and does not throw', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1); // under every chance
+    const swarm = new GruntSwarm({ size: 3, x: 0, y: 0 });
+    swarm.heading = 'advance'; // still as it steered the frame before
+    const a = audio();
+    expect(() =>
+      swarm.update([], { x: 0, y: 0 }, onTwoOrFour(9), a)
+    ).not.toThrow();
+    expect(a.playSound).not.toHaveBeenCalled();
+  });
+
   it('one of its grunts speaks for it; when he dies the next takes over', () => {
     const swarm = new GruntSwarm({ size: 3, x: 0, y: 0 });
     const enemies = [
