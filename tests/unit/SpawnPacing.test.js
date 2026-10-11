@@ -18,7 +18,11 @@ function waves({ level, progress }, count) {
   const system = new SpawnSystem({
     gameState,
     enemies: [],
-    beatClock: { isOnBeat: () => true, getTotalBeats: () => beats },
+    beatClock: {
+      isOnBeat: () => true,
+      getTotalBeats: () => beats,
+      getBeatPosition: () => beats,
+    },
   });
   const spawned = [];
   vi.spyOn(system, 'spawnEnemies').mockImplementation((n, type = null) => {
@@ -69,7 +73,11 @@ describe('Spawn pacing', () => {
     const system = new SpawnSystem({
       gameState,
       enemies: [],
-      beatClock: { isOnBeat: () => true, getTotalBeats: () => beats },
+      beatClock: {
+        isOnBeat: () => true,
+        getTotalBeats: () => beats,
+        getBeatPosition: () => beats,
+      },
     });
     const spawned = [];
     vi.spyOn(system, 'spawnEnemies').mockImplementation((n, type = null) => {

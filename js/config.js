@@ -105,7 +105,7 @@ const CONFIG = {
     SIZE_MAX: 12,
     SHOOTERS_MAX: 4, // the most that fire on one 2 or 4
     GRUNTS_PER_SHOOTER: 3, // a third of the swarm fires, up to SHOOTERS_MAX
-    GAP_BEATS: 4, // a new swarm's first volley comes no sooner after the clear
+    BREAK_BEATS: 14, // the next swarm comes this long after a clear (7 s at 120 BPM)
     FIRE_RANGE_PX: 280, // a grunt fires only with the hero this close
     // Its centre holds this plus the cloud's radius from the hero, so its
     // nearest grunt keeps a lone grunt's old distance (150-250 px)

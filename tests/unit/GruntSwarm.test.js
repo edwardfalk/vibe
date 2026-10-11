@@ -292,16 +292,6 @@ describe('a swarm’s snare', () => {
     expect(gs.map((g) => g.warnedOnBeat ?? null)).toEqual([8, null]);
   });
 
-  it('picks no one for a volley before its quiet ends (GAP_BEATS after the last swarm)', () => {
-    const swarm = new GruntSwarm({ size: 1, x: 0, y: 0 });
-    swarm.quietUntil = 11;
-    const g = shooter(swarm, 100);
-    swarm.beat([g], hero, clockAt(8, 0)); // for beat 9: too soon
-    expect(g.warnedOnBeat ?? null).toBe(null);
-    swarm.beat([g], hero, clockAt(10, 2)); // for beat 11: allowed
-    expect(g.warnedOnBeat).toBe(10);
-  });
-
   it('settles its volley in the 2-or-4 window: a pick still in it, warned the beat before, with a clear line fires; the rest hold', () => {
     const swarm = new GruntSwarm({ size: 4, x: 0, y: 0 });
     const fires = shooter(swarm, 100, { warnedOnBeat: 8 });

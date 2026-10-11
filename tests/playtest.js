@@ -208,13 +208,9 @@ test('playtest session', async ({ page }) => {
       }
       const hero = window.player;
       const beat = clock.getTotalBeats();
-      // A 2 or 4 the swarm could fire on: past its quiet, a grunt of it in
-      // range and done materialising
-      if (
-        swarm &&
-        clock.getCurrentBeat() % 2 === 1 &&
-        beat >= swarm.quietUntil
-      ) {
+      // A 2 or 4 the swarm could fire on: a grunt of it in range and done
+      // materialising
+      if (swarm && clock.getCurrentBeat() % 2 === 1) {
         const near = window.enemies.some(
           (e) =>
             e.swarm === swarm &&

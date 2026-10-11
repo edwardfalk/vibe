@@ -91,7 +91,7 @@ const KNOBS = [
   [SWARM, 'SIZE_MAX', [1, 24, 1]],
   [SWARM, 'SHOOTERS_MAX', [1, 8, 1]],
   [SWARM, 'GRUNTS_PER_SHOOTER', [1, 6, 1]],
-  [SWARM, 'GAP_BEATS', [0, 16, 1]],
+  [SWARM, 'BREAK_BEATS', [0, 32, 1]],
   [SWARM, 'FIRE_RANGE_PX', [100, 500, 10]],
   [SWARM, 'STANDOFF_PX', [50, 400, 10]],
   [SWARM, 'DRIFT_SHARE', [0, 1, 0.05]],

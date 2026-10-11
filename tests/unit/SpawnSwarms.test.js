@@ -64,7 +64,6 @@ describe('a run starts with its first swarm', () => {
         expect(Math.abs(g.y)).toBeLessThanOrEqual(halfH);
       }
       // the first swarm of a run has no gap before its first volley
-      expect(system.swarm.quietUntil).toBe(-Infinity);
     }
   });
 
@@ -128,7 +127,8 @@ describe('a run starts with its first swarm', () => {
 });
 
 describe('the next swarm', () => {
-  it('comes at once when all of the last are dead, its first volley no sooner than GAP_BEATS after', () => {
+  it('comes BREAK_BEATS after all of the last are dead, not before', () => {
+    CONFIG.SWARM.BREAK_BEATS = 9.5;
     const { system, enemies, clock } = world();
     system.update();
     const first = system.swarm;
@@ -136,27 +136,32 @@ describe('the next swarm', () => {
     system.update();
     expect(system.swarm).toBe(first); // still alive: no new swarm
     for (const g of enemies) g.markedForRemoval = true;
+    clock.beats = 40.3;
     system.update();
-    expect(system.swarm).not.toBe(first);
-    expect(system.swarm.quietUntil).toBe(40 + CONFIG.SWARM.GAP_BEATS);
+    expect(system.swarm).toBe(null); // the break
+    clock.beats = 40.3 + 9.4;
+    system.update();
+    expect(system.swarm).toBe(null);
+    clock.beats = 40.3 + 9.5;
+    system.update();
+    expect(system.swarm).toBeInstanceOf(GruntSwarm);
     expect(
       grunts(enemies).filter((g) => g.swarm === system.swarm)
     ).toHaveLength(swarmSize(1));
-    // a clear late in a beat counts from the next: never under GAP_BEATS
-    for (const g of enemies) g.markedForRemoval = true;
-    clock.beats = 50.9;
-    system.update();
-    expect(system.swarm.quietUntil).toBe(51 + CONFIG.SWARM.GAP_BEATS);
   });
 
-  it('a restart (reset) drops the swarm; the next run starts its own', () => {
-    const { system, enemies } = world();
+  it('a restart (reset) drops the swarm and its break; the next run starts its own at once', () => {
+    const { system, enemies, clock } = world();
     system.update();
+    for (const g of enemies) g.markedForRemoval = true;
+    clock.beats = 40;
+    system.update(); // cleared: its break begins
     system.reset();
     expect(system.swarm).toBe(null);
     enemies.length = 0; // the restart clears the enemies too
+    clock.beats = 0; // and the next run's clock starts over
     system.update();
-    expect(system.swarm.quietUntil).toBe(-Infinity);
+    expect(system.swarm).toBeInstanceOf(GruntSwarm);
     expect(grunts(enemies).every((g) => g.swarm === system.swarm)).toBe(true);
     expect(grunts(enemies)).toHaveLength(swarmSize(1));
   });

@@ -38,8 +38,10 @@ export class SpawnSystem {
     // Beat-aligned spawning; intervals and caps come from CONFIG.PACING
     this.lastSpawnBeat = -Infinity;
     this.previewed = new Set(); // types already given a one-off taste
-    // The grunts come only in swarms, one at a time (GruntSwarm.js)
+    // The grunts come only in swarms, one at a time (GruntSwarm.js), the
+    // next on this beat
     this.swarm = null;
+    this.nextSwarmBeat = -Infinity;
     this.getContextValue = createContextAccessor(() => this.context);
   }
 
@@ -59,10 +61,9 @@ export class SpawnSystem {
   /**
    * A swarm of the level's size, round a spot off screen, its grunts on the
    * far side of it from the view and inside the world; all are placed
-   * before any is added. Its first volley comes no sooner than beat
-   * `quietUntil` (GruntSwarm)
+   * before any is added
    */
-  spawnSwarm(quietUntil) {
+  spawnSwarm() {
     const enemies = this.getContextValue('enemies');
     if (!enemies) return;
     const gameState = this.getContextValue('gameState');
@@ -70,7 +71,6 @@ export class SpawnSystem {
     const size = swarmSize(gameState ? gameState.level : 1);
     const centre = this.findSpawnPosition();
     const swarm = new GruntSwarm({ size, ...centre });
-    swarm.quietUntil = quietUntil;
     const made = this.cloudSpots(centre, size).map(({ x, y }) => {
       const grunt = this.createEnemy(x, y, 'grunt', player && player.p);
       grunt.swarm = swarm;
@@ -104,16 +104,15 @@ export class SpawnSystem {
     const beatClock = this.getContextValue('beatClock');
     if (!beatClock) return;
 
-    // A run's first swarm comes on its first update; the next at once when
-    // all of the last are dead, its first volley no sooner than GAP_BEATS
-    // after (counted from the clear's beat rounded up)
+    // A run's first swarm comes on its first update; the next BREAK_BEATS
+    // after all of the last are dead, a breather for the hero
     const all = this.getContextValue('enemies');
-    if (all && (!this.swarm || this.swarm.isCleared(all))) {
-      const quietUntil = this.swarm
-        ? Math.ceil(beatClock.getBeatPosition()) + CONFIG.SWARM.GAP_BEATS
-        : -Infinity;
-      this.spawnSwarm(quietUntil);
+    const now = beatClock.getBeatPosition();
+    if (all && this.swarm?.isCleared(all)) {
+      this.swarm = null;
+      this.nextSwarmBeat = now + CONFIG.SWARM.BREAK_BEATS;
     }
+    if (all && !this.swarm && now >= this.nextSwarmBeat) this.spawnSwarm();
 
     // Waves land on any beat, so the interval counts whole beats (fractions
     // round up). Restricting waves to beat 1 rounded every interval up to a
@@ -315,5 +314,6 @@ export class SpawnSystem {
     this.lastSpawnBeat = -Infinity;
     this.previewed.clear();
     this.swarm = null;
+    this.nextSwarmBeat = -Infinity;
   }
 }

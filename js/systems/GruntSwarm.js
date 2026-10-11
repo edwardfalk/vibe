@@ -46,9 +46,6 @@ export class GruntSwarm {
     this.entering = true;
     // Which way its centre went last frame: 'advance', 'retreat' or null
     this.heading = null;
-    // No volley before this beat (SpawnSystem: GAP_BEATS after the last
-    // swarm's clear; none for a run's first)
-    this.quietUntil = -Infinity;
     // The beats it last picked shooters on, and last settled a volley on
     this.pickedBeat = null;
     this.settledBeat = null;
@@ -110,7 +107,7 @@ export class GruntSwarm {
     const total = beatClock.getTotalBeats();
     if (beatClock.getCurrentBeat() % 2 === 0 && this.pickedBeat !== total) {
       this.pickedBeat = total;
-      if (total + 1 >= this.quietUntil) this.pick(members, hero, total);
+      this.pick(members, hero, total);
     }
     if (beatClock.canGruntShoot() && this.settledBeat !== total) {
       this.settledBeat = total;
