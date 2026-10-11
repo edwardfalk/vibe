@@ -139,7 +139,7 @@ Calls and smaller work:
 
 - **build: fail on console errors during real play.** `playtest.js` only counts them, so a sound that breaks in play leaves every suite green. (#94)
 - **build: one shared fake-audio helper for the unit tests.** Nine test files each define their own.
-- **check: known flakes under full-suite load:** "Kick locks to the enemies' beat" (about 1 in 10), and "Held keyboard fire lands on eighth notes". Run alone on the desktop (2026-10-10) the first failed 3 times in 60 on main and 7 in 60 with the beat lead, always "no grunt shot in a 3 s recording": the grunts' random skips, the same on both. Grunts no longer skip at random (a swarm picks its shooters on 1 and 3), though a swarm fires on only some of the 2s and 4s: measure the kick-lock check again.
+- **check: a known flake under full-suite load:** "Held keyboard fire lands on eighth notes". (The kick-lock check, the other one, failed about 1 run in 10 on the grunts' random skips; it now plants a swarm held still with a clear line, and passed 30 runs out of 30 alone on the desktop, 2026-10-10 and 11.)
 
 ## The README
 
