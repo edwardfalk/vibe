@@ -18,6 +18,12 @@ export function runDraw(p, updateGame, drawGame) {
   // Pausing holds the sound; checked every frame, so ?tune's box takes at once
   window.audio?.syncPause?.(window.gameState?.gameState === 'paused');
 
+  // A level-up the game reaches this frame, before the sky that breathes
+  // deeper on it; again after the update, for a level risen in it
+  if (window.gameState?.gameState === 'playing') {
+    window.gameState.updateLevelUp();
+  }
+
   if (window.backgroundRenderer) {
     window.backgroundRenderer.drawSky(p);
     if (window.gameState && window.gameState.gameState === 'playing') {

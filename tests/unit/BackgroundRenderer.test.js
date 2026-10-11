@@ -103,7 +103,7 @@ describe('BackgroundRenderer sky frame', () => {
     const { gameState, step } = renderer(1, { beatClock, beatTrack, audio });
     const moving = step();
     expect(step().flow).toBeGreaterThan(moving.flow);
-    gameState.lastLevelUpAt = 0.37; // a level-up on beat 0, just heard
+    gameState.lastLevelUpAt = 0.37; // a level-up on beat 0
     step();
     // Paused: the context is suspended and the beat clock stands still
     audio.soundPaused = true;

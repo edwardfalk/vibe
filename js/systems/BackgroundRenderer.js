@@ -85,7 +85,10 @@ export class BackgroundRenderer {
     );
     // The kick on the beat 1 the level-up played on breathes deeper: its age
     // counts from half a beat before that beat 1 as heard, so its own kick
-    // is the first since. A restart clears it (GameState)
+    // is the first since. A restart clears it (GameState).
+    // shortcut: with a negative SKY.OFFSET_MS the sky hears that kick before
+    // the game plays the level-up, so its first frames breathe as usual; read
+    // GameState's pending levelUpAt if that offset is ever used
     const upAt = this.gameState?.lastLevelUpAt ?? null;
     const levelAge =
       upAt === null || !beatClock
