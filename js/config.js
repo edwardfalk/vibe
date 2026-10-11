@@ -96,9 +96,9 @@ const CONFIG = {
   },
 
   // The grunts' swarms (js/systems/GruntSwarm.js): the alien throws its
-  // cannon fodder in as one loose, jostling cloud that drifts after the hero
-  // and plays the snare as a section. Tune live with ?tune; sizes apply from
-  // the next swarm, the rest at once.
+  // cannon fodder in as loose, jostling clouds that drift after the hero and
+  // play the snare as a section. Tune live with ?tune, all but OPENING; sizes
+  // apply from the next swarm, the rest at once.
   SWARM: {
     COUNT: 2, // swarms at once, each from its own side of the hero
     SIZE_FIRST: 2, // grunts in a swarm at level 1

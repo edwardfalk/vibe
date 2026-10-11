@@ -426,13 +426,14 @@ test.describe('Gameplay Probes', () => {
     ]) {
       await expect(page.locator('#tunePanel')).toContainText(`DEATHS.${key}:`);
     }
-    // So are the grunts' swarms'
+    // So are the grunts' swarms', all but the run's opening (a list, read
+    // as a run starts)
     for (const key of Object.keys(
       await page.evaluate(async () => {
         const { CONFIG } = await import('/js/config.js');
         return CONFIG.SWARM;
       })
-    )) {
+    ).filter((k) => k !== 'OPENING')) {
       await expect(page.locator('#tunePanel')).toContainText(`SWARM.${key}:`);
     }
     for (const label of [
