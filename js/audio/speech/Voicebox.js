@@ -17,6 +17,7 @@ export const LEAD_SEC = 0.02;
 const LEVEL_MISS_DB = 1;
 // A word, with contractions inside it ("can't"); quotes around it don't count
 const WORD = /[A-Za-z]+(?:'[A-Za-z]+)*/g;
+const CENTS_PER_OCTAVE = 1200;
 
 // The text an engine hears: respelled whole words, case-insensitive, with
 // punctuation and every other word untouched. The bubble shows the original.
@@ -155,7 +156,9 @@ export class Voicebox {
       buffer,
       spokenSec: dry.samples.length / dry.sampleRate,
       f0: dry.f0 ?? null, // the dry line's median pitch in Hz, or null if none
-      tune: setup.tune !== false,
+      // The scale's note nearest that pitch, picked once so a line keeps its
+      // note from play to play; null if untuned
+      note: setup.tune !== false && dry.f0 > 0 ? nearestNote(dry.f0) : null,
       renderMs: dry.renderMs,
       chainMs: t1 - t0,
       levelMs,
@@ -167,14 +170,14 @@ export class Voicebox {
   }
 
   // Play a line at `when`. A tuned line is detuned so its median pitch lands
-  // on the scale's nearest note at `when`, the hum's drift included; that
-  // shifts its effects too, and stretches it by the same ratio (at most
-  // ~102 c, 6 %). Returns its start, its durations as played (the spoken
-  // part, and with the tail) and the correction: cents, and the note or null.
+  // on its note with the hum's drift at `when`; that shifts its effects too,
+  // and stretches it by the same ratio (at most half the scale's widest gap,
+  // 102 c, plus the drift: 7 %). Returns its start, its durations as played
+  // (the spoken part, and with the tail) and the correction in cents.
   play(line, when, gain = 1, pan = 0) {
-    const note = line.tune && line.f0 > 0 ? nearestNote(line.f0, when) : null;
-    const cents = note ? 1200 * Math.log2(hz(note, when) / line.f0) : 0;
-    const rate = 2 ** (cents / 1200);
+    const { note, f0 } = line;
+    const cents = note ? CENTS_PER_OCTAVE * Math.log2(hz(note, when) / f0) : 0;
+    const rate = 2 ** (cents / CENTS_PER_OCTAVE);
     const source = this.ctx.createBufferSource();
     source.buffer = line.buffer;
     source.detune.value = cents;
@@ -193,7 +196,6 @@ export class Voicebox {
       duration,
       totalDuration: line.buffer.duration / rate,
       cents,
-      note,
     };
   }
 

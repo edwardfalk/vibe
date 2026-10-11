@@ -67,18 +67,17 @@ export function hz([degree, octave], t = 0) {
 const SCALE = ['1', '2', 'b3', '4', '5', 'b6', 'b7'];
 
 /**
- * The note of natural minor nearest to f Hz at audio time t, drift included
- * (never the sour b5). Searches the octave f is in and its neighbours.
+ * The note of natural minor nearest to f Hz, without the drift (never the
+ * sour b5). Searches the octave f is in and its neighbours.
  * @param {number} f a frequency in Hz, above 0
- * @param {number} [t] the audio time the sound starts
  */
-export function nearestNote(f, t = 0) {
-  const octave = 1 + Math.floor(Math.log2(f / hz(['1', 1], t)));
+export function nearestNote(f) {
+  const octave = 1 + Math.floor(Math.log2(f / hz(['1', 1])));
   let nearest = null;
   let away = Infinity;
   for (const o of [octave - 1, octave, octave + 1]) {
     for (const degree of SCALE) {
-      const off = Math.abs(Math.log2(hz([degree, o], t) / f));
+      const off = Math.abs(Math.log2(hz([degree, o]) / f));
       if (off < away) [nearest, away] = [[degree, o], off];
     }
   }

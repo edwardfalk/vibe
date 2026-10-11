@@ -502,8 +502,8 @@ const CONFIG = {
 
   // The game's own speech engines (js/audio/speech/): each speaker's engine,
   // voice and effect chain. Tune them in voices.html, then paste here.
-  // Every line is detuned so its median pitch lands on the hum's scale,
-  // unless its speaker says tune: false. A SAM voice with sing: true holds
+  // Every line is detuned so its median pitch lands on the hum's scale (the
+  // nearest note, with the drift), unless its speaker says tune: false. A SAM voice with sing: true holds
   // one pitch, 6800 / pitch Hz, where it would lift its stressed syllables.
   SPEECH: {
     TARGET_DB: -20, // RMS loudness every line is matched to, in and out

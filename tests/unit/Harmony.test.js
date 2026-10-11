@@ -76,14 +76,13 @@ describe('Harmony, the pitch grid', () => {
     expect(nearestNote(hz(['b5', 2]))).toEqual(['4', 2]);
   });
 
-  it('nearestNote counts the drift at audio time t', () => {
+  it('nearestNote reads the grid without its drift', () => {
     CONFIG.HUM.ROOT = 'F#';
     CONFIG.HUM.DRIFT_CENTS = 9;
-    // 105 c above the root: 99 c under the 2 at t = 0 (no drift), but at
-    // t = 5 the grid has drifted 6.8 c up, so the root is nearer
+    // 105 c above the root: 99 c under the 2. Drifted 6.8 c up (as at
+    // t = 5) the root would be nearer
     const f = hz(['1', 2]) * 2 ** (105 / 1200);
-    expect(nearestNote(f, 0)).toEqual(['2', 2]);
-    expect(nearestNote(f, 5)).toEqual(['1', 2]);
+    expect(nearestNote(f)).toEqual(['2', 2]);
   });
 
   it('throws on an unknown degree or root', () => {

@@ -6,7 +6,7 @@ import {
   startTime,
 } from '../../js/audio/speech/Voicebox.js';
 import { CONFIG } from '../../js/config.js';
-import { hz, nearestNote } from '../../js/audio/Harmony.js';
+import { hz } from '../../js/audio/Harmony.js';
 
 const RATE = 22050;
 const GRUNT = CONFIG.SPEECH.SPEAKERS.grunt;
@@ -200,10 +200,11 @@ describe('Voicebox', () => {
       CONFIG.HUM = { ...CONFIG.HUM, ROOT: 'F#', DRIFT_CENTS: 0 };
       const { voicebox, ctx, line } = await tuned(GRUNT, 437.3);
       // The nearest note is F#'s b3 in octave 4: 46.249 × 8 × 6/5 = 443.99 Hz
+      expect(line.note).toEqual(['b3', 4]);
       const played = voicebox.play(line, 5);
       const cents = 1200 * Math.log2(443.99 / 437.3);
       expect(ctx.sources[0].detune.value).toBeCloseTo(cents, 1);
-      expect(played).toMatchObject({ startsAt: 5, note: ['b3', 4] });
+      expect(played.startsAt).toBe(5);
       expect(played.cents).toBeCloseTo(cents, 1);
       const rate = 2 ** (played.cents / 1200);
       expect(played.duration).toBeCloseTo(0.5 / rate, 9);
@@ -211,24 +212,19 @@ describe('Voicebox', () => {
       expect([...voicebox.playing][0].duration).toBe(played.duration);
     });
 
-    it("follows the hum's drift where each playing starts, from one render", async () => {
+    it("keeps a line's note from play to play, and follows the hum's drift where each starts", async () => {
       CONFIG.HUM = { ...CONFIG.HUM, ROOT: 'F#', DRIFT_CENTS: 9 };
-      const { voicebox, ctx, line } = await tuned(GRUNT, 437.3);
+      // 105 c above F#2: 99 c under the 2. At t = 5 the grid has drifted
+      // 6.85 c up, which puts the root nearer; the line stays on the 2
+      const f0 = 2 * 46.249 * 2 ** (105 / 1200);
+      const { voicebox, ctx, line } = await tuned(GRUNT, f0);
+      expect(line.note).toEqual(['2', 2]);
       voicebox.play(line, 0);
       voicebox.play(line, 5);
       const [still, drifted] = ctx.sources.map((s) => s.detune.value);
-      // At t = 5 the grid has drifted 6.85 c up
+      expect(still).toBeCloseTo(1200 * Math.log2(9 / 8) - 105, 2);
       expect(drifted - still).toBeCloseTo(6.847, 2);
-      expect(437.3 * 2 ** (drifted / 1200)).toBeCloseTo(
-        hz(nearestNote(437.3, 5), 5),
-        6
-      );
-      // 105 c above F#2: the 2 is nearer at t = 0, the drifted root at t = 5
-      const between = await tuned(GRUNT, 2 * 46.249 * 2 ** (105 / 1200));
-      expect(between.voicebox.play(between.line, 0).note).toEqual(['2', 2]);
-      const late = between.voicebox.play(between.line, 5);
-      expect(late.note).toEqual(['1', 2]);
-      expect(late.cents).toBeCloseTo(-105 + 6.847, 2);
+      expect(f0 * 2 ** (drifted / 1200)).toBeCloseTo(hz(['2', 2], 5), 6);
     });
 
     it('leaves a line alone with tune: false, or with no pitch to read', async () => {
@@ -237,9 +233,10 @@ describe('Voicebox', () => {
         [GRUNT, null],
       ]) {
         const { voicebox, ctx, line } = await tuned(setupFor, f0);
+        expect(line.note).toBeNull();
         const played = voicebox.play(line, 5);
         expect(ctx.sources[0].detune.value).toBe(0);
-        expect(played).toMatchObject({ cents: 0, note: null, duration: 0.5 });
+        expect(played).toMatchObject({ cents: 0, duration: 0.5 });
         expect(played.totalDuration).toBe(line.buffer.duration);
       }
     });

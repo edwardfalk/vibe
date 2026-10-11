@@ -299,20 +299,25 @@ function ensureAudio() {
 }
 
 const NOTE_NAMES = 'C C# D D# E F F# G G# A A# B'.split(' ');
+const A4_HZ = 440;
+const A4_FROM_C0 = 57; // semitones
+const CENTS_PER_OCTAVE = 1200;
 
 // The equal-tempered name nearest f Hz, as a label: "A4"
 function noteName(f) {
-  const fromC0 = Math.round(12 * Math.log2(f / 440)) + 57;
-  return `${NOTE_NAMES[fromC0 % 12]}${Math.floor(fromC0 / 12)}`;
+  const fromC0 =
+    Math.round(NOTE_NAMES.length * Math.log2(f / A4_HZ)) + A4_FROM_C0;
+  const octave = Math.floor(fromC0 / NOTE_NAMES.length);
+  return `${NOTE_NAMES[fromC0 % NOTE_NAMES.length]}${octave}`;
 }
 
 function pitchReadout(line, played) {
   if (!line.f0)
     return 'pitch: none found (no voiced frames), played as rendered';
   const dry = `pitch: dry median ${line.f0.toFixed(1)} Hz (${noteName(line.f0)})`;
-  if (!played.note) return `${dry}, not tuned`;
-  const [degree, octave] = played.note;
-  const target = line.f0 * 2 ** (played.cents / 1200);
+  if (!line.note) return `${dry}, not tuned`;
+  const [degree, octave] = line.note;
+  const target = line.f0 * 2 ** (played.cents / CENTS_PER_OCTAVE);
   const sign = played.cents < 0 ? '−' : '+';
   return `${dry} → the scale's ${degree} in octave ${octave}, ${target.toFixed(1)} Hz (${noteName(target)}): ${sign}${Math.abs(played.cents).toFixed(0)} cents`;
 }
