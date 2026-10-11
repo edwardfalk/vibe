@@ -88,6 +88,10 @@ test('the hum box plays the hum under the voices, and unticked it is silent', as
   await expect.poll(rms).toBeGreaterThan(0.001);
   await page.uncheck('#hum');
   await expect.poll(rms).toBe(0);
+  // The line can still be in its first, silent moments at the first check
+  // above; it is over now, so this level can only be the hum's
+  await page.check('#hum');
+  await expect.poll(rms).toBeGreaterThan(0.001);
   expect(errors).toEqual([]);
 });
 

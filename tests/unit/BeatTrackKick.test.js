@@ -7,8 +7,7 @@ const original = structuredClone(CONFIG.BEAT_TRACK);
 const originalHum = structuredClone(CONFIG.HUM);
 
 // Schedule `eighths` eighth notes 0.25 s apart (8 = one measure) and report
-// which beats (0-3) got a kick. `hum` stands in for audio.hum; without one
-// the track schedules as it does in the voice playground.
+// which beats (0-3) got a kick. `hum` stands in for audio.hum.
 function playMeasure(hum = null, eighths = 8) {
   const track = new BeatTrack({});
   track.hum = hum;
