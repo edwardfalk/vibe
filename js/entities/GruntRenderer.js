@@ -372,14 +372,17 @@ function chatterMove(pose, sec, voice, aiming) {
 }
 
 /**
- * How much further than its full hop's stretch a whine stretches it, as a
- * share of its height: its health bar rises by that much (Grunt.healthBarRise)
+ * How high a whine lifts its antennae, px above its middle, when the full
+ * hop lifts them `reach` px stretched plus HOP_PX: a whiner hops the small
+ * hop, stretched by the small hop's stretch and the whine's at its most
+ * (Grunt.healthBarRise keeps its health bar above the higher of the two)
  */
-export function whineReach() {
+export function whineTop(reach) {
   const L = CONFIG.GRUNT_LOOK;
-  const most = L.WHINE_STRETCH * (1 + WHINE.TREMBLE);
-  // A whiner hops the small hop, so it stretches that much less in the air
-  return Math.max(0, most - DANCE.AIR_STRETCH * (1 - L.IDLE_DANCE));
+  const stretch =
+    DANCE.AIR_STRETCH * L.IDLE_DANCE + L.WHINE_STRETCH * (1 + WHINE.TREMBLE);
+  const still = reach / (1 + DANCE.AIR_STRETCH); // unstretched
+  return still * (1 + stretch) + L.HOP_PX * L.IDLE_DANCE;
 }
 
 // Its swarm's move call, `sec` ago: it leans at the hero with its jet in full

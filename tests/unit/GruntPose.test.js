@@ -179,6 +179,10 @@ describe('what the grunt sounds shows', () => {
     expect(squeak(0.15).hop).toBeCloseTo(fires.hop);
     expect(squeak(0.15).back).toBe(0);
     expect(whine(0.15).hop).toBeCloseTo(poseAt(1, 0.15).hop);
+    // A squeak doesn't stretch it: that is the whine's
+    const squash = squeak(0.15).squash;
+    CONFIG.GRUNT_LOOK.WHINE_STRETCH = 0.5;
+    expect(squeak(0.15).squash).toBe(squash);
     // A squeak on the snare before counts no more than a shot does
     const old = poseAt(3, 0.15, { sinceChatter: 2.15, chatterVoice: 'squeak' });
     expect(old.hop).toBeCloseTo(poseAt(3, 0.15).hop);
@@ -195,6 +199,10 @@ describe('what the grunt sounds shows', () => {
     expect(Math.max(...through) - Math.min(...through)).toBeGreaterThan(
       WHINE_STRETCH * 0.35
     );
+    // Half way through its relax it is still taller, but on its way down
+    const relaxing = taller(beatsOf(0.26));
+    expect(relaxing).toBeGreaterThan(WHINE_STRETCH * 0.2);
+    expect(relaxing).toBeLessThan(WHINE_STRETCH * 0.8);
     expect(taller(beatsOf(0.4))).toBeCloseTo(0);
     CONFIG.GRUNT_LOOK.WHINE_STRETCH = 0; // its knob reaches it live
     expect(taller(0.2)).toBeCloseTo(0);
@@ -216,6 +224,14 @@ describe('what the grunt sounds shows', () => {
       CONFIG.GRUNT_LOOK.CALL_LEAN_RAD * 0.5
     );
     expect(flinch.squash).toBeGreaterThan(before.squash);
+  });
+
+  it('leans with its swarm as it squeaks, too', () => {
+    const both = squeak(0.1, { sinceCall: 0.1, call: 'advance' });
+    expect(both.back - squeak(0.1).back).toBeGreaterThan(
+      CONFIG.GRUNT_LOOK.CALL_LEAN_RAD * 0.5
+    );
+    expect(both.turn).toBe(squeak(0.1).turn);
   });
 
   it('leans with its swarm only for a moment, and not when it fires', () => {

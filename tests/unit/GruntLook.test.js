@@ -207,6 +207,9 @@ describe('drawing a grunt', () => {
     g.swarm.call.heading = 'retreat';
     expect(lean).toBeGreaterThan(g.pose().back);
     g.pendingStabDeath = true; // while its "ow" plays, no event shows
+    expect(g.pose().squash).toBeCloseTo(
+      gruntWith(clockAt(17 + away)).pose().squash
+    );
     expect(g.pose().back).toBeCloseTo(
       gruntWith(clockAt(17 + away)).pose().back
     );
@@ -218,53 +221,80 @@ describe('drawing a grunt', () => {
     expect(g.chatter).toBe(null);
   });
 
-  it('keeps its health bar clear of its antennae, at any hop, size and whine', () => {
-    const whine = DEFAULTS.WHINE_STRETCH;
-    for (const [hop, scale, stretch] of [
-      [DEFAULTS.HOP_PX, DEFAULTS.ART_SCALE, whine],
-      [12, DEFAULTS.ART_SCALE, whine],
-      [12, 0.8, whine],
-      [12, 1.6, whine],
-      [DEFAULTS.HOP_PX, 1.6, whine],
-      [DEFAULTS.HOP_PX, DEFAULTS.ART_SCALE, 0.5], // the slider's top
-      [0, 1.6, 0.5],
-      [12, 0.8, 0],
-    ]) {
-      CONFIG.GRUNT_LOOK.HOP_PX = hop;
-      CONFIG.GRUNT_LOOK.ART_SCALE = scale;
-      CONFIG.GRUNT_LOOK.WHINE_STRETCH = stretch;
+  // The look settings its health bar must clear its antennae at: any hop
+  // and size, and a whine's stretch up to its slider's top
+  const whine = DEFAULTS.WHINE_STRETCH;
+  const LOOKS = [
+    [DEFAULTS.HOP_PX, DEFAULTS.ART_SCALE, whine],
+    [12, DEFAULTS.ART_SCALE, whine],
+    [12, 0.8, whine],
+    [12, 1.6, whine],
+    [DEFAULTS.HOP_PX, 1.6, whine],
+    [DEFAULTS.HOP_PX, DEFAULTS.ART_SCALE, 0.5],
+    [0, 1.6, 0.5],
+    [12, 0.8, 0],
+  ];
+  const lookOf = ([hop, scale, stretch]) => {
+    CONFIG.GRUNT_LOOK.HOP_PX = hop;
+    CONFIG.GRUNT_LOOK.ART_SCALE = scale;
+    CONFIG.GRUNT_LOOK.WHINE_STRETCH = stretch;
+  };
+  // Px between the lower edge of its drawn health bar and the top of
+  // everything else it draws
+  const barGap = (g) => {
+    g.health = 1; // damaged, so its health bar shows
+    const { p, shapes, calls } = transformP5();
+    g.draw(p);
+    const top = Math.min(
+      ...shapes
+        .filter((s) => s.kind === 'ellipse' && s.blend !== 'add')
+        .map((s) => s.top)
+    );
+    const [, , barY, , barH] = calls.find(([k]) => k === 'rect');
+    expect(barH).toBe(HEALTH_BAR_HEIGHT_PX);
+    expect(Number.isFinite(top)).toBe(true);
+    return top - (barY + barH);
+  };
+
+  it('keeps its health bar clear of its antennae, at any hop and size', () => {
+    for (const look of LOOKS) {
+      lookOf(look);
       for (let i = 0; i < 80; i++) {
         const g = gruntWith(clockAt(16 + i / 20));
         g.aimAngle = i % 2 ? 0.4 : Math.PI - 0.4;
         g.facing = i % 2 ? 1 : -1;
         if (i % 4 === 0) g.warnedOnBeat = Math.floor(16 + i / 20);
         if (i % 4 === 1) g.heldOnBeat = Math.floor(16 + i / 20);
-        // The snare's chatter, a whine or a squeak, and its swarm's call
+        // Every other one fired on its last snare (beats 2 and 4 are odd
+        // here): those do the full hop, which lifts the antennae highest
         const snare = Math.floor((16 + i / 20 - 1) / 2) * 2 + 1;
-        if (i % 3 === 0) g.chatter = { beat: snare, voice: 'whine' };
+        if (i % 2 === 0) g.firedAt = snare;
+        // A squeak on the snare, and its swarm's call
         if (i % 3 === 1) g.chatter = { beat: snare, voice: 'squeak' };
         if (i % 5 < 2) {
           g.swarm = {
             call: { beat: snare, heading: i % 5 ? 'retreat' : 'advance' },
           };
         }
-        // Every other one fired on its last snare (beats 2 and 4 are odd
-        // here): those do the full hop, which lifts the antennae highest
-        if (i % 2 === 0) g.firedAt = Math.floor((16 + i / 20 - 1) / 2) * 2 + 1;
-        g.health = 1; // damaged, so its health bar shows
-        const { p, shapes, calls } = transformP5();
-        g.draw(p);
-        const top = Math.min(
-          ...shapes
-            .filter((s) => s.kind === 'ellipse' && s.blend !== 'add')
-            .map((s) => s.top)
-        );
-        // The drawn bar's lower edge sits above everything else it draws
-        const [, , barY, , barH] = calls.find(([k]) => k === 'rect');
-        expect(barH).toBe(HEALTH_BAR_HEIGHT_PX);
-        expect(Number.isFinite(top)).toBe(true);
-        expect(top).toBeGreaterThan(barY + barH);
+        expect(barGap(g)).toBeGreaterThan(0);
       }
+    }
+  });
+
+  it('keeps its health bar clear of a whine, and no higher than it needs', () => {
+    // A whiner never fires on that snare (GruntSwarm): it hops the small hop
+    for (const look of LOOKS) {
+      lookOf(look);
+      let closest = Infinity;
+      for (let ms = 0; ms <= 400; ms += 5) {
+        const g = gruntWith(clockAt(17 + ms / 500));
+        g.aimAngle = 0.4;
+        g.chatter = { beat: 17, voice: 'whine' };
+        closest = Math.min(closest, barGap(g));
+      }
+      expect(closest).toBeGreaterThan(0);
+      // 4.4 px measured at the defaults: it doesn't float far above it
+      if (look === LOOKS[0]) expect(closest).toBeLessThan(6);
     }
   });
 });
