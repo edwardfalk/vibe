@@ -17,6 +17,11 @@ import { BOMB_PLANTED, COUNTDOWN } from '../../js/audio/DialogueLines.js';
 import * as sam from '../../js/audio/speech/engines/sam.js';
 import * as espeak from '../../js/audio/speech/engines/espeak.js';
 
+// Voicebox tunes a line by up to half the scale's widest gap (a 9/8 tone)
+// plus the hum's drift; tuned down, it plays that much longer
+const longestTuned = (sec) =>
+  sec * Math.sqrt(9 / 8) * 2 ** (CONFIG.HUM.DRIFT_CENTS / 1200);
+
 const clockAt = (beats) => ({
   getBeatPosition: () => beats,
   beatInterval: 500,
@@ -268,7 +273,7 @@ describe('the bomb, on the beat', () => {
       spoken(cast.engine, COUNTDOWN.at(-1)),
       cast.voice
     );
-    const oneSec = samples.length / sampleRate;
+    const oneSec = longestTuned(samples.length / sampleRate);
     const { audio, ticks, now } = setup();
     const at = {};
     audio.speak.mockImplementation((_e, word) => ((at[word] = now()), true));
@@ -351,7 +356,8 @@ describe('"TIMEBOMB!" and the count', () => {
     const engine = { sam, espeak }[cast.engine];
     const words = spoken(cast.engine, BOMB_PLANTED);
     const { samples, sampleRate } = await engine.render(words, cast.voice);
-    const shoutSec = samples.length / sampleRate; // as Voicebox times it
+    // As Voicebox times it, at the slowest its tuning can play it
+    const shoutSec = longestTuned(samples.length / sampleRate);
     // Frames come ~16 ms apart and one may land right on the "3"'s beat:
     // step finely, or the "3" is found late and an overlap hides
     const STEP_SEC = 0.0005;

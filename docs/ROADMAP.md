@@ -21,7 +21,6 @@ Calls and smaller work:
 - **check: the kick's level depends on where in a 128-frame render block it starts:** above 250 Hz it is 2.3 dB louder half a block in than on a block's start, smoothly, and the tank's shot 1.5 dB the same way; most tones don't move. In play each beat lands at a different place in a block, so the kick may swing up to ±1.2 dB from beat to beat. Cause not found; the window tests average over a block. (mix pass)
 - **call: the hero's final shot sound** (softHat, metalHat, tick, ghostArp; tick is the default). Then the other three and the `HERO_SHOT.SOUND` knob go.
 - **build: delete the grunt shot's zap option and its `BAND.GRUNT_SHOT` knob.** Edward kept the stab (#94); ask before deleting.
-- **build: tune the speech voices to the hum's scale,** and give the voice playground the hum. (universe-hum spec)
 - **call: rushers set off in a chain crash together exactly in step,** +6 dB each doubling (the crash noise has a fixed seed). Fix only if it's heard as too loud: one crash per frame.
 - **build, low: a rusher lit while he warps in misses that beat's fuse beep.** A fuse with no beeps at all needs `FUSE_MIN_BEATS` 1. Fix: beep on his first update when it falls within the clock's tolerance of a beat. (Codex on #94)
 - **build: #94's deferred minors:**

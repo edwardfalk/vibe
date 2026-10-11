@@ -6,6 +6,7 @@ import {
   startTime,
 } from '../../js/audio/speech/Voicebox.js';
 import { CONFIG } from '../../js/config.js';
+import { hz } from '../../js/audio/Harmony.js';
 
 const RATE = 22050;
 const GRUNT = CONFIG.SPEECH.SPEAKERS.grunt;
@@ -39,6 +40,7 @@ function fakeContext() {
     }),
     createBufferSource() {
       const source = {
+        detune: { value: 0 },
         connect: (n) => n,
         start(when) {
           source.when = when;
@@ -175,11 +177,78 @@ describe('Voicebox', () => {
     for (const key of ['renderMs', 'chainMs', 'levelMs', 'reductionDb']) {
       expect(Number.isFinite(line[key])).toBe(true);
     }
-    expect(voicebox.play(line, 11, 0.5, -0.3)).toEqual({
+    expect(voicebox.play(line, 11, 0.5, -0.3)).toMatchObject({
       startsAt: 11,
       duration: 0.5,
     });
     expect(ctx.sources[0].when).toBe(11);
+  });
+
+  describe('tuning', () => {
+    const hum = structuredClone(CONFIG.HUM);
+    afterEach(() => {
+      CONFIG.HUM = structuredClone(hum);
+    });
+    // The chain adds a tail, so the spoken part and the whole differ
+    const TAIL = 5000;
+    const WHOLE_SEC = 0.5 + TAIL / RATE;
+    const withTail = async (s) => {
+      const out = new Float32Array(s.length + TAIL);
+      out.set(s);
+      out.fill(0.01, s.length);
+      return out;
+    };
+    const tuned = async (setupFor, f0) => {
+      const { voicebox, ctx, reply } = setup({ chain: withTail });
+      const rendering = voicebox.renderLine(setupFor, 'Kill human!');
+      reply({ f0 });
+      return { voicebox, ctx, line: await rendering };
+    };
+
+    it('detunes a line onto the nearest note of the scale, and its durations with it', async () => {
+      CONFIG.HUM = { ...CONFIG.HUM, ROOT: 'F#', DRIFT_CENTS: 0 };
+      const { voicebox, ctx, line } = await tuned(GRUNT, 437.3);
+      // The nearest note is F#'s b3 in octave 4: 46.249 × 8 × 6/5 = 443.99 Hz
+      expect(line.note).toEqual(['b3', 4]);
+      const played = voicebox.play(line, 5);
+      const cents = 1200 * Math.log2(443.99 / 437.3);
+      expect(ctx.sources[0].detune.value).toBeCloseTo(cents, 1);
+      expect(played.startsAt).toBe(5);
+      expect(played.cents).toBeCloseTo(cents, 1);
+      const rate = 2 ** (played.cents / 1200);
+      expect(played.duration).toBeCloseTo(0.5 / rate, 9);
+      expect(played.totalDuration).toBeCloseTo(WHOLE_SEC / rate, 9);
+      expect([...voicebox.playing][0].duration).toBe(played.duration);
+    });
+
+    it("keeps a line's note from play to play, and follows the hum's drift where each starts", async () => {
+      CONFIG.HUM = { ...CONFIG.HUM, ROOT: 'F#', DRIFT_CENTS: 9 };
+      // 105 c above F#2: 99 c under the 2. At t = 5 the grid has drifted
+      // 6.85 c up, which puts the root nearer; the line stays on the 2
+      const f0 = 2 * 46.249 * 2 ** (105 / 1200);
+      const { voicebox, ctx, line } = await tuned(GRUNT, f0);
+      expect(line.note).toEqual(['2', 2]);
+      voicebox.play(line, 0);
+      voicebox.play(line, 5);
+      const [still, drifted] = ctx.sources.map((s) => s.detune.value);
+      expect(still).toBeCloseTo(1200 * Math.log2(9 / 8) - 105, 2);
+      expect(drifted - still).toBeCloseTo(6.847, 2);
+      expect(f0 * 2 ** (drifted / 1200)).toBeCloseTo(hz(['2', 2], 5), 6);
+    });
+
+    it('leaves a line alone with tune: false, or with no pitch to read', async () => {
+      for (const [setupFor, f0] of [
+        [{ ...GRUNT, tune: false }, 437.3],
+        [GRUNT, null],
+      ]) {
+        const { voicebox, ctx, line } = await tuned(setupFor, f0);
+        expect(line.note).toBeNull();
+        const played = voicebox.play(line, 5);
+        expect(ctx.sources[0].detune.value).toBe(0);
+        expect(played).toMatchObject({ cents: 0, duration: 0.5 });
+        expect(played.totalDuration).toBeCloseTo(WHOLE_SEC, 9);
+      }
+    });
   });
 
   it('a chain that leaves silence', async () => {

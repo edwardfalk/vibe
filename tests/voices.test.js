@@ -27,6 +27,72 @@ test('the playground renders a typed phrase and shows the readout', async ({
   await expect(readout).toContainText('engine hears: Siege mode!');
   await expect(readout).toContainText(/render [\d.]+ ms \+ chain [\d.]+ ms/);
   await expect(readout).toContainText('ceiling cost');
+  // The tank is left untuned (tune: false); the box tunes him
+  await expect(readout).toContainText(
+    /pitch: dry median [\d.]+ Hz .*, not tuned/
+  );
+  await page.check('#tune');
+  await page.click('#play-now');
+  await expect(readout).toContainText(
+    /pitch: dry median [\d.]+ Hz \(\w#?\d\) → the scale's \w+ in octave \d, [\d.]+ Hz \(\w#?\d\): [+−]\d+ cents/
+  );
+  expect(errors).toEqual([]);
+});
+
+test('a SAM voice can sing, and the box keeps its edit', async ({ page }) => {
+  const errors = await open(page);
+  await page.selectOption('#speaker', 'tank');
+  // He sings in config; the box stops him, and the edit survives a reload
+  const sing = page.getByLabel('sing', { exact: true });
+  await expect(sing).toBeChecked();
+  await sing.uncheck();
+  await page.reload();
+  await expect(page.locator('#speaker option')).toHaveCount(5);
+  await page.selectOption('#speaker', 'tank');
+  await expect(page.getByLabel('sing', { exact: true })).not.toBeChecked();
+  // espeak-ng voices have no such box
+  await page.selectOption('#speaker', 'player');
+  await expect(page.getByLabel('sing', { exact: true })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('the hum box plays the hum under the voices, and unticked it is silent', async ({
+  page,
+}) => {
+  // Everything that reaches the speakers also feeds one analyser (lines
+  // render offline, on contexts of their own)
+  await page.addInitScript(() => {
+    const connect = AudioNode.prototype.connect;
+    AudioNode.prototype.connect = function (to, ...rest) {
+      if (
+        to instanceof AudioDestinationNode &&
+        this.context instanceof AudioContext
+      ) {
+        window.tap ??= this.context.createAnalyser();
+        connect.call(this, window.tap);
+      }
+      return connect.call(this, to, ...rest);
+    };
+  });
+  const errors = await open(page);
+  const rms = () =>
+    page.evaluate(() => {
+      const x = new Float32Array(window.tap.fftSize);
+      window.tap.getFloatTimeDomainData(x);
+      return Math.sqrt(x.reduce((sum, v) => sum + v * v, 0) / x.length);
+    });
+  // The first play starts the audio, kick and hum both off
+  await sayWith(page, 'grunt', 'Hi.');
+  await expect(page.locator('#readout')).toContainText('engine hears');
+  await expect.poll(rms, { timeout: 5000 }).toBe(0);
+  await page.check('#hum');
+  await expect.poll(rms).toBeGreaterThan(0.001);
+  await page.uncheck('#hum');
+  await expect.poll(rms).toBe(0);
+  // The line can still be in its first, silent moments at the first check
+  // above; it is over now, so this level can only be the hum's
+  await page.check('#hum');
+  await expect.poll(rms).toBeGreaterThan(0.001);
   expect(errors).toEqual([]);
 });
 

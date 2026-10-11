@@ -36,6 +36,17 @@ describe('SAM', () => {
     );
   });
 
+  it('sings, one steady pitch, only with sing set', async () => {
+    // The tank's voice with no sing key at all (his config sings)
+    const voice = { ...SPEAKERS.tank.voice };
+    delete voice.sing;
+    const spoken = await sam.render('Stab time!', voice);
+    const sung = await sam.render('Stab time!', { ...voice, sing: true });
+    const again = await sam.render('Stab time!', { ...voice, sing: false });
+    expect(differ(spoken.samples, sung.samples)).toBe(true);
+    expect(differ(spoken.samples, again.samples)).toBe(false);
+  });
+
   it('changes its sound with the mouth setting', async () => {
     const voice = SPEAKERS.tank.voice;
     const a = await sam.render('Stab time!', { ...voice, mouth: 80 });

@@ -1,11 +1,12 @@
 /**
  * Voicebox: the game's speech. The worker renders a line (SAM or espeak-ng)
  * at a set loudness; the speaker's effect chain runs offline; the result is
- * levelled again, fitted under the ceiling, and played. The game says its
- * lines through say(), on the beat grid, from a cache: its lines are a fixed
- * set, so each is rendered once.
+ * levelled again, fitted under the ceiling, and played, tuned onto the
+ * scale. The game says its lines through say(), on the beat grid, from a
+ * cache: its lines are a fixed set, so each is rendered once.
  */
 import { CONFIG } from '../../config.js';
+import { hz, nearestNote } from '../Harmony.js';
 import { renderChain as renderEffectChain } from './effects.js';
 import { fitCeiling, isUsable, loudness, matchLoudness } from './levels.js';
 
@@ -16,6 +17,7 @@ export const LEAD_SEC = 0.02;
 const LEVEL_MISS_DB = 1;
 // A word, with contractions inside it ("can't"); quotes around it don't count
 const WORD = /[A-Za-z]+(?:'[A-Za-z]+)*/g;
+const CENTS_PER_OCTAVE = 1200;
 
 // The text an engine hears: respelled whole words, case-insensitive, with
 // punctuation and every other word untouched. The bubble shows the original.
@@ -153,6 +155,10 @@ export class Voicebox {
     return {
       buffer,
       spokenSec: dry.samples.length / dry.sampleRate,
+      f0: dry.f0 ?? null, // the dry line's median pitch in Hz, or null if none
+      // The scale's note nearest that pitch, picked once so a line keeps its
+      // note from play to play; null if untuned
+      note: setup.tune !== false && dry.f0 > 0 ? nearestNote(dry.f0) : null,
       renderMs: dry.renderMs,
       chainMs: t1 - t0,
       levelMs,
@@ -163,19 +169,34 @@ export class Voicebox {
     };
   }
 
+  // Play a line at `when`. A tuned line is detuned so its median pitch lands
+  // on its note with the hum's drift at `when`; that shifts its effects too,
+  // and stretches it by the same ratio (at most half the scale's widest gap,
+  // 102 c, plus the drift: 7 %). Returns its start, its durations as played
+  // (the spoken part, and with the tail) and the correction in cents.
   play(line, when, gain = 1, pan = 0) {
+    const { note, f0 } = line;
+    const cents = note ? CENTS_PER_OCTAVE * Math.log2(hz(note, when) / f0) : 0;
+    const rate = 2 ** (cents / CENTS_PER_OCTAVE);
     const source = this.ctx.createBufferSource();
     source.buffer = line.buffer;
+    source.detune.value = cents;
     const level = this.ctx.createGain();
     level.gain.value = gain;
     const panner = this.ctx.createStereoPanner();
     panner.pan.value = pan;
     source.connect(level).connect(panner).connect(this.output);
     source.start(when);
-    const playing = { source, startsAt: when, duration: line.spokenSec };
+    const duration = line.spokenSec / rate;
+    const playing = { source, startsAt: when, duration };
     this.playing.add(playing);
     source.onended = () => this.playing.delete(playing);
-    return { startsAt: when, duration: line.spokenSec };
+    return {
+      startsAt: when,
+      duration,
+      totalDuration: line.buffer.duration / rate,
+      cents,
+    };
   }
 
   // A speaker's line, rendered once: asking again, even before it is ready,

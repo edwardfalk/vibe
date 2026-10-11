@@ -7,6 +7,7 @@ import { CONFIG } from '../config.js';
 import { SPEAKER_LINES } from '../audio/DialogueLines.js';
 import { BeatClock } from '../audio/BeatClock.js';
 import { BeatTrack } from '../audio/BeatTrack.js';
+import { Hum } from '../audio/Hum.js';
 import {
   STAGE_PARAMS,
   stageDefaults,
@@ -183,6 +184,17 @@ function renderVoice() {
   for (const [key, range] of Object.entries(VOICE_PARAMS[s.engine])) {
     box.append(slider(key, s.voice, key, range));
   }
+  if (s.engine === 'sam') {
+    const sing = element('input', {
+      type: 'checkbox',
+      checked: s.voice.sing === true,
+    });
+    sing.onchange = () => {
+      s.voice.sing = sing.checked;
+      edited();
+    };
+    box.append(element('label', {}, sing, 'sing'));
+  }
 }
 
 function renderChain() {
@@ -216,6 +228,7 @@ function renderChain() {
   s.levelDb ??= 0;
   $('level').value = s.levelDb;
   $('level-value').textContent = s.levelDb;
+  $('tune').checked = s.tune !== false;
 }
 
 function renderRespell() {
@@ -263,18 +276,31 @@ async function startAudio() {
   const beatClock = new BeatClock(BPM, ctx);
   const kickBus = ctx.createGain();
   kickBus.connect(ctx.destination);
+  // The game's hum at level 1 with no enemies, at the effects' volume (the
+  // game also ducks it while someone speaks); the beat track keeps its time
+  const humBus = ctx.createGain();
+  humBus.connect(ctx.destination);
   const beatTrack = new BeatTrack({
-    audio: { audioContext: ctx, beatDuckGain: kickBus },
+    audio: {
+      audioContext: ctx,
+      beatDuckGain: kickBus,
+      hum: new Hum(ctx, humBus),
+    },
     beatClock,
   });
   beatTrack.setMuted(!$('kick').checked);
+  applyHum(humBus);
   const voicebox = new Voicebox({ audioContext: ctx });
   voicebox.connect(ctx.destination);
   await ctx.resume();
   await beatTrack.start();
   variants = await voicebox.variants().catch(() => []);
   renderVoice();
-  return { ctx, beatClock, beatTrack, voicebox };
+  return { ctx, beatClock, beatTrack, voicebox, humBus };
+}
+
+function applyHum(humBus) {
+  humBus.gain.value = $('hum').checked ? CONFIG.MIX.SFX_VOLUME : 0;
 }
 
 // One audio setup per page; a failed start can be retried by the next click
@@ -286,11 +312,36 @@ function ensureAudio() {
   return audioReady;
 }
 
-function readout(line, words) {
+const NOTE_NAMES = 'C C# D D# E F F# G G# A A# B'.split(' ');
+const A4_HZ = 440;
+const A4_FROM_C0 = 57; // semitones
+const CENTS_PER_OCTAVE = 1200;
+
+// The equal-tempered name nearest f Hz, as a label: "A4"
+function noteName(f) {
+  const fromC0 =
+    Math.round(NOTE_NAMES.length * Math.log2(f / A4_HZ)) + A4_FROM_C0;
+  const octave = Math.floor(fromC0 / NOTE_NAMES.length);
+  return `${NOTE_NAMES[fromC0 % NOTE_NAMES.length]}${octave}`;
+}
+
+function pitchReadout(line, played) {
+  if (!line.f0)
+    return 'pitch: none found (no voiced frames), played as rendered';
+  const dry = `pitch: dry median ${line.f0.toFixed(1)} Hz (${noteName(line.f0)})`;
+  if (!line.note) return `${dry}, not tuned`;
+  const [degree, octave] = line.note;
+  const target = line.f0 * 2 ** (played.cents / CENTS_PER_OCTAVE);
+  const sign = played.cents < 0 ? '−' : '+';
+  return `${dry} → the scale's ${degree} in octave ${octave}, ${target.toFixed(1)} Hz (${noteName(target)}): ${sign}${Math.abs(played.cents).toFixed(0)} cents`;
+}
+
+function readout(line, words, played) {
   const f = (n) => n.toFixed(1);
   const hot = line.reductionDb > CONFIG.SPEECH.REDUCTION_WARN_DB;
   return [
     `engine hears: ${words}`,
+    pitchReadout(line, played),
     `render ${f(line.renderMs)} ms + chain ${f(line.chainMs)} ms + level ${f(line.levelMs)} ms · spoken ${f(line.spokenSec)} s, ${f(line.buffer.duration)} s with the tail`,
     `loudness: in ${f(line.loudnessIn)} dB → after the chain ${f(line.loudnessChain)} dB → out ${f(line.loudnessOut)} dB`,
     `ceiling cost ${f(line.reductionDb)} dB` +
@@ -300,7 +351,8 @@ function readout(line, words) {
   ].join('\n');
 }
 
-// Render and play one line. `how` is 'now', 'grid' or 'game'.
+// Render and play one line. `how` is 'now', 'grid' or 'game'. Resolves
+// what play() returned, or null if it didn't play.
 async function playLine(how, text, myRun) {
   if (!text) {
     show('Type a phrase first.', 'error');
@@ -322,13 +374,13 @@ async function playLine(how, text, myRun) {
     const line = await audio.voicebox.renderLine(version.setup, words);
     if (myRun !== run) return null;
     const now = audio.ctx.currentTime;
-    audio.voicebox.play(
+    const played = audio.voicebox.play(
       line,
       how === 'grid' ? startTime(now, audio.beatClock) : now
     );
     const hot = line.reductionDb > CONFIG.SPEECH.REDUCTION_WARN_DB;
-    show(readout(line, words), hot ? 'warn' : '');
-    return line;
+    show(readout(line, words, played), hot ? 'warn' : '');
+    return played;
   } catch (error) {
     if (myRun !== run) return null;
     const off = audio?.voicebox.failed;
@@ -350,13 +402,10 @@ async function playAll() {
     if (myRun !== run) return;
     $('phrase').value = line;
     renderHears();
-    const rendered = await playLine('now', line, myRun);
-    if (!rendered || myRun !== run) return;
+    const played = await playLine('now', line, myRun);
+    if (!played || myRun !== run) return;
     await new Promise((resolve) =>
-      setTimeout(
-        resolve,
-        rendered.buffer.duration * 1000 + PAUSE_BETWEEN_LINES_MS
-      )
+      setTimeout(resolve, played.totalDuration * 1000 + PAUSE_BETWEEN_LINES_MS)
     );
   }
 }
@@ -396,6 +445,12 @@ $('stage-add').onclick = () => {
   setup().chain.push({ type, ...stageDefaults(type) });
   changed();
 };
+// Tuning is on unless a setup says tune: false, so only that is written
+$('tune').onchange = () => {
+  if ($('tune').checked) delete setup().tune;
+  else setup().tune = false;
+  edited();
+};
 $('level').oninput = () => {
   setup().levelDb = Number($('level').value);
   $('level-value').textContent = $('level').value;
@@ -408,6 +463,10 @@ $('play-all').onclick = playAll;
 $('kick').onchange = async () => {
   if (!audioReady) return; // the first play applies the box
   (await audioReady).beatTrack.setMuted(!$('kick').checked);
+};
+$('hum').onchange = async () => {
+  if (!audioReady) return; // the first play applies the box
+  applyHum((await audioReady).humBus);
 };
 $('copy').onclick = async () => {
   const text = [

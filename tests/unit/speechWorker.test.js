@@ -20,6 +20,21 @@ describe('speech worker', () => {
     }
   });
 
+  it("reads each line's pitch: SAM singing holds 6800 / pitch", async () => {
+    // Where SAM holds still: its sentence ends fall, some consonants glide
+    for (const pitch of [25, 125]) {
+      const out = await renderRequest({
+        engine: 'sam',
+        text: 'Stab time!',
+        voice: { ...SPEAKERS.tank.voice, pitch, sing: true },
+        targetDb: -20,
+      });
+      expect(Math.abs(1200 * Math.log2(out.f0 / (6800 / pitch)))).toBeLessThan(
+        10
+      );
+    }
+  });
+
   it('refuses an engine it does not know', async () => {
     await expect(
       renderRequest({ engine: 'piper', text: 'Hi', voice: {}, targetDb: -20 })
