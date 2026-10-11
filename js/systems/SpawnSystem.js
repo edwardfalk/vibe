@@ -45,6 +45,7 @@ export class SpawnSystem {
     // each cleared one leaves a break, the beat it was cleared on
     this.swarms = [];
     this.breaks = [];
+    this.opened = 0; // the opening's swarms cleared this run (SWARM.OPENING)
     this.getContextValue = createContextAccessor(() => this.context);
   }
 
@@ -71,7 +72,8 @@ export class SpawnSystem {
     if (!enemies) return;
     const gameState = this.getContextValue('gameState');
     const player = this.getContextValue('player');
-    const size = swarmSize(gameState ? gameState.level : 1);
+    const size =
+      this.openingSize() ?? swarmSize(gameState ? gameState.level : 1);
     const centre = this.spotApart();
     const swarm = new GruntSwarm({ size, ...centre });
     const made = this.cloudSpots(centre, size).map(({ x, y }) => {
@@ -82,6 +84,13 @@ export class SpawnSystem {
     });
     enemies.push(...made);
     this.swarms.push(swarm);
+  }
+
+  // While a run from level 1 is in its opening, the size of its swarm now
+  openingSize() {
+    const gameState = this.getContextValue('gameState');
+    const level = gameState ? gameState.level : 1;
+    return level === 1 ? CONFIG.SWARM.OPENING[this.opened] : undefined;
   }
 
   // A spot off screen: of SIDE_TRIES, the one furthest round the hero from
@@ -126,17 +135,20 @@ export class SpawnSystem {
 
     // A run's first swarms come on its first update; a cleared one's place
     // is taken BREAK_BEATS after all of it are dead, a breather on its side
-    // (both read each frame, so ?tune changes a break already begun)
+    // (both read each frame, so ?tune changes a break already begun). The
+    // opening's come alone and leave no break: the next comes at once
     const all = this.getContextValue('enemies');
     if (all) {
       const now = beatClock.getBeatPosition();
       const cleared = this.swarms.filter((s) => s.isCleared(all));
       this.swarms = this.swarms.filter((s) => !cleared.includes(s));
-      this.breaks.push(...cleared.map(() => now));
+      if (this.openingSize() !== undefined) this.opened += cleared.length;
+      else this.breaks.push(...cleared.map(() => now));
       this.breaks = this.breaks.filter(
         (t) => now < t + CONFIG.SWARM.BREAK_BEATS
       );
-      const room = CONFIG.SWARM.COUNT - this.swarms.length;
+      const count = this.openingSize() !== undefined ? 1 : CONFIG.SWARM.COUNT;
+      const room = count - this.swarms.length;
       for (let i = this.breaks.length; i < room; i++) this.spawnSwarm();
     }
 
@@ -341,5 +353,6 @@ export class SpawnSystem {
     this.previewed.clear();
     this.swarms = [];
     this.breaks = [];
+    this.opened = 0;
   }
 }

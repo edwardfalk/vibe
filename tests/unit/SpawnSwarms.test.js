@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SpawnSystem } from '../../js/systems/SpawnSystem.js';
 import {
   GruntSwarm,
@@ -12,6 +12,11 @@ import { createMockP5 } from './helpers/enemyMocks.js';
 vi.spyOn(console, 'log').mockImplementation(() => {});
 const SWARM = { ...CONFIG.SWARM };
 const PACING = structuredClone(CONFIG.PACING);
+// A run's opening has its own tests ('a run from level 1 opens'); the rest
+// start where it ends, with COUNT at once
+beforeEach(() => {
+  CONFIG.SWARM.OPENING = [];
+});
 afterEach(() => {
   Object.assign(CONFIG.SWARM, SWARM);
   CONFIG.PACING = structuredClone(PACING);
@@ -229,6 +234,60 @@ describe('a run starts with its first swarms', () => {
 const kill = (enemies, swarm) => {
   for (const g of enemies) if (g.swarm === swarm) g.markedForRemoval = true;
 };
+
+describe('a run from level 1 opens', () => {
+  it('with OPENING’s swarms one at a time, each as soon as the last is cleared, then COUNT at once', () => {
+    CONFIG.SWARM.OPENING = [1, 3];
+    const { system, enemies, clock } = world();
+    const alive = (swarm) =>
+      enemies.filter((g) => g.swarm === swarm && !g.markedForRemoval);
+    system.update();
+    const [first] = system.swarms;
+    expect(system.swarms).toHaveLength(1);
+    expect(alive(first)).toHaveLength(1);
+    clock.beats = 40;
+    system.update();
+    expect(system.swarms).toEqual([first]); // alone while it's up
+    kill(enemies, first);
+    clock.beats = 40.5;
+    system.update(); // no break: the next comes at once
+    const [second] = system.swarms;
+    expect(system.swarms).toHaveLength(1);
+    expect(second).not.toBe(first);
+    expect(alive(second)).toHaveLength(3);
+    kill(enemies, second);
+    clock.beats = 41;
+    system.update();
+    expect(system.swarms).toHaveLength(CONFIG.SWARM.COUNT);
+    for (const s of system.swarms) expect(alive(s)).toHaveLength(swarmSize(1));
+  });
+
+  it('not from a later level: COUNT at once, of its size', () => {
+    CONFIG.SWARM.OPENING = [1, 3];
+    const { system, enemies } = world({ level: 3 });
+    system.update();
+    expect(system.swarms).toHaveLength(CONFIG.SWARM.COUNT);
+    expect(grunts(enemies)).toHaveLength(CONFIG.SWARM.COUNT * swarmSize(3));
+  });
+
+  it('again after a restart (reset)', () => {
+    CONFIG.SWARM.OPENING = [1, 3];
+    const { system, enemies, clock } = world();
+    system.update();
+    kill(enemies, system.swarms[0]);
+    clock.beats = 1;
+    system.update();
+    kill(enemies, system.swarms[0]);
+    clock.beats = 2;
+    system.update(); // the opening is over
+    system.reset();
+    enemies.length = 0;
+    clock.beats = 0;
+    system.update();
+    expect(system.swarms).toHaveLength(1);
+    expect(grunts(enemies)).toHaveLength(1);
+  });
+});
 
 describe('a cleared swarm’s place', () => {
   it('is taken BREAK_BEATS after all of it are dead, not before, while the other stays', () => {
