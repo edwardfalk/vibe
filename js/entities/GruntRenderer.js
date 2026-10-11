@@ -115,6 +115,8 @@ const SHOT = {
   SQUASH_Y: 0.1,
   RECOIL_PX: 4,
 };
+// A blob seen edge-on is still a blob: a spin never draws it thinner than this
+const SPIN_EDGE = 0.3;
 // A whine's stretch follows its sound (CHATTER_VOICES.whine): up as its pitch
 // slides, trembling with its wobble, relaxing over RELAX_SEC once it ends
 const WHINE = { TREMBLE: 0.3, RELAX_SEC: 0.12 };
@@ -356,7 +358,8 @@ function chatterMove(pose, sec, voice, aiming) {
   const L = CONFIG.GRUNT_LOOK;
   if (voice === 'squeak' && !aiming && sec < L.SPIN_SEC) {
     const k = 1 - (1 - sec / L.SPIN_SEC) ** 2;
-    pose.turn = Math.cos(TWO_PI * k);
+    const c = Math.cos(TWO_PI * k);
+    pose.turn = (c < 0 ? -1 : 1) * (SPIN_EDGE + (1 - SPIN_EDGE) * Math.abs(c));
   }
   const sound = CHATTER_VOICES.whine;
   if (voice === 'whine' && sec < sound.SEC + WHINE.RELAX_SEC) {
@@ -366,6 +369,17 @@ function chatterMove(pose, sec, voice, aiming) {
       1 + WHINE.TREMBLE * Math.sin(TWO_PI * sound.WOBBLE_HZ * sec);
     pose.squash -= L.WHINE_STRETCH * rise * relax * tremble;
   }
+}
+
+/**
+ * How much further than its full hop's stretch a whine stretches it, as a
+ * share of its height: its health bar rises by that much (Grunt.healthBarRise)
+ */
+export function whineReach() {
+  const L = CONFIG.GRUNT_LOOK;
+  const most = L.WHINE_STRETCH * (1 + WHINE.TREMBLE);
+  // A whiner hops the small hop, so it stretches that much less in the air
+  return Math.max(0, most - DANCE.AIR_STRETCH * (1 - L.IDLE_DANCE));
 }
 
 // Its swarm's move call, `sec` ago: it leans at the hero with its jet in full

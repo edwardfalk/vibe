@@ -17,6 +17,7 @@ import {
   gruntMuzzle,
   gruntPose,
   nextFacing,
+  whineReach,
 } from './GruntRenderer.js';
 
 // A friend this close and this near his aim blocks his shot
@@ -306,7 +307,7 @@ class Grunt extends BaseEnemy {
   get healthBarRise() {
     const L = CONFIG.GRUNT_LOOK;
     return (
-      this.size * L.ART_SCALE * ANTENNA_REACH +
+      this.size * L.ART_SCALE * ANTENNA_REACH * (1 + whineReach()) +
       L.HOP_PX +
       L.HOVER_PX +
       HEALTH_BAR_HEIGHT_PX +

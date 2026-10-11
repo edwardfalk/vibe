@@ -333,7 +333,7 @@ const CONFIG = {
     // What it sounds shows: a squeak spins it round in this long, a whine
     // stretches it up this much, its swarm's move call leans it this far
     SPIN_SEC: 0.3,
-    WHINE_STRETCH: 0.15,
+    WHINE_STRETCH: 0.25,
     CALL_LEAN_RAD: 0.3,
   },
 

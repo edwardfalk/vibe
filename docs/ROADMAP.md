@@ -50,7 +50,8 @@ Calls and smaller work:
 
 ## Characters
 
-- **call: tune by eye on `?tune`, and put the values in `config.js`:** the grunt (`GRUNT_LOOK`); the tank; the rusher (boost, turn, fuse, push, size, crash volume). No values have come back for any of them.
+- **call: tune by eye on `?tune`, and put the values in `config.js`:** the grunt (`GRUNT_LOOK`, with his chatter's spin and stretch and his swarm's lean); the tank; the rusher (boost, turn, fuse, push, size, crash volume). No values have come back for any of them.
+- **check: other sounds with no cause on screen?** Edward: "it should be visible what causes the sounds the player hears". The grunts' chatter and move calls show now; the other enemies' chatter, calls and speech were not checked.
 - **call: the stabber's play-test** (#87). Points to judge:
   - does he read as a beetle or a crab from above, and how is the magenta, his gaze at game size, his glow;
   - the strings' levels, alone and two or three at once (raised 1.4–4.7 dB by the mix pass);

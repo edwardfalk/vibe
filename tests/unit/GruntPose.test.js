@@ -157,6 +157,12 @@ describe('what the grunt sounds shows', () => {
     const away = beatsOf(SPIN_SEC * (1 - Math.SQRT1_2));
     expect(squeak(away).turn).toBeCloseTo(-1);
     expect(squeak(beatsOf(SPIN_SEC * 0.9)).turn).toBeGreaterThan(0.9);
+    // Edge-on it is still a blob, never a line
+    for (let i = 0; i < 40; i++) {
+      expect(
+        Math.abs(squeak(beatsOf((SPIN_SEC * i) / 40)).turn)
+      ).toBeGreaterThan(0.25);
+    }
     expect(squeak(beatsOf(SPIN_SEC)).turn).toBe(1);
     expect(poseAt(1, away).turn).toBe(1); // no chatter, no spin
     expect(whine(away).turn).toBe(1);

@@ -218,16 +218,21 @@ describe('drawing a grunt', () => {
     expect(g.chatter).toBe(null);
   });
 
-  it('keeps its health bar clear of its antennae, at any hop and size', () => {
-    for (const [hop, scale] of [
-      [DEFAULTS.HOP_PX, DEFAULTS.ART_SCALE],
-      [12, DEFAULTS.ART_SCALE],
-      [12, 0.8],
-      [12, 1.6],
-      [DEFAULTS.HOP_PX, 1.6],
+  it('keeps its health bar clear of its antennae, at any hop, size and whine', () => {
+    const whine = DEFAULTS.WHINE_STRETCH;
+    for (const [hop, scale, stretch] of [
+      [DEFAULTS.HOP_PX, DEFAULTS.ART_SCALE, whine],
+      [12, DEFAULTS.ART_SCALE, whine],
+      [12, 0.8, whine],
+      [12, 1.6, whine],
+      [DEFAULTS.HOP_PX, 1.6, whine],
+      [DEFAULTS.HOP_PX, DEFAULTS.ART_SCALE, 0.5], // the slider's top
+      [0, 1.6, 0.5],
+      [12, 0.8, 0],
     ]) {
       CONFIG.GRUNT_LOOK.HOP_PX = hop;
       CONFIG.GRUNT_LOOK.ART_SCALE = scale;
+      CONFIG.GRUNT_LOOK.WHINE_STRETCH = stretch;
       for (let i = 0; i < 80; i++) {
         const g = gruntWith(clockAt(16 + i / 20));
         g.aimAngle = i % 2 ? 0.4 : Math.PI - 0.4;
