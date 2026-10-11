@@ -139,3 +139,108 @@ describe('the grunt faces its target and never turns upside down', () => {
     expect(facing).toBe(-1);
   });
 });
+
+describe('what the grunt sounds shows', () => {
+  // A chatter or a move call on the snare it is in, `beats` ago
+  const squeak = (beats, o = {}) =>
+    poseAt(1, beats, { sinceChatter: beats, chatterVoice: 'squeak', ...o });
+  const whine = (beats) =>
+    poseAt(1, beats, { sinceChatter: beats, chatterVoice: 'whine' });
+  const call = (heading, beats, o = {}) =>
+    poseAt(1, beats, { sinceCall: beats, call: heading, ...o });
+  const beatsOf = (sec) => sec / 0.5;
+
+  it('spins round once as it squeaks, fast at first and slowing to a stop', () => {
+    const { SPIN_SEC } = CONFIG.GRUNT_LOOK;
+    expect(squeak(0).turn).toBeCloseTo(1);
+    // Half way round it faces away, a third of the way into its time
+    const away = beatsOf(SPIN_SEC * (1 - Math.SQRT1_2));
+    expect(squeak(away).turn).toBeCloseTo(-1);
+    expect(squeak(beatsOf(SPIN_SEC * 0.9)).turn).toBeGreaterThan(0.9);
+    // Edge-on it is still a blob, never a line
+    for (let i = 0; i < 40; i++) {
+      expect(
+        Math.abs(squeak(beatsOf((SPIN_SEC * i) / 40)).turn)
+      ).toBeGreaterThan(0.25);
+    }
+    expect(squeak(beatsOf(SPIN_SEC)).turn).toBe(1);
+    expect(poseAt(1, away).turn).toBe(1); // no chatter, no spin
+    expect(whine(away).turn).toBe(1);
+  });
+
+  it('never spins while it aims, so its gun stays true', () => {
+    const away = beatsOf(CONFIG.GRUNT_LOOK.SPIN_SEC * (1 - Math.SQRT1_2));
+    expect(squeak(away, { sinceShot: away }).turn).toBe(1);
+    expect(squeak(away, { warn: 0.2 }).turn).toBe(1);
+  });
+
+  it('hops in full as it squeaks and does not slump; a whine keeps the small hop', () => {
+    const fires = poseAt(1, 0.15, { sinceShot: 0.15 });
+    expect(squeak(0.15).hop).toBeCloseTo(fires.hop);
+    expect(squeak(0.15).back).toBe(0);
+    expect(whine(0.15).hop).toBeCloseTo(poseAt(1, 0.15).hop);
+    // A squeak doesn't stretch it: that is the whine's
+    const squash = squeak(0.15).squash;
+    CONFIG.GRUNT_LOOK.WHINE_STRETCH = 0.5;
+    expect(squeak(0.15).squash).toBe(squash);
+    // A squeak on the snare before counts no more than a shot does
+    const old = poseAt(3, 0.15, { sinceChatter: 2.15, chatterVoice: 'squeak' });
+    expect(old.hop).toBeCloseTo(poseAt(3, 0.15).hop);
+  });
+
+  it('stretches up as it whines, trembling with it, and relaxes once it ends', () => {
+    const { WHINE_STRETCH } = CONFIG.GRUNT_LOOK;
+    // Against a grunt that doesn't chatter: the same small hop and dance
+    const taller = (beats) => poseAt(1, beats).squash - whine(beats).squash;
+    expect(taller(0)).toBeCloseTo(0);
+    const through = Array.from({ length: 9 }, (_, i) => taller(0.15 + i / 40));
+    expect(Math.min(...through)).toBeGreaterThan(WHINE_STRETCH * 0.5);
+    // It trembles: up and down by more than a third of its stretch
+    expect(Math.max(...through) - Math.min(...through)).toBeGreaterThan(
+      WHINE_STRETCH * 0.35
+    );
+    // Half way through its relax it is still taller, but on its way down
+    const relaxing = taller(beatsOf(0.26));
+    expect(relaxing).toBeGreaterThan(WHINE_STRETCH * 0.2);
+    expect(relaxing).toBeLessThan(WHINE_STRETCH * 0.8);
+    expect(taller(beatsOf(0.4))).toBeCloseTo(0);
+    CONFIG.GRUNT_LOOK.WHINE_STRETCH = 0; // its knob reaches it live
+    expect(taller(0.2)).toBeCloseTo(0);
+  });
+
+  it('leans at the hero with its jet in full as its swarm calls an advance', () => {
+    const before = poseAt(1, 0.1);
+    const lunge = call('advance', 0.1);
+    expect(lunge.back - before.back).toBeGreaterThan(
+      CONFIG.GRUNT_LOOK.CALL_LEAN_RAD * 0.5
+    );
+    expect(lunge.thrust).toBeGreaterThan(before.thrust);
+  });
+
+  it('leans back from the hero and cowers as its swarm calls a retreat', () => {
+    const before = poseAt(1, 0.1);
+    const flinch = call('retreat', 0.1);
+    expect(before.back - flinch.back).toBeGreaterThan(
+      CONFIG.GRUNT_LOOK.CALL_LEAN_RAD * 0.5
+    );
+    expect(flinch.squash).toBeGreaterThan(before.squash);
+  });
+
+  it('leans with its swarm as it squeaks, too', () => {
+    const both = squeak(0.1, { sinceCall: 0.1, call: 'advance' });
+    expect(both.back - squeak(0.1).back).toBeGreaterThan(
+      CONFIG.GRUNT_LOOK.CALL_LEAN_RAD * 0.5
+    );
+    expect(both.turn).toBe(squeak(0.1).turn);
+  });
+
+  it('leans with its swarm only for a moment, and not when it fires', () => {
+    expect(call('advance', 1.5).back).toBe(poseAt(1, 1.5).back);
+    expect(call('advance', 0.1, { sinceShot: 0.1 })).toEqual(
+      poseAt(1, 0.1, { sinceShot: 0.1 })
+    );
+    expect(poseAt(1, 0.1, { sinceCall: 0.1 })).toEqual(poseAt(1, 0.1));
+    CONFIG.GRUNT_LOOK.CALL_LEAN_RAD = 0; // its knob reaches it live
+    expect(call('retreat', 0.1).back).toBeCloseTo(poseAt(1, 0.1).back);
+  });
+});

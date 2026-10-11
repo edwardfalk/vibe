@@ -442,6 +442,7 @@ describe('a swarm’s other sounds', () => {
     getCurrentBeat: () => total % 4,
     canGruntShoot: () => false,
     isOnBeat: (beats) => on && beats?.includes((total % 4) + 1),
+    heardFrom: (beat) => beat,
   });
   const audio = () => ({ playSound: vi.fn() });
   const chatty = (swarm, x) =>
@@ -486,6 +487,43 @@ describe('a swarm’s other sounds', () => {
     expect(chats()).toBe(1);
     swarm.sounds(members, onTwoOrFour(13), a); // the next bar
     expect(chats()).toBe(2);
+  });
+
+  it('never has a grunt picked to fire this beat chatter, nor chatters when all are', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1); // picks the first it may
+    const swarm = new GruntSwarm({ size: 3, x: 0, y: 0 });
+    const members = [chatty(swarm, 0), chatty(swarm, 40), chatty(swarm, 80)];
+    members[0].warnedOnBeat = 8; // picked on beat 1, fires or holds on 9
+    swarm.sounds(members, onTwoOrFour(9), audio());
+    expect(members.map((g) => g.makeGruntWeirdNoise.mock.calls.length)).toEqual(
+      [0, 1, 0]
+    );
+    for (const g of members) g.warnedOnBeat = 12;
+    expect(() => swarm.sounds(members, onTwoOrFour(13), audio())).not.toThrow();
+    expect(members[1].makeGruntWeirdNoise).toHaveBeenCalledTimes(1);
+    // A warning from an earlier beat no longer counts
+    swarm.sounds(members, onTwoOrFour(17), audio());
+    expect(members[0].makeGruntWeirdNoise).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps its move call, its beat and its heading, for its grunts to lean with', () => {
+    const roll = vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    const swarm = new GruntSwarm({ size: 2, x: 0, y: 0 });
+    const members = [chatty(swarm, 0), chatty(swarm, 10)];
+    expect(swarm.call).toBe(null);
+    swarm.heading = 'retreat';
+    swarm.sounds(members, onTwoOrFour(9), audio());
+    expect(swarm.call).toEqual({ beat: 9, heading: 'retreat' });
+    // No call on the next 2 or 4 (over its chance): the last one stays
+    roll.mockReturnValue(0.99);
+    swarm.heading = 'advance';
+    swarm.sounds(members, onTwoOrFour(11), audio());
+    expect(swarm.call).toEqual({ beat: 9, heading: 'retreat' });
+    // A call played late (hitstop) is kept from when it is heard
+    roll.mockReturnValue(0.1);
+    const late = { ...onTwoOrFour(13), heardFrom: (beat) => beat + 0.13 };
+    swarm.sounds(members, late, audio());
+    expect(swarm.call).toEqual({ beat: 13.13, heading: 'advance' });
   });
 
   it('one whose last grunt died after its update (a bomb’s cloud) makes no sound, and does not throw', () => {

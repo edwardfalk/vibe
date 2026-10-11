@@ -437,6 +437,20 @@ describe("a grunt's death, drawn", () => {
     }
   });
 
+  it('flings its helmet, eyes and gun the way its body faced, half way round a spin too', () => {
+    const base = { size: SIZE, dir: 0, blast: false, seed: 0.7, linger: 1 };
+    const front = makeBurst({ ...base, pose: poseOf() });
+    // Killed a third into a squeak's spin: it faces away
+    const away = makeBurst({
+      ...base,
+      pose: { ...poseOf(), turn: -0.8 },
+    });
+    expect(front.helmet.face).toBe(poseOf().face);
+    expect(away.helmet.face).toBe(-front.helmet.face);
+    expect(away.gun.face).toBe(-front.gun.face);
+    expect(away.eyes[0].look).toBeCloseTo(Math.PI - front.eyes[0].look);
+  });
+
   it('a blast flings its pieces harder', () => {
     const base = { size: SIZE, pose: poseOf(), dir: 0, seed: 0.7, linger: 1 };
     const shot = makeBurst({ ...base, blast: false });

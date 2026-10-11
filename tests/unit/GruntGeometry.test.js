@@ -55,6 +55,29 @@ describe("the grunt's gun", () => {
     }
   });
 
+  it('spins round with its body as it squeaks, still on its shoulder', () => {
+    const spin = CONFIG.GRUNT_LOOK.SPIN_SEC / 0.5; // in beats
+    for (const aim of [0.3, Math.PI - 0.3]) {
+      const facing = nextFacing(1, aim);
+      for (let i = 0; i < 10; i++) {
+        const since = (spin * i) / 10;
+        const squeak = { sinceChatter: since, chatterVoice: 'squeak' };
+        const turned = pose(aim, { beats: 17 + since, ...squeak });
+        const { p, shapes } = transformP5();
+        drawGrunt(p, S, turned);
+        const [a, b, c, d, e, f] = shapes.filter((s) => s.kind === 'image')[1]
+          .matrix;
+        const [x, y] = [SHOULDER[0] * S, SHOULDER[1] * S];
+        const gun = gunOf(shapes).matrix;
+        expect(gun[4]).toBeCloseTo(a * x + c * y + e, 6);
+        expect(gun[5]).toBeCloseTo(b * x + d * y + f, 6);
+        // Body and gun face the same way, away from its target half way round
+        expect(Math.sign(a)).toBe(Math.sign(facing * turned.turn));
+        expect(Math.sign(gun[0] * Math.cos(aim))).toBe(Math.sign(turned.turn));
+      }
+    }
+  });
+
   it('ends where its shot starts', () => {
     for (const aim of AIMS) {
       // At rest, charging: the charge glows at the drawn muzzle

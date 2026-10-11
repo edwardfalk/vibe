@@ -102,6 +102,16 @@ export class BeatClock {
     return this.cache.elapsed / this.beatInterval;
   }
 
+  /**
+   * The beat position a sound played now for `beat` is heard from: on it,
+   * or now on the audio's clock when the game came to it more than its lead
+   * late (a slow frame, hitstop), as Audio.beatTiming then plays it at once
+   */
+  heardFrom(beat) {
+    const at = this.getBeatPosition(); // syncs the lead first
+    return Math.max(beat, at - this._ahead / this.beatInterval);
+  }
+
   // Get total beats since start (for longer patterns)
   getTotalBeats() {
     this.update();

@@ -473,8 +473,9 @@ const TANK_CHARGE = {
   },
 };
 
-// The grunts' chatter, now and then on 2 or 4: each grunt has one voice
-const CHATTER_VOICES = {
+// The grunts' chatter, now and then on 2 or 4: each grunt has one voice. His
+// move follows its shape (GruntRenderer.js)
+export const CHATTER_VOICES = {
   // A soft tone sliding up a step into his minor third, with a nervous
   // wobble
   whine: {
@@ -539,14 +540,18 @@ export const GRUNT_VOICES = Object.keys(CHATTER_VOICES);
 export const CHATTER_CHOICES = ['both', ...GRUNT_VOICES];
 
 /**
- * A grunt's chatter: his own `voice`, or CONFIG.BAND.CHATTER's for every
- * grunt; read live, so ?tune reaches grunts already alive
+ * The chatter voice a grunt whose own is `voice` plays: his own, or
+ * CONFIG.BAND.CHATTER's for every grunt; read live, so ?tune reaches grunts
+ * already alive
  */
+export const playedChatterVoice = (voice) =>
+  CONFIG.BAND.CHATTER === 'both' ? voice : CONFIG.BAND.CHATTER;
+
+/** A grunt's chatter, in the voice he plays (playedChatterVoice) */
 export function gruntChatter(ctx, out, _cfg, opts) {
-  const { CHATTER, CHATTER_DB } = CONFIG.BAND;
-  const voice = CHATTER === 'both' ? opts.voice : CHATTER;
+  const voice = playedChatterVoice(opts.voice);
   const sound = chosen(CHATTER_VOICES, voice, 'chatter voice');
-  playBand(ctx, out, sound, CHATTER_DB, opts);
+  playBand(ctx, out, sound, CONFIG.BAND.CHATTER_DB, opts);
 }
 
 // The rusher's lit fuse: a clean triangle beep a beat, counting down. From

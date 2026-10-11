@@ -166,6 +166,8 @@ export function makeBurst(d) {
     });
   }
   const up = pose.lean - PI / 2; // the body's top
+  // The way its body faced, a spin's half turn included (its width stays out)
+  const face = pose.face * Math.sign(pose.turn ?? 1);
   const hAt = bodyPoint(s, pose, ...HEAD_AT.HELMET, true);
   const hDir = Math.atan2(
     Math.sin(d.dir) + BURST.HELMET_UP * Math.sin(up),
@@ -180,9 +182,9 @@ export function makeBurst(d) {
       a: hDir,
       v: BURST.HELMET_V * hard * r(...BURST.HELMET_V_K),
       // How far round the living drawing had it: lean, then mirrored back and tilt
-      turn: pose.lean + pose.face * (pose.back + pose.headTilt),
+      turn: pose.lean + face * (pose.back + pose.headTilt),
       spin: side * r(...BURST.HELMET_SPIN),
-      face: pose.face,
+      face,
       life: BURST.HELMET_LIFE * L,
       bob: pose.bob,
     },
@@ -204,7 +206,7 @@ export function makeBurst(d) {
       // two ways still: the big one keeps staring where it aimed, the small
       // one looks the other way and rolls round
       look:
-        Math.atan2(Math.sin(pose.aim), Math.cos(pose.aim) * pose.face) +
+        Math.atan2(Math.sin(pose.aim), Math.cos(pose.aim) * face) +
         (i ? PI : 0),
       roll: i ? r(...BURST.EYE_ROLL) * -side : 0,
     });
@@ -215,7 +217,7 @@ export function makeBurst(d) {
     y: gy,
     a: d.dir + side * BURST.GUN_TURN,
     v: BURST.GUN_V * hard,
-    face: pose.face,
+    face,
     aim: pose.aim + pose.gunWobble,
     spin: -side * BURST.GUN_SPIN,
     life: BURST.GUN_LIFE,

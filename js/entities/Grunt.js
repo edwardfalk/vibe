@@ -9,7 +9,7 @@ import {
 import { GRUNT_LINES, GRUNT_OW } from '../audio/DialogueLines.js';
 import { Bullet } from './bullet.js';
 import { GRUNT_SHOT_NOTES } from '../audio/SoundConfig.js';
-import { GRUNT_VOICES } from '../audio/Instruments.js';
+import { GRUNT_VOICES, playedChatterVoice } from '../audio/Instruments.js';
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 import {
   GRUNT_COLORS,
@@ -17,6 +17,7 @@ import {
   gruntMuzzle,
   gruntPose,
   nextFacing,
+  whineTop,
 } from './GruntRenderer.js';
 
 // A friend this close and this near his aim blocks his shot
@@ -64,6 +65,7 @@ class Grunt extends BaseEnemy {
     this.lookSeed = this.animFrame / p.TWO_PI;
     this.firedAt = null; // the clock's beat position when it last fired
     this.heldOnBeat = null; // the beat it last held its fire on after a warning
+    this.chatter = null; // { beat, voice } of its last chatter, for its move
     // The beat it is drawn at, kept by update(), so a paused game freezes it.
     // A grunt can be drawn once before its first update.
     this.poseBeats =
@@ -185,8 +187,15 @@ class Grunt extends BaseEnemy {
     return false;
   }
 
-  /** His chatter (separate from speech), in his own voice */
+  /** His chatter (separate from speech), in his own voice; his pose shows it */
   makeGruntWeirdNoise() {
+    const clock = this.getContextValue('beatClock');
+    this.chatter = clock
+      ? {
+          beat: clock.heardFrom(clock.getTotalBeats()),
+          voice: playedChatterVoice(this.chatterVoice()),
+        }
+      : null;
     this.getContextValue('audio')?.playSound('gruntChatter', this.x, this.y, {
       voice: this.chatterVoice(),
       seed: this.lookSeed,
@@ -238,6 +247,8 @@ class Grunt extends BaseEnemy {
     const phase = (beats ?? 0) - total;
     // While its "ow" plays (a pending stab death) no event shows
     const live = beats !== null && !this.pendingStabDeath;
+    const since = (event) => (live && event ? beats - event.beat : Infinity);
+    const call = this.swarm?.call;
     return gruntPose({
       beats,
       beatSec: (clock?.beatInterval ?? 0) / 1000,
@@ -249,6 +260,10 @@ class Grunt extends BaseEnemy {
       sinceShot:
         live && this.firedAt !== null ? beats - this.firedAt : Infinity,
       sulk: live && this.heldOnBeat === total ? phase : -1,
+      sinceChatter: since(this.chatter),
+      chatterVoice: this.chatter?.voice ?? null,
+      sinceCall: since(call),
+      call: call?.heading ?? null,
     });
   }
 
@@ -293,9 +308,9 @@ class Grunt extends BaseEnemy {
    */
   get healthBarRise() {
     const L = CONFIG.GRUNT_LOOK;
+    const reach = this.size * L.ART_SCALE * ANTENNA_REACH;
     return (
-      this.size * L.ART_SCALE * ANTENNA_REACH +
-      L.HOP_PX +
+      Math.max(reach + L.HOP_PX, whineTop(reach)) +
       L.HOVER_PX +
       HEALTH_BAR_HEIGHT_PX +
       HEALTH_BAR_GAP_PX

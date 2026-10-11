@@ -105,6 +105,39 @@ describe('the beat clock runs ahead of what you hear', () => {
   });
 });
 
+describe('a sound played for a beat is heard from', () => {
+  // At 120 BPM, its origin 25 ms on the clock: the game's time at the
+  // audio's t s is beat 2t, and what is heard then is beat 2t - 0.05
+  const clockAt = (t) => {
+    CONFIG.BEAT_CLOCK.AHEAD_MS = 25;
+    const ctx = ctxAt(0);
+    const clock = new BeatClock(120, ctx);
+    clock.startTime = 25;
+    ctx.currentTime = t;
+    return clock;
+  };
+
+  it('its beat, when the game comes to it within the lead', () => {
+    expect(clockAt(8.505).heardFrom(17)).toBe(17); // the game 5 ms past it
+    expect(clockAt(8.525).heardFrom(17)).toBeCloseTo(17, 9); // the lead past
+  });
+
+  it('now on the audio, when the game comes to it later (hitstop)', () => {
+    // 100 ms past it on the game: Audio.beatTiming plays it at once, at the
+    // audio's 8.6 s, which is beat 17.15
+    expect(clockAt(8.6).heardFrom(17)).toBeCloseTo(17.15, 9);
+  });
+
+  it('its beat or now, with no lead before audio starts', () => {
+    vi.useFakeTimers({ now: 0 });
+    const clock = new BeatClock(120);
+    clock.startTime = 0;
+    vi.setSystemTime(8600);
+    expect(clock.heardFrom(17)).toBeCloseTo(17.2, 9);
+    expect(clock.heardFrom(18)).toBe(18);
+  });
+});
+
 describe('the heard latency includes the lead', () => {
   const ctx = { currentTime: 0, baseLatency: 0.01, outputLatency: 0.03 };
 

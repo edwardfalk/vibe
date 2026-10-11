@@ -330,6 +330,11 @@ const CONFIG = {
     COUGH_CHANCE: 0.07, // chance its jet coughs, rolled 9 times a second
     TUMBLE_RAD: 0.35, // its own shot rocks it back this far
     FACING_DEADZONE: 0.17, // it turns round once |cos(aim)| passes this
+    // What it sounds shows: a squeak spins it round in this long, a whine
+    // stretches it up this much, its swarm's move call leans it this far
+    SPIN_SEC: 0.3,
+    WHINE_STRETCH: 0.25,
+    CALL_LEAN_RAD: 0.3,
   },
 
   // The tank, a bouncer from space (js/entities/Tank.js). He turns only on
