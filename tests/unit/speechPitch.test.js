@@ -37,6 +37,16 @@ describe('medianHz', () => {
     expect(Math.abs(cents(medianHz(line, RATE), 151.3))).toBeLessThan(5);
   });
 
+  it('skips what rings 40 dB under the line, however long it lasts', () => {
+    const line = new Float32Array(RATE);
+    line.set(voiced(151.3, 0.4));
+    line.set(
+      voiced(302.9, 0.6).map((x) => x / 100),
+      Math.round(RATE * 0.4)
+    );
+    expect(Math.abs(cents(medianHz(line, RATE), 151.3))).toBeLessThan(5);
+  });
+
   it('reads the same pitch at any level', () => {
     const tone = voiced(183.1);
     const quiet = tone.map((x) => x / 300);

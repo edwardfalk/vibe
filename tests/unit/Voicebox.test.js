@@ -223,6 +223,12 @@ describe('Voicebox', () => {
         hz(nearestNote(437.3, 5), 5),
         6
       );
+      // 105 c above F#2: the 2 is nearer at t = 0, the drifted root at t = 5
+      const between = await tuned(GRUNT, 2 * 46.249 * 2 ** (105 / 1200));
+      expect(between.voicebox.play(between.line, 0).note).toEqual(['2', 2]);
+      const late = between.voicebox.play(between.line, 5);
+      expect(late.note).toEqual(['1', 2]);
+      expect(late.cents).toBeCloseTo(-105 + 6.847, 2);
     });
 
     it('leaves a line alone with tune: false, or with no pitch to read', async () => {
