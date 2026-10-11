@@ -181,11 +181,18 @@ test('playtest session', async ({ page }) => {
     };
     // Every grunt death, whatever the route (a stab's deferred death and a
     // tank's ball never return through takeDamage's kill), counted once at
-    // the death handler, by the last hit's source; none means a tank's ball
+    // the death handler, by the last hit's source. A tank's ball kills
+    // without takeDamage, so it marks its own
     const takeDamage = Grunt.prototype.takeDamage;
     Grunt.prototype.takeDamage = function (amount, angle, source) {
       this.lastHitBy = source ?? 'shot';
       return takeDamage.call(this, amount, angle, source);
+    };
+    const collisions = window.collisionSystem;
+    const ballHit = collisions.handleTankEnergyBallHit.bind(collisions);
+    collisions.handleTankEnergyBallHit = (bullet, enemy) => {
+      enemy.lastHitBy = "a tank's ball";
+      return ballHit(bullet, enemy);
     };
     const handler = window.enemyDeathHandler;
     const handleEnemyDeath = handler.handleEnemyDeath.bind(handler);
@@ -193,7 +200,7 @@ test('playtest session', async ({ page }) => {
     handler.handleEnemyDeath = (e, ...rest) => {
       if (e.type === 'grunt' && !dead.has(e)) {
         dead.add(e);
-        const cause = e.lastHitBy ?? "a tank's ball";
+        const cause = e.lastHitBy ?? 'unknown';
         s.deaths[cause] = (s.deaths[cause] ?? 0) + 1;
       }
       return handleEnemyDeath(e, ...rest);
