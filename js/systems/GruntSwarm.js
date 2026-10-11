@@ -86,7 +86,7 @@ export class GruntSwarm {
     if (this.heading && random() < MOVE_CALL_CHANCE) {
       const call = this.heading === 'advance' ? 'gruntAdvance' : 'gruntRetreat';
       audio.playSound(call, this.x, this.y);
-      this.call = { beat: total, heading: this.heading };
+      this.call = { beat: beatClock.heardFrom(total), heading: this.heading };
     }
     const bar = Math.floor(total / BEATS_PER_BAR);
     const idle = members.filter((g) => g.warnedOnBeat !== total - 1);

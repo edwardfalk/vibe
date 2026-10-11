@@ -189,11 +189,13 @@ class Grunt extends BaseEnemy {
 
   /** His chatter (separate from speech), in his own voice; his pose shows it */
   makeGruntWeirdNoise() {
-    const beat = this.getContextValue('beatClock')?.getTotalBeats();
-    this.chatter =
-      beat === undefined
-        ? null
-        : { beat, voice: playedChatterVoice(this.chatterVoice()) };
+    const clock = this.getContextValue('beatClock');
+    this.chatter = clock
+      ? {
+          beat: clock.heardFrom(clock.getTotalBeats()),
+          voice: playedChatterVoice(this.chatterVoice()),
+        }
+      : null;
     this.getContextValue('audio')?.playSound('gruntChatter', this.x, this.y, {
       voice: this.chatterVoice(),
       seed: this.lookSeed,

@@ -18,6 +18,7 @@ const clockAt = (beats) => ({
   getCurrentBeat: () => Math.floor(beats) % 4,
   isOnBeat: () => false,
   canGruntShoot: () => false,
+  heardFrom: (beat) => beat,
   beatInterval: 500,
 });
 const gruntWith = (clock) => {
@@ -202,6 +203,10 @@ describe('drawing a grunt', () => {
     } finally {
       Object.assign(CONFIG.BAND, band);
     }
+    // A chatter played late (hitstop) shows from when it is heard
+    const late = gruntWith({ ...clockAt(17.2), heardFrom: (b) => b + 0.13 });
+    late.makeGruntWeirdNoise();
+    expect(late.chatter.beat).toBe(17.13);
     g.swarm = { call: { beat: 17, heading: 'advance' } };
     const lean = g.pose().back;
     g.swarm.call.heading = 'retreat';

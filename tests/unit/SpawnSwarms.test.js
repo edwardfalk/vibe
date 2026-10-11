@@ -495,6 +495,7 @@ describe('a cleared swarm’s place', () => {
       isOnBeat: (beats) => beats.includes(2),
       getTotalBeats: () => 9,
       getCurrentBeat: () => 1,
+      heardFrom: (beat) => beat,
     };
     system.getContextValue = (k) =>
       ({ audio, beatClock: onBeatTwo })[k] ?? get(k);
