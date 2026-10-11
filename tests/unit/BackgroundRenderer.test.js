@@ -43,14 +43,35 @@ describe('BackgroundRenderer sky frame', () => {
     expect(s.level).toBeCloseTo(8, 3);
   });
 
-  it('remembers a level rise for the next kick, and forgets it on a fall', () => {
-    const { gameState, step } = renderer(2);
-    step();
+  it("breathes deeper on the kick on the level-up's beat 1 as heard, and forgets it on a restart", () => {
+    // NebulaSky's rule: the first kick since levelAge began breathes deeper
+    const deep = (s) => s.kickAge <= s.levelAge && s.levelAge < s.prevKickAge;
+    let beats = 23.9;
+    // A start whose bar line comes back from the subtraction a hair late,
+    // as about 1 in 35 do: without its half-beat margin the kick is missed
+    const beatClock = {
+      beatInterval: 500,
+      startTime: 4715.119,
+      getTotalBeats: () => Math.floor(beats),
+      getBeatPhase: () => beats % 1,
+    };
+    const beatTrack = {
+      isPlaying: true,
+      ctx: { state: 'running', baseLatency: 0.01, outputLatency: 0.02 },
+    };
+    const { gameState, step } = renderer(2, { beatClock, beatTrack });
     expect(step().levelAge).toBe(99);
     gameState.level = 3;
-    expect(step().levelAge).toBeCloseTo(0, 5);
-    expect(step(500).levelAge).toBeCloseTo(0.5, 5);
-    gameState.level = 1; // a restart
+    gameState.lastLevelUpAt = 4.715119 + 6 * 2; // its beat 1: beat 24
+    // Beat 24.05 sounds 0.03 s later: heard, it is still beat 23.99
+    beats = 24.05;
+    expect(deep(step())).toBe(false);
+    beats = 24.07; // heard: 24.01, its kick
+    expect(deep(step())).toBe(true);
+    beats = 25.07; // the next kick breathes as usual
+    expect(deep(step())).toBe(false);
+    gameState.level = 1;
+    gameState.lastLevelUpAt = null; // a restart
     expect(step().levelAge).toBe(99);
   });
 
@@ -73,6 +94,7 @@ describe('BackgroundRenderer sky frame', () => {
   it('stands still while the game is paused and its sound held, kick glow and all', () => {
     const beatClock = {
       beatInterval: 500,
+      startTime: 370,
       getTotalBeats: () => 8,
       getBeatPhase: () => 0.2,
     };
@@ -81,7 +103,7 @@ describe('BackgroundRenderer sky frame', () => {
     const { gameState, step } = renderer(1, { beatClock, beatTrack, audio });
     const moving = step();
     expect(step().flow).toBeGreaterThan(moving.flow);
-    gameState.level = 2; // a level rise, so the next kick is a deeper one
+    gameState.lastLevelUpAt = 0.37; // a level-up on beat 0, just heard
     step();
     // Paused: the context is suspended and the beat clock stands still
     audio.soundPaused = true;
@@ -93,6 +115,7 @@ describe('BackgroundRenderer sky frame', () => {
     expect(later.levelAge).toBe(held.levelAge);
     expect(later.level).toBe(held.level);
     expect(held.kickAge).toBeLessThan(99); // the glow it had, not none
+    expect(held.levelAge).toBeLessThan(99);
   });
 
   it('hears the kick after both latencies plus OFFSET_MS, and only on a running context', () => {

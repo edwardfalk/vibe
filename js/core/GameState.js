@@ -33,6 +33,7 @@ export class GameState {
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
     this.levelUpAt = null; // the bar line a level-up waits for (updateLevelUp)
+    this.lastLevelUpAt = null; // the one it last played on, for the sky
     this.gameState = 'playing'; // 'title', 'playing', 'gameOver', 'paused'
     // His death scene, the first bar of 'gameOver' (startDeathScene)
     this.scene = null;
@@ -123,6 +124,7 @@ export class GameState {
       return;
     }
     this.levelUpAt = null;
+    this.lastLevelUpAt = at;
     window.cameraSystem?.addShake(15, 30);
     window.audio?.playSound('levelUp', null, null, { at });
   }
@@ -240,6 +242,7 @@ export class GameState {
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
     this.levelUpAt = null;
+    this.lastLevelUpAt = null;
     this.killStreak = 0;
     this.totalKills = 0;
     this.shotsFired = 0;

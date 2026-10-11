@@ -29,11 +29,7 @@ export class BackgroundRenderer {
     this.getContextValue = createContextAccessor(context);
     this.sky = null; // made on the first draw, when p5 can make buffers
     this.flow = 0;
-    // The sky's own clock, which stands still while a pause holds the sound
-    this.skyTime = 0;
     this.level = null; // the eased sky level; starts at its target
-    this.levelTarget = null;
-    this.levelRoseAt = -Infinity;
     this.skyFailed = false;
   }
 
@@ -65,17 +61,11 @@ export class BackgroundRenderer {
     // A pause that holds the sound holds the sky: no flow, no easing, no time
     const held = !!this.getContextValue('audio')?.soundPaused;
     const frameSec = held ? 0 : (p.deltaTime ?? 0) / 1000;
-    this.skyTime += frameSec;
-    const now = this.skyTime;
     const dt = constrain(frameSec, 0, MAX_DT_SEC);
     const target =
       CONFIG.SKY.LEVEL_OVERRIDE ||
       Math.min(this.gameState?.level ?? 1, MAX_SKY_LEVEL);
-    if (this.level === null) this.level = this.levelTarget = target;
-    // A rise deepens the next kick; a fall (a restart) cancels that
-    if (target > this.levelTarget) this.levelRoseAt = now;
-    else if (target < this.levelTarget) this.levelRoseAt = -Infinity;
-    this.levelTarget = target;
+    if (this.level === null) this.level = target;
     const ease = Math.max(MIN_LEVEL_EASE_SEC, CONFIG.SKY.LEVEL_EASE_SEC);
     this.level += (target - this.level) * (1 - Math.exp(-dt / ease));
     this.flow += dt * (1 + FLOW_PER_LEVEL * levelFraction(this.level));
@@ -86,16 +76,34 @@ export class BackgroundRenderer {
       ? beatClock.getTotalBeats() + beatClock.getBeatPhase()
       : 0;
 
+    // While held, the stopped beat keeps the kick glow it had
+    const kick = heardKickOf(
+      this.getContextValue('beatTrack'),
+      beats,
+      beatSec,
+      held
+    );
+    // The kick on the beat 1 the level-up played on breathes deeper: its age
+    // counts from half a beat before that beat 1 as heard, so its own kick
+    // is the first since. A restart clears it (GameState)
+    const upAt = this.gameState?.lastLevelUpAt ?? null;
+    const levelAge =
+      upAt === null || !beatClock
+        ? NONE_SEC
+        : Math.min(
+            NONE_SEC,
+            kick.t - (upAt - beatClock.startTime / 1000) + beatSec / 2
+          );
+
     const { WORLD_WIDTH, WORLD_HEIGHT } = CONFIG.GAME_SETTINGS;
     return {
-      // While held, the stopped beat keeps the kick glow it had
-      ...heardKickOf(this.getContextValue('beatTrack'), beats, beatSec, held),
+      ...kick,
       beatSec,
       flow: this.flow,
       camX: (this.cameraSystem?.x ?? 0) + WORLD_WIDTH / 2,
       camY: (this.cameraSystem?.y ?? 0) + WORLD_HEIGHT / 2,
       level: this.level,
-      levelAge: Math.min(NONE_SEC, now - this.levelRoseAt),
+      levelAge,
     };
   }
 

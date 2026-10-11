@@ -170,6 +170,10 @@ describe('GameState', () => {
       gs.updateLevelUp();
       expect(levelUps()).toEqual([['levelUp', null, null, { at: 4.37 }]]);
       expect(window.cameraSystem.addShake).toHaveBeenCalledTimes(1);
+      // The sky breathes deeper on it (BackgroundRenderer), until a restart
+      expect(gs.lastLevelUpAt).toBe(4.37);
+      gs.restart();
+      expect(gs.lastLevelUpAt).toBe(null);
     });
 
     it('takes a beat 1 the game has passed but you have not heard yet', () => {

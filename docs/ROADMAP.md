@@ -101,7 +101,6 @@ Calls and smaller work:
 
 - **call: the nebula's detail** ("good enough to push, work more on the detail later").
 - **call: should the sky keep pulsing while muted?** It does today.
-- **call: line the sky's level-up breath up with the level-up sound?** The sky breathes deeper on the first kick after the level rises; the sound and the screen shake wait for the next beat 1, up to a bar later.
 - **call, then build: the beat track records the kicks it really plays,** so the sky and the Dude stop rebuilding them from the pattern. This fixes:
   - the phantom pulse on the first key press;
   - pulses on kicks a pattern change or a restart skipped;
