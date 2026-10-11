@@ -201,9 +201,7 @@ const CONFIG = {
   // everything, drifting slowly like an old analog synth. It dips on every
   // beat, breathes over two bars, grows at levels 3 and 5 and brightens as
   // enemies fill the screen. Every tuned sound shares its root and drift
-  // (js/audio/Harmony.js). Tune live with ?tune. Provisional: re-check
-  // LEVEL_DB and CUTOFF_HZ once the effects are in key (the audio
-  // overhaul's PR 2).
+  // (js/audio/Harmony.js). Tune live with ?tune.
   HUM: {
     ROOT: 'F#', // the universe's key: E, F, F#, G or A, in the octave up to A1 = 55 Hz
     LEVEL_DB: 0, // added to the listening page's level (Hum.js's TRIM_DB)
