@@ -82,8 +82,9 @@ export class Voicebox {
     this.output = audioContext.createGain();
     this.pending = new Map(); // worker request id → { resolve, reject, timer }
     this.nextId = 0;
-    // speaker and spoken text → Promise<line | null>. Nothing changes
-    // CONFIG.SPEECH in a running game; a live knob for it must clear this
+    // A speaker's setup → its spoken text → Promise<line | null>. A speaker
+    // given a new setup (?tune's rusher voice) renders afresh; a setup
+    // edited in place isn't noticed
     this.lines = new Map();
     this.playing = new Set(); // { source, startsAt, duration } until it ends
     this.epoch = 0; // cancelPending() moves it on
@@ -205,8 +206,9 @@ export class Voicebox {
   prepare(speaker, text) {
     const setup = this.config.SPEAKERS[speaker] ?? this.config.SPEAKERS.player;
     const words = spoken(setup.engine, text, this.config.RESPELL);
-    const key = `${speaker}:${words}`;
-    if (!this.lines.has(key)) {
+    if (!this.lines.has(setup)) this.lines.set(setup, new Map());
+    const lines = this.lines.get(setup);
+    if (!lines.has(words)) {
       const line = this.renderLine(setup, words).catch((error) => {
         if (!this.failed) {
           console.warn(
@@ -215,9 +217,9 @@ export class Voicebox {
         }
         return null;
       });
-      this.lines.set(key, line);
+      lines.set(words, line);
     }
-    return this.lines.get(key);
+    return lines.get(words);
   }
 
   // Say a line on the beat grid (startTime), panned and at `gain`. Resolves

@@ -61,7 +61,7 @@ Calls and smaller work:
 - **call: the cast's beat moves run one lead ahead of their sounds.** The Dude's nod and steps, the grunts' crouch, the tank's lurch, the rusher's boost and the stabber's count ring read the game's clock, which runs `CONFIG.BEAT_CLOCK.AHEAD_MS` ahead of what you hear. If it shows, move them to the heard beat, as the sky and the Dude's kick pulse already are. (beat-lead spec)
 - **call (deferred by Edward): the Dude's speech text sits on his health bar.** The fix is a text offset per speaker.
 - **build: a bomb-planting pose for the Dude:** his drink hand is full. (#83's spec)
-- **build: lines that fit the new cast.** Grunts still shout soldier lines ("KILL HUMAN!"), and the tank's anger and calm lines are robotic, not a vain bully's. The rusher's were redone in #82.
+- **build: lines that fit the new cast.** Grunts still shout soldier lines ("KILL HUMAN!"), and the tank's anger and calm lines are robotic, not a vain bully's. The rusher's were redone on 2026-10-12.
 - **build, ideas Edward liked:**
   - the tank can't reach the bomb on his back;
   - a bowling-ball bomb with "STRIKE!";
@@ -116,7 +116,9 @@ Calls and smaller work:
 
 ## Speech
 
-- **call: tune the hero's, the rusher's and the tank's voices.** They are still first guesses; the grunt's (#89) and the stabber's (#94) are tuned.
+- **call: tune the hero's and the tank's voices.** They are still first guesses; the grunt's (#89) and the stabber's (#94) are tuned.
+- **call: the rusher's voice.** He sings through SAM now (the singer from the 2026-10-12 voice studies); `?tune`'s `SPEAKERS.rusher` tries the studies' other voices in play. Once one is picked, put it in `config.js` and delete `RUSHER_VOICES` and its knob in `TunePanel.js`. A voice picked there renders the rusher's punchlines when first said, so they can start an eighth late.
+- **call: the grunt on SAM too?** Edward's direction (2026-10-12): the enemies speak through SAM, the hero through espeak-ng. The grunt is the last enemy on espeak-ng (`anika`, tuned in #89).
 - **call: enemies can talk over the bomb's countdown** (since #89). If it clutters, hold their gap through the count. Also set the chatter odds by ear.
 - **check: a second bomb's "TIMEBOMB!" can land on the first bomb's count** (#90 doesn't cover it).
 - **build, low: speech told the start of the sound it goes with,** so "FIRE!" starts with the tank's shot itself, not on the eighth found again when its render ends. (beat-lead spec)
