@@ -20,9 +20,7 @@ export function runDraw(p, updateGame, drawGame) {
 
   // A level-up the game reaches this frame, before the sky that breathes
   // deeper on it; again after the update, for a level risen in it
-  if (window.gameState?.gameState === 'playing') {
-    window.gameState.updateLevelUp();
-  }
+  window.gameState?.updateLevelUp();
 
   if (window.backgroundRenderer) {
     window.backgroundRenderer.drawSky(p);

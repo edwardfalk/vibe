@@ -111,14 +111,16 @@ export class GameState {
   }
 
   /**
-   * Every frame in play: the level-up's sound and shake, once the game
-   * reaches its bar line. A death before it drops them (restart)
+   * Every frame: the level-up's sound and shake, once the game reaches its
+   * bar line. Only in play: a death before it, even in the update that
+   * earned it, drops them (restart)
    */
   updateLevelUp() {
     const at = this.levelUpAt;
+    if (at === null || this.gameState !== 'playing') return;
     const clock = window.beatClock;
     const now = clock.nowSec();
-    if (at === null || now < at) return;
+    if (now < at) return;
     if (now - at >= (LEVEL_UP_LATE_BEATS * clock.beatInterval) / 1000) {
       this.levelUpAt = nextBarLine(clock);
       return;

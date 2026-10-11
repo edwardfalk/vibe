@@ -239,6 +239,23 @@ describe('GameState', () => {
       }
     });
 
+    it('an update that earns a level, then ends the run, plays nothing', async () => {
+      const { runDraw } = await import('../../js/GameLoopDraw.js');
+      window.gameState = gs;
+      try {
+        now = 4.38; // its beat 1 at 4.37 is due, as above
+        const riseThenDie = () => {
+          gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+          gs.setGameState('gameOver');
+        };
+        runDraw({ frameCount: 1 }, riseThenDie, () => {});
+        expect(levelUps()).toEqual([]);
+        expect(window.cameraSystem.addShake).not.toHaveBeenCalled();
+      } finally {
+        window.gameState = null;
+      }
+    });
+
     it('plays once for two levels risen in one bar', () => {
       now = 3;
       gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);

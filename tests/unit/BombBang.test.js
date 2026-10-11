@@ -207,6 +207,7 @@ describe("the hero's death scene", () => {
     window.gameState = {
       gameState: 'gameOver',
       updateScene() {},
+      updateLevelUp() {},
       overlayUp: () => false,
     };
     window.explosionManager = manager;
