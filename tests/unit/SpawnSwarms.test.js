@@ -158,6 +158,28 @@ describe('the next swarm', () => {
       true
     );
   });
+  it('makes its swarm’s sounds on the 2s and 4s, from where its grunts are (updateSwarm)', () => {
+    const { system, enemies } = world();
+    system.update();
+    // Its grunts coming in from the right, its centre at (520, 0)
+    grunts(enemies).forEach((g, i) => {
+      g.x = 500 + i * 10;
+      g.y = 0;
+    });
+    const audio = { playSound: vi.fn() };
+    const get = system.getContextValue;
+    const onBeatTwo = {
+      ...get('beatClock'),
+      isOnBeat: (beats) => beats.includes(2),
+      getTotalBeats: () => 9,
+      getCurrentBeat: () => 1,
+    };
+    system.getContextValue = (k) =>
+      ({ audio, beatClock: onBeatTwo })[k] ?? get(k);
+    vi.spyOn(Math, 'random').mockReturnValue(0.3); // a move call, no chatter
+    system.updateSwarm();
+    expect(audio.playSound).toHaveBeenCalledWith('gruntAdvance', 520, 0);
+  });
 });
 
 describe('the trickle of other types', () => {
