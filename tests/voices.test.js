@@ -27,14 +27,14 @@ test('the playground renders a typed phrase and shows the readout', async ({
   await expect(readout).toContainText('engine hears: Siege mode!');
   await expect(readout).toContainText(/render [\d.]+ ms \+ chain [\d.]+ ms/);
   await expect(readout).toContainText('ceiling cost');
-  // Tuned onto the scale by default; the box turns it off
-  await expect(readout).toContainText(
-    /pitch: dry median [\d.]+ Hz \(\w#?\d\) → the scale's \w+ in octave \d, [\d.]+ Hz \(\w#?\d\): [+−]\d+ cents/
-  );
-  await page.uncheck('#tune');
-  await page.click('#play-now');
+  // The tank is left untuned (tune: false); the box tunes him
   await expect(readout).toContainText(
     /pitch: dry median [\d.]+ Hz .*, not tuned/
+  );
+  await page.check('#tune');
+  await page.click('#play-now');
+  await expect(readout).toContainText(
+    /pitch: dry median [\d.]+ Hz \(\w#?\d\) → the scale's \w+ in octave \d, [\d.]+ Hz \(\w#?\d\): [+−]\d+ cents/
   );
   expect(errors).toEqual([]);
 });
@@ -42,13 +42,14 @@ test('the playground renders a typed phrase and shows the readout', async ({
 test('a SAM voice can sing, and the box keeps its edit', async ({ page }) => {
   const errors = await open(page);
   await page.selectOption('#speaker', 'tank');
+  // He sings in config; the box stops him, and the edit survives a reload
   const sing = page.getByLabel('sing', { exact: true });
-  await expect(sing).not.toBeChecked();
-  await sing.check();
+  await expect(sing).toBeChecked();
+  await sing.uncheck();
   await page.reload();
   await expect(page.locator('#speaker option')).toHaveCount(5);
   await page.selectOption('#speaker', 'tank');
-  await expect(page.getByLabel('sing', { exact: true })).toBeChecked();
+  await expect(page.getByLabel('sing', { exact: true })).not.toBeChecked();
   // espeak-ng voices have no such box
   await page.selectOption('#speaker', 'player');
   await expect(page.getByLabel('sing', { exact: true })).toHaveCount(0);

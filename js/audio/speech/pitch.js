@@ -5,7 +5,8 @@
  * line.
  *
  * shortcut: SAM above pitch ~126 rings at ~350 Hz inside each of its slow
- * periods and reads as that; the game's SAM voices sit at 25 and 125.
+ * periods and can read as that (singing at 147 reads true). The tank, the
+ * only SAM voice up there, isn't tuned; read again before tuning another.
  */
 const MIN_HZ = 40;
 const MAX_HZ = 1000;

@@ -533,7 +533,7 @@ const CONFIG = {
       },
       stabber: {
         engine: 'sam',
-        voice: { pitch: 25, speed: 99, mouth: 173, throat: 97 },
+        voice: { pitch: 18, speed: 99, mouth: 173, throat: 97, sing: true },
         chain: [
           { type: 'tremolo', rate: 8, depth: 0.32 },
           { type: 'reverb', seconds: 1, mix: 0.56 },
@@ -551,12 +551,13 @@ const CONFIG = {
       },
       tank: {
         engine: 'sam',
-        voice: { pitch: 125, speed: 105, mouth: 100, throat: 92 },
+        voice: { pitch: 147, speed: 105, mouth: 100, throat: 92, sing: true },
         chain: [
           { type: 'ringmod', freq: 38, mix: 0.74 },
           { type: 'lowpass', freq: 2400 },
         ],
         levelDb: 0,
+        tune: false, // sung at 147, his held notes are already on the root
       },
     },
     // Words an engine mispronounces, respelled for that engine only; the

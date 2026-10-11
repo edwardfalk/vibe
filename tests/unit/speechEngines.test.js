@@ -37,7 +37,9 @@ describe('SAM', () => {
   });
 
   it('sings, one steady pitch, only with sing set', async () => {
-    const voice = SPEAKERS.tank.voice;
+    // The tank's voice with no sing key at all (his config sings)
+    const voice = { ...SPEAKERS.tank.voice };
+    delete voice.sing;
     const spoken = await sam.render('Stab time!', voice);
     const sung = await sam.render('Stab time!', { ...voice, sing: true });
     const again = await sam.render('Stab time!', { ...voice, sing: false });
