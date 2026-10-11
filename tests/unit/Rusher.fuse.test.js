@@ -4,6 +4,7 @@ import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
 import { CONFIG } from '../../js/config.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { beatWorld } from './helpers/beatWorld.js';
+import { RUSHER_BLAST_LINES } from '../../js/audio/DialogueLines.js';
 
 const R = CONFIG.RUSHER;
 const DEFAULTS = { ...R };
@@ -111,6 +112,77 @@ describe("the rusher's fuse beeps", () => {
     w.r.takeDamage(R.EXPLOSION_DAMAGE, null, 'rusher-blast');
     w.run(14.03, 17);
     expect(beeps(w)).toEqual([1]);
+  });
+});
+
+// His punchlines said, as speak's arguments
+const punchlines = (w) =>
+  w.audio.speak.mock.calls.filter(([, text]) =>
+    RUSHER_BLAST_LINES.includes(text)
+  );
+
+describe("the rusher's punchline", () => {
+  it('he says one on the first frame of the beat before his blast, forced, once', () => {
+    const w = fused();
+    const at = [];
+    w.audio.speak.mockImplementation((_, text) => {
+      if (RUSHER_BLAST_LINES.includes(text)) at.push(w.clock.getBeatPosition());
+      return true;
+    });
+    w.step(12.2);
+    w.r.takeDamage(1, null, 'hit'); // his blast is beat 16
+    w.run(12.2, 17);
+    expect(punchlines(w)).toEqual([[w.r, expect.any(String), 'rusher', true]]);
+    expect(Math.floor(at[0])).toBe(15);
+    expect(at[0] - 15).toBeLessThan(0.05);
+  });
+
+  it('rushers blowing on one beat say one between them; on different beats, each his own', () => {
+    const w = fused();
+    const r2 = new Rusher(
+      30,
+      0,
+      'rusher',
+      { context: w.context },
+      createMockP5(),
+      w.audio
+    );
+    r2.isSpawning = false;
+    r2.spawnTimer = r2.spawnDuration;
+    const third = new Rusher(
+      60,
+      0,
+      'rusher',
+      { context: w.context },
+      createMockP5(),
+      w.audio
+    );
+    third.isSpawning = false;
+    third.spawnTimer = third.spawnDuration;
+    const { enemies } = w.values;
+    enemies.push(w.r, r2, third);
+    // Each frame every rusher updates; one that blows leaves, as in the game
+    const both = (from, to) => {
+      for (
+        let ms = from * MS_PER_BEAT;
+        ms <= to * MS_PER_BEAT;
+        ms += FRAME_MS
+      ) {
+        w.at(ms);
+        for (const r of [...enemies]) {
+          if (r.updateSpecificBehavior(FAR, 0, FRAME_MS)) {
+            enemies.splice(enemies.indexOf(r), 1);
+          }
+        }
+      }
+    };
+    both(12.2, 12.2);
+    w.r.takeDamage(1, null, 'hit');
+    r2.takeDamage(1, null, 'hit'); // both blow on 16
+    both(12.2, 14.2);
+    third.takeDamage(1, null, 'hit'); // he blows on 18
+    both(14.2, 19);
+    expect(punchlines(w).map(([who]) => who)).toEqual([w.r, third]);
   });
 });
 

@@ -538,12 +538,14 @@ const CONFIG = {
         ],
         levelDb: -6,
       },
+      // The singer from the 2026-10-12 voice studies: sung near E3, his
+      // seventh. ?tune's SPEAKERS.rusher tries the studies' other voices
       rusher: {
-        engine: 'espeak',
-        voice: { variant: 'Tweaky', pitch: 72, range: 90, speed: 235 },
+        engine: 'sam',
+        voice: { pitch: 41, speed: 60, mouth: 128, throat: 128, sing: true },
         chain: [
-          { type: 'drive', amount: 5 },
-          { type: 'tremolo', rate: 14, depth: 0.6 },
+          { type: 'drive', amount: 4 },
+          { type: 'slapback', time: 0.09, feedback: 0.25, mix: 0.2 },
         ],
         levelDb: 0,
       },

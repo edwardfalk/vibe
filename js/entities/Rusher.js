@@ -10,7 +10,11 @@ import {
 } from './RusherRenderer.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
-import { RUSHER_LINES, RUSHER_BATTLE_CRIES } from '../audio/DialogueLines.js';
+import {
+  RUSHER_LINES,
+  RUSHER_BATTLE_CRIES,
+  RUSHER_BLAST_LINES,
+} from '../audio/DialogueLines.js';
 import { turnStep, turnAt } from './TankRenderer.js';
 
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
@@ -64,7 +68,7 @@ class Rusher extends BaseEnemy {
     this.seenBeats = null; // his last update's beat position, to tell a new beat and a stall
     this.cried = false;
     this.chargeSoundDue = false;
-    this.lit = null; // { at, by, blastBeat, beatsTotal } once lit
+    this.lit = null; // { at, by, blastBeat, beatsTotal, said } once lit
     this.pushed = false;
     this.pushDir = 0;
     // When things happened to him, in beat positions (poseBeats), for drawing
@@ -143,7 +147,10 @@ class Rusher extends BaseEnemy {
     }
 
     if (this.lit) {
-      if (newBeat) this.beepFuse(beats);
+      if (newBeat) {
+        this.beepFuse(beats);
+        this.sayPunchline(beats);
+      }
       return this.blowOnBeat(beats);
     }
 
@@ -229,6 +236,28 @@ class Rusher extends BaseEnemy {
       left,
       seed: this.lookSeed,
     });
+  }
+
+  /**
+   * On the first new beat with one beat left to his blast, his punchline,
+   * once, forced past the gap between the enemies' lines, as the tank's
+   * "UH, OH" is. Rushers blowing on one beat (a chain) say one between them
+   */
+  sayPunchline(beats) {
+    const lit = this.lit;
+    if (lit.said || lit.blastBeat === null) return;
+    if (lit.blastBeat - Math.floor(beats) !== 1) return;
+    lit.said = true;
+    const taken = (this.getContextValue('enemies') ?? []).some(
+      (e) => e !== this && e.lit?.said && e.lit.blastBeat === lit.blastBeat
+    );
+    if (taken) return;
+    this.getContextValue('audio')?.speak(
+      this,
+      random(RUSHER_BLAST_LINES),
+      'rusher',
+      true
+    );
   }
 
   /**
