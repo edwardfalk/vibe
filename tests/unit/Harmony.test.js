@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ROOTS, DEGREES, driftCents, hz } from '../../js/audio/Harmony.js';
+import {
+  ROOTS,
+  DEGREES,
+  driftCents,
+  hz,
+  nearestNote,
+} from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 
 const original = structuredClone(CONFIG.HUM);
@@ -59,10 +65,32 @@ describe('Harmony, the pitch grid', () => {
     }
   });
 
+  it('nearestNote: the note of the scale nearest a frequency, never the sour b5', () => {
+    CONFIG.HUM.ROOT = 'F#';
+    const off = (note, c) => hz(note) * 2 ** (c / 1200);
+    expect(nearestNote(off(['5', 3], 30))).toEqual(['5', 3]);
+    expect(nearestNote(off(['b6', 4], -30))).toEqual(['b6', 4]);
+    // Just under a root: the root of the octave above
+    expect(nearestNote(off(['1', 3], -20))).toEqual(['1', 3]);
+    // The b5 sits 92 c above the 4 and 112 c below the 5
+    expect(nearestNote(hz(['b5', 2]))).toEqual(['4', 2]);
+  });
+
+  it('nearestNote counts the drift at audio time t', () => {
+    CONFIG.HUM.ROOT = 'F#';
+    CONFIG.HUM.DRIFT_CENTS = 9;
+    // 105 c above the root: 99 c under the 2 at t = 0 (no drift), but at
+    // t = 5 the grid has drifted 6.8 c up, so the root is nearer
+    const f = hz(['1', 2]) * 2 ** (105 / 1200);
+    expect(nearestNote(f, 0)).toEqual(['2', 2]);
+    expect(nearestNote(f, 5)).toEqual(['1', 2]);
+  });
+
   it('throws on an unknown degree or root', () => {
     expect(() => hz(['3', 1])).toThrow(/degree/);
     expect(() => hz(['toString', 1])).toThrow(/degree/);
     CONFIG.HUM.ROOT = 'H';
     expect(() => hz(['1', 1])).toThrow(/root/);
+    expect(() => nearestNote(100)).toThrow(/root/);
   });
 });

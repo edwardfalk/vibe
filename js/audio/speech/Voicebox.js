@@ -1,11 +1,12 @@
 /**
  * Voicebox: the game's speech. The worker renders a line (SAM or espeak-ng)
  * at a set loudness; the speaker's effect chain runs offline; the result is
- * levelled again, fitted under the ceiling, and played. The game says its
- * lines through say(), on the beat grid, from a cache: its lines are a fixed
- * set, so each is rendered once.
+ * levelled again, fitted under the ceiling, and played, tuned onto the
+ * scale. The game says its lines through say(), on the beat grid, from a
+ * cache: its lines are a fixed set, so each is rendered once.
  */
 import { CONFIG } from '../../config.js';
+import { hz, nearestNote } from '../Harmony.js';
 import { renderChain as renderEffectChain } from './effects.js';
 import { fitCeiling, isUsable, loudness, matchLoudness } from './levels.js';
 
@@ -153,6 +154,8 @@ export class Voicebox {
     return {
       buffer,
       spokenSec: dry.samples.length / dry.sampleRate,
+      f0: dry.f0 ?? null, // the dry line's median pitch in Hz, or null if none
+      tune: setup.tune !== false,
       renderMs: dry.renderMs,
       chainMs: t1 - t0,
       levelMs,
@@ -163,19 +166,35 @@ export class Voicebox {
     };
   }
 
+  // Play a line at `when`. A tuned line is detuned so its median pitch lands
+  // on the scale's nearest note at `when`, the hum's drift included; that
+  // shifts its effects too, and stretches it by the same ratio (at most
+  // ~102 c, 6 %). Returns its start, its durations as played (the spoken
+  // part, and with the tail) and the correction: cents, and the note or null.
   play(line, when, gain = 1, pan = 0) {
+    const note = line.tune && line.f0 > 0 ? nearestNote(line.f0, when) : null;
+    const cents = note ? 1200 * Math.log2(hz(note, when) / line.f0) : 0;
+    const rate = 2 ** (cents / 1200);
     const source = this.ctx.createBufferSource();
     source.buffer = line.buffer;
+    source.detune.value = cents;
     const level = this.ctx.createGain();
     level.gain.value = gain;
     const panner = this.ctx.createStereoPanner();
     panner.pan.value = pan;
     source.connect(level).connect(panner).connect(this.output);
     source.start(when);
-    const playing = { source, startsAt: when, duration: line.spokenSec };
+    const duration = line.spokenSec / rate;
+    const playing = { source, startsAt: when, duration };
     this.playing.add(playing);
     source.onended = () => this.playing.delete(playing);
-    return { startsAt: when, duration: line.spokenSec };
+    return {
+      startsAt: when,
+      duration,
+      totalDuration: line.buffer.duration / rate,
+      cents,
+      note,
+    };
   }
 
   // A speaker's line, rendered once: asking again, even before it is ready,

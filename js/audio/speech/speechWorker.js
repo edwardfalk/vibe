@@ -1,11 +1,13 @@
 /**
  * The speech worker: renders lines with SAM or espeak-ng off the main thread
  * and levels each one (level in), so every effect chain gets the same input
- * whichever engine made the line. Talks to Voicebox by message.
+ * whichever engine made the line, and reads its pitch (f0, for tuning).
+ * Talks to Voicebox by message.
  */
 import * as espeak from './engines/espeak.js';
 import * as sam from './engines/sam.js';
 import { isUsable, matchLoudness } from './levels.js';
+import { medianHz } from './pitch.js';
 
 const ENGINES = { sam, espeak };
 
@@ -16,10 +18,14 @@ export async function renderRequest({ engine, text, voice, targetDb }) {
   const { samples, sampleRate } = await impl.render(text, voice);
   if (!isUsable(samples))
     throw new Error(`${engine} made no sound for "${text}"`);
+  const levelled = matchLoudness(samples, sampleRate, targetDb);
+  // The dry line's: the chain's ring mod, drive and filters would mislead it
+  const f0 = medianHz(levelled, sampleRate);
   return {
-    samples: matchLoudness(samples, sampleRate, targetDb),
+    samples: levelled,
     sampleRate,
     renderMs: performance.now() - t0,
+    f0,
   };
 }
 
