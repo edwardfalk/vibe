@@ -91,7 +91,10 @@ describe('his line of fire', () => {
   };
 
   it('is blocked by another enemy within 20° of his aim and 400 px, by no one else', () => {
-    expect(world().grunt.lineBlocked()).toBe(false); // alone
+    expect(world().grunt.lineBlocked()).toBe(false); // no aim yet
+    const alone = world().grunt;
+    alone.aimAngle = 0;
+    expect(alone.lineBlocked()).toBe(false); // never in his own way
     expect(blockedBy(0, 100)).toBe(true);
     expect(blockedBy(15, 300)).toBe(true);
     expect(blockedBy(-15, 300)).toBe(true);
