@@ -116,13 +116,13 @@ describe('NebulaSky', () => {
     expect(uniforms.ringA).toBe(0);
   });
 
-  it('breathes deeper on the first kick after the level rises', () => {
+  it('breathes deeper on the first kick since levelAge began (a level-up)', () => {
     const { p, uniforms } = fakeP5();
     const sky = new NebulaSky(p, 'full');
     const kick = { kickAge: 0.02, prevKickAge: 0.52, downbeat: true };
     sky.draw(p, frame(kick));
     const normal = uniforms.breath;
-    // The level rose 0.1 s ago: between the previous kick and this one
+    // levelAge began 0.1 s ago: between the previous kick and this one
     sky.draw(p, frame({ ...kick, levelAge: 0.1 }));
     expect(uniforms.breath / normal).toBeCloseTo(1.6); // LEVEL_UP_BREATH
   });

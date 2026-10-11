@@ -37,7 +37,7 @@ const BREATH_BASE = 1.1;
 const BREATH_PER_LEVEL = 0.3;
 const PUSH_BASE_PX = 20; // the gas pushes out from the cluster
 const PUSH_PER_LEVEL_PX = 20;
-const LEVEL_UP_BREATH = 1.6; // the first kick after the level rises
+const LEVEL_UP_BREATH = 1.6; // the kick on a level-up's beat 1
 const FRONT_ATTACK_SEC = 0.012;
 const FRONT_DECAY_SEC = 0.3;
 const FRONT_START_PX = 30;
@@ -321,7 +321,8 @@ function envelopes(s) {
       accent *
       str
     : 0;
-  // The first kick after the level rises breathes deeper
+  // The first kick since levelAge began (a level-up's: BackgroundRenderer)
+  // breathes deeper
   const deep =
     s.kickAge <= s.levelAge && s.levelAge < s.prevKickAge ? LEVEL_UP_BREATH : 1;
   // Only the downbeat throws the front

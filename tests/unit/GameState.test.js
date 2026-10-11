@@ -126,6 +126,158 @@ describe('GameState', () => {
     }
   });
 
+  describe('the level-up sound, on the bar line', () => {
+    // Bars of 2 s from 0.37 s, heard one 40 ms lead behind the game's now
+    // (not the game's lead, so the code must read the clock's)
+    let now;
+    const clock = {
+      beatInterval: 500,
+      beatsPerMeasure: 4,
+      startTime: 370,
+      aheadSec: 0.04,
+      nowSec: () => now,
+      reset: () => {},
+    };
+    const levelUps = () =>
+      window.audio.playSound.mock.calls.filter(([name]) => name === 'levelUp');
+
+    beforeEach(() => {
+      window.beatClock = clock;
+      window.audio = {
+        playSound: vi.fn(),
+        speakPlayerLine: vi.fn(),
+        playLastBreath: vi.fn(),
+      };
+      window.cameraSystem = { addShake: vi.fn(), reset: () => {} };
+    });
+    afterEach(() => {
+      window.beatClock = null;
+      window.audio = null;
+      window.cameraSystem = null;
+      clearTimeout(gs.startSpeechTimer);
+    });
+
+    it('waits for the next beat 1, then books the sound and the shake on it', () => {
+      now = 3;
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      expect(gs.level).toBe(2); // the level itself rises at once
+      now = 4.36;
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([]);
+      expect(window.cameraSystem.addShake).not.toHaveBeenCalled();
+      now = 4.38;
+      gs.updateLevelUp();
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([['levelUp', null, null, { at: 4.37 }]]);
+      expect(window.cameraSystem.addShake).toHaveBeenCalledTimes(1);
+      // The sky breathes deeper on it (BackgroundRenderer), until a restart
+      expect(gs.lastLevelUpAt).toBe(4.37);
+      gs.restart();
+      expect(gs.lastLevelUpAt).toBe(null);
+    });
+
+    it('takes a beat 1 the game has passed but you have not heard yet', () => {
+      now = 4.38; // heard: 4.34, before the bar line at 4.37
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([['levelUp', null, null, { at: 4.37 }]]);
+    });
+
+    it('a bar line passed with no frame to play it moves to the next one', () => {
+      now = 3;
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      now = 4.37 + 0.13; // over a quarter beat late: a hidden tab
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([]);
+      now = 6.38;
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([['levelUp', null, null, { at: 6.37 }]]);
+    });
+
+    it('a slow frame, under a quarter beat late, still plays it', () => {
+      now = 3;
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      now = 4.37 + 0.12;
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([['levelUp', null, null, { at: 4.37 }]]);
+    });
+
+    it('reaches the sky in the frame it plays, which breathes deeper on it', async () => {
+      const { runDraw } = await import('../../js/GameLoopDraw.js');
+      let seen;
+      window.gameState = gs;
+      window.backgroundRenderer = {
+        drawSky: () => (seen = gs.lastLevelUpAt),
+        drawInteractiveBackgroundEffects: () => {},
+      };
+      try {
+        now = 3;
+        gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+        now = 4.38;
+        runDraw(
+          { frameCount: 1 },
+          () => {},
+          () => {}
+        );
+        expect(seen).toBe(4.37);
+      } finally {
+        window.gameState = null;
+        window.backgroundRenderer = null;
+      }
+    });
+
+    it("a level risen in a frame's update plays in that frame when its beat 1 is due", async () => {
+      const { runDraw } = await import('../../js/GameLoopDraw.js');
+      window.gameState = gs;
+      try {
+        now = 4.38; // heard: 4.34, before the bar line at 4.37
+        const rise = () => gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+        runDraw({ frameCount: 1 }, rise, () => {});
+        expect(levelUps()).toEqual([['levelUp', null, null, { at: 4.37 }]]);
+      } finally {
+        window.gameState = null;
+      }
+    });
+
+    it('an update that earns a level, then ends the run, plays nothing', async () => {
+      const { runDraw } = await import('../../js/GameLoopDraw.js');
+      window.gameState = gs;
+      try {
+        now = 4.38; // its beat 1 at 4.37 is due, as above
+        const riseThenDie = () => {
+          gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+          gs.setGameState('gameOver');
+        };
+        runDraw({ frameCount: 1 }, riseThenDie, () => {});
+        expect(levelUps()).toEqual([]);
+        expect(window.cameraSystem.addShake).not.toHaveBeenCalled();
+      } finally {
+        window.gameState = null;
+      }
+    });
+
+    it('plays once for two levels risen in one bar', () => {
+      now = 3;
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      now = 3.5;
+      gs.addScore(gs.nextLevelThreshold - gs.score);
+      expect(gs.level).toBe(3);
+      now = 4.38;
+      gs.updateLevelUp();
+      expect(levelUps()).toHaveLength(1);
+    });
+
+    it('a death before the bar line drops it, and the next run never plays it', () => {
+      now = 3;
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      gs.setGameState('gameOver');
+      gs.restart();
+      now = 4.38;
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([]);
+    });
+  });
+
   it('level progresses at threshold', () => {
     gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
     expect(gs.level).toBe(2);

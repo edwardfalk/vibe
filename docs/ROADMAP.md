@@ -15,7 +15,6 @@ Everything still open, by area: work to build, and calls only Edward can make by
 The audio overhaul's next step:
 
 - **call: a ghost snare in the silences?** Grunts now come in swarms, two at once from different sides, that play the snare as a section while one is in range, though not on every 2 and 4 (the playtest reports the share and the silences over a bar); once Edward has heard them, do the silences want one? It would play in the drums group.
-- **build: the level-up sound on the bar line.** Today it plays the moment the score crosses (`GameState.js`).
 
 Calls and smaller work:
 
@@ -46,7 +45,6 @@ Calls and smaller work:
   - pasting a `?tune` JSON from before #84 crashes the `KICK.TUNED` knob.
 - **build: a lead that adapts to the frame rate.** The game runs a fixed `CONFIG.BEAT_CLOCK.AHEAD_MS` ahead of what you hear; a 30 fps machine needs about 40 ms. It can't use the live slider's change, which moves the kick: it would apply at a restart, where the grid snaps anyway. (beat-lead spec)
 - **check: a restart that moves beat 1 earlier doesn't restart the hum's breathing,** so its filter eases toward the old bar line for up to a breath. (Codex on #84; `Hum.js` accepts the bend in a comment)
-- **build, trivial:** `config.js`'s HUM comment still says "Provisional … (PR 2)"; PR 2 is merged and the hum is settled.
 
 ## Characters
 
@@ -141,6 +139,7 @@ Calls and smaller work:
 - **build: fail on console errors during real play.** `playtest.js` only counts them, so a sound that breaks in play leaves every suite green. (#94)
 - **build: one shared fake-audio helper for the unit tests.** Nine test files each define their own.
 - **check: a known flake under full-suite load:** "Held keyboard fire lands on eighth notes". (The kick-lock check, the other one, failed about 1 run in 10 on the grunts' random skips; it now plants a swarm held still with a clear line, and passed 30 runs out of 30 alone on the desktop, 2026-10-10 and 11.)
+- **check: "The sky draws in every state" failed once under full-suite load** on the desktop (2026-10-12, #100), message lost; it then passed 6 runs out of 6 alone and the full suite again. It wants a sky frame within each 300 ms window, which a loaded runner can miss.
 
 ## The README
 

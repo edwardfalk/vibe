@@ -7,6 +7,19 @@ import { isWaiting } from '../audio/TextDisplay.js';
 
 // An end this close to an eighth (in eighths) counts as on it
 const ON_EIGHTH = 1e-6;
+// A level-up whose bar line the game passed this many beats ago or more,
+// with no frame to play it (a hidden tab, ?tune's sound while paused),
+// waits for the next one; the stabber drops a step as late (Stabber.js)
+const LEVEL_UP_LATE_BEATS = 0.25;
+
+// The first beat 1 at or after the heard now, which the game may have passed
+// by up to its lead (BeatClock); seconds on the clock
+function nextBarLine(clock) {
+  const bar = (clock.beatInterval * clock.beatsPerMeasure) / 1000;
+  const origin = clock.startTime / 1000;
+  const heard = clock.nowSec() - clock.aheadSec;
+  return origin + Math.ceil((heard - origin) / bar) * bar;
+}
 
 export class GameState {
   constructor() {
@@ -19,6 +32,8 @@ export class GameState {
     this.level = 1;
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
+    this.levelUpAt = null; // the bar line a level-up waits for (updateLevelUp)
+    this.lastLevelUpAt = null; // the one it last played on, for the sky
     this.gameState = 'playing'; // 'title', 'playing', 'gameOver', 'paused'
     // His death scene, the first bar of 'gameOver' (startDeathScene)
     this.scene = null;
@@ -84,20 +99,36 @@ export class GameState {
         window.beatTrack.setLevel(this.level);
       }
 
-      // Trigger level up effects
-      if (window.cameraSystem) {
-        window.cameraSystem.addShake(15, 30);
-      }
-
-      if (window.audio) {
-        window.audio.playSound('levelUp');
-      }
+      // Its sound and shake wait for the next beat 1 you hear
+      // (updateLevelUp). Two levels in one bar share it
+      if (window.beatClock) this.levelUpAt = nextBarLine(window.beatClock);
 
       // A new level: the next place he looks for his carpet
       if (window.audio && window.player) {
         window.audio.speakPlayerLine(window.player, 'levelUp');
       }
     }
+  }
+
+  /**
+   * Every frame: the level-up's sound and shake, once the game reaches its
+   * bar line. Only in play: a death before it, even in the update that
+   * earned it, drops them (restart)
+   */
+  updateLevelUp() {
+    const at = this.levelUpAt;
+    if (at === null || this.gameState !== 'playing') return;
+    const clock = window.beatClock;
+    const now = clock.nowSec();
+    if (now < at) return;
+    if (now - at >= (LEVEL_UP_LATE_BEATS * clock.beatInterval) / 1000) {
+      this.levelUpAt = nextBarLine(clock);
+      return;
+    }
+    this.levelUpAt = null;
+    this.lastLevelUpAt = at;
+    window.cameraSystem?.addShake(15, 30);
+    window.audio?.playSound('levelUp', null, null, { at });
   }
 
   // High score management
@@ -212,6 +243,8 @@ export class GameState {
     this.level = 1;
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
+    this.levelUpAt = null;
+    this.lastLevelUpAt = null;
     this.killStreak = 0;
     this.totalKills = 0;
     this.shotsFired = 0;
