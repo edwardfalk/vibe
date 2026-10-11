@@ -137,6 +137,18 @@ describe("the rusher's punchline", () => {
     expect(at[0] - 15).toBeLessThan(0.05);
   });
 
+  it('he says it once, even when a late frame moves his blast on after it', () => {
+    const w = fused();
+    w.step(12.0);
+    w.r.takeDamage(1, null, 'hit'); // his blast is beat 14
+    w.walk(12.0, 13.9); // his punchline on 13
+    expect(punchlines(w)).toHaveLength(1);
+    w.step(14.6); // 0.6 beat late: on to 16, one beat from 15
+    expect(w.r.lit.blastBeat).toBe(16);
+    w.run(14.6, 16.1);
+    expect(punchlines(w)).toHaveLength(1);
+  });
+
   it('rushers blowing on one beat say one between them; on different beats, each his own', () => {
     const w = fused();
     const r2 = new Rusher(
