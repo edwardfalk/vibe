@@ -14,7 +14,7 @@ Everything still open, by area: work to build, and calls only Edward can make by
 
 The audio overhaul's next step:
 
-- **call: a ghost snare in the gaps between swarms?** Grunts now come in swarms that play the snare as a section while one is in range, though not on every 2 and 4 (the playtest reports the share), and not in the breather after a clear (`SWARM.BREAK_BEATS`); once Edward has heard them, does the gap between swarms want one? It would play in the drums group.
+- **call: a ghost snare in the silences?** Grunts now come in swarms, two at once from different sides, that play the snare as a section while one is in range, though not on every 2 and 4 (the playtest reports the share and the silences over a bar); once Edward has heard them, do the silences want one? It would play in the drums group.
 - **build: the level-up sound on the bar line.** Today it plays the moment the score crosses (`GameState.js`).
 
 Calls and smaller work:
