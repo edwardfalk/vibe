@@ -149,6 +149,36 @@ describe("the rusher's punchline", () => {
     expect(punchlines(w)).toHaveLength(1);
   });
 
+  it("one whose blast moved on after his punchline doesn't hold back another blowing on that beat", () => {
+    const w = fused();
+    const other = new Rusher(
+      30,
+      0,
+      'rusher',
+      { context: w.context },
+      createMockP5(),
+      w.audio
+    );
+    other.isSpawning = false;
+    other.spawnTimer = other.spawnDuration;
+    w.values.enemies.push(w.r, other);
+    const frames = (from, to) => {
+      for (let b = from; b <= to; b += FRAME_MS / MS_PER_BEAT) {
+        w.at(b * MS_PER_BEAT);
+        for (const r of [w.r, other])
+          r.updateSpecificBehavior(FAR, 0, FRAME_MS);
+      }
+    };
+    frames(12.0, 12.0);
+    w.r.takeDamage(1, null, 'hit'); // his blast is beat 14
+    frames(12.0, 13.9); // his punchline on 13
+    other.takeDamage(1, null, 'hit'); // the other's blast is beat 16
+    frames(14.6, 14.6); // 0.6 beat late: his blast moves on to 16 too
+    expect(w.r.lit.blastBeat).toBe(16);
+    frames(14.6, 15.9);
+    expect(punchlines(w).map(([who]) => who)).toEqual([w.r, other]);
+  });
+
   it('rushers blowing on one beat say one between them; on different beats, each his own', () => {
     const w = fused();
     const r2 = new Rusher(

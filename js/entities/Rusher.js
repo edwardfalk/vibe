@@ -68,7 +68,7 @@ class Rusher extends BaseEnemy {
     this.seenBeats = null; // his last update's beat position, to tell a new beat and a stall
     this.cried = false;
     this.chargeSoundDue = false;
-    this.lit = null; // { at, by, blastBeat, beatsTotal, said } once lit
+    this.lit = null; // { at, by, blastBeat, beatsTotal, saidFor } once lit
     this.pushed = false;
     this.pushDir = 0;
     // When things happened to him, in beat positions (poseBeats), for drawing
@@ -241,15 +241,16 @@ class Rusher extends BaseEnemy {
   /**
    * On the first new beat with one beat left to his blast, his punchline,
    * once, forced past the gap between the enemies' lines, as the tank's
-   * "UH, OH" is. Rushers blowing on one beat (a chain) say one between them
+   * "UH, OH" is. Rushers blowing on one beat (a chain) say one between them:
+   * saidFor is the blast beat his was said for
    */
   sayPunchline(beats) {
     const lit = this.lit;
-    if (lit.said || lit.blastBeat === null) return;
+    if (lit.saidFor != null || lit.blastBeat === null) return;
     if (lit.blastBeat - Math.floor(beats) !== 1) return;
-    lit.said = true;
+    lit.saidFor = lit.blastBeat;
     const taken = (this.getContextValue('enemies') ?? []).some(
-      (e) => e !== this && e.lit?.said && e.lit.blastBeat === lit.blastBeat
+      (e) => e !== this && e.lit?.saidFor === lit.blastBeat
     );
     if (taken) return;
     this.getContextValue('audio')?.speak(
