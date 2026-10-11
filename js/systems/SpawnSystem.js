@@ -38,10 +38,10 @@ export class SpawnSystem {
     // Beat-aligned spawning; intervals and caps come from CONFIG.PACING
     this.lastSpawnBeat = -Infinity;
     this.previewed = new Set(); // types already given a one-off taste
-    // The grunts come only in swarms, one at a time (GruntSwarm.js), the
-    // next on this beat
+    // The grunts come only in swarms, one at a time (GruntSwarm.js); the
+    // beat the last was cleared on
     this.swarm = null;
-    this.nextSwarmBeat = -Infinity;
+    this.clearedAt = -Infinity;
     this.getContextValue = createContextAccessor(() => this.context);
   }
 
@@ -105,14 +105,21 @@ export class SpawnSystem {
     if (!beatClock) return;
 
     // A run's first swarm comes on its first update; the next BREAK_BEATS
-    // after all of the last are dead, a breather for the hero
+    // after all of the last are dead, a breather for the hero (read each
+    // frame, so ?tune changes a break already begun)
     const all = this.getContextValue('enemies');
     const now = beatClock.getBeatPosition();
     if (all && this.swarm?.isCleared(all)) {
       this.swarm = null;
-      this.nextSwarmBeat = now + CONFIG.SWARM.BREAK_BEATS;
+      this.clearedAt = now;
     }
-    if (all && !this.swarm && now >= this.nextSwarmBeat) this.spawnSwarm();
+    if (
+      all &&
+      !this.swarm &&
+      now >= this.clearedAt + CONFIG.SWARM.BREAK_BEATS
+    ) {
+      this.spawnSwarm();
+    }
 
     // Waves land on any beat, so the interval counts whole beats (fractions
     // round up). Restricting waves to beat 1 rounded every interval up to a
@@ -314,6 +321,6 @@ export class SpawnSystem {
     this.lastSpawnBeat = -Infinity;
     this.previewed.clear();
     this.swarm = null;
-    this.nextSwarmBeat = -Infinity;
+    this.clearedAt = -Infinity;
   }
 }

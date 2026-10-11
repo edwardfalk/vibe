@@ -165,6 +165,34 @@ describe('the next swarm', () => {
     ).toHaveLength(swarmSize(1));
   });
 
+  it('takes a change of BREAK_BEATS on ?tune at once, in a break already begun', () => {
+    const { system, enemies, clock } = world();
+    system.update();
+    for (const g of enemies) g.markedForRemoval = true;
+    clock.beats = 40;
+    system.update(); // cleared: its break begins
+    CONFIG.SWARM.BREAK_BEATS = 2.5;
+    clock.beats = 42.4;
+    system.update();
+    expect(system.swarm).toBe(null);
+    clock.beats = 42.5;
+    system.update();
+    expect(system.swarm).toBeInstanceOf(GruntSwarm);
+  });
+
+  it('a restart (reset) drops a swarm still alive; the next run starts its own at once', () => {
+    const { system, enemies, clock } = world();
+    system.update();
+    const first = system.swarm;
+    system.reset();
+    expect(system.swarm).toBe(null);
+    enemies.length = 0; // the restart clears the enemies too
+    clock.beats = 0;
+    system.update();
+    expect(system.swarm).toBeInstanceOf(GruntSwarm);
+    expect(system.swarm).not.toBe(first);
+  });
+
   it('a restart (reset) drops the swarm and its break; the next run starts its own at once', () => {
     const { system, enemies, clock } = world();
     system.update();
