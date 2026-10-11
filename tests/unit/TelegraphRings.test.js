@@ -188,10 +188,10 @@ describe('attack warning rings', () => {
     expect(shots).toEqual([]);
   });
 
-  it('a grunt that was never picked shows no ?', () => {
+  it('a grunt that was never picked shows no ring and no ?', () => {
     // Out of range through beat 1, in range only as beat 2 lands
     const heroX = (ms) => (ms % 1000 < 500 ? 900 : 150);
-    expect(questionMarks(heroX)).toBe(0);
+    expect(oneBar(heroX)).toMatchObject({ marks: 0, rings: 0 });
   });
 
   it('a grunt with no swarm never fires and is never warned', () => {
