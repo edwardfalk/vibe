@@ -126,6 +126,80 @@ describe('GameState', () => {
     }
   });
 
+  describe('the level-up sound, on the bar line', () => {
+    // Bars of 2 s from 0.37 s, heard one 25 ms lead behind the game's now
+    let now;
+    const clock = {
+      beatInterval: 500,
+      beatsPerMeasure: 4,
+      startTime: 370,
+      aheadSec: 0.025,
+      nowSec: () => now,
+      reset: () => {},
+    };
+    const levelUps = () =>
+      window.audio.playSound.mock.calls.filter(([name]) => name === 'levelUp');
+
+    beforeEach(() => {
+      window.beatClock = clock;
+      window.audio = {
+        playSound: vi.fn(),
+        speakPlayerLine: vi.fn(),
+        playLastBreath: vi.fn(),
+      };
+      window.cameraSystem = { addShake: vi.fn(), reset: () => {} };
+    });
+    afterEach(() => {
+      window.beatClock = null;
+      window.audio = null;
+      window.cameraSystem = null;
+      clearTimeout(gs.startSpeechTimer);
+    });
+
+    it('waits for the next beat 1, then books the sound and the shake on it', () => {
+      now = 3;
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      expect(gs.level).toBe(2); // the level itself rises at once
+      now = 4.36;
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([]);
+      expect(window.cameraSystem.addShake).not.toHaveBeenCalled();
+      now = 4.38;
+      gs.updateLevelUp();
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([['levelUp', null, null, { at: 4.37 }]]);
+      expect(window.cameraSystem.addShake).toHaveBeenCalledTimes(1);
+    });
+
+    it('takes a beat 1 the game has passed but you have not heard yet', () => {
+      now = 4.38; // heard: 4.355, before the bar line at 4.37
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([['levelUp', null, null, { at: 4.37 }]]);
+    });
+
+    it('plays once for two levels risen in one bar', () => {
+      now = 3;
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      now = 3.5;
+      gs.addScore(gs.nextLevelThreshold - gs.score);
+      expect(gs.level).toBe(3);
+      now = 4.38;
+      gs.updateLevelUp();
+      expect(levelUps()).toHaveLength(1);
+    });
+
+    it('a death before the bar line drops it, and the next run never plays it', () => {
+      now = 3;
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      gs.setGameState('gameOver');
+      gs.restart();
+      now = 4.38;
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([]);
+    });
+  });
+
   it('level progresses at threshold', () => {
     gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
     expect(gs.level).toBe(2);

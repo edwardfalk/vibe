@@ -19,6 +19,7 @@ export class GameState {
     this.level = 1;
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
+    this.levelUpAt = null; // the bar line a level-up waits for (updateLevelUp)
     this.gameState = 'playing'; // 'title', 'playing', 'gameOver', 'paused'
     // His death scene, the first bar of 'gameOver' (startDeathScene)
     this.scene = null;
@@ -84,13 +85,15 @@ export class GameState {
         window.beatTrack.setLevel(this.level);
       }
 
-      // Trigger level up effects
-      if (window.cameraSystem) {
-        window.cameraSystem.addShake(15, 30);
-      }
-
-      if (window.audio) {
-        window.audio.playSound('levelUp');
+      // Its sound and shake wait for the next beat 1 you hear, which the
+      // game may have passed by up to its lead (BeatClock). Two levels in
+      // one bar share it
+      const clock = window.beatClock;
+      if (clock) {
+        const bar = (clock.beatInterval * clock.beatsPerMeasure) / 1000;
+        const origin = clock.startTime / 1000;
+        const heard = clock.nowSec() - clock.aheadSec;
+        this.levelUpAt = origin + Math.ceil((heard - origin) / bar) * bar;
       }
 
       // A new level: the next place he looks for his carpet
@@ -98,6 +101,18 @@ export class GameState {
         window.audio.speakPlayerLine(window.player, 'levelUp');
       }
     }
+  }
+
+  /**
+   * Every frame in play: the level-up's sound and shake, once the game
+   * reaches its bar line. A death before it drops them (restart)
+   */
+  updateLevelUp() {
+    const at = this.levelUpAt;
+    if (at === null || window.beatClock.nowSec() < at) return;
+    this.levelUpAt = null;
+    window.cameraSystem?.addShake(15, 30);
+    window.audio?.playSound('levelUp', null, null, { at });
   }
 
   // High score management
@@ -212,6 +227,7 @@ export class GameState {
     this.level = 1;
     this.previousLevelThreshold = 0;
     this.nextLevelThreshold = CONFIG.PACING.FIRST_LEVEL_POINTS;
+    this.levelUpAt = null;
     this.killStreak = 0;
     this.totalKills = 0;
     this.shotsFired = 0;

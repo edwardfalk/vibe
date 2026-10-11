@@ -15,7 +15,6 @@ Everything still open, by area: work to build, and calls only Edward can make by
 The audio overhaul's next step:
 
 - **call: a ghost snare in the silences?** Grunts now come in swarms, two at once from different sides, that play the snare as a section while one is in range, though not on every 2 and 4 (the playtest reports the share and the silences over a bar); once Edward has heard them, do the silences want one? It would play in the drums group.
-- **build: the level-up sound on the bar line.** Today it plays the moment the score crosses (`GameState.js`).
 
 Calls and smaller work:
 
@@ -46,7 +45,6 @@ Calls and smaller work:
   - pasting a `?tune` JSON from before #84 crashes the `KICK.TUNED` knob.
 - **build: a lead that adapts to the frame rate.** The game runs a fixed `CONFIG.BEAT_CLOCK.AHEAD_MS` ahead of what you hear; a 30 fps machine needs about 40 ms. It can't use the live slider's change, which moves the kick: it would apply at a restart, where the grid snaps anyway. (beat-lead spec)
 - **check: a restart that moves beat 1 earlier doesn't restart the hum's breathing,** so its filter eases toward the old bar line for up to a breath. (Codex on #84; `Hum.js` accepts the bend in a comment)
-- **build, trivial:** `config.js`'s HUM comment still says "Provisional … (PR 2)"; PR 2 is merged and the hum is settled.
 
 ## Characters
 
@@ -103,6 +101,7 @@ Calls and smaller work:
 
 - **call: the nebula's detail** ("good enough to push, work more on the detail later").
 - **call: should the sky keep pulsing while muted?** It does today.
+- **call: line the sky's level-up breath up with the level-up sound?** The sky breathes deeper on the first kick after the level rises; the sound and the screen shake wait for the next beat 1, up to a bar later.
 - **call, then build: the beat track records the kicks it really plays,** so the sky and the Dude stop rebuilding them from the pattern. This fixes:
   - the phantom pulse on the first key press;
   - pulses on kicks a pattern change or a restart skipped;

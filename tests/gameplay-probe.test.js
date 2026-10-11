@@ -783,6 +783,55 @@ test.describe('Gameplay Probes', () => {
     expect(booked()).toBeGreaterThanOrEqual(1);
   });
 
+  test("A new level's sound waits for the next beat 1 you hear, and starts on it", async ({
+    page,
+  }) => {
+    await bootGame(page);
+    await page.waitForFunction(() => window.beatTrack?.isPlaying);
+    const r = await page.evaluate(async () => {
+      const audio = window.audio;
+      const clock = window.beatClock;
+      const gs = window.gameState;
+      const timing = audio.beatTiming.bind(audio);
+      const playSound = audio.playSound.bind(audio);
+      // Each level-up: the time it aimed at, and the timing it was decided on
+      const played = [];
+      let decided = null;
+      audio.beatTiming = (...a) => (decided = timing(...a));
+      audio.playSound = (name, ...rest) => {
+        decided = null;
+        const out = playSound(name, ...rest);
+        if (name === 'levelUp') played.push({ aimed: rest[2]?.at, ...decided });
+        return out;
+      };
+      const barSec = (clock.beatInterval * clock.beatsPerMeasure) / 1000;
+      const heardAt = clock.nowSec() - clock.aheadSec;
+      gs.addScore(gs.nextLevelThreshold - gs.score);
+      await new Promise((r) => setTimeout(r, barSec * 1000 + 300));
+      audio.beatTiming = timing;
+      audio.playSound = playSound;
+      return {
+        played,
+        heardAt,
+        barSec,
+        origin: clock.startTime / 1000,
+        quantum: 128 / audio.audioContext.sampleRate,
+      };
+    });
+    expect(r.played).toHaveLength(1);
+    const [s] = r.played;
+    const bars = (s.aimed - r.origin) / r.barSec;
+    expect(bars).toBeCloseTo(Math.round(bars), 9); // a beat 1
+    expect(s.aimed).toBeGreaterThanOrEqual(r.heardAt);
+    expect(s.aimed - r.heardAt).toBeLessThanOrEqual(r.barSec + 0.01);
+    // On it, unless its frame came later than the lead
+    const bookable = s.aimed - s.now >= r.quantum;
+    expect(s.at, `booked ${bookable}`).toBeCloseTo(
+      bookable ? s.aimed : s.now,
+      9
+    );
+  });
+
   test('Pausing stops the sound and the beat; unpausing picks them up again', async ({
     page,
   }) => {
