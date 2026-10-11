@@ -106,13 +106,13 @@ const CONFIG = {
     SHOOTERS_MAX: 4, // the most that fire on one 2 or 4
     GRUNTS_PER_SHOOTER: 3, // a third of the swarm fires, up to SHOOTERS_MAX
     BREAK_BEATS: 14, // the next swarm comes this long after a clear (7 s at 120 BPM)
-    FIRE_RANGE_PX: 280, // a grunt fires only with the hero this close
+    FIRE_RANGE_PX: 380, // a grunt fires only with the hero this close
     // Its centre comes in to this plus the cloud's radius, give or take
     // STANDOFF_BAND_PX (50), from the hero, and parks at the far edge: its
     // nearest grunt stops 60-130 px further out than this, more for a big
     // or wide cloud. Keep that inside FIRE_RANGE_PX, or a hero who stands
     // still is never shot at
-    STANDOFF_PX: 260,
+    STANDOFF_PX: 230,
     DRIFT_SHARE: 1, // of a grunt's speed, once in range (full speed coming in)
     PULL: 0.02, // toward the centre, a share of the way a frame
     SPACING_PX: 80, // grunts closer than this push apart
@@ -201,7 +201,7 @@ const CONFIG = {
   // overhaul's PR 2).
   HUM: {
     ROOT: 'F#', // the universe's key: E, F, F#, G or A, in the octave up to A1 = 55 Hz
-    LEVEL_DB: -1, // added to the listening page's level (Hum.js's TRIM_DB)
+    LEVEL_DB: 0, // added to the listening page's level (Hum.js's TRIM_DB)
     DRIFT_CENTS: 10, // the furthest the root wanders
     DIP: 0.85, // share of the hum's level each beat's dip takes
     BREATH: 0.7, // how far the filter opens and closes over two bars
