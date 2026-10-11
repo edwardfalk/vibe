@@ -278,7 +278,7 @@ describe("a grunt's death", () => {
       expect(opts.at).toBeCloseTo(1.5, 9);
     });
 
-    it('grunts popping together share one answer, given for the chord’s first, from one neighbour', () => {
+    it('grunts popping together share one answer, from one neighbour', () => {
       const neighbours = [1, 2, 3].map(() =>
         aGrunt({ onNearbyDeath: vi.fn(() => true) })
       );
@@ -287,6 +287,20 @@ describe("a grunt's death", () => {
       const asked = neighbours.flatMap((n) => n.onNearbyDeath.mock.calls);
       expect(asked).toHaveLength(1);
       expect(asked[0][2]).toBe(true); // a stand-in may give it
+    });
+
+    it('a chord whose first pop has no one near is answered for a later pop that has', () => {
+      // He takes on only a death near him, at x 600
+      const neighbour = aGrunt({
+        x: 600,
+        onNearbyDeath: vi.fn((dead) => dead.x > 500),
+      });
+      const w = deathWorld(1.13, [neighbour]);
+      for (const x of [0, 620, 630]) w.kill(aGrunt({ x }));
+      // asked for the lone pop and the next, which he took; not the third
+      expect(neighbour.onNearbyDeath.mock.calls.map(([d]) => d.x)).toEqual([
+        0, 620,
+      ]);
     });
 
     it('a neighbour who turns it down (too far, dead) leaves it to the next', () => {
