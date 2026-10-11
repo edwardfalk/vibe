@@ -1,5 +1,5 @@
 /**
- * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK (the kick, and whether it is tuned to the hum), HUM, SKY, PACING,
+ * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK (the kick, and whether it is tuned to the hum), HUM, SKY, PACING, the grunts' swarms (SWARM),
  * MIX, the rusher's flight, fuse, push and blast (RUSHER) and look (RUSHER_LOOK), the stabber's stalk, lunge, rest,
  * push, health and strings' volumes (STABBER) and size (STABBER_LOOK), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
@@ -30,6 +30,7 @@ const BEAT_CLOCK = 'BEAT_CLOCK';
 const KICK = 'BEAT_TRACK.KICK';
 const HUM = 'HUM';
 const PACING = 'PACING';
+const SWARM = 'SWARM';
 const MIX = 'MIX';
 const TONES = 'TONES';
 const HERO_SHOT = 'HERO_SHOT';
@@ -67,6 +68,7 @@ const KNOBS = [
   [HUM, 'BREATH', [0, 1, 0.05]],
   [HUM, 'CUTOFF_HZ', [150, 1500, 10]],
   [HUM, 'FIGHT_OPEN', [0, 3, 0.1]],
+  [HUM, 'FULL_SCREEN_ENEMIES', [1, 30, 1]],
   [SKY, 'KICK_STRENGTH', [0, 2, 0.05]],
   [SKY, 'DOWNBEAT_FRONT', [0, 2, 0.05]],
   [SKY, 'OFFBEAT_SHARE', [0, 1, 0.05]],
@@ -83,6 +85,21 @@ const KNOBS = [
   [PACING, 'MAX_ENEMIES_CAP', [2, 12, 1]],
   [PACING, 'PREVIEW_NEW_ENEMY'],
   [PACING, 'PREVIEW_AT_PROGRESS', [0, 1, 0.05]],
+  [PACING, 'GRUNT_KILL_POINTS', [1, 10, 1]],
+  [SWARM, 'COUNT', [1, 4, 1]],
+  [SWARM, 'SIZE_FIRST', [1, 12, 1]],
+  [SWARM, 'SIZE_PER_LEVEL', [0, 4, 1]],
+  [SWARM, 'SIZE_MAX', [1, 24, 1]],
+  [SWARM, 'SHOOTERS_MAX', [1, 8, 1]],
+  [SWARM, 'GRUNTS_PER_SHOOTER', [1, 6, 1]],
+  [SWARM, 'BREAK_BEATS', [0, 32, 1]],
+  [SWARM, 'FIRE_RANGE_PX', [100, 500, 10]],
+  [SWARM, 'STANDOFF_PX', [50, 400, 10]],
+  [SWARM, 'DRIFT_SHARE', [0, 1, 0.05]],
+  [SWARM, 'PULL', [0, 0.1, 0.005]],
+  [SWARM, 'SPACING_PX', [10, 160, 2]],
+  [SWARM, 'APART_DEG', [0, 180, 5]],
+  [SWARM, 'VOLLEY_DB_PER_DOUBLING', [-6, 0, 0.5]],
   [MIX, 'SFX_VOLUME', [0, 1, 0.01]],
   [MIX, 'BEAT_TRACK_VOLUME', [0, 1, 0.01]],
   [MIX, 'SPEECH_VOLUME', [0, 1, 0.05]],

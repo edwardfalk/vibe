@@ -42,9 +42,10 @@ export class EnemyDeathHandler {
   constructor(context = {}) {
     this.context = context;
     this.getContextValue = createContextAccessor(() => this.context);
-    // The grunts popping at one time: a pop's audio time never comes round
-    // again, even across a restart
-    this.chord = { at: null, n: 0 };
+    // The grunts popping at one time, and whether a neighbour took on their
+    // answer: a pop's audio time never comes round again, even across a
+    // restart
+    this.chord = { at: null, n: 0, answered: false };
   }
 
   /**
@@ -72,18 +73,27 @@ export class EnemyDeathHandler {
       audio.playSound(DEATH_SOUND[enemyType] ?? 'enemyOhNo', x, y);
     }
 
-    // Call-and-response: notify nearby same-type enemies
+    // Call-and-response: notify nearby same-type enemies. Grunts popping
+    // together share one neighbour's answer: each pop of the chord asks
+    // until one takes it on (one who turns it down, too far or dead, doesn't
+    // use it up), and if he dies before it plays, another still alive near
+    // the pop gives it
     const enemies = this.getContextValue('enemies');
-    if (enemies) {
+    const grunt = enemyType === 'grunt';
+    const answers = grunt ? 1 : 2;
+    if (enemies && !(grunt && this.chord.answered)) {
       let responseCount = 0;
       for (const other of enemies) {
-        if (responseCount >= 2) break;
+        if (responseCount >= answers) break;
         if (other === enemy || other.markedForRemoval) continue;
-        if (other.type === enemyType && other.onNearbyDeath) {
-          other.onNearbyDeath(enemy, popsAt);
+        if (
+          other.type === enemyType &&
+          other.onNearbyDeath?.(enemy, popsAt, grunt)
+        ) {
           responseCount++;
         }
       }
+      if (grunt && responseCount > 0) this.chord.answered = true;
     }
   }
 
@@ -99,7 +109,7 @@ export class EnemyDeathHandler {
     const now = () => clock.nowSec();
     const diedAt = now();
     const at = popTime(diedAt, clock);
-    if (at !== this.chord.at) this.chord = { at, n: 0 };
+    if (at !== this.chord.at) this.chord = { at, n: 0, answered: false };
     const k = this.chord.n++;
     explosionManager.fragmentExplosions.push(
       new GruntDeath({
@@ -115,12 +125,15 @@ export class EnemyDeathHandler {
         now,
       })
     );
+    // A crowd popping together (a blast through a swarm) doesn't stack up:
+    // each later pop of a chord is quieter, 1/sqrt of its place in it
     audio.playGruntPop(
       enemy.x,
       enemy.y,
       at + k * STRUM_SEC,
       GRUNT_CHORD[k % GRUNT_CHORD.length],
-      enemy.lookSeed
+      enemy.lookSeed,
+      1 / Math.sqrt(k + 1)
     );
     return at;
   }

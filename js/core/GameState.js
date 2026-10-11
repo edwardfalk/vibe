@@ -281,10 +281,8 @@ export class GameState {
       window.spawnSystem.reset();
     }
 
-    // Spawn initial enemies
-    if (window.spawnSystem) {
-      window.spawnSystem.spawnEnemies(1);
-    }
+    // A run's first swarm of grunts comes on the spawn system's first update
+    // (SpawnSystem.update), in place of an initial enemy
 
     // Game start speech
     if (this.startSpeechTimer) {

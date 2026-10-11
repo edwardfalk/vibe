@@ -85,11 +85,45 @@ const CONFIG = {
     // next type still to come appears when this far through a level
     PREVIEW_NEW_ENEMY: true,
     PREVIEW_AT_PROGRESS: 0.5,
+    // A grunt is cannon fodder, a swarm of them at a time: his kill's base
+    // points, whatever killed him (each route keeps its streak bonus)
+    GRUNT_KILL_POINTS: 3,
     // Enemies appear this far (px) past an edge of the view: past a tank's
     // spawn ring (1.5 × its size of 50) plus the biggest screen shake (15).
     // At most 125: with the view centred, that's the world beyond the top
     // and bottom edges
     SPAWN_MARGIN: 95,
+  },
+
+  // The grunts' swarms (js/systems/GruntSwarm.js): the alien throws its
+  // cannon fodder in as loose, jostling clouds that drift after the hero and
+  // play the snare as a section. Tune live with ?tune, all but OPENING; sizes
+  // apply from the next swarm, the rest at once.
+  SWARM: {
+    COUNT: 2, // swarms at once, each from its own side of the hero
+    SIZE_FIRST: 2, // grunts in a swarm at level 1
+    SIZE_PER_LEVEL: 1, // more each level
+    SIZE_MAX: 6,
+    SHOOTERS_MAX: 4, // the most that fire on one 2 or 4
+    GRUNTS_PER_SHOOTER: 3, // a third of the swarm fires, up to SHOOTERS_MAX
+    BREAK_BEATS: 14, // a cleared swarm's place is taken this long after (7 s at 120 BPM)
+    // A run from level 1 opens with swarms of these sizes, one at a time,
+    // each as soon as the last is cleared; then COUNT at once
+    OPENING: [1, 2],
+    FIRE_RANGE_PX: 450, // a grunt fires only with the hero this close
+    // Its centre comes in to this plus the cloud's radius, give or take
+    // STANDOFF_BAND_PX (50), from the hero, and parks at the far edge: its
+    // nearest grunt stops 60-130 px further out than this, more for a big
+    // or wide cloud. Keep that inside FIRE_RANGE_PX, or a hero who stands
+    // still is never shot at
+    STANDOFF_PX: 230,
+    DRIFT_SHARE: 1, // of a grunt's speed, once in range (full speed coming in)
+    PULL: 0.02, // toward the centre, a share of the way a frame
+    SPACING_PX: 80, // grunts of a swarm closer than this push apart
+    APART_DEG: 90, // swarms nearer than this round the hero drift apart (0: never)
+    // Each shot of a volley of n is this many dB down per doubling of n, so
+    // a volley carries about one shot's energy (-3: 1/sqrt(n))
+    VOLLEY_DB_PER_DOUBLING: -3,
   },
 
   // Mix. Speech runs outside Web Audio and can't go above full volume, so it
@@ -173,11 +207,14 @@ const CONFIG = {
   HUM: {
     ROOT: 'F#', // the universe's key: E, F, F#, G or A, in the octave up to A1 = 55 Hz
     LEVEL_DB: 0, // added to the listening page's level (Hum.js's TRIM_DB)
-    DRIFT_CENTS: 9, // the furthest the root wanders
-    DIP: 0.65, // share of the hum's level each beat's dip takes
-    BREATH: 0.3, // how far the filter opens and closes over two bars
+    DRIFT_CENTS: 10, // the furthest the root wanders
+    DIP: 0.85, // share of the hum's level each beat's dip takes
+    BREATH: 0.7, // how far the filter opens and closes over two bars
     CUTOFF_HZ: 420, // the filter's resting brightness
     FIGHT_OPEN: 1, // a full screen opens the filter this much more (1 = twice as bright)
+    // A full screen (Hum.filterTarget): SWARM.COUNT full swarms of SIZE_MAX
+    // plus the others' top cap (5); move it with either
+    FULL_SCREEN_ENEMIES: 17,
   },
 
   // Beat track: the steady kick. The hum under it is CONFIG.HUM.
@@ -197,7 +234,7 @@ const CONFIG = {
       // Saturation: adds overtones of the body, so small speakers that can't
       // play the bass itself still let you hear it. 0 = clean sine.
       DRIVE: 4,
-      CLICK_LEVEL: 0.5, // noise attack ("beater"), relative to VOLUME
+      CLICK_LEVEL: 0.4, // noise attack ("beater"), relative to VOLUME
       CLICK_DECAY_SEC: 0.015,
       CLICK_FREQ_HZ: 2500, // centre of the click's band; hearing peaks ~2-4 kHz
     },

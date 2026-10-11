@@ -107,7 +107,7 @@ test("the hum and the hero's shots sit under the kick, the hum quiet and on a fu
     return {
       kick,
       quiet: await hum(1, 0),
-      busy: await hum(5, CONFIG.PACING.MAX_ENEMIES_CAP),
+      busy: await hum(5, CONFIG.HUM.FULL_SCREEN_ENEMIES),
       heroes,
     };
   });
@@ -173,17 +173,35 @@ test('a bad root costs only the hum and the pitched sounds: the kick plays on', 
 // four at random phases 6 dB on average. Each grunt's seed spreads his copy
 // (Audio.playSynth). Averaged over many volleys, so chance alignment in one
 // can't fail it
-test('a volley of four grunt shots in one frame adds like random phases, not in phase', async ({
+// Grunt shots in one frame: four at full level add like random phases, not
+// in phase; a swarm's volley (GruntSwarm.settle), each of its n shots at the
+// swarm's gain, carries about one shot's energy, averaged over volleys
+const VOLLEY_TOLERANCE_DB = 1;
+test("grunt volleys: four shots add like random phases; a swarm's 2, 3 or 4 carry about one shot's energy", async ({
   page,
 }) => {
   await page.goto('/tests/helpers/speech-gate.html');
   const overOne = await page.evaluate(async () => {
     const { Audio } = await import('/js/Audio.js');
     const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
+    const { GruntSwarm } = await import('/js/systems/GruntSwarm.js');
     const RATE = 44100;
     const VOLLEYS = 64;
     const GAP_SEC = 0.25; // longer than the shot
-    async function energy(copies) {
+    // The gain its own settle() gives a volley of n
+    const gainFor = (n) => {
+      const swarm = new GruntSwarm({ size: n, x: 0, y: 0 });
+      const picks = Array.from({ length: n }, () => ({
+        warnedOnBeat: 0,
+        lineBlocked: () => false,
+      }));
+      swarm.settle(picks, 1);
+      return swarm.volleyGain;
+    };
+    // Each volley's grunts are new ones: fresh seeds, each his own note by
+    // his seed (Grunt.shotNote), from the half that picks the minor third
+    // unless `bothNotes`
+    async function energy(copies, { gain = 1, bothNotes = false } = {}) {
       const ctx = new OfflineAudioContext(
         1,
         Math.ceil(RATE * (VOLLEYS * GAP_SEC + 0.5)),
@@ -199,27 +217,24 @@ test('a volley of four grunt shots in one frame adds like random phases, not in 
               ? target[key].bind(target)
               : target[key],
       });
+      const out = ctx.destination;
       const audio = Object.assign(Object.create(Audio.prototype), {
         audioContext: timed,
-        masterGain: ctx.destination,
-        buses: {
-          drums: ctx.destination,
-          band: ctx.destination,
-          feedback: ctx.destination,
-        },
+        masterGain: out,
+        buses: { drums: out, band: out, feedback: out },
         effects: { reverb: null },
         player: { x: 0, y: 0 },
         context: null,
         getContextValue: () => undefined,
       });
-      // Each volley's grunts are new ones on one note: fresh seeds from the
-      // half that picks it (Grunt.shotNote)
       for (let v = 0; v < VOLLEYS; v++) {
         clock.t = v * GAP_SEC;
         for (let c = 0; c < copies; c++) {
+          const seed = Math.random() * (bothNotes ? 1 : 0.5);
           audio.playSynth(SOUND_CONFIG.alienShoot, null, null, {
-            note: ['b3', 5],
-            seed: Math.random() * 0.5,
+            note: seed < 0.5 ? ['b3', 5] : ['5', 5],
+            seed,
+            gain,
           });
         }
       }
@@ -228,11 +243,24 @@ test('a volley of four grunt shots in one frame adds like random phases, not in 
       for (const x of data) sum += x * x;
       return sum;
     }
-    return 10 * Math.log10((await energy(4)) / (await energy(1)));
+    const dB = (a, b) => 10 * Math.log10(a / b);
+    const four = dB(await energy(4), await energy(1));
+    const one = await energy(1, { bothNotes: true });
+    const volley = {};
+    for (const n of [2, 3, 4]) {
+      volley[n] = dB(
+        await energy(n, { gain: gainFor(n), bothNotes: true }),
+        one
+      );
+    }
+    return { four, volley };
   });
-  console.log('four grunt shots over one, dB:', overOne);
-  expect(overOne).toBeGreaterThan(4);
-  expect(overOne).toBeLessThan(8);
+  console.log('grunt shots over one, dB:', overOne);
+  expect(overOne.four).toBeGreaterThan(4);
+  expect(overOne.four).toBeLessThan(8);
+  for (const [n, db] of Object.entries(overOne.volley)) {
+    expect(Math.abs(db), `${n} shots`).toBeLessThanOrEqual(VOLLEY_TOLERANCE_DB);
+  }
 });
 
 // The mix pass (docs/superpowers/specs/2026-10-10-mix-pass-design.md): each
@@ -241,8 +269,8 @@ test('a volley of four grunt shots in one frame adds like random phases, not in 
 // is rendered alone, before the limiter, centred and near, the group knobs
 // at 0 and every other knob at its default, Math.random at 0.5, in the
 // default key, the band's dB knobs at 0; the kick in the same run. Where in
-// a 128-frame render block
-// a sound starts moves some by up to 2.3 dB (the kick most), and in play
+// a 128-frame render block a sound starts moves some by up to 2.3 dB (the
+// kick most), and in play
 // they start anywhere: each level is its mean over START_FRAMES. A group's
 // offset, and a band sound's dB knob, are Edward's by ear on top: the
 // windows check the levelling inside each group

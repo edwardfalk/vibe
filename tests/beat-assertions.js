@@ -4,11 +4,9 @@ import { bootGame, jumpToLevel } from './helpers/boot.js';
 const NUM_BEATS = parseInt(process.env.BEATS) || 8;
 
 /**
- * Inject beat event recorder that wraps BeatClock gate methods.
- * When a gate method (canGruntShoot, etc.) returns true, we log the event
- * with the current beat position. We record the *gate opening*, not the
- * enemy deciding to fire (which has random skips). This tells us whether
- * the timing system is correct. The tank has no gate: he acts on his first
+ * Inject a recorder of each enemy's beat actions, with the beat position.
+ * A grunt is recorded by his shot, at the beat it is fired on (his swarm
+ * decides who fires). The tank has no gate: he acts on his first
  * update in each bar (Tank.onKick), so that is what is recorded for him.
  * The rusher is recorded by his blast, at its nearest beat, and the stabber
  * by his lunge, at the beat position of the update that started it.
@@ -19,24 +17,19 @@ const injectRecorder = async (page) => {
     const bc = window.beatClock;
     if (!bc) throw new Error('beatClock not found on window');
 
-    const wrap = (methodName, enemyType) => {
-      const original = bc[methodName].bind(bc);
-      bc[methodName] = (...args) => {
-        const result = original(...args);
-        if (result) {
-          window.__beatEvents.push({
-            type: methodName,
-            enemyType,
-            beat: bc.getCurrentBeat(), // 0-indexed
-            totalBeats: bc.getTotalBeats(),
-            timestamp: Date.now(),
-          });
-        }
-        return result;
-      };
+    // Each grunt shot, at the beat it is fired on, which must be 2 or 4
+    const { Grunt } = await import('/js/entities/Grunt.js');
+    const createBullet = Grunt.prototype.createBullet;
+    Grunt.prototype.createBullet = function (...args) {
+      window.__beatEvents.push({
+        type: 'shot',
+        enemyType: 'grunt',
+        beat: bc.getCurrentBeat(), // 0-indexed
+        totalBeats: bc.getTotalBeats(),
+        timestamp: Date.now(),
+      });
+      return createBullet.apply(this, args);
     };
-
-    wrap('canGruntShoot', 'grunt');
 
     // The same module instance the game loaded, so its tanks use the patch
     const { Tank } = await import('/js/entities/Tank.js');
@@ -114,6 +107,29 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   // Inject recorder after level is set
   await injectRecorder(page);
 
+  // The swarms in range, above and ahead of the hero, settled in and held
+  // there: they fire on their next 2 and 4. Its line of fire is kept clear: the
+  // planted stabber below the hero is in it once he walks under them, and
+  // this check is of the beat a shot lands on, not of the line rule
+  // (TelegraphRings.test.js) or the stand-off (a far one backs it out of
+  // range: GruntSwarm.test.js)
+  await page.evaluate(() => {
+    const hero = window.player;
+    const grunts = window.enemies.filter((e) => e.type === 'grunt');
+    if (grunts.length === 0) throw new Error('no swarm to plant');
+    grunts.forEach((g, i) => {
+      g.x = hero.x + 120 + (i % 4) * 30;
+      g.y = hero.y - 120 - Math.floor(i / 4) * 30;
+      g.isSpawning = false;
+      g.lineBlocked = () => false;
+      g.velocity = { x: 0, y: 0 };
+    });
+    for (const swarm of window.spawnSystem.swarms) {
+      swarm.entering = false;
+      swarm.steer = () => {};
+    }
+  });
+
   // Light one rusher behind the hero: he blows within four beats
   await page.evaluate(() => {
     const hero = window.player;
@@ -174,7 +190,7 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   }
 
   // Expected beats (0-indexed):
-  // Grunt: beats 1, 3 (canGruntShoot checks currentBeat === 1 || === 3)
+  // Grunt: his shots, beats 1, 3 (2 and 4)
   // Tank: beat 0 (he acts on his first update in each bar)
   // Stabber: his lunge's nearest eighth, the "and" of 3 (2.5)
   // Rusher: his blast's nearest beat, 0 or 2 (beats 1 and 3)
@@ -232,6 +248,12 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   expect(
     byType.rusher?.length ?? 0,
     'no rusher blast was recorded'
+  ).toBeGreaterThan(0);
+
+  // The planted swarm must have fired, or the grunts' check proved nothing
+  expect(
+    byType.grunt?.length ?? 0,
+    'no grunt shot was recorded'
   ).toBeGreaterThan(0);
 
   // The planted stabber must have lunged, or the stabber's check proved nothing

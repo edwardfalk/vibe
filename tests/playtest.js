@@ -149,6 +149,107 @@ test('playtest session', async ({ page }) => {
       }
     }, 100);
   });
+  // The grunts' swarms (GruntSwarm.js): which 2s and 4s had a grunt shot
+  // while a swarm had a grunt in range, the silences over a bar between
+  // grunt shots, each swarm's size, how far apart round the hero they are,
+  // the others' arrivals by type, and how the grunts died
+  await page.evaluate(async () => {
+    const { Grunt } = await import('/js/entities/Grunt.js');
+    const { CONFIG } = await import('/js/config.js');
+    const clock = window.beatClock;
+    const s = (window.__swarms = {
+      inRange: new Set(),
+      shot: new Set(),
+      sizes: [],
+      gaps: [],
+      apart: [],
+      arrivals: {},
+      deaths: {},
+    });
+    // The beat of the last grunt shot; a silence is the beats to the next,
+    // when over a bar
+    const BAR_BEATS = 4;
+    let lastShot = null;
+    const known = new Set();
+    const createBullet = Grunt.prototype.createBullet;
+    Grunt.prototype.createBullet = function (...args) {
+      const beat = clock.getTotalBeats();
+      s.shot.add(beat);
+      if (lastShot !== null && beat - lastShot > BAR_BEATS) {
+        s.gaps.push(beat - lastShot);
+      }
+      lastShot = beat;
+      return createBullet.apply(this, args);
+    };
+    // Every grunt death, whatever the route (a stab's deferred death and a
+    // tank's ball never return through takeDamage's kill), counted once at
+    // the death handler, by the last hit's source. A tank's ball kills
+    // without takeDamage, so it marks its own
+    const takeDamage = Grunt.prototype.takeDamage;
+    Grunt.prototype.takeDamage = function (amount, angle, source) {
+      this.lastHitBy = source ?? 'shot';
+      return takeDamage.call(this, amount, angle, source);
+    };
+    const collisions = window.collisionSystem;
+    const ballHit = collisions.handleTankEnergyBallHit.bind(collisions);
+    collisions.handleTankEnergyBallHit = (bullet, enemy) => {
+      enemy.lastHitBy = "a tank's ball";
+      return ballHit(bullet, enemy);
+    };
+    const handler = window.enemyDeathHandler;
+    const handleEnemyDeath = handler.handleEnemyDeath.bind(handler);
+    const dead = new WeakSet();
+    handler.handleEnemyDeath = (e, ...rest) => {
+      if (e.type === 'grunt' && !dead.has(e)) {
+        dead.add(e);
+        const cause = e.lastHitBy ?? 'unknown';
+        s.deaths[cause] = (s.deaths[cause] ?? 0) + 1;
+      }
+      return handleEnemyDeath(e, ...rest);
+    };
+    const seen = new Set();
+    setInterval(() => {
+      const { swarms } = window.spawnSystem;
+      for (const swarm of swarms) {
+        if (known.has(swarm)) continue;
+        known.add(swarm);
+        s.sizes.push(swarm.size);
+      }
+      const hero = window.player;
+      const beat = clock.getTotalBeats();
+      // The least angle round the hero between two swarms' centres
+      if (swarms.length >= 2) {
+        const at = swarms.map((w) => Math.atan2(w.y - hero.y, w.x - hero.x));
+        let least = Math.PI;
+        for (let i = 0; i < at.length; i++) {
+          for (let j = i + 1; j < at.length; j++) {
+            const d = at[i] - at[j];
+            const a = Math.abs(Math.atan2(Math.sin(d), Math.cos(d)));
+            least = Math.min(least, a);
+          }
+        }
+        s.apart.push((least * 180) / Math.PI);
+      }
+      // A 2 or 4 a swarm could fire on: a grunt of it in range and done
+      // materialising
+      if (swarms.length && clock.getCurrentBeat() % 2 === 1) {
+        const near = window.enemies.some(
+          (e) =>
+            swarms.includes(e.swarm) &&
+            !e.markedForRemoval &&
+            !e.isSpawning &&
+            Math.hypot(e.x - hero.x, e.y - hero.y) < CONFIG.SWARM.FIRE_RANGE_PX
+        );
+        if (near) s.inRange.add(beat);
+      }
+      for (const e of window.enemies) {
+        if (e.type === 'grunt' || seen.has(e)) continue;
+        seen.add(e);
+        s.arrivals[e.type] = (s.arrivals[e.type] ?? 0) + 1;
+      }
+    }, 50);
+  });
+
   const box = await page.locator('canvas').first().boundingBox();
   await page.mouse.down();
 
@@ -207,6 +308,28 @@ test('playtest session', async ({ page }) => {
     renderer: window.backgroundRenderer?.sky?.renderer,
   }));
   const pacing = await page.evaluate(() => window.__pacing);
+  const swarms = await page.evaluate(() => {
+    const s = window.__swarms;
+    const covered = [...s.inRange].filter((b) => s.shot.has(b)).length;
+    return {
+      snareShare: s.inRange.size
+        ? +(covered / s.inRange.size).toFixed(2)
+        : null,
+      beatsInRange: s.inRange.size,
+      gapsBeats: s.gaps,
+      apartMedianDeg: s.apart.length
+        ? Math.round(
+            s.apart.toSorted((a, b) => a - b)[Math.floor(s.apart.length / 2)]
+          )
+        : null,
+      apartUnder45: s.apart.length
+        ? +(s.apart.filter((a) => a < 45).length / s.apart.length).toFixed(2)
+        : null,
+      sizes: s.sizes,
+      arrivals: s.arrivals,
+      gruntDeaths: s.deaths,
+    };
+  });
   const { frameMs, frameGapMs, longTasks } = await page.evaluate(() => {
     const stats = (list) => {
       const ms = list.toSorted((a, b) => a - b);
@@ -252,6 +375,7 @@ test('playtest session', async ({ page }) => {
     sampleCount: samples.length,
     levelUps: pacing.levelUps,
     firstSeen: pacing.firstSeen,
+    swarms,
   };
 
   // Print summary
@@ -276,6 +400,15 @@ test('playtest session', async ({ page }) => {
   console.log(`   Survived: ${survived ? 'yes' : 'no'}`);
   console.log(
     `   Level-ups [level, s]: ${JSON.stringify(pacing.levelUps)} | first seen (s): ${JSON.stringify(pacing.firstSeen)}`
+  );
+  console.log(
+    `   Swarms: sizes ${JSON.stringify(swarms.sizes)} | snare on ${swarms.snareShare} of ${swarms.beatsInRange} 2s and 4s in range | silences over a bar (beats) ${JSON.stringify(swarms.gapsBeats)}`
+  );
+  console.log(
+    `   Swarms apart round the hero: median ${swarms.apartMedianDeg}°, under 45° ${swarms.apartUnder45} of the time two were up`
+  );
+  console.log(
+    `   Others' arrivals: ${JSON.stringify(swarms.arrivals)} | grunt deaths by cause: ${JSON.stringify(swarms.gruntDeaths)}`
   );
   if (errors.length > 0) {
     console.log(`   ⚠️ Console errors: ${errors.length}`);

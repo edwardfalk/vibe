@@ -10,6 +10,12 @@ import {
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
+// A death is answered by one of its kind within this, px
+const ANSWER_RANGE_PX = 300;
+// Alive and staying so: not dead, not marked, not pending a stab death
+const canAnswer = (e) =>
+  !e.markedForRemoval && e.health > 0 && !e.pendingStabDeath;
+
 /**
  * BaseEnemy class - Contains shared functionality for all enemy types
  * Handles position, health, basic movement, common rendering, and speech systems
@@ -341,19 +347,21 @@ export class BaseEnemy {
   /**
    * A neighbour of its kind died: it answers on the next eighth note, or,
    * when the death pops (a grunt's, at popsAt on the audio clock), an
-   * eighth after the pop
+   * eighth after the pop. A chord's one answer (`standIn`) is given, if he
+   * has died by then, by the first of his kind still alive near the pop.
+   * @returns {boolean} whether it took the answer on
    */
-  onNearbyDeath(deadEnemy, popsAt = null) {
-    if (!deadEnemy || deadEnemy.type !== this.type) return;
-    if (this.markedForRemoval || this.health <= 0) return;
+  onNearbyDeath(deadEnemy, popsAt = null, standIn = false) {
+    if (!deadEnemy || deadEnemy.type !== this.type) return false;
+    if (this.markedForRemoval || this.health <= 0) return false;
 
     const dx = this.x - deadEnemy.x;
     const dy = this.y - deadEnemy.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance > 300) return;
+    if (distance > ANSWER_RANGE_PX) return false;
 
     const audio = this.getContextValue('audio');
-    if (!audio) return;
+    if (!audio) return false;
 
     const responseKey = `${this.type}Response`;
     const beatClock = this.getContextValue('beatClock');
@@ -372,19 +380,31 @@ export class BaseEnemy {
       const at = beatClock.nowSec() + delay / 1000;
       setTimeout(
         () => {
-          audio.playSound(responseKey, this.x, this.y, { at });
+          // Only one still alive answers
+          const near = (e) =>
+            e.type === this.type &&
+            canAnswer(e) &&
+            Math.hypot(e.x - deadEnemy.x, e.y - deadEnemy.y) <= ANSWER_RANGE_PX;
+          const voice = canAnswer(this)
+            ? this
+            : standIn
+              ? this.getContextValue('enemies')?.find(near)
+              : null;
+          if (voice) audio.playSound(responseKey, voice.x, voice.y, { at });
         },
         Math.max(0, delay)
       );
     } else {
       audio.playSound(responseKey, this.x, this.y);
     }
+    return true;
   }
 
   /**
-   * Keep inside the world, where the camera never goes past. The tank and
-   * the rusher call it: a sidestep, or a rusher shooting past near a wall,
-   * could otherwise carry them out
+   * Keep inside the world, where the camera never goes past. Each type calls
+   * it after it moves (a tank's sidestep, a rusher shooting past near a
+   * wall, a stabber's lunge, a grunt his swarm pushes), and the spawn system
+   * on a swarm's grunts as they are placed
    */
   keepInWorld() {
     const halfW = CONFIG.GAME_SETTINGS.WORLD_WIDTH / 2 - this.size / 2;

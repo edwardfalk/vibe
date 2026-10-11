@@ -20,6 +20,7 @@ import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
 import { hash01 } from '../entities/RusherRenderer.js';
 import { COMIC } from '../effects/explosions/BombBlast.js';
 import { BOMB_PLANTED, COUNTDOWN, TANK_UH_OH } from '../audio/DialogueLines.js';
+import { killPoints } from '../shared/DamageResultHandler.js';
 
 const COUNT_EVERY_BEATS = 2;
 const SEED_Y = 7.31; // folds y into a bang's seed, so bombs on one row differ
@@ -231,7 +232,7 @@ export function updateBombs(context) {
         enemy.markedForRemoval = true;
         if (gameState) {
           gameState.addKill();
-          gameState.addScore(20);
+          gameState.addScore(killPoints(enemy, 20));
         }
       } else if (damageResult === DAMAGE_RESULT.EXPLODING) {
         if (explosionManager) {

@@ -180,6 +180,39 @@ test.describe('Gameplay Probes', () => {
     expect(after.playerAlive).toBe(true);
   });
 
+  test('Each frame the swarm steers its grunts before they move', async ({
+    page,
+  }) => {
+    await bootGame(page);
+    await page.waitForFunction(() => window.spawnSystem?.swarms.length);
+    const frames = await page.evaluate(async () => {
+      const { Grunt } = await import('/js/entities/Grunt.js');
+      const log = [];
+      const system = window.spawnSystem;
+      const updateSwarm = system.updateSwarm;
+      system.updateSwarm = function () {
+        log.push(['swarm', window.frameCount]);
+        return updateSwarm.call(this);
+      };
+      const update = Grunt.prototype.update;
+      Grunt.prototype.update = function (...args) {
+        log.push(['grunt', window.frameCount]);
+        return update.apply(this, args);
+      };
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      Grunt.prototype.update = update;
+      system.updateSwarm = updateSwarm;
+      // What each frame that moved grunts did, in order
+      const byFrame = new Map();
+      for (const [what, frame] of log) {
+        byFrame.set(frame, [...(byFrame.get(frame) ?? []), what]);
+      }
+      return [...byFrame.values()].filter((done) => done.includes('grunt'));
+    });
+    expect(frames.length).toBeGreaterThan(5);
+    for (const done of frames) expect(done[0]).toBe('swarm');
+  });
+
   test('Screen flashes fade out in the running game', async ({ page }) => {
     await bootGame(page);
     await page.evaluate(() => {
@@ -392,6 +425,22 @@ test.describe('Gameplay Probes', () => {
       'SCENE_ZOOM',
     ]) {
       await expect(page.locator('#tunePanel')).toContainText(`DEATHS.${key}:`);
+    }
+    // So are the grunts' swarms', all but the run's opening (a list, read
+    // as a run starts)
+    for (const key of Object.keys(
+      await page.evaluate(async () => {
+        const { CONFIG } = await import('/js/config.js');
+        return CONFIG.SWARM;
+      })
+    ).filter((k) => k !== 'OPENING')) {
+      await expect(page.locator('#tunePanel')).toContainText(`SWARM.${key}:`);
+    }
+    for (const label of [
+      'PACING.GRUNT_KILL_POINTS',
+      'HUM.FULL_SCREEN_ENEMIES',
+    ]) {
+      await expect(page.locator('#tunePanel')).toContainText(`${label}:`);
     }
     // So are the chatter's
     for (const label of [
@@ -606,16 +655,30 @@ test.describe('Gameplay Probes', () => {
   }) => {
     await bootGame(page);
     await page.waitForFunction(() => window.beatTrack?.isPlaying);
-    const record = () =>
-      page.evaluate(async () => {
+    const record = async () => {
+      // A run's swarms come on the spawn system's first update
+      await page.waitForFunction(() => window.spawnSystem?.swarms.length);
+      return page.evaluate(async () => {
         const track = window.beatTrack;
         const clock = window.beatClock;
         const audio = window.audio;
-        // Bring a grunt within firing range (grunts fire only within 300 px)
-        const grunt = window.enemies.find((e) => e.type === 'grunt');
-        if (grunt) {
-          grunt.x = window.player.x + 200;
-          grunt.y = window.player.y;
+        // The swarms in range (FIRE_RANGE_PX) of the still hero, settled in
+        // and held there, their line clear: they fire on their next 2 and 4 (the line
+        // rule is TelegraphRings.test.js's; a far stand-off would back it out
+        // of range, GruntSwarm.test.js's)
+        const hero = window.player;
+        window.enemies
+          .filter((e) => e.type === 'grunt')
+          .forEach((g, i) => {
+            g.x = hero.x + 150 + (i % 4) * 30;
+            g.y = hero.y - 30 + Math.floor(i / 4) * 30;
+            g.isSpawning = false;
+            g.lineBlocked = () => false;
+            g.velocity = { x: 0, y: 0 };
+          });
+        for (const swarm of window.spawnSystem.swarms) {
+          swarm.entering = false;
+          swarm.steer = () => {};
         }
         const schedule = track._scheduleNote.bind(track);
         const playSound = audio.playSound.bind(audio);
@@ -668,6 +731,7 @@ test.describe('Gameplay Probes', () => {
         SYNTHS.gruntShot = gruntShot;
         return { kicks, shotOffsets, shotStarts, tolerance: clock.tolerance };
       });
+    };
     const check = ({ kicks, shotOffsets, shotStarts, tolerance }) => {
       expect(kicks.length).toBeGreaterThanOrEqual(3);
       for (const k of kicks) {

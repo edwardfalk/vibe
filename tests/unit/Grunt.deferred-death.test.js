@@ -4,7 +4,6 @@ import { Grunt } from '../../js/entities/Grunt.js';
 import { CONFIG } from '../../js/config.js';
 import { Bullet } from '../../js/entities/bullet.js';
 import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
-import { STABBER_KILL_POINTS } from '../../js/shared/DamageResultHandler.js';
 
 describe('Grunt deferred stabber death', () => {
   let grunt;
@@ -103,7 +102,7 @@ describe('Grunt deferred stabber death', () => {
     );
   });
 
-  it('scores the kill when the delayed death lands, like any stabber kill', () => {
+  it('scores the kill when the delayed death lands, at a grunt’s points like any kill of his', () => {
     grunt.takeDamage(5, null, 'stabber_melee');
     for (let i = 0; i < 12; i++) {
       grunt.updateSpecificBehavior(
@@ -113,7 +112,9 @@ describe('Grunt deferred stabber death', () => {
       );
     }
     expect(mockGameState.addKill).toHaveBeenCalledTimes(1);
-    expect(mockGameState.addScore).toHaveBeenCalledWith(STABBER_KILL_POINTS);
+    expect(mockGameState.addScore).toHaveBeenCalledWith(
+      CONFIG.PACING.GRUNT_KILL_POINTS
+    );
   });
 });
 

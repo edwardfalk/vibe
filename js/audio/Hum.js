@@ -53,11 +53,12 @@ const levelGainOf = () => dbToGain(TRIM_DB + CONFIG.HUM.LEVEL_DB);
 
 /**
  * The filter's target: brighter as the screen fills. Fill is enemies over
- * PACING.MAX_ENEMIES_CAP, clamped to 0-1, and 0 with no cap.
+ * HUM.FULL_SCREEN_ENEMIES (full swarms and the most others), clamped to
+ * 0-1, and 0 with none.
  */
 export function filterTarget(enemies) {
   const { CUTOFF_HZ, FIGHT_OPEN } = CONFIG.HUM;
-  const cap = CONFIG.PACING.MAX_ENEMIES_CAP;
+  const cap = CONFIG.HUM.FULL_SCREEN_ENEMIES;
   const fill = cap > 0 ? clamp01(enemies / cap) : 0;
   return CUTOFF_HZ * (1 + FIGHT_OPEN * fill);
 }

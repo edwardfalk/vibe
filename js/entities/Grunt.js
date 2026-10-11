@@ -1,5 +1,5 @@
 import { BaseEnemy } from './BaseEnemy.js';
-import { random, sqrt, atan2 } from '../mathUtils.js';
+import { sqrt, atan2 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import {
@@ -19,11 +19,9 @@ import {
   nextFacing,
 } from './GruntRenderer.js';
 
-// Per-beat chances for beat-gated grunt sounds (rolled once per beat)
-const GRUNT_WEIRD_NOISE_CHANCE = 0.2;
-const GRUNT_MOVE_SOUND_CHANCE = 0.5;
-// Grunts only shoot at the hero from this close
-const GRUNT_FIRE_RANGE = 300;
+// A friend this close and this near his aim blocks his shot
+const LINE_OF_FIRE_PX = 400;
+const LINE_OF_FIRE_RAD = Math.PI / 9; // 20°
 // Shown over a warned grunt that doesn't fire after all
 // (lift: px above its health bar's top)
 const SHOT_CANCELLED = {
@@ -39,8 +37,8 @@ const ANTENNA_REACH = 1.1;
 const GRUNT_SHOT_SPEED = 4; // px per frame
 
 /**
- * Grunt class - Tactical ranged combat AI
- * Maintains tactical distance, uses friendly fire avoidance, confused personality
+ * A grunt: the alien's cannon fodder, one of a swarm (GruntSwarm.js) that
+ * moves him; he fires on 2 and 4, his own note, his own look and death
  */
 class Grunt extends BaseEnemy {
   constructor(x, y, type, config, p, audio) {
@@ -55,7 +53,8 @@ class Grunt extends BaseEnemy {
 
     // --- Deferred-death state ---------------------------------
     this.pendingStabDeath = false; // true while "ow" delay active
-    this.warnedOnBeat = null; // the beat a ring last warned of a shot from
+    this.warnedOnBeat = null; // the beat his swarm picked him to fire after
+    this.fireOnBeat = null; // the beat his swarm's volley has him fire on
     this.pendingStabDeathTimer = 0; // frames remaining
     this._pendingStabDeathParams = null;
 
@@ -69,12 +68,11 @@ class Grunt extends BaseEnemy {
     // A grunt can be drawn once before its first update.
     this.poseBeats =
       this.getContextValue('beatClock')?.getBeatPosition() ?? null;
-
-    // Grunt weird noises are now beat-gated (no timer needed)
   }
 
   /**
-   * Update specific grunt behavior - tactical ranged combat
+   * Each frame, after he moved: a stabbed grunt's delayed death, else his
+   * wind-up ring and the shot his swarm settled
    * @param {number} playerX - Player X position
    * @param {number} playerY - Player Y position
    * @param {number} deltaTimeMs - Time elapsed since last frame in milliseconds
@@ -121,69 +119,16 @@ class Grunt extends BaseEnemy {
       return null;
     }
 
-    const dx = playerX - this.x;
-    const dy = playerY - this.y;
-    const distance = sqrt(dx * dx + dy * dy);
-
-    // Handle grunt weird noise (beat-gated)
     const beatClock = this.getContextValue('beatClock');
-    const audio = this.getContextValue('audio');
-    if (
-      this.onBeatOnce(beatClock, 'weirdNoise', beatClock?.isOnBeat([2, 4])) &&
-      random() < GRUNT_WEIRD_NOISE_CHANCE
-    ) {
-      this.makeGruntWeirdNoise();
-    }
-
-    // Grunts maintain tactical distance (150-250 pixels)
-    const tooClose = 150;
-    const tooFar = 250;
-
-    this.velocity.x = 0;
-    this.velocity.y = 0;
-
-    let moveSound = null;
-    if (distance > 0) {
-      const unitX = dx / distance;
-      const unitY = dy / distance;
-
-      if (distance < tooClose) {
-        // Too close - retreat while maintaining line of sight
-        this.velocity.x = -unitX * this.speed * 0.8;
-        this.velocity.y = -unitY * this.speed * 0.8;
-
-        // Tactical side-step 40% of the time
-        if (random() < 0.4) {
-          this.velocity.x += random(-0.5, 0.5);
-          this.velocity.y += random(-0.5, 0.5);
-        }
-        moveSound = 'gruntRetreat';
-      } else if (distance > tooFar) {
-        // Too far - advance but maintain tactical spacing
-        this.velocity.x = unitX * this.speed * 0.6;
-        this.velocity.y = unitY * this.speed * 0.6;
-        moveSound = 'gruntAdvance';
-      } else {
-        // At ideal distance - maintain position with small movements
-        this.velocity.x = random(-0.3, 0.3);
-        this.velocity.y = random(-0.3, 0.3);
-      }
-    }
-    if (
-      moveSound &&
-      audio &&
-      this.onBeatOnce(beatClock, 'moveSound', beatClock?.isOnBeat([2, 4])) &&
-      random() < GRUNT_MOVE_SOUND_CHANCE
-    ) {
-      audio.playSound(moveSound, this.x, this.y);
-    }
-
-    // BEAT-ALIGNED GRUNT SHOOTING: once per beat 2 or 4, with random skip
+    // His swarm steers him and picks who fires (GruntSwarm, before the
+    // enemies move); BaseEnemy.update has moved him. A grunt with no swarm
+    // stands and never fires.
+    if (!beatClock) return null;
+    const total = beatClock.getTotalBeats();
+    // Picked: his ring runs through the beat he was picked on (1 or 3,
+    // the only beats a swarm picks on) and closes as the 2 or 4 lands
     const rhythmFX = this.getContextValue('rhythmFX');
-    const inRange = distance < GRUNT_FIRE_RANGE;
-    // Warn through the beat before each shot (beats 1 and 3, counted from 0
-    // here): the ring closes as beat 2 or 4 lands
-    if (inRange && rhythmFX && beatClock?.getCurrentBeat() % 2 === 0) {
+    if (rhythmFX && this.warnedOnBeat === total) {
       const beatsUntilShot = 1 - beatClock.getBeatPhase();
       rhythmFX.addAttackTelegraph(
         this.x,
@@ -192,34 +137,22 @@ class Grunt extends BaseEnemy {
         beatsUntilShot,
         this
       );
-      this.warnedOnBeat = beatClock.getTotalBeats();
     }
 
-    if (
-      beatClock &&
-      this.onBeatOnce(beatClock, 'fire', beatClock.canGruntShoot())
-    ) {
-      // Warned on the beat just before this one; a warning whose fire
-      // window was missed (hitstop, a pause) must not show up a bar later
-      const warned = this.warnedOnBeat === beatClock.getTotalBeats() - 1;
-      if (inRange) {
-        // Coordination: check if another grunt already fired this beat
-        const currentTotalBeat = beatClock.getTotalBeats();
-        const lastGruntFireBeat = this.getContextValue('gruntFireBeat') ?? -1;
-        const alreadyFired = lastGruntFireBeat === currentTotalBeat;
-
-        // Higher skip chance if another grunt already fired this beat
-        const skipChance = alreadyFired ? 0.6 : 0.2;
-        if (random() >= skipChance && !this.shouldAvoidFriendlyFire()) {
-          // Fire!
-          this.firedAt = beatClock.getBeatPosition();
-          this.context.set('gruntFireBeat', currentTotalBeat);
-          return this.createBullet();
-        }
+    // His swarm settled this beat's volley: he fires, or, picked, holds,
+    // once. He reads its stamps alone: a window check of his own, a moment
+    // later in the same frame, could find the 2 or 4 already landed
+    if (this.swarm?.settledBeat === total && this.actedOnBeat !== total) {
+      this.actedOnBeat = total;
+      if (this.fireOnBeat === total) {
+        this.firedAt = beatClock.getBeatPosition();
+        return this.createBullet();
       }
-      // A warning with nothing after it would look like a glitch
-      if (warned) {
-        this.heldOnBeat = beatClock.getTotalBeats();
+      // Warned on the beat just before this one; a warning whose fire
+      // window was missed (hitstop, a pause) must not show up a bar later.
+      // A warning with nothing after it would look like a glitch.
+      if (this.warnedOnBeat === total - 1) {
+        this.heldOnBeat = total;
         const { text, color, size } = SHOT_CANCELLED;
         this.getContextValue('floatingText')?.addText(
           this.x,
@@ -235,52 +168,20 @@ class Grunt extends BaseEnemy {
   }
 
   /**
-   * Check if grunt should avoid friendly fire
+   * Another enemy within 20° of his aim and LINE_OF_FIRE_PX: his shot would
+   * hit a friend, so his swarm doesn't pick him, or holds his shot
    */
-  shouldAvoidFriendlyFire() {
+  lineBlocked() {
     const enemies = this.getContextValue('enemies');
-    if (!enemies) return false;
-    // Defensive: If aimAngle is not set, skip friendly fire check to avoid NaN results
-    if (typeof this.aimAngle !== 'number') return false;
-
-    const bulletPath = {
-      startX: this.x,
-      startY: this.y,
-      angle: this.aimAngle,
-      range: 400, // Check 400 pixels ahead
-    };
-
-    for (const otherEnemy of enemies) {
-      if (otherEnemy === this) continue; // Skip self
-
-      // Calculate if other enemy is in the line of fire
-      const dx = otherEnemy.x - this.x;
-      const dy = otherEnemy.y - this.y;
-      const distanceToOther = sqrt(dx * dx + dy * dy);
-
-      if (distanceToOther < bulletPath.range) {
-        // Calculate angle to other enemy
-        const angleToOther = atan2(dy, dx);
-        // Minimal angular difference (handle wrap-around)
-        const angleDifference = Math.abs(angleToOther - bulletPath.angle);
-        const normalizedAngleDiff = Math.min(
-          angleDifference,
-          Math.PI * 2 - angleDifference
-        );
-
-        // If other enemy is within 20 degrees of aim angle, consider avoiding
-        if (normalizedAngleDiff < Math.PI / 9) {
-          // 20 degrees
-          // 45% chance to avoid shooting (grunts try to avoid but aren't perfect)
-          if (random() < 0.45) {
-            return true;
-          } else {
-            return false;
-          }
-        }
-      }
+    if (!enemies || typeof this.aimAngle !== 'number') return false;
+    for (const other of enemies) {
+      if (other === this || other.markedForRemoval) continue;
+      const dx = other.x - this.x;
+      const dy = other.y - this.y;
+      if (sqrt(dx * dx + dy * dy) >= LINE_OF_FIRE_PX) continue;
+      const off = Math.abs(atan2(dy, dx) - this.aimAngle);
+      if (Math.min(off, Math.PI * 2 - off) < LINE_OF_FIRE_RAD) return true;
     }
-
     return false;
   }
 
@@ -301,8 +202,9 @@ class Grunt extends BaseEnemy {
     return GRUNT_VOICES[Math.floor(rest * GRUNT_VOICES.length)];
   }
 
-  /** @override */
+  /** @override One grunt speaks for his swarm (GruntSwarm.speaker) */
   getAmbientSpeechConfig() {
+    if (this.swarm && this.swarm.speaker !== this) return null;
     return {
       lines: GRUNT_LINES,
       gate: (beatClock) => !!beatClock?.isOnBeat([2, 4]),
@@ -313,6 +215,8 @@ class Grunt extends BaseEnemy {
   /** @override Turns to face its target once it has moved and aimed */
   update(playerX, playerY, deltaTimeMs) {
     const bullet = super.update(playerX, playerY, deltaTimeMs);
+    // A swarm's push can carry a grunt at its edge past the world's
+    this.keepInWorld();
     this.facing = nextFacing(this.facing, this.aimAngle);
     // After super.update(), so a shot it just fired is never in the future
     this.poseBeats =
@@ -367,9 +271,11 @@ class Grunt extends BaseEnemy {
       'enemy-grunt'
     );
     bullet.ownerId = this.id; // so it can't shoot itself
+    // A volley of n carries about one shot's energy (GruntSwarm.settle)
     this.audio?.playSound('alienShoot', this.x, this.y, {
       note: this.shotNote(),
       seed: this.lookSeed,
+      gain: this.swarm?.volleyGain ?? 1,
     });
     return bullet;
   }

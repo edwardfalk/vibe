@@ -92,7 +92,8 @@ describe("a grunt's death", () => {
       50,
       1.25,
       ['b3', 5],
-      0.37
+      0.37,
+      1 // the chord's first pop, at full level
     );
     // Today's burst and blip are gone for it
     expect(w.explosionManager.addFragmentExplosion).not.toHaveBeenCalled();
@@ -107,6 +108,17 @@ describe("a grunt's death", () => {
     expect(w.audio.playGruntPop.mock.calls.map((c) => c[2])).toEqual([
       1.5,
       1.5 + STRUM_SEC,
+    ]);
+  });
+
+  it('a crowd popping together does not stack up: each later pop of a chord at 1/√ of its place', () => {
+    const w = deathWorld(1.13);
+    for (let k = 0; k < 4; k++) w.kill(aGrunt());
+    expect(w.audio.playGruntPop.mock.calls.map((c) => c[5])).toEqual([
+      1,
+      1 / Math.sqrt(2),
+      1 / Math.sqrt(3),
+      1 / 2,
     ]);
   });
 
@@ -239,7 +251,7 @@ describe("a grunt's death", () => {
       const w = deathWorld(1.13, [neighbour]);
       const dead = aGrunt();
       w.kill(dead);
-      expect(neighbour.onNearbyDeath).toHaveBeenCalledWith(dead, 1.25);
+      expect(neighbour.onNearbyDeath).toHaveBeenCalledWith(dead, 1.25, true);
     });
 
     it('answer an eighth after its pop, not on it', () => {
@@ -264,6 +276,78 @@ describe("a grunt's death", () => {
       const [name, x, y, opts] = audio.playSound.mock.calls[0];
       expect([name, x, y]).toEqual(['gruntResponse', 0, 0]);
       expect(opts.at).toBeCloseTo(1.5, 9);
+    });
+
+    it('grunts popping together share one answer, from one neighbour', () => {
+      const neighbours = [1, 2, 3].map(() =>
+        aGrunt({ onNearbyDeath: vi.fn(() => true) })
+      );
+      const w = deathWorld(1.13, neighbours);
+      for (let k = 0; k < 4; k++) w.kill(aGrunt());
+      const asked = neighbours.flatMap((n) => n.onNearbyDeath.mock.calls);
+      expect(asked).toHaveLength(1);
+      expect(asked[0][2]).toBe(true); // a stand-in may give it
+    });
+
+    it('a chord whose first pop has no one near is answered for a later pop that has', () => {
+      // He takes on only a death near him, at x 600
+      const neighbour = aGrunt({
+        x: 600,
+        onNearbyDeath: vi.fn((dead) => dead.x > 500),
+      });
+      const w = deathWorld(1.13, [neighbour]);
+      for (const x of [0, 620, 630]) w.kill(aGrunt({ x }));
+      // asked for the lone pop and the next, which he took; not the third
+      expect(neighbour.onNearbyDeath.mock.calls.map(([d]) => d.x)).toEqual([
+        0, 620,
+      ]);
+      // the next eighth's chord is asked afresh
+      w.clock.t = 1.38;
+      w.kill(aGrunt({ x: 640 }));
+      expect(neighbour.onNearbyDeath).toHaveBeenCalledTimes(3);
+    });
+
+    it('a neighbour who turns it down (too far, dead) leaves it to the next', () => {
+      const [far, near, next] = [false, true, true].map((takes) =>
+        aGrunt({ onNearbyDeath: vi.fn(() => takes) })
+      );
+      deathWorld(1.13, [far, near, next]).kill(aGrunt());
+      expect(far.onNearbyDeath).toHaveBeenCalledTimes(1);
+      expect(near.onNearbyDeath).toHaveBeenCalledTimes(1);
+      expect(next.onNearbyDeath).not.toHaveBeenCalled();
+    });
+
+    it('an answer whose grunt died before it plays comes from another still alive near the pop, if any', () => {
+      vi.useFakeTimers();
+      // A neighbour asked to answer; the same blast takes him, and maybe
+      // the others
+      const answered = (others, standIn = true) => {
+        const audio = { playSound: vi.fn() };
+        const values = { audio, beatClock: audioClock(1.13), enemies: [] };
+        const grunt = (x, o = {}) =>
+          Object.assign(Object.create(BaseEnemy.prototype), {
+            type: 'grunt',
+            x,
+            y: 0,
+            health: 3,
+            markedForRemoval: false,
+            getContextValue: (k) => values[k],
+            ...o,
+          });
+        const neighbour = grunt(0);
+        values.enemies.push(neighbour, ...others.map((o) => grunt(...o)));
+        expect(
+          neighbour.onNearbyDeath({ type: 'grunt', x: 10, y: 0 }, 1.25, standIn)
+        ).toBe(true);
+        neighbour.markedForRemoval = true;
+        vi.advanceTimersByTime(1000);
+        return audio.playSound.mock.calls.map(([, x]) => x);
+      };
+      expect(answered([[40], [60]])).toEqual([40]); // the first still alive
+      expect(answered([[40, { health: 0 }], [60]])).toEqual([60]);
+      expect(answered([[40, { pendingStabDeath: true }], [60]])).toEqual([60]);
+      expect(answered([[400]])).toEqual([]); // none near the pop
+      expect(answered([[40]], false)).toEqual([]); // not a chord's: no stand-in
     });
   });
 });
