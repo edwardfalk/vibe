@@ -100,7 +100,7 @@ const CONFIG = {
   // and plays the snare as a section. Tune live with ?tune; sizes apply from
   // the next swarm, the rest at once.
   SWARM: {
-    SIZE_FIRST: 5, // grunts in a swarm at level 1
+    SIZE_FIRST: 2, // grunts in a swarm at level 1
     SIZE_PER_LEVEL: 2, // more each level
     SIZE_MAX: 12,
     SHOOTERS_MAX: 4, // the most that fire on one 2 or 4
@@ -108,10 +108,10 @@ const CONFIG = {
     GAP_BEATS: 4, // a new swarm's first volley comes no sooner after the clear
     // Its centre holds this plus the cloud's radius from the hero, so its
     // nearest grunt keeps a lone grunt's old distance (150-250 px)
-    STANDOFF_PX: 200,
-    DRIFT_SHARE: 0.6, // of a grunt's speed, once in range (full speed coming in)
+    STANDOFF_PX: 260,
+    DRIFT_SHARE: 1, // of a grunt's speed, once in range (full speed coming in)
     PULL: 0.02, // toward the centre, a share of the way a frame
-    SPACING_PX: 34, // grunts closer than this push apart
+    SPACING_PX: 80, // grunts closer than this push apart
     // Each shot of a volley of n is this many dB down per doubling of n, so
     // a volley carries about one shot's energy (-3: 1/sqrt(n))
     VOLLEY_DB_PER_DOUBLING: -3,
@@ -197,10 +197,10 @@ const CONFIG = {
   // overhaul's PR 2).
   HUM: {
     ROOT: 'F#', // the universe's key: E, F, F#, G or A, in the octave up to A1 = 55 Hz
-    LEVEL_DB: 0, // added to the listening page's level (Hum.js's TRIM_DB)
-    DRIFT_CENTS: 9, // the furthest the root wanders
-    DIP: 0.65, // share of the hum's level each beat's dip takes
-    BREATH: 0.3, // how far the filter opens and closes over two bars
+    LEVEL_DB: -1, // added to the listening page's level (Hum.js's TRIM_DB)
+    DRIFT_CENTS: 10, // the furthest the root wanders
+    DIP: 0.85, // share of the hum's level each beat's dip takes
+    BREATH: 0.7, // how far the filter opens and closes over two bars
     CUTOFF_HZ: 420, // the filter's resting brightness
     FIGHT_OPEN: 1, // a full screen opens the filter this much more (1 = twice as bright)
     // A full screen (Hum.filterTarget): SWARM.SIZE_MAX plus the others' top
@@ -225,7 +225,7 @@ const CONFIG = {
       // Saturation: adds overtones of the body, so small speakers that can't
       // play the bass itself still let you hear it. 0 = clean sine.
       DRIVE: 4,
-      CLICK_LEVEL: 0.5, // noise attack ("beater"), relative to VOLUME
+      CLICK_LEVEL: 0.4, // noise attack ("beater"), relative to VOLUME
       CLICK_DECAY_SEC: 0.015,
       CLICK_FREQ_HZ: 2500, // centre of the click's band; hearing peaks ~2-4 kHz
     },

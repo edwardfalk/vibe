@@ -119,7 +119,7 @@ describe('a run starts with its first swarm', () => {
     const make = system.createEnemy.bind(system);
     let n = 0;
     vi.spyOn(system, 'createEnemy').mockImplementation((...a) => {
-      if (++n === 3) throw new Error('no grunt');
+      if (++n === swarmSize(1)) throw new Error('no grunt'); // the last
       return make(...a);
     });
     expect(() => system.update()).toThrow('no grunt');
@@ -174,8 +174,9 @@ describe('the next swarm', () => {
     const { system, enemies } = world();
     system.update();
     // Its grunts coming in from the right, its centre at (520, 0)
+    const n = grunts(enemies).length;
     grunts(enemies).forEach((g, i) => {
-      g.x = 500 + i * 10;
+      g.x = 520 + (i - (n - 1) / 2) * 10;
       g.y = 0;
     });
     const audio = { playSound: vi.fn() };
@@ -219,7 +220,7 @@ describe('the trickle of other types', () => {
   it('counts only the others against it: a full swarm never holds them back', () => {
     const { system, enemies, clock } = world({ level: 5 });
     system.update();
-    expect(grunts(enemies)).toHaveLength(12);
+    expect(grunts(enemies)).toHaveLength(swarmSize(5));
     system.getContextValue('beatClock').isOnBeat = () => true;
     for (let wave = 0; wave < 4; wave++) {
       clock.beats += 100;

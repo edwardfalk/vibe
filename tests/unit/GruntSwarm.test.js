@@ -60,7 +60,7 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 describe('a swarm’s size', () => {
   it('starts at SIZE_FIRST and grows SIZE_PER_LEVEL a level, up to SIZE_MAX', () => {
     expect([1, 2, 3, 4, 5, 6, 9].map(swarmSize)).toEqual([
-      5, 7, 9, 11, 12, 12, 12,
+      2, 4, 6, 8, 10, 12, 12,
     ]);
   });
 
@@ -177,13 +177,16 @@ describe('a swarm’s movement', () => {
 
   it('pulls a grunt knocked out of the cloud back into it, as hard as PULL says', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5); // no jitter
-    // Five at the stand-off from the hero, a sixth 200 px past them
+    // Five at the stand-off from the hero, a sixth five cloud radii past them
     const strayAfter = (pull) => {
       CONFIG.SWARM.PULL = pull;
       const swarm = new GruntSwarm({ size: 6, x: 0, y: 0 });
       swarm.entering = false;
       const D = CONFIG.SWARM.STANDOFF_PX + cloudRadius(6);
-      const enemies = [...cloud(swarm, 5, D, 0), grunt(swarm, D + 200, 0)];
+      const enemies = [
+        ...cloud(swarm, 5, D, 0),
+        grunt(swarm, D + 5 * cloudRadius(6), 0),
+      ];
       run(swarm, enemies, hero, 300);
       return dist(enemies[5], centroid(enemies));
     };
