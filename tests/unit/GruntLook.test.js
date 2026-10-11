@@ -184,6 +184,40 @@ describe('drawing a grunt', () => {
     expect(g.pose().flash).toBe(0);
   });
 
+  it("shows its chatter, in the voice it plays, and its swarm's move call", () => {
+    const away = (CONFIG.GRUNT_LOOK.SPIN_SEC * (1 - Math.SQRT1_2)) / 0.5;
+    const g = gruntWith(clockAt(17));
+    g.lookSeed = 0.3; // his own voice is the squeak
+    g.makeGruntWeirdNoise();
+    expect(g.chatter).toEqual({ beat: 17, voice: 'squeak' });
+    g.poseBeats = 17 + away;
+    expect(g.pose().turn).toBeCloseTo(-1);
+    // ?tune's one voice for every grunt is the one he plays, and shows
+    const band = { ...CONFIG.BAND };
+    try {
+      CONFIG.BAND.CHATTER = 'whine';
+      g.makeGruntWeirdNoise();
+      expect(g.chatter.voice).toBe('whine');
+      expect(g.pose().turn).toBe(1);
+    } finally {
+      Object.assign(CONFIG.BAND, band);
+    }
+    g.swarm = { call: { beat: 17, heading: 'advance' } };
+    const lean = g.pose().back;
+    g.swarm.call.heading = 'retreat';
+    expect(lean).toBeGreaterThan(g.pose().back);
+    g.pendingStabDeath = true; // while its "ow" plays, no event shows
+    expect(g.pose().back).toBeCloseTo(
+      gruntWith(clockAt(17 + away)).pose().back
+    );
+  });
+
+  it('chatters unseen, and does not throw, with no beat clock', () => {
+    const g = gruntWith(null);
+    g.makeGruntWeirdNoise();
+    expect(g.chatter).toBe(null);
+  });
+
   it('keeps its health bar clear of its antennae, at any hop and size', () => {
     for (const [hop, scale] of [
       [DEFAULTS.HOP_PX, DEFAULTS.ART_SCALE],
@@ -200,6 +234,15 @@ describe('drawing a grunt', () => {
         g.facing = i % 2 ? 1 : -1;
         if (i % 4 === 0) g.warnedOnBeat = Math.floor(16 + i / 20);
         if (i % 4 === 1) g.heldOnBeat = Math.floor(16 + i / 20);
+        // The snare's chatter, a whine or a squeak, and its swarm's call
+        const snare = Math.floor((16 + i / 20 - 1) / 2) * 2 + 1;
+        if (i % 3 === 0) g.chatter = { beat: snare, voice: 'whine' };
+        if (i % 3 === 1) g.chatter = { beat: snare, voice: 'squeak' };
+        if (i % 5 < 2) {
+          g.swarm = {
+            call: { beat: snare, heading: i % 5 ? 'retreat' : 'advance' },
+          };
+        }
         // Every other one fired on its last snare (beats 2 and 4 are odd
         // here): those do the full hop, which lifts the antennae highest
         if (i % 2 === 0) g.firedAt = Math.floor((16 + i / 20 - 1) / 2) * 2 + 1;

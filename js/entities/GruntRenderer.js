@@ -6,7 +6,10 @@
  * It never turns with its aim: it mirrors to face its target, and only its gun
  * swings. Its moves follow BeatClock's grid: on 2 and 4 (its snare) every
  * grunt starts a hop; one that fires does it in full, the rest a small one and
- * slump back. Through the beat before a shot it winds up.
+ * slump back. Through the beat before a shot it winds up. What it sounds
+ * shows: one that squeaks hops in full and spins round, one that whines
+ * stretches up, and its swarm's move call leans every grunt of it at the
+ * hero or away.
  *
  * gruntPose() is pure: beat position, seed, aim and recent events in, numbers
  * out. drawGrunt() only draws a pose. Neither uses the game's random numbers;
@@ -16,6 +19,7 @@
 import { CONFIG } from '../config.js';
 import { mulberry32, smooth, clamp01 } from '../mathUtils.js';
 import { spriteParts, stamp } from './spriteCache.js';
+import { CHATTER_VOICES } from '../audio/Instruments.js';
 
 const PI = Math.PI;
 const TWO_PI = 2 * PI;
@@ -111,6 +115,11 @@ const SHOT = {
   SQUASH_Y: 0.1,
   RECOIL_PX: 4,
 };
+// A whine's stretch follows its sound (CHATTER_VOICES.whine): up as its pitch
+// slides, trembling with its wobble, relaxing over RELAX_SEC once it ends
+const WHINE = { TREMBLE: 0.3, RELAX_SEC: 0.12 };
+// Its swarm's move call: the lean comes in over ATTACK_SEC and fades over DECAY_SEC
+const CALL = { ATTACK_SEC: 0.04, DECAY_SEC: 0.2, MIN: 0.05, COWER: 0.12 };
 const SULK_TILT_RAD = 0.3;
 const SULK_FADE = 0.15; // of the beat: it perks up just before the next one
 
@@ -165,6 +174,10 @@ export function gruntMuzzle(x, y, size, aimAngle, facing) {
  * @param {number} [o.warn] - 0..1 through the warning beat before a shot, or -1
  * @param {number} [o.sinceShot] - beats since it fired
  * @param {number} [o.sulk] - 0..1 through the beat it held its fire on, or -1
+ * @param {number} [o.sinceChatter] - beats since it chattered
+ * @param {?string} [o.chatterVoice] - the voice it chattered in ('whine' or 'squeak')
+ * @param {number} [o.sinceCall] - beats since its swarm's move call
+ * @param {?string} [o.call] - that call ('advance' or 'retreat')
  */
 export function gruntPose({
   beats,
@@ -176,6 +189,10 @@ export function gruntPose({
   warn = -1,
   sinceShot = Infinity,
   sulk = -1,
+  sinceChatter = Infinity,
+  chatterVoice = null,
+  sinceCall = Infinity,
+  call = null,
 }) {
   const L = CONFIG.GRUNT_LOOK;
   const pose = {
@@ -204,6 +221,7 @@ export function gruntPose({
     droop: 0,
     headTilt: 0,
     gunWobble: 0,
+    turn: 1, // its body's width as it spins round: -1 faces away
   };
   if (beats === null) return pose; // no beat clock: its rest pose
 
@@ -211,14 +229,19 @@ export function gruntPose({
   pose.t = t;
 
   // The dance: every grunt crouches before the snare; on it, one that fires
-  // hops, squashes as it lands and puffs its jet in full, the rest do a small
-  // hop and slump back. A nod on 1 and 3 for all.
+  // or squeaks hops, squashes as it lands and puffs its jet in full, the
+  // rest do a small hop and slump back (a whine stretches it up instead, and
+  // with the full hop's stretch would lift its antennae into its health
+  // bar). A nod on 1 and 3 for all.
   const pos = mod(beats, 4); // 0..4 through the bar; 1 and 3 are beats 2 and 4
   const sinceSnare = mod(pos - 1, 2) * beatSec;
   const toSnare = 2 * beatSec - sinceSnare;
-  const firedThisSnare =
-    sinceShot <= sinceSnare / beatSec + DANCE.SNARE_SLACK_BEATS;
-  const dance = firedThisSnare ? 1 : L.IDLE_DANCE;
+  const onThisSnare = (since) =>
+    since >= 0 && since <= sinceSnare / beatSec + DANCE.SNARE_SLACK_BEATS;
+  const firedThisSnare = onThisSnare(sinceShot);
+  const full =
+    firedThisSnare || (chatterVoice === 'squeak' && onThisSnare(sinceChatter));
+  const dance = full ? 1 : L.IDLE_DANCE;
   if (toSnare < DANCE.CROUCH_SEC) {
     pose.squash += DANCE.CROUCH_SQUASH * smooth(1 - toSnare / DANCE.CROUCH_SEC);
   }
@@ -226,7 +249,7 @@ export function gruntPose({
     const air = Math.sin((PI * sinceSnare) / DANCE.AIR_SEC);
     pose.hop = L.HOP_PX * air * dance;
     pose.squash -= DANCE.AIR_STRETCH * air * dance;
-    if (!firedThisSnare) pose.back = -DANCE.SLUMP_RAD * air;
+    if (!full) pose.back = -DANCE.SLUMP_RAD * air;
   } else {
     const u = sinceSnare - DANCE.AIR_SEC;
     pose.squash +=
@@ -315,12 +338,47 @@ export function gruntPose({
     pose.headTilt = SULK_TILT_RAD * pose.droop;
   }
   // The gun wobbles idly, but points true through the wind-up and the shot
-  pose.gunWobble =
-    warn >= 0 || fire > SHOT.MIN
-      ? 0
-      : GUN_WOBBLE_RAD *
-        Math.sin(t * RATE.GUN_WOBBLE + seed * SEED_PHASE.GUN_WOBBLE);
+  const aiming = warn >= 0 || fire > SHOT.MIN;
+  pose.gunWobble = aiming
+    ? 0
+    : GUN_WOBBLE_RAD *
+      Math.sin(t * RATE.GUN_WOBBLE + seed * SEED_PHASE.GUN_WOBBLE);
+  chatterMove(pose, sinceChatter * beatSec, chatterVoice, aiming);
+  if (!firedThisSnare) callMove(pose, sinceCall * beatSec, call);
   return pose;
+}
+
+// Its chatter, `sec` ago: a squeak spins it round once, fast as it squeaks
+// and slowing to a stop (never while it aims: its gun would leave its shot);
+// a whine stretches it up as the whine's pitch rises
+function chatterMove(pose, sec, voice, aiming) {
+  if (!(sec >= 0)) return;
+  const L = CONFIG.GRUNT_LOOK;
+  if (voice === 'squeak' && !aiming && sec < L.SPIN_SEC) {
+    const k = 1 - (1 - sec / L.SPIN_SEC) ** 2;
+    pose.turn = Math.cos(TWO_PI * k);
+  }
+  const sound = CHATTER_VOICES.whine;
+  if (voice === 'whine' && sec < sound.SEC + WHINE.RELAX_SEC) {
+    const rise = smooth(clamp01(sec / sound.SLIDE_SEC));
+    const relax = 1 - smooth(clamp01((sec - sound.SEC) / WHINE.RELAX_SEC));
+    const tremble =
+      1 + WHINE.TREMBLE * Math.sin(TWO_PI * sound.WOBBLE_HZ * sec);
+    pose.squash -= L.WHINE_STRETCH * rise * relax * tremble;
+  }
+}
+
+// Its swarm's move call, `sec` ago: it leans at the hero with its jet in full
+// as the swarm advances, or back from him, cowering, as it retreats
+function callMove(pose, sec, call) {
+  if (!(sec >= 0) || !call) return;
+  const k =
+    smooth(clamp01(sec / CALL.ATTACK_SEC)) * Math.exp(-sec / CALL.DECAY_SEC);
+  if (k < CALL.MIN) return;
+  const advance = call === 'advance';
+  pose.back += (advance ? 1 : -1) * CONFIG.GRUNT_LOOK.CALL_LEAN_RAD * k;
+  if (advance) pose.thrust = Math.max(pose.thrust, k);
+  else pose.squash += CALL.COWER * k;
 }
 
 // ---- drawing ---------------------------------------------------------------
@@ -481,7 +539,7 @@ export function placeBody(p, s, pose) {
   p.translate(0, pose.hover - pose.hop + pivot);
   p.rotate(pose.lean);
   p.scale(1 + pose.squash * SQUASH_WIDEN, 1 - pose.squash);
-  p.scale(pose.face, 1);
+  p.scale(pose.face * pose.turn, 1);
   p.rotate(pose.back);
   p.scale(pose.puff * pose.kick[0], pose.puff * pose.kick[1]);
   p.translate(0, -pivot);
@@ -508,7 +566,7 @@ export function bodyPoint(s, pose, x, y, head = false) {
   ];
   pt = turn(pt, pose.back);
   pt = [
-    pt[0] * pose.face * (1 + pose.squash * SQUASH_WIDEN),
+    pt[0] * pose.face * pose.turn * (1 + pose.squash * SQUASH_WIDEN),
     pt[1] * (1 - pose.squash),
   ];
   pt = turn(pt, pose.lean);
@@ -703,9 +761,9 @@ export function drawGrunt(p, s, pose, look = null) {
   p.pop();
 
   // The gun hangs from the shoulder but takes none of the body's turns, so it
-  // points where its shot goes
+  // points where its shot goes; only a spin takes it round
   const [sx, sy] = bodyPoint(s, pose, SHOULDER[0], SHOULDER[1]);
   p.translate(sx, sy);
-  p.scale(pose.face, 1);
+  p.scale(pose.face * pose.turn, 1);
   gunArm(p, s, pose, parts.gun);
 }

@@ -56,6 +56,8 @@ export class GruntSwarm {
     // The beat it last made its sounds on, and the bar its last chatter was in
     this.soundBeat = null;
     this.chatterBar = null;
+    // Its last move call, { beat, heading }: its grunts lean with it
+    this.call = null;
   }
 
   /**
@@ -73,7 +75,8 @@ export class GruntSwarm {
 
   /**
    * On each 2 and 4, once: its move call from its centre while it moves,
-   * and one grunt's chatter, at most one a bar
+   * and one grunt's chatter, at most one a bar. A grunt picked to fire
+   * this beat never chatters: his chatter's move would pull his aim.
    */
   sounds(members, beatClock, audio) {
     if (!beatClock.isOnBeat([2, 4]) || members.length === 0) return;
@@ -83,11 +86,13 @@ export class GruntSwarm {
     if (this.heading && random() < MOVE_CALL_CHANCE) {
       const call = this.heading === 'advance' ? 'gruntAdvance' : 'gruntRetreat';
       audio.playSound(call, this.x, this.y);
+      this.call = { beat: total, heading: this.heading };
     }
     const bar = Math.floor(total / BEATS_PER_BAR);
-    if (this.chatterBar !== bar && random() < CHATTER_CHANCE) {
+    const idle = members.filter((g) => g.warnedOnBeat !== total - 1);
+    if (this.chatterBar !== bar && idle.length && random() < CHATTER_CHANCE) {
       this.chatterBar = bar;
-      random(members).makeGruntWeirdNoise();
+      random(idle).makeGruntWeirdNoise();
     }
   }
 
