@@ -150,9 +150,9 @@ test('playtest session', async ({ page }) => {
     }, 100);
   });
   // The grunts' swarms (GruntSwarm.js): which 2s and 4s had a grunt shot
-  // while a swarm had a grunt in range, the beats from each clear to the
-  // next swarm's first volley, each swarm's size, the others' arrivals by
-  // type, and how the grunts died
+  // while a swarm had a grunt in range, the silences over a bar between
+  // grunt shots, each swarm's size, the others' arrivals by type, and how
+  // the grunts died
   await page.evaluate(async () => {
     const { Grunt } = await import('/js/entities/Grunt.js');
     const { CONFIG } = await import('/js/config.js');
@@ -165,18 +165,19 @@ test('playtest session', async ({ page }) => {
       arrivals: {},
       deaths: {},
     });
-    // The beat the snare's silence began: the first clear since a grunt shot
-    // (a swarm killed before it fired doesn't restart it)
-    let cleared = null;
-    let swarm = null;
+    // The beat of the last grunt shot; a silence is the beats to the next,
+    // when over a bar
+    const BAR_BEATS = 4;
+    let lastShot = null;
+    const known = new Set();
     const createBullet = Grunt.prototype.createBullet;
     Grunt.prototype.createBullet = function (...args) {
       const beat = clock.getTotalBeats();
       s.shot.add(beat);
-      if (cleared !== null) {
-        s.gaps.push(beat - cleared);
-        cleared = null;
+      if (lastShot !== null && beat - lastShot > BAR_BEATS) {
+        s.gaps.push(beat - lastShot);
       }
+      lastShot = beat;
       return createBullet.apply(this, args);
     };
     // Every grunt death, whatever the route (a stab's deferred death and a
@@ -207,20 +208,20 @@ test('playtest session', async ({ page }) => {
     };
     const seen = new Set();
     setInterval(() => {
-      const system = window.spawnSystem;
-      if (system.swarm !== swarm) {
-        if (swarm && cleared === null) cleared = clock.getTotalBeats();
-        swarm = system.swarm;
-        if (swarm) s.sizes.push(swarm.size);
+      const { swarms } = window.spawnSystem;
+      for (const swarm of swarms) {
+        if (known.has(swarm)) continue;
+        known.add(swarm);
+        s.sizes.push(swarm.size);
       }
       const hero = window.player;
       const beat = clock.getTotalBeats();
-      // A 2 or 4 the swarm could fire on: a grunt of it in range and done
+      // A 2 or 4 a swarm could fire on: a grunt of it in range and done
       // materialising
-      if (swarm && clock.getCurrentBeat() % 2 === 1) {
+      if (swarms.length && clock.getCurrentBeat() % 2 === 1) {
         const near = window.enemies.some(
           (e) =>
-            e.swarm === swarm &&
+            swarms.includes(e.swarm) &&
             !e.markedForRemoval &&
             !e.isSpawning &&
             Math.hypot(e.x - hero.x, e.y - hero.y) < CONFIG.SWARM.FIRE_RANGE_PX
@@ -379,7 +380,7 @@ test('playtest session', async ({ page }) => {
     `   Level-ups [level, s]: ${JSON.stringify(pacing.levelUps)} | first seen (s): ${JSON.stringify(pacing.firstSeen)}`
   );
   console.log(
-    `   Swarms: sizes ${JSON.stringify(swarms.sizes)} | snare on ${swarms.snareShare} of ${swarms.beatsInRange} 2s and 4s in range | gaps (beats) ${JSON.stringify(swarms.gapsBeats)}`
+    `   Swarms: sizes ${JSON.stringify(swarms.sizes)} | snare on ${swarms.snareShare} of ${swarms.beatsInRange} 2s and 4s in range | silences over a bar (beats) ${JSON.stringify(swarms.gapsBeats)}`
   );
   console.log(
     `   Others' arrivals: ${JSON.stringify(swarms.arrivals)} | grunt deaths by cause: ${JSON.stringify(swarms.gruntDeaths)}`

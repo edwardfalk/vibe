@@ -86,6 +86,7 @@ const KNOBS = [
   [PACING, 'PREVIEW_NEW_ENEMY'],
   [PACING, 'PREVIEW_AT_PROGRESS', [0, 1, 0.05]],
   [PACING, 'GRUNT_KILL_POINTS', [1, 10, 1]],
+  [SWARM, 'COUNT', [1, 4, 1]],
   [SWARM, 'SIZE_FIRST', [1, 12, 1]],
   [SWARM, 'SIZE_PER_LEVEL', [0, 4, 1]],
   [SWARM, 'SIZE_MAX', [1, 24, 1]],

@@ -100,12 +100,13 @@ const CONFIG = {
   // and plays the snare as a section. Tune live with ?tune; sizes apply from
   // the next swarm, the rest at once.
   SWARM: {
+    COUNT: 2, // swarms at once, each from its own side of the hero
     SIZE_FIRST: 2, // grunts in a swarm at level 1
-    SIZE_PER_LEVEL: 2, // more each level
-    SIZE_MAX: 12,
+    SIZE_PER_LEVEL: 1, // more each level
+    SIZE_MAX: 6,
     SHOOTERS_MAX: 4, // the most that fire on one 2 or 4
     GRUNTS_PER_SHOOTER: 3, // a third of the swarm fires, up to SHOOTERS_MAX
-    BREAK_BEATS: 14, // the next swarm comes this long after a clear (7 s at 120 BPM)
+    BREAK_BEATS: 14, // a cleared swarm's place is taken this long after (7 s at 120 BPM)
     FIRE_RANGE_PX: 380, // a grunt fires only with the hero this close
     // Its centre comes in to this plus the cloud's radius, give or take
     // STANDOFF_BAND_PX (50), from the hero, and parks at the far edge: its
@@ -207,8 +208,8 @@ const CONFIG = {
     BREATH: 0.7, // how far the filter opens and closes over two bars
     CUTOFF_HZ: 420, // the filter's resting brightness
     FIGHT_OPEN: 1, // a full screen opens the filter this much more (1 = twice as bright)
-    // A full screen (Hum.filterTarget): SWARM.SIZE_MAX plus the others' top
-    // cap (5); move it with SIZE_MAX
+    // A full screen (Hum.filterTarget): SWARM.COUNT full swarms of SIZE_MAX
+    // plus the others' top cap (5); move it with either
     FULL_SCREEN_ENEMIES: 17,
   },
 

@@ -21,6 +21,9 @@ const ENEMY_CLASSES = {
 
 export const ENEMY_INTRO_LEVEL = { stabber: 2, rusher: 3, tank: 5 };
 
+// Spots tried for a new swarm, to find one away from the others
+const SIDE_TRIES = 8;
+
 // The next type to be introduced after this level, or null
 export function nextNewEnemyType(level) {
   let next = null;
@@ -38,30 +41,29 @@ export class SpawnSystem {
     // Beat-aligned spawning; intervals and caps come from CONFIG.PACING
     this.lastSpawnBeat = -Infinity;
     this.previewed = new Set(); // types already given a one-off taste
-    // The grunts come only in swarms, one at a time (GruntSwarm.js); the
-    // beat the last was cleared on
-    this.swarm = null;
-    this.clearedAt = -Infinity;
+    // The grunts come only in swarms, SWARM.COUNT at once (GruntSwarm.js);
+    // each cleared one leaves a break, the beat it was cleared on
+    this.swarms = [];
+    this.breaks = [];
     this.getContextValue = createContextAccessor(() => this.context);
   }
 
-  /** Before the enemies move: the swarm steers its grunts, picks and fires */
+  /** Before the enemies move: each swarm steers its grunts, picks and fires */
   updateSwarm() {
     const enemies = this.getContextValue('enemies');
     const player = this.getContextValue('player');
-    if (!this.swarm || !enemies || !player) return;
-    this.swarm.update(
-      enemies,
-      player,
-      this.getContextValue('beatClock'),
-      this.getContextValue('audio')
-    );
+    if (!enemies || !player) return;
+    const beatClock = this.getContextValue('beatClock');
+    const audio = this.getContextValue('audio');
+    for (const swarm of this.swarms) {
+      swarm.update(enemies, player, beatClock, audio);
+    }
   }
 
   /**
-   * A swarm of the level's size, round a spot off screen, its grunts on the
-   * far side of it from the view and inside the world; all are placed
-   * before any is added
+   * A swarm of the level's size, round a spot off screen away from the
+   * others, its grunts on the far side of it from the view and inside the
+   * world; all are placed before any is added
    */
   spawnSwarm() {
     const enemies = this.getContextValue('enemies');
@@ -69,7 +71,7 @@ export class SpawnSystem {
     const gameState = this.getContextValue('gameState');
     const player = this.getContextValue('player');
     const size = swarmSize(gameState ? gameState.level : 1);
-    const centre = this.findSpawnPosition();
+    const centre = this.spotApart();
     const swarm = new GruntSwarm({ size, ...centre });
     const made = this.cloudSpots(centre, size).map(({ x, y }) => {
       const grunt = this.createEnemy(x, y, 'grunt', player && player.p);
@@ -78,7 +80,24 @@ export class SpawnSystem {
       return grunt;
     });
     enemies.push(...made);
-    this.swarm = swarm;
+    this.swarms.push(swarm);
+  }
+
+  // A spot off screen: of SIDE_TRIES, the one furthest round the hero from
+  // the nearest swarm already here (the first, with none)
+  spotApart() {
+    const player = this.getContextValue('player');
+    const n = player && this.swarms.length ? SIDE_TRIES : 1;
+    const tries = Array.from({ length: n }, () => this.findSpawnPosition());
+    const bearing = (q) => Math.atan2(q.y - player.y, q.x - player.x);
+    const apart = (c) =>
+      Math.min(
+        ...this.swarms.map((s) => {
+          const d = bearing(c) - bearing(s);
+          return Math.abs(Math.atan2(Math.sin(d), Math.cos(d)));
+        })
+      );
+    return tries.reduce((best, c) => (apart(c) > apart(best) ? c : best));
   }
 
   // n spots within a cloud's radius of `centre`, on its far side from the
@@ -104,21 +123,20 @@ export class SpawnSystem {
     const beatClock = this.getContextValue('beatClock');
     if (!beatClock) return;
 
-    // A run's first swarm comes on its first update; the next BREAK_BEATS
-    // after all of the last are dead, a breather for the hero (read each
-    // frame, so ?tune changes a break already begun)
+    // A run's first swarms come on its first update; a cleared one's place
+    // is taken BREAK_BEATS after all of it are dead, a breather on its side
+    // (both read each frame, so ?tune changes a break already begun)
     const all = this.getContextValue('enemies');
-    const now = beatClock.getBeatPosition();
-    if (all && this.swarm?.isCleared(all)) {
-      this.swarm = null;
-      this.clearedAt = now;
-    }
-    if (
-      all &&
-      !this.swarm &&
-      now >= this.clearedAt + CONFIG.SWARM.BREAK_BEATS
-    ) {
-      this.spawnSwarm();
+    if (all) {
+      const now = beatClock.getBeatPosition();
+      const cleared = this.swarms.filter((s) => s.isCleared(all));
+      this.swarms = this.swarms.filter((s) => !cleared.includes(s));
+      this.breaks.push(...cleared.map(() => now));
+      this.breaks = this.breaks.filter(
+        (t) => now < t + CONFIG.SWARM.BREAK_BEATS
+      );
+      const room = CONFIG.SWARM.COUNT - this.swarms.length;
+      for (let i = this.breaks.length; i < room; i++) this.spawnSwarm();
     }
 
     // Waves land on any beat, so the interval counts whole beats (fractions
@@ -320,7 +338,7 @@ export class SpawnSystem {
   reset() {
     this.lastSpawnBeat = -Infinity;
     this.previewed.clear();
-    this.swarm = null;
-    this.clearedAt = -Infinity;
+    this.swarms = [];
+    this.breaks = [];
   }
 }

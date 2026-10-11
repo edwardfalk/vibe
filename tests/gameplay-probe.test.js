@@ -184,7 +184,7 @@ test.describe('Gameplay Probes', () => {
     page,
   }) => {
     await bootGame(page);
-    await page.waitForFunction(() => window.spawnSystem?.swarm);
+    await page.waitForFunction(() => window.spawnSystem?.swarms.length);
     const frames = await page.evaluate(async () => {
       const { Grunt } = await import('/js/entities/Grunt.js');
       const log = [];
@@ -655,14 +655,14 @@ test.describe('Gameplay Probes', () => {
     await bootGame(page);
     await page.waitForFunction(() => window.beatTrack?.isPlaying);
     const record = async () => {
-      // A run's swarm comes on the spawn system's first update
-      await page.waitForFunction(() => window.spawnSystem?.swarm);
+      // A run's swarms come on the spawn system's first update
+      await page.waitForFunction(() => window.spawnSystem?.swarms.length);
       return page.evaluate(async () => {
         const track = window.beatTrack;
         const clock = window.beatClock;
         const audio = window.audio;
-        // The swarm in range (FIRE_RANGE_PX) of the still hero, settled in and
-        // held there, its line clear: it fires on its next 2 and 4 (the line
+        // The swarms in range (FIRE_RANGE_PX) of the still hero, settled in
+        // and held there, their line clear: they fire on their next 2 and 4 (the line
         // rule is TelegraphRings.test.js's; a far stand-off would back it out
         // of range, GruntSwarm.test.js's)
         const hero = window.player;
@@ -675,8 +675,10 @@ test.describe('Gameplay Probes', () => {
             g.lineBlocked = () => false;
             g.velocity = { x: 0, y: 0 };
           });
-        window.spawnSystem.swarm.entering = false;
-        window.spawnSystem.swarm.steer = () => {};
+        for (const swarm of window.spawnSystem.swarms) {
+          swarm.entering = false;
+          swarm.steer = () => {};
+        }
         const schedule = track._scheduleNote.bind(track);
         const playSound = audio.playSound.bind(audio);
         const kicks = [];

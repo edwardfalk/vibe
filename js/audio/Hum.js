@@ -53,7 +53,7 @@ const levelGainOf = () => dbToGain(TRIM_DB + CONFIG.HUM.LEVEL_DB);
 
 /**
  * The filter's target: brighter as the screen fills. Fill is enemies over
- * HUM.FULL_SCREEN_ENEMIES (a full swarm and the most others), clamped to
+ * HUM.FULL_SCREEN_ENEMIES (full swarms and the most others), clamped to
  * 0-1, and 0 with none.
  */
 export function filterTarget(enemies) {

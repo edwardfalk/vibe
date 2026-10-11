@@ -107,8 +107,8 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   // Inject recorder after level is set
   await injectRecorder(page);
 
-  // The swarm in range, above and ahead of the hero, settled in and held
-  // there: it fires on its next 2 and 4. Its line of fire is kept clear: the
+  // The swarms in range, above and ahead of the hero, settled in and held
+  // there: they fire on their next 2 and 4. Its line of fire is kept clear: the
   // planted stabber below the hero is in it once he walks under them, and
   // this check is of the beat a shot lands on, not of the line rule
   // (TelegraphRings.test.js) or the stand-off (a far one backs it out of
@@ -124,8 +124,10 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
       g.lineBlocked = () => false;
       g.velocity = { x: 0, y: 0 };
     });
-    window.spawnSystem.swarm.entering = false;
-    window.spawnSystem.swarm.steer = () => {};
+    for (const swarm of window.spawnSystem.swarms) {
+      swarm.entering = false;
+      swarm.steer = () => {};
+    }
   });
 
   // Light one rusher behind the hero: he blows within four beats

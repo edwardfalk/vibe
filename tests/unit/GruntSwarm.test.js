@@ -59,9 +59,7 @@ const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
 describe('a swarm’s size', () => {
   it('starts at SIZE_FIRST and grows SIZE_PER_LEVEL a level, up to SIZE_MAX', () => {
-    expect([1, 2, 3, 4, 5, 6, 9].map(swarmSize)).toEqual([
-      2, 4, 6, 8, 10, 12, 12,
-    ]);
+    expect([1, 2, 3, 4, 5, 6, 9].map(swarmSize)).toEqual([2, 3, 4, 5, 6, 6, 6]);
   });
 
   it('follows its knobs, and is never less than one grunt', () => {
