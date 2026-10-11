@@ -164,7 +164,9 @@ test('playtest session', async ({ page }) => {
       arrivals: {},
       deaths: {},
     });
-    let cleared = null; // the beat the last swarm was cleared on
+    // The beat the snare's silence began: the first clear since a grunt shot
+    // (a swarm killed before it fired doesn't restart it)
+    let cleared = null;
     let swarm = null;
     const createBullet = Grunt.prototype.createBullet;
     Grunt.prototype.createBullet = function (...args) {
@@ -199,7 +201,7 @@ test('playtest session', async ({ page }) => {
     setInterval(() => {
       const system = window.spawnSystem;
       if (system.swarm !== swarm) {
-        if (swarm) cleared = clock.getTotalBeats();
+        if (swarm && cleared === null) cleared = clock.getTotalBeats();
         swarm = system.swarm;
         if (swarm) s.sizes.push(swarm.size);
       }
