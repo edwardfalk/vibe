@@ -107,6 +107,45 @@ describe('a run starts with its first swarms', () => {
     expect({ x: b.x, y: b.y }).toEqual(spots[3]);
   });
 
+  it('furthest round as seen from the hero, not from the world’s centre', () => {
+    const { system } = world({ hero: { x: 400, y: 0 } });
+    // From the hero the third spot is straight across from the first (180°)
+    // and the second 69° from it; from the world's centre the third is 90°
+    // from it and the second 98°
+    const spots = [
+      { x: 400, y: 400 },
+      { x: -400, y: 300 },
+      { x: 400, y: -400 },
+    ];
+    let n = 0;
+    vi.spyOn(system, 'findSpawnPosition').mockImplementation(() => ({
+      ...spots[Math.min(n++, spots.length - 1)],
+    }));
+    system.update();
+    const b = system.swarms[1];
+    expect({ x: b.x, y: b.y }).toEqual(spots[2]);
+  });
+
+  it('with more than two, away from the nearest of those already there', () => {
+    CONFIG.SWARM.COUNT = 3;
+    const { system } = world();
+    const at = (deg) => {
+      const r = (deg * Math.PI) / 180;
+      return { x: 500 * Math.cos(r), y: 500 * Math.sin(r) };
+    };
+    // The first at 0°, the second at 90°; for the third, 270° is 180° from
+    // the first but 90° from the second, 225° is 135° from both
+    const spots = [at(0), ...Array(8).fill(at(90)), at(270), at(225)];
+    let n = 0;
+    vi.spyOn(system, 'findSpawnPosition').mockImplementation(() => ({
+      ...spots[Math.min(n++, spots.length - 1)],
+    }));
+    system.update();
+    const c = system.swarms[2];
+    expect(c.x).toBeCloseTo(at(225).x, 9);
+    expect(c.y).toBeCloseTo(at(225).y, 9);
+  });
+
   it('two of them come from well apart round the hero', () => {
     for (let run = 0; run < 30; run++) {
       const { system } = world();
@@ -341,6 +380,44 @@ describe('a cleared swarm’s place', () => {
       ).toBe(true);
     }
   });
+  it('steers each swarm away round the hero from the other (updateSwarm)', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // no jitter
+    const { system, enemies } = world();
+    system.update();
+    const D = CONFIG.SWARM.STANDOFF_PX + cloudRadius(swarmSize(1));
+    // The first straight right of the hero, the second 20° round from it,
+    // each at its stand-off, its grunts in a line out from him
+    const deg = [0, 20];
+    system.swarms.forEach((swarm, k) => {
+      const r = (deg[k] * Math.PI) / 180;
+      swarm.entering = false;
+      swarm.x = D * Math.cos(r); // where it was last frame, as the other reads it
+      swarm.y = D * Math.sin(r);
+      enemies
+        .filter((g) => g.swarm === swarm)
+        .forEach((g, i) => {
+          g.isSpawning = false;
+          g.x = (D - 10 + 20 * i) * Math.cos(r);
+          g.y = (D - 10 + 20 * i) * Math.sin(r);
+        });
+    });
+    system.updateSwarm();
+    // Each one's mean velocity round the hero (+: away from 0°, toward 20°)
+    const round = (swarm, d) => {
+      const own = enemies.filter((g) => g.swarm === swarm);
+      const r = (d * Math.PI) / 180;
+      return (
+        own.reduce(
+          (t, g) => t - g.velocity.x * Math.sin(r) + g.velocity.y * Math.cos(r),
+          0
+        ) / own.length
+      );
+    };
+    const [a, b] = system.swarms;
+    expect(round(a, 0)).toBeLessThan(-0.1);
+    expect(round(b, 20)).toBeGreaterThan(0.1);
+  });
+
   it('makes its swarm’s sounds on the 2s and 4s, from where its grunts are (updateSwarm)', () => {
     const { system, enemies } = world();
     system.update();

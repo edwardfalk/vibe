@@ -98,6 +98,7 @@ const KNOBS = [
   [SWARM, 'DRIFT_SHARE', [0, 1, 0.05]],
   [SWARM, 'PULL', [0, 0.1, 0.005]],
   [SWARM, 'SPACING_PX', [10, 160, 2]],
+  [SWARM, 'APART_DEG', [0, 180, 5]],
   [SWARM, 'VOLLEY_DB_PER_DOUBLING', [-6, 0, 0.5]],
   [MIX, 'SFX_VOLUME', [0, 1, 0.01]],
   [MIX, 'BEAT_TRACK_VOLUME', [0, 1, 0.01]],

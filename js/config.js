@@ -116,7 +116,8 @@ const CONFIG = {
     STANDOFF_PX: 230,
     DRIFT_SHARE: 1, // of a grunt's speed, once in range (full speed coming in)
     PULL: 0.02, // toward the centre, a share of the way a frame
-    SPACING_PX: 80, // grunts closer than this push apart
+    SPACING_PX: 80, // grunts of a swarm closer than this push apart
+    APART_DEG: 90, // swarms nearer than this round the hero drift apart (0: never)
     // Each shot of a volley of n is this many dB down per doubling of n, so
     // a volley carries about one shot's energy (-3: 1/sqrt(n))
     VOLLEY_DB_PER_DOUBLING: -3,

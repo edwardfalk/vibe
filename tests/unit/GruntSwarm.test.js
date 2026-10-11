@@ -214,6 +214,55 @@ describe('a swarm’s movement', () => {
     expect(strayAfter(0)).toBeGreaterThan(2 * cloudRadius(6));
   });
 
+  // Still: no velocity either way
+  const still = (g) =>
+    expect(Math.hypot(g.velocity.x, g.velocity.y)).toBeCloseTo(0, 9);
+
+  it('drifts sideways round the hero, away from another swarm nearer round him than APART_DEG, harder the nearer', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // no jitter
+    CONFIG.SWARM.DRIFT_SHARE = 0.5; // under a grunt's speed: nothing capped
+    CONFIG.SWARM.APART_DEG = 90;
+    const at = { x: 400, y: 100 }; // the hero, off the world's centre
+    const D = CONFIG.SWARM.STANDOFF_PX + cloudRadius(1); // in its band
+    const swarm = new GruntSwarm({ size: 1, x: 0, y: 0 });
+    swarm.entering = false;
+    const g = grunt(swarm, at.x + D, at.y); // straight right of him
+    const other = (deg) => {
+      const r = (deg * Math.PI) / 180;
+      return { x: at.x + D * Math.cos(r), y: at.y + D * Math.sin(r) };
+    };
+    const pace = 0.5 * SPEED;
+    swarm.steer([g], at, [other(30)]);
+    expect(g.velocity.x).toBeCloseTo(0, 9);
+    expect(g.velocity.y).toBeCloseTo(-pace * (60 / 90), 9); // round, away
+    swarm.steer([g], at, [other(-60)]);
+    expect(g.velocity.x).toBeCloseTo(0, 9);
+    expect(g.velocity.y).toBeCloseTo(pace * (30 / 90), 9);
+    swarm.steer([g], at, [other(120)]); // further round than APART_DEG
+    still(g);
+    swarm.steer([g], at, []);
+    still(g);
+    CONFIG.SWARM.APART_DEG = 0; // never
+    swarm.steer([g], at, [other(30)]);
+    still(g);
+  });
+
+  it('two on one bearing from the hero part, each its own way round', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // no jitter
+    CONFIG.SWARM.DRIFT_SHARE = 0.5;
+    const D = CONFIG.SWARM.STANDOFF_PX + cloudRadius(1);
+    const a = new GruntSwarm({ size: 1, x: D, y: 0 });
+    const b = new GruntSwarm({ size: 1, x: D + 40, y: 0 }); // in the band too
+    a.entering = false;
+    b.entering = false;
+    const ga = grunt(a, D, 0);
+    const gb = grunt(b, D + 40, 0);
+    a.steer([ga], hero, [b]);
+    b.steer([gb], hero, [a]);
+    expect(Math.abs(ga.velocity.y)).toBeGreaterThan(0.1);
+    expect(Math.sign(ga.velocity.y)).toBe(-Math.sign(gb.velocity.y));
+  });
+
   it('no grunt moves faster than a grunt can', () => {
     const swarm = new GruntSwarm({ size: 12, x: 900, y: 0 });
     // all piled on one spot, the pull and the push at their largest

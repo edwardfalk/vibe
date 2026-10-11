@@ -56,7 +56,8 @@ export class SpawnSystem {
     const beatClock = this.getContextValue('beatClock');
     const audio = this.getContextValue('audio');
     for (const swarm of this.swarms) {
-      swarm.update(enemies, player, beatClock, audio);
+      const others = this.swarms.filter((s) => s !== swarm);
+      swarm.update(enemies, player, beatClock, audio, others);
     }
   }
 

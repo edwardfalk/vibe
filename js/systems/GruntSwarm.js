@@ -62,10 +62,10 @@ export class GruntSwarm {
    * Each frame, before its grunts move: it steers them, picks and fires,
    * and makes its sounds; one of them speaks for it
    */
-  update(enemies, hero, beatClock, audio = null) {
+  update(enemies, hero, beatClock, audio = null, others = []) {
     const members = this.members(enemies);
     if (!members.includes(this.speaker)) this.speaker = members[0] ?? null;
-    this.steer(members, hero);
+    this.steer(members, hero, others);
     if (!beatClock) return;
     this.beat(members, hero, beatClock);
     if (audio) this.sounds(members, beatClock, audio);
@@ -168,11 +168,12 @@ export class GruntSwarm {
 
   /**
    * Each grunt's velocity this frame (px a frame at 60 fps): the cloud's
-   * drift toward its stand-off from the hero, a loose pull toward its
-   * centre, a push off neighbours closer than SPACING_PX, and the idle
-   * jitter; never faster than a grunt can go
+   * drift toward its stand-off from the hero and round him away from
+   * `others` (the other swarms), a loose pull toward its centre, a push off
+   * neighbours closer than SPACING_PX, and the idle jitter; never faster
+   * than a grunt can go
    */
-  steer(members, hero) {
+  steer(members, hero, others = []) {
     if (members.length === 0) return;
     const { STANDOFF_PX, DRIFT_SHARE, PULL, SPACING_PX } = CONFIG.SWARM;
     const speed = members[0].speed;
@@ -211,6 +212,22 @@ export class GruntSwarm {
       driftX = (-dx / d) * pace * RETREAT_SHARE;
       driftY = (-dy / d) * pace * RETREAT_SHARE;
       this.heading = 'retreat';
+    }
+    // Round the hero, away from another swarm nearer round him than
+    // APART_DEG, harder the nearer, so two keep to their own sides; two on
+    // one bearing part, the nearer one way and the further the other
+    const apart = (CONFIG.SWARM.APART_DEG * Math.PI) / 180;
+    const bearing = Math.atan2(-dy, -dx);
+    for (const o of d > 0 ? others : []) {
+      const ox = o.x - hero.x;
+      const oy = o.y - hero.y;
+      const diff = bearing - Math.atan2(oy, ox);
+      const off = Math.atan2(Math.sin(diff), Math.cos(diff));
+      if (Math.abs(off) >= apart) continue;
+      const way = off !== 0 ? Math.sign(off) : d < Math.hypot(ox, oy) ? 1 : -1;
+      const round = ((apart - Math.abs(off)) / apart) * pace * way;
+      driftX += (dy / d) * round;
+      driftY += (-dx / d) * round;
     }
 
     for (let i = 0; i < members.length; i++) {
