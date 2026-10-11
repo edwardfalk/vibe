@@ -154,7 +154,8 @@ test('playtest session', async ({ page }) => {
   // next swarm's first volley, each swarm's size, the others' arrivals by
   // type, and how the grunts died
   await page.evaluate(async () => {
-    const { Grunt, GRUNT_FIRE_RANGE } = await import('/js/entities/Grunt.js');
+    const { Grunt } = await import('/js/entities/Grunt.js');
+    const { CONFIG } = await import('/js/config.js');
     const clock = window.beatClock;
     const s = (window.__swarms = {
       inRange: new Set(),
@@ -219,7 +220,7 @@ test('playtest session', async ({ page }) => {
             e.swarm === swarm &&
             !e.markedForRemoval &&
             !e.isSpawning &&
-            Math.hypot(e.x - hero.x, e.y - hero.y) < GRUNT_FIRE_RANGE
+            Math.hypot(e.x - hero.x, e.y - hero.y) < CONFIG.SWARM.FIRE_RANGE_PX
         );
         if (near) s.inRange.add(beat);
       }

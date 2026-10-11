@@ -628,14 +628,14 @@ test.describe('Gameplay Probes', () => {
         const track = window.beatTrack;
         const clock = window.beatClock;
         const audio = window.audio;
-        // The swarm in range (300 px) of the still hero, settled in, its
+        // The swarm in range (FIRE_RANGE_PX) of the still hero, settled in, its
         // line clear: it fires on its next 2 and 4 (the line rule is
         // TelegraphRings.test.js's)
         const hero = window.player;
         window.enemies
           .filter((e) => e.type === 'grunt')
           .forEach((g, i) => {
-            g.x = hero.x + 200 + (i % 4) * 30;
+            g.x = hero.x + 150 + (i % 4) * 30;
             g.y = hero.y - 30 + Math.floor(i / 4) * 30;
             g.isSpawning = false;
             g.lineBlocked = () => false;

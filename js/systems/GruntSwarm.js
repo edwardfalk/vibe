@@ -9,7 +9,6 @@
  */
 import { CONFIG } from '../config.js';
 import { random, sqrt, min, max } from '../mathUtils.js';
-import { GRUNT_FIRE_RANGE } from '../entities/Grunt.js';
 
 // The centre holds its stand-off within this either way before it moves
 export const STANDOFF_BAND_PX = 50;
@@ -127,7 +126,7 @@ export class GruntSwarm {
   pick(members, hero, total) {
     const near = (g) => Math.hypot(hero.x - g.x, hero.y - g.y);
     const ready = members
-      .filter((g) => !g.isSpawning && near(g) < GRUNT_FIRE_RANGE)
+      .filter((g) => !g.isSpawning && near(g) < CONFIG.SWARM.FIRE_RANGE_PX)
       .filter((g) => !g.lineBlocked())
       .sort((a, b) => near(a) - near(b));
     for (const g of ready.slice(0, this.shooterQuota(this.size))) {
@@ -193,7 +192,8 @@ export class GruntSwarm {
 
     if (
       members.some(
-        (g) => Math.hypot(hero.x - g.x, hero.y - g.y) < GRUNT_FIRE_RANGE
+        (g) =>
+          Math.hypot(hero.x - g.x, hero.y - g.y) < CONFIG.SWARM.FIRE_RANGE_PX
       )
     ) {
       this.entering = false;

@@ -6,7 +6,6 @@ import {
   cloudRadius,
   STANDOFF_BAND_PX,
 } from '../../js/systems/GruntSwarm.js';
-import { GRUNT_FIRE_RANGE } from '../../js/entities/Grunt.js';
 
 const SWARM = { ...CONFIG.SWARM };
 afterEach(() => {
@@ -122,7 +121,7 @@ describe('a swarm’s movement', () => {
     expect(swarm.entering).toBe(true);
     expect(enemies[0].velocity.x).toBeCloseTo(-SPEED, 9);
     // in range: from now on it drifts
-    enemies[0].x = GRUNT_FIRE_RANGE - 1;
+    enemies[0].x = CONFIG.SWARM.FIRE_RANGE_PX - 1;
     swarm.steer(swarm.members(enemies), hero);
     expect(swarm.entering).toBe(false);
     enemies[0].x = 900;
@@ -251,7 +250,7 @@ describe('a swarm’s snare', () => {
       shooter(swarm, 120),
       shooter(swarm, 150, { lineBlocked: () => true }),
       shooter(swarm, 100, { isSpawning: true }),
-      shooter(swarm, GRUNT_FIRE_RANGE + 10),
+      shooter(swarm, CONFIG.SWARM.FIRE_RANGE_PX + 10),
       shooter(swarm, 180),
     ];
     swarm.beat(swarm.members(enemies), hero, clockAt(8, 0));
@@ -274,7 +273,7 @@ describe('a swarm’s snare', () => {
     // never one out of range, even with the quota to spare
     const few = new GruntSwarm({ size: 4, x: 0, y: 0 });
     const gs = [100, 10, 20, 30].map((d, i) =>
-      shooter(few, i === 0 ? d : GRUNT_FIRE_RANGE + d)
+      shooter(few, i === 0 ? d : CONFIG.SWARM.FIRE_RANGE_PX + d)
     );
     few.beat(few.members(gs), hero, clockAt(8, 0));
     expect(gs.map((g) => g.warnedOnBeat ?? null)).toEqual([
@@ -283,6 +282,14 @@ describe('a swarm’s snare', () => {
       null,
       null,
     ]);
+  });
+
+  it('picks only grunts within FIRE_RANGE_PX of the hero, read live', () => {
+    CONFIG.SWARM.FIRE_RANGE_PX = 157;
+    const swarm = new GruntSwarm({ size: 6, x: 0, y: 0 });
+    const gs = [150, 170].map((x) => shooter(swarm, x));
+    swarm.beat(swarm.members(gs), hero, clockAt(8, 0));
+    expect(gs.map((g) => g.warnedOnBeat ?? null)).toEqual([8, null]);
   });
 
   it('picks no one for a volley before its quiet ends (GAP_BEATS after the last swarm)', () => {

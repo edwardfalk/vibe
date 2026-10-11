@@ -19,8 +19,6 @@ import {
   nextFacing,
 } from './GruntRenderer.js';
 
-// Grunts only shoot at the hero from this close
-export const GRUNT_FIRE_RANGE = 300;
 // A friend this close and this near his aim blocks his shot
 const LINE_OF_FIRE_PX = 400;
 const LINE_OF_FIRE_RAD = Math.PI / 9; // 20°
