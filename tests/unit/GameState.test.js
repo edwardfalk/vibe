@@ -127,13 +127,14 @@ describe('GameState', () => {
   });
 
   describe('the level-up sound, on the bar line', () => {
-    // Bars of 2 s from 0.37 s, heard one 25 ms lead behind the game's now
+    // Bars of 2 s from 0.37 s, heard one 40 ms lead behind the game's now
+    // (not the game's lead, so the code must read the clock's)
     let now;
     const clock = {
       beatInterval: 500,
       beatsPerMeasure: 4,
       startTime: 370,
-      aheadSec: 0.025,
+      aheadSec: 0.04,
       nowSec: () => now,
       reset: () => {},
     };
@@ -172,8 +173,27 @@ describe('GameState', () => {
     });
 
     it('takes a beat 1 the game has passed but you have not heard yet', () => {
-      now = 4.38; // heard: 4.355, before the bar line at 4.37
+      now = 4.38; // heard: 4.34, before the bar line at 4.37
       gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([['levelUp', null, null, { at: 4.37 }]]);
+    });
+
+    it('a bar line passed with no frame to play it moves to the next one', () => {
+      now = 3;
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      now = 4.37 + 0.13; // over a quarter beat late: a hidden tab
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([]);
+      now = 6.38;
+      gs.updateLevelUp();
+      expect(levelUps()).toEqual([['levelUp', null, null, { at: 6.37 }]]);
+    });
+
+    it('a slow frame, under a quarter beat late, still plays it', () => {
+      now = 3;
+      gs.addScore(CONFIG.PACING.FIRST_LEVEL_POINTS);
+      now = 4.37 + 0.12;
       gs.updateLevelUp();
       expect(levelUps()).toEqual([['levelUp', null, null, { at: 4.37 }]]);
     });

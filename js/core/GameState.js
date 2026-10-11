@@ -7,6 +7,19 @@ import { isWaiting } from '../audio/TextDisplay.js';
 
 // An end this close to an eighth (in eighths) counts as on it
 const ON_EIGHTH = 1e-6;
+// A level-up whose bar line the game passed this many beats ago or more,
+// with no frame to play it (a hidden tab, ?tune's sound while paused),
+// waits for the next one; the stabber drops a step as late (Stabber.js)
+const LEVEL_UP_LATE_BEATS = 0.25;
+
+// The first beat 1 at or after the heard now, which the game may have passed
+// by up to its lead (BeatClock); seconds on the clock
+function nextBarLine(clock) {
+  const bar = (clock.beatInterval * clock.beatsPerMeasure) / 1000;
+  const origin = clock.startTime / 1000;
+  const heard = clock.nowSec() - clock.aheadSec;
+  return origin + Math.ceil((heard - origin) / bar) * bar;
+}
 
 export class GameState {
   constructor() {
@@ -85,16 +98,9 @@ export class GameState {
         window.beatTrack.setLevel(this.level);
       }
 
-      // Its sound and shake wait for the next beat 1 you hear, which the
-      // game may have passed by up to its lead (BeatClock). Two levels in
-      // one bar share it
-      const clock = window.beatClock;
-      if (clock) {
-        const bar = (clock.beatInterval * clock.beatsPerMeasure) / 1000;
-        const origin = clock.startTime / 1000;
-        const heard = clock.nowSec() - clock.aheadSec;
-        this.levelUpAt = origin + Math.ceil((heard - origin) / bar) * bar;
-      }
+      // Its sound and shake wait for the next beat 1 you hear
+      // (updateLevelUp). Two levels in one bar share it
+      if (window.beatClock) this.levelUpAt = nextBarLine(window.beatClock);
 
       // A new level: the next place he looks for his carpet
       if (window.audio && window.player) {
@@ -109,7 +115,13 @@ export class GameState {
    */
   updateLevelUp() {
     const at = this.levelUpAt;
-    if (at === null || window.beatClock.nowSec() < at) return;
+    const clock = window.beatClock;
+    const now = clock.nowSec();
+    if (at === null || now < at) return;
+    if (now - at >= (LEVEL_UP_LATE_BEATS * clock.beatInterval) / 1000) {
+      this.levelUpAt = nextBarLine(clock);
+      return;
+    }
     this.levelUpAt = null;
     window.cameraSystem?.addShake(15, 30);
     window.audio?.playSound('levelUp', null, null, { at });

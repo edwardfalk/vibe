@@ -807,7 +807,11 @@ test.describe('Gameplay Probes', () => {
       const barSec = (clock.beatInterval * clock.beatsPerMeasure) / 1000;
       const heardAt = clock.nowSec() - clock.aheadSec;
       gs.addScore(gs.nextLevelThreshold - gs.score);
-      await new Promise((r) => setTimeout(r, barSec * 1000 + 300));
+      await new Promise((r) => {
+        const id = setInterval(() => {
+          if (gs.levelUpAt === null) r(clearInterval(id));
+        }, 20);
+      });
       audio.beatTiming = timing;
       audio.playSound = playSound;
       return {
@@ -824,6 +828,7 @@ test.describe('Gameplay Probes', () => {
     expect(bars).toBeCloseTo(Math.round(bars), 9); // a beat 1
     expect(s.aimed).toBeGreaterThanOrEqual(r.heardAt);
     expect(s.aimed - r.heardAt).toBeLessThanOrEqual(r.barSec + 0.01);
+    expect(s.game).toBeGreaterThanOrEqual(s.aimed); // it waited for it
     // On it, unless its frame came later than the lead
     const bookable = s.aimed - s.now >= r.quantum;
     expect(s.at, `booked ${bookable}`).toBeCloseTo(
