@@ -415,6 +415,8 @@ describe("Voicebox: the game's side", () => {
 
   it("a speaker given a new setup (?tune's rusher voice) renders afresh, and the old one's lines are kept", () => {
     const { voicebox, worker } = setup();
+    // ?tune's pick writes CONFIG, so the game's Voicebox reads CONFIG's own
+    expect(voicebox.config).toBe(CONFIG.SPEECH);
     const { SPEAKERS } = voicebox.config;
     const first = SPEAKERS.rusher;
     const other = { ...first, voice: { ...first.voice, pitch: 99 } };

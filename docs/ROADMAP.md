@@ -22,7 +22,7 @@ Calls and smaller work:
 - **call: the hero's final shot sound** (softHat, metalHat, tick, ghostArp; tick is the default). Then the other three and the `HERO_SHOT.SOUND` knob go.
 - **build: delete the grunt shot's zap option and its `BAND.GRUNT_SHOT` knob.** Edward kept the stab (#94); ask before deleting.
 - **call: rushers set off in a chain crash together exactly in step,** +6 dB each doubling (the crash noise has a fixed seed). Fix only if it's heard as too loud: one crash per frame.
-- **build, low: a rusher lit while he warps in misses that beat's fuse beep.** A fuse with no beeps at all needs `FUSE_MIN_BEATS` 1. Fix: beep on his first update when it falls within the clock's tolerance of a beat. (Codex on #94)
+- **build, low: a rusher lit while he warps in misses that beat's fuse beep.** A fuse with no beeps at all needs `FUSE_MIN_BEATS` 1, which also skips his punchline (said with his last beep). Fix: beep on his first update when it falls within the clock's tolerance of a beat. (Codex on #94)
 - **build: #94's deferred minors:**
   - `Tank.js`'s `lastBeat` comment says "for the shove", but it also drives the charge's pluck;
   - `drive()` rebuilds its curve on every tank shot;
@@ -76,7 +76,7 @@ Calls and smaller work:
   - `pose()` is built twice a frame while he's lit;
   - the arm sprite clips the hand;
   - the crash call has no try/catch;
-  - four missing tests.
+  - three missing tests: the hit flash, `turnAt`'s easing and GameLoop's `update(dt)`.
 - **check: #87's stabber minors:**
   - a dead `'stabber-miss'` route;
   - duplicated helpers;
