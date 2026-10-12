@@ -365,11 +365,10 @@ export class Audio {
 
   // How loud (0..1), where (pan -1..1) and how far (0..1, distanceShare) a
   // sound from (x, y) is, heard from the hero; one with no position is
-  // beside him
+  // beside him. A position that isn't a number (an enemy gone NaN) is left
+  // to fail where its sound is built, which logs it
   placement(x, y) {
-    if (!Number.isFinite(x) || !Number.isFinite(y)) {
-      return { near: 1, pan: 0, far: 0 };
-    }
+    if (x == null || y == null) return { near: 1, pan: 0, far: 0 };
     const hx = Number.isFinite(this.player?.x) ? this.player.x : 0;
     const hy = Number.isFinite(this.player?.y) ? this.player.y : 0;
     return {
@@ -874,7 +873,10 @@ export class Audio {
 
     // The hero hears it from where the speaker is; one without a position
     // speaks from where the hero is
-    const { near, pan } = this.placement(entity?.x, entity?.y);
+    const placed = Number.isFinite(entity?.x) && Number.isFinite(entity?.y);
+    const { near, pan } = placed
+      ? this.placement(entity.x, entity.y)
+      : this.placement(null, null);
     const gain = Math.max(CONFIG.MIX.SPEECH_DISTANCE_FLOOR, near);
 
     this.voicebox

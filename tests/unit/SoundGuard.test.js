@@ -101,15 +101,18 @@ describe('where a sound is, heard from the hero (placement)', () => {
     player: { x: 100, y: 50 },
   });
 
-  it('one with no position, or a broken one, is beside him: full and centred', () => {
+  it('one with no position is beside him: full and centred', () => {
     for (const [x, y] of [
       [null, null],
       [undefined, undefined],
-      [NaN, 0],
-      [0, Infinity],
+      [5, null],
     ]) {
       expect(audio.placement(x, y)).toEqual({ near: 1, pan: 0, far: 0 });
     }
+  });
+
+  it("a broken one (an enemy gone NaN) isn't hidden: it fails where its sound is built", () => {
+    expect(audio.placement(NaN, 0).near).toBeNaN();
   });
 
   it('quieter, panned and further with distance, to its floor at 600 px', () => {
