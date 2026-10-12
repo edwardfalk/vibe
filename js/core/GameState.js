@@ -21,12 +21,21 @@ function nextBarLine(clock) {
   return origin + Math.ceil((heard - origin) / bar) * bar;
 }
 
+// A browser that blocks site data throws on any access to localStorage
+function readHighScore() {
+  try {
+    return parseInt(localStorage.getItem('vibeHighScore')) || 0;
+  } catch {
+    return 0;
+  }
+}
+
 export class GameState {
   constructor() {
     // Core game state
     this.score = 0;
     this.startSpeechTimer = null;
-    this.highScore = parseInt(localStorage.getItem('vibeHighScore')) || 0;
+    this.highScore = readHighScore();
     // What this run has to beat; highScore itself follows the score up
     this.highScoreAtRunStart = this.highScore;
     this.level = 1;
@@ -148,7 +157,12 @@ export class GameState {
 
   _flushHighScore() {
     if (this._highScoreDirty) {
-      localStorage.setItem('vibeHighScore', this.highScore.toString());
+      // A browser that blocks site data throws here: the run goes on unsaved
+      try {
+        localStorage.setItem('vibeHighScore', this.highScore.toString());
+      } catch {
+        // nothing to keep it in
+      }
       this._highScoreDirty = false;
     }
     if (this._highScoreDebounceTimer) {

@@ -290,6 +290,24 @@ describe('GameState', () => {
     expect(localStorage.getItem('vibeHighScore')).toBe('500');
   });
 
+  it('a browser that blocks site data still starts and ends a run', () => {
+    const blocked = () => {
+      throw new Error('SecurityError: access is denied');
+    };
+    const get = vi.spyOn(localStorage, 'getItem').mockImplementation(blocked);
+    const set = vi.spyOn(localStorage, 'setItem').mockImplementation(blocked);
+    try {
+      const run = new GameState();
+      expect(run.highScore).toBe(0);
+      run.addScore(500);
+      expect(() => run.setGameState('gameOver')).not.toThrow();
+      expect(run.highScore).toBe(500);
+    } finally {
+      get.mockRestore();
+      set.mockRestore();
+    }
+  });
+
   it('setGameState transitions correctly', () => {
     gs.setGameState('paused');
     expect(gs.gameState).toBe('paused');
