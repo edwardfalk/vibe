@@ -446,6 +446,7 @@ const CONFIG = {
     // How long a dying tank darts about, s (0.5 to 2): shorter is less
     TANK_ZIP_SEC: 0.95,
     STABBER_STYLE: 'shell',
+    STABBER_VOLUME: 1, // his death, 1 = its level in feedback's events window
   },
 
   // Tank armour plates (hits to break). Applies to tanks spawned after a

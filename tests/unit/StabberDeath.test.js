@@ -11,7 +11,13 @@ import {
   EnemyDeathHandler,
   popTime,
 } from '../../js/systems/combat/EnemyDeathHandler.js';
+import { stabberShell } from '../../js/audio/DeathSounds.js';
+import { hz } from '../../js/audio/Harmony.js';
+import { Audio } from '../../js/Audio.js';
+import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
+import { fakeAudio } from './helpers/fakeAudio.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 import { beatWorld } from './helpers/beatWorld.js';
 import { transformP5 } from './helpers/transformP5.js';
 
@@ -265,5 +271,94 @@ describe('Empty shell', () => {
     const { death: alone } = deathOf(record(), () => null);
     const h = alone.heroAt();
     expect(Math.atan2(h.y, h.x)).toBeCloseTo(0.3, 9);
+  });
+});
+
+describe("Empty shell's sound", () => {
+  const play = (rec, at) => {
+    const { ctx, made } = fakeAudio();
+    stabberShell(
+      ctx,
+      { kind: 'bus' },
+      { at, record: rec, noise: { duration: 2 }, volume: 1, pan: 0 }
+    );
+    return made;
+  };
+
+  it("glides onto the hum's fifth as it drifts at its start, not the drift-less one", () => {
+    const at = 7.3;
+    expect(Math.abs(hz(['5', 5], at) - hz(['5', 5], 0))).toBeGreaterThan(0.05);
+    const made = play(record({ at }), at);
+    // The voice on his note itself: a saw whose glide ends at the curve's last value
+    const ends = made
+      .filter(
+        (n) =>
+          n.kind === 'osc' && n.frequency.setValueCurveAtTime.mock.calls.length
+      )
+      .map((o) => o.frequency.setValueCurveAtTime.mock.calls[0][0].at(-1));
+    expect(ends.some((f) => Math.abs(f - hz(['5', 5], at)) < 1e-3)).toBe(true);
+  });
+
+  it('plucks the fifth as the eye shuts, from the same record, at any linger', () => {
+    const at = 2;
+    const rec = record({ at, linger: 1.7 });
+    const made = play(rec, at);
+    const pluck = made.filter((n) => n.kind === 'osc').at(-1);
+    expect(pluck.start.mock.calls[0][0]).toBeCloseTo(at + shellShutAt(rec), 9);
+    expect(pluck.start.mock.calls[0][0]).toBeCloseTo(at + 1.75, 9);
+    expect(pluck.frequency.setValueAtTime.mock.calls[0][0]).toBeCloseTo(
+      hz(['5', 5], at),
+      9
+    );
+  });
+
+  it('stops every source it starts, and frees its nodes when it ends', () => {
+    for (const rec of [
+      record(),
+      record({ pose: { ...record().pose, lunge: { k: 0.2 } } }),
+    ]) {
+      const made = play(rec, 2);
+      const started = made.filter((n) => n.start.mock.calls.length);
+      expect(started.length).toBeGreaterThan(5);
+      for (const n of started) expect(n.stop).toHaveBeenCalled();
+      const last = made.find((n) => n.onended);
+      last.onended();
+      for (const n of made) expect(n.disconnect).toHaveBeenCalled();
+    }
+  });
+
+  it('hisses only white-hot', () => {
+    const sources = (rec) =>
+      play(rec, 2).filter((n) => n.kind === 'source').length;
+    const hot = record({ pose: { ...record().pose, lunge: { k: 0.2 } } });
+    expect(sources(hot)).toBe(sources(record()) + 1);
+  });
+
+  it("the game's Audio plays it at its volume knob, placed, on feedback, and not while a pause holds the sound", () => {
+    const { ctx, made } = fakeAudio();
+    const audio = Object.assign(Object.create(Audio.prototype), {
+      audioContext: ctx,
+      initialized: true,
+      enabled: true,
+      initialize() {},
+      sounds: { ...SOUND_CONFIG },
+      player: { x: 0, y: 0 },
+      masterGain: { kind: 'effects bus' },
+      buses: fakeBuses(),
+      getContextValue: () => undefined,
+      _pausedByGame: false,
+      _resuming: false,
+    });
+    CONFIG.DEATHS.STABBER_VOLUME = 0;
+    const { near } = audio.placement(300, 0);
+    audio.playStabberDeath(300, 0, 4, record({ at: 4 }));
+    const bus = made.find((n) => n.kind === 'gain');
+    expect(bus.gain.setValueAtTime.mock.calls[0][0]).toBe(0 * near);
+    const pan = made.find((n) => n.kind === 'pan');
+    expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
+    const count = made.length;
+    audio._pausedByGame = true;
+    audio.playStabberDeath(0, 0, 4, record({ at: 4 }));
+    expect(made).toHaveLength(count);
   });
 });
