@@ -12,13 +12,14 @@ export const isWaiting = ({ showsAt }, now) =>
 export function updateActiveTexts(activeTexts, now = Infinity) {
   for (let i = activeTexts.length - 1; i >= 0; i--) {
     const textObj = activeTexts[i];
-    if (isWaiting(textObj, now)) continue;
-    textObj.timer--;
-
+    // A waiting bubble follows too: its line can start in a hitstop, when
+    // this doesn't run, and it shows where its speaker is
     if (textObj.entity) {
       textObj.x = textObj.entity.x;
       textObj.y = textObj.entity.y - 30;
     }
+    if (isWaiting(textObj, now)) continue;
+    textObj.timer--;
 
     if (textObj.shakeTimer > 0) textObj.shakeTimer--;
     if (textObj.wobbleTimer > 0) textObj.wobbleTimer--;
