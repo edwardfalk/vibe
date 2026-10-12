@@ -749,7 +749,6 @@ export function drawTank(p, s, look, react = NO_REACTION) {
   const parts = tankParts(p, s);
   const off = react.hands ?? 0;
   const raised = off > 0 ? tankRaisedParts(p, s) : null;
-  const turn = react.turn ?? 0;
   const t = look.t;
   const ctx = p.drawingContext;
   // An overlay at a fraction of the alpha it is drawn at (a spawning tank
@@ -973,6 +972,10 @@ export function drawTank(p, s, look, react = NO_REACTION) {
   // His head, sunk between his traps; it rolls on his neck and looks where he aims
   p.push();
   const gaze = 0.4 * aimRel;
+  // His "uh oh" looking round wins; else a glance turns his head to where
+  // it says (on his body), from wherever the rest of his pose puts it
+  const g = look.glance;
+  const turn = react.turn ?? (g ? g.k * (g.rel - yokeA - headA - gaze) : 0);
   p.translate(
     s *
       (HEAD[0] -

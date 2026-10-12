@@ -7,6 +7,7 @@ import {
   MUZZLE,
 } from '../../js/entities/TankRenderer.js';
 import { HEALTH_BAR_HEIGHT_PX } from '../../js/entities/BaseEnemyHelpers.js';
+import { UH } from '../../js/entities/TankFlinch.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { transformP5 } from './helpers/transformP5.js';
 
@@ -139,6 +140,29 @@ describe('drawing the tank', () => {
         );
       }
     }
+  });
+
+  it('turns his head to a glance, no further than his "uh oh" looks, and never across his back', () => {
+    const headAngle = (t) => {
+      const { p, shapes } = transformP5();
+      t.draw(p);
+      const { matrix } = imageOf(shapes, tankParts(p, drawnSize()).head);
+      return Math.atan2(matrix[1], matrix[0]);
+    };
+    // Each glance began at beat 17.5, 0.25 s ago: fully in
+    const glancing = (facing, rel0) => {
+      const t = tankAt(18, facing);
+      t.glance = { rel0, facing0: 0, at: 17.5, hold: false };
+      return t;
+    };
+    // A hit from 1 rad to his right: he looks straight at it
+    expect(near(headAngle(glancing(0, 1)), 1)).toBeLessThan(1e-6);
+    // From dead behind, on his left: as far as his "uh oh" looks
+    expect(near(headAngle(glancing(0, -Math.PI)), UH.LOOK)).toBeLessThan(1e-6);
+    // He has turned 2.5 rad the other way since: still over his left shoulder
+    expect(near(headAngle(glancing(2.5, -2.9)), 2.5 + UH.LOOK)).toBeLessThan(
+      1e-6
+    );
   });
 
   it('rebuilds his sprites when his drawn size changes, and removes the old ones', () => {
