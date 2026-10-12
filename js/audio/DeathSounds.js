@@ -481,7 +481,9 @@ export function plateClang(ctx, out, { at, noise, volume, pan }) {
 // sour semitone above it dying as he falls; cut off as the eye shuts, with
 // a pluck on the fifth
 const SHELL_SOUND = {
-  TRIM_DB: 0, // the mix pass: this style's level in feedback's events window
+  // Its level in feedback's events window: about 2 dB over the kick, beside
+  // the tank's death (tests/audio-levels.test.js; -4.3 dB at the page's level)
+  TRIM_DB: 6.2,
   SILENT: 0.0001,
   CLICK_ATTACK_SEC: 0.001,
   // A crack running down the seam: snaps of bright noise, unevenly spaced
@@ -705,7 +707,9 @@ export function stabberShell(ctx, out, { at, record, noise, volume, pan }) {
 // hum. His spike's last jab, his own pizzicato at a whisper; a dry crumble
 // of bone when it goes
 const SHATTER_SOUND = {
-  TRIM_DB: 0, // the mix pass: this style's level in feedback's events window
+  // Its level in feedback's events window: about 2 dB over the kick, beside
+  // the tank's death (tests/audio-levels.test.js; -1.8 dB at the page's level)
+  TRIM_DB: 3.8,
   // The cluster round his note: [degree, octave, cents, level, onset s]. The
   // players pluck a hair apart (a rake), his note first, on the eighth
   SOUR: [
