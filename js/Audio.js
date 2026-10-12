@@ -516,7 +516,7 @@ export class Audio {
    */
   playStabberStrings(part, x, y, opts = {}) {
     if (!this.ensureAudioContext()) return null;
-    return this.guarded('stabberStrings', () => {
+    return this.guarded(`stabberStrings ${part}`, () => {
       const S = CONFIG.STABBER;
       const volume = {
         tremolo: S.TREMOLO_VOLUME,
@@ -570,7 +570,7 @@ export class Audio {
    */
   playStabberDeath(x, y, at, record) {
     if (!this.ensureAudioContext()) return;
-    this.guarded('stabberDeath', () => {
+    this.guarded(`stabberDeath ${record.style}`, () => {
       const { near, pan } = this.placement(x, y);
       STABBER_DEATH_SOUNDS[record.style](
         this.audioContext,

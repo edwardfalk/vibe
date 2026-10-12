@@ -58,6 +58,18 @@ describe('a sound that throws', () => {
     }
   );
 
+  it("each string and each death style logs its own failure, so one can't hide another", () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const audio = brokenAudio();
+    for (const part of ['pluck', 'stab', 'pluck']) {
+      audio.playStabberStrings(part, 10, 0, { seed: 0.5 });
+    }
+    for (const style of ['shatter', 'shell', 'shatter']) {
+      audio.playStabberDeath(10, 0, 3.1, { style });
+    }
+    expect(error).toHaveBeenCalledTimes(4);
+  });
+
   it('a sound with a handle gives none', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const audio = brokenAudio();
