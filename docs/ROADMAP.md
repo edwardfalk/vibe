@@ -153,5 +153,4 @@ Calls and smaller work:
 
 ## The README
 
-- **build: re-record `docs/media/demo.gif`.** It dates from 2026-09-25, before the sky, the five character overhauls, the deaths and the explosions.
 - **call: a gameplay clip with sound.** It needs Edward's screen and speakers; he said to skip it for now.
