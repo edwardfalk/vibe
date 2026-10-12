@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { bootGame } from './helpers/boot.js';
+import { aimAtNearestEnemy, bootGame, jumpToLevel } from './helpers/boot.js';
 
 // The gas buffer's luminance spread in the fixed resting level-8 frame must
 // stay above this: a black or NaN shader leaves a flat buffer
@@ -1162,6 +1162,60 @@ test.describe('Gameplay Probes', () => {
     await page.waitForTimeout(500);
     const fc2 = await page.evaluate(() => window.frameCount);
     expect(fc2).toBeGreaterThan(fc1);
+  });
+
+  // A sound or effect that breaks only in a real fight logs an error and
+  // nothing else; the playtest, which plays longer, isn't in CI
+  test('A fight with every enemy type logs no errors', async ({ page }) => {
+    const FIGHT_MS = 8000;
+    const AIM_MS = 50;
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+    await bootGame(page);
+    // The level the last type comes in at, so the waves bring every type too
+    const allTypes = await page.evaluate(
+      async () =>
+        (await import('/js/systems/SpawnSystem.js')).ENEMY_INTRO_LEVEL.tank
+    );
+    await jumpToLevel(page, allTypes);
+    // One of each type round the hero, so all of them fight from the start.
+    // The tank's plates would soak every shot the bot aims at him, so he
+    // starts further out, and the others die to one hit
+    await page.evaluate(() => {
+      const hero = window.player;
+      const at = (type, a, distance) => {
+        const e = window.spawnSystem.createEnemy(
+          hero.x + distance * Math.cos(a),
+          hero.y + distance * Math.sin(a),
+          type,
+          hero.p
+        );
+        window.enemies.push(e);
+        return e;
+      };
+      at('tank', 0, 450);
+      window.__weak = ['grunt', 'rusher', 'stabber'].map((type, i) => {
+        const e = at(type, ((i + 1) * Math.PI) / 2, 180);
+        e.health = 1;
+        return e;
+      });
+    });
+    const box = await page.locator('#defaultCanvas0').boundingBox();
+    await page.mouse.down();
+    for (const end = Date.now() + FIGHT_MS; Date.now() < end; ) {
+      await aimAtNearestEnemy(page, box);
+      await page.waitForTimeout(AIM_MS);
+    }
+    await page.mouse.up();
+    // It was a fight: the three weak ones died, the rusher by his own blast
+    const alive = await page.evaluate(() =>
+      window.__weak
+        .filter((e) => window.enemies.includes(e) && !e.markedForRemoval)
+        .map((e) => e.type)
+    );
+    expect(alive).toEqual([]);
+    expect(errors).toEqual([]);
   });
 
   test('Bullet collision kills enemy and awards score', async ({ page }) => {
