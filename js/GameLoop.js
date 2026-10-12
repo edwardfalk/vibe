@@ -247,7 +247,7 @@ function drawGame(p) {
   const scene = gameState?.gameState === 'gameOver' ? gameState.scene : null;
   const clock = window.beatClock;
   if (cameraSystem) {
-    cameraSystem.applyTransform();
+    cameraSystem.applyTransform(gameState?.gameState !== 'paused');
     if (scene && player) easeCameraIn(p, cameraSystem, player, scene, clock);
   }
 

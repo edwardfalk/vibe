@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { random, sin, atan2, constrain } from '../mathUtils.js';
+import { random, sin, atan2, constrain, TWO_PI } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import {
   getGlowColorForType,
@@ -11,6 +11,9 @@ import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 // A death is answered by one of its kind within this, px
 const ANSWER_RANGE_PX = 300;
+// How far a hit's shake turns, radians a frame of hitFlash: big and apart
+// in x and y, so it jitters rather than sways
+const HIT_SHAKE_STEP = { x: 2.3, y: 3.7 };
 // Alive and staying so: not dead, not marked, not pending a stab death
 const canAnswer = (e) =>
   !e.markedForRemoval && e.health > 0 && !e.pendingStabDeath;
@@ -295,16 +298,21 @@ export class BaseEnemy {
    */
   drawFigure(p, s) {}
 
-  /** Shake and squash the figure for a few frames after a hit */
+  /**
+   * Shake and squash the figure for a few frames after a hit. It runs on
+   * hitFlash, which only an update moves, so a pause or the hero's death
+   * scene holds it still
+   */
   applyHitShake(p) {
     if (!(this.hitFlash > 0)) return;
     const hitIntensity = this.hitFlash / 8;
-    const shakeX = random(-hitIntensity * 4, hitIntensity * 4);
-    const shakeY = random(-hitIntensity * 3, hitIntensity * 3);
-    p.translate(shakeX, shakeY);
+    const phase = this.lookSeed * TWO_PI;
+    const shakeX = sin(this.hitFlash * HIT_SHAKE_STEP.x + phase);
+    const shakeY = sin(this.hitFlash * HIT_SHAKE_STEP.y + phase);
+    p.translate(shakeX * hitIntensity * 4, shakeY * hitIntensity * 3);
 
     // Comical size distortion when hit
-    const distortion = 1 + sin(p.frameCount * 2) * hitIntensity * 0.1;
+    const distortion = 1 + sin(this.hitFlash * 2) * hitIntensity * 0.1;
     p.scale(distortion, 1 / distortion);
   }
 
