@@ -64,7 +64,7 @@ function world() {
   const handler = new EnemyDeathHandler(w.context);
   const kill = (blow = { dir: 0 }) => {
     s.health = 1;
-    s.takeDamage(5, blow.dir ?? null, 'player_bullet');
+    s.takeDamage(1, blow.dir ?? null, 'player_bullet'); // a shot's own damage
     handler.handleEnemyDeath(s, 'stabber', s.x, s.y, blow);
     return explosionManager.fragmentExplosions.at(-1);
   };
@@ -161,6 +161,7 @@ function screenPoints(p) {
 describe("when the stabber's death starts", () => {
   it("on the next eighth, at least the voices' lead ahead: his sound then, his picture when it is heard", () => {
     const w = world();
+    w.audio.audioContext = { baseLatency: 0.01, outputLatency: 0.02 };
     w.run(0, 300);
     const death = w.kill({ dir: 0 });
     expect(death).toBeInstanceOf(StabberDeath);
@@ -169,7 +170,10 @@ describe("when the stabber's death starts", () => {
     expect([x, y]).toEqual([w.s.x, w.s.y]);
     expect(start).toBeCloseTo(at, 9);
     expect(rec).toBe(death.record);
-    expect(death.startsAt).toBeGreaterThanOrEqual(at);
+    expect(death.startsAt).toBeCloseTo(
+      at + 0.01 + 0.02 + CONFIG.SKY.OFFSET_MS / 1000,
+      9
+    );
   });
 
   it('with the bang when the bomb killed him; on the next eighth when the bang played nothing', () => {
@@ -318,13 +322,26 @@ describe('Empty shell', () => {
     }
   });
 
+  it("is handed the game's hero, wherever he goes after the kill", () => {
+    const w = world();
+    w.run(0, 300);
+    const death = w.kill({ dir: 0 });
+    w.player.x = 500;
+    w.player.y = 40;
+    expect(death.heroAt()).toEqual({
+      x: 500 - death.x,
+      y: 40 - death.y,
+    });
+  });
+
   it('knows where the hero is each frame, from where he died; with no hero, along his aim', () => {
     const hero = { x: 300, y: 50 };
     const { death } = deathOf(record(), () => hero);
     death.x = 100;
-    expect(death.heroAt()).toEqual({ x: 200, y: 50 });
+    death.y = 20;
+    expect(death.heroAt()).toEqual({ x: 200, y: 30 });
     hero.x = 0;
-    expect(death.heroAt()).toEqual({ x: -100, y: 50 });
+    expect(death.heroAt()).toEqual({ x: -100, y: 30 });
     const { death: alone } = deathOf(record(), () => null);
     const h = alone.heroAt();
     expect(Math.atan2(h.y, h.x)).toBeCloseTo(0.3, 9);
@@ -406,13 +423,28 @@ describe("Empty shell's sound", () => {
       _pausedByGame: false,
       _resuming: false,
     });
-    CONFIG.DEATHS.STABBER_VOLUME = 0;
-    const { near } = audio.placement(300, 0);
-    audio.playStabberDeath(300, 0, 4, record({ at: 4 }));
-    const bus = made.find((n) => n.kind === 'gain');
-    expect(bus.gain.setValueAtTime.mock.calls[0][0]).toBe(0 * near);
-    const pan = made.find((n) => n.kind === 'pan');
-    expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
+    // Its level and pan, at the hero and 300 px off to his right
+    CONFIG.DEATHS.STABBER_VOLUME = 1.3;
+    const placedAt = (x) => {
+      const from = made.length;
+      audio.playStabberDeath(x, 0, 4, record({ at: 4 }));
+      const mine = made.slice(from);
+      return {
+        gain: mine.find((n) => n.kind === 'gain').gain.setValueAtTime.mock
+          .calls[0][0],
+        pan: mine.find((n) => n.kind === 'pan'),
+      };
+    };
+    const here = placedAt(0);
+    const off = placedAt(300);
+    const { near, pan } = audio.placement(300, 0);
+    expect(near).toBeLessThan(0.9);
+    expect(pan).toBeGreaterThan(0.1);
+    expect(off.gain / here.gain).toBeCloseTo(near, 9);
+    CONFIG.DEATHS.STABBER_VOLUME = 2.6;
+    expect(placedAt(0).gain / here.gain).toBeCloseTo(2, 9);
+    expect(off.pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(pan, 9);
+    expect(off.pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
     const count = made.length;
     audio._pausedByGame = true;
     audio.playStabberDeath(0, 0, 4, record({ at: 4 }));
