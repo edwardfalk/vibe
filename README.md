@@ -27,7 +27,7 @@ Every sound an enemy makes is timed to one shared clock, so together they play a
 | ------- | --------------------------------------------------------------------- | ----------------------------- |
 | Player  | held fire snaps to eighth notes; the first shot of a burst is instant | hi-hat                        |
 | Grunt   | fires on beats 2 and 4                                                | snare                         |
-| Tank    | fires on beat 1                                                       | kick                          |
+| Tank    | fires on beat 1 of an even bar                                        | kick                          |
 | Stabber | lunges on the "and" of 3                                              | string stab (off-beat accent) |
 | Rusher  | explodes on beats 1 and 3                                             | crash                         |
 
@@ -35,7 +35,7 @@ Every sound an enemy makes is timed to one shared clock, so together they play a
 - **Grunts** keep their distance, stepping back when you get close and advancing when you run.
 - **Stabbers** wind up on beat 2, lock on beat 3 and lunge on the "and" of 3: a ring counts the eighths and a lane shows where they'll go. Shoot one before the lock and its stab is off; after it, dodge.
 - **Rushers** are stuntmen on rockets who steer only on the beat: dash aside and they shoot past. Shot or too close, they light, count down on the beat and blow up with a crash on beat 1 or 3, hurting anything near and lighting any rusher in reach. Your shots knock them along, so bat one into a crowd.
-- **Tanks** are big, slow bouncers who turn only on beat 1. Their armour is on the side facing you and their back is bare: get behind one to plant your time bomb, which counts down on the beat and kills him. Stand in front of one and he shoves you.
+- **Tanks** are big, slow bouncers who turn only on beat 1. Their armour is on the side facing you and their back is bare: get behind one to plant your time bomb, which counts down on the beat and kills him. Stand in front of one and he shoves you; brush his side and he elbows you away.
 - **Everyone talks.** Enemies shout lines like "KILL HUMAN!" and "SLICE AND DICE!", each in its own synthesized voice, on the beat, and the mix dips the game under them so they're heard.
 
 A steady kick drum keeps time over a hum, one root note and its fifth, which dips on every beat and grows with the fight. Without them, the enemies' hits are just sounds. With them, you can hear each hit landing on the beat.

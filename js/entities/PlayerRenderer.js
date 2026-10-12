@@ -179,7 +179,7 @@ const GHOST_GAP = 8;
 const HP_W = 26;
 const HP_H = 3.6;
 
-const easeOutBack = (k) =>
+export const easeOutBack = (k) =>
   1 + 2.4 * Math.pow(k - 1, 3) + 1.4 * Math.pow(k - 1, 2);
 
 // ---- drawing on the raw context ---------------------------------------------
@@ -860,30 +860,34 @@ export function shadesOn(look, P) {
   ctx.restore();
 }
 // The anger vein at (x, y), throbbing on the kick; `fade` (0..1) shrinks and
-// fades it away
-export function vein(kick, anger, x, y, fade = 1) {
+// fades it away. On his canvas, or `on` another's (the tank's anger mark)
+export function vein(kick, anger, x, y, fade = 1, on = ctx) {
   const v = (2.2 + 1.8 * anger) * (1 + 0.3 * kick) * fade;
   const gp = 0.36 * v;
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
+  on.save();
+  on.translate(x, y);
+  on.lineCap = 'round';
+  on.lineJoin = 'round';
+  on.beginPath();
   for (const [qx, qy] of [
     [1, 1],
     [-1, 1],
     [1, -1],
     [-1, -1],
   ]) {
-    ctx.moveTo(qx * gp, qy * v);
-    ctx.lineTo(qx * gp, qy * gp);
-    ctx.lineTo(qx * v, qy * gp);
+    on.moveTo(qx * gp, qy * v);
+    on.lineTo(qx * gp, qy * gp);
+    on.lineTo(qx * v, qy * gp);
   }
-  strokeC(C.ink, 2.8, fade);
-  ctx.stroke();
-  strokeC(C.vein, 1.4, fade);
-  ctx.stroke();
-  ctx.restore();
+  for (const [c, w] of [
+    [C.ink, 2.8],
+    [C.vein, 1.4],
+  ]) {
+    on.strokeStyle = style(c, fade);
+    on.lineWidth = w;
+    on.stroke();
+  }
+  on.restore();
 }
 // Steam from under his hair at (x, y): a puff on each of the last two kicks
 function steam(look, P, x, y) {

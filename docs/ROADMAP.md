@@ -24,8 +24,7 @@ Calls and smaller work:
 - **call: rushers set off in a chain crash together exactly in step,** +6 dB each doubling (the crash noise has a fixed seed). Fix only if it's heard as too loud: one crash per frame.
 - **build, low: a rusher lit while he warps in misses that beat's fuse beep.** A fuse with no beeps at all needs `FUSE_MIN_BEATS` 1, which also skips his punchline (said with his last beep). Fix: beep on his first update when it falls within the clock's tolerance of a beat. (Codex on #94)
 - **build: #94's deferred minors:**
-  - `Tank.js`'s `lastBeat` comment says "for the shove", but it also drives the charge's pluck;
-  - two tanks firing on one beat 1 come out about 2 dB loud;
+  - two tanks firing on one beat 1 come out about 2 dB loud (more often since tank charges start only on even bars);
   - a note with a fractional octave fails after its nodes exist;
   - no test for a late frame in the middle of a fuse;
   - no test that the `BAND` knobs show on `?tune`;
@@ -74,6 +73,18 @@ Calls and smaller work:
   - the arm sprite clips the hand;
   - the crash call has no try/catch;
   - three missing tests: the hit flash, `turnAt`'s easing and GameLoop's `update(dt)`.
+- **call: the tank's elbow and anger, the play test's smaller questions** (#106). Edward: "it plays well, keep the defaults". Not judged yet:
+  - do the glances at hits 1 and 2 read at game size? His head is a small bald ball, so mostly his shades move; a shoulder twist with it would show more;
+  - his forced anger line can talk over another alien's line begun under `VOICE_GAP_SEC` before;
+  - a tank killed mid-glance or mid-elbow keeps that pose through his death, as the shove already did;
+  - when the bomb's "uh oh" starts during a glance, his head flicks to the front for about a frame (its `react.turn` is 0 for the first 0.02 s).
+- **build: #106's deferred minors** (its review round; the code is right, the tests are missing):
+  - no test that a second grudge resets `whipAt`;
+  - `ANGER_MARK_SIZE`'s scale, `ANGER_MARK_BEATS` and the mark's throb are untested;
+  - the glance's correction for `yokeA`, `headA` and `gaze` is untested with his gun off his facing;
+  - the "uh oh" winning over a glance (`react.turn ??`) is untested;
+  - no test that an elbow doesn't also stamp the shove's lunge;
+  - `CHARGE_BEATS` must be whole bars for the even-bar grid, and `config.js` doesn't say so.
 - **check: #87's stabber minors:**
   - a dead `'stabber-miss'` route;
   - duplicated helpers;

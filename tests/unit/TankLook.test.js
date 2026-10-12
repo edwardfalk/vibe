@@ -7,6 +7,7 @@ import {
   MUZZLE,
 } from '../../js/entities/TankRenderer.js';
 import { HEALTH_BAR_HEIGHT_PX } from '../../js/entities/BaseEnemyHelpers.js';
+import { UH } from '../../js/entities/TankFlinch.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { transformP5 } from './helpers/transformP5.js';
 
@@ -89,6 +90,106 @@ describe('drawing the tank', () => {
         );
       }
     }
+  });
+
+  it('barges toward his side on an elbow, that pad punching out, and stays under his health bar', () => {
+    const drawn = (t) => {
+      const { p, shapes, calls } = transformP5();
+      t.draw(p);
+      const parts = tankParts(p, drawnSize());
+      const y = (sh) => sh.matrix[5];
+      const pads = shapes.filter(
+        (sh) => sh.kind === 'image' && sh.g === parts.pad.g
+      );
+      return {
+        slab: y(imageOf(shapes, parts.slab)),
+        right: y(pads.find((sh) => y(sh) > t.y)),
+        left: y(pads.find((sh) => y(sh) < t.y)),
+        shapes,
+        calls,
+      };
+    };
+    const rest = drawn(tankAt(18));
+    for (const side of [1, -1]) {
+      const t = tankAt(18); // facing +x: his right is screen +y
+      t.elbowAt = 18;
+      t.elbowSide = side;
+      const e = drawn(t);
+      const slab = (e.slab - rest.slab) * side;
+      const [near, far] = side > 0 ? ['right', 'left'] : ['left', 'right'];
+      expect(slab, `side ${side}`).toBeGreaterThan(2);
+      expect((e[near] - rest[near]) * side).toBeGreaterThan(slab + 2);
+      expect((e[far] - rest[far]) * side).toBeLessThan(slab + 1);
+    }
+    for (const facing of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+      for (const side of [1, -1]) {
+        const t = tankAt(18, facing);
+        t.elbowAt = 18;
+        t.elbowSide = side;
+        t.health = 1; // damaged, so the bar shows
+        const { shapes, calls } = drawn(t);
+        const top = Math.min(
+          ...shapes.filter((sh) => sh.blend !== 'add').map((sh) => sh.top)
+        );
+        const [, , barY, , barH] = calls.find(
+          ([k, , , w, h]) =>
+            k === 'rect' && h === HEALTH_BAR_HEIGHT_PX && w === t.size * 1.2
+        );
+        expect(top, `facing ${facing}, side ${side}`).toBeGreaterThan(
+          barY + barH
+        );
+      }
+    }
+  });
+
+  it('turns his head to a glance, no further than his "uh oh" looks, and never across his back', () => {
+    const headAngle = (t) => {
+      const { p, shapes } = transformP5();
+      t.draw(p);
+      const { matrix } = imageOf(shapes, tankParts(p, drawnSize()).head);
+      return Math.atan2(matrix[1], matrix[0]);
+    };
+    // Each glance began at beat 17.5, 0.25 s ago: fully in
+    const glancing = (facing, aim) => {
+      const t = tankAt(18, facing);
+      t.glance = { aim, at: 17.5, hold: false };
+      return t;
+    };
+    // A hit from 1 rad to his right: he looks straight at it
+    expect(near(headAngle(glancing(0, 1)), 1)).toBeLessThan(1e-6);
+    // From dead behind, on his left: as far as his "uh oh" looks
+    expect(near(headAngle(glancing(0, -Math.PI)), UH.LOOK)).toBeLessThan(1e-6);
+    // He has turned 2.5 rad the other way since: still over his left shoulder
+    expect(near(headAngle(glancing(2.5, -2.9)), 2.5 + UH.LOOK)).toBeLessThan(
+      1e-6
+    );
+  });
+
+  it('pops his anger mark on when he tips, for ANGER_MARK_BEATS, then lets it go', () => {
+    // How many strokes in the Dude's vein red he is drawn with
+    const red = (t) => {
+      const { p } = transformP5();
+      const ctx = p.drawingContext;
+      const styles = [];
+      ctx.stroke = () => styles.push(ctx.strokeStyle);
+      t.draw(p);
+      return styles.filter((st) => st.startsWith('rgba(236,46,58,')).length;
+    };
+    const tipped = (ago) => {
+      const t = tankAt(20);
+      t.isAngry = true;
+      t.angerAt = 20 - ago;
+      return t;
+    };
+    const { ANGER_MARK_BEATS } = CONFIG.TANK_LOOK;
+    expect(red(tankAt(20))).toBe(0); // never angered
+    expect(red(tipped(0.5))).toBeGreaterThan(0);
+    expect(red(tipped(ANGER_MARK_BEATS + 0.2))).toBeGreaterThan(0); // shrinking
+    expect(red(tipped(ANGER_MARK_BEATS + 1))).toBe(0); // gone
+    // Tipped for real: three hits through his back from aliens of one kind
+    const t = tankAt(20);
+    for (let i = 0; i < t.angerThreshold; i++) t.takeDamage(1, 0, 'grunt');
+    expect(red(t)).toBeGreaterThan(0);
   });
 
   it('rebuilds his sprites when his drawn size changes, and removes the old ones', () => {

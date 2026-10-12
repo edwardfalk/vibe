@@ -197,7 +197,9 @@ export class BeatClock {
     this.update(true);
   }
 
-  // Adjust tempo (for dynamic music)
+  // Adjust tempo (for dynamic music). Unused in the game. A caller must keep
+  // the beat count carrying on across the change: tanks start their charges
+  // on even bars of this grid (Tank.onKick), and a jump would split them
   setBPM(newBPM) {
     this.bpm = newBPM;
     this.beatInterval = (60 / newBPM) * 1000;

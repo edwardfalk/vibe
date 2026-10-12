@@ -146,6 +146,7 @@ describe('every beat sound books on its eighth through playSound', () => {
     ['tankShot', { seed: 0.3 }],
     ['tankCharge', { step: 0, steps: 8, seed: 0.3 }],
     ['tankShove', {}],
+    ['tankElbow', {}],
     ['rusherCharge', {}],
     ['rusherFuse', { left: 2, seed: 0.3 }],
     ['rusherCrash', {}],

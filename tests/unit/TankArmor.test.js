@@ -27,6 +27,23 @@ describe('Tank anger at stabbers', () => {
     expect(tank.velocity.y).toBeGreaterThan(0);
   });
 
+  it('a killing third hit starts no anger and says nothing, through his back or a plate it breaks', () => {
+    const FROM_FRONT = Math.PI; // flying -x into his front plate
+    for (const [angle, overkill] of [
+      [FROM_BEHIND, 0],
+      [FROM_FRONT, CONFIG.TANK_ARMOR.FRONT],
+    ]) {
+      const tank = tankAmong([]);
+      for (let i = 1; i < tank.angerThreshold; i++) {
+        tank.takeDamage(1, FROM_BEHIND, 'stabber_melee');
+      }
+      tank.takeDamage(tank.health + overkill, angle, 'stabber_melee');
+      expect(tank.health).toBeLessThanOrEqual(0);
+      expect(tank.isAngry, `angle ${angle}`).toBe(false);
+      expect(tank.getContextValue('audio').speak).not.toHaveBeenCalled();
+    }
+  });
+
   it('once its anger wears off, the next stab does not re-anger it', () => {
     const tank = tankAmong([]);
     for (let i = 0; i < tank.angerThreshold; i++) {

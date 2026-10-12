@@ -72,7 +72,8 @@ export const TANK_REACH = 1.95;
 /**
  * Which of his sides an angle from his facing falls on: front within 45°,
  * back from 135°, left (y up) or right between. The plates take shots by
- * it, and contact goes by it (the shove in front, the bomb behind).
+ * it, and contact goes by it (the shove in front, the elbow at his sides,
+ * the bomb behind).
  */
 export function tankSide(rel) {
   const a = normalizeAngle(rel);
@@ -748,7 +749,6 @@ export function drawTank(p, s, look, react = NO_REACTION) {
   const parts = tankParts(p, s);
   const off = react.hands ?? 0;
   const raised = off > 0 ? tankRaisedParts(p, s) : null;
-  const turn = react.turn ?? 0;
   const t = look.t;
   const ctx = p.drawingContext;
   // An overlay at a fraction of the alpha it is drawn at (a spawning tank
@@ -835,8 +835,11 @@ export function drawTank(p, s, look, react = NO_REACTION) {
       0.04 * bulk -
       0.16 * wF +
       0.06 * backHit);
-  const yokeY = s * 0.16 * (wL - wR);
-  yokeA += 0.22 * (wR - wL);
+  // An elbow is a wince run the other way: he barges toward that side,
+  // that shoulder's pad punching out (below)
+  const elbow = look.elbow * look.elbowSide;
+  const yokeY = s * (0.16 * (wL - wR) + 0.22 * elbow);
+  yokeA += 0.22 * (wR - wL) - 0.15 * elbow;
   const stretch = 0.08 * L * (1 - hunch) - 0.08 * hunch - 0.06 * tw;
   const aimRel = look.gunRel - yokeA;
 
@@ -931,7 +934,11 @@ export function drawTank(p, s, look, react = NO_REACTION) {
     p.push();
     p.translate(
       s * PAD_AT[0] + side * rollX,
-      side * s * (PAD_AT[1] - 0.04 * hitP[name])
+      side *
+        s *
+        (PAD_AT[1] -
+          0.04 * hitP[name] +
+          (side === look.elbowSide ? 0.14 * look.elbow : 0))
     );
     p.scale(1, side);
     if (pl[name] > 0) {
@@ -965,6 +972,10 @@ export function drawTank(p, s, look, react = NO_REACTION) {
   // His head, sunk between his traps; it rolls on his neck and looks where he aims
   p.push();
   const gaze = 0.4 * aimRel;
+  // His "uh oh" looking round wins; else a glance turns his head to where
+  // it says (on his body), from wherever the rest of his pose puts it
+  const g = look.glance;
+  const turn = react.turn ?? (g ? g.k * (g.rel - yokeA - headA - gaze) : 0);
   p.translate(
     s *
       (HEAD[0] -

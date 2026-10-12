@@ -1,6 +1,15 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { Bullet } from './bullet.js';
-import { random, cos, sin, PI, smooth, clamp01, env } from '../mathUtils.js';
+import {
+  random,
+  cos,
+  sin,
+  PI,
+  smooth,
+  clamp01,
+  env,
+  normalizeAngle,
+} from '../mathUtils.js';
 import { CONFIG } from '../config.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import {
@@ -20,17 +29,39 @@ import {
   drawTank,
   TANK_REACH,
   TANK_SIZE,
+  HEAD,
 } from './TankRenderer.js';
-import { tankFlinch } from './TankFlinch.js';
+import { tankFlinch, UH } from './TankFlinch.js';
+import { vein, easeOutBack } from './PlayerRenderer.js';
+import { heardKickOf } from '../audio/BeatTrack.js';
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 
 const BEATS_PER_BAR = 4;
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const DEG = PI / 180;
 
-// The beat a hero was last shoved on, by any tank. A shove lands only on a
+// The beat a hero was last struck on, by any tank. A blow lands only on a
 // beat's first update, so this keeps it to one a frame from all tanks
 const shovedOnBeat = new WeakMap();
+
+// His blows, by the side of him the hero touches (tankSide): the shove in
+// front, the elbow at either side; his back takes the bomb. CONFIG.PLAYER keys
+const ELBOW = {
+  sound: 'tankElbow',
+  damage: 'DAMAGE_TANK_ELBOW',
+  knock: 'KNOCKBACK_TANK_ELBOW',
+  source: 'tank-elbow',
+};
+const BLOWS = {
+  front: {
+    sound: 'tankShove',
+    damage: 'DAMAGE_TANK_SHOVE',
+    knock: 'KNOCKBACK_TANK_SHOVE',
+    source: 'tank-shove',
+  },
+  left: ELBOW,
+  right: ELBOW,
+};
 
 const PLATE_NAMES = ['front', 'left', 'right'];
 // How fast his drawn envelopes fade (s)
@@ -38,6 +69,16 @@ const KICK_TAU_SEC = 0.1;
 const HIT_TAU_SEC = 0.08;
 const FIRE_TAU_SEC = 0.25;
 const SHOVE_TAU_SEC = 0.2;
+// A glance at a hit: his head snaps to it, holds, and comes back (s)
+const GLANCE_IN_SEC = 0.05;
+const GLANCE_HOLD_SEC = 0.3;
+const GLANCE_OUT_SEC = 0.2;
+// His anger mark: its pop, its throb on the heard kick and its shrink (s),
+// and where it sits, up and right of his head on screen (units of his size)
+const MARK_POP_SEC = 0.15;
+const MARK_THROB_TAU_SEC = 0.12;
+const MARK_OUT_SEC = 0.25;
+const MARK_AT = [0.3, -0.35];
 
 // Which way a broken plate's debris flies, from his facing
 const PLATE_SIDE = { front: 0, left: -PI / 2, right: PI / 2 };
@@ -84,9 +125,12 @@ class Tank extends BaseEnemy {
     this._lastTankFireBeat = -Infinity;
     this.firedAt = null;
     this.callsOut = false; // this charge says CHARGING! and FIRE!
-    this.lastBeat = null; // the last beat he saw, for the shove
-    this.lastShoveBeat = -Infinity;
+    this.lastBeat = null; // the last beat he saw, for his blows and plucks
+    this.lastShoveBeat = -Infinity; // his last blow, a shove or an elbow
     this.shovedAt = null;
+    // His last elbow: from when its thwack is heard, and his side (-1 left)
+    this.elbowAt = null;
+    this.elbowSide = 0;
 
     // Tank anger system - tracks who damages it
     this.damageTracker = new Map(); // Track damage sources: enemyType -> count
@@ -96,6 +140,13 @@ class Tank extends BaseEnemy {
     this.angerCooldown = 0; // Cooldown before returning to normal behavior
     this.maxAngerCooldown = 600; // 10 seconds of anger
     this.calmLinePending = false;
+    // His head turned to a hit (glanceNow); the third holds until his whip:
+    // the first bar action after he's angered turns him all the way round
+    this.glance = null;
+    this.whipPending = false;
+    this.whipAt = null; // when that bar action came (a beat position)
+    this.whipTo = null; // the facing its turn ends at, or null for none
+    this.angerAt = null; // when he tipped, for his anger mark
 
     // Destructible armour plates, by side (tankSide in TankRenderer.js)
     const { FRONT, SIDE } = CONFIG.TANK_ARMOR;
@@ -151,12 +202,17 @@ class Tank extends BaseEnemy {
     this.poseBeats = beats;
     const beatSec = (beatClock?.beatInterval ?? 0) / 1000;
 
-    // Whole bars since his last update the game sat out (a hidden tab,
-    // ?tune's "Sound while paused") don't count toward his charge, as whole
-    // beats don't toward a bomb's fuse. A hitstop never lasts a bar
-    if (beats !== null && this.seenBeats !== null && this.chargingShot) {
-      const missed = Math.floor((beats - this.seenBeats) / BEATS_PER_BAR);
-      if (missed >= 1) this.chargeStartBeat += missed * BEATS_PER_BAR;
+    // A whole bar or more since his last update (a hidden tab, ?tune's
+    // "Sound while paused") ends his charge with no shot: he starts again on
+    // the grid, from its first pluck, so the hero always gets the whole
+    // warning. A hitstop never lasts a bar
+    if (
+      beats !== null &&
+      this.seenBeats !== null &&
+      this.chargingShot &&
+      beats - this.seenBeats >= BEATS_PER_BAR
+    ) {
+      this.chargingShot = false;
     }
     this.seenBeats = beats;
 
@@ -172,7 +228,12 @@ class Tank extends BaseEnemy {
       } else if (bar !== this.lastActedBar) {
         this.lastActedBar = bar;
         this.kickAt = beats;
-        fire = this.onKick(bar * BEATS_PER_BAR, toTarget, distance);
+        fire = this.onKick(
+          bar * BEATS_PER_BAR,
+          toTarget,
+          distance,
+          target.type !== undefined
+        );
       }
       this.facing = this.facingAt(beats, beatSec);
     }
@@ -207,8 +268,9 @@ class Tank extends BaseEnemy {
         Math.cos(toTarget) * side) /
       FRAMES_PER_SEC;
 
-    // Any new beat: a hero in front of him gets shoved, and his charge
-    // plucks its next note (on his first update ever, too)
+    // Any new beat: a hero touching his front gets shoved, at his side
+    // elbowed, and his charge plucks its next note (on his first update
+    // ever, too)
     if (beats !== null) {
       const beat = Math.floor(beats);
       if (beat !== this.lastBeat) {
@@ -228,17 +290,27 @@ class Tank extends BaseEnemy {
 
   /**
    * Beat 1 (kickBeat is the bar's start, counting the charge in bars): turn
-   * toward the target, then start a charge, power it up or call the shot.
-   * Returns true when the charged shot is due.
+   * toward the target (all the way, if it's his whip and his target an
+   * alien), then start a charge (on an even bar, within its first beat),
+   * power it up or call the shot. Returns true when the charged shot is due.
    */
-  onKick(kickBeat, toTarget, distance) {
+  onKick(kickBeat, toTarget, distance, atAlien = false) {
     const T = CONFIG.TANK;
+    let most = T.TURN_STEP_DEG * DEG;
+    const whip = this.whipPending;
+    if (whip) {
+      this.whipPending = false;
+      this.whipAt = this.kickAt;
+      if (atAlien) most = PI;
+    }
     const step = turnStep(
       this.facing,
       toTarget,
-      T.TURN_STEP_DEG * DEG,
+      most,
       T.TURN_DEADZONE_DEG * DEG
     );
+    // Kept apart from this.turn, which the next bar's turn replaces
+    if (whip) this.whipTo = step !== 0 ? this.facing + step : null;
     if (step !== 0) {
       this.turn = {
         from: this.facing,
@@ -257,9 +329,14 @@ class Tank extends BaseEnemy {
       }
       return false;
     }
+    // A charge starts on its own length's grid (every other bar), so two
+    // tanks' plucks climb together or apart, never a bar apart; and only on
+    // time, so it always starts on its first pluck
     if (
       distance < T.CHARGE_RANGE_PX &&
-      kickBeat - this._lastTankFireBeat >= T.RECHARGE_BEATS
+      kickBeat - this._lastTankFireBeat >= T.RECHARGE_BEATS &&
+      kickBeat % this.chargeDurationBeats === 0 &&
+      this.kickAt - kickBeat < 1
     ) {
       this.chargingShot = true;
       this.chargeStartBeat = kickBeat;
@@ -271,8 +348,7 @@ class Tank extends BaseEnemy {
 
   /**
    * His charge's note on whole beat `beat`: step 0 on the beat it started,
-   * one step up a beat, none on the beat his shot is due. A stalled bar
-   * moved chargeStartBeat on, and the steps with it
+   * one step up a beat, none on the beat his shot is due
    */
   chargeNote(beat) {
     const step = beat - this.chargeStartBeat;
@@ -286,10 +362,11 @@ class Tank extends BaseEnemy {
   }
 
   /**
-   * The bouncer's shove, on the beat: a hero within reach and on his front
-   * side is hit and knocked back, at most once per SHOVE_COOLDOWN_BEATS from
-   * him and once a frame from all tanks. A real hit, so the shield takes it
-   * whole; the knockback happens either way, as the rusher's blast does.
+   * The bouncer's blows, on the beat: a hero within reach is shoved if he is
+   * at his front, elbowed if at his side, at most once per
+   * SHOVE_COOLDOWN_BEATS from him, either blow, and once a frame from all
+   * tanks. A real hit, so the shield takes it whole; the knockback happens
+   * either way, as the rusher's blast does.
    */
   tryShove(beatIndex, beats) {
     if (beatIndex - this.lastShoveBeat < CONFIG.TANK.SHOVE_COOLDOWN_BEATS) {
@@ -298,14 +375,21 @@ class Tank extends BaseEnemy {
     const hero = this.getContextValue('player');
     if (!hero || !this.checkCollision(hero)) return;
     const toHero = Math.atan2(hero.y - this.y, hero.x - this.x);
-    if (tankSide(toHero - this.facing) !== 'front') return;
+    const side = tankSide(toHero - this.facing);
+    const blow = BLOWS[side];
+    if (!blow) return;
     if (shovedOnBeat.get(hero) === beatIndex) return;
     shovedOnBeat.set(hero, beatIndex);
     this.lastShoveBeat = beatIndex;
-    this.shovedAt = beats;
-    this.getContextValue('audio')?.playSound('tankShove', hero.x, hero.y);
-    if (hero.hurt(CONFIG.PLAYER.DAMAGE_TANK_SHOVE, 'tank-shove')) return;
-    hero.knockBack(this.x, this.y, CONFIG.PLAYER.KNOCKBACK_TANK_SHOVE);
+    if (side === 'front') this.shovedAt = beats;
+    else {
+      this.elbowAt = this.getContextValue('beatClock').heardFrom(beatIndex);
+      this.elbowSide = side === 'left' ? -1 : 1;
+    }
+    this.getContextValue('audio')?.playSound(blow.sound, hero.x, hero.y);
+    const P = CONFIG.PLAYER;
+    if (hero.hurt(P[blow.damage], blow.source)) return;
+    hero.knockBack(this.x, this.y, P[blow.knock]);
   }
 
   /**
@@ -366,6 +450,8 @@ class Tank extends BaseEnemy {
         this.angerTarget = null;
         this.damageTracker.clear(); // a fresh count for the next grudge
         this.calmLinePending = true; // said on the next beat 1
+        // A whip left over would stamp whipAt, holding his head on the old hit
+        this.whipPending = false;
       }
     }
     if (!this.calmLinePending) return;
@@ -399,6 +485,47 @@ class Tank extends BaseEnemy {
     const flinch = this.flinchNow(size);
     drawTank(p, size, this.pose(), flinch?.react);
     flinch?.sweat(p);
+    this.drawAngerMark(p, size);
+  }
+
+  /**
+   * The mark on his head when aliens anger him: the Dude's vein, upright on
+   * screen, popping in, throbbing on the heard kick for ANGER_MARK_BEATS,
+   * then shrinking away. Drawn here, not by drawTank, so his death (drawn
+   * from his last pose) never shows it
+   */
+  drawAngerMark(p, size) {
+    const beats = this.poseBeats;
+    if (this.angerAt === null || beats === null) return;
+    const L = CONFIG.TANK_LOOK;
+    const beatSec =
+      (this.getContextValue('beatClock')?.beatInterval ?? 0) / 1000;
+    const sec = (beats - this.angerAt) * beatSec;
+    const out = sec - L.ANGER_MARK_BEATS * beatSec;
+    if (sec < 0 || out >= MARK_OUT_SEC) return;
+    const kick = heardKickOf(
+      this.getContextValue('beatTrack'),
+      beats,
+      beatSec,
+      !!this.getContextValue('audio')?.soundPaused
+    );
+    const ctx = p.drawingContext;
+    const k = L.ANGER_MARK_SIZE * easeOutBack(clamp01(sec / MARK_POP_SEC));
+    ctx.save();
+    ctx.translate(
+      size * (HEAD[0] * cos(this.facing) + MARK_AT[0]),
+      size * (HEAD[0] * sin(this.facing) + MARK_AT[1])
+    );
+    ctx.scale(k, k);
+    vein(
+      env(kick.kickAge, MARK_THROB_TAU_SEC),
+      1,
+      0,
+      0,
+      1 - smooth(clamp01(out / MARK_OUT_SEC)),
+      ctx
+    );
+    ctx.restore();
   }
 
   /** His "uh oh" at the beat update() last kept, while BombSystem has set one */
@@ -463,6 +590,8 @@ class Tank extends BaseEnemy {
       gunRel: this.gunRel,
       lurch: this.lurchNow,
       shove: env(since(this.shovedAt), SHOVE_TAU_SEC),
+      elbow: env(since(this.elbowAt), SHOVE_TAU_SEC),
+      elbowSide: this.elbowSide,
       charge: charging ? clamp01(intoCharge / this.chargeDurationBeats) : -1,
       chargeBeats: Math.max(0, Math.floor(intoCharge)),
       fire: env(since(this.firedAt), FIRE_TAU_SEC),
@@ -473,6 +602,7 @@ class Tank extends BaseEnemy {
       hit: env(since(this.hitAt), HIT_TAU_SEC),
       backHit: env(since(this.backHitAt), HIT_TAU_SEC),
       angry: this.isAngry ? 1 : 0,
+      glance: this.glanceNow(beats, beatSec),
       seed: this.lookSeed,
     };
   }
@@ -534,18 +664,26 @@ class Tank extends BaseEnemy {
       this.plateBrokeAt[side] = this.poseBeats;
       audio?.playPlateClang?.(this.x, this.y);
       this.breakArmor(side);
-      this.trackAnger(damageSource);
       // One impact sound besides the clang: his, if damage is left over
       if (overflow > 0) audio?.playSound('tankHit', this.x, this.y, before);
       else audio?.playSound('tankPlateHit', this.x, this.y);
-      if (overflow <= 0) return DAMAGE_RESULT.DAMAGED;
-      return super.takeDamage(overflow, bulletAngle, damageSource);
+      if (overflow > 0) return this.wound(overflow, bulletAngle, damageSource);
+      this.trackAnger(damageSource, bulletAngle + PI);
+      return DAMAGE_RESULT.DAMAGED;
     }
 
     this.backHitAt = this.poseBeats; // his bare back, or skin under a broken plate
     audio?.playSound('tankHit', this.x, this.y, before);
-    this.trackAnger(damageSource);
-    return super.takeDamage(amount, bulletAngle, damageSource);
+    return this.wound(amount, bulletAngle, damageSource);
+  }
+
+  /** Damage through to him; one he lives through counts toward his anger */
+  wound(amount, bulletAngle, damageSource) {
+    const result = super.takeDamage(amount, bulletAngle, damageSource);
+    if (result !== DAMAGE_RESULT.DIED) {
+      this.trackAnger(damageSource, bulletAngle + PI); // where it came from
+    }
+    return result;
   }
 
   /** Debris, a label and a shake where an armour plate broke off */
@@ -573,21 +711,72 @@ class Tank extends BaseEnemy {
     }
   }
 
-  /** Hits from other enemies make the tank angry at their type */
-  trackAnger(source) {
-    if (!source || source === 'player') return;
+  /**
+   * Hits from other enemies make the tank angry at their type. Calm, each
+   * turns his head toward where it came from (`bearing`); the one that tips
+   * him holds it there until his whip, and his line is forced past the gap
+   * between enemy lines
+   */
+  trackAnger(source, bearing) {
+    if (!source || source === 'player' || this.isAngry) return;
     // A stab is named for the attack; the grudge is against the stabber
     const damageSource = ANGER_SOURCE_TYPE[source] ?? source;
     const count = (this.damageTracker.get(damageSource) || 0) + 1;
     this.damageTracker.set(damageSource, count);
-    if (count >= this.angerThreshold && !this.isAngry) {
-      this.isAngry = true;
-      this.calmLinePending = false;
-      this.angerTarget = damageSource;
-      this.angerCooldown = this.maxAngerCooldown;
-      const audio = this.getContextValue('audio');
-      if (audio) audio.speak(this, random(TANK_ANGER_LINES), 'tank');
+    const tipped = count >= this.angerThreshold;
+    // A bearing unwrapped from his facing, so it keeps the side it picks (his
+    // facing never wraps); dead behind is over his left shoulder, as his
+    // "uh oh" looks
+    const rel = normalizeAngle(bearing - this.facing);
+    this.glance = {
+      aim: this.facing + (rel === PI ? -PI : rel),
+      at: this.poseBeats,
+      hold: tipped,
+    };
+    if (!tipped) return;
+    this.isAngry = true;
+    this.calmLinePending = false;
+    this.angerTarget = damageSource;
+    this.angerCooldown = this.maxAngerCooldown;
+    this.whipPending = true;
+    this.whipAt = null;
+    this.angerAt = this.poseBeats;
+    this.getContextValue('audio')?.speak(
+      this,
+      random(TANK_ANGER_LINES),
+      'tank',
+      true
+    );
+  }
+
+  /**
+   * His glance now: where it turns his head, on his body and no further than
+   * his "uh oh" looks, and how far in (k, 0 to 1), or null. It keeps its
+   * bearing in the world as he turns (his facing never wraps), and the hold
+   * lets go TURN_SEC after his whip, or as he calms without one. A whip that
+   * leaves the hit out of his head's reach (it swung him the other way)
+   * lets go as it starts: the turn carries the look
+   */
+  glanceNow(beats, beatSec) {
+    const g = this.glance;
+    if (!g || g.at === null || beats === null) return null;
+    const lim = Math.abs(UH.LOOK);
+    const age = (beats - g.at) * beatSec;
+    let until = GLANCE_IN_SEC + GLANCE_HOLD_SEC;
+    if (g.hold) {
+      if (this.whipAt !== null) {
+        const away =
+          this.whipTo !== null && Math.abs(g.aim - this.whipTo) > lim;
+        until =
+          (this.whipAt - g.at) * beatSec + (away ? 0 : CONFIG.TANK.TURN_SEC);
+      } else until = this.isAngry ? Infinity : 0;
     }
+    const k =
+      smooth(clamp01(age / GLANCE_IN_SEC)) *
+      (1 - smooth(clamp01((age - until) / GLANCE_OUT_SEC)));
+    if (!(k > 0)) return null;
+    const rel = g.aim - this.facing;
+    return { rel: Math.max(-lim, Math.min(lim, rel)), k };
   }
 }
 
