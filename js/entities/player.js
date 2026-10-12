@@ -325,7 +325,7 @@ export class Player {
     if (this.footfalls.some((f) => f.at > beats)) {
       this.footfalls = this.footfalls.filter((f) => f.at <= beats);
     }
-    if (this.lastEighth !== null && this.lastEighth > beats * 2) {
+    if (this.lastEighth !== null && this.lastEighth > this.eighthsAt(beats)) {
       this.lastEighth = null;
     }
   }
@@ -337,7 +337,7 @@ export class Player {
       this.lastEighth = null;
       return;
     }
-    const eighth = Math.floor(beats * 2);
+    const eighth = Math.floor(this.eighthsAt(beats));
     // Setting off mid-eighth, his first foot lands on the next one
     if (this.lastEighth === null) this.lastEighth = eighth;
     if (eighth === this.lastEighth) return;
@@ -346,10 +346,17 @@ export class Player {
     this.footfalls.push({
       x: this.x + this.facing * CRACK_AHEAD * k,
       y: this.y + FEET_Y * k,
-      at: eighth / 2,
+      at:
+        this.getContextValue('beatClock')?.heroEighthBeat?.(eighth) ??
+        eighth / 2,
       foot: mod(eighth, 2),
     });
     if (this.footfalls.length > FOOTFALLS_KEPT) this.footfalls.shift();
+  }
+
+  /** His eighths at beat position `beats`: BeatClock's hero grid, swung with his fire while a bassist is about */
+  eighthsAt(beats) {
+    return this.getContextValue('beatClock')?.heroEighths?.(beats) ?? beats * 2;
   }
 
   /** His drawn size: his size times PLAYER_LOOK.ART_SCALE */
@@ -376,7 +383,7 @@ export class Player {
       (this.getContextValue('beatClock')?.beatInterval ?? DEFAULT_BEAT_MS) /
       1000;
     const since = (at) => this.sinceStamp(at, beats);
-    const eighths = beats === null ? 0 : beats * 2;
+    const eighths = beats === null ? 0 : this.eighthsAt(beats);
     const e8 = Math.floor(eighths);
     const kick =
       beats === null
