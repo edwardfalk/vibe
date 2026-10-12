@@ -88,7 +88,6 @@ Calls and smaller work:
   - the shatter's spike turns and jabs at the hero before it crumbles (the designer's own idea);
   - the shatter's magenta bits among the gold plates.
 - **call: a `?tune` knob for the stabber's frill** (0 hides it), if it is too much now that it shows. A proposal from the stabber death spec's review.
-- **check: a death's sound can't stop the game.** `Audio.playStabberDeath` and `playTankDeath` have no try/catch, where `playSound` has one: a Web Audio throw (a non-finite time, a ramp to 0) would escape the kill before the dead enemy leaves play and stop p5's loop. No input reaches one today. From the stabber death's review round.
 - **test: the Empty shell's eye turns to the hero.** Nothing would notice it glaring along his turn at the kill instead: the shell keeps no state for the eye, so a test has to read where it is drawn. From the stabber death's review round.
 - **check: two stabber deaths at different `STABBER_LOOK.ART_SCALE`s** (the slider moved mid-fight) rebuild each other's sprites every frame until one ends: the sprite cache keeps one size a table.
 - **check: every death keeps the time it is heard from the kill:** a change in the audio latency or the beat clock's lead mid-death doesn't move its picture. A proposal from the stabber death spec's review, for all the deaths at once.

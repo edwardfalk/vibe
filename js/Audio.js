@@ -329,21 +329,31 @@ export class Audio {
       console.warn(`❌ Sound not found: ${soundName}`);
       return;
     }
-    // A sound that throws (a bad CONFIG.HUM.ROOT) warns once and plays
-    // nothing: it can't stop the game loop
-    try {
+    this.guarded(soundName, () => {
       if (soundConfig.synth) {
         this.playSynth(soundConfig, x, y, opts);
       } else {
         this.playTone(soundConfig, x, y, soundName, opts);
       }
+    });
+  }
+
+  /**
+   * Plays a sound through `play`: one that throws (a bad CONFIG.HUM.ROOT)
+   * logs once by `name` and plays nothing, since it can't be let stop the
+   * game loop. Returns what `play` returns, or null when it threw
+   */
+  guarded(name, play) {
+    try {
+      return play();
     } catch (error) {
       // An error, not a warning, so the browser tests catch a broken sound
       const failed = (this._failedSounds ??= new Set());
-      if (!failed.has(soundName)) {
-        failed.add(soundName);
-        console.error(`Sound ${soundName} failed and plays nothing:`, error);
+      if (!failed.has(name)) {
+        failed.add(name);
+        console.error(`Sound ${name} failed and plays nothing:`, error);
       }
+      return null;
     }
   }
 
@@ -480,15 +490,17 @@ export class Audio {
    */
   playGruntPop(x, y, at, note, seed, gain = 1) {
     if (!this.ensureAudioContext()) return;
-    const { near, pan } = this.placement(x, y);
-    const noise = crashNoise(this.audioContext);
-    gruntPop(this.audioContext, this.bus('feedback'), {
-      at,
-      note,
-      noise,
-      offset: seed * (noise.duration - GRUNT_POP_SEC),
-      volume: CONFIG.DEATHS.GRUNT_VOLUME * near * gain,
-      pan,
+    this.guarded('gruntPop', () => {
+      const { near, pan } = this.placement(x, y);
+      const noise = crashNoise(this.audioContext);
+      gruntPop(this.audioContext, this.bus('feedback'), {
+        at,
+        note,
+        noise,
+        offset: seed * (noise.duration - GRUNT_POP_SEC),
+        volume: CONFIG.DEATHS.GRUNT_VOLUME * near * gain,
+        pan,
+      });
     });
   }
 
@@ -498,34 +510,36 @@ export class Audio {
    * how long from the game's now to the lock; returns its handle),
    * 'stab', 'screech' (opts.beatSec, for its echo) or 'pluck'. opts.seed
    * (0..1) picks its stretch of the noise. Null when it plays nothing
-   * (muted, paused, no context)
+   * (muted, paused, no context, or it threw)
    */
   playStabberStrings(part, x, y, opts = {}) {
     if (!this.ensureAudioContext()) return null;
-    const S = CONFIG.STABBER;
-    const volume = {
-      tremolo: S.TREMOLO_VOLUME,
-      stab: S.STAB_VOLUME,
-      screech: S.STAB_VOLUME,
-      pluck: S.PLUCK_VOLUME,
-    }[part];
-    const { near, pan } = this.placement(x, y);
-    const noise = crashNoise(this.audioContext);
-    const { game, at } = this.beatTiming();
-    // The tremolo ends on the lock, however late it starts
-    const untilSec =
-      opts.untilSec === undefined ? undefined : game + opts.untilSec - at;
-    return (
-      STRING_PARTS[part](this.audioContext, this.bus('band'), {
-        ...opts,
-        at,
-        untilSec,
-        volume: volume * near,
-        pan,
-        noise,
-        offset: (opts.seed ?? 0) * (noise.duration - STRINGS_NOISE_SEC),
-      }) ?? null
-    );
+    return this.guarded('stabberStrings', () => {
+      const S = CONFIG.STABBER;
+      const volume = {
+        tremolo: S.TREMOLO_VOLUME,
+        stab: S.STAB_VOLUME,
+        screech: S.STAB_VOLUME,
+        pluck: S.PLUCK_VOLUME,
+      }[part];
+      const { near, pan } = this.placement(x, y);
+      const noise = crashNoise(this.audioContext);
+      const { game, at } = this.beatTiming();
+      // The tremolo ends on the lock, however late it starts
+      const untilSec =
+        opts.untilSec === undefined ? undefined : game + opts.untilSec - at;
+      return (
+        STRING_PARTS[part](this.audioContext, this.bus('band'), {
+          ...opts,
+          at,
+          untilSec,
+          volume: volume * near,
+          pan,
+          noise,
+          offset: (opts.seed ?? 0) * (noise.duration - STRINGS_NOISE_SEC),
+        }) ?? null
+      );
+    });
   }
 
   /**
@@ -534,15 +548,17 @@ export class Audio {
    */
   playTankDeath(x, y, at, timing, darts) {
     if (!this.ensureAudioContext()) return;
-    const { near, pan } = this.placement(x, y);
-    tankAir(this.audioContext, this.bus('feedback'), {
-      at,
-      note: TANK_DEATH_NOTE,
-      noise: crashNoise(this.audioContext),
-      volume: CONFIG.DEATHS.TANK_VOLUME * near,
-      pan,
-      timing,
-      darts,
+    this.guarded('tankDeath', () => {
+      const { near, pan } = this.placement(x, y);
+      tankAir(this.audioContext, this.bus('feedback'), {
+        at,
+        note: TANK_DEATH_NOTE,
+        noise: crashNoise(this.audioContext),
+        volume: CONFIG.DEATHS.TANK_VOLUME * near,
+        pan,
+        timing,
+        darts,
+      });
     });
   }
 
@@ -552,46 +568,55 @@ export class Audio {
    */
   playStabberDeath(x, y, at, record) {
     if (!this.ensureAudioContext()) return;
-    const { near, pan } = this.placement(x, y);
-    STABBER_DEATH_SOUNDS[record.style](
-      this.audioContext,
-      this.bus('feedback'),
-      {
-        at,
-        record,
-        noise: crashNoise(this.audioContext),
-        volume: CONFIG.DEATHS.STABBER_VOLUME * near,
-        pan,
-      }
-    );
+    this.guarded('stabberDeath', () => {
+      const { near, pan } = this.placement(x, y);
+      STABBER_DEATH_SOUNDS[record.style](
+        this.audioContext,
+        this.bus('feedback'),
+        {
+          at,
+          record,
+          noise: crashNoise(this.audioContext),
+          volume: CONFIG.DEATHS.STABBER_VOLUME * near,
+          pan,
+        }
+      );
+    });
   }
 
   /** A tank's plate breaking (DeathSounds.js) at (x, y), now (beatTiming) */
   playPlateClang(x, y) {
     if (!this.ensureAudioContext()) return;
-    const { near, pan } = this.placement(x, y);
-    plateClang(this.audioContext, this.bus('feedback'), {
-      at: this.beatTiming().at,
-      noise: crashNoise(this.audioContext),
-      volume: CONFIG.TANK_ARMOR.CLANG_VOLUME * near,
-      pan,
+    this.guarded('plateClang', () => {
+      const { near, pan } = this.placement(x, y);
+      plateClang(this.audioContext, this.bus('feedback'), {
+        at: this.beatTiming().at,
+        noise: crashNoise(this.audioContext),
+        volume: CONFIG.TANK_ARMOR.CLANG_VOLUME * near,
+        pan,
+      });
     });
   }
 
   /**
    * The bomb's bang (BombSounds.js) from (x, y), now (beatTiming); returns
-   * the audio time it starts at, for the tank it kills to die with it, or
-   * null when it plays nothing
+   * the audio time it starts at, for the tank it kills to die with it. Muted
+   * or broken, the bang still has its time, so he dies as he would with it
+   * heard; null only before the game has its audio
    */
   playBombBang(x, y) {
-    if (!this.ensureAudioContext()) return null;
-    const { near, pan } = this.placement(x, y);
+    const playing = this.ensureAudioContext();
+    if (!this.audioContext) return null;
     const { at } = this.beatTiming();
-    bangSound(this.audioContext, this.bus('feedback'), {
-      at,
-      noise: crashNoise(this.audioContext),
-      volume: CONFIG.BOMB.BANG_VOLUME * near,
-      pan,
+    if (!playing) return at;
+    this.guarded('bombBang', () => {
+      const { near, pan } = this.placement(x, y);
+      bangSound(this.audioContext, this.bus('feedback'), {
+        at,
+        noise: crashNoise(this.audioContext),
+        volume: CONFIG.BOMB.BANG_VOLUME * near,
+        pan,
+      });
     });
     return at;
   }
@@ -599,32 +624,36 @@ export class Audio {
   /**
    * The bomb's cloud (BombSounds.js) from (x, y), from now (beatTiming) to
    * the end of its debris; seed (0..1) is the cloud's own. Returns its handle (stop()), or
-   * null when it plays nothing (muted, paused, no context)
+   * null when it plays nothing (muted, paused, no context, or it threw)
    */
   playBombCloud(x, y, seed) {
     if (!this.ensureAudioContext()) return null;
-    const { near, pan } = this.placement(x, y);
-    const clock = this.getContextValue('beatClock');
-    return cloudSound(this.audioContext, this.bus('feedback'), {
-      at: this.beatTiming().at,
-      noise: crashNoise(this.audioContext),
-      volume: CONFIG.BOMB.CLOUD_VOLUME * near,
-      pan,
-      beatSec: (clock?.beatInterval ?? DEFAULT_BEAT_MS) / MS_PER_SEC,
-      plasmaSec: CONFIG.PLASMA.DURATION * CLOUD_FRAME_SEC,
-      debrisSec: CONFIG.DEBRIS.DURATION * CLOUD_FRAME_SEC,
-      seed,
+    return this.guarded('bombCloud', () => {
+      const { near, pan } = this.placement(x, y);
+      const clock = this.getContextValue('beatClock');
+      return cloudSound(this.audioContext, this.bus('feedback'), {
+        at: this.beatTiming().at,
+        noise: crashNoise(this.audioContext),
+        volume: CONFIG.BOMB.CLOUD_VOLUME * near,
+        pan,
+        beatSec: (clock?.beatInterval ?? DEFAULT_BEAT_MS) / MS_PER_SEC,
+        plasmaSec: CONFIG.PLASMA.DURATION * CLOUD_FRAME_SEC,
+        debrisSec: CONFIG.DEBRIS.DURATION * CLOUD_FRAME_SEC,
+        seed,
+      });
     });
   }
 
   /** The Dude's last breath (DeathSounds.js) at audio time `at` */
   playLastBreath(at) {
     if (!this.ensureAudioContext()) return;
-    lastBreath(this.audioContext, this.bus('feedback'), {
-      at,
-      noise: crashNoise(this.audioContext),
-      volume: CONFIG.DEATHS.BREATH_VOLUME,
-    });
+    this.guarded('lastBreath', () =>
+      lastBreath(this.audioContext, this.bus('feedback'), {
+        at,
+        noise: crashNoise(this.audioContext),
+        volume: CONFIG.DEATHS.BREATH_VOLUME,
+      })
+    );
   }
 
   playTone(config, x, y, soundName = '', opts = null) {
