@@ -82,6 +82,15 @@ describe('his lets', () => {
     expect(w.plays()).toHaveLength(1);
   });
 
+  it('a let 3 he reaches too late locks nothing, so that bar has no slap', () => {
+    const w = bassistWorld({ ms0: 1990 });
+    w.run(2000, letMs(6) - 10);
+    const fired = [w.step(letMs(6) + 100)]; // let 3, 100 ms late: dropped
+    fired.push(...w.run(letMs(6) + 116, 3999).map((e) => e.r));
+    expect(fired.filter(Boolean)).toEqual([]);
+    expect(w.plays().map((p) => p.name)).not.toContain('bassSlap');
+  });
+
   it('never slaps without a let 3 before it: a fresh one waits a whole count', () => {
     const w = bassistWorld({ ms0: letMs(6) + 20 }); // made just after let 3
     w.run(letMs(6) + 30, 5999);
