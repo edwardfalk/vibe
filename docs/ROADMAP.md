@@ -25,7 +25,6 @@ Calls and smaller work:
 - **build, low: a rusher lit while he warps in misses that beat's fuse beep.** A fuse with no beeps at all needs `FUSE_MIN_BEATS` 1, which also skips his punchline (said with his last beep). Fix: beep on his first update when it falls within the clock's tolerance of a beat. (Codex on #94)
 - **build: #94's deferred minors:**
   - `Tank.js`'s `lastBeat` comment says "for the shove", but it also drives the charge's pluck;
-  - `drive()` rebuilds its curve on every tank shot;
   - two tanks firing on one beat 1 come out about 2 dB loud;
   - a note with a fractional octave fails after its nodes exist;
   - no test for a late frame in the middle of a fuse;
@@ -68,12 +67,10 @@ Calls and smaller work:
   - the White Russian as the Dude's health gauge;
   - family reactions between enemy types;
   - the carpet in play.
-- **build: #83's minors:**
-  - the sprite cache never rebuilds after a lost graphics context (only the sky checks for one);
-  - a restart doesn't clear the Dude's queued shot.
+- **build: #83's minor:** the sprite cache never rebuilds after a lost graphics context (only the sky checks for one).
+- **check: the grunts' drawing costs most of a frame's work in big swarms.** 25 grunts take about 5.7 ms a frame in headless Chromium (2026-10-12), up to 1.9 ms of it in the 18 colour changes each grunt makes (fill and stroke). Building his fixed colours once as p5.Colors saved nothing measurable: the cost is the canvas switching colour, so a cut needs fewer switches (more of him in his sprites). Time it on Edward's laptop before building. (The audit fixes.)
 - **build: #82's rusher minors:**
   - a ring lit by a bomb flashes a ghost arc for about 0.15 s;
-  - `pose()` is built twice a frame while he's lit;
   - the arm sprite clips the hand;
   - the crash call has no try/catch;
   - three missing tests: the hit flash, `turnAt`'s easing and GameLoop's `update(dt)`.
@@ -90,7 +87,6 @@ Calls and smaller work:
   - the shatter's spike turns and jabs at the hero before it crumbles (the designer's own idea);
   - the shatter's magenta bits among the gold plates.
 - **call: a `?tune` knob for the stabber's frill** (0 hides it), if it is too much now that it shows. A proposal from the stabber death spec's review.
-- **check: a death's sound can't stop the game.** `Audio.playStabberDeath` and `playTankDeath` have no try/catch, where `playSound` has one: a Web Audio throw (a non-finite time, a ramp to 0) would escape the kill before the dead enemy leaves play and stop p5's loop. No input reaches one today. From the stabber death's review round.
 - **test: the Empty shell's eye turns to the hero.** Nothing would notice it glaring along his turn at the kill instead: the shell keeps no state for the eye, so a test has to read where it is drawn. From the stabber death's review round.
 - **check: two stabber deaths at different `STABBER_LOOK.ART_SCALE`s** (the slider moved mid-fight) rebuild each other's sprites every frame until one ends: the sprite cache keeps one size a table.
 - **check: every death keeps the time it is heard from the kill:** a change in the audio latency or the beat clock's lead mid-death doesn't move its picture. A proposal from the stabber death spec's review, for all the deaths at once.
@@ -143,6 +139,13 @@ Calls and smaller work:
 - **check: a tank with blockers on both sides can stall midway between them.** It's rare, and two simple fixes made it worse.
 
 ## Tests and tooling
+
+- **build: the 2026-10-12 audit's smaller leftovers** (its fixes are #103):
+  - an aggressive line's bubble shakes with `random()` while drawn, so it jitters through a pause and draws the replay's random numbers, as enemies' hit shakes did;
+  - each enemy type calls `keepInWorld()` after `super.update()`; one call in `BaseEnemy.update` would do (keep the rusher's own while `Rusher.fuse.test.js` calls his behaviour step directly);
+  - no test presses an arrow key into the aim flags or checks that a window blur clears them;
+  - `Audio` keeps fields nothing reads (`p`, `volume`, the one-key `effects`), `update()` only calls `updateTexts()`, and `speechEnabled` always follows `enabled`;
+  - about a dozen names are exported but only used in their own file.
 
 - **build: fail on console errors during real play.** `playtest.js` only counts them, so a sound that breaks in play leaves every suite green. (#94)
 - **build: one shared fake-audio helper for the unit tests.** Eight test files each define their own; `tests/unit/helpers/fakeAudio.js` exists now (`StabberDeath.test.js` and `DeathSounds.test.js` use it): move the others onto it.

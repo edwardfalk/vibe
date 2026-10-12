@@ -34,7 +34,3 @@ export function isConfusedText(text = '') {
   const t = String(text).toUpperCase();
   return CONFUSED_WORDS.some((word) => t.includes(word));
 }
-
-export function isScreamingText(text = '') {
-  return text.includes('!') || text.includes('AHHH') || text.includes('WHEEE');
-}

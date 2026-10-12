@@ -76,7 +76,6 @@ class Rusher extends BaseEnemy {
     this.hitAt = null;
     this.pushAt = null;
     this.hitFlashAlpha = 255; // he stays solid when hit: his own POW shows it
-    this.lookSeed = this.animFrame / p.TWO_PI; // his flicker's phase
     // The beat he is drawn at, kept by update(). Kept from here on, so a hit
     // before his first update stamps a real beat
     this.poseBeats =

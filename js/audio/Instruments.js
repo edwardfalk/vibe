@@ -13,6 +13,7 @@ import { hz, stepUp } from './Harmony.js';
 import { crashNoise, disconnectWhenEnded, playCrash } from './CrashSynth.js';
 import { SOUND_CONFIG } from './SoundConfig.js';
 import { dB } from '../mathUtils.js';
+import { driveCurve } from './speech/effects.js';
 
 const SILENT = 0.0001; // exponential ramps can't reach 0
 
@@ -248,16 +249,15 @@ function noiseAt(ctx, at, out, offset) {
   return s;
 }
 
-// A soft clipper: tanh(amount·x), scaled back to full range
+// A soft clipper (driveCurve), its curve made once per amount
 const DRIVE_POINTS = 1024;
+const driveCurves = new Map();
 function drive(ctx, amount) {
-  const curve = new Float32Array(DRIVE_POINTS);
-  for (let i = 0; i < DRIVE_POINTS; i++) {
-    const x = (i / (DRIVE_POINTS - 1)) * 2 - 1;
-    curve[i] = Math.tanh(amount * x) / Math.tanh(amount);
+  if (!driveCurves.has(amount)) {
+    driveCurves.set(amount, driveCurve(amount, DRIVE_POINTS));
   }
   const w = ctx.createWaveShaper();
-  w.curve = curve;
+  w.curve = driveCurves.get(amount);
   w.oversample = '2x';
   return w;
 }

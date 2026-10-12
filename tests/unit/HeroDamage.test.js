@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { CollisionSystem } from '../../js/systems/CollisionSystem.js';
 import { Bullet } from '../../js/entities/bullet.js';
 import { CONFIG } from '../../js/config.js';
+import { Player } from '../../js/entities/player.js';
 
 const contextOf = (values) => ({ get: (key) => values[key], set: () => {} });
 
@@ -31,7 +32,71 @@ describe('damage enemy shots do to the hero', () => {
     }
   });
 
+  it('every bullet that reaches him in one frame hurts him', () => {
+    const player = { x: 0, y: 0, size: 30, hurt: vi.fn() };
+    const volley = [
+      Bullet.acquire(0, 0, 0, 8, 'enemy-grunt'),
+      Bullet.acquire(4, 0, 0, 8, 'enemy-grunt'),
+    ];
+    new CollisionSystem(
+      contextOf({ enemyBullets: volley, player }),
+      {}
+    ).checkEnemyBulletsVsPlayer();
+    expect(player.hurt).toHaveBeenCalledTimes(2);
+    expect(volley.every((b) => b._remove)).toBe(true);
+  });
+
+  it('a bullet after the fatal one, in the same frame, does nothing more', () => {
+    const audio = { playSound: vi.fn(), speakPlayerLine: vi.fn() };
+    const gameState = {
+      gameState: 'playing',
+      resetKillStreak: vi.fn(),
+      setGameState: vi.fn(),
+    };
+    const player = new Player({ color: () => ({}) }, 0, 0, null, {
+      audio,
+      gameState,
+    });
+    player.shieldUp = false;
+    player.health = 1;
+    const volley = [
+      Bullet.acquire(0, 0, 0, 8, 'enemy-grunt'),
+      Bullet.acquire(4, 0, 0, 8, 'enemy-grunt'),
+    ];
+    new CollisionSystem(
+      contextOf({ enemyBullets: volley, player }),
+      {}
+    ).checkEnemyBulletsVsPlayer();
+    expect(gameState.setGameState).toHaveBeenCalledTimes(1);
+    const hits = audio.playSound.mock.calls.filter(([k]) => k === 'playerHit');
+    expect(hits).toHaveLength(1);
+    expect(volley.every((b) => b._remove)).toBe(true);
+  });
+
   it('a grunt bullet still does its own 1 to another enemy', () => {
     expect(Bullet.acquire(0, 0, 0, 8, 'enemy-grunt').damage).toBe(1);
+  });
+});
+
+describe("the hero's accuracy", () => {
+  it('counts one hit for each of his bullets that lands', () => {
+    const enemy = {
+      type: 'grunt',
+      x: 0,
+      y: 0,
+      size: 30,
+      hitRadius: 15,
+      takeDamage: vi.fn(() => 'damaged'),
+    };
+    const gameState = { addShotHit: vi.fn() };
+    const bullets = [
+      Bullet.acquire(0, 0, 0, 8, 'player'),
+      Bullet.acquire(500, 500, 0, 8, 'player'),
+    ];
+    new CollisionSystem(
+      contextOf({ playerBullets: bullets, enemies: [enemy], gameState }),
+      { handleEnemyDeath: vi.fn() }
+    ).checkPlayerBulletsVsEnemies();
+    expect(gameState.addShotHit).toHaveBeenCalledTimes(1);
   });
 });

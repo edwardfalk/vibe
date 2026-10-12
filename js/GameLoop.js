@@ -39,15 +39,6 @@ let enemyDeathHandler;
 // then fades out over FADE_FRAMES once the game runs again.
 const HITSTOP_CHROMA = { RAMP_FRAMES: 8, PEAK: 0.6, FADE_FRAMES: 20 };
 
-// Global system references for easy access
-window.player = null;
-window.enemies = enemies;
-window.playerBullets = playerBullets;
-window.enemyBullets = enemyBullets;
-window.activeBombs = activeBombs;
-window.explosionManager = null;
-window.audio = null;
-
 // Input state, written by core/InputHandlers.js
 window.playerIsShooting = false;
 window.arrowUpPressed = false;
@@ -284,6 +275,12 @@ function drawGame(p) {
 
   if (window.audio) {
     window.audio.drawTexts(p);
+  }
+
+  // The grunts' warning rings, in the world so they shake with their
+  // grunts; not while paused or over, when they would freeze
+  if (gameState?.gameState === 'playing') {
+    window.rhythmFX?.drawAttackTelegraphs(p);
   }
 
   if (cameraSystem) {

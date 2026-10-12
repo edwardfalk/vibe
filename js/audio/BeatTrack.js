@@ -15,6 +15,8 @@
 import { CONFIG } from '../config.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { hz } from './Harmony.js';
+import { driveCurve } from './speech/effects.js';
+import { mulberry32 } from '../mathUtils.js';
 
 const EIGHTH_NOTES_PER_MEASURE = 8;
 const BEATS_PER_BAR = 4;
@@ -114,16 +116,21 @@ const LATE_GRACE_SEC = 0.05;
 // Exponential ramps can't reach 0; this is inaudible
 const SILENCE_GAIN = 0.001;
 const DRIVE_CURVE_SAMPLES = 1024;
+const CLICK_NOISE_SEED = 1;
 // Fade from SILENCE_GAIN to 0 before stopping, so drive can't turn the
 // leftover sine into an audible tick
 const TAIL_FADE_SEC = 0.005;
 
-/** The kick's click noise, made once per track (the loudness test makes its own) */
+/**
+ * The kick's click noise, made once per track (the loudness test makes its
+ * own), from its own seed: it draws none of the game's random numbers
+ */
 export function clickNoise(ctx) {
   const length = Math.floor(ctx.sampleRate * CLICK_NOISE_SEC);
   const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
   const data = buffer.getChannelData(0);
-  for (let i = 0; i < length; i++) data[i] = Math.random() * 2 - 1;
+  const rand = mulberry32(CLICK_NOISE_SEED);
+  for (let i = 0; i < length; i++) data[i] = rand() * 2 - 1;
   return buffer;
 }
 
@@ -328,16 +335,11 @@ export class BeatTrack {
     }
   }
 
-  // Soft-clipping curve tanh(drive * x), normalised so full scale stays full
-  // scale. The curve is cached per drive value; each kick gets its own node.
+  // Soft clipping (driveCurve). The curve is cached per drive value; each
+  // kick gets its own node.
   _getDriveShaper(drive) {
     if (this._driveCurveFor !== drive) {
-      const curve = new Float32Array(DRIVE_CURVE_SAMPLES);
-      for (let i = 0; i < DRIVE_CURVE_SAMPLES; i++) {
-        const x = (i / (DRIVE_CURVE_SAMPLES - 1)) * 2 - 1;
-        curve[i] = Math.tanh(drive * x) / Math.tanh(drive);
-      }
-      this._driveCurve = curve;
+      this._driveCurve = driveCurve(drive, DRIVE_CURVE_SAMPLES);
       this._driveCurveFor = drive;
     }
     const shaper = this.ctx.createWaveShaper();

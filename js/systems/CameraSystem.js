@@ -78,13 +78,15 @@ export class CameraSystem {
     this.y = p.lerp(this.y, this.targetY, this.interpolationSpeed);
   }
 
-  // Apply camera transform (call before drawing world objects)
+  // Apply camera transform (call before drawing world objects). A paused
+  // world is drawn without its shake, which waits for the game to go on
   applyTransform() {
     const p = this.p;
     p.push();
 
     // Apply screen shake (frame-rate independent, duration in ms)
-    if (this.screenShake.duration > 0) {
+    const paused = this.context?.get?.('gameState')?.gameState === 'paused';
+    if (!paused && this.screenShake.duration > 0) {
       this.screenShake.duration -= this.lastDeltaTimeMs;
       if (this.screenShake.duration <= 0) {
         this.screenShake.intensity = 0;

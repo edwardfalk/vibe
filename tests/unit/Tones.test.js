@@ -332,3 +332,29 @@ describe('a hit climbs the scale as its enemy weakens', () => {
     }
   });
 });
+
+describe("the rusher's charge wobbles at the beat's rate", () => {
+  it('its wobble starts and stops with the tone, swinging half its level', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5);
+    const { audio, made } = gameAudio();
+    audio.getContextValue = (k) =>
+      k === 'beatClock' ? { bpm: 132, getBeatPosition: () => 0 } : null;
+    audio.playSound('rusherCharge');
+    const [tone, lfo] = made.filter((n) => n.kind === 'osc');
+    const at = tone.start.mock.calls[0][0];
+    expect(at).toBeGreaterThan(2); // booked ahead of the context's now
+    expect(lfo.start).toHaveBeenCalledWith(at);
+    expect(lfo.stop).toHaveBeenCalledWith(tone.stop.mock.calls[0][0]);
+    expect(lfo.frequency.setValueAtTime.mock.calls[0][0]).toBe(132 / 60);
+    const depth = lfo.connect.mock.calls[0][0];
+    expect(depth.gain.setValueAtTime.mock.calls[0][0]).toBe(0.5);
+  });
+
+  it('a tone without a wobble makes no node for one', () => {
+    const { audio, made } = gameAudio();
+    audio.getContextValue = (k) =>
+      k === 'beatClock' ? { bpm: 132, getBeatPosition: () => 0 } : null;
+    audio.playSound('gruntHit');
+    expect(made.filter((n) => n.kind === 'gain')).toHaveLength(1); // its envelope
+  });
+});

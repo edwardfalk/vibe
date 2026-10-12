@@ -26,8 +26,6 @@ vi.stubGlobal('localStorage', {
   },
 });
 
-vi.spyOn(console, 'log').mockImplementation(() => {});
-
 const { GameState } = await import('../../js/core/GameState.js');
 const { CONFIG } = await import('../../js/config.js');
 
@@ -83,7 +81,7 @@ describe('GameState', () => {
     expect(gs.practiceRun).toBe(false);
   });
 
-  it("restart starts the hero's look clean, and ends a dash he died in", () => {
+  it("restart starts the hero's look clean, ends a dash he died in, and drops its cooldown and his queued shot", () => {
     const player = {
       maxHealth: 100,
       shotAt: 3.6,
@@ -93,6 +91,12 @@ describe('GameState', () => {
       lastEighth: 7,
       isDashing: true,
       dashTimerMs: 120,
+      dashCooldownMs: 2400,
+      queuedShot: { timerMs: 80 },
+      // Fire held through the restart
+      shootCooldownMs: 150,
+      isCurrentlyShooting: true,
+      firstShotFired: true,
     };
     window.player = player;
     try {
@@ -105,6 +109,14 @@ describe('GameState', () => {
       expect(player.footfalls).toEqual([]);
       expect(player.lastEighth).toBe(null);
       expect([player.isDashing, player.dashTimerMs]).toEqual([false, 0]);
+      expect(player.dashCooldownMs).toBe(0);
+      expect(player.queuedShot).toBe(null);
+      // His next run's first shot is immediate, as any burst's is
+      expect([
+        player.shootCooldownMs,
+        player.isCurrentlyShooting,
+        player.firstShotFired,
+      ]).toEqual([0, false, false]);
     } finally {
       window.player = null;
     }
@@ -283,11 +295,67 @@ describe('GameState', () => {
     expect(gs.level).toBe(2);
   });
 
+  it('each level costs its number times LEVEL_POINTS_PER_LEVEL more; a restart starts the count over', () => {
+    const { FIRST_LEVEL_POINTS, LEVEL_POINTS_PER_LEVEL } = CONFIG.PACING;
+    // Values no constant uses, so a mix-up between them shows
+    CONFIG.PACING.FIRST_LEVEL_POINTS = 70;
+    CONFIG.PACING.LEVEL_POINTS_PER_LEVEL = 37;
+    try {
+      const run = new GameState();
+      const steps = [];
+      for (let level = 2; level <= 4; level++) {
+        run.addScore(run.nextLevelThreshold - run.score);
+        steps.push([
+          run.level,
+          run.previousLevelThreshold,
+          run.nextLevelThreshold,
+        ]);
+      }
+      expect(steps).toEqual([
+        [2, 70, 70 + 2 * 37],
+        [3, 144, 144 + 3 * 37],
+        [4, 255, 255 + 4 * 37],
+      ]);
+      run.restart();
+      expect([run.previousLevelThreshold, run.nextLevelThreshold]).toEqual([
+        0, 70,
+      ]);
+      run.addScore(69);
+      expect(run.level).toBe(1);
+      run.addScore(1);
+      expect(run.level).toBe(2);
+    } finally {
+      CONFIG.PACING.FIRST_LEVEL_POINTS = FIRST_LEVEL_POINTS;
+      CONFIG.PACING.LEVEL_POINTS_PER_LEVEL = LEVEL_POINTS_PER_LEVEL;
+    }
+  });
+
   it('high score persists in localStorage', () => {
     gs.addScore(500);
     // High score is debounced; flush explicitly to verify persistence
     gs._flushHighScore();
     expect(localStorage.getItem('vibeHighScore')).toBe('500');
+  });
+
+  it('a browser that blocks site data still starts and ends a run, and says so once', () => {
+    const blocked = () => {
+      throw new Error('SecurityError: access is denied');
+    };
+    const get = vi.spyOn(localStorage, 'getItem').mockImplementation(blocked);
+    const set = vi.spyOn(localStorage, 'setItem').mockImplementation(blocked);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const run = new GameState();
+      expect(run.highScore).toBe(0);
+      run.addScore(500);
+      expect(() => run.setGameState('gameOver')).not.toThrow();
+      expect(run.highScore).toBe(500);
+      expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      get.mockRestore();
+      set.mockRestore();
+      warn.mockRestore();
+    }
   });
 
   it('setGameState transitions correctly', () => {
@@ -315,10 +383,16 @@ describe('GameState', () => {
     expect(gs.gameState).toBe('playing');
   });
 
-  it('getAccuracy calculates correctly', () => {
+  it("accuracy is the hero's shots that landed, whatever else kills", () => {
     gs.shotsFired = 10;
-    gs.totalKills = 3;
+    gs.addShotHit();
+    gs.addShotHit();
+    gs.addShotHit();
+    // A bomb's or a tank ball's kills are not his shots
+    for (let i = 0; i < 8; i++) gs.addKill();
     expect(gs.getAccuracy()).toBe(30);
+    gs.restart();
+    expect(gs.shotsHit).toBe(0);
   });
 
   it('getAccuracy returns 0 with no shots', () => {

@@ -229,7 +229,7 @@ describe('attack warning rings', () => {
       strokeWeight() {},
       ellipse: (x, y) => drawn.push([x, y]),
     };
-    rhythmFX.drawAttackTelegraphs(p, null);
+    rhythmFX.drawAttackTelegraphs(p);
     expect(drawn[0]).toEqual([60, 0]);
   });
 

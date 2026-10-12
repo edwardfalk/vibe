@@ -5,7 +5,6 @@ export function handleAreaDamageEvents(damageEvents, context) {
   const {
     player,
     enemies,
-    audio,
     gameState,
     cameraSystem,
     explosionManager,
@@ -36,7 +35,6 @@ export function handleAreaDamageEvents(damageEvents, context) {
       enemies,
       {
         explosionManager,
-        audio,
         // No scoring once the player has died, this frame or earlier
         gameState,
         onDeath: (e, blow) =>

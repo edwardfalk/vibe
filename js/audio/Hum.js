@@ -16,7 +16,7 @@
  */
 
 import { CONFIG } from '../config.js';
-import { clamp01 } from '../mathUtils.js';
+import { clamp01, dB } from '../mathUtils.js';
 import { hz } from './Harmony.js';
 
 // [note, waveform, detune in cents, level, the game level it joins at]
@@ -48,8 +48,7 @@ const DIP_RISE_TAU_SEC = 0.12;
 const BREATH_SHARE = 0.6;
 const FADE_IN_SEC = 0.4;
 
-const dbToGain = (db) => 10 ** (db / 20);
-const levelGainOf = () => dbToGain(TRIM_DB + CONFIG.HUM.LEVEL_DB);
+const levelGainOf = () => dB(TRIM_DB + CONFIG.HUM.LEVEL_DB);
 
 /**
  * The filter's target: brighter as the screen fills. Fill is enemies over

@@ -4,24 +4,6 @@ import { CameraSystem } from '../../js/systems/CameraSystem.js';
 import { drawBombs } from '../../js/systems/BombSystem.js';
 import { transformP5 } from './helpers/transformP5.js';
 
-// A p5 stand-in that records where circles are drawn
-function recordingP5() {
-  const shapes = [];
-  const record = (x, y) => shapes.push([x, y]);
-  return new Proxy(
-    {
-      width: 800,
-      height: 600,
-      frameCount: 0,
-      sin: Math.sin,
-      shapes,
-      ellipse: record,
-      circle: record,
-    },
-    { get: (t, k) => (k in t ? t[k] : () => {}) }
-  );
-}
-
 function cameraAt(x, y, p) {
   const camera = new CameraSystem(p);
   camera.x = x;
@@ -29,17 +11,28 @@ function cameraAt(x, y, p) {
   return camera;
 }
 
-describe('world-space overlays drawn in screen space', () => {
-  it('an attack telegraph is drawn where its enemy is on screen', () => {
-    const p = recordingP5();
+describe('world-space overlays drawn under the camera', () => {
+  it('an attack telegraph moves with the camera and its shake, as its grunt does', () => {
+    const { p, shapes } = transformP5();
+    p.width = 800;
+    p.height = 600;
     const camera = cameraAt(100, 50, p);
+    camera.addShake(8, 12);
     const fx = new RhythmFX({ get: () => ({}) });
-    fx.addAttackTelegraph(300, 200, 'grunt', 1);
+    const grunt = { x: 300, y: 200 };
+    fx.addAttackTelegraph(grunt.x, grunt.y, 'grunt', 1, grunt);
+    camera.applyTransform();
+    p.ellipse(grunt.x, grunt.y, 10); // the grunt, drawn in the world
+    // Handed the camera as its old screen-space call was, it must not move
+    // the ring a second time
     fx.drawAttackTelegraphs(p, camera);
-    expect(p.shapes[0]).toEqual([
-      camera.worldToScreen(300, 200).x,
-      camera.worldToScreen(300, 200).y,
-    ]);
+    camera.removeTransform();
+    const [body, ring] = shapes.map((sh) => sh.centre);
+    expect(ring).toEqual(body);
+    const { x, y } = camera.worldToScreen(grunt.x, grunt.y);
+    // The shake moved both, by no more than its intensity
+    expect(Math.abs(ring[0] - x)).toBeLessThanOrEqual(8);
+    expect(Math.abs(ring[1] - y)).toBeLessThanOrEqual(8);
   });
 
   it('a bomb is drawn at its world position under the camera', () => {

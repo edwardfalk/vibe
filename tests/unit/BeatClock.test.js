@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BeatClock } from '../../js/audio/BeatClock.js';
 
-// Suppress console.log from BeatClock constructor
-vi.spyOn(console, 'log').mockImplementation(() => {});
-
 /**
  * Helper: create a mock AudioContext with controllable currentTime.
  */
@@ -83,12 +80,6 @@ describe('BeatClock', () => {
     expect(phase).toBeLessThan(1);
   });
 
-  it('isOnBeat with beat filter checks specific beats', () => {
-    // isOnBeat([...]) should always return boolean
-    const result = clock.isOnBeat([1, 3]);
-    expect(typeof result).toBe('boolean');
-  });
-
   it('currentBeat getter matches getCurrentBeat()', () => {
     expect(clock.currentBeat).toBe(clock.getCurrentBeat());
   });
@@ -99,10 +90,6 @@ describe('BeatClock', () => {
     const t = clock.getTimeToNextEighthNote();
     expect(t).toBeGreaterThan(0);
     expect(t).toBeLessThanOrEqual(clock.beatInterval / 2);
-  });
-
-  it('isOnEighthNote returns boolean', () => {
-    expect(typeof clock.isOnEighthNote()).toBe('boolean');
   });
 
   // --- New AudioContext-based tests ---

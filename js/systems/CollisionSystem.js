@@ -106,7 +106,6 @@ export class CollisionSystem {
         player.hurt(damage, `${bullet.owner}-bullet`);
         Bullet.release(bullet);
         bullet._remove = true;
-        break; // Exit loop since bullet hit player
       }
     }
   }

@@ -20,7 +20,6 @@ export class Explosion {
     this.timer = 0;
 
     const config = getExplosionConfig(type);
-    this.maxTimer = config.maxTimer;
 
     const params = getParticleParams(type);
     const { vxRange, vyRange, sizeRange, lifeRange } = params;
@@ -66,10 +65,8 @@ export class Explosion {
       if (p.life <= 0) this.particles.splice(i, 1);
     }
 
-    const timerExpired = this.timer >= this.maxTimer;
-    const noParticles = this.particles.length === 0;
-    // Gone with its particles, once it has shown for MIN_FRAMES (or its timer)
-    if (noParticles && (timerExpired || this.timer > MIN_FRAMES)) {
+    // Gone with its particles, once it has shown for MIN_FRAMES
+    if (this.particles.length === 0 && this.timer > MIN_FRAMES) {
       this.active = false;
     }
   }

@@ -71,7 +71,10 @@ class Tank extends BaseEnemy {
     this.lastActedBar = null; // the bar he last acted on beat 1 of
     this.kickAt = null; // when he did (a beat position)
     this.lurchNow = 0; // this frame's lurch, 0 to 1 (drawn too)
-    this.poseBeats = null; // the beat position update() last kept
+    // The beat position update() last kept; kept from here on, so a hit
+    // before his first update stamps a real beat
+    this.poseBeats =
+      this.getContextValue('beatClock')?.getBeatPosition() ?? null;
     this.seenBeats = null; // his last update's, to tell a stall
 
     // His charge, on his bar clock (beat positions)
@@ -109,7 +112,6 @@ class Tank extends BaseEnemy {
     this.backHitAt = null;
 
     this.hitFlashAlpha = 255; // he stays solid when hit: his own parts flash
-    this.lookSeed = this.animFrame / p.TWO_PI; // his swagger's phase
     // While a bomb on his back is about to blow, BombSystem sets when (the
     // bang's beat) and for how many beats before it he flinches
     this.flinch = null;

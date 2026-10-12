@@ -12,11 +12,6 @@ export class RhythmFX {
     this.context = context;
     // Attack telegraphs for enemies
     this.telegraphs = []; // {x, y, type, beatsUntil, intensity, owner}
-
-    // Early-warning ring colour per enemy type
-    this.enemyTypeConfig = {
-      grunt: { color: [50, 255, 50] },
-    };
   }
 
   _getBeatClock() {
@@ -50,7 +45,7 @@ export class RhythmFX {
    * @param {number} x - Enemy X position
    * @param {number} y - Enemy Y position
    * @param {string} type - Enemy type ('grunt'; the tank's chain, the rusher's and the stabber's rings count their own)
-   * @param {number} beatsUntil - How many beats until attack (0.0 to 4.0)
+   * @param {number} beatsUntil - How many beats until attack (0 to 1: a grunt warns at most a beat ahead)
    * @param {object} [owner] - The enemy: one ring per enemy, drawn where it
    *   is now, so a moving enemy doesn't leave a trail of rings
    */
@@ -68,56 +63,37 @@ export class RhythmFX {
     }
   }
 
-  /**
-   * Draw enemy attack telegraph rings
-   */
-  drawAttackTelegraphs(p, cameraSystem) {
+  /** Draw enemy attack telegraph rings, in the world (under the camera) */
+  drawAttackTelegraphs(p) {
     if (!this._getBeatClock() || this.telegraphs.length === 0) return;
 
     p.push();
 
     for (const telegraph of this.telegraphs) {
-      // Convert world position to screen position
-      const at = telegraph.owner ?? telegraph;
-      const { x: screenX, y: screenY } = cameraSystem
-        ? cameraSystem.worldToScreen(at.x, at.y)
-        : at;
+      const { x, y } = telegraph.owner ?? telegraph;
 
       // Calculate ring size based on beats until attack
       const progress = 1 - min(1, max(0, telegraph.beatsUntil / 2));
       const maxRadius = 50;
       const currentRadius = progress * maxRadius;
 
-      // Color based on urgency
-      let r, g, b;
-      if (telegraph.beatsUntil < 0.5) {
-        // Critical - red flash
-        r = 255;
-        g = 50;
-        b = 50;
-      } else if (telegraph.beatsUntil < 1.0) {
-        // Warning - orange
-        r = 255;
-        g = 150;
-        b = 50;
-      } else {
-        // Early warning - enemy color
-        const config = this.enemyTypeConfig[telegraph.type];
-        [r, g, b] = config ? config.color : [200, 200, 200];
-      }
+      // Orange, then a red flash for its last half beat (a grunt warns at
+      // most a beat ahead)
+      const [r, g, b] =
+        telegraph.beatsUntil < 0.5 ? [255, 50, 50] : [255, 150, 50];
 
       // Draw expanding ring
       const alpha = (1 - progress) * 200;
       p.noFill();
       p.stroke(r, g, b, alpha);
       p.strokeWeight(2 + progress * 2);
-      p.ellipse(screenX, screenY, currentRadius * 2, currentRadius * 2);
+      p.ellipse(x, y, currentRadius * 2, currentRadius * 2);
 
       // Draw inner dot pulsing
       const pulse = sin(Date.now() * 0.01) * 0.3 + 0.7;
       p.fill(r, g, b, alpha * pulse);
       p.noStroke();
-      p.ellipse(screenX, screenY, 6 * pulse, 6 * pulse);
+      p.ellipse(x, y, 6 * pulse, 6 * pulse);
     }
 
     p.pop();

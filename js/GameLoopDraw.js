@@ -35,8 +35,6 @@ export function runDraw(p, updateGame, drawGame) {
         updateGame(p);
         window.gameState.updateLevelUp();
         drawGame(p);
-        // Under the HUD; not while paused or over, when they would freeze
-        window.rhythmFX?.drawAttackTelegraphs(p, window.cameraSystem ?? null);
         break;
 
       case 'paused':

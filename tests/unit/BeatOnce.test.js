@@ -1,8 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { BeatClock } from '../../js/audio/BeatClock.js';
 import { BaseEnemy } from '../../js/entities/BaseEnemy.js';
-
-vi.spyOn(console, 'log').mockImplementation(() => {});
 
 // A BeatClock on a fake audio clock, `ms` after its start (500 ms beats)
 function clockAt(ms) {

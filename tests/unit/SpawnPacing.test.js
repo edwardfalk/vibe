@@ -4,7 +4,6 @@ import { CONFIG } from '../../js/config.js';
 import { BeatClock } from '../../js/audio/BeatClock.js';
 import { CameraSystem } from '../../js/systems/CameraSystem.js';
 
-vi.spyOn(console, 'log').mockImplementation(() => {});
 const original = structuredClone(CONFIG.PACING);
 
 // A SpawnSystem on a fake context; returns what each spawn wave produced.

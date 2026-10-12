@@ -9,7 +9,6 @@ import { CONFIG } from '../../js/config.js';
 import { CameraSystem } from '../../js/systems/CameraSystem.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 
-vi.spyOn(console, 'log').mockImplementation(() => {});
 const SWARM = { ...CONFIG.SWARM };
 const PACING = structuredClone(CONFIG.PACING);
 // A run's opening has its own tests ('a run from level 1 opens'); the rest

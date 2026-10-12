@@ -13,6 +13,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const PACKAGES = {
   espeak: {
@@ -26,8 +27,10 @@ const PACKAGES = {
       'sha512-X4GUr8Q/T8RgtjnPOssSwYDknxot69PgEAVvwsJ4kB8Lz8wytuHB6n1JqsXLmpdKGD8YR9tqKptm07jmw83eWQ==',
   },
 };
-const ESPEAK_OUT = 'js/vendor/espeak-ng';
-const SAM_OUT = 'js/vendor/sam';
+// From the repo's root, wherever the script is run from
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const ESPEAK_OUT = join(ROOT, 'js/vendor/espeak-ng');
+const SAM_OUT = join(ROOT, 'js/vendor/sam');
 
 // The espeak-ng data the game needs: the English dictionary, the phoneme and
 // intonation tables, the English language entries and every voice variant

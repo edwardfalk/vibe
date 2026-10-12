@@ -124,7 +124,7 @@ describe.each(KINDS)('a $kind', ({ make, base, busy }) => {
     expect(spy.mock.calls.length).toBe(plain);
   });
 
-  it("draws without the game's random numbers, apart from the hit-shake's two", () => {
+  it("draws without the game's random numbers, hit or not", () => {
     for (const clock of [clockAt(17.3), null]) {
       const e = make(clock);
       busy(e);
@@ -134,7 +134,7 @@ describe.each(KINDS)('a $kind', ({ make, base, busy }) => {
       expect(spy).toHaveBeenCalledTimes(0);
       e.hitFlash = 5;
       e.draw(p);
-      expect(spy).toHaveBeenCalledTimes(2);
+      expect(spy).toHaveBeenCalledTimes(0);
       expect(p.drawingContext.globalAlpha).toBe(1); // restored after drawing
       spy.mockRestore();
     }

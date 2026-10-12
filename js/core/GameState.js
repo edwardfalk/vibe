@@ -21,12 +21,29 @@ function nextBarLine(clock) {
   return origin + Math.ceil((heard - origin) / bar) * bar;
 }
 
+// A browser that blocks site data throws on any access to localStorage (a
+// full one on a write): the game goes on without it, said once a session
+let storageWarned = false;
+function storageFailed(error) {
+  if (storageWarned) return;
+  storageWarned = true;
+  console.warn('The high score is not kept:', error);
+}
+function readHighScore() {
+  try {
+    return parseInt(localStorage.getItem('vibeHighScore')) || 0;
+  } catch (error) {
+    storageFailed(error);
+    return 0;
+  }
+}
+
 export class GameState {
   constructor() {
     // Core game state
     this.score = 0;
     this.startSpeechTimer = null;
-    this.highScore = parseInt(localStorage.getItem('vibeHighScore')) || 0;
+    this.highScore = readHighScore();
     // What this run has to beat; highScore itself follows the score up
     this.highScoreAtRunStart = this.highScore;
     this.level = 1;
@@ -43,6 +60,7 @@ export class GameState {
     this.killStreak = 0;
     this.totalKills = 0;
     this.shotsFired = 0;
+    this.shotsHit = 0; // his bullets that landed, for the accuracy
 
     // High score write debounce
     this._highScoreDirty = false;
@@ -81,6 +99,10 @@ export class GameState {
 
   addShotFired() {
     this.shotsFired++;
+  }
+
+  addShotHit() {
+    this.shotsHit++;
   }
 
   // Level progression
@@ -148,7 +170,11 @@ export class GameState {
 
   _flushHighScore() {
     if (this._highScoreDirty) {
-      localStorage.setItem('vibeHighScore', this.highScore.toString());
+      try {
+        localStorage.setItem('vibeHighScore', this.highScore.toString());
+      } catch (error) {
+        storageFailed(error);
+      }
       this._highScoreDirty = false;
     }
     if (this._highScoreDebounceTimer) {
@@ -248,6 +274,7 @@ export class GameState {
     this.killStreak = 0;
     this.totalKills = 0;
     this.shotsFired = 0;
+    this.shotsHit = 0;
     this._flushHighScore();
     this.highScoreAtRunStart = this.highScore;
 
@@ -268,7 +295,9 @@ export class GameState {
       window.player.msSinceHit = 0;
       // His look starts clean: the beat clock's reset below can land it
       // near beat 4 (it snaps to a beat), so last run's first stamps would
-      // otherwise survive; and a dash he died in doesn't carry over
+      // otherwise survive; and a dash he died in, its cooldown, a shot still
+      // queued and a burst he was firing don't carry over (only his update
+      // counts them down): his first shot is immediate, as any burst's is
       window.player.shotAt = null;
       window.player.hurtAt = null;
       window.player.shieldBackAt = null;
@@ -276,6 +305,11 @@ export class GameState {
       window.player.lastEighth = null;
       window.player.isDashing = false;
       window.player.dashTimerMs = 0;
+      window.player.dashCooldownMs = 0;
+      window.player.queuedShot = null;
+      window.player.shootCooldownMs = 0;
+      window.player.isCurrentlyShooting = false;
+      window.player.firstShotFired = false;
     }
 
     // Clear all game objects
@@ -333,7 +367,7 @@ export class GameState {
   // Getters for computed values
   getAccuracy() {
     return this.shotsFired > 0
-      ? Math.round((this.totalKills / this.shotsFired) * 100)
+      ? Math.round((this.shotsHit / this.shotsFired) * 100)
       : 0;
   }
 

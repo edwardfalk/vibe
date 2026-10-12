@@ -78,7 +78,6 @@ export class FloatingTextManager {
   addKill(x, y, enemyType, streak = 0) {
     const typeColors = {
       grunt: GRUNT_COLORS.belly,
-      rusher: [255, 50, 150],
       tank: TANK_COLORS.gold,
       stabber: [255, 215, 0],
     };

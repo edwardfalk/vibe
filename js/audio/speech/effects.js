@@ -4,7 +4,7 @@
  * quieter or hotter; Voicebox levels the result. Also the reverb impulse the
  * sound effects in Audio.js use.
  */
-import { mulberry32, random } from '../../mathUtils.js';
+import { mulberry32 } from '../../mathUtils.js';
 
 const TAIL_CAP_SEC = 1.5; // the longest effect tail kept after a line
 const SILENT = 1e-4; // trailing samples quieter than -80 dBFS are trimmed
@@ -41,7 +41,9 @@ export const stageDefaults = (type) =>
     ])
   );
 
-export function createReverbImpulse(ctx, duration, decay, rand = random) {
+// rand: a seeded generator (mulberry32), never the game's random numbers,
+// which the replay compare seeds
+export function createReverbImpulse(ctx, duration, decay, rand) {
   const sampleRate = ctx.sampleRate;
   const length = sampleRate * duration;
   const impulse = ctx.createBuffer(2, length, sampleRate);

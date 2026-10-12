@@ -87,7 +87,7 @@ const BOMB = 'BOMB';
 const DEATHS = 'DEATHS';
 const SPEECH = 'SPEECH_SETTINGS';
 
-const KNOBS = [
+export const KNOBS = [
   [BEAT_CLOCK, 'AHEAD_MS', [0, 60, 1]],
   [KICK, 'ENABLED'],
   [KICK, 'PATTERN', ['four', 'oneThree']],
@@ -228,7 +228,7 @@ const KNOBS = [
   [BOMB, 'COUNT_LEAD_BEATS', [1, 4, 1]],
   [BOMB, 'RADIUS_PX', [80, 400, 10]],
   [BOMB, 'BANG_VOLUME', [0, 3, 0.05]],
-  [BOMB, 'CLOUD_VOLUME', [0, 3, 0.05]],
+  [BOMB, 'CLOUD_VOLUME', [0, 3, 0.01]], // its 1.41 is +3 dB
   [BOMB, 'ENEMY_DAMAGE_MAX', [0, 100, 5]],
   [BOMB, 'PLAYER_DAMAGE_MAX', [0, 100, 5]],
   [HITBOX, 'SHOW'],

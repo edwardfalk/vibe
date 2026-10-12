@@ -165,6 +165,21 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
     window.enemies.push(s);
   });
 
+  // A tank below and behind the hero, out of his line of fire and the lit
+  // rusher's blast: he acts on every bar's first update, so he acts within
+  // NUM_BEATS whatever the spawn odds left about
+  await page.evaluate(() => {
+    const hero = window.player;
+    const t = window.spawnSystem.createEnemy(
+      hero.x - 250,
+      hero.y + 250,
+      'tank',
+      hero.p
+    );
+    t.isSpawning = false;
+    window.enemies.push(t);
+  });
+
   // Simulate some gameplay so enemies engage
   await page.keyboard.down('d');
   await page.keyboard.down(' ');
@@ -255,6 +270,11 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
     byType.grunt?.length ?? 0,
     'no grunt shot was recorded'
   ).toBeGreaterThan(0);
+
+  // The planted tank must have acted, or the tank's check proved nothing
+  expect(byType.tank?.length ?? 0, 'no tank kick was recorded').toBeGreaterThan(
+    0
+  );
 
   // The planted stabber must have lunged, or the stabber's check proved nothing
   expect(

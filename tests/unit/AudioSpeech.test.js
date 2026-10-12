@@ -317,7 +317,7 @@ describe('a bubble that waits for its line', () => {
     const drawn = () => calls.filter(([k]) => k === 'text').map(([, t]) => t);
     const frame = (now) => {
       updateActiveTexts(texts, now);
-      drawActiveTexts(p, texts, false, 0, 0, null, now);
+      drawActiveTexts(p, texts, now);
     };
     frame(0.9);
     frame(0.99);
@@ -332,6 +332,18 @@ describe('a bubble that waits for its line', () => {
     expect(texts).toEqual([]); // its two frames are up
   });
 
+  it('follows its speaker while it waits: a line starting in a hitstop, where no update runs, shows where he is', () => {
+    const speaker = { x: 0, y: 0 };
+    const texts = [
+      { text: 'FIRE!', timer: 5, showsAt: 1, x: 0, y: -30, entity: speaker },
+    ];
+    speaker.x = 90;
+    speaker.y = 40;
+    updateActiveTexts(texts, 0.9); // still waiting
+    expect([texts[0].x, texts[0].y]).toEqual([90, 10]);
+    expect(texts[0].timer).toBe(5);
+  });
+
   it('shows at once without a start, or without an audio clock', () => {
     const texts = [
       { text: 'A', timer: 5, showsAt: null, x: 0, y: 0 },
@@ -340,10 +352,10 @@ describe('a bubble that waits for its line', () => {
     const { p, calls } = transformP5();
     const drawn = () => calls.filter(([k]) => k === 'text').map(([, t]) => t);
     updateActiveTexts(texts, 0);
-    drawActiveTexts(p, texts, false, 0, 0, null, 0);
+    drawActiveTexts(p, texts, 0);
     expect(drawn()).toEqual(['A']);
     updateActiveTexts(texts); // no audio clock: every bubble shows
-    drawActiveTexts(p, texts, false, 0, 0, null);
+    drawActiveTexts(p, texts);
     expect(drawn()).toEqual(['A', 'A', 'B']);
   });
 });

@@ -5,7 +5,7 @@
 
 import { random } from '../../mathUtils.js';
 
-/** @typedef {{ particleCount: number, maxTimer: number }} ExplosionTypeConfig */
+/** @typedef {{ particleCount: number }} ExplosionTypeConfig */
 /** @typedef {{ vxRange: [number, number], vyRange: [number, number], sizeRange: [number, number], lifeRange: [number, number] }} ParticleParams */
 
 const DEFAULT_PARTICLE_PARAMS = {
@@ -35,17 +35,16 @@ const COLOR_PALETTES = {
   ],
 };
 
-/** Particle count and lifetime (frames) for each type */
+/** Particle count for each type */
 const TYPE_CONFIG = {
-  'armor-break': { particleCount: 8, maxTimer: 30 },
+  'armor-break': { particleCount: 8 },
 };
 const DEFAULT_TYPE_CONFIG = {
   particleCount: 3,
-  maxTimer: 30,
 };
 
 /**
- * Get explosion type config (particle count, timer).
+ * Get explosion type config (particle count).
  * @param {string} type
  * @returns {ExplosionTypeConfig}
  */
