@@ -208,8 +208,14 @@ describe("his note meets aliens by the tank ball's rule", () => {
 // Shot down, a note hangs, swelling, until the next let, then bursts with
 // its b7 booked at that let (the bassist spec, It can be shot)
 describe('the hero shoots his notes down', () => {
-  function frame({ playerBullets, enemyBullets, enemies = [], player }) {
-    const values = { playerBullets, enemyBullets, enemies, player };
+  function frame({
+    playerBullets,
+    enemyBullets,
+    enemies = [],
+    player,
+    gameState,
+  }) {
+    const values = { playerBullets, enemyBullets, enemies, player, gameState };
     new CollisionSystem(
       { get: (k) => values[k], set() {} },
       { handleEnemyDeath: vi.fn() }
@@ -229,6 +235,20 @@ describe('the hero shoots his notes down', () => {
     expect(note.hung).not.toBeNull();
     expect(v.playerBullets).toEqual([]); // the shot is spent
     expect(v.enemyBullets).toEqual([note]); // the note hangs on
+  });
+
+  it('a shot that stops a note counts as a hit for his accuracy', () => {
+    const note = Bullet.acquire(0, 0, 0, 0, NOTE_OWNER);
+    const shot = Bullet.acquire(-10, 0, 0, 20, 'player');
+    shot.update();
+    const gameState = { addShotHit: vi.fn() };
+    frame({
+      playerBullets: [shot],
+      enemyBullets: [note],
+      player: hero(),
+      gameState,
+    });
+    expect(gameState.addShotHit).toHaveBeenCalledTimes(1);
   });
 
   it('a hanging note hurts no one, no alien, and takes no second shot', () => {

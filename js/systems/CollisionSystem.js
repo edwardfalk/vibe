@@ -83,6 +83,7 @@ export class CollisionSystem {
         (b) => !b._remove && b.checkCollision(note)
       );
       if (!shot) continue;
+      this.getContextValue('gameState')?.addShotHit();
       Bullet.release(shot);
       shot._remove = true;
       hangNote(note, beats);
