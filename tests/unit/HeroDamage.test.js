@@ -31,6 +31,20 @@ describe('damage enemy shots do to the hero', () => {
     }
   });
 
+  it('every bullet that reaches him in one frame hurts him', () => {
+    const player = { x: 0, y: 0, size: 30, hurt: vi.fn() };
+    const volley = [
+      Bullet.acquire(0, 0, 0, 8, 'enemy-grunt'),
+      Bullet.acquire(4, 0, 0, 8, 'enemy-grunt'),
+    ];
+    new CollisionSystem(
+      contextOf({ enemyBullets: volley, player }),
+      {}
+    ).checkEnemyBulletsVsPlayer();
+    expect(player.hurt).toHaveBeenCalledTimes(2);
+    expect(volley.every((b) => b._remove)).toBe(true);
+  });
+
   it('a grunt bullet still does its own 1 to another enemy', () => {
     expect(Bullet.acquire(0, 0, 0, 8, 'enemy-grunt').damage).toBe(1);
   });
