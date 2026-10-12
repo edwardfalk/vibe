@@ -230,11 +230,14 @@ describe('what his death keeps from the kill', () => {
 });
 
 describe('Empty shell', () => {
-  it('shuts its eye on the eighth nearest a second times the linger, never before half a second', () => {
+  it('shuts its eye on the eighth nearest a second times the linger, never before half a second, off the grid too', () => {
     expect(shellShutAt(record({ linger: 1 }))).toBeCloseTo(1, 9);
     expect(shellShutAt(record({ linger: 1.7 }))).toBeCloseTo(1.75, 9); // 6.8 eighths: the 7th
     expect(shellShutAt(record({ linger: 0.5 }))).toBeCloseTo(0.5, 9);
-    expect(shellShutAt(record({ linger: 1, at: 2.1 }))).toBeCloseTo(1.15, 9);
+    // Off the grid, the eighths start 0.15 s in: 3.0 is the nearest to 3.1,
+    // and 2.75 the first not before 2.6
+    expect(shellShutAt(record({ linger: 1, at: 2.1 }))).toBeCloseTo(0.9, 9);
+    expect(shellShutAt(record({ linger: 0.5, at: 2.1 }))).toBeCloseTo(0.65, 9);
   });
 
   it('hangs frozen until it starts, then cracks, lives its course and is gone', () => {

@@ -157,15 +157,19 @@ const LIDS = {
   SHUT: [-1.2, 1.2, -1.2, 1.2], // one slash, down toward him
 };
 
+const SLACK = 1e-6; // on beat positions, for floating-point error
+
 /**
  * When the eye shuts, s after the crack: the song's eighth nearest SHUT_AT
- * times the death's linger, never before SHUT_MIN (the sound's pluck too)
+ * times the death's linger, never before SHUT_MIN (the sound's pluck too).
+ * Counted from the death's first eighth, which is off its start when the
+ * start is off the grid (a bomb's late bang)
  */
 export function shellShutAt(r) {
-  const n = Math.round(
-    Math.max(EYEF.SHUT_MIN, EYEF.SHUT_AT * r.linger) / r.eighth
-  );
-  return r.eighthAfter(Math.max(1, n));
+  const at = Math.max(EYEF.SHUT_MIN, EYEF.SHUT_AT * r.linger);
+  const nearest = Math.round((at - r.offset) / r.eighth);
+  const least = Math.ceil((EYEF.SHUT_MIN - r.offset) / r.eighth - SLACK);
+  return r.eighthAfter(Math.max(1, nearest, least));
 }
 /** When the eye is gone, s after the crack: the death is over */
 export const shellEnd = (r) => shellShutAt(r) + EYEF.HOLD_SEC + EYEF.GONE_SEC;
