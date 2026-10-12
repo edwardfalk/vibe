@@ -99,9 +99,11 @@ export function updateEnemiesAndResolveResults(context) {
   const { enemies, enemyBullets, player, deltaTimeMs } = context;
 
   const blasts = [];
-  let write = 0;
-  for (let read = 0; read < enemies.length; read++) {
-    const enemy = enemies[read];
+  // The array stays as it is until every enemy has updated: a death inside
+  // an update (a stab kill) asks its neighbours to answer from it, and
+  // compacting as the loop goes lists the ones already kept twice
+  for (let i = 0; i < enemies.length; i++) {
+    const enemy = enemies[i];
 
     if (enemy.markedForRemoval) {
       continue;
@@ -127,14 +129,19 @@ export function updateEnemiesAndResolveResults(context) {
         console.warn(`⚠️ Unknown object returned from enemy update:`, result);
       }
     }
-
-    if (!enemy.markedForRemoval) {
-      enemies[write++] = enemy;
-    }
   }
-  enemies.length = write;
+  dropRemoved(enemies);
 
   if (blasts.length > 0) damageEnemiesInBlasts(blasts, context);
+}
+
+/** Takes the enemies marked for removal out of the array, in place */
+function dropRemoved(enemies) {
+  let write = 0;
+  for (const enemy of enemies) {
+    if (!enemy.markedForRemoval) enemies[write++] = enemy;
+  }
+  enemies.length = write;
 }
 
 /**
@@ -161,9 +168,5 @@ function damageEnemiesInBlasts(blasts, context) {
       'rusher-blast'
     );
   }
-  let write = 0;
-  for (const enemy of enemies) {
-    if (!enemy.markedForRemoval) enemies[write++] = enemy;
-  }
-  enemies.length = write;
+  dropRemoved(enemies);
 }
