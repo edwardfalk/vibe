@@ -66,6 +66,22 @@ const injectRecorder = async (page) => {
     // The stabber counts beat positions too: record each lunge at the
     // nearest eighth of the update that started it (0-indexed), which must
     // be the "and" of 3
+    // The bassist by each let he plays, in thirds of a bar: his lets fall
+    // at n + 2/3 (CONFIG.SWING.AND_AT), so 2, 5, 8 and 11; whole numbers,
+    // since thirds don't round to equal floats
+    const { Bassist } = await import('/js/entities/Bassist.js');
+    const pluck = Bassist.prototype.pluck;
+    Bassist.prototype.pluck = function (...args) {
+      window.__beatEvents.push({
+        type: 'let',
+        enemyType: 'bassist',
+        beat: Math.round(this.poseBeats * 3) % 12,
+        totalBeats: bc.getTotalBeats(),
+        timestamp: Date.now(),
+      });
+      return pluck.apply(this, args);
+    };
+
     const { Stabber } = await import('/js/entities/Stabber.js');
     const startLunge = Stabber.prototype.startLunge;
     Stabber.prototype.startLunge = function (...args) {
@@ -170,6 +186,18 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   // NUM_BEATS whatever the spawn odds left about
   await page.evaluate(() => {
     const hero = window.player;
+    const b = window.spawnSystem.createEnemy(
+      hero.x + 300,
+      hero.y - 200,
+      'bassist',
+      hero.p
+    );
+    b.isSpawning = false;
+    window.enemies.push(b);
+  });
+
+  await page.evaluate(() => {
+    const hero = window.player;
     const t = window.spawnSystem.createEnemy(
       hero.x - 250,
       hero.y + 250,
@@ -215,6 +243,7 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
     tank: [0],
     stabber: [2.5],
     rusher: [0, 2],
+    bassist: [2, 5, 8, 11], // thirds of a bar
   };
 
   const results = {};
@@ -250,6 +279,9 @@ test('beat-synced enemy actions fire on correct beats', async ({ page }) => {
   }
 
   // Assert: any enemy type that fired should have fired on correct beats only
+  // He was planted, so he must have played
+  expect(results.bassist.total, 'the bassist played no let').toBeGreaterThan(0);
+
   for (const [enemyType, result] of Object.entries(results)) {
     if (result.total > 0) {
       expect(

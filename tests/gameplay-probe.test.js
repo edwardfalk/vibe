@@ -1126,7 +1126,7 @@ test.describe('Gameplay Probes', () => {
       const spawnSystem = window.spawnSystem;
       const out = {};
 
-      for (const type of ['grunt', 'rusher', 'tank', 'stabber']) {
+      for (const type of ['grunt', 'rusher', 'tank', 'stabber', 'bassist']) {
         try {
           const enemy = spawnSystem.createEnemy(
             window.player.x + 150,
@@ -1156,6 +1156,7 @@ test.describe('Gameplay Probes', () => {
       rusher: { ok: true, dmgResult: 'exploding' },
       tank: { ok: true, dmgResult: 'died' },
       stabber: { ok: true, dmgResult: 'died' },
+      bassist: { ok: true, dmgResult: 'died' },
     });
 
     // Verify draw loop still running after enemy deaths
@@ -1201,8 +1202,8 @@ test.describe('Gameplay Probes', () => {
       const tank = at('tank', 0, 450);
       plantBomb(window.activeBombs, tank, window.beatClock, window.audio);
       window.__doomed = [tank];
-      ['grunt', 'rusher', 'stabber'].forEach((type, i) => {
-        const e = at(type, ((i + 1) * Math.PI) / 2, 180);
+      ['grunt', 'rusher', 'stabber', 'bassist'].forEach((type, i) => {
+        const e = at(type, ((i + 1) * Math.PI) / 2.5, 180);
         e.health = 1;
         window.__doomed.push(e);
       });
@@ -1214,7 +1215,7 @@ test.describe('Gameplay Probes', () => {
       await page.waitForTimeout(AIM_MS);
     }
     await page.mouse.up();
-    // It was a fight: all four died, the tank to his bomb
+    // It was a fight: all five died, the tank to his bomb
     const alive = await page.evaluate(() =>
       window.__doomed
         .filter((e) => window.enemies.includes(e) && !e.markedForRemoval)
