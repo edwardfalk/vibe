@@ -83,3 +83,29 @@ describe("the bomb's bang gives the tank it kills its time", () => {
     expect(DIRECT.bombBang(audio)).toBe(null);
   });
 });
+
+describe('where a sound is, heard from the hero (placement)', () => {
+  const audio = Object.assign(Object.create(Audio.prototype), {
+    player: { x: 100, y: 50 },
+  });
+
+  it('one with no position, or a broken one, is beside him: full and centred', () => {
+    for (const [x, y] of [
+      [null, null],
+      [undefined, undefined],
+      [NaN, 0],
+      [0, Infinity],
+    ]) {
+      expect(audio.placement(x, y)).toEqual({ near: 1, pan: 0, far: 0 });
+    }
+  });
+
+  it('quieter, panned and further with distance, to its floor at 600 px', () => {
+    const half = audio.placement(400, 50); // 300 px to his right
+    expect(half.far).toBeCloseTo(0.5, 12);
+    expect(half.near).toBeCloseTo(0.7, 12);
+    expect(half.pan).toBeCloseTo(0.75, 12);
+    const beyond = audio.placement(100, 50 + 900);
+    expect(beyond).toEqual({ near: 0.4, pan: 0, far: 1 });
+  });
+});

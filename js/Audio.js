@@ -15,13 +15,11 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { random, floor, dB } from './mathUtils.js';
 import { createContextAccessor } from './shared/ContextAccessor.js';
-import {
-  AMBIENT_SOUNDS,
-  resolveSoundSourcePosition,
-} from './audio/AmbientSoundProfile.js';
+import { AMBIENT_SOUNDS } from './audio/AmbientSoundProfile.js';
 import {
   calculatePanForPosition,
   calculateVolumeForPosition,
+  distanceShare,
 } from './audio/SpatialAudio.js';
 import { applyBeatTremolo as applyBeatTremoloEffect } from './audio/BeatTremolo.js';
 import {
@@ -361,15 +359,19 @@ export class Audio {
     return this.buses[group];
   }
 
-  // How loud (0..1) and where (pan -1..1) a sound from (x, y) is, heard from
-  // the hero; one with no position is beside him
+  // How loud (0..1), where (pan -1..1) and how far (0..1, distanceShare) a
+  // sound from (x, y) is, heard from the hero; one with no position is
+  // beside him
   placement(x, y) {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      return { near: 1, pan: 0, far: 0 };
+    }
     const hx = Number.isFinite(this.player?.x) ? this.player.x : 0;
     const hy = Number.isFinite(this.player?.y) ? this.player.y : 0;
-    const placed = x !== null && y !== null;
     return {
-      near: placed ? calculateVolumeForPosition(x, y, hx, hy) : 1,
-      pan: placed ? calculatePanForPosition(x, hx) : 0,
+      near: calculateVolumeForPosition(x, y, hx, hy),
+      pan: calculatePanForPosition(x, hx),
+      far: distanceShare(x, y, hx, hy),
     };
   }
 
@@ -477,7 +479,7 @@ export class Audio {
     this._heroRun = { at, n };
     const { SOFTEN_DB, SOFTEN_SHOTS } = CONFIG.HERO_SHOT;
     if (SOFTEN_SHOTS <= 0) return 1;
-    return 10 ** ((-SOFTEN_DB * Math.min(n, SOFTEN_SHOTS)) / SOFTEN_SHOTS / 20);
+    return dB((-SOFTEN_DB * Math.min(n, SOFTEN_SHOTS)) / SOFTEN_SHOTS);
   }
 
   /**
@@ -708,48 +710,23 @@ export class Audio {
       }
     }
 
-    // Get player position for relative audio positioning
-    // The world is centred on 0,0, which is where the hero starts
-    let playerX = 0,
-      playerY = 0;
-    if (
-      this.player &&
-      Number.isFinite(this.player.x) &&
-      Number.isFinite(this.player.y)
-    ) {
-      playerX = this.player.x;
-      playerY = this.player.y;
-    }
+    // Quieter and panned with distance from the hero
+    const { near, pan, far } = this.placement(x, y);
 
     // Configure gain envelope with proper volume calculation and randomness;
     // the enemies' hits share one level knob
-    const level =
+    const volume =
       config.volume *
       volumeVariation *
-      (config.hit ? 10 ** (CONFIG.HITS.LEVEL_DB / 20) : 1);
-    let volume = level;
-    let panValue = 0;
-
-    // Only calculate distance-based volume and panning for positioned sounds (enemies)
-    // Player sounds (x, y null or same as player position) get full volume
-    if (x !== null && y !== null) {
-      const isPlayerSound =
-        Math.abs(x - playerX) < 1 && Math.abs(y - playerY) < 1;
-
-      if (!isPlayerSound) {
-        // This is an enemy sound - calculate distance-based volume and panning
-        volume = level * calculateVolumeForPosition(x, y, playerX, playerY);
-        panValue = calculatePanForPosition(x, playerX);
-      }
-      // If it's a player sound, keep full volume and center panning (defaults above)
-    }
+      (config.hit ? dB(CONFIG.HITS.LEVEL_DB) : 1) *
+      near;
 
     gainNode.gain.setValueAtTime(0, at);
     gainNode.gain.linearRampToValueAtTime(volume, at + TONE_ATTACK_SEC);
     gainNode.gain.exponentialRampToValueAtTime(0.001, at + sec);
 
     // Configure panning
-    panNode.pan.setValueAtTime(panValue, at);
+    panNode.pan.setValueAtTime(pan, at);
 
     // Connect nodes - add reverb for ambient enemy sounds
     const tremoloGain = ctx.createGain();
@@ -778,16 +755,7 @@ export class Audio {
 
     if (isAmbientSound && this.effects.reverb) {
       // Distance-based reverb, lowpass and light distortion for ambient enemy sounds
-      const { sourceX, sourceY } = resolveSoundSourcePosition(
-        x,
-        y,
-        playerX,
-        playerY
-      );
-      const distance = Math.sqrt(
-        (sourceX - playerX) ** 2 + (sourceY - playerY) ** 2
-      );
-      const normalizedDistance = Math.max(0, Math.min(distance / 600, 1)); // 0 = close, 1 = far; clamp to avoid negative
+      const normalizedDistance = far; // 0 = close, 1 = far
 
       reverbGainNode = ctx.createGain();
       lowPassFilter = ctx.createBiquadFilter();
@@ -890,15 +858,8 @@ export class Audio {
 
     // The hero hears it from where the speaker is; one without a position
     // speaks from where the hero is
-    const hx = Number.isFinite(this.player?.x) ? this.player.x : 0;
-    const hy = Number.isFinite(this.player?.y) ? this.player.y : 0;
-    const ex = Number.isFinite(entity?.x) ? entity.x : hx;
-    const ey = Number.isFinite(entity?.y) ? entity.y : hy;
-    const gain = Math.max(
-      CONFIG.MIX.SPEECH_DISTANCE_FLOOR,
-      calculateVolumeForPosition(ex, ey, hx, hy)
-    );
-    const pan = calculatePanForPosition(ex, hx);
+    const { near, pan } = this.placement(entity?.x, entity?.y);
+    const gain = Math.max(CONFIG.MIX.SPEECH_DISTANCE_FLOOR, near);
 
     this.voicebox
       .say(voiceType, text, {
@@ -1024,11 +985,7 @@ export class Audio {
       [this.beatDuckGain, MIX.DUCK_BEAT_DB],
     ]) {
       node.gain.cancelScheduledValues(t);
-      node.gain.setTargetAtTime(
-        speaking ? 10 ** (db / 20) : 1,
-        t,
-        timeConstant
-      );
+      node.gain.setTargetAtTime(speaking ? dB(db) : 1, t, timeConstant);
     }
   }
 

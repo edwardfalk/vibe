@@ -15,6 +15,7 @@
 import { CONFIG } from '../config.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { hz } from './Harmony.js';
+import { driveCurve } from './speech/effects.js';
 
 const EIGHTH_NOTES_PER_MEASURE = 8;
 const BEATS_PER_BAR = 4;
@@ -328,16 +329,11 @@ export class BeatTrack {
     }
   }
 
-  // Soft-clipping curve tanh(drive * x), normalised so full scale stays full
-  // scale. The curve is cached per drive value; each kick gets its own node.
+  // Soft clipping (driveCurve). The curve is cached per drive value; each
+  // kick gets its own node.
   _getDriveShaper(drive) {
     if (this._driveCurveFor !== drive) {
-      const curve = new Float32Array(DRIVE_CURVE_SAMPLES);
-      for (let i = 0; i < DRIVE_CURVE_SAMPLES; i++) {
-        const x = (i / (DRIVE_CURVE_SAMPLES - 1)) * 2 - 1;
-        curve[i] = Math.tanh(drive * x) / Math.tanh(drive);
-      }
-      this._driveCurve = curve;
+      this._driveCurve = driveCurve(drive, DRIVE_CURVE_SAMPLES);
       this._driveCurveFor = drive;
     }
     const shaper = this.ctx.createWaveShaper();

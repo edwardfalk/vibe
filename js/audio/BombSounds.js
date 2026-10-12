@@ -276,7 +276,6 @@ function roomOf(ctx) {
   return ir;
 }
 
-/** The kick's drive (BeatTrack.js): tanh(k·x), scaled so ±1 stays ±1 */
 /**
  * The bomb's bang at audio time `at`, placed.
  * @param {AudioContext} ctx
