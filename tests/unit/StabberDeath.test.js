@@ -19,6 +19,7 @@ import {
 import { shatterTimes } from '../../js/entities/StabberShatter.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { Audio } from '../../js/Audio.js';
+import { normalizeAngle } from '../../js/mathUtils.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { fakeAudio } from './helpers/fakeAudio.js';
@@ -386,6 +387,17 @@ describe("Empty shell's sound", () => {
     );
   });
 
+  it('frees its nodes when the last source stops, at any linger', () => {
+    for (const linger of [0.5, 1, 1.7, 2]) {
+      const made = play(record({ linger }), 2);
+      const started = made.filter((n) => n.start.mock.calls.length);
+      const latest = Math.max(...started.map((n) => n.stop.mock.calls[0][0]));
+      const freer = made.filter((n) => n.onended);
+      expect(freer).toHaveLength(1);
+      expect(freer[0].stop.mock.calls[0][0]).toBe(latest);
+    }
+  });
+
   it('stops every source it starts, and frees its nodes when it ends', () => {
     for (const rec of [
       record(),
@@ -550,6 +562,28 @@ describe('Gold shatter', () => {
     expect(reach(0.6) / reach(1)).toBeCloseTo(0.6, 1);
   });
 
+  it('throws its plates along the blow, further for a blast, and the blow carries them', () => {
+    const dir = Math.PI / 2; // a blow downward
+    const thrown = (o) => {
+      const { death, at } = deathOf(shatter({ dir, ...o }));
+      at(2.1);
+      death.draw(transformP5().p);
+      return death.state;
+    };
+    const sum = (qs) => qs.reduce((a, q) => a + q.go, 0);
+    const st = thrown({});
+    // The same plates (one seed), thrown by a blow the other way
+    const back = thrown({ dir: dir + Math.PI });
+    const down = (qs) => qs.filter((q) => Math.cos(q.a - dir) > 0.5);
+    expect(down(st.shards).length).toBeGreaterThan(1);
+    expect(sum(down(st.shards))).toBeGreaterThan(sum(down(back.shards)) * 1.2);
+    expect(st.pushY).toBeGreaterThan(0);
+    expect(Math.abs(st.pushX)).toBeLessThan(1e-9);
+    const blasted = thrown({ blast: true });
+    expect(sum(blasted.shards)).toBeGreaterThan(sum(st.shards) * 1.1);
+    expect(blasted.pushY).toBeGreaterThan(st.pushY);
+  });
+
   it('its spike turns to the hero until it crumbles; its dust stays where it crumbled', () => {
     const hero = { x: 0, y: 300 };
     const { death, at } = deathOf(shatter(), () => hero);
@@ -558,6 +592,12 @@ describe('Gold shatter', () => {
     death.draw(p);
     const crumbled = death.state.crumbledAt;
     expect(crumbled).toBeDefined();
+    // Its blade points at him as it crumbles
+    const [x, y, a] = crumbled;
+    expect(normalizeAngle(a - Math.atan2(hero.y - y, hero.x - x))).toBeCloseTo(
+      0,
+      6
+    );
     hero.x = 500;
     at(2 + 1.1);
     death.draw(p);
@@ -586,6 +626,17 @@ describe("Gold shatter's sound", () => {
       .map((o) => o.frequency.setValueAtTime.mock.calls[0][0]);
     expect(freqs.some((f) => Math.abs(f - hz(['5', 6], at)) < 1e-6)).toBe(true);
     expect(freqs.some((f) => Math.abs(f - hz(['5', 6], 0)) < 1e-6)).toBe(false);
+  });
+
+  it('hisses only white-hot', () => {
+    const sources = (rec) =>
+      play(rec, 2).filter((n) => n.kind === 'source').length;
+    const cold = record({ style: 'shatter' });
+    const hot = record({
+      style: 'shatter',
+      pose: { ...record().pose, lunge: { k: 0.2 } },
+    });
+    expect(sources(hot)).toBe(sources(cold) + 1);
   });
 
   it('jabs and crumbles where the picture does, at any linger', () => {
