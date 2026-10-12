@@ -282,7 +282,8 @@ export class GameState {
       window.player.msSinceHit = 0;
       // His look starts clean: the beat clock's reset below can land it
       // near beat 4 (it snaps to a beat), so last run's first stamps would
-      // otherwise survive; and a dash he died in doesn't carry over
+      // otherwise survive; and a dash he died in, its cooldown and a shot
+      // still queued don't carry over (only his update counts them down)
       window.player.shotAt = null;
       window.player.hurtAt = null;
       window.player.shieldBackAt = null;
@@ -290,6 +291,8 @@ export class GameState {
       window.player.lastEighth = null;
       window.player.isDashing = false;
       window.player.dashTimerMs = 0;
+      window.player.dashCooldownMs = 0;
+      window.player.queuedShot = null;
     }
 
     // Clear all game objects

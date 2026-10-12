@@ -83,7 +83,7 @@ describe('GameState', () => {
     expect(gs.practiceRun).toBe(false);
   });
 
-  it("restart starts the hero's look clean, and ends a dash he died in", () => {
+  it("restart starts the hero's look clean, ends a dash he died in, and drops its cooldown and his queued shot", () => {
     const player = {
       maxHealth: 100,
       shotAt: 3.6,
@@ -93,6 +93,8 @@ describe('GameState', () => {
       lastEighth: 7,
       isDashing: true,
       dashTimerMs: 120,
+      dashCooldownMs: 2400,
+      queuedShot: { timerMs: 80 },
     };
     window.player = player;
     try {
@@ -105,6 +107,8 @@ describe('GameState', () => {
       expect(player.footfalls).toEqual([]);
       expect(player.lastEighth).toBe(null);
       expect([player.isDashing, player.dashTimerMs]).toEqual([false, 0]);
+      expect(player.dashCooldownMs).toBe(0);
+      expect(player.queuedShot).toBe(null);
     } finally {
       window.player = null;
     }

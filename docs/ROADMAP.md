@@ -68,9 +68,7 @@ Calls and smaller work:
   - the White Russian as the Dude's health gauge;
   - family reactions between enemy types;
   - the carpet in play.
-- **build: #83's minors:**
-  - the sprite cache never rebuilds after a lost graphics context (only the sky checks for one);
-  - a restart doesn't clear the Dude's queued shot.
+- **build: #83's minor:** the sprite cache never rebuilds after a lost graphics context (only the sky checks for one).
 - **build: #82's rusher minors:**
   - a ring lit by a bomb flashes a ghost arc for about 0.15 s;
   - `pose()` is built twice a frame while he's lit;
