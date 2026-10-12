@@ -655,3 +655,93 @@ test('feedback sits in its windows: frequent sounds under the band, events a lit
   console.log('feedback over the kick, dB:', rounded(levels));
   expectInWindows(levels);
 });
+
+// The bassist's line in his octave over the hum at level 4, where he comes
+// in (the bassist spec, Sound): each pluck and his slap as heard, its
+// loudest 50 ms, against the hum's level over two bars, both through the
+// game's limiter and the 250 Hz high-pass. He plays in the band's bus at
+// his own knobs, and at the hero's side (in play he is quieter by his
+// distance, as every band sound is). Hidden means under HUM_MARGIN_DB over
+// it; on the listening page his weakest pluck sat about 6 dB over
+const HUM_MARGIN_DB = 3;
+
+test('the bassist plays over the hum at level 4: every pluck and his slap', async ({
+  page,
+}) => {
+  await page.goto('/tests/helpers/speech-gate.html');
+  const levels = await page.evaluate(async () => {
+    const { CONFIG } = await import('/js/config.js');
+    const { Hum } = await import('/js/audio/Hum.js');
+    const { createMasterLimiter } = await import('/js/Audio.js');
+    const { SYNTHS } = await import('/js/audio/Instruments.js');
+    const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
+    const { dB } = await import('/js/mathUtils.js');
+    const RATE = 44100;
+    const BEAT_SEC = 0.5;
+    const BAR_SEC = 4 * BEAT_SEC;
+    const WINDOW_SEC = 10; // the hum's filter settled, as above
+    const END_SEC = WINDOW_SEC + 2 * BAR_SEC;
+    const PASS_SEC = 0.025;
+    const LOUD_SEC = 0.05;
+    const render = async (play) => {
+      const ctx = new OfflineAudioContext(
+        1,
+        Math.ceil(RATE * (END_SEC + 0.5)),
+        RATE
+      );
+      const highpass = new BiquadFilterNode(ctx, {
+        type: 'highpass',
+        frequency: 250,
+        Q: 0.7,
+      });
+      highpass.connect(ctx.destination);
+      const limiter = createMasterLimiter(ctx);
+      limiter.connect(highpass);
+      play(ctx, limiter);
+      return (await ctx.startRendering()).getChannelData(0);
+    };
+    const hum = await render((ctx, out) => {
+      const h = new Hum(ctx, out);
+      for (let t = 0; t < END_SEC; t += PASS_SEC) h.sync(t, 4, 8);
+      for (let beat = 0; beat * BEAT_SEC < END_SEC; beat++) {
+        h.dipAt(beat * BEAT_SEC);
+        if (beat % 4 === 0) h.barAt(beat * BEAT_SEC, BAR_SEC);
+      }
+    });
+    let sum = 0;
+    for (let i = WINDOW_SEC * RATE; i < END_SEC * RATE; i++) sum += hum[i] ** 2;
+    const humDb = 10 * Math.log10(sum / ((END_SEC - WINDOW_SEC) * RATE));
+    // One of his sounds at WINDOW_SEC, as the game plays it: its loudest 50 ms
+    const loudest = async (name, note) => {
+      const data = await render((ctx, out) => {
+        const bus = new GainNode(ctx, { gain: dB(CONFIG.MIX.BAND_DB) });
+        bus.connect(out);
+        SYNTHS[SOUND_CONFIG[name].synth](ctx, bus, SOUND_CONFIG[name], {
+          at: WINDOW_SEC,
+          volume: 1,
+          pan: 0,
+          note,
+        });
+      });
+      const w = Math.round(RATE * LOUD_SEC);
+      let loud = 0;
+      for (let i = WINDOW_SEC * RATE; i + w <= data.length; i += w >> 2) {
+        let s = 0;
+        for (let j = i; j < i + w; j++) s += data[j] ** 2;
+        loud = Math.max(loud, s / w);
+      }
+      return 10 * Math.log10(loud);
+    };
+    const octave = CONFIG.BASSIST.OCTAVE;
+    const his = {};
+    for (const d of ['b3', '4', '5']) {
+      his[`bassPluck ${d}`] = await loudest('bassPluck', [d, octave]);
+    }
+    his.bassSlap = await loudest('bassSlap', ['b7', octave]);
+    return { humDb, his };
+  });
+  console.log('the bassist over the hum at level 4, dB:', levels);
+  for (const [name, db] of Object.entries(levels.his)) {
+    expect(db - levels.humDb, name).toBeGreaterThanOrEqual(HUM_MARGIN_DB);
+  }
+});
