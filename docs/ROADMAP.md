@@ -85,6 +85,16 @@ Calls and smaller work:
   - the "uh oh" winning over a glance (`react.turn ??`) is untested;
   - no test that an elbow doesn't also stamp the shove's lunge;
   - `CHARGE_BEATS` must be whole bars for the even-bar grid, and `config.js` doesn't say so.
+- **build: the bassist's deferred minors** (its review round, 2026-10-12):
+  - a bomb-killed bassist's twang is a tone, rounded to its nearest eighth, while his slack starts at the bang's exact time (up to about 125 ms apart after a 150 ms hitch);
+  - a shot note's burst flash shows about 25 ms plus the output latency before its b7 is heard;
+  - a shot note with no beat clock would hang forever (no route in the game reaches it);
+  - `playLets`' comment says nothing sounds off its let, but a let 22-83 ms late plays at once (the game's general rule);
+  - `Bassist.js` defaults the beat with `?? 500` (`player.js` has `DEFAULT_BEAT_MS`); the flash's seed has inline 0.37 and 0.11;
+  - `drawBassNote` sets the trail's fill before its `ctx.save`;
+  - comments out of place: `Instruments.js`'s "Every synth by name" sits on `fm()`; in `beat-assertions.js` the stabber's and tank's sit above the bassist's recorder; `ARCHITECTURE.md`'s checklist still says four renderers cache sprites;
+  - untested: the death's `startsAt` heard-latency offset; the burst's softening at `AND_AT` 0.75 sits on `RUN_GAP_BEATS` (1 grid pair in 2400 unsoftened);
+  - test tidiness: tests restore `AND_AT` in their bodies, not `afterEach`; `HeroShot.test.js` spreads `STRAIGHT_HERO_GRID` twice.
 - **check: #87's stabber minors:**
   - a dead `'stabber-miss'` route;
   - duplicated helpers;
