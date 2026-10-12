@@ -21,7 +21,6 @@ import {
   calculateVolumeForPosition,
   distanceShare,
 } from './audio/SpatialAudio.js';
-import { applyBeatTremolo as applyBeatTremoloEffect } from './audio/BeatTremolo.js';
 import {
   drawActiveTexts,
   isWaiting,
@@ -72,6 +71,8 @@ const CENTS_PER_OCTAVE = 1200;
 // A tone starts at most this late (playTone), and a seeded synth by its seed
 // (playSynth), so copies don't add in phase
 const MAX_START_OFFSET_SEC = 0.005;
+// A tremolo swings its tone's gain this far either way of its level
+const TREMOLO_DEPTH = 0.5;
 // A seed times this, mod 1, is all but independent of the seed's top bits
 const SEED_SCRAMBLE = 1009;
 // A hero shot this close (beats) to the last continues their run (heroRunLevel)
@@ -729,20 +730,32 @@ export class Audio {
     panNode.pan.setValueAtTime(pan, at);
 
     // Connect nodes - add reverb for ambient enemy sounds
-    const tremoloGain = ctx.createGain();
-    if (band) {
-      oscillator.connect(band);
-      band.connect(tremoloGain);
+    if (band) oscillator.connect(band);
+    const source = band ?? oscillator;
+    // A tremolo preset (the rusher's charge) wobbles at the beat's rate, a
+    // gain swung half its level either way, from the tone's start to its end
+    const beatClock = config.tremolo ? this.getContextValue('beatClock') : null;
+    let tremolo = null;
+    if (beatClock) {
+      tremolo = ctx.createGain();
+      const lfo = ctx.createOscillator();
+      const depth = ctx.createGain();
+      lfo.frequency.setValueAtTime(beatClock.bpm / 60, at);
+      depth.gain.setValueAtTime(TREMOLO_DEPTH, at);
+      lfo.connect(depth);
+      depth.connect(tremolo.gain);
+      source.connect(tremolo);
+      tremolo.connect(gainNode);
+      lfo.start(at);
+      lfo.stop(at + sec);
+      lfo.onended = () => {
+        lfo.disconnect();
+        depth.disconnect();
+      };
     } else {
-      oscillator.connect(tremoloGain);
+      source.connect(gainNode);
     }
-    tremoloGain.connect(gainNode);
     gainNode.connect(panNode);
-
-    if (config.tremolo) {
-      const beatClock = this.getContextValue('beatClock');
-      applyBeatTremoloEffect(this.audioContext, beatClock, tremoloGain, sec);
-    }
 
     // Check if this is an ambient enemy sound that should have reverb
     const isAmbientSound = AMBIENT_SOUNDS.has(soundName);
@@ -803,7 +816,7 @@ export class Audio {
         try {
           oscillator.disconnect();
           band?.disconnect();
-          tremoloGain.disconnect();
+          tremolo?.disconnect();
           gainNode.disconnect();
           panNode.disconnect();
           if (lowPassFilter) lowPassFilter.disconnect();
