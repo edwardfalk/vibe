@@ -49,3 +49,26 @@ describe('damage enemy shots do to the hero', () => {
     expect(Bullet.acquire(0, 0, 0, 8, 'enemy-grunt').damage).toBe(1);
   });
 });
+
+describe("the hero's accuracy", () => {
+  it('counts one hit for each of his bullets that lands', () => {
+    const enemy = {
+      type: 'grunt',
+      x: 0,
+      y: 0,
+      size: 30,
+      hitRadius: 15,
+      takeDamage: vi.fn(() => 'damaged'),
+    };
+    const gameState = { addShotHit: vi.fn() };
+    const bullets = [
+      Bullet.acquire(0, 0, 0, 8, 'player'),
+      Bullet.acquire(500, 500, 0, 8, 'player'),
+    ];
+    new CollisionSystem(
+      contextOf({ playerBullets: bullets, enemies: [enemy], gameState }),
+      { handleEnemyDeath: vi.fn() }
+    ).checkPlayerBulletsVsEnemies();
+    expect(gameState.addShotHit).toHaveBeenCalledTimes(1);
+  });
+});

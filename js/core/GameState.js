@@ -52,6 +52,7 @@ export class GameState {
     this.killStreak = 0;
     this.totalKills = 0;
     this.shotsFired = 0;
+    this.shotsHit = 0; // his bullets that landed, for the accuracy
 
     // High score write debounce
     this._highScoreDirty = false;
@@ -90,6 +91,10 @@ export class GameState {
 
   addShotFired() {
     this.shotsFired++;
+  }
+
+  addShotHit() {
+    this.shotsHit++;
   }
 
   // Level progression
@@ -262,6 +267,7 @@ export class GameState {
     this.killStreak = 0;
     this.totalKills = 0;
     this.shotsFired = 0;
+    this.shotsHit = 0;
     this._flushHighScore();
     this.highScoreAtRunStart = this.highScore;
 
@@ -350,7 +356,7 @@ export class GameState {
   // Getters for computed values
   getAccuracy() {
     return this.shotsFired > 0
-      ? Math.round((this.totalKills / this.shotsFired) * 100)
+      ? Math.round((this.shotsHit / this.shotsFired) * 100)
       : 0;
   }
 

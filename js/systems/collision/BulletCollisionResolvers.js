@@ -31,6 +31,7 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
   // Read before damage is applied
   const enemyType = enemy.type;
 
+  gameState?.addShotHit();
   // Damage enemy (pass bullet angle for knockback)
   const result = enemy.takeDamage(bullet.damage, bullet.angle);
 

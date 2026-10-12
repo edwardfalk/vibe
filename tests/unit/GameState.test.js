@@ -337,10 +337,16 @@ describe('GameState', () => {
     expect(gs.gameState).toBe('playing');
   });
 
-  it('getAccuracy calculates correctly', () => {
+  it("accuracy is the hero's shots that landed, whatever else kills", () => {
     gs.shotsFired = 10;
-    gs.totalKills = 3;
+    gs.addShotHit();
+    gs.addShotHit();
+    gs.addShotHit();
+    // A bomb's or a tank ball's kills are not his shots
+    for (let i = 0; i < 8; i++) gs.addKill();
     expect(gs.getAccuracy()).toBe(30);
+    gs.restart();
+    expect(gs.shotsHit).toBe(0);
   });
 
   it('getAccuracy returns 0 with no shots', () => {
