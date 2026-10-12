@@ -140,6 +140,13 @@ Calls and smaller work:
 
 ## Tests and tooling
 
+- **build: the 2026-10-12 audit's smaller leftovers** (its fixes are PR `audit-fixes`):
+  - an aggressive line's bubble shakes with `random()` while drawn, so it jitters through a pause and draws the replay's random numbers, as enemies' hit shakes did;
+  - each enemy type calls `keepInWorld()` after `super.update()`; one call in `BaseEnemy.update` would do (keep the rusher's own while `Rusher.fuse.test.js` calls his behaviour step directly);
+  - no test presses an arrow key into the aim flags or checks that a window blur clears them;
+  - `Audio` keeps fields nothing reads (`p`, `volume`, the one-key `effects`), `update()` only calls `updateTexts()`, and `speechEnabled` always follows `enabled`;
+  - about a dozen names are exported but only used in their own file.
+
 - **build: fail on console errors during real play.** `playtest.js` only counts them, so a sound that breaks in play leaves every suite green. (#94)
 - **build: one shared fake-audio helper for the unit tests.** Eight test files each define their own; `tests/unit/helpers/fakeAudio.js` exists now (`StabberDeath.test.js` and `DeathSounds.test.js` use it): move the others onto it.
 - **check: a known flake under full-suite load:** "Held keyboard fire lands on eighth notes". (The kick-lock check, the other one, failed about 1 run in 10 on the grunts' random skips; it now plants a swarm held still with a clear line, and passed 30 runs out of 30 alone on the desktop, 2026-10-10 and 11.)
