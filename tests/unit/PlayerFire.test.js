@@ -106,8 +106,9 @@ describe('held fire on the hero grid', () => {
     CONFIG.SWING.AND_AT = andAt;
   });
 
-  // Holds fire from beat 2.9 to 8 at 60 fps; the beat positions he fired at
-  function holdThroughABar({ swing, at = andAt }) {
+  // Holds fire from beat 2.9 to 8 at `fps`, in the game loop's order (the
+  // player's update, then his shot); the beat positions he fired at
+  function holdThroughABar({ swing, at = andAt, fps = 60 }) {
     globalThis.window = { playerIsShooting: true };
     CONFIG.SWING.AND_AT = at;
     const ahead = CONFIG.BEAT_CLOCK.AHEAD_MS / 1000;
@@ -125,37 +126,45 @@ describe('held fire on the hero grid', () => {
       shots.push(clock.getBeatPosition());
       return fire(held);
     };
-    const frameMs = 1000 / 60;
-    for (let i = 0; i < 500 && clock.getBeatPosition() < 8; i++) {
-      player.shoot();
+    const frameMs = 1000 / fps;
+    for (let i = 0; i < 1000 && clock.getBeatPosition() < 8; i++) {
       ctx.currentTime += frameMs / 1000;
       player.update(frameMs);
+      player.shoot();
     }
     return shots.filter((b) => b >= 4 - 0.04 && b < 8 - 0.04);
   }
 
-  // Each shot within the 20 ms window (0.04 beat) of 0 or `and` in its beat
-  const onGrid = (shots, and) =>
+  // Each shot within the eighth's window (0.04 beat), or a frame late (a
+  // queued shot fires on the first frame after its eighth), of 0 or `and`
+  const onGrid = (shots, and, fps = 60) =>
     shots.every((b) => {
+      const slack = Math.max(0.04, 1000 / fps / 500);
       const f = b - Math.round(b);
       const g = b - Math.floor(b) - and;
-      return Math.abs(f) <= 0.04 || Math.abs(g) <= 0.04;
+      return Math.abs(f) <= slack || Math.abs(g) <= slack;
     });
 
-  it.each([2 / 3, 0.75])(
-    'swung at %s: 8 shots a bar, on 0 and the let',
-    (at) => {
-      const shots = holdThroughABar({ swing: true, at });
+  // 30 fps: frames miss the eighth's window, so the queued shot carries it
+  it.each([
+    [2 / 3, 60],
+    [0.75, 60],
+    [2 / 3, 30],
+    [0.75, 30],
+  ])('swung at %s, %s fps: 8 shots a bar, on 0 and the let', (at, fps) => {
+    const shots = holdThroughABar({ swing: true, at, fps });
+    expect(shots).toHaveLength(8);
+    expect(onGrid(shots, at, fps)).toBe(true);
+  });
+
+  it.each([60, 30])(
+    'straight, %s fps: 8 shots a bar, on 0 and 0.5, as today',
+    (fps) => {
+      const shots = holdThroughABar({ swing: false, fps });
       expect(shots).toHaveLength(8);
-      expect(onGrid(shots, at)).toBe(true);
+      expect(onGrid(shots, 0.5, fps)).toBe(true);
     }
   );
-
-  it('straight: 8 shots a bar, on 0 and 0.5, as today', () => {
-    const shots = holdThroughABar({ swing: false });
-    expect(shots).toHaveLength(8);
-    expect(onGrid(shots, 0.5)).toBe(true);
-  });
 });
 
 // Held fire's cooldown is the grid's: today's 200 ms on the straight grid,
