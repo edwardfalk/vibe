@@ -47,7 +47,6 @@ export function runSetup(p, arrays) {
 
   window.cameraSystem = new CameraSystem(p, gameContext);
   window.gameState = new GameState();
-  window.gameState.activeBombs = activeBombs;
   window.gameState.gameContext = gameContext; // restart() clears hitstop
 
   // The hero starts at the world's centre, where the camera starts
