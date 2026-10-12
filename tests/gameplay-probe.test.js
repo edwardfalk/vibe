@@ -1289,6 +1289,59 @@ test.describe('Gameplay Probes', () => {
     expect(r.straight).toBe(true);
   });
 
+  test("A bassist killed in a bar's last frame takes the swing with him at the bar line", async ({
+    page,
+  }) => {
+    await bootGame(page);
+    const r = await page.evaluate(async () => {
+      const clock = window.beatClock;
+      const hero = window.player;
+      hero.health = hero.maxHealth = 10000;
+      const frames = (n) =>
+        new Promise((done) => {
+          const start = window.frameCount;
+          const tick = () =>
+            window.frameCount >= start + n
+              ? done()
+              : window.requestAnimationFrame(tick);
+          tick();
+        });
+      const nextBar = () => (Math.floor(clock.getBeatPosition() / 4) + 1) * 4;
+      const b = window.spawnSystem.createEnemy(
+        hero.x + 260,
+        hero.y,
+        'bassist',
+        hero.p
+      );
+      b.isSpawning = false;
+      window.enemies.push(b);
+      const swingBar = nextBar();
+      while (clock.getBeatPosition() < swingBar + 0.2) await frames(1);
+      const out = { swung: clock.swingOn };
+      // The clock's time held still, so the kill lands in the frame just
+      // before a bar line and the bar line in the frame after
+      const barMs = clock.startTime + nextBar() * clock.beatInterval;
+      let now = barMs - 5;
+      clock._now = () => now;
+      const spawnUpdate = window.spawnSystem.update.bind(window.spawnSystem);
+      let armed = true;
+      window.spawnSystem.update = () => {
+        if (armed) b.markedForRemoval = true; // killed mid-frame, any route
+        armed = false;
+        spawnUpdate();
+      };
+      await frames(1);
+      out.killed = !armed;
+      now = barMs + 50;
+      await frames(1);
+      out.straight = !clock.swingOn;
+      return out;
+    });
+    expect(r.swung).toBe(true);
+    expect(r.killed).toBe(true);
+    expect(r.straight).toBe(true);
+  });
+
   test('Bullet collision kills enemy and awards score', async ({ page }) => {
     await bootGame(page);
 

@@ -97,8 +97,6 @@ function updateGame(p) {
   // Update BeatClock every frame for accurate rhythm timing
   if (window.beatClock && typeof window.beatClock.update === 'function') {
     window.beatClock.update();
-    // The hero's fire and steps swing while a bassist is about
-    window.beatClock.wantSwing(bassistAbout(enemies));
   }
 
   // Update beat visualizer
@@ -210,6 +208,11 @@ function updateGame(p) {
       });
     }
   }
+
+  // The hero's fire and steps swing while a bassist is about. Said after
+  // this frame's last kill and spawn, so a bar line in the next update
+  // applies who is about now
+  window.beatClock?.wantSwing(bassistAbout(enemies));
 
   // Update audio system
   if (window.audio) {
