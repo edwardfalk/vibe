@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   drawStabber,
   stabberBody,
+  SHELL_OUTLINE,
   drawLane,
   STABBER_REACH_PX,
   RING_R_PX,
@@ -214,5 +215,22 @@ describe('his body, as numbers', () => {
     const spy = vi.spyOn(Math, 'random');
     for (const look of Object.values(LOOKS)) stabberBody(look);
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('his frill', () => {
+  it('stands out round his shell: every outline normal points away from its middle', () => {
+    const { x, y, nx, ny } = SHELL_OUTLINE;
+    expect(x.length).toBeGreaterThan(20);
+    for (let i = 0; i < x.length; i++) {
+      expect(nx[i] * x[i] + ny[i] * y[i], `sample ${i}`).toBeGreaterThan(0);
+    }
+  });
+
+  it('stands out nowhere at his nose and all along his flanks', () => {
+    const { x, taper } = SHELL_OUTLINE;
+    const nose = x.indexOf(Math.max(...x));
+    expect(taper[nose]).toBe(0);
+    expect(Math.max(...taper)).toBe(1);
   });
 });

@@ -283,11 +283,22 @@ const HTAPER = new Float32Array(NH);
     const tx = HX[b] - HX[a];
     const ty = HY[b] - HY[a];
     const l = Math.hypot(tx, ty) || 1;
-    HNX[i] = -ty / l; // clockwise on screen (y down): the outward side
-    HNY[i] = tx / l;
+    // The outline runs clockwise on screen (y down), nose, right flank, rear,
+    // left flank: its outward side is the tangent turned a quarter back
+    HNX[i] = ty / l;
+    HNY[i] = -tx / l;
     HTAPER[i] = smooth(clamp01((NOSE - 0.5 - HX[i]) / 6)); // none at his nose
   }
 }
+
+/** His shell's outline, sampled (units): points, outward normals, and how far the frill stands out at each (none at his nose) */
+export const SHELL_OUTLINE = Object.freeze({
+  x: HX,
+  y: HY,
+  nx: HNX,
+  ny: HNY,
+  taper: HTAPER,
+});
 
 // ---- live parts ----
 let ctx = null;
