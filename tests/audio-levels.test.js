@@ -299,8 +299,15 @@ async function overKick(page, tiers) {
       const { BeatTrack, clickNoise } = await import('/js/audio/BeatTrack.js');
       const { SOUND_CONFIG } = await import('/js/audio/SoundConfig.js');
       const { bangSound } = await import('/js/audio/BombSounds.js');
-      const { tankAir, plateClang, gruntPop, lastBreath } =
-        await import('/js/audio/DeathSounds.js');
+      const {
+        tankAir,
+        plateClang,
+        gruntPop,
+        lastBreath,
+        STABBER_DEATH_SOUNDS,
+      } = await import('/js/audio/DeathSounds.js');
+      const { stabberDeathRecord } =
+        await import('/js/entities/StabberDeath.js');
       const { crashNoise } = await import('/js/audio/CrashSynth.js');
       const { STRING_PARTS } = await import('/js/audio/StabberStrings.js');
       const { airTiming, airDarts } = await import('/js/entities/TankDeath.js');
@@ -395,6 +402,47 @@ async function overKick(page, tiers) {
       const steps = CONFIG.TANK.CHARGE_BEATS;
       // Each case is its play, or [play, seconds]; the tiers' members are the
       // spec's section 1
+      // A stabber's death in `style`, on the grid at AT, as the game plays it
+      const stabberDeath = (ctx, out, style, hot) =>
+        STABBER_DEATH_SOUNDS[style](ctx, out, {
+          at: AT,
+          record: stabberDeathRecord({
+            style,
+            linger: CONFIG.DEATHS.LINGER,
+            beatSec: 0.5,
+            origin: AT,
+            at: AT,
+            pose: {
+              t: 0,
+              beatSec: 0.5,
+              beats: 0,
+              eighth: 0,
+              kick: 0,
+              aim: 0,
+              toHero: 0,
+              vx: 0,
+              vy: 0,
+              age: 1,
+              windup: null,
+              lunge: hot ? { k: 0.2 } : null,
+              recover: null,
+              stunned: null,
+              hit: 0,
+              hitAge: Infinity,
+              hitDir: 0,
+              push: 0,
+              seed: 0.5,
+              reach: 42,
+            },
+            scale: 1,
+            dir: 0,
+            blast: false,
+            seed: 0.5,
+          }),
+          noise: crashNoise(ctx),
+          volume: CONFIG.DEATHS.STABBER_VOLUME,
+          pan: 0,
+        });
       const CASES = {
         drums: { rusherCrash: preset('rusherCrash') },
         band: {
@@ -462,9 +510,7 @@ async function overKick(page, tiers) {
               pan: 0,
             }),
           ...Object.fromEntries(
-            ['gruntOw', 'enemyFrying', 'stabberOhNo', 'rusherOhNo'].map(
-              (name) => [name, preset(name)]
-            )
+            ['gruntOw', 'enemyFrying'].map((name) => [name, preset(name)])
           ),
         },
         events: {
@@ -473,7 +519,6 @@ async function overKick(page, tiers) {
               'levelUp',
               'gameOver',
               'killStreak',
-              'explosion',
               'tankBallKill',
               'tankShove',
               'shieldBreak',
@@ -517,6 +562,15 @@ async function overKick(page, tiers) {
               }),
             3,
           ],
+          // A stabber's death, each style, killed stalking and white-hot
+          ...Object.fromEntries(
+            Object.keys(STABBER_DEATH_SOUNDS).flatMap((style) =>
+              [false, true].map((hot) => [
+                `stabber ${style}${hot ? ' white-hot' : ''}`,
+                [(ctx, out) => stabberDeath(ctx, out, style, hot), 2],
+              ])
+            )
+          ),
         },
       };
       const kick = await loudest((ctx, out) => {

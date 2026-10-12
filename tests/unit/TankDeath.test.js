@@ -76,7 +76,6 @@ function deathWorld(t) {
   };
   const explosionManager = {
     fragmentExplosions: [],
-    addFragmentExplosion: vi.fn(),
   };
   const cameraSystem = { addShake: vi.fn() };
   const values = {
@@ -97,7 +96,7 @@ function deathWorld(t) {
 describe("when the tank's death starts", () => {
   it('with the bang, when the bomb killed him: at once, his sound now', () => {
     const w = deathWorld(1.13);
-    w.kill({ dir: 0, blast: true, bomb: true });
+    w.kill({ dir: 0, blast: true, bomb: true, at: 1.13 });
     const [death] = w.explosionManager.fragmentExplosions;
     expect(death).toBeInstanceOf(TankDeath);
     expect(death.startsAt).toBeCloseTo(1.13 + 0.03, 9); // when it is heard
@@ -107,6 +106,13 @@ describe("when the tank's death starts", () => {
     // The picture darts on the same dice as the squeal
     expect(darts).toEqual(airDarts(death.timing, w.tank.lookSeed));
     expect(darts).toEqual(airDarts(death.timing, death.seed));
+  });
+
+  it("on the next eighth when the bomb's bang played nothing (no sound, no time)", () => {
+    const w = deathWorld(1.13);
+    w.kill({ dir: 0, blast: true, bomb: true, at: null });
+    const at = popTime(1.13, audioClock(1.13));
+    expect(w.audio.playTankDeath.mock.calls[0][2]).toBeCloseTo(at, 9);
   });
 
   it('on the next eighth for any other kill (a shot, a cloud, a stab)', () => {
@@ -123,10 +129,9 @@ describe("when the tank's death starts", () => {
     expect(w.audio.playTankDeath.mock.calls[1][2]).toBeCloseTo(at, 9);
   });
 
-  it('with no burst, no cloud, no old "oh no" and no extra explosion; a small shake', () => {
+  it('with no cloud, no old "oh no" and no extra explosion; a small shake', () => {
     const w = deathWorld(1.13);
     w.kill({ dir: 0 });
-    expect(w.explosionManager.addFragmentExplosion).not.toHaveBeenCalled();
     const sounds = w.audio.playSound.mock.calls.map(([k]) => k);
     expect(sounds).not.toContain('tankOhNo');
     expect(sounds).not.toContain('explosion');

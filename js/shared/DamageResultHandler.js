@@ -47,11 +47,6 @@ export function handleDamageResult(result, enemy, ctx) {
     // Death effects (explosion + type-specific sound)
     if (ctx.onDeath) ctx.onDeath(enemy, ctx.blow);
 
-    // Extra audio on death (e.g. friendly-fire explosion sound)
-    if (ctx.deathSound && ctx.audio) {
-      ctx.audio.playSound(ctx.deathSound, enemy.x, enemy.y);
-    }
-
     enemy.markedForRemoval = true;
 
     // Scoring: either full kill-feedback or simple addKill + addScore

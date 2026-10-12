@@ -3,7 +3,6 @@ import { RusherBlast } from './RusherBlast.js';
 import { HazardCloud } from './HazardCloud.js';
 import { BombSmoke } from './BombSmoke.js';
 import { BombBlast } from './BombBlast.js';
-import { EnemyFragmentExplosion } from './EnemyFragmentExplosion.js';
 import { createContextAccessor } from '../../shared/ContextAccessor.js';
 import { CONFIG } from '../../config.js';
 
@@ -65,21 +64,6 @@ export class ExplosionManager {
         sound: audio?.playBombCloud?.(x, y, seed) ?? null,
       })
     );
-  }
-
-  addFragmentExplosion(x, y, enemy) {
-    const fragmentExplosion = new EnemyFragmentExplosion(x, y, enemy);
-    const beatClock = this.getContextValue('beatClock');
-    const beatIntensity = beatClock ? beatClock.getBeatIntensity(6) : 0;
-    if (beatIntensity > 0.3) {
-      // Boost fragment speeds on beat
-      fragmentExplosion.fragments.forEach((f) => {
-        f.vx *= 1 + beatIntensity * 0.3;
-        f.vy *= 1 + beatIntensity * 0.3;
-      });
-    }
-
-    this.fragmentExplosions.push(fragmentExplosion);
   }
 
   /**

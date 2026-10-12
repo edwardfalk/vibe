@@ -54,6 +54,7 @@ import {
   lastBreath,
   tankAir,
   plateClang,
+  STABBER_DEATH_SOUNDS,
   GRUNT_POP_SEC,
 } from './audio/DeathSounds.js';
 import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
@@ -543,6 +544,26 @@ export class Audio {
       timing,
       darts,
     });
+  }
+
+  /**
+   * A stabber's death (DeathSounds.js) from (x, y) at audio time `at`, in
+   * its record's style, at CONFIG.DEATHS.STABBER_VOLUME
+   */
+  playStabberDeath(x, y, at, record) {
+    if (!this.ensureAudioContext()) return;
+    const { near, pan } = this.placement(x, y);
+    STABBER_DEATH_SOUNDS[record.style](
+      this.audioContext,
+      this.bus('feedback'),
+      {
+        at,
+        record,
+        noise: crashNoise(this.audioContext),
+        volume: CONFIG.DEATHS.STABBER_VOLUME * near,
+        pan,
+      }
+    );
   }
 
   /** A tank's plate breaking (DeathSounds.js) at (x, y), now (beatTiming) */

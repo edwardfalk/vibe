@@ -287,15 +287,20 @@ describe('drawing a grunt', () => {
   });
 
   it('keeps its health bar clear of a whine, and no higher than it needs', () => {
-    // A whiner never fires on that snare (GruntSwarm): it hops the small hop
+    // A whiner never fires on that snare (GruntSwarm): it hops the small hop.
+    // His sway comes from his look's seed: these include the seed that comes
+    // closest (0.775, at the defaults), not a random one
     for (const look of LOOKS) {
       lookOf(look);
       let closest = Infinity;
-      for (let ms = 0; ms <= 400; ms += 5) {
-        const g = gruntWith(clockAt(17 + ms / 500));
-        g.aimAngle = 0.4;
-        g.chatter = { beat: 17, voice: 'whine' };
-        closest = Math.min(closest, barGap(g));
+      for (const seed of [0.1, 0.4, 0.775]) {
+        for (let ms = 0; ms <= 400; ms += 5) {
+          const g = gruntWith(clockAt(17 + ms / 500));
+          g.lookSeed = seed;
+          g.aimAngle = 0.4;
+          g.chatter = { beat: 17, voice: 'whine' };
+          closest = Math.min(closest, barGap(g));
+        }
       }
       expect(closest).toBeGreaterThan(0);
       // 4.4 px measured at the defaults: it doesn't float far above it

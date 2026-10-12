@@ -8,6 +8,7 @@ import { prepareHeroLook } from './entities/PlayerRenderer.js';
 import { prepareDudeDeath } from './entities/DudeDeath.js';
 import { prepareBombSmoke } from './effects/explosions/BombSmoke.js';
 import { prepareTankDeath } from './entities/TankDeath.js';
+import { prepareStabberDeath } from './entities/StabberDeath.js';
 import { ExplosionManager } from './effects/explosions/ExplosionManager.js';
 import { GameState } from './core/GameState.js';
 import { CameraSystem } from './systems/CameraSystem.js';
@@ -20,6 +21,7 @@ import { BeatClock } from './audio/BeatClock.js';
 import { BeatTrack } from './audio/BeatTrack.js';
 import { RhythmFX } from './RhythmFX.js';
 import { GameContext } from './core/GameContext.js';
+import { CONFIG } from './config.js';
 import VisualEffectsManager from './effects/VisualEffectsManager.js';
 import { FloatingTextManager } from './effects/FloatingTextManager.js';
 import { EnemyDeathHandler } from './systems/combat/EnemyDeathHandler.js';
@@ -54,6 +56,7 @@ export function runSetup(p, arrays) {
   prepareDudeDeath(p, player); // and his death's
   prepareBombSmoke(p); // the bomb's cloud's sheets
   prepareTankDeath(p); // the tank's, and his death's
+  prepareStabberDeath(p, CONFIG.STABBER_LOOK.ART_SCALE); // the stabber's death's
   window.player = player;
 
   window.enemies = enemies;

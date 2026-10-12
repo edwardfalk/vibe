@@ -66,8 +66,10 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
  */
 export function handleTankEnergyBallHit(bullet, enemy, deps) {
   // Another tank only takes a dent, through his armour, and the ball is spent
-  // on him; any other alien it meets dies outright
-  if (enemy.type === 'tank') {
+  // on him; so is it on a rusher, whom it lights as any hit does (he never
+  // dies of damage: he blows on his beat); any other alien it meets dies
+  // outright
+  if (enemy.type === 'tank' || enemy.type === 'rusher') {
     handleRegularEnemyBulletHit(
       bullet,
       enemy,
@@ -88,15 +90,11 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
   const energyCost =
     enemy.maxHealth > 0 ? (enemy.health / enemy.maxHealth) * 30 : 0;
 
-  // Kill the enemy and create explosion
+  // Kill the enemy: his own death
   handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y, { dir: bullet.angle });
 
   if (audio) {
     audio.playSound('enemyFrying', enemy.x, enemy.y);
-    // A grunt's death is its pop, on the beat
-    if (enemy.type !== 'grunt') {
-      audio.playSound('explosion', enemy.x, enemy.y);
-    }
   }
 
   enemy.markedForRemoval = true;
@@ -159,9 +157,6 @@ export function handleRegularEnemyBulletHit(
       gameState,
       onDeath: (e) =>
         handleEnemyDeath(e, e.type, e.x, e.y, { dir: bullet.angle }),
-      // A grunt's or a tank's death has its own sound, on the beat
-      deathSound:
-        enemy.type === 'grunt' || enemy.type === 'tank' ? null : 'explosion',
       scorePoints: 8,
       hitX: bullet.x,
       hitY: bullet.y,

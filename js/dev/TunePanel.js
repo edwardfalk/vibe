@@ -6,7 +6,8 @@
  * while paused box (ticked here: the beat plays on while paused), the hero's
  * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK),
  * the deaths (DEATHS): the grunt's pop and the Dude's last breath, how
- * long remains stay, and his death scene's length and camera zoom, and the
+ * long remains stay, how the stabber dies, and the Dude's death scene's
+ * length and camera zoom, and the
  * chatter (SPEECH_SETTINGS): the gap between lines, how often each enemy
  * speaks, and the share of the tank's charges he calls out, and the rusher's
  * voice (SPEECH.SPEAKERS.rusher).
@@ -23,6 +24,7 @@ import {
   GRUNT_SHOT_SOUNDS,
   CHATTER_CHOICES,
 } from '../audio/Instruments.js';
+import { STABBER_STYLES } from '../entities/StabberDeath.js';
 
 // The rusher's voices from the 2026-10-12 voice studies, to try in play:
 // the singer is the game's, the old one his voice before it.
@@ -263,6 +265,8 @@ const KNOBS = [
   [DEATHS, 'GRUNT_VOLUME', [0, 3, 0.05]],
   [DEATHS, 'BREATH_VOLUME', [0, 3, 0.05]],
   [DEATHS, 'LINGER', [0.5, 2, 0.1]],
+  [DEATHS, 'STABBER_STYLE', STABBER_STYLES],
+  [DEATHS, 'STABBER_VOLUME', [0, 3, 0.05]],
   [DEATHS, 'SCENE_BEATS', [4, 8, 1]],
   [DEATHS, 'SCENE_ZOOM', [1, 2, 0.05]],
   [DEATHS, 'TANK_VOLUME', [0, 3, 0.05]],

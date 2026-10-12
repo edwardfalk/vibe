@@ -11,7 +11,6 @@ import {
   TANK_CHARGING,
 } from '../audio/DialogueLines.js';
 import {
-  TANK_COLORS,
   tankMuzzle,
   tankCannon,
   turnStep,
@@ -57,7 +56,6 @@ class Tank extends BaseEnemy {
       size: TANK_SIZE,
       health: CONFIG.TANK.HEALTH,
       speed: CONFIG.TANK.DRIFT_PX_S / FRAMES_PER_SEC,
-      color: p.color(...TANK_COLORS.skin),
     };
 
     super(x, y, 'tank', tankConfig, p, audio);

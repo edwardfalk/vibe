@@ -68,7 +68,6 @@ function deathWorld(t = 0, enemies = []) {
   };
   const explosionManager = {
     fragmentExplosions: [],
-    addFragmentExplosion: vi.fn(),
   };
   const values = { beatClock: clock, audio, explosionManager, enemies };
   const handler = new EnemyDeathHandler({ get: (k) => values[k] });
@@ -95,8 +94,7 @@ describe("a grunt's death", () => {
       0.37,
       1 // the chord's first pop, at full level
     );
-    // Today's burst and blip are gone for it
-    expect(w.explosionManager.addFragmentExplosion).not.toHaveBeenCalled();
+    // No other sound for it
     expect(w.audio.playSound).not.toHaveBeenCalled();
   });
 
@@ -231,16 +229,6 @@ describe("a grunt's death", () => {
     expect([blown.dir, blown.blast]).toEqual([2, true]);
     expect([left.dir, left.blast]).toEqual([Math.PI, false]);
     expect(right.dir).toBe(0);
-  });
-
-  it('leaves the stabber and the rusher their burst and sounds (the tank has his own death)', () => {
-    const w = deathWorld(1.13);
-    for (const type of ['stabber', 'rusher']) {
-      w.kill({ type, x: 0, y: 0 });
-    }
-    expect(w.explosionManager.addFragmentExplosion).toHaveBeenCalledTimes(2);
-    expect(w.audio.playGruntPop).not.toHaveBeenCalled();
-    expect(w.deaths()).toHaveLength(0);
   });
 
   describe('its neighbours', () => {
@@ -563,7 +551,7 @@ describe('every way a grunt dies hands its death the blow', () => {
       const bangs = audio.playSound.mock.calls.filter(
         ([key]) => key === 'explosion'
       );
-      expect(bangs).toHaveLength(type === 'grunt' ? 0 : 1);
+      expect(bangs).toHaveLength(0);
     }
   });
 

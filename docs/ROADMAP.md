@@ -50,7 +50,7 @@ Calls and smaller work:
 - **call: tune by eye on `?tune`, and put the values in `config.js`:** the grunt (`GRUNT_LOOK`, with his chatter's spin and stretch and his swarm's lean); the tank; the rusher (boost, turn, fuse, push, size, crash volume). No values have come back for any of them.
 - **check: other sounds with no cause on screen?** Edward: "it should be visible what causes the sounds the player hears". The grunts' chatter and move calls show now; the other enemies' chatter, calls and speech were not checked.
 - **call: the stabber's play-test** (#87). Points to judge:
-  - does he read as a beetle or a crab from above, and how is the magenta, his gaze at game size, his glow;
+  - does he read as a beetle or a crab from above, and how is the magenta, his frill now showing, his gaze at game size, his glow;
   - the strings' levels, alone and two or three at once (raised 1.4–4.7 dB by the mix pass);
   - ten shots to kill;
   - the gold flakes after a lunge.
@@ -84,8 +84,16 @@ Calls and smaller work:
 
 ## Deaths and effects
 
-- **build: the stabber's own death.** He still bursts into the generic recoloured chunks.
-- **build, after it: delete `EnemyFragmentExplosion`.** Only the stabber, and a rusher dying without his crash, still use it.
+- **call: the stabber's death, by eye and ear on `?tune`:** Gold shatter is the default (Edward's pick at the play test, for its sound), Empty shell the other `DEATHS.STABBER_STYLE`. Its level (`DEATHS.STABBER_VOLUME`; both styles sit about 2 dB over the kick, beside the tank's death). The port kept the studies page's small choices, each Edward's to change:
+  - the shell's spike splits with the shell;
+  - its glide falls almost an octave, onto the hum's fifth;
+  - the shatter's spike turns and jabs at the hero before it crumbles (the designer's own idea);
+  - the shatter's magenta bits among the gold plates.
+- **call: a `?tune` knob for the stabber's frill** (0 hides it), if it is too much now that it shows. A proposal from the stabber death spec's review.
+- **check: a death's sound can't stop the game.** `Audio.playStabberDeath` and `playTankDeath` have no try/catch, where `playSound` has one: a Web Audio throw (a non-finite time, a ramp to 0) would escape the kill before the dead enemy leaves play and stop p5's loop. No input reaches one today. From the stabber death's review round.
+- **test: the Empty shell's eye turns to the hero.** Nothing would notice it glaring along his turn at the kill instead: the shell keeps no state for the eye, so a test has to read where it is drawn. From the stabber death's review round.
+- **check: two stabber deaths at different `STABBER_LOOK.ART_SCALE`s** (the slider moved mid-fight) rebuild each other's sprites every frame until one ends: the sprite cache keeps one size a table.
+- **check: every death keeps the time it is heard from the kill:** a change in the audio latency or the beat clock's lead mid-death doesn't move its picture. A proposal from the stabber death spec's review, for all the deaths at once.
 - **build: a new look for a tank plate breaking.** Only its clang was redone (#92).
 - **build: #92's follow-ups:**
   - the smoke cloud's sound follows its picture at low frame rates;
@@ -137,7 +145,7 @@ Calls and smaller work:
 ## Tests and tooling
 
 - **build: fail on console errors during real play.** `playtest.js` only counts them, so a sound that breaks in play leaves every suite green. (#94)
-- **build: one shared fake-audio helper for the unit tests.** Nine test files each define their own.
+- **build: one shared fake-audio helper for the unit tests.** Eight test files each define their own; `tests/unit/helpers/fakeAudio.js` exists now (`StabberDeath.test.js` and `DeathSounds.test.js` use it): move the others onto it.
 - **check: a known flake under full-suite load:** "Held keyboard fire lands on eighth notes". (The kick-lock check, the other one, failed about 1 run in 10 on the grunts' random skips; it now plants a swarm held still with a clear line, and passed 30 runs out of 30 alone on the desktop, 2026-10-10 and 11.)
 - **check: "The sky draws in every state" failed once under full-suite load** on the desktop (2026-10-12, #100), message lost; it then passed 6 runs out of 6 alone and the full suite again. It wants a sky frame within each 300 ms window, which a loaded runner can miss.
 

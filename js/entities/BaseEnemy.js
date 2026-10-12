@@ -2,7 +2,6 @@ import { CONFIG } from '../config.js';
 import { random, sin, atan2, constrain } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import {
-  getEnemyColors,
   getGlowColorForType,
   getGlowSizeForType,
   drawEnemyHealthBar,
@@ -41,7 +40,6 @@ export class BaseEnemy {
     this.health = config.health;
     this.maxHealth = config.health;
     this.speed = config.speed;
-    this.bodyColor = config.color;
 
     // Movement and animation
     this.velocity = { x: 0, y: 0 };
@@ -76,16 +74,6 @@ export class BaseEnemy {
     this.audio = audio;
     this.context = config?.context ?? null;
     this.getContextValue = createContextAccessor(() => this.context);
-
-    this.initializeColors();
-  }
-
-  initializeColors() {
-    const colors = getEnemyColors(this.type, this.p);
-    this.skinColor = colors.skinColor;
-    this.helmetColor = colors.helmetColor;
-    this.weaponColor = colors.weaponColor;
-    this.eyeColor = colors.eyeColor;
   }
 
   /**

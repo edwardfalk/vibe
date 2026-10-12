@@ -1,5 +1,7 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { Rusher, strongBeatAfter } from '../../js/entities/Rusher.js';
+import { Bullet } from '../../js/entities/bullet.js';
+import { handleTankEnergyBallHit } from '../../js/systems/collision/BulletCollisionResolvers.js';
 import { DAMAGE_RESULT } from '../../js/shared/DamageResult.js';
 import { CONFIG } from '../../js/config.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
@@ -447,5 +449,37 @@ describe("the rusher's fuse", () => {
     for (let i = 0; i < 600; i++) {
       expect(r.updateSpecificBehavior(FAR, 0, FRAME_MS)).toBeNull();
     }
+  });
+});
+
+describe("a tank's ball", () => {
+  it('lights a rusher, as any hit does: no kill, no score, and the ball is spent on him', () => {
+    const w = fused();
+    w.step(12.2);
+    const handleEnemyDeath = vi.fn();
+    const gameState = { addKill: vi.fn(), addScore: vi.fn() };
+    const values = {
+      audio: w.audio,
+      gameState,
+      explosionManager: { addExplosion: vi.fn() },
+    };
+    const deps = { getContextValue: (k) => values[k], handleEnemyDeath };
+    const ball = Bullet.acquire(0, 0, 0, 2, 'enemy-tank');
+    handleTankEnergyBallHit(ball, w.r, deps);
+    expect(w.r.lit).not.toBeNull();
+    expect(w.r.markedForRemoval).toBe(false);
+    expect(handleEnemyDeath).not.toHaveBeenCalled();
+    expect(gameState.addKill).not.toHaveBeenCalled();
+    expect(gameState.addScore).not.toHaveBeenCalled();
+    expect(ball._remove).toBe(true);
+    const sounds = w.audio.playSound.mock.calls.map(([k]) => k);
+    expect(sounds).not.toContain('tankBallKill');
+    // Already lit, another ball leaves his fuse's beat as it was, and is spent
+    const { blastBeat } = w.r.lit;
+    w.step(13.1);
+    const again = Bullet.acquire(0, 0, 0, 2, 'enemy-tank');
+    handleTankEnergyBallHit(again, w.r, deps);
+    expect(w.r.lit.blastBeat).toBe(blastBeat);
+    expect(again._remove).toBe(true);
   });
 });

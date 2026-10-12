@@ -25,7 +25,7 @@ import { spriteParts, stamp } from './spriteCache.js';
 
 const PI = Math.PI;
 
-// His palette, [r, g, b]. His glow, death fragments, KILL! text and shot
+// His palette, [r, g, b]. His glow, death, KILL! text and shot
 // use it too, so it is frozen. Ink and the warning colours are the cast's.
 export const TANK_COLORS = Object.freeze(
   Object.fromEntries(

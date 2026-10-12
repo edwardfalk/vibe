@@ -14,8 +14,7 @@
 import { hz } from './Harmony.js';
 import { mulberry32 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
-import { placed } from './DeathSounds.js';
-import { disconnectWhenEnded } from './CrashSynth.js';
+import { placed, disconnectWhenEnded } from './CrashSynth.js';
 import { RING_LANDS_SEC } from '../effects/explosions/BombBlast.js';
 import { driveCurve } from './speech/effects.js';
 

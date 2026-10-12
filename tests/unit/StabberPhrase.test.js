@@ -541,6 +541,20 @@ describe('the stabber hit', () => {
     expect(s.takeDamage(5, 0, 'player_bullet')).toBe(DAMAGE_RESULT.DIED);
   });
 
+  it('a lethal hit leaves him as he was: before his lock it neither dazes nor pushes him', () => {
+    const { s, run } = shiv();
+    run(0, 700);
+    expect(s.state).toBe('windup');
+    // A shot's own damage: 1 gets through his armour, and his health lands on 0
+    s.health = 1;
+    expect(s.takeDamage(1, Math.PI / 2, 'player_bullet')).toBe(
+      DAMAGE_RESULT.DIED
+    );
+    expect(s.state).toBe('windup');
+    expect(s.pose().windup).not.toBeNull();
+    expect(s.push).toEqual({ x: 0, y: 0 });
+  });
+
   it('lethal damage kills him while dazed', () => {
     const { s, run } = shiv();
     run(0, 700);
@@ -630,7 +644,8 @@ describe('his strings', () => {
     const handle = s.tremolo;
     const values = {
       audio: { playSound: vi.fn() },
-      explosionManager: { addFragmentExplosion: vi.fn() },
+      beatClock: { nowSec: () => 1, startTime: 0, beatInterval: 500 },
+      explosionManager: { fragmentExplosions: [] },
       enemies: [],
     };
     new EnemyDeathHandler({ get: (k) => values[k] }).handleEnemyDeath(
