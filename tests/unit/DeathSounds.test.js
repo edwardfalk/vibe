@@ -12,6 +12,7 @@ import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { Audio } from '../../js/Audio.js';
 import { NOISE_SEC } from '../../js/audio/CrashSynth.js';
 import { fakeBuses } from './helpers/audioBuses.js';
+import { fakeAudio } from './helpers/fakeAudio.js';
 
 const DEATHS = { ...CONFIG.DEATHS };
 afterEach(() => {
@@ -19,47 +20,6 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// A Web Audio stand-in that records the nodes it makes and what is set on
-// their params
-function fakeAudio() {
-  const made = [];
-  const param = () => ({
-    value: 0,
-    setValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    setTargetAtTime: vi.fn(),
-  });
-  const node = (kind, extra = {}) => {
-    const n = {
-      kind,
-      connect: vi.fn((d) => d),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      ...extra,
-    };
-    made.push(n);
-    return n;
-  };
-  const ctx = {
-    currentTime: 2,
-    sampleRate: 8000,
-    state: 'running',
-    createStereoPanner: () => node('pan', { pan: param() }),
-    createBiquadFilter: () =>
-      node('filter', { frequency: param(), Q: param() }),
-    createGain: () => node('gain', { gain: param() }),
-    createOscillator: () =>
-      node('osc', { frequency: param(), detune: param() }),
-    createBufferSource: () => node('source'),
-    createBuffer: vi.fn((channels, length, rate) => {
-      const data = new Float32Array(length);
-      return { duration: length / rate, getChannelData: () => data };
-    }),
-  };
-  return { ctx, made };
-}
 const noise = { duration: 1.6 };
 const oscs = (made) => made.filter((n) => n.kind === 'osc');
 const sources = (made) =>
