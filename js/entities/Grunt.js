@@ -59,7 +59,6 @@ class Grunt extends BaseEnemy {
 
     // --- Its look (GruntRenderer.js) --------------------------
     this.facing = 1; // 1 faces right, -1 left; update() turns it
-    // BaseEnemy's random phase, so the look adds no random() call
     this.firedAt = null; // the clock's beat position when it last fired
     this.heldOnBeat = null; // the beat it last held its fire on after a warning
     this.chatter = null; // { beat, voice } of its last chatter, for its move
