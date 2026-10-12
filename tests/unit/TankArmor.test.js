@@ -188,3 +188,15 @@ describe('a plate breaking', () => {
     expect(sounds).not.toContain('explosion');
   });
 });
+
+describe("a tank's first frame", () => {
+  it('a hit before his first update stamps a real beat, as the other aliens do', () => {
+    // Spawning runs before the area damage in a frame: a cloud can tick on
+    // a tank that has not updated yet, and his flash must still show
+    const w = tankWorld();
+    w.at(4100);
+    const t = w.tank();
+    t.takeDamage(1, null, 'area');
+    expect(t.hitAt).toBeCloseTo(8.2, 6);
+  });
+});
