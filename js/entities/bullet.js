@@ -3,7 +3,7 @@ import { sin, cos, dist } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import { GRUNT_COLORS } from './GruntRenderer.js';
 import { TANK_COLORS, drawTankBall } from './TankRenderer.js';
-import { NOTE_OWNER, NOTE_GLOW_RGB, drawBassNote } from './BassNote.js';
+import { NOTE_OWNER, NOTE_GLOW_RGB, SWELL, drawBassNote } from './BassNote.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
@@ -58,6 +58,8 @@ export class Bullet {
     this.owner = owner; // 'player' or 'enemy'
     this.ownerId = undefined;
     this.energy = undefined;
+    this.hung = null; // a bassist's note the hero shot (BassNote.hangNote)
+    this.swell = 0;
     this._inPool = false;
     this._remove = false; // a hit marks it; a recycled bullet starts clean
 
@@ -167,7 +169,7 @@ export class Bullet {
     } else if (this.owner === NOTE_OWNER) {
       p.blendMode(p.BLEND);
       p.rotate(-this.angle); // a note stands upright
-      drawBassNote(p, this.size);
+      drawBassNote(p, this.size * (1 + SWELL * this.swell));
     } else {
       // A grunt's shot: a coral line with a white core
       p.stroke(...GRUNT_COLORS.shotCore, 210);

@@ -14,7 +14,7 @@ import {
   handleTankEnergyBallHit,
   handleRegularEnemyBulletHit,
 } from './collision/BulletCollisionResolvers.js';
-import { NOTE_OWNER } from '../entities/BassNote.js';
+import { NOTE_OWNER, hangNote } from '../entities/BassNote.js';
 
 // Single-pass compaction: O(n) instead of O(n²) from repeated splice
 function compactArray(arr) {
@@ -39,6 +39,7 @@ export class CollisionSystem {
 
   // Main collision detection function
   checkBulletCollisions() {
+    this.checkPlayerBulletsVsNotes();
     this.checkPlayerBulletsVsEnemies();
     this.checkEnemyBulletsVsPlayer();
     this.checkEnemyBulletsVsEnemies();
@@ -62,6 +63,30 @@ export class CollisionSystem {
       activeBombs: this.getContextValue('activeBombs'),
       beatClock: this.getContextValue('beatClock'),
     });
+  }
+
+  /**
+   * Player bullets vs the bassists' notes, before anything else: a shot note
+   * hangs (BassNote.hangNote), so it can't reach the hero this frame. The
+   * shot is spent on it. shortcut: the shot's path against where the note
+   * is now (a note moves far slower than a shot); sweep both if one slips
+   * through
+   */
+  checkPlayerBulletsVsNotes() {
+    const playerBullets = this.getContextValue('playerBullets');
+    const enemyBullets = this.getContextValue('enemyBullets');
+    if (!playerBullets || !enemyBullets) return;
+    const beats = this.getContextValue('beatClock')?.getBeatPosition() ?? null;
+    for (const note of enemyBullets) {
+      if (note.owner !== NOTE_OWNER || note._remove || note.hung) continue;
+      const shot = playerBullets.find(
+        (b) => !b._remove && b.checkCollision(note)
+      );
+      if (!shot) continue;
+      Bullet.release(shot);
+      shot._remove = true;
+      hangNote(note, beats);
+    }
   }
 
   // Player bullets vs enemies
@@ -96,7 +121,7 @@ export class CollisionSystem {
 
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const bullet = enemyBullets[i];
-      if (bullet._remove) continue;
+      if (bullet._remove || bullet.hung) continue; // a shot note is spent
 
       // Check player collision
       if (bullet.checkCollision(player)) {
@@ -121,7 +146,7 @@ export class CollisionSystem {
 
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const bullet = enemyBullets[i];
-      if (bullet._remove) continue;
+      if (bullet._remove || bullet.hung) continue;
       const note = bullet.owner === NOTE_OWNER;
 
       for (let j = 0; j < enemies.length; j++) {

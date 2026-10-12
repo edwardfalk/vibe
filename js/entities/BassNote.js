@@ -1,6 +1,12 @@
 // The bassist's note (Bassist.js fires it, bullet.js draws it): a glowing
 // note head and flag, drawn upright whichever way it flies
 
+import { CONFIG } from '../config.js';
+
+const EPS = 1e-6; // slack on beat positions, for floating-point error
+/** A shot note swells by up to this share of its size as it hangs */
+export const SWELL = 0.6;
+
 /** The owner a note's Bullet carries */
 export const NOTE_OWNER = 'enemy-bassist';
 /** Its glow and its trail */
@@ -36,4 +42,18 @@ export function drawBassNote(p, s) {
     x + s * FLAG * 0.6,
     -s * STEM_H * 0.05
   );
+}
+
+/**
+ * A note the hero shot: it stops and hangs, spent, until the first let after
+ * beat position `beats` (null with no clock), when driveBassNotes bursts it
+ */
+export function hangNote(note, beats) {
+  note.velocity.x = 0;
+  note.velocity.y = 0;
+  note.hung = {
+    at: beats,
+    let:
+      beats === null ? null : Math.floor(beats - CONFIG.SWING.AND_AT + EPS) + 1,
+  };
 }

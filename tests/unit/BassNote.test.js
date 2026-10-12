@@ -203,3 +203,117 @@ describe("his note meets aliens by the tank ball's rule", () => {
     CONFIG.BASSIST.NOTE_DAMAGE_TO_TANKS = saved;
   });
 });
+
+// Shot down, a note hangs, swelling, until the next let, then bursts with
+// its b7 booked at that let (the bassist spec, It can be shot)
+describe('the hero shoots his notes down', () => {
+  function frame({ playerBullets, enemyBullets, enemies = [], player }) {
+    const values = { playerBullets, enemyBullets, enemies, player };
+    new CollisionSystem(
+      { get: (k) => values[k], set() {} },
+      { handleEnemyDeath: vi.fn() }
+    ).checkBulletCollisions();
+    return values;
+  }
+  const hero = () => ({ x: 0, y: 0, size: 30, hurt: vi.fn() });
+
+  it('a shot that meets a note stops it before it reaches the hero, that frame', () => {
+    const note = Bullet.acquire(0, 0, 0, 0, NOTE_OWNER);
+    note.ownerId = 'his';
+    const shot = Bullet.acquire(-10, 0, 0, 20, 'player');
+    shot.update(); // its path crosses the note
+    const player = hero();
+    const v = frame({ playerBullets: [shot], enemyBullets: [note], player });
+    expect(player.hurt).not.toHaveBeenCalled();
+    expect(note.hung).not.toBeNull();
+    expect(v.playerBullets).toEqual([]); // the shot is spent
+    expect(v.enemyBullets).toEqual([note]); // the note hangs on
+  });
+
+  it('a hanging note hurts no one, no alien, and takes no second shot', () => {
+    const note = Bullet.acquire(0, 0, 0, 0, NOTE_OWNER);
+    note.hung = { at: 4.2, let: 4 };
+    const shot = Bullet.acquire(-10, -5, 0, 20, 'player');
+    shot.update(); // through the note, past the grunt below it
+    const grunt = {
+      type: 'grunt',
+      id: 'g',
+      x: 0,
+      y: 15, // in the note's reach, out of the shot's
+      size: 20,
+      health: 3,
+      maxHealth: 3,
+    };
+    const player = hero();
+    const v = frame({
+      playerBullets: [shot],
+      enemyBullets: [note],
+      enemies: [grunt],
+      player,
+    });
+    expect(player.hurt).not.toHaveBeenCalled();
+    expect(grunt.markedForRemoval).toBeUndefined();
+    expect(v.playerBullets).toEqual([shot]);
+  });
+
+  it('hangs, swelling, until the next let, then bursts with its b7 at its grid time', () => {
+    const w = bassistWorld();
+    const note = Bullet.acquire(0, 0, 0, 0, NOTE_OWNER);
+    note.ownerId = w.b.id;
+    w.at(4.2 * 500);
+    note.hung = { at: 4.2, let: 4 }; // as the shot left it
+    w.at(4.5 * 500);
+    driveBassNotes([note], w.values.enemies, w.clock);
+    expect(note.velocity).toEqual({ x: 0, y: 0 });
+    expect(note.swell).toBeGreaterThan(0.5);
+    expect(note.swell).toBeLessThan(1);
+    expect(w.audio.playSound).not.toHaveBeenCalled();
+    w.at(letMs(4) + 10);
+    driveBassNotes([note], w.values.enemies, w.clock);
+    expect(note._remove).toBe(true);
+    const [[name, , , opts]] = w.audio.playSound.mock.calls;
+    expect(name).toBe('bassPluck');
+    expect(opts.note).toEqual(['b7', CONFIG.BASSIST.OCTAVE]);
+    expect(opts.at).toBeCloseTo(
+      CONFIG.BEAT_CLOCK.AHEAD_MS / 1000 + letMs(4) / 1000,
+      9
+    );
+    expect(opts.seed).toBe(w.b.lookSeed);
+  });
+
+  it('waits for the let after the one it was shot on', () => {
+    const w = bassistWorld();
+    const shot = Bullet.acquire(-10, -5, 0, 20, 'player');
+    shot.update(); // through the note, past the grunt below it
+    const note = Bullet.acquire(0, 0, 0, 0, NOTE_OWNER);
+    note.ownerId = w.b.id;
+    w.at(letMs(4) + 5); // shot just after let 4
+    w.values.playerBullets = [shot];
+    w.values.enemyBullets = [note];
+    new CollisionSystem(w.context, {}).checkBulletCollisions();
+    expect(note.hung.let).toBe(5);
+  });
+
+  it('pops silently if his bassist dies first', () => {
+    const w = bassistWorld();
+    const note = Bullet.acquire(0, 0, 0, 0, NOTE_OWNER);
+    note.ownerId = w.b.id;
+    note.hung = { at: 4.2, let: 4 };
+    w.b.markedForRemoval = true;
+    w.at(letMs(4) + 10);
+    driveBassNotes([note], w.values.enemies, w.clock);
+    expect(note._remove).toBe(true);
+    expect(w.audio.playSound).not.toHaveBeenCalled();
+  });
+
+  it('a recycled bullet does not hang', () => {
+    const note = Bullet.acquire(0, 0, 0, 0, NOTE_OWNER);
+    note.hung = { at: 4.2, let: 4 };
+    note.swell = 0.5;
+    Bullet.release(note);
+    const again = Bullet.acquire(0, 0, 0, 0, NOTE_OWNER);
+    expect(again).toBe(note);
+    expect(again.hung).toBeNull();
+    expect(again.swell).toBe(0);
+  });
+});

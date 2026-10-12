@@ -1,5 +1,6 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { CONFIG } from '../config.js';
+import { clamp01 } from '../mathUtils.js';
 import { stalkWant } from './Stabber.js';
 import { volleyGain } from '../systems/GruntSwarm.js';
 import { mod } from './GruntRenderer.js';
@@ -149,13 +150,11 @@ export class Bassist extends BaseEnemy {
     const audio = this.getContextValue('audio');
     const clock = this.getContextValue('beatClock');
     if (!audio || !clock) return;
-    const beatSec = clock.beatInterval / 1000;
-    const at = clock.startTime / 1000 + (n + CONFIG.SWING.AND_AT) * beatSec;
     const crowd = (this.getContextValue('enemies') ?? []).filter(
       (e) => e.type === 'bassist' && !e.markedForRemoval && !e.isSpawning
     ).length;
     audio.playSound(k === SLAP_LET ? 'bassSlap' : 'bassPluck', this.x, this.y, {
-      at,
+      at: letTime(clock, n),
       seed: this.lookSeed,
       note: [LINE[k], CONFIG.BASSIST.OCTAVE],
       gain: volleyGain(Math.max(1, crowd)),
@@ -191,6 +190,12 @@ export class Bassist extends BaseEnemy {
       p.line(x, s * 0.4, x, -s * 0.6);
     }
   }
+}
+
+/** Let n's grid time on the audio clock, s: beat n + SWING.AND_AT */
+function letTime(clock, n) {
+  const beatSec = clock.beatInterval / 1000;
+  return clock.startTime / 1000 + (n + CONFIG.SWING.AND_AT) * beatSec;
 }
 
 /**
@@ -233,8 +238,36 @@ export function driveBassNotes(bullets, enemies, clock) {
       note._remove = true;
       continue;
     }
+    if (note.hung) {
+      hangOn(note, bassist, clock, beats);
+      continue;
+    }
     const perFrame = noteSpeed(bassist, beats, beatSec) / FRAMES_PER_SEC;
     note.velocity.x = Math.cos(note.angle) * perFrame;
     note.velocity.y = Math.sin(note.angle) * perFrame;
   }
+}
+
+/**
+ * A note the hero shot (BassNote.hangNote) holds still, swelling, until
+ * its let; then it bursts with its b7, booked at that let's grid time as
+ * his own lets are
+ */
+function hangOn(note, bassist, clock, beats) {
+  note.velocity.x = 0;
+  note.velocity.y = 0;
+  const { at, let: n } = note.hung;
+  if (n === null) return;
+  const letBeats = n + CONFIG.SWING.AND_AT;
+  if (beats < letBeats - EPS) {
+    note.swell = at === null ? 0 : clamp01((beats - at) / (letBeats - at));
+    return;
+  }
+  bassist.getContextValue('audio')?.playSound('bassPluck', note.x, note.y, {
+    at: letTime(clock, n),
+    seed: bassist.lookSeed,
+    note: [LINE[SLAP_LET], CONFIG.BASSIST.OCTAVE],
+  });
+  Bullet.release(note);
+  note._remove = true;
 }
