@@ -9,7 +9,7 @@
  * docs/superpowers/specs/2026-10-08-explosion-studies/ (git-ignored; the
  * page is https://claude.ai/artifact/GHjWCySGwv8cVCtWDoE6nV; the spec is
  * docs/superpowers/specs/2026-10-09-bomb-kill-design.md); the stabber's
- * deaths, ported from `death-shell.js` in
+ * deaths, ported from `death-shell.js` and `death-shatter.js` in
  * docs/superpowers/specs/2026-10-12-stabber-death-studies/ (StabberDeath.js
  * names the page and the spec). From the port on, these constants are the
  * authority.
@@ -20,9 +20,12 @@
  * as the crash does.
  */
 import { hz } from './Harmony.js';
-import { disconnectWhenEnded } from './CrashSynth.js';
+import { disconnectWhenEnded, placed } from './CrashSynth.js';
 import { hash01 } from '../entities/RusherRenderer.js';
 import { shellShutAt } from '../entities/StabberShell.js';
+import { shatterTimes } from '../entities/StabberShatter.js';
+import { pluck } from './StabberStrings.js';
+import { CONFIG } from '../config.js';
 import { dB, smooth } from '../mathUtils.js';
 
 const SILENT = 0.0001; // exponential ramps can't reach 0
@@ -95,17 +98,6 @@ const EXHALE = {
   OFFSET_SEC: 0.3, // into the noise
   TAIL_SEC: 0.05,
 };
-
-// Into `out` at `volume`, panned -1..1 (the stabber's strings use it too)
-export function placed(ctx, out, volume, pan, at) {
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(volume, at);
-  const panner = ctx.createStereoPanner();
-  panner.pan.setValueAtTime(pan, at);
-  gain.connect(panner);
-  panner.connect(out);
-  return [gain, panner];
-}
 
 /**
  * A grunt's pop and whine at audio time `at`, its whine landing on `note`
@@ -706,5 +698,212 @@ export function stabberShell(ctx, out, { at, record, noise, volume, pan }) {
   disconnectWhenEnded(shut + S.PLUCK_SEC > end ? pl : vib, nodes);
 }
 
+// A stabber's death, Gold shatter: his strings plucked as a cluster round his
+// sour note (b5), the players a hair apart. The sour notes die at once; the
+// fifth, which was always in his cluster (his stab's semitone above b5 is
+// the hum's fifth), rings on: with him gone his grind resolves into the
+// hum. His spike's last jab, his own pizzicato at a whisper; a dry crumble
+// of bone when it goes
+const SHATTER_SOUND = {
+  TRIM_DB: 0, // the mix pass: this style's level in feedback's events window
+  // The cluster round his note: [degree, octave, cents, level, onset s]. The
+  // players pluck a hair apart (a rake), his note first, on the eighth
+  SOUR: [
+    ['b5', 6, -8, 1, 0],
+    ['4', 6, 0, 0.7, 0.004],
+    ['b5', 6, 7, 1, 0.007],
+    ['b6', 6, 0, 0.7, 0.011],
+  ],
+  SOUR_PEAK: 0.055,
+  SOUR_SEC: 0.17,
+  SOUR_SAG: 0.985, // they sag as they die
+  // The fifth rings on (in his cluster all along), and an octave under it
+  RING: [
+    ['5', 6, 0, 1, 0.002],
+    ['5', 5, 0, 0.5, 0.009],
+  ],
+  RING_PEAK: 0.06,
+  RING_HOLD: 0.6, // a pluck's drop to this share, then a long ring
+  RING_DROP_SEC: 0.12,
+  RING_TAU: 0.24,
+  RING_SEC: 1.1, // by here it is 40 dB under its peak: it stops
+  VIB_HZ: 5.5,
+  VIB_DEPTH: 0.005, // of the pitch, growing in
+  VIB_SEC: 0.35,
+  ATTACK_SEC: 0.003,
+  LP: { FROM: 6000, HOT: 8500, TO: 1000, SEC: 0.09, Q: 5 },
+  RING_LP: { FROM: 7000, TO: 2600, SEC: 0.35, Q: 1.2 },
+  HP_HZ: 600, // nothing near the kick
+  SNAP: { HZ: 4200, Q: 1.2, PEAK: 0.09, HOT: 0.13, SEC: 0.03 }, // the shell cracking
+  HISS: { HZ: 5500, PEAK: 0.018, SEC: 0.45, DELAY_SEC: 0.02 }, // white-hot: the spike hisses as it cools
+  JAB_VOLUME: 0.3, // of his pluck in play (CONFIG.STABBER.PLUCK_VOLUME)
+  JAB_NOISE_AT: 1.6, // s into the noise, for the jab's tick
+  CRUMBLE: { N: 5, EVERY: 0.017, HZ: 3000, Q: 1.4, PEAK: 0.09, SEC: 0.025 },
+  NOISE_AT: [0.4, 0.9, 1.3], // s into the noise: snap, hiss, crumble
+  SILENT: 0.0001,
+  TAIL_SEC: 0.02,
+};
+
+/**
+ * A stabber's death, Gold shatter, from audio time `at`: its jab and its
+ * crumble on the picture's eighths (StabberShatter.js's shatterTimes, from
+ * the same record).
+ * @param {AudioContext} ctx
+ * @param {AudioNode} out the effects' bus
+ * @param {object} o { at, record (StabberDeath.js), noise (an AudioBuffer),
+ *   volume (1: the studies page's level, plus TRIM_DB), pan (-1..1) }
+ */
+export function stabberShatter(ctx, out, { at, record, noise, volume, pan }) {
+  const S = SHATTER_SOUND;
+  const [placedGain, panner] = placed(
+    ctx,
+    out,
+    volume * dB(S.TRIM_DB),
+    pan,
+    at
+  );
+  const bus = ctx.createBiquadFilter();
+  bus.type = 'highpass';
+  bus.frequency.setValueAtTime(S.HP_HZ, at);
+  bus.connect(placedGain);
+  const nodes = [placedGain, panner, bus];
+  const ends = []; // [source, when it stops]
+  // Silent from the start: a gain left at 1 lets a source's first sample
+  // through (a highpass passes it whole: a click)
+  const shape = (g, t0, peak, sec) => {
+    g.gain.value = S.SILENT;
+    g.gain.setValueAtTime(S.SILENT, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + S.ATTACK_SEC);
+    g.gain.exponentialRampToValueAtTime(S.SILENT, t0 + sec);
+  };
+  const lowpass = (t0, P, from) => {
+    const f = ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.Q.setValueAtTime(P.Q, t0);
+    f.frequency.setValueAtTime(from, t0);
+    f.frequency.exponentialRampToValueAtTime(P.TO, t0 + P.SEC);
+    return f;
+  };
+  // A plucked string: a saw through a closing lowpass; with vib, it rings
+  const pluckOf = (
+    [deg, oct, cents, level, onset],
+    peak,
+    sec,
+    P,
+    from,
+    sag,
+    vib
+  ) => {
+    const t0 = at + onset;
+    const f = hz([deg, oct], at) * 2 ** (cents / 1200);
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(f, t0);
+    if (sag !== 1) o.frequency.exponentialRampToValueAtTime(f * sag, t0 + sec);
+    if (vib) {
+      const depth = ctx.createGain();
+      depth.gain.setValueAtTime(0, t0);
+      depth.gain.linearRampToValueAtTime(f * S.VIB_DEPTH, t0 + S.VIB_SEC);
+      vib.connect(depth);
+      depth.connect(o.frequency);
+      nodes.push(depth);
+    }
+    const lp = lowpass(t0, P, from);
+    const g = ctx.createGain();
+    if (vib) {
+      g.gain.value = S.SILENT;
+      g.gain.setValueAtTime(S.SILENT, t0);
+      g.gain.exponentialRampToValueAtTime(peak * level, t0 + S.ATTACK_SEC);
+      const hold = t0 + S.RING_DROP_SEC;
+      g.gain.exponentialRampToValueAtTime(peak * level * S.RING_HOLD, hold);
+      g.gain.setTargetAtTime(0, hold, S.RING_TAU);
+    } else shape(g, t0, peak * level, sec);
+    o.connect(lp);
+    lp.connect(g);
+    g.connect(bus);
+    o.start(t0);
+    o.stop(t0 + sec + S.TAIL_SEC);
+    nodes.push(o, lp, g);
+    ends.push([o, t0 + sec + S.TAIL_SEC]);
+  };
+  const burst = (t0, type, freq, q, peak, sec, offset) => {
+    const src = ctx.createBufferSource();
+    src.buffer = noise;
+    const f = ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.setValueAtTime(freq, t0);
+    f.Q.setValueAtTime(q, t0);
+    const g = ctx.createGain();
+    shape(g, t0, peak, sec);
+    src.connect(f);
+    f.connect(g);
+    g.connect(bus);
+    src.start(t0, offset);
+    src.stop(t0 + sec + S.TAIL_SEC);
+    nodes.push(src, f, g);
+    ends.push([src, t0 + sec + S.TAIL_SEC]);
+  };
+  const hot = record.hot;
+  const lpFrom = hot ? S.LP.HOT : S.LP.FROM;
+  for (const v of S.SOUR) {
+    pluckOf(v, S.SOUR_PEAK, S.SOUR_SEC, S.LP, lpFrom, S.SOUR_SAG);
+  }
+  const vib = ctx.createOscillator();
+  vib.frequency.setValueAtTime(S.VIB_HZ, at);
+  for (const v of S.RING) {
+    pluckOf(v, S.RING_PEAK, S.RING_SEC, S.RING_LP, S.RING_LP.FROM, 1, vib);
+  }
+  vib.start(at);
+  vib.stop(at + S.RING_SEC + S.TAIL_SEC);
+  nodes.push(vib);
+  burst(
+    at,
+    'bandpass',
+    S.SNAP.HZ,
+    S.SNAP.Q,
+    hot ? S.SNAP.HOT : S.SNAP.PEAK,
+    S.SNAP.SEC,
+    S.NOISE_AT[0]
+  );
+  if (hot) {
+    burst(
+      at + S.HISS.DELAY_SEC,
+      'highpass',
+      S.HISS.HZ,
+      0.7,
+      S.HISS.PEAK,
+      S.HISS.SEC,
+      S.NOISE_AT[1]
+    );
+  }
+  // The spike's last pathetic jab, then its crumble: on the picture's eighths
+  const { jab, crumble } = shatterTimes(record);
+  pluck(ctx, placedGain, {
+    at: at + jab,
+    volume: S.JAB_VOLUME * CONFIG.STABBER.PLUCK_VOLUME,
+    pan: 0,
+    noise,
+    offset: S.JAB_NOISE_AT,
+  });
+  for (let i = 0; i < S.CRUMBLE.N; i++) {
+    const k = 1 - i / S.CRUMBLE.N;
+    burst(
+      at + crumble + i * S.CRUMBLE.EVERY,
+      'bandpass',
+      S.CRUMBLE.HZ * (1 + 0.25 * (i % 2)),
+      S.CRUMBLE.Q,
+      S.CRUMBLE.PEAK * k,
+      S.CRUMBLE.SEC,
+      S.NOISE_AT[2] + i * 0.03
+    );
+  }
+  // The last to stop frees them all (the jab frees its own)
+  const [last] = ends.reduce((a, b) => (b[1] > a[1] ? b : a));
+  disconnectWhenEnded(last, nodes);
+}
+
 /** A stabber's death sound by its style (StabberDeath.js's styles) */
-export const STABBER_DEATH_SOUNDS = Object.freeze({ shell: stabberShell });
+export const STABBER_DEATH_SOUNDS = Object.freeze({
+  shell: stabberShell,
+  shatter: stabberShatter,
+});

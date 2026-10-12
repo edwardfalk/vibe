@@ -93,6 +93,20 @@ export function playCrash(ctx, out, cfg, volume, pan, t = ctx.currentTime) {
   ]);
 }
 
+/**
+ * A sound's way out: a gain at `volume` from audio time `at`, panned -1..1,
+ * into `out` (the deaths, the bomb and the stabber's strings play through it)
+ */
+export function placed(ctx, out, volume, pan, at) {
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(volume, at);
+  const panner = ctx.createStereoPanner();
+  panner.pan.setValueAtTime(pan, at);
+  gain.connect(panner);
+  panner.connect(out);
+  return [gain, panner];
+}
+
 /** Disconnect every node once `last` has ended: a sound's nodes, freed */
 export function disconnectWhenEnded(last, nodes) {
   last.onended = () => {

@@ -18,8 +18,7 @@
  * of the game's random numbers.
  */
 import { hz } from './Harmony.js';
-import { placed } from './DeathSounds.js';
-import { disconnectWhenEnded } from './CrashSynth.js';
+import { placed, disconnectWhenEnded } from './CrashSynth.js';
 import { dB } from '../mathUtils.js';
 
 const NOTE = ['b5', 6]; // the stab and the screech

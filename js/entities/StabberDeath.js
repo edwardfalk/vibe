@@ -1,7 +1,7 @@
 /**
  * How the stabber dies (docs/superpowers/specs/2026-10-12-stabber-death-design.md):
- * Empty shell (StabberShell.js), or another style picked on ?tune
- * (CONFIG.DEATHS.STABBER_STYLE). Ported from the stabber death studies page,
+ * Empty shell (StabberShell.js), or Gold shatter (StabberShatter.js) picked
+ * on ?tune (CONFIG.DEATHS.STABBER_STYLE). Ported from the stabber death studies page,
  * docs/superpowers/specs/2026-10-12-stabber-death-studies/ (git-ignored; the
  * page is https://claude.ai/artifact/VLR3dxtERhVhUCM4jEwPUD).
  *
@@ -15,9 +15,11 @@
  */
 import { stabberBody } from './StabberRenderer.js';
 import { drawShellWait, drawShell, shellParts } from './StabberShell.js';
+import { drawShatterWait, drawShatter } from './StabberShatter.js';
 
 const STYLES = {
   shell: { wait: drawShellWait, draw: drawShell, prepare: shellParts },
+  shatter: { wait: drawShatterWait, draw: drawShatter },
 };
 /** The styles on offer (CONFIG.DEATHS.STABBER_STYLE), for ?tune; the first is the default */
 export const STABBER_STYLES = Object.freeze(Object.keys(STYLES));

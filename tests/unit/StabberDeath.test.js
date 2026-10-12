@@ -11,7 +11,8 @@ import {
   EnemyDeathHandler,
   popTime,
 } from '../../js/systems/combat/EnemyDeathHandler.js';
-import { stabberShell } from '../../js/audio/DeathSounds.js';
+import { stabberShell, stabberShatter } from '../../js/audio/DeathSounds.js';
+import { shatterTimes } from '../../js/entities/StabberShatter.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { Audio } from '../../js/Audio.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
@@ -360,5 +361,149 @@ describe("Empty shell's sound", () => {
     audio._pausedByGame = true;
     audio.playStabberDeath(0, 0, 4, record({ at: 4 }));
     expect(made).toHaveLength(count);
+  });
+});
+
+describe('Gold shatter', () => {
+  const shatter = (o = {}) => record({ style: 'shatter', ...o });
+
+  it("jabs and crumbles on the song's eighths, four of them times the linger on", () => {
+    expect(shatterTimes(shatter())).toEqual({ jab: 0.75, crumble: 1 });
+    const long = shatterTimes(shatter({ linger: 1.7 })); // 6.8 eighths: the 7th
+    expect(long.jab).toBeCloseTo(1.5, 9);
+    expect(long.crumble).toBeCloseTo(1.75, 9);
+    const off = shatterTimes(shatter({ at: 2.1 }));
+    expect(off.crumble).toBeCloseTo(1.15, 9);
+  });
+
+  it('is the style ?tune picks at the kill', () => {
+    const w = world();
+    w.run(0, 300);
+    CONFIG.DEATHS.STABBER_STYLE = 'shatter';
+    expect(w.kill({ dir: 0 }).record.style).toBe('shatter');
+  });
+
+  it('hangs frozen until it starts, then shatters, lives its course and is gone', () => {
+    const rec = shatter();
+    const { death, at } = deathOf(rec);
+    const { p } = transformP5();
+    const spy = vi.spyOn(Math, 'random');
+    for (const t of [1.8, 1.9, 1.99]) {
+      at(t);
+      death.draw(p);
+      expect(death.active).toBe(true);
+    }
+    let t = 2;
+    for (; t < 4 && death.active; t += 0.05) {
+      at(t);
+      death.draw(p);
+    }
+    expect(death.active).toBe(false);
+    // Gone after its spike's crumble, within about 1.4 s of its start
+    expect(t - 2).toBeGreaterThan(shatterTimes(rec).crumble);
+    expect(t - 2).toBeLessThan(1.5);
+    expect(spy).not.toHaveBeenCalled();
+    expect(p.drawingContext.depth).toBe(0);
+  });
+
+  it('can first be drawn at any age, white-hot or not, blasted or not', () => {
+    const hotPose = { ...record().pose, lunge: { k: 0.3 } };
+    for (const rec of [
+      shatter(),
+      shatter({ pose: hotPose, blast: true, scale: 1.3 }),
+    ]) {
+      for (const t of [2.05, 2.5, 2.8, 3.1]) {
+        const { death, at } = deathOf(rec);
+        const { p } = transformP5();
+        at(t);
+        expect(() => death.draw(p)).not.toThrow();
+        expect(p.drawingContext.depth).toBe(0);
+      }
+    }
+  });
+
+  it('its spike turns to the hero until it crumbles; its dust stays where it crumbled', () => {
+    const hero = { x: 0, y: 300 };
+    const { death, at } = deathOf(shatter(), () => hero);
+    const { p } = transformP5();
+    at(2 + 1.02);
+    death.draw(p);
+    const crumbled = death.state.crumbledAt;
+    expect(crumbled).toBeDefined();
+    hero.x = 500;
+    at(2 + 1.1);
+    death.draw(p);
+    expect(death.state.crumbledAt).toBe(crumbled);
+  });
+});
+
+describe("Gold shatter's sound", () => {
+  const play = (rec, at) => {
+    const { ctx, made } = fakeAudio();
+    stabberShatter(
+      ctx,
+      { kind: 'bus' },
+      { at, record: rec, noise: { duration: 2 }, volume: 1, pan: 0 }
+    );
+    return made;
+  };
+
+  it("rings on the hum's fifth as it drifts at its start", () => {
+    const at = 7.3;
+    const made = play(record({ style: 'shatter', at }), at);
+    const freqs = made
+      .filter(
+        (n) => n.kind === 'osc' && n.frequency.setValueAtTime.mock.calls.length
+      )
+      .map((o) => o.frequency.setValueAtTime.mock.calls[0][0]);
+    expect(freqs.some((f) => Math.abs(f - hz(['5', 6], at)) < 1e-6)).toBe(true);
+    expect(freqs.some((f) => Math.abs(f - hz(['5', 6], 0)) < 1e-6)).toBe(false);
+  });
+
+  it('jabs and crumbles where the picture does, at any linger', () => {
+    const at = 2;
+    const rec = record({ style: 'shatter', at, linger: 1.7 });
+    const { jab, crumble } = shatterTimes(rec);
+    const made = play(rec, at);
+    const starts = made.flatMap((n) => n.start.mock.calls.map(([t]) => t));
+    expect(starts.some((t) => Math.abs(t - (at + jab)) < 1e-9)).toBe(true);
+    expect(starts.some((t) => Math.abs(t - (at + crumble)) < 1e-9)).toBe(true);
+  });
+
+  it('stops every source it starts, and frees its nodes when the last stops', () => {
+    for (const linger of [0.5, 1, 2]) {
+      const made = play(record({ style: 'shatter', linger }), 2);
+      const started = made.filter((n) => n.start.mock.calls.length);
+      for (const n of started) expect(n.stop).toHaveBeenCalled();
+      const latest = Math.max(...started.map((n) => n.stop.mock.calls[0][0]));
+      const last = made.filter((n) => n.onended);
+      // Its own (the jab frees its own nodes)
+      const own = last.find((n) => n.stop.mock.calls[0][0] === latest);
+      expect(own).toBeDefined();
+    }
+  });
+
+  it("the game's Audio plays it in its style, and its volume knob silences the jab too", () => {
+    const { ctx, made } = fakeAudio();
+    const audio = Object.assign(Object.create(Audio.prototype), {
+      audioContext: ctx,
+      initialized: true,
+      enabled: true,
+      initialize() {},
+      sounds: { ...SOUND_CONFIG },
+      player: { x: 0, y: 0 },
+      masterGain: { kind: 'effects bus' },
+      buses: fakeBuses(),
+      getContextValue: () => undefined,
+      _pausedByGame: false,
+      _resuming: false,
+    });
+    CONFIG.DEATHS.STABBER_VOLUME = 0;
+    audio.playStabberDeath(0, 0, 4, record({ style: 'shatter', at: 4 }));
+    const [top] = made.filter((n) => n.kind === 'gain');
+    expect(top.gain.setValueAtTime.mock.calls[0][0]).toBe(0);
+    // The jab is his pizzicato: its own way out goes into the death's
+    const jabPan = made.filter((n) => n.kind === 'pan')[1];
+    expect(jabPan.connect).toHaveBeenCalledWith(top);
   });
 });
