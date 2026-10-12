@@ -334,3 +334,68 @@ describe("the tank's charge", () => {
     expect(t.chargingShot).toBe(true); // bar 6: eight beats on
   });
 });
+
+describe('tank charges start on even bars, on time', () => {
+  it('starts a charge only on an even bar: ready on bar 3, he waits for bar 4', () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 2;
+    for (let ms = 6000; ms < 8000; ms += 500) w.frame(t, ms); // bar 3
+    expect(t.chargingShot).toBe(false);
+    w.frame(t, 8000); // bar 4
+    expect(t.chargingShot).toBe(true);
+    expect(t.chargeStartBeat).toBe(16);
+  });
+
+  it('ready on bars 3 and 4, two tanks start together on bar 4; ready on bars 2 and 3, they start on 2 and 4', () => {
+    const run = (lastA, lastB, from) => {
+      const w = tankWorld({ hero: { x: 300, y: 0 } });
+      const a = w.tank(0, -100);
+      const b = w.tank(0, 100);
+      a.lastActedBar = lastA;
+      b.lastActedBar = lastB;
+      const starts = { a: [], b: [] };
+      for (let ms = from; ms <= 8000; ms += 500) {
+        for (const [name, t] of [
+          ['a', a],
+          ['b', b],
+        ]) {
+          const was = t.chargingShot;
+          w.frame(t, ms);
+          if (t.chargingShot && !was) starts[name].push(t.chargeStartBeat);
+        }
+      }
+      return starts;
+    };
+    expect(run(2, 3, 6000)).toEqual({ a: [16], b: [16] });
+    expect(run(1, 2, 4000)).toEqual({ a: [8], b: [16] });
+  });
+
+  it('a bar action a beat or more late starts no charge; the next even bar starts one from its first pluck', () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    w.frame(t, 3900); // bar 1
+    w.frame(t, 4600); // a 700 ms hitch: bar 2's action comes on beat 9.2
+    expect(t.chargingShot).toBe(false);
+    for (let ms = 5000; ms <= 8000; ms += 500) w.frame(t, ms);
+    expect(t.chargeStartBeat).toBe(16); // bar 4
+    const plucks = w.audio.playSound.mock.calls.filter(
+      ([name]) => name === 'tankCharge'
+    );
+    expect(plucks.map(([, , , { step }]) => step)).toEqual([0]);
+  });
+
+  it('a bar action under a beat late still starts the charge, from its first pluck', () => {
+    const w = tankWorld({ hero: { x: 300, y: 0 } });
+    const t = w.tank();
+    t.lastActedBar = 1;
+    w.frame(t, 3900);
+    w.frame(t, 4400); // beat 8.8: late, but within the bar's first beat
+    expect(t.chargeStartBeat).toBe(8);
+    const steps = w.audio.playSound.mock.calls
+      .filter(([name]) => name === 'tankCharge')
+      .map(([, , , { step }]) => step);
+    expect(steps).toEqual([0]);
+  });
+});

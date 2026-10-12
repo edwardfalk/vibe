@@ -228,8 +228,9 @@ class Tank extends BaseEnemy {
 
   /**
    * Beat 1 (kickBeat is the bar's start, counting the charge in bars): turn
-   * toward the target, then start a charge, power it up or call the shot.
-   * Returns true when the charged shot is due.
+   * toward the target, then start a charge (on an even bar, within its
+   * first beat), power it up or call the shot. Returns true when the
+   * charged shot is due.
    */
   onKick(kickBeat, toTarget, distance) {
     const T = CONFIG.TANK;
@@ -257,9 +258,14 @@ class Tank extends BaseEnemy {
       }
       return false;
     }
+    // A charge starts on its own length's grid (every other bar), so two
+    // tanks' plucks climb together or apart, never a bar apart; and only on
+    // time, so it always starts on its first pluck
     if (
       distance < T.CHARGE_RANGE_PX &&
-      kickBeat - this._lastTankFireBeat >= T.RECHARGE_BEATS
+      kickBeat - this._lastTankFireBeat >= T.RECHARGE_BEATS &&
+      kickBeat % this.chargeDurationBeats === 0 &&
+      this.kickAt - kickBeat < 1
     ) {
       this.chargingShot = true;
       this.chargeStartBeat = kickBeat;
