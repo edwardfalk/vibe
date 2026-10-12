@@ -66,8 +66,10 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
  */
 export function handleTankEnergyBallHit(bullet, enemy, deps) {
   // Another tank only takes a dent, through his armour, and the ball is spent
-  // on him; any other alien it meets dies outright
-  if (enemy.type === 'tank') {
+  // on him; so is it on a rusher, whom it lights as any hit does (he never
+  // dies of damage: he blows on his beat); any other alien it meets dies
+  // outright
+  if (enemy.type === 'tank' || enemy.type === 'rusher') {
     handleRegularEnemyBulletHit(
       bullet,
       enemy,
