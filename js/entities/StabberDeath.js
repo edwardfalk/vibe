@@ -29,7 +29,7 @@ const NO_HERO_PX = 300;
 
 /**
  * What a death keeps from the kill: its style (an unknown one is the
- * shell), linger and beat, his pose (clean: the death draws its own flash),
+ * first, the default), linger and beat, his pose (clean: the death draws its own flash),
  * his body at it (stabberBody), his scale, the blow's way (rad) and whether
  * it was a blast, whether he was white-hot, his seed; and the song's eighths
  * from its start `at` (audio s): the first at or after it is `offset` s

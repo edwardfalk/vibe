@@ -24,7 +24,7 @@ import { CHATTER_VOICES } from '../audio/Instruments.js';
 const PI = Math.PI;
 const TWO_PI = 2 * PI;
 
-// The grunt's palette, [r, g, b]. Its glow, death fragments, KILL! text and
+// The grunt's palette, [r, g, b]. Its glow, death, KILL! text and
 // shots use it too, so it is frozen.
 export const GRUNT_COLORS = Object.freeze(
   Object.fromEntries(

@@ -90,7 +90,7 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
   const energyCost =
     enemy.maxHealth > 0 ? (enemy.health / enemy.maxHealth) * 30 : 0;
 
-  // Kill the enemy and create explosion
+  // Kill the enemy: his own death
   handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y, { dir: bullet.angle });
 
   if (audio) {

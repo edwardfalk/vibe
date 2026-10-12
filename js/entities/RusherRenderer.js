@@ -31,7 +31,7 @@ export const BOOST_ENV_SEC = 0.12; // his boost's envelope (Rusher.js pose)
 export const BLAST_SEC = 2.3; // his blast's stars are gone by then
 const O = 2.2; // the ink round each part, px (union's, the tank's): the grunt's 1.1 each side
 
-// His palette, [r, g, b]. His glow and death fragments use it too, so it is
+// His palette, [r, g, b]. His glow uses it too, so it is
 // frozen. Ink, eye whites and the warning colours are the cast's
 export const RUSHER_COLORS = Object.freeze(
   Object.fromEntries(
