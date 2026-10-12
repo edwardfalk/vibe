@@ -13,7 +13,7 @@
  */
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
-import { random, floor, dB } from './mathUtils.js';
+import { random, floor, dB, mulberry32 } from './mathUtils.js';
 import { createContextAccessor } from './shared/ContextAccessor.js';
 import { AMBIENT_SOUNDS } from './audio/AmbientSoundProfile.js';
 import {
@@ -71,6 +71,8 @@ const CENTS_PER_OCTAVE = 1200;
 // A tone starts at most this late (playTone), and a seeded synth by its seed
 // (playSynth), so copies don't add in phase
 const MAX_START_OFFSET_SEC = 0.005;
+// The ambient reverb's own noise, so it draws none of the game's
+const AMBIENT_REVERB_SEED = 3;
 // A tremolo swings its tone's gain this far either way of its level
 const TREMOLO_DEPTH = 0.5;
 // A seed times this, mod 1, is all but independent of the seed's top bits
@@ -269,7 +271,8 @@ export class Audio {
     this.effects.reverb.buffer = createReverbImpulse(
       this.audioContext,
       3.5,
-      0.5
+      0.5,
+      mulberry32(AMBIENT_REVERB_SEED)
     ); // Longer, more atmospheric reverb
     // Its only output, once: every ambient sound is band
     this.effects.reverb.connect(this.bus('band'));
