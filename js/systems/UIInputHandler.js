@@ -1,6 +1,6 @@
 /**
  * Input handling extracted from UIRenderer.
- * Dispatches key presses to game actions (restart, pause, sound, dash, aim).
+ * Dispatches key presses to game actions (restart, pause, sound, dash).
  */
 
 export function handleKeyPress(
@@ -47,26 +47,6 @@ export function handleKeyPress(
       if (cameraSystem) {
         cameraSystem.addShake(6, 12);
       }
-      return true;
-    }
-  }
-
-  // Arrow keys for aim direction
-  if (gameState.gameState === 'playing' && player) {
-    if (key === 'ArrowUp') {
-      player.aimAngle = -Math.PI / 2;
-      return true;
-    }
-    if (key === 'ArrowDown') {
-      player.aimAngle = Math.PI / 2;
-      return true;
-    }
-    if (key === 'ArrowLeft') {
-      player.aimAngle = Math.PI;
-      return true;
-    }
-    if (key === 'ArrowRight') {
-      player.aimAngle = 0;
       return true;
     }
   }

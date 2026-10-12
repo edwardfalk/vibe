@@ -297,18 +297,6 @@ export class UIRenderer {
       barY - 5
     );
 
-    // Show damage number if recently damaged
-    if (this.player.hitFlash > 0) {
-      p.fill(255, 20, 147, this.player.hitFlash * 30); // Pink damage text
-      p.textAlign(p.CENTER, p.CENTER);
-      p.textSize(14);
-      p.text(
-        `-${ceil(this.player.maxHealth - this.player.health)}`,
-        barX + barWidth / 2,
-        barY - 20
-      );
-    }
-
     p.pop();
   }
 
