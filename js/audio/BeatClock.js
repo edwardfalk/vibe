@@ -24,6 +24,11 @@ export class BeatClock {
 
     // Beat pattern tracking (4/4 time signature)
     this.beatsPerMeasure = 4;
+    // The hero's grid swings while it is wanted (a bassist is about), from
+    // the first update in a new bar: wantSwing() says, update() applies
+    this._swingWanted = false;
+    this._swingOn = false;
+    this._swingBar = null;
     this.cache = {
       timestamp: 0,
       elapsed: 0,
@@ -168,6 +173,68 @@ export class BeatClock {
     );
   }
 
+  /** Whether the hero's grid should swing; it does from the next bar line */
+  wantSwing(on) {
+    this._swingWanted = !!on;
+  }
+
+  /** Whether the hero's grid swings now (its "and" at CONFIG.SWING.AND_AT) */
+  get swingOn() {
+    this.update();
+    return this._swingOn;
+  }
+
+  // Where the hero's "and" falls in the beat now: halfway, or swung
+  _heroAndAt() {
+    return this.swingOn ? CONFIG.SWING.AND_AT : 0.5;
+  }
+
+  /**
+   * The hero's eighths at beat position `beats`, two a beat, the second at
+   * the "and" (swung or not), so floor() is his eighth's index and the rest
+   * its phase. With swing off it is beats * 2. Only the hero reads his grid:
+   * the straight methods stay straight for everyone else
+   */
+  heroEighths(beats) {
+    const n = Math.floor(beats);
+    const f = beats - n;
+    const a = this._heroAndAt();
+    return 2 * n + (f < a ? f / a : 1 + (f - a) / (1 - a));
+  }
+
+  /** The beat position of the hero's eighth number `eighth` */
+  heroEighthBeat(eighth) {
+    const n = Math.floor(eighth / 2);
+    return eighth % 2 === 0 ? n : n + this._heroAndAt();
+  }
+
+  // The hero's eighths before and after now, in ms on the grid
+  _heroEighthsAround() {
+    this.update();
+    const elapsed = this.cache.elapsed;
+    const prev = Math.floor(this.heroEighths(elapsed / this.beatInterval));
+    return {
+      elapsed,
+      prevMs: this.heroEighthBeat(prev) * this.beatInterval,
+      nextMs: this.heroEighthBeat(prev + 1) * this.beatInterval,
+    };
+  }
+
+  /** isOnEighthNote() on the hero's grid */
+  isOnHeroEighth() {
+    const { elapsed, prevMs, nextMs } = this._heroEighthsAround();
+    return (
+      elapsed - prevMs <= this.eighthNoteTolerance ||
+      nextMs - elapsed <= this.eighthNoteTolerance
+    );
+  }
+
+  /** getTimeToNextEighthNote() on the hero's grid */
+  getTimeToNextHeroEighth() {
+    const { elapsed, nextMs } = this._heroEighthsAround();
+    return nextMs - elapsed;
+  }
+
   // GRUNT TIMING: Beats 2 and 4 (snare pattern)
   canGruntShoot() {
     return this.isOnBeat([2, 4]);
@@ -229,6 +296,9 @@ export class BeatClock {
         (this.beatInterval - remainder) -
         this.beatInterval * this.beatsPerMeasure;
     }
+    // A new run starts straight: its enemies come later
+    this._swingWanted = false;
+    this._swingBar = null;
     this.update(true);
   }
 
@@ -274,6 +344,14 @@ export class BeatClock {
     this.cache.timeToNextBeat = this.beatInterval - timeSinceLastBeat;
     this.cache.beatPhase = timeSinceLastBeat / this.beatInterval;
     this.cache.measurePhase = (elapsed % measureLength) / measureLength;
+
+    // A new bar takes the swing asked for; a different number, not a higher
+    // one, since reset() numbers the bars from 0 again
+    const bar = Math.floor(totalBeats / this.beatsPerMeasure);
+    if (bar !== this._swingBar) {
+      this._swingBar = bar;
+      this._swingOn = this._swingWanted;
+    }
   }
 
   // Getter for currentBeat for probe/debug compatibility

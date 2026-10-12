@@ -28,6 +28,13 @@ const CONFIG = {
     AHEAD_MS: 25,
   },
 
+  // The swing a bassist brings: while one is about, the hero's fire and
+  // steps put their "and" this far through the beat (2/3: the triplet's
+  // "let"), and the bassist plays there. Tune with ?tune.
+  SWING: {
+    AND_AT: 2 / 3,
+  },
+
   // Speech/Chatter Settings (per enemy type, in seconds). Every AMBIENT_MIN
   // to AMBIENT_MAX s an enemy waits for its beat, then speaks one of its
   // lines on CHANCE: about one line each 20-30 s. Tune live with ?tune.
