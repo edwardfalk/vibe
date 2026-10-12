@@ -28,6 +28,13 @@ const CONFIG = {
     AHEAD_MS: 25,
   },
 
+  // The swing a bassist brings: while one is about, the hero's fire and
+  // steps put their "and" this far through the beat (2/3: the triplet's
+  // "let"), and the bassist plays there. Tune with ?tune.
+  SWING: {
+    AND_AT: 2 / 3,
+  },
+
   // Speech/Chatter Settings (per enemy type, in seconds). Every AMBIENT_MIN
   // to AMBIENT_MAX s an enemy waits for its beat, then speaks one of its
   // lines on CHANCE: about one line each 20-30 s. Tune live with ?tune.
@@ -189,6 +196,8 @@ const CONFIG = {
     CHATTER: 'both', // both (each grunt his own voice), whine or squeak
     CHATTER_DB: 0,
     FUSE_DB: 0, // the rusher's fuse
+    BASS_PLUCK_DB: 2.5, // the bassist's ghost plucks: Edward's, on the page
+    BASS_SLAP_DB: -1, // and his slap
   },
 
   // Pausing (P) stops the sound: the audio is suspended, which also stops
@@ -305,6 +314,7 @@ const CONFIG = {
     rusher: 18, // the stuntman's rocket and rider
     stabber: 19, // the shiv's shell and claws
     tank: 55, // the Bouncer's shoulders reach about 65 px
+    bassist: 20, // his shell (the look's, on the studies page)
   },
 
   // How the rusher looks (js/entities/RusherRenderer.js). Drawn only; his hit
@@ -414,6 +424,7 @@ const CONFIG = {
     DAMAGE_STAB: 25,
     DAMAGE_TANK_SHOVE: 15, // a tank's shove when he's in front of it
     DAMAGE_TANK_ELBOW: 10, // a tank's elbow when he's at its side
+    DAMAGE_BASS_NOTE: 15, // a bassist's note
     // Knockback: a push of this many px/frame that fades by KNOCKBACK_DECAY
     // (share kept per frame), so it carries him about force x 6.7 px in all
     KNOCKBACK_DECAY: 0.85,
@@ -463,6 +474,44 @@ const CONFIG = {
     FRONT: 45,
     SIDE: 30,
     CLANG_VOLUME: 1, // a plate breaking, 1 = the studies page's level
+  },
+
+  // The bassist (js/entities/Bassist.js), an alien that resembles an upright
+  // bass. Speeds are px/s. He stalks the hero as the stabber does, between
+  // STALK_MIN_PX and STALK_MAX_PX, and plays the let of every beat
+  // (SWING.AND_AT). His four strings are his health: HITS_PER_STRING of the
+  // hero's shots snap one. Health applies to bassists spawned after a
+  // change. Tune live with ?tune.
+  BASSIST: {
+    SIZE: 30,
+    STALK_MIN_PX: 230,
+    STALK_MAX_PX: 380,
+    APPROACH_PX_S: 110, // closing in from further out
+    STALK_PX_S: 25, // circling the hero inside the band
+    BACKOFF_PX_S: 90, // nearer than the band
+    STEER_SEC: 0.35, // how fast his drift eases to what he wants
+    LURCH_PX_S: 160, // each let he plays puffs him on this fast
+    PUFF_KEEP: 0.88, // the share of a puff's push kept per 60 Hz frame
+    TURN_SEC: 0.12, // his quick turn to the hero on let 3
+    RECOIL_PX_S: 110, // the slap kicks him back off his aim
+    KNOCK_PX_S: 160, // a shot's push (the stabber's is 480)
+    KNOCK_MAX_PX_S: 500, // capped under steady fire
+    KNOCK_DECAY: 0.85, // the share of it kept per 60 Hz frame
+    OCTAVE: 2, // his line's octave (b3, 4, 5, b7)
+    HITS_PER_STRING: 3,
+    // His note, fired on the slap: it glides at NOTE_GLIDE_PX_S, and each
+    // let he plays pushes it NOTE_LURCH_PX further by the next beat
+    NOTE_SIZE: 16,
+    NOTE_GLIDE_PX_S: 60,
+    NOTE_LURCH_PX: 45,
+    NOTE_DAMAGE_TO_TANKS: 5, // it kills smaller aliens; a tank only takes this
+  },
+
+  // How the bassist looks (js/entities/BassistRenderer.js). Drawn only:
+  // ART_SCALE 1 is the studies page's size (about 75 px long); his hit
+  // circle is HITBOX.bassist
+  BASSIST_LOOK: {
+    ART_SCALE: 1,
   },
 
   // The stabber, the shiv (js/entities/Stabber.js). Speeds are px/s. He

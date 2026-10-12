@@ -516,14 +516,15 @@ describe('the trickle of other types', () => {
     };
     expect(seen(2)).toEqual(['stabber']);
     expect(seen(3)).toEqual(['rusher', 'stabber']);
-    expect(seen(5)).toEqual(['rusher', 'stabber', 'tank']);
+    expect(seen(4)).toEqual(['bassist', 'rusher', 'stabber']);
+    expect(seen(5)).toEqual(['bassist', 'rusher', 'stabber', 'tank']);
   });
 
   it('caps the others at today’s cap times today’s share of non-grunts', () => {
     const { system } = world();
     expect(
       [1, 2, 3, 4, 5, 6, 7, 8, 9].map((l) => system.getMaxOthersForLevel(l))
-    ).toEqual([0, 1, 2, 2, 3, 4, 4, 5, 5]);
+    ).toEqual([0, 1, 2, 3, 3, 4, 4, 5, 5]); // the bassist's level 4: 2 before him
   });
 
   it('counts only the others against it: a full swarm never holds them back', () => {

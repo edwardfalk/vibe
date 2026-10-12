@@ -580,6 +580,59 @@ const FUSE = {
 };
 
 /** Every synth by name; the crash keeps CONFIG.RUSHER.CRASH_VOLUME */
+// FM: a sine on `f` whose frequency each modulator bends: a sine at RATIO
+// times the note, by FROM times its own frequency falling to TO over
+// SWEEP_SEC, so it is bright as it is struck and rounder as it rings
+function fm(ctx, out, at, f, cents, mods) {
+  const carrier = osc(ctx, 'sine', f, at, out, cents);
+  const sources = [carrier];
+  const nodes = [];
+  for (const m of mods) {
+    const fMod = f * m.RATIO;
+    const depth = gainAt(ctx, m.FROM * fMod, at, carrier.frequency);
+    depth.gain.exponentialRampToValueAtTime(m.TO * fMod, at + m.SWEEP_SEC);
+    const o = osc(ctx, 'sine', fMod, at, depth, cents);
+    sources.push(o);
+    nodes.push(depth);
+  }
+  for (const src of sources) src.start(at);
+  return [sources, nodes];
+}
+
+// The bassist's ghost pluck and slap, on the note he is given: the 80s FM
+// bass, Edward's pick on the listening page (2026-10-12). The ghost is a
+// short soft blip; the slap starts brighter and rings longer, and a high
+// modulator gone in 30 ms gives it a metal snap. Each trim is the page's,
+// measured the game's way: his plucks' mean 2.5 dB under the kick, his slap
+// 2.5 dB over it, in octave 2
+const BASS_PLUCK = {
+  trim: -9.0,
+  MODS: [{ RATIO: 1, FROM: 2.2, TO: 0.8, SWEEP_SEC: 0.06 }],
+  PEAK: 0.7,
+  ATTACK_SEC: 0.002,
+  SEC: 0.14,
+  STOP_SEC: 0.16,
+  notes: ({ note }) => [note],
+  play(ctx, bus, at, [f], cents) {
+    const e = envelope(ctx, this.PEAK, this.ATTACK_SEC, this.SEC, at, bus);
+    const [sources, nodes] = fm(ctx, e, at, f, cents, this.MODS);
+    return [sources, [e, ...nodes], this.STOP_SEC];
+  },
+};
+const BASS_SLAP = {
+  ...BASS_PLUCK,
+  trim: -12.5,
+  // The body bright then round; a seventh-harmonic modulator, gone in 30 ms,
+  // is the slap's metal
+  MODS: [
+    { RATIO: 1, FROM: 4.5, TO: 1.3, SWEEP_SEC: 0.35 },
+    { RATIO: 7, FROM: 2.5, TO: 0.01, SWEEP_SEC: 0.03 },
+  ],
+  PEAK: 0.8,
+  SEC: 0.6,
+  STOP_SEC: 0.65,
+};
+
 export const SYNTHS = {
   crash: (ctx, out, cfg, { volume, pan, at }) =>
     playCrash(
@@ -592,6 +645,10 @@ export const SYNTHS = {
     ),
   heroShot,
   gruntShot,
+  bassPluck: (ctx, out, _cfg, opts) =>
+    playBand(ctx, out, BASS_PLUCK, CONFIG.BAND.BASS_PLUCK_DB, opts),
+  bassSlap: (ctx, out, _cfg, opts) =>
+    playBand(ctx, out, BASS_SLAP, CONFIG.BAND.BASS_SLAP_DB, opts),
   tankShot: (ctx, out, _cfg, opts) =>
     playBand(ctx, out, TANK_SHOT, CONFIG.BAND.TANK_SHOT_DB, opts),
   tankCharge: (ctx, out, _cfg, opts) =>

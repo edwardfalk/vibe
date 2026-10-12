@@ -3,6 +3,7 @@ import { sin, cos, dist } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import { GRUNT_COLORS } from './GruntRenderer.js';
 import { TANK_COLORS, drawTankBall } from './TankRenderer.js';
+import { NOTE_OWNER, drawBassNote } from './BassNote.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
@@ -57,6 +58,9 @@ export class Bullet {
     this.owner = owner; // 'player' or 'enemy'
     this.ownerId = undefined;
     this.energy = undefined;
+    this.hung = null; // a bassist's note the hero shot (BassNote.hangNote)
+    this.swell = 0; // and how far through its wait for the let
+    this.push = 0; // how hard a let pushes a note now, 0..1
     this._inPool = false;
     this._remove = false; // a hit marks it; a recycled bullet starts clean
 
@@ -73,6 +77,11 @@ export class Bullet {
       this.size = 26;
       this.damage = 50;
       this.energy = 100;
+    } else if (owner === NOTE_OWNER) {
+      // The bassist's note: its speed is set each frame (driveBassNotes)
+      this.size = CONFIG.BASSIST.NOTE_SIZE;
+      this.damage = CONFIG.PLAYER.DAMAGE_BASS_NOTE;
+      this.energy = 100; // spent on the aliens it kills, as the tank's ball
     } else {
       this.size = 6;
       this.damage = 1;
@@ -105,6 +114,11 @@ export class Bullet {
 
   draw(p) {
     if (!this.active) return;
+    // A bassist's note draws itself, trail and glow too, as on its page
+    if (this.owner === NOTE_OWNER) {
+      drawBassNote(p, this);
+      return;
+    }
 
     try {
       if (this.owner === 'player') {

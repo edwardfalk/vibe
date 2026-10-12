@@ -1126,7 +1126,7 @@ test.describe('Gameplay Probes', () => {
       const spawnSystem = window.spawnSystem;
       const out = {};
 
-      for (const type of ['grunt', 'rusher', 'tank', 'stabber']) {
+      for (const type of ['grunt', 'rusher', 'tank', 'stabber', 'bassist']) {
         try {
           const enemy = spawnSystem.createEnemy(
             window.player.x + 150,
@@ -1156,6 +1156,7 @@ test.describe('Gameplay Probes', () => {
       rusher: { ok: true, dmgResult: 'exploding' },
       tank: { ok: true, dmgResult: 'died' },
       stabber: { ok: true, dmgResult: 'died' },
+      bassist: { ok: true, dmgResult: 'died' },
     });
 
     // Verify draw loop still running after enemy deaths
@@ -1201,8 +1202,8 @@ test.describe('Gameplay Probes', () => {
       const tank = at('tank', 0, 450);
       plantBomb(window.activeBombs, tank, window.beatClock, window.audio);
       window.__doomed = [tank];
-      ['grunt', 'rusher', 'stabber'].forEach((type, i) => {
-        const e = at(type, ((i + 1) * Math.PI) / 2, 180);
+      ['grunt', 'rusher', 'stabber', 'bassist'].forEach((type, i) => {
+        const e = at(type, ((i + 1) * Math.PI) / 2.5, 180);
         e.health = 1;
         window.__doomed.push(e);
       });
@@ -1214,7 +1215,7 @@ test.describe('Gameplay Probes', () => {
       await page.waitForTimeout(AIM_MS);
     }
     await page.mouse.up();
-    // It was a fight: all four died, the tank to his bomb
+    // It was a fight: all five died, the tank to his bomb
     const alive = await page.evaluate(() =>
       window.__doomed
         .filter((e) => window.enemies.includes(e) && !e.markedForRemoval)
@@ -1222,6 +1223,123 @@ test.describe('Gameplay Probes', () => {
     );
     expect(alive).toEqual([]);
     expect(errors).toEqual([]);
+  });
+
+  // The game loop's two bassist hooks (the bassist spec): the hero's grid
+  // swings from the bar after one is about and stops the bar after none
+  // is (BeatClock.wantSwing), and one pass a frame drives his notes and
+  // pops them once he is gone (driveBassNotes)
+  test('A bassist swings the hero, drives his notes, and takes them with him', async ({
+    page,
+  }) => {
+    await bootGame(page);
+    const r = await page.evaluate(async () => {
+      const clock = window.beatClock;
+      const hero = window.player;
+      hero.health = hero.maxHealth = 10000; // his notes may land
+      const frames = (n) =>
+        new Promise((done) => {
+          const start = window.frameCount;
+          const tick = () =>
+            window.frameCount >= start + n
+              ? done()
+              : window.requestAnimationFrame(tick);
+          tick();
+        });
+      const until = async (ok, maxFrames = 600) => {
+        for (let i = 0; i < maxFrames && !ok(); i++) await frames(1);
+        return ok();
+      };
+      const nextBar = () => (Math.floor(clock.getBeatPosition() / 4) + 1) * 4;
+      const out = { before: clock.swingOn };
+      const b = window.spawnSystem.createEnemy(
+        hero.x + 260,
+        hero.y,
+        'bassist',
+        hero.p
+      );
+      b.isSpawning = false;
+      window.enemies.push(b);
+      const bar = nextBar();
+      await until(() => clock.getBeatPosition() >= bar + 0.2);
+      out.swung = clock.swingOn;
+      const noteOf = () =>
+        window.enemyBullets.find(
+          (n) => n.owner === 'enemy-bassist' && n.ownerId === b.id
+        );
+      out.fired = await until(() => !!noteOf(), 300);
+      const note = noteOf();
+      const x0 = note?.x;
+      const y0 = note?.y;
+      await frames(5);
+      out.moved = note ? Math.hypot(note.x - x0, note.y - y0) : 0;
+      b.markedForRemoval = true; // gone, by whatever route
+      await frames(3);
+      out.popped = !window.enemyBullets.includes(note);
+      const after = nextBar();
+      await until(() => clock.getBeatPosition() >= after + 0.2);
+      out.straight = !clock.swingOn;
+      return out;
+    });
+    expect(r.before).toBe(false);
+    expect(r.swung).toBe(true);
+    expect(r.fired).toBe(true);
+    expect(r.moved).toBeGreaterThan(1);
+    expect(r.popped).toBe(true);
+    expect(r.straight).toBe(true);
+  });
+
+  test("A bassist killed in a bar's last frame takes the swing with him at the bar line", async ({
+    page,
+  }) => {
+    await bootGame(page);
+    const r = await page.evaluate(async () => {
+      const clock = window.beatClock;
+      const hero = window.player;
+      hero.health = hero.maxHealth = 10000;
+      const frames = (n) =>
+        new Promise((done) => {
+          const start = window.frameCount;
+          const tick = () =>
+            window.frameCount >= start + n
+              ? done()
+              : window.requestAnimationFrame(tick);
+          tick();
+        });
+      const nextBar = () => (Math.floor(clock.getBeatPosition() / 4) + 1) * 4;
+      const b = window.spawnSystem.createEnemy(
+        hero.x + 260,
+        hero.y,
+        'bassist',
+        hero.p
+      );
+      b.isSpawning = false;
+      window.enemies.push(b);
+      const swingBar = nextBar();
+      while (clock.getBeatPosition() < swingBar + 0.2) await frames(1);
+      const out = { swung: clock.swingOn };
+      // The clock's time held still, so the kill lands in the frame just
+      // before a bar line and the bar line in the frame after
+      const barMs = clock.startTime + nextBar() * clock.beatInterval;
+      let now = barMs - 5;
+      clock._now = () => now;
+      const spawnUpdate = window.spawnSystem.update.bind(window.spawnSystem);
+      let armed = true;
+      window.spawnSystem.update = () => {
+        if (armed) b.markedForRemoval = true; // killed mid-frame, any route
+        armed = false;
+        spawnUpdate();
+      };
+      await frames(1);
+      out.killed = !armed;
+      now = barMs + 50;
+      await frames(1);
+      out.straight = !clock.swingOn;
+      return out;
+    });
+    expect(r.swung).toBe(true);
+    expect(r.killed).toBe(true);
+    expect(r.straight).toBe(true);
   });
 
   test('Bullet collision kills enemy and awards score', async ({ page }) => {

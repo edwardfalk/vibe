@@ -1,7 +1,8 @@
 /**
  * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK (the kick, and whether it is tuned to the hum), HUM, SKY, PACING, the grunts' swarms (SWARM),
  * MIX, the rusher's flight, fuse, push and blast (RUSHER) and look (RUSHER_LOOK), the stabber's stalk, lunge, rest,
- * push, health and strings' volumes (STABBER) and size (STABBER_LOOK), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
+ * push, health and strings' volumes (STABBER) and size (STABBER_LOOK), the swing a bassist brings (SWING) and his stalk,
+ * strings, puff, octave and note (BASSIST), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the hero's
  * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK),
@@ -78,6 +79,8 @@ const HITS = 'HITS';
 const BAND = 'BAND';
 const RUSHER = 'RUSHER';
 const STABBER = 'STABBER';
+const SWING = 'SWING';
+const BASSIST = 'BASSIST';
 const HITBOX = 'HITBOX';
 const SKY = 'SKY';
 const GRUNT = 'GRUNT_LOOK';
@@ -164,6 +167,8 @@ export const KNOBS = [
   [BAND, 'CHATTER', CHATTER_CHOICES],
   [BAND, 'CHATTER_DB', [-24, 12, 1]],
   [BAND, 'FUSE_DB', [-24, 12, 1]],
+  [BAND, 'BASS_PLUCK_DB', [-24, 12, 0.5]],
+  [BAND, 'BASS_SLAP_DB', [-24, 12, 0.5]],
   [RUSHER, 'BOOST_PX_S', [0, 600, 10]],
   [RUSHER, 'CRUISE_PX_S', [0, 400, 10]],
   [RUSHER, 'BOOST_TAU_SEC', [0.02, 1, 0.01]],
@@ -179,6 +184,27 @@ export const KNOBS = [
   [RUSHER, 'EXPLOSION_RADIUS', [60, 300, 10]],
   [RUSHER, 'EXPLOSION_DAMAGE', [5, 100, 5]],
   [RUSHER, 'CRASH_VOLUME', [0, 2, 0.05]],
+  [SWING, 'AND_AT', [0.5, 0.75, 1 / 24]], // 2/3 is the triplet's let
+  [BASSIST, 'STALK_MIN_PX', [50, 500, 10]],
+  [BASSIST, 'STALK_MAX_PX', [100, 600, 10]],
+  [BASSIST, 'APPROACH_PX_S', [0, 400, 10]],
+  [BASSIST, 'STALK_PX_S', [0, 200, 5]],
+  [BASSIST, 'BACKOFF_PX_S', [0, 300, 10]],
+  [BASSIST, 'STEER_SEC', [0.05, 1, 0.05]],
+  [BASSIST, 'HITS_PER_STRING', [1, 10, 1]],
+  [BASSIST, 'LURCH_PX_S', [0, 600, 10]],
+  [BASSIST, 'PUFF_KEEP', [0.5, 0.98, 0.01]],
+  [BASSIST, 'TURN_SEC', [0.02, 0.5, 0.02]],
+  ['BASSIST_LOOK', 'ART_SCALE', [0.5, 2, 0.05]],
+  [BASSIST, 'RECOIL_PX_S', [0, 400, 10]],
+  [BASSIST, 'KNOCK_PX_S', [0, 600, 10]],
+  [BASSIST, 'KNOCK_MAX_PX_S', [0, 1500, 50]],
+  [BASSIST, 'KNOCK_DECAY', [0.5, 0.98, 0.01]],
+  [BASSIST, 'OCTAVE', [1, 4, 1]],
+  // Above 0, so a note always leaves
+  [BASSIST, 'NOTE_GLIDE_PX_S', [10, 300, 5]],
+  [BASSIST, 'NOTE_LURCH_PX', [5, 200, 5]],
+  [BASSIST, 'NOTE_DAMAGE_TO_TANKS', [0, 30, 1]],
   [STABBER, 'STALK_MIN_PX', [50, 500, 10]],
   [STABBER, 'STALK_MAX_PX', [100, 600, 10]],
   [STABBER, 'APPROACH_PX_S', [0, 400, 10]],
@@ -236,6 +262,7 @@ export const KNOBS = [
   [HITBOX, 'SHOW'],
   [HITBOX, 'grunt', [8, 50, 1]],
   [HITBOX, 'rusher', [8, 50, 1]],
+  [HITBOX, 'bassist', [8, 50, 1]],
   [HITBOX, 'stabber', [8, 50, 1]],
   [HITBOX, 'tank', [20, 70, 1]],
   [GRUNT, 'ART_SCALE', [0.8, 1.6, 0.05]],
@@ -256,6 +283,7 @@ export const KNOBS = [
   ['PLAYER', 'REGEN_PER_SEC', [0, 10, 0.1]],
   ['PLAYER', 'DAMAGE_GRUNT_BULLET', [0, 30, 1]],
   ['PLAYER', 'DAMAGE_TANK_BALL', [0, 100, 1]],
+  ['PLAYER', 'DAMAGE_BASS_NOTE', [0, 60, 1]],
   ['PLAYER', 'DAMAGE_STAB', [0, 60, 1]],
   ['PLAYER', 'DAMAGE_TANK_SHOVE', [0, 60, 1]],
   ['PLAYER', 'DAMAGE_TANK_ELBOW', [0, 60, 1]],

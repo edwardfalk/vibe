@@ -391,10 +391,18 @@ export class Audio {
     const { near, pan } = this.placement(x, y);
     // Every synth starts on its eighth when it can (beatTiming) and is told
     // it; the hero's shot has its own window, and softens in a burst
+    // A caller's own time goes on its nearest eighth, as a tone's does, or,
+    // asked (`exact`: the bassist's let), as it is
     const { at, eighth, level } =
       config.synth === 'heroShot'
         ? this.heroShotTiming()
-        : { ...this.beatTiming(), level: 1 };
+        : {
+            ...this.beatTiming({
+              target: opts?.at,
+              exact: opts?.exact === true,
+            }),
+            level: 1,
+          };
     // Scrambled: a creature picks its note and voice from its seed's top
     // bits, and copies on one note must still spread over the whole range
     const spreadBy =
@@ -423,30 +431,47 @@ export class Audio {
    * the beat clock's lead ahead of the audio (BeatClock), so a sound played
    * in the frame after its eighth is still in time to start on it. Its
    * eighth is the last one at or before the game's now plus `early` (s), or
-   * the one at clock time `target` when its caller aimed at one; it starts
+   * the one at clock time `target` when its caller aimed at one (`exact`:
+   * the target itself, for a sound between the eighths); it starts
    * there when that is at least one render quantum ahead of the audio (or it
    * would land in the past), and else now. `fromAudio` measures from the
    * audio's now instead (the hero's first shot). It books only on a beat
    * clock that runs on this AudioContext, as BeatTrack checks before every
    * kick. It is told the eighth it is booked on, else the nearest one.
    */
-  beatTiming({ early = 0, fromAudio = false, target } = {}) {
+  beatTiming({
+    early = 0,
+    fromAudio = false,
+    target,
+    exact = false,
+    hero = false,
+  } = {}) {
     const clock = this.getContextValue('beatClock');
     const ctx = this.audioContext;
     const now = ctx.currentTime; // once: it moves within a task
-    const nearest = clock ? Math.round(clock.getBeatPosition() * 2) : 0;
+    // The hero's shots keep his own grid, swung while a bassist is about
+    const eighths = (beats) => (hero ? clock.heroEighths(beats) : beats * 2);
+    const nearest = clock ? Math.round(eighths(clock.getBeatPosition())) : 0;
     if (clock?.audioContext !== ctx) {
       return { now, game: now, at: now, eighth: nearest };
     }
     const origin = clock.startTime / MS_PER_SEC;
     const step = clock.beatInterval / 2 / MS_PER_SEC;
+    const beatSec = clock.beatInterval / MS_PER_SEC;
     const game = now + (clock.aheadSec ?? 0);
     const from = fromAudio ? now : game;
-    const eighth =
-      target === undefined
+    const eighth = hero
+      ? Math.floor(eighths((from + early - origin) / beatSec))
+      : target === undefined
         ? Math.floor((from + early - origin) / step)
         : Math.round((target - origin) / step);
-    const at = origin + eighth * step;
+    // An exact target (the bassist's let) keeps its own time
+    const at =
+      exact && target !== undefined
+        ? target
+        : hero
+          ? origin + clock.heroEighthBeat(eighth) * beatSec
+          : origin + eighth * step;
     const quantum = RENDER_QUANTUM_FRAMES / ctx.sampleRate;
     if (at - now >= quantum) return { now, game, at, eighth };
     return { now, game, at: now, eighth: nearest };
@@ -464,7 +489,11 @@ export class Audio {
   heroShotTiming() {
     const clock = this.getContextValue('beatClock');
     const held = this.player?.shotHeld === true;
-    const timing = this.beatTiming({ early: SNAP_SEC, fromAudio: !held });
+    const timing = this.beatTiming({
+      early: SNAP_SEC,
+      fromAudio: !held,
+      hero: true,
+    });
     return { ...timing, level: this.heroRunLevel(timing.at, clock) };
   }
 

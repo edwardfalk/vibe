@@ -14,6 +14,7 @@ export const VOICE_DEGREES = {
   rusher: ['b7', '1'],
   hero: ['1', '5'],
   game: ['1', 'b3', '5', 'b7'],
+  bassist: ['1', 'b3', '4', '5', 'b7'], // his line walks up b3, 4, 5, b7 into the root
 };
 
 // A grunt shoots one of these for life, by his look's seed (Grunt.shotNote):
@@ -35,6 +36,9 @@ export const SOUND_CONFIG = {
   // The tank's shot and his charge: the band's 808 boom with its zap, and a
   // rising pluck a beat (Instruments.js)
   tankShot: { synth: 'tankShot', group: 'band' },
+  // The bassist's lets, on his line's note (Bassist.js)
+  bassPluck: { synth: 'bassPluck', group: 'band' },
+  bassSlap: { synth: 'bassSlap', group: 'band' },
   tankCharge: { synth: 'tankCharge', group: 'band' },
   // A tank ball killing an enemy on its way: short, dry, not the shot's boom
   tankBallKill: {
@@ -172,6 +176,46 @@ export const SOUND_CONFIG = {
     volume: 0.35,
     duration: 0.2,
     hit: true,
+  },
+  // The bassist's: a hit climbs from his 4; a hit that snaps a string
+  // twangs from his b7 down to his 5 instead (Bassist.takeDamage)
+  bassistHit: {
+    group: 'feedback',
+    voice: 'bassist',
+    note: ['4', 3],
+    waveform: 'triangle',
+    volume: 0.3,
+    duration: 0.06,
+    hit: true,
+  },
+  bassistTwang: {
+    group: 'feedback',
+    voice: 'bassist',
+    note: ['b7', 3],
+    sweep: { to: ['5', 2], curve: 'exponential' },
+    waveform: 'sawtooth',
+    volume: 0.3 * dB(-3), // the window test: under the band
+    duration: 0.3,
+    hit: true, // the hit's one sound; played without his health, it never climbs
+  },
+  // His last string's twang, sliding down onto the hum's root as he dies
+  bassistDeath: {
+    group: 'feedback',
+    voice: 'bassist',
+    note: ['b7', 3],
+    sweep: { to: ['1', 2], curve: 'exponential' },
+    waveform: 'sawtooth',
+    volume: 0.35 * dB(-1.2), // the window test: with the other events
+    duration: 0.6,
+  },
+  // A bassist's answer to his kin's death: a pluck on his 5
+  bassistResponse: {
+    group: 'band',
+    voice: 'bassist',
+    note: ['5', 3],
+    waveform: 'triangle',
+    volume: 0.25,
+    duration: 0.12,
   },
   stabberHit: {
     group: 'feedback',

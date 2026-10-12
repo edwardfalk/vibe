@@ -154,6 +154,9 @@ const BAND = {
     trim: 9.6,
   },
   rusherFuse: { opts: { left: 1 }, knob: 'FUSE_DB', trim: 0.4 },
+  // The bassist's FM bass, on a note of his line
+  bassPluck: { opts: { note: ['4', 2] }, knob: 'BASS_PLUCK_DB', trim: -9.0 },
+  bassSlap: { opts: { note: ['b7', 2] }, knob: 'BASS_SLAP_DB', trim: -12.5 },
 };
 const NAMES = Object.keys(BAND);
 

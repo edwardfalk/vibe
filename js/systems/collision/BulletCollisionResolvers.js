@@ -10,6 +10,7 @@ import {
   killPoints,
 } from '../../shared/DamageResultHandler.js';
 import { applyKillFeedback } from '../combat/KillFeedback.js';
+import { NOTE_OWNER } from '../../entities/BassNote.js';
 
 /**
  * Resolve a player bullet hitting an enemy.
@@ -64,24 +65,23 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
  * Handle tank energy ball hitting an enemy (friendly fire).
  */
 export function handleTankEnergyBallHit(bullet, enemy, deps) {
-  // Another tank only takes a dent, through his armour, and the ball is spent
-  // on him; so is it on a rusher, whom it lights as any hit does (he never
-  // dies of damage: he blows on his beat); any other alien it meets dies
-  // outright
+  // A tank's ball, or a bassist's note: another tank only takes
+  // a dent, through his armour, and the shot is spent on him; so is it on a
+  // rusher, whom it lights as any hit does (he never dies of damage: he
+  // blows on his beat); any other alien it meets dies outright
+  // A bassist's note dents by its own number, and kills without the ball's sounds
+  const note = bullet.owner === NOTE_OWNER;
   if (enemy.type === 'tank' || enemy.type === 'rusher') {
-    handleRegularEnemyBulletHit(
-      bullet,
-      enemy,
-      deps,
-      CONFIG.TANK.SHOT_DAMAGE_TO_TANKS
-    );
+    const dent = note
+      ? CONFIG.BASSIST.NOTE_DAMAGE_TO_TANKS
+      : CONFIG.TANK.SHOT_DAMAGE_TO_TANKS;
+    handleRegularEnemyBulletHit(bullet, enemy, deps, dent);
     return;
   }
   const { getContextValue, handleEnemyDeath } = deps;
   const audio = getContextValue('audio');
   const gameState = getContextValue('gameState');
-
-  if (audio) {
+  if (audio && !note) {
     audio.playSound('tankBallKill', bullet.x, bullet.y);
   }
 
@@ -92,7 +92,7 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
   // Kill the enemy: his own death
   handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y, { dir: bullet.angle });
 
-  if (audio) {
+  if (audio && !note) {
     audio.playSound('enemyFrying', enemy.x, enemy.y);
   }
 
@@ -144,6 +144,8 @@ export function handleRegularEnemyBulletHit(
     bulletSource = 'stabber';
   } else if (bullet.owner === 'enemy-tank') {
     bulletSource = 'tank';
+  } else if (bullet.owner === NOTE_OWNER) {
+    bulletSource = 'bassist';
   }
 
   handleDamageResult(

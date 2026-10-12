@@ -6,6 +6,7 @@ import { Grunt } from '../entities/Grunt.js';
 import { Rusher } from '../entities/Rusher.js';
 import { Tank } from '../entities/Tank.js';
 import { Stabber } from '../entities/Stabber.js';
+import { Bassist } from '../entities/Bassist.js';
 import { CONFIG } from '../config.js';
 import { createContextAccessor } from '../shared/ContextAccessor.js';
 import { max, min, floor, random, sqrt } from '../mathUtils.js';
@@ -17,9 +18,10 @@ const ENEMY_CLASSES = {
   rusher: Rusher,
   tank: Tank,
   stabber: Stabber,
+  bassist: Bassist,
 };
 
-export const ENEMY_INTRO_LEVEL = { stabber: 2, rusher: 3, tank: 5 };
+export const ENEMY_INTRO_LEVEL = { stabber: 2, rusher: 3, bassist: 4, tank: 5 };
 
 // Spots tried for a new swarm, to find one away from the others
 const SIDE_TRIES = 8;
@@ -250,12 +252,22 @@ export class SpawnSystem {
       // Early levels: mostly grunts
       weightedTypes = ['grunt', 'grunt', 'grunt'];
       if (level >= ENEMY_INTRO_LEVEL.stabber) weightedTypes.push('stabber');
-    } else if (level < ENEMY_INTRO_LEVEL.tank) {
+    } else if (level < ENEMY_INTRO_LEVEL.bassist) {
       // Mid levels: mix of grunt, stabber, rusher
       weightedTypes = ['grunt', 'grunt', 'stabber', 'stabber', 'rusher'];
+    } else if (level < ENEMY_INTRO_LEVEL.tank) {
+      // The bassist joins them
+      weightedTypes = [
+        'grunt',
+        'grunt',
+        'stabber',
+        'stabber',
+        'rusher',
+        'bassist',
+      ];
     } else {
       // High levels: all enemy types with tanks
-      weightedTypes = ['grunt', 'stabber', 'rusher', 'tank'];
+      weightedTypes = ['grunt', 'stabber', 'rusher', 'tank', 'bassist'];
     }
 
     return weightedTypes;

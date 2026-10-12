@@ -16,6 +16,10 @@ import { nextFacing, mod } from './GruntRenderer.js';
 import { rusherTilt } from './RusherRenderer.js';
 import { heardKickOf } from '../audio/BeatTrack.js';
 
+// A shot waits this long before the next (about an eighth); a held shot,
+// on a swung grid, less (heldCooldownMs)
+const TAP_COOLDOWN_MS = 200;
+
 const WORLD_WIDTH = CONFIG.GAME_SETTINGS.WORLD_WIDTH;
 const WORLD_HEIGHT = CONFIG.GAME_SETTINGS.WORLD_HEIGHT;
 // A dash step clamps the frame time to this range
@@ -279,7 +283,7 @@ export class Player {
           }
 
           // Set proper cooldown to prevent double shot from shoot() later this frame
-          this.shootCooldownMs = 200;
+          this.shootCooldownMs = this.heldCooldownMs();
 
           this.queuedShot = null; // Clear the queue
         }
@@ -325,7 +329,7 @@ export class Player {
     if (this.footfalls.some((f) => f.at > beats)) {
       this.footfalls = this.footfalls.filter((f) => f.at <= beats);
     }
-    if (this.lastEighth !== null && this.lastEighth > beats * 2) {
+    if (this.lastEighth !== null && this.lastEighth > this.eighthsAt(beats)) {
       this.lastEighth = null;
     }
   }
@@ -337,7 +341,7 @@ export class Player {
       this.lastEighth = null;
       return;
     }
-    const eighth = Math.floor(beats * 2);
+    const eighth = Math.floor(this.eighthsAt(beats));
     // Setting off mid-eighth, his first foot lands on the next one
     if (this.lastEighth === null) this.lastEighth = eighth;
     if (eighth === this.lastEighth) return;
@@ -346,10 +350,17 @@ export class Player {
     this.footfalls.push({
       x: this.x + this.facing * CRACK_AHEAD * k,
       y: this.y + FEET_Y * k,
-      at: eighth / 2,
+      at:
+        this.getContextValue('beatClock')?.heroEighthBeat?.(eighth) ??
+        eighth / 2,
       foot: mod(eighth, 2),
     });
     if (this.footfalls.length > FOOTFALLS_KEPT) this.footfalls.shift();
+  }
+
+  /** His eighths at beat position `beats`: BeatClock's hero grid, swung with his fire while a bassist is about */
+  eighthsAt(beats) {
+    return this.getContextValue('beatClock')?.heroEighths?.(beats) ?? beats * 2;
   }
 
   /** His drawn size: his size times PLAYER_LOOK.ART_SCALE */
@@ -376,7 +387,7 @@ export class Player {
       (this.getContextValue('beatClock')?.beatInterval ?? DEFAULT_BEAT_MS) /
       1000;
     const since = (at) => this.sinceStamp(at, beats);
-    const eighths = beats === null ? 0 : beats * 2;
+    const eighths = beats === null ? 0 : this.eighthsAt(beats);
     const e8 = Math.floor(eighths);
     const kick =
       beats === null
@@ -438,19 +449,20 @@ export class Player {
       if (!this.firstShotFired) {
         this.firstShotFired = true;
         const bullet = this.fireBullet(false);
-        this.shootCooldownMs = 200; // Tap cooldown (~8th note)
+        this.shootCooldownMs = TAP_COOLDOWN_MS;
         return bullet;
       }
 
-      // Sustained fire: quantized to 8th notes
+      // Sustained fire: quantized to his eighths, swung while a bassist is
+      // about (BeatClock's hero grid)
       const beatClock = this.getContextValue('beatClock');
       if (beatClock) {
-        if (beatClock.isOnEighthNote()) {
+        if (beatClock.isOnHeroEighth()) {
           const bullet = this.fireBullet();
-          this.shootCooldownMs = 200;
+          this.shootCooldownMs = this.heldCooldownMs();
           return bullet;
         } else if (!this.queuedShot) {
-          const timeToNext = beatClock.getTimeToNextEighthNote();
+          const timeToNext = beatClock.getTimeToNextHeroEighth();
           this.queueShot(timeToNext);
           return null;
         }
@@ -484,6 +496,22 @@ export class Player {
       this.drawnSize()
     );
     return Bullet.acquire(m.x, m.y, this.aimAngle, 8, 'player');
+  }
+
+  /**
+   * How long a held shot waits before the next may fire: today's 200 ms,
+   * short of the shorter gap between his eighths, less the eighth's window
+   * either side so no eighth fires twice. On the straight grid that is the
+   * 200 ms; swung, the let's gap to the beat is shorter (167 ms at
+   * SWING.AND_AT 2/3), and a fixed 200 would skip every beat
+   */
+  heldCooldownMs() {
+    const clock = this.getContextValue('beatClock');
+    if (!clock?.heroShortestGapMs) return TAP_COOLDOWN_MS;
+    return Math.min(
+      TAP_COOLDOWN_MS,
+      clock.heroShortestGapMs() - 2 * clock.eighthNoteTolerance
+    );
   }
 
   queueShot(timeToNextBeat) {

@@ -26,7 +26,7 @@ Always pass `--project` to Playwright (the scripts do); a bare `playwright test`
 
 ## What This Is
 
-A p5.js geometric space shooter where enemy actions sync to musical beats, creating an emergent rhythm that grows as the game progresses. Player held fire snaps to eighth notes (hi-hat), grunts fire on beats 2 & 4 (snare), tanks on beat 1 (kick), stabbers on beat 3.5 (syncopation), rushers explode on 1 & 3 (crash). Under it all a hum, a root note and its fifth drifting like an old analog synth, dips on every beat; `js/audio/Harmony.js` is the pitch grid every tuned sound shares.
+A p5.js geometric space shooter where enemy actions sync to musical beats, creating an emergent rhythm that grows as the game progresses. Player held fire snaps to eighth notes (hi-hat), grunts fire on beats 2 & 4 (snare), tanks on beat 1 (kick), stabbers on beat 3.5 (syncopation), rushers explode on 1 & 3 (crash), the bassist plucks the triplet "let" before every beat and slaps on the let of 4 (and while one is about, the player's eighths swing onto the let: `CONFIG.SWING`). Under it all a hum, a root note and its fifth drifting like an old analog synth, dips on every beat; `js/audio/Harmony.js` is the pitch grid every tuned sound shares.
 
 ## Architecture
 
@@ -34,7 +34,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md): the game loop, folders, shared state, be
 
 ## Level Progression
 
-Score-based, not wave-based: grunts come in swarms, two at a time (`CONFIG.SWARM`, `js/systems/GruntSwarm.js`), the other types in beat-aligned waves. All numbers live in `CONFIG.PACING` and `CONFIG.SWARM`, tunable live with `?tune`. Types come in by level (`ENEMY_INTRO_LEVEL` in `SpawnSystem.js`): grunts at 1, stabbers at 2, rushers at 3, tanks at 5. Each is previewed once per run, halfway through a level, as the next type still to come (the tank at level 3). Details in [docs/DESIGN.md](docs/DESIGN.md).
+Score-based, not wave-based: grunts come in swarms, two at a time (`CONFIG.SWARM`, `js/systems/GruntSwarm.js`), the other types in beat-aligned waves. All numbers live in `CONFIG.PACING` and `CONFIG.SWARM`, tunable live with `?tune`. Types come in by level (`ENEMY_INTRO_LEVEL` in `SpawnSystem.js`): grunts at 1, stabbers at 2, rushers at 3, bassists at 4, tanks at 5. Each is previewed once per run, halfway through a level, as the next type still to come (the bassist at level 3, the tank at 4). Details in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Code Style
 

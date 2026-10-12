@@ -6,12 +6,14 @@
 import { GRUNT_COLORS } from './GruntRenderer.js';
 import { TANK_COLORS } from './TankRenderer.js';
 import { RUSHER_COLORS } from './RusherRenderer.js';
+import { BASSIST_GLOW_RGB } from './BassistRenderer.js';
 
 const GLOW_RGB = {
   tank: TANK_COLORS.armour,
   rusher: RUSHER_COLORS.bike,
   stabber: [255, 140, 0],
   grunt: GRUNT_COLORS.glow,
+  bassist: BASSIST_GLOW_RGB,
 };
 const DEFAULT_GLOW_RGB = [50, 200, 50];
 

@@ -128,6 +128,30 @@ describe("the hero's shot", () => {
     expect(game(2.98).heroShotTiming().at).toBeCloseTo(2.955, 9);
   });
 
+  // While a bassist is about his grid swings (BeatClock.heroEighths)
+  it('held fire books the swung "and" when swing is on, told its eighth', () => {
+    const { audio, clock, game } = hero(true);
+    clock.wantSwing(true);
+    game(4.05).heroShotTiming(); // a new bar takes the swing
+    const and = (8 + 2 / 3) * 0.5; // the let after beat 8, in s
+    const t = game(and - 0.02).heroShotTiming();
+    expect(clock.swingOn).toBe(true);
+    expect(t.at).toBeCloseTo(and, 9);
+    expect(t.eighth).toBe(17);
+    expect(audio.player.shotHeld).toBe(true);
+  });
+
+  it('a first shot with swing on never waits for the next "and"', () => {
+    const { clock, game } = hero(false);
+    clock.wantSwing(true);
+    game(4.05).heroShotTiming();
+    // 8.52 beats: 30 ms on is still before the swung "and" at 8.667, so it
+    // plays at once (on the straight grid it would wait for the let)
+    const t = game(8.52 * 0.5).heroShotTiming();
+    expect(t.at).toBeCloseTo(8.52 * 0.5 - AHEAD, 9);
+    expect(t.eighth).toBe(17); // the nearest
+  });
+
   it('a shot with no mark is taken as a first shot', () => {
     expect(hero(undefined).game(2.98).heroShotTiming().at).toBeCloseTo(
       2.955,
@@ -412,5 +436,42 @@ describe('a tank the bomb kills dies with the bang', () => {
       3 + CONFIG.SKY.OFFSET_MS / 1000 + 0.025,
       9
     );
+  });
+});
+
+// The bassist plays between the eighths, on his let: a synth given a time
+// books at it exactly, with the guard (the bassist spec, Timing)
+describe('a synth given a time books at it, not its nearest eighth', () => {
+  it('beatTiming books an exact target at its time, and rounds without', () => {
+    const { game } = ledAudio();
+    const let3 = 3 + 1 / 3; // a let, 83 ms past the eighth at 3.25
+    expect(game(3.21).beatTiming({ target: let3, exact: true }).at).toBe(let3);
+    expect(game(3.21).beatTiming({ target: let3 }).at).toBe(3.25);
+  });
+
+  it('an exact target less than a render quantum ahead plays at once', () => {
+    const { game } = ledAudio();
+    const t = game(3.03).beatTiming({ target: 3.006, exact: true });
+    expect(t.at).toBeCloseTo(3.005, 9); // the audio's now
+  });
+
+  it("playSound passes a synth caller's time on, booked exactly when asked", () => {
+    const { made, game } = ledAudio();
+    game(3.31).playSound('tankShot', 100, 0, { at: 3 + 1 / 3, exact: true });
+    const starts = made
+      .filter((n) => n.start.mock.calls.length)
+      .map((n) => n.start.mock.calls[0][0]);
+    expect(starts.length).toBeGreaterThan(0);
+    for (const t of starts) expect(t).toBeCloseTo(3 + 1 / 3, 9);
+  });
+
+  it("a synth caller's time not asked to be exact goes on its nearest eighth, as a tone's", () => {
+    const { made, game } = ledAudio();
+    game(3.21).playSound('tankShot', 100, 0, { at: 3 + 1 / 3 });
+    const starts = made
+      .filter((n) => n.start.mock.calls.length)
+      .map((n) => n.start.mock.calls[0][0]);
+    expect(starts.length).toBeGreaterThan(0);
+    for (const t of starts) expect(t).toBeCloseTo(3.25, 9);
   });
 });
