@@ -18,6 +18,7 @@
     "screenshot": "playwright test --project=screenshot",
     "screenshot:level": "LEVEL=${LEVEL:-3} playwright test --project=screenshot",
     "test:beats": "playwright test --project=beats",
+    "demo": "playwright test --project=demo",
     "playtest": "playwright test --project=playtest",
     "compare": "node tests/replay/compare.js"
   },
