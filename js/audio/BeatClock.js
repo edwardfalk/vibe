@@ -304,9 +304,10 @@ export class BeatClock {
         (this.beatInterval - remainder) -
         this.beatInterval * this.beatsPerMeasure;
     }
-    // A new run starts straight: its enemies come later
+    // A new run starts straight: its enemies come later. Its first update
+    // is in a new bar (reset numbers them from 0, and swing only ever comes
+    // on in a later one), so it applies this at once
     this._swingWanted = false;
-    this._swingBar = null;
     this.update(true);
   }
 
