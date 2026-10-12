@@ -20,17 +20,21 @@ function moves(frameCount = 0) {
 describe('a pause holds the shakes still', () => {
   it("the camera's shake neither moves the world nor runs down while paused", () => {
     const { p, calls } = moves();
-    const camera = new CameraSystem(p);
+    const gameState = { gameState: 'paused' };
+    const camera = new CameraSystem(p, {
+      get: (key) => (key === 'gameState' ? gameState : undefined),
+    });
     camera.addShake(8, 12);
     const left = camera.screenShake.duration;
-    camera.applyTransform(false);
-    camera.applyTransform(false);
+    camera.applyTransform();
+    camera.applyTransform();
     expect(calls).toEqual([
       ['translate', 400, 300],
       ['translate', 400, 300],
     ]);
     expect(camera.screenShake.duration).toBe(left);
     calls.length = 0;
+    gameState.gameState = 'playing';
     camera.applyTransform();
     expect(calls).toHaveLength(2); // the shake, then the camera
     expect(camera.screenShake.duration).toBeLessThan(left);
