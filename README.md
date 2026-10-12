@@ -42,7 +42,7 @@ A steady kick drum keeps time over a hum, one root note and its fifth, which dip
 
 The clock ([`BeatClock`](js/audio/BeatClock.js)) runs on the Web Audio clock (`AudioContext.currentTime`), not on frame time. The kick ([`BeatTrack`](js/audio/BeatTrack.js)) is scheduled slightly ahead on the same grid, so frame hiccups don't push it off the beat.
 
-New enemy types join as you level up: grunts from the start, then stabbers at level 2, rushers at level 3 and tanks at level 5. Each one is previewed once: halfway through a level, a single enemy of the next type still to come appears (the tank's at level 3).
+New enemy types join as you level up: grunts from the start, then stabbers at level 2, rushers at level 3, the bassist at level 4 and tanks at level 5. Each one is previewed once: halfway through a level, a single enemy of the next type still to come appears (the bassist's at level 3, the tank's at level 4).
 
 ## Tuning
 

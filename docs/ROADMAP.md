@@ -92,6 +92,8 @@ Calls and smaller work:
 
 ## Deaths and effects
 
+- **build: the bassist's own death.** He ships with a stand-in (`BassistDeath.js`: slack, sinews curling, drifting off). Pick his own from a studies page of animated options, as the stabber's was, then port it. (bassist spec, Death)
+
 - **call: the stabber's death, by eye and ear on `?tune`:** Gold shatter is the default (Edward's pick at the play test, for its sound), Empty shell the other `DEATHS.STABBER_STYLE`. Its level (`DEATHS.STABBER_VOLUME`; both styles sit about 2 dB over the kick, beside the tank's death). The port kept the studies page's small choices, each Edward's to change:
   - the shell's spike splits with the shell;
   - its glide falls almost an octave, onto the hum's fifth;
