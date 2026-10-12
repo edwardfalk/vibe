@@ -55,11 +55,12 @@ const fuseOf = (bomb, beats) =>
   beats - Math.ceil(bomb.plantedAt + CONFIG.BOMB.COUNT_LEAD_BEATS);
 // Its damage at a point: from hi at its centre to lo at its reach, 0 beyond;
 // never above hi, so a max of 0 deals none. An alien counts once his hit
-// radius (`reach`) comes inside, as a rusher's blast and the clouds count him
+// radius (`reach`) comes inside, as a rusher's blast and the clouds count
+// him; how much he takes still falls off with his centre's distance
 function blastAt(bomb, x, y, lo, hi, reach = 0) {
   const R = CONFIG.BOMB.RADIUS_PX;
-  const d = Math.hypot(x - bomb.x, y - bomb.y) - reach;
-  if (d >= R) return 0;
+  const d = Math.hypot(x - bomb.x, y - bomb.y);
+  if (d - reach >= R) return 0;
   return Math.min(hi, Math.max(lo, floor(hi * (1 - d / R))));
 }
 

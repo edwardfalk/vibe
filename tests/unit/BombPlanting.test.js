@@ -521,6 +521,22 @@ describe('the bang kills the tank it is on', () => {
     expect(other.health).toBeLessThan(other.maxHealth);
   });
 
+  it("another alien's damage falls off with his centre's distance, his hit radius aside", () => {
+    const w = tankWorld({ hero: { x: 3000, y: 0 } });
+    const t = w.tank(0, 0);
+    const s = 50 * CONFIG.TANK_LOOK.ART_SCALE;
+    const back = tankBackPoint(t.x, t.y, s, t.facing);
+    const d = 137;
+    const other = w.tank(back.x + d, back.y);
+    blowOn(w, t, [t, other]);
+    const { ENEMY_DAMAGE_MIN, ENEMY_DAMAGE_MAX, RADIUS_PX } = CONFIG.BOMB;
+    const expected = Math.max(
+      ENEMY_DAMAGE_MIN,
+      Math.floor(ENEMY_DAMAGE_MAX * (1 - d / RADIUS_PX))
+    );
+    expect(other.maxHealth - other.health).toBe(expected);
+  });
+
   it("reaches an alien whose hit radius comes inside its ring, as a rusher's blast does, and sparks where it hurts him", () => {
     const w = tankWorld({ hero: { x: 3000, y: 0 } });
     const t = w.tank(0, 0);
