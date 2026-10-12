@@ -324,7 +324,7 @@ export class Audio {
 
     const soundConfig = this.sounds[soundName];
     if (!soundConfig) {
-      console.warn(`❌ Sound not found: ${soundName}`);
+      console.error(`❌ Sound not found: ${soundName}`);
       return;
     }
     this.guarded(soundName, () => {
