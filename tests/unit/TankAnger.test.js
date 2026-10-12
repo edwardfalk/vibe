@@ -91,9 +91,11 @@ describe('the third hit tips him', () => {
     w.frame(t, 6000); // bar 3: the whip, the whole 90°
     expect(t.turn.to - t.turn.from).toBeCloseTo(Math.PI / 2, 9);
     expect(t.whipAt).toBe(12);
-    w.frame(t, 6300); // into the turn: still held
-    expect(t.pose().glance.k).toBe(1);
-    w.frame(t, 6700); // past TURN_SEC and the ease back
+    // It swings him to his right, away from his head over his left
+    // shoulder: his head lets go as it starts, and the turn carries the look
+    w.frame(t, 6100);
+    expect(t.pose().glance.k).toBeLessThan(1);
+    w.frame(t, 6300);
     expect(t.pose().glance).toBeNull();
     // The next bar action turns him a step, as ever
     Object.assign(g, { x: 0, y: -300 }); // the grunt goes round behind him
@@ -103,6 +105,20 @@ describe('the third hit tips him', () => {
     t.takeDamage(1, t.facing, 'grunt');
     expect(t.backHitAt).toBe(t.poseBeats);
     w.frame(t, 8100);
+    expect(t.pose().glance).toBeNull();
+  });
+
+  it('a whip that swings him toward where his head looks holds it on the hit through the turn', () => {
+    const { w, t } = angerWorld({ x: 0, y: -300 }); // a grunt at his left
+    w.frame(t, 5000);
+    tip(t); // from dead behind: his head over his left shoulder
+    w.frame(t, 5900);
+    w.frame(t, 6000); // the whip, 90° to his left
+    expect(t.turn.to - t.turn.from).toBeCloseTo(-Math.PI / 2, 9);
+    w.frame(t, 6300); // into the turn: still held, closing on the hit
+    expect(t.pose().glance.k).toBe(1);
+    expect(t.pose().glance.rel).toBeGreaterThan(-LIMIT);
+    w.frame(t, 6700); // past TURN_SEC and the ease back
     expect(t.pose().glance).toBeNull();
   });
 

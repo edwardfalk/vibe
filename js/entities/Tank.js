@@ -749,23 +749,28 @@ class Tank extends BaseEnemy {
    * His glance now: where it turns his head, on his body and no further than
    * his "uh oh" looks, and how far in (k, 0 to 1), or null. It keeps its
    * bearing in the world as he turns (his facing never wraps), and the hold
-   * lets go TURN_SEC after his whip, or as he calms without one
+   * lets go TURN_SEC after his whip, or as he calms without one. A whip that
+   * leaves the hit out of his head's reach (it swung him the other way)
+   * lets go as it starts: the turn carries the look
    */
   glanceNow(beats, beatSec) {
     const g = this.glance;
     if (!g || g.at === null || beats === null) return null;
+    const lim = Math.abs(UH.LOOK);
     const age = (beats - g.at) * beatSec;
     let until = GLANCE_IN_SEC + GLANCE_HOLD_SEC;
     if (g.hold) {
       if (this.whipAt !== null) {
-        until = (this.whipAt - g.at) * beatSec + CONFIG.TANK.TURN_SEC;
+        const whip = this.turn.at === this.whipAt ? this.turn : null;
+        const away = whip && Math.abs(g.aim - whip.to) > lim;
+        until =
+          (this.whipAt - g.at) * beatSec + (away ? 0 : CONFIG.TANK.TURN_SEC);
       } else until = this.isAngry ? Infinity : 0;
     }
     const k =
       smooth(clamp01(age / GLANCE_IN_SEC)) *
       (1 - smooth(clamp01((age - until) / GLANCE_OUT_SEC)));
     if (!(k > 0)) return null;
-    const lim = Math.abs(UH.LOOK);
     const rel = g.aim - this.facing;
     return { rel: Math.max(-lim, Math.min(lim, rel)), k };
   }
