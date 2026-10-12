@@ -484,7 +484,6 @@ const SHELL_SOUND = {
   // Its level in feedback's events window: about 2 dB over the kick, beside
   // the tank's death (tests/audio-levels.test.js; -4.3 dB at the page's level)
   TRIM_DB: 6.2,
-  SILENT: 0.0001,
   CLICK_ATTACK_SEC: 0.001,
   // A crack running down the seam: snaps of bright noise, unevenly spaced
   CRACK: [
@@ -562,10 +561,10 @@ export function stabberShell(ctx, out, { at, record, noise, volume, pan }) {
     const g = ctx.createGain();
     // Silent before its first event too: else, where the source's start and
     // the event round to different frames, a raw sample of noise gets out
-    g.gain.value = S.SILENT;
-    g.gain.setValueAtTime(S.SILENT, t0);
+    g.gain.value = SILENT;
+    g.gain.setValueAtTime(SILENT, t0);
     g.gain.exponentialRampToValueAtTime(peak, t0 + S.CLICK_ATTACK_SEC);
-    g.gain.exponentialRampToValueAtTime(S.SILENT, t0 + decay);
+    g.gain.exponentialRampToValueAtTime(SILENT, t0 + decay);
     src.connect(band).connect(g).connect(bus);
     src.start(t0, off + from);
     src.stop(t0 + sec);
@@ -614,13 +613,13 @@ export function stabberShell(ctx, out, { at, record, noise, volume, pan }) {
     (_, i) => (f1 / f0) ** smooth(i / S.FALL_STEPS)
   );
   const level = ctx.createGain();
-  level.gain.value = S.SILENT;
-  level.gain.setValueAtTime(S.SILENT, t0);
+  level.gain.value = SILENT;
+  level.gain.setValueAtTime(SILENT, t0);
   level.gain.exponentialRampToValueAtTime(S.PEAK, t0 + S.ATTACK_SEC);
   level.gain.exponentialRampToValueAtTime(S.PEAK * S.BODY, t0 + S.BODY_SEC);
   level.gain.exponentialRampToValueAtTime(S.PEAK * S.LANDED, fall1);
   level.gain.setValueAtTime(S.PEAK * S.LANDED, stop - S.RELEASE_SEC);
-  level.gain.exponentialRampToValueAtTime(S.SILENT, end);
+  level.gain.exponentialRampToValueAtTime(SILENT, end);
   level.connect(bus);
   const hp = ctx.createBiquadFilter();
   hp.type = 'highpass';
@@ -650,7 +649,7 @@ export function stabberShell(ctx, out, { at, record, noise, volume, pan }) {
   for (const [ratio, share, dies] of S.CLUSTER) {
     const g = ctx.createGain();
     g.gain.setValueAtTime(share / S.CENTS.length, t0);
-    if (dies) g.gain.linearRampToValueAtTime(S.SILENT, fall1);
+    if (dies) g.gain.linearRampToValueAtTime(SILENT, fall1);
     g.connect(hp);
     nodes.push(g);
     for (const c of S.CENTS) {
@@ -688,10 +687,10 @@ export function stabberShell(ctx, out, { at, record, noise, volume, pan }) {
     shut + S.PLUCK_LP_SEC
   );
   const pg = ctx.createGain();
-  pg.gain.value = S.SILENT;
-  pg.gain.setValueAtTime(S.SILENT, shut);
+  pg.gain.value = SILENT;
+  pg.gain.setValueAtTime(SILENT, shut);
   pg.gain.exponentialRampToValueAtTime(S.PLUCK, shut + S.PLUCK_ATTACK_SEC);
-  pg.gain.exponentialRampToValueAtTime(S.SILENT, shut + S.PLUCK_SEC);
+  pg.gain.exponentialRampToValueAtTime(SILENT, shut + S.PLUCK_SEC);
   pl.connect(plp).connect(pg).connect(bus);
   pl.start(shut);
   pl.stop(shut + S.PLUCK_SEC + S.TAIL_SEC);
@@ -744,7 +743,6 @@ const SHATTER_SOUND = {
   JAB_NOISE_AT: 1.6, // s into the noise, for the jab's tick
   CRUMBLE: { N: 5, EVERY: 0.017, HZ: 3000, Q: 1.4, PEAK: 0.09, SEC: 0.025 },
   NOISE_AT: [0.4, 0.9, 1.3], // s into the noise: snap, hiss, crumble
-  SILENT: 0.0001,
   TAIL_SEC: 0.02,
 };
 
@@ -775,10 +773,10 @@ export function stabberShatter(ctx, out, { at, record, noise, volume, pan }) {
   // Silent from the start: a gain left at 1 lets a source's first sample
   // through (a highpass passes it whole: a click)
   const shape = (g, t0, peak, sec) => {
-    g.gain.value = S.SILENT;
-    g.gain.setValueAtTime(S.SILENT, t0);
+    g.gain.value = SILENT;
+    g.gain.setValueAtTime(SILENT, t0);
     g.gain.exponentialRampToValueAtTime(peak, t0 + S.ATTACK_SEC);
-    g.gain.exponentialRampToValueAtTime(S.SILENT, t0 + sec);
+    g.gain.exponentialRampToValueAtTime(SILENT, t0 + sec);
   };
   const lowpass = (t0, P, from) => {
     const f = ctx.createBiquadFilter();
@@ -815,8 +813,8 @@ export function stabberShatter(ctx, out, { at, record, noise, volume, pan }) {
     const lp = lowpass(t0, P, from);
     const g = ctx.createGain();
     if (vib) {
-      g.gain.value = S.SILENT;
-      g.gain.setValueAtTime(S.SILENT, t0);
+      g.gain.value = SILENT;
+      g.gain.setValueAtTime(SILENT, t0);
       g.gain.exponentialRampToValueAtTime(peak * level, t0 + S.ATTACK_SEC);
       const hold = t0 + S.RING_DROP_SEC;
       g.gain.exponentialRampToValueAtTime(peak * level * S.RING_HOLD, hold);

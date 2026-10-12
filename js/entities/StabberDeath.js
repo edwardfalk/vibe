@@ -18,7 +18,7 @@ import { drawShellWait, drawShell, shellParts } from './StabberShell.js';
 import { drawShatterWait, drawShatter } from './StabberShatter.js';
 
 const STYLES = {
-  shell: { wait: drawShellWait, draw: drawShell, prepare: shellParts },
+  shell: { wait: drawShellWait, draw: drawShell },
   shatter: { wait: drawShatterWait, draw: drawShatter },
 };
 /** The styles on offer (CONFIG.DEATHS.STABBER_STYLE), for ?tune; the first is the default */
@@ -74,10 +74,8 @@ export function stabberDeathRecord({
   });
 }
 
-/** Build the default style's sprites now (at setup), so the first death doesn't hitch */
-export function prepareStabberDeath(p, scale) {
-  for (const style of Object.values(STYLES)) style.prepare?.(p, scale);
-}
+/** Build the shell's sprites now (at setup), so the first death doesn't hitch; the shatter has none */
+export const prepareStabberDeath = shellParts;
 
 /**
  * A stabber's death, for ExplosionManager's fragmentExplosions: its

@@ -24,7 +24,10 @@ import {
   drift,
   mulberry32,
   normalizeAngle,
+  PI,
+  TWO_PI,
 } from '../mathUtils.js';
+import { mix } from './GruntRenderer.js';
 import { spriteParts } from './spriteCache.js';
 import {
   K,
@@ -50,8 +53,6 @@ import {
   drawStabber,
 } from './StabberRenderer.js';
 
-const PI = Math.PI;
-const TAU = 2 * PI;
 const SEED_STEPS = 1e6;
 
 // His colours, and the shell's: its hollow inside, its edge while white-hot,
@@ -66,9 +67,7 @@ const COL = {
 const CS = Object.fromEntries(
   Object.entries(COL).map(([k, v]) => [k, `rgb(${v})`])
 );
-const mixRgb = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
-const mixCss = (a, b, k) =>
-  `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * k))})`;
+const mixCss = (a, b, k) => `rgb(${mix(a, b, k).map(Math.round)})`;
 
 // ---- the timing (s from the crack, at linger 1) ----
 const SPLIT = {
@@ -200,12 +199,12 @@ function drawHalf(c, hot) {
   c.clip();
   c.fillStyle = CS.goldLo;
   c.beginPath();
-  c.ellipse(-3, 0, 14, 11, 0, 0, TAU);
-  c.ellipse(-3.5, 0, 11, 5.4, 0, 0, TAU, true);
+  c.ellipse(-3, 0, 14, 11, 0, 0, TWO_PI);
+  c.ellipse(-3.5, 0, 11, 5.4, 0, 0, TWO_PI, true);
   c.fill();
   c.fillStyle = CS.goldHi;
   c.beginPath();
-  c.ellipse(-7.5, 0, 3.6, 1.5, 0, 0, TAU);
+  c.ellipse(-7.5, 0, 3.6, 1.5, 0, 0, TWO_PI);
   c.fill();
   c.restore();
   c.strokeStyle = CS.ink;
@@ -220,7 +219,7 @@ function drawHalf(c, hot) {
   c.clip();
   c.fillStyle = CS.goldHi;
   c.beginPath();
-  c.ellipse(8.5, 0, 3.6, 1, 0, 0, TAU);
+  c.ellipse(8.5, 0, 3.6, 1, 0, 0, TWO_PI);
   c.fill();
   c.restore();
   // Keep what lies below the crack
@@ -360,7 +359,7 @@ function drawMist(ctx, d, B, t) {
   LOBE.length = 0;
   LOBE.push(px, py, MIST.CORE * swell);
   for (let j = 0; j < MIST.LOBES; j++) {
-    const a = ((j + 0.5 * rand()) / MIST.LOBES) * TAU + swirl;
+    const a = ((j + 0.5 * rand()) / MIST.LOBES) * TWO_PI + swirl;
     const r = (MIST.R[0] + (MIST.R[1] - MIST.R[0]) * rand()) * swell;
     // In his frame, long as he was, then into the screen's
     const bx = Math.cos(a) * out * MIST.ALONG;
@@ -377,12 +376,12 @@ function drawMist(ctx, d, B, t) {
   );
   const hot = B.hot && t < MIST.HOT_SEC ? 1 - t / MIST.HOT_SEC : 0;
   const flesh = mixCss(
-    mixRgb(COL.flesh, COL.mistHi, pale * MIST.PALE),
+    mix(COL.flesh, COL.mistHi, pale * MIST.PALE),
     COL.mistHot,
     hot
   );
   const hi = mixCss(
-    mixRgb(COL.mistHi, COL.white, pale * MIST.PALE),
+    mix(COL.mistHi, COL.white, pale * MIST.PALE),
     COL.white,
     hot
   );
@@ -402,7 +401,7 @@ function drawMist(ctx, d, B, t) {
       const cx = px + (LOBE[i] - px) * k + ox;
       const cy = py + (LOBE[i + 1] - py) * k + oy;
       ctx.moveTo(cx + r, cy);
-      ctx.arc(cx, cy, r, 0, TAU);
+      ctx.arc(cx, cy, r, 0, TWO_PI);
     }
     ctx.fill();
   }
@@ -439,19 +438,19 @@ function freeEye(ctx, x, y, rot, sc, lid, look, glower, slit, hot, shut) {
   const iy = flip * Math.sin(look) * 1.2 + glower;
   ctx.fillStyle = CS.ink;
   ctx.beginPath();
-  ctx.arc(ix, iy, 2.55, 0, TAU);
+  ctx.arc(ix, iy, 2.55, 0, TWO_PI);
   ctx.fill();
   ctx.fillStyle = CS.iris;
   ctx.beginPath();
-  ctx.arc(ix, iy, 2.15, 0, TAU);
+  ctx.arc(ix, iy, 2.15, 0, TWO_PI);
   ctx.fill();
   ctx.fillStyle = CS.ink;
   ctx.beginPath();
-  ctx.ellipse(ix, iy, slit, 2, 0, 0, TAU);
+  ctx.ellipse(ix, iy, slit, 2, 0, 0, TWO_PI);
   ctx.fill();
   ctx.fillStyle = hot ? CS.hot : CS.white;
   ctx.beginPath();
-  ctx.arc(ix - 0.7, iy - 0.8, hot ? 0.8 : 0.55, 0, TAU);
+  ctx.arc(ix - 0.7, iy - 0.8, hot ? 0.8 : 0.55, 0, TWO_PI);
   ctx.fill();
   const far = ry + 2;
   const xb = -rx - 1;
@@ -635,7 +634,7 @@ export function drawShell(p, d) {
   const hy = d.hero.y / d.scale - e0y;
   const hd = Math.hypot(hx, hy) || 1;
   const creep = Math.min(EYEF.MAX_PX, drift(EYEF.V, EYEF.TAU, t), hd * 0.25);
-  const bob = EYEF.BOB_PX * Math.sin(t * TAU * EYEF.BOB_HZ) * smooth(pop);
+  const bob = EYEF.BOB_PX * Math.sin(t * TWO_PI * EYEF.BOB_HZ) * smooth(pop);
   const ex = e0x + (hx / hd) * creep;
   const ey = e0y + (hy / hd) * creep + bob;
   const toHero = Math.atan2(d.hero.y / d.scale - ey, d.hero.x / d.scale - ex);

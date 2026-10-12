@@ -23,29 +23,28 @@ import {
   drift,
   mulberry32,
   normalizeAngle,
+  PI,
+  TWO_PI,
 } from '../mathUtils.js';
+import { mix } from './GruntRenderer.js';
 import {
   K,
   RGB,
-  NOSE,
-  SHELL,
   BLADE_W,
   BLADE_ROOT,
+  HUSK,
   drawStabber,
 } from './StabberRenderer.js';
 
-const PI = Math.PI;
-const TAU = 2 * PI;
 const SHELL_RX = 12; // units: his shell as an ellipse, for where a plate starts
 const SHELL_RY = 8;
 const COL = {
   ...RGB,
   ember: [255, 96, 52], // the spike, cooling: between white-hot and bone
 };
-COL.inside = COL.gold.map((v, i) => v + (COL.goldLo[i] - v) * 0.55); // a plate's inside
+COL.inside = mix(COL.gold, COL.goldLo, 0.55); // a plate's inside
 const INK = `rgb(${COL.ink})`;
-const mix = (a, b, k) =>
-  `rgb(${Math.round(a[0] + (b[0] - a[0]) * k)},${Math.round(a[1] + (b[1] - a[1]) * k)},${Math.round(a[2] + (b[2] - a[2]) * k)})`;
+const mixCss = (a, b, k) => `rgb(${mix(a, b, k).map(Math.round)})`;
 
 // ---- the frozen moment: cracks run across his shell from the hit ----
 const WAIT = {
@@ -172,11 +171,6 @@ function toFrame(c, B, sc) {
   c.scale(K * B.sx, K * B.sy);
 }
 
-const shellPath = (c) => {
-  c.beginPath();
-  c.moveTo(NOSE, 0);
-  for (const [, a, b, e] of SHELL) c.bezierCurveTo(...a, ...b, ...e);
-};
 // A point on his shell's ellipse at angle a (his frame, units)
 function onShell(a) {
   const ca = Math.cos(a);
@@ -208,7 +202,7 @@ function shardShape(r, flesh) {
   const pts = [Math.cos(th), Math.sin(th)];
   const n = r(0, 1) < 0.5 ? 2 : 3;
   for (let k = 1; k <= n; k++) {
-    const a = th + ((TAU - 2 * th) * k) / (n + 1) + r(-0.25, 0.25);
+    const a = th + ((TWO_PI - 2 * th) * k) / (n + 1) + r(-0.25, 0.25);
     const d = flesh ? r(0.75, 0.95) : r(0.45, 0.95);
     pts.push(Math.cos(a) * d, Math.sin(a) * d);
   }
@@ -309,9 +303,9 @@ function prep(d) {
     [kinds[i], kinds[j]] = [kinds[j], kinds[i]];
   }
   const shards = [];
-  const a0 = r(0, TAU);
+  const a0 = r(0, TWO_PI);
   kinds.forEach(([S, kind], i) => {
-    const a = a0 + (TAU * i) / kinds.length + r(-1, 1) * SHARDS.JITTER;
+    const a = a0 + (TWO_PI * i) / kinds.length + r(-1, 1) * SHARDS.JITTER;
     const r0 = onShell(a - B.turn)[2] * K * sc;
     const along = 1 + SHARDS.BIAS * Math.cos(a - d.dir);
     const flesh = kind === 'flesh';
@@ -323,7 +317,7 @@ function prep(d) {
       s: r(...S),
       kind,
       shape: shardShape(r, flesh),
-      rot: r(0, TAU),
+      rot: r(0, TWO_PI),
       spin: (rand() < 0.5 ? -1 : 1) * r(...SHARDS.SPIN),
       flip: r(-1, 1) * SHARDS.FLIP_FROM,
       flipV: (rand() < 0.5 ? -1 : 1) * r(...SHARDS.FLIP),
@@ -344,7 +338,7 @@ function prep(d) {
         u: (i + r(0.2, 0.8)) / n, // along the blade, root to tip
         v: r(...V) * (i % 2 ? -1 : 1),
         s: r(...S),
-        rot: r(0, TAU),
+        rot: r(0, TWO_PI),
         shape: shardShape(r, false),
         life: SPIKE.DUST_LIFE * L * r(0.75, 1),
       });
@@ -375,7 +369,7 @@ function prep(d) {
 // The cracks, run out to g (0..1), u through the wait (they widen)
 function drawCracks(c, st, g, u, hot) {
   c.save();
-  shellPath(c);
+  HUSK(c);
   c.clip();
   c.lineCap = 'round';
   c.lineJoin = 'round';
@@ -492,13 +486,13 @@ function drawShards(c, st, d, t) {
     [front, COL.gold],
   ]) {
     if (!list.length) continue;
-    c.fillStyle = mix(from, col, pale);
+    c.fillStyle = mixCss(from, col, pale);
     shardsPath(c, list, 0);
     c.fill();
   }
   // Their rims, catching the light on the eighths
   if (front.length) {
-    c.fillStyle = mix(COL.goldHi, COL.white, SHARDS.CATCH_WHITE * tw);
+    c.fillStyle = mixCss(COL.goldHi, COL.white, SHARDS.CATCH_WHITE * tw);
     shardsPath(c, front, 0, SHARDS.RIM + (SHARDS.RIM_CATCH - SHARDS.RIM) * tw);
     c.fill();
   }
@@ -596,8 +590,8 @@ function drawSpike(c, st, d, t) {
     );
     const fill =
       h > 0.5
-        ? mix(COL.ember, COL.hot, (h - 0.5) * 2)
-        : mix(COL.bone, COL.ember, h * 2);
+        ? mixCss(COL.ember, COL.hot, (h - 0.5) * 2)
+        : mixCss(COL.bone, COL.ember, h * 2);
     const hi = `rgb(${h > 0.5 ? COL.white : COL.boneHi})`;
     const base = c.globalAlpha;
     c.save();
@@ -718,7 +712,7 @@ export function drawShatterWait(p, d) {
   if (fl > 0.02) {
     c.globalAlpha = base * fl;
     c.fillStyle = '#fff';
-    shellPath(c);
+    HUSK(c);
     c.fill();
     c.globalAlpha = base;
   }
@@ -747,7 +741,7 @@ export function drawShatter(p, d) {
     toFrame(c, d.body, d.scale);
     c.scale(g, g);
     c.fillStyle = c.strokeStyle = `rgb(${d.hot ? COL.hot : COL.goldHi})`;
-    shellPath(c);
+    HUSK(c);
     if (t < FLASH.FILL_SEC) {
       c.globalAlpha = base * FLASH.ALPHA;
       c.fill();
