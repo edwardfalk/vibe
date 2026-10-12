@@ -196,8 +196,8 @@ const CONFIG = {
     CHATTER: 'both', // both (each grunt his own voice), whine or squeak
     CHATTER_DB: 0,
     FUSE_DB: 0, // the rusher's fuse
-    BASS_PLUCK_DB: 0, // the bassist's ghost plucks
-    BASS_SLAP_DB: 0, // and his slap
+    BASS_PLUCK_DB: 2.5, // the bassist's ghost plucks: Edward's, on the page
+    BASS_SLAP_DB: -1, // and his slap
   },
 
   // Pausing (P) stops the sound: the audio is suspended, which also stops

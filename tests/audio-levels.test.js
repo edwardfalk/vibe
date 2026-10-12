@@ -459,6 +459,16 @@ async function overKick(page, tiers) {
           ),
           tankShot: preset('tankShot'),
           'tankCharge top': preset('tankCharge', { step: steps - 1, steps }),
+          // The bassist's line in his octave: his ghost plucks, his slap
+          ...Object.fromEntries(
+            ['b3', '4', '5'].map((d) => [
+              `bassPluck ${d}`,
+              preset('bassPluck', { note: [d, CONFIG.BASSIST.OCTAVE] }),
+            ])
+          ),
+          bassSlap: preset('bassSlap', {
+            note: ['b7', CONFIG.BASSIST.OCTAVE],
+          }),
           ...Object.fromEntries(
             ['whine', 'squeak'].map((voice) => [
               `gruntChatter ${voice}`,
@@ -480,6 +490,7 @@ async function overKick(page, tiers) {
               'tankResponse',
               'stabberResponse',
               'rusherResponse',
+              'bassistResponse',
             ].map((name) => [name, preset(name)])
           ),
           'strings tremolo': strings('tremolo', S.TREMOLO_VOLUME),
@@ -493,6 +504,8 @@ async function overKick(page, tiers) {
           ...hits('stabberHit'),
           ...hits('rusherHit'),
           ...hits('tankPlateHit'),
+          ...hits('bassistHit'),
+          bassistTwang: preset('bassistTwang'), // played without his health: it never climbs
           plateClang: (ctx, out) =>
             plateClang(ctx, out, {
               at: AT,
@@ -518,6 +531,7 @@ async function overKick(page, tiers) {
             [
               'levelUp',
               'gameOver',
+              'bassistDeath',
               'killStreak',
               'tankBallKill',
               'tankShove',

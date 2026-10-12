@@ -580,37 +580,57 @@ const FUSE = {
 };
 
 /** Every synth by name; the crash keeps CONFIG.RUSHER.CRASH_VOLUME */
-// The bassist's ghost pluck and slap, on the note he is given: a saw
-// through a low-pass that closes, driven. shortcut: a stand-in until Edward
-// picks one on the listening page (the bassist spec, Sound); the pick
-// replaces these two
+// FM: a sine on `f` whose frequency each modulator bends: a sine at RATIO
+// times the note, by FROM times its own frequency falling to TO over
+// SWEEP_SEC, so it is bright as it is struck and rounder as it rings
+function fm(ctx, out, at, f, cents, mods) {
+  const carrier = osc(ctx, 'sine', f, at, out, cents);
+  const sources = [carrier];
+  const nodes = [];
+  for (const m of mods) {
+    const fMod = f * m.RATIO;
+    const depth = gainAt(ctx, m.FROM * fMod, at, carrier.frequency);
+    depth.gain.exponentialRampToValueAtTime(m.TO * fMod, at + m.SWEEP_SEC);
+    const o = osc(ctx, 'sine', fMod, at, depth, cents);
+    sources.push(o);
+    nodes.push(depth);
+  }
+  for (const src of sources) src.start(at);
+  return [sources, nodes];
+}
+
+// The bassist's ghost pluck and slap, on the note he is given: the 80s FM
+// bass, Edward's pick on the listening page (2026-10-12). The ghost is a
+// short soft blip; the slap starts brighter and rings longer, and a high
+// modulator gone in 30 ms gives it a metal snap. Each trim is the page's,
+// measured the game's way: his plucks' mean 2.5 dB under the kick, his slap
+// 2.5 dB over it, in octave 2
 const BASS_PLUCK = {
-  trim: -8,
-  LOWPASS: { FROM_HZ: 1400, TO_HZ: 250, Q: 1.5, SWEEP_SEC: 0.06 },
-  DRIVE: 2,
-  PEAK: 0.5,
-  ATTACK_SEC: 0.003,
-  SEC: 0.09,
-  STOP_SEC: 0.12,
+  trim: -9.0,
+  MODS: [{ RATIO: 1, FROM: 2.2, TO: 0.8, SWEEP_SEC: 0.06 }],
+  PEAK: 0.7,
+  ATTACK_SEC: 0.002,
+  SEC: 0.14,
+  STOP_SEC: 0.16,
   notes: ({ note }) => [note],
   play(ctx, bus, at, [f], cents) {
-    const L = this.LOWPASS;
     const e = envelope(ctx, this.PEAK, this.ATTACK_SEC, this.SEC, at, bus);
-    const sat = drive(ctx, this.DRIVE);
-    sat.connect(e);
-    const lp = filterAt(ctx, 'lowpass', L.FROM_HZ, L.Q, at, sat);
-    lp.frequency.exponentialRampToValueAtTime(L.TO_HZ, at + L.SWEEP_SEC);
-    const saw = osc(ctx, 'sawtooth', f, at, lp, cents);
-    saw.start(at);
-    return [[saw], [e, sat, lp], this.STOP_SEC];
+    const [sources, nodes] = fm(ctx, e, at, f, cents, this.MODS);
+    return [sources, [e, ...nodes], this.STOP_SEC];
   },
 };
 const BASS_SLAP = {
   ...BASS_PLUCK,
-  trim: -4,
-  LOWPASS: { FROM_HZ: 3200, TO_HZ: 300, Q: 2, SWEEP_SEC: 0.18 },
-  SEC: 0.45,
-  STOP_SEC: 0.5,
+  trim: -12.5,
+  // The body bright then round; a seventh-harmonic modulator, gone in 30 ms,
+  // is the slap's metal
+  MODS: [
+    { RATIO: 1, FROM: 4.5, TO: 1.3, SWEEP_SEC: 0.35 },
+    { RATIO: 7, FROM: 2.5, TO: 0.01, SWEEP_SEC: 0.03 },
+  ],
+  PEAK: 0.8,
+  SEC: 0.6,
+  STOP_SEC: 0.65,
 };
 
 export const SYNTHS = {

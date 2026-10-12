@@ -194,7 +194,7 @@ export const SOUND_CONFIG = {
     note: ['b7', 3],
     sweep: { to: ['5', 2], curve: 'exponential' },
     waveform: 'sawtooth',
-    volume: 0.3,
+    volume: 0.3 * dB(-3), // the window test: under the band
     duration: 0.3,
     hit: true, // the hit's one sound; played without his health, it never climbs
   },
@@ -205,7 +205,7 @@ export const SOUND_CONFIG = {
     note: ['b7', 3],
     sweep: { to: ['1', 2], curve: 'exponential' },
     waveform: 'sawtooth',
-    volume: 0.35,
+    volume: 0.35 * dB(-1.2), // the window test: with the other events
     duration: 0.6,
   },
   // A bassist's answer to his kin's death: a pluck on his 5
