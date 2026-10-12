@@ -23,6 +23,7 @@ These run through Playwright too. They're for measuring and looking, so CI doesn
 - `pnpm run playtest`: a bot plays and reports frame rate, the work per frame in ms (avg, p50, p95) and pacing. Fps is capped at 60, so compare the ms figures to see whether a change made frames cheaper. It runs Chromium on the machine's real GPU, so the sky draws its shader; ms figures from before the sky (September 2026) don't compare. `LEVEL=8` starts it at level 8, and `DURATION` sets how long it plays in ms (30000 by default: pacing past level 2 needs `DURATION=90000`). It prints the sky's mode, and its numbers count only in `full`. It fails if the game logged a console error, after printing and saving its report.
 - `pnpm run screenshot`: screenshots of a running game.
 - `pnpm run test:beats`: records when enemies act and checks each lands on its beat.
+- `pnpm run demo`: records the bot playing for the README's `docs/media/demo.webp`: a video in `test-results/`, 40 s (`DURATION`) from level 5 (`LEVEL`), on the GPU like the playtest. The bot walks into tanks' backs to bomb them. Pick 16 s and make the animation with `ffmpeg -ss 4 -t 16 -i test-results/demo.js-demo-demo/video.webm -vf fps=15 -c:v libwebp_anim -quality 75 -compression_level 6 -loop 0 docs/media/demo.webp`. WebP, not GIF: the nebula moves behind everything and needs more than 256 colours, so a GIF of the same 16 s came out at 9–21 MB with its colours cut, where the WebP is about 4 MB.
 
 ## Proving a refactor changes nothing
 
@@ -49,7 +50,7 @@ Both replays get the same seeded random numbers, clock and scripted input. The r
 
 CI and the browser tests run Chromium without a GPU, so they draw the sky flat unless a test asks for `?sky=full`, as the sky tests do.
 
-The Playwright config has four projects (`e2e`, `playtest`, `screenshot`, `beats`). The scripts always pick one. A bare `npx playwright test` runs all four.
+The Playwright config has five projects (`e2e`, `playtest`, `screenshot`, `beats`, `demo`). The scripts always pick one. A bare `npx playwright test` runs all five.
 
 ## Listing the tests
 

@@ -5,11 +5,12 @@ const PORT = process.env.PORT || 5500;
 
 const TOOL = { retries: 0, use: { trace: 'off', screenshot: 'off' } };
 
-// One config, four projects: the E2E suite (CI) and three dev tools.
+// One config, five projects: the E2E suite (CI) and four dev tools.
 // Always pick one with --project; package.json scripts do.
 // Chromium on the machine's real GPU, so the sky runs its shader as players
 // see it (headless Chromium otherwise renders WebGL on the CPU)
 const GPU_ARGS = ['--enable-gpu', '--use-angle=gl', '--ignore-gpu-blocklist'];
+const DEMO_SIZE = { width: 800, height: 600 };
 
 export default defineConfig({
   testDir: './tests',
@@ -44,6 +45,19 @@ export default defineConfig({
       use: { ...TOOL.use, launchOptions: { args: GPU_ARGS } },
     },
     { name: 'beats', testMatch: '**/beat-assertions.js', ...TOOL },
+    // The README's animation: a video of the bot playing, at the canvas's size
+    {
+      name: 'demo',
+      testMatch: '**/demo.js',
+      timeout: 120000,
+      ...TOOL,
+      use: {
+        ...TOOL.use,
+        launchOptions: { args: GPU_ARGS },
+        viewport: DEMO_SIZE,
+        video: { mode: 'on', size: DEMO_SIZE },
+      },
+    },
   ],
 
   webServer: {

@@ -6,7 +6,7 @@ Enemies attack on the beat, and each type plays a different part of the band. Th
 
 **[Play it in the browser](https://edwardfalk.github.io/vibe/)**. It needs a computer with a keyboard and mouse. Turn the sound on.
 
-![Vibe gameplay](docs/media/demo.gif)
+![Vibe gameplay](docs/media/demo.webp)
 
 ## Controls
 

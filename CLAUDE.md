@@ -15,13 +15,14 @@ pnpm run test:beats       # Enemies act on their beats (not in CI)
 pnpm run playtest         # Aim-bot plays; reports FPS, ms per frame and pacing
 pnpm run compare          # Refactor check: replays main vs working tree, frame by frame
 pnpm run screenshot       # Screenshots (screenshot:level for LEVEL=n)
+pnpm run demo             # Records the bot playing, for the README's demo.webp
 npx eslint "**/*.js"    # Lint (fails on Prettier diffs too)
 npx prettier --write "**/*.{js,md,json}"  # Format
 ```
 
 Single unit test: `npx vitest run tests/unit/BeatClock.test.js`
 
-Always pass `--project` to Playwright (the scripts do); a bare `playwright test` runs all four projects. In a worktree, symlink `node_modules` from the main checkout (`ln -s ../../node_modules node_modules`): the E2E web server runs `node_modules/.bin/five-server` by path. `pnpm run` then refuses the symlink (it tries to install), so run the scripts' own commands there: `npx vitest run`, `npx playwright test --project=e2e`. Set `PORT=5502` for E2E if a dev server may already hold 5500.
+Always pass `--project` to Playwright (the scripts do); a bare `playwright test` runs all five projects. In a worktree, symlink `node_modules` from the main checkout (`ln -s ../../node_modules node_modules`): the E2E web server runs `node_modules/.bin/five-server` by path. `pnpm run` then refuses the symlink (it tries to install), so run the scripts' own commands there: `npx vitest run`, `npx playwright test --project=e2e`. Set `PORT=5502` for E2E if a dev server may already hold 5500.
 
 ## What This Is
 
