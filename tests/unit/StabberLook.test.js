@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   drawStabber,
+  stabberBody,
   drawLane,
   STABBER_REACH_PX,
   RING_R_PX,
@@ -178,5 +179,40 @@ describe('his lane', () => {
     expect(begins(1)).toBeGreaterThan(RING_R_PX);
     expect(begins(1.5)).toBeGreaterThan(RING_R_PX * 1.5);
     expect(begins(1.5) - begins(1)).toBeCloseTo(RING_R_PX * 0.5, 9);
+  });
+});
+
+describe('his body, as numbers', () => {
+  it('is what he is drawn from: white-hot from the lock and in the lunge, red through the wind-up', () => {
+    const stalk = stabberBody(LOOKS.stalk);
+    expect(stalk.hot).toBe(false);
+    expect(stalk.heat).toBe(0);
+    const winding = stabberBody(LOOKS.winding);
+    expect(winding.hot).toBe(false);
+    expect(winding.heat).toBeCloseTo(winding.coil, 9);
+    expect(winding.coil).toBeGreaterThan(0);
+    expect(stabberBody(LOOKS.locked).hot).toBe(true);
+    expect(stabberBody(LOOKS.lunge).hot).toBe(true);
+  });
+
+  it("puts his spike's tip at rest, raised through the wind-up, cocked from the lock and out to his reach in the lunge", () => {
+    const tip = (name) => stabberBody(LOOKS[name]).tip;
+    expect(tip('stalk')).toBeLessThan(28); // 25 at rest, a little more on the kick
+    expect(tip('winding')).toBeGreaterThan(25);
+    expect(tip('winding')).toBeLessThan(34);
+    expect(tip('locked')).toBeGreaterThan(35);
+    expect(tip('locked')).toBeLessThan(40);
+    expect(tip('lunge')).toBe(STABBER_REACH_PX);
+  });
+
+  it('turns him with his aim, and spins him out after a miss', () => {
+    expect(stabberBody(LOOKS.stalk).turn).toBe(BASE.aim);
+    expect(stabberBody(LOOKS.missed).turn).not.toBeCloseTo(BASE.aim, 3);
+  });
+
+  it('draws nothing and reads no random numbers', () => {
+    const spy = vi.spyOn(Math, 'random');
+    for (const look of Object.values(LOOKS)) stabberBody(look);
+    expect(spy).not.toHaveBeenCalled();
   });
 });

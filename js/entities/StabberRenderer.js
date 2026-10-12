@@ -507,17 +507,17 @@ function star4(x, y, s, style) {
 }
 
 /**
- * The shiv at (0, 0), from his pose (Stabber#pose()), times `scale` (his
- * ART_SCALE). Multiplies the alpha it is drawn with and leaves the context
- * as it found it
+ * His body for a pose (Stabber#pose()), as drawStabber sets him, in numbers:
+ * his deaths start from it, so his last living frame and their first agree.
+ * turn: his heading (rad); lag: the tendrils' swing; coil: the wind-up 0..1;
+ * tremble and back: how far he shakes and draws back (px); the claws (armR,
+ * armL: the shoulders' swing; elR, elL: the elbows', rad); tip: the spike's
+ * tip (px); wob: its swing (rad); sx, sy: his squash; the tendrils' (wave,
+ * tcurl, stretch, spread) and the frill's (fAmp, fSpeed, fPuff) motion; heat:
+ * the spike's red; hot: white-hot; shake: a struck recovery's shiver (px, or
+ * null); eye: { open, slant, ix, iy, slit, hot }
  */
-export function drawStabber(p, scale, L) {
-  SP_S = K * scale;
-  SP = spriteParts(p, PARTS, SP_S);
-  ctx = p.drawingContext;
-  A0 = ctx.globalAlpha;
-  ctx.save();
-  ctx.scale(scale, scale);
+export function stabberBody(L) {
   const t = L.t;
   const W = L.windup;
   const LU = L.lunge;
@@ -529,31 +529,6 @@ export function drawStabber(p, scale, L) {
   const bar = Math.floor(L.beats / 4);
   // A jerk on each eighth while he stalks: twitchy
   const twitch = W || LU || SN || R ? 0 : env(L.eighth * L.beatSec * 0.5, 0.04);
-  ctx.save();
-
-  // ---- the screen's frame: a shot's slide sheds gold flakes behind him ----
-  if (L.push > 0.05 && !LU) {
-    const c = Math.cos(L.hitDir);
-    const s = Math.sin(L.hitDir);
-    for (let i = 0; i < 3; i++) {
-      const d = 15 + i * 6 + 14 * (1 - L.push);
-      const off = (i - 1) * 6;
-      ctx.globalAlpha = A0 * L.push * (1 - i * 0.25);
-      star4(-c * d - s * off, -s * d + c * off, 3 - i * 0.4, CS.ink);
-      star4(-c * d - s * off, -s * d + c * off, 2 - i * 0.4, CS.star);
-    }
-    ctx.globalAlpha = A0;
-  }
-
-  // ---- jolts, never mid-lunge (there the tip sits exactly at his reach) ----
-  if (!LU) {
-    const j = 2.4 * L.hit + 1.1 * twitch;
-    if (j > 0.05)
-      ctx.translate(
-        j * (hash01(e8 * 1.7 + t * 31) - 0.5) * 2,
-        j * (hash01(e8 * 2.3 + t * 17) - 0.5) * 2
-      );
-  }
   let turn = L.aim;
   if (missed) {
     // Overshot: he spins out, once round, then wobbles
@@ -565,7 +540,6 @@ export function drawStabber(p, scale, L) {
     // Stunned: he drifts round, slowly, lopsided
     turn += 0.6 * Math.sin(SN.age * 2.2) + SN.age * 1.4;
   }
-  ctx.rotate(turn);
   // His motion in his own frame: the tendrils lag behind it
   const cs = Math.cos(turn);
   const sn = Math.sin(turn);
@@ -600,6 +574,7 @@ export function drawStabber(p, scale, L) {
   let fAmp = 1.6; // the frill: ripple height, speed, how far out
   let fSpeed = 8;
   let fPuff = 1.9 + 0.7 * L.kick;
+  let shake = null;
   if (W && !locked) {
     // Raising: shoulders out wide, forearms cocked back hard, trembling; the
     // blade grows a notch an eighth
@@ -657,11 +632,9 @@ export function drawStabber(p, scale, L) {
     wave = 1 + 1.5 * glee;
     fAmp = 1.6 + 1.4 * glee;
     fSpeed = 8 + 30 * glee;
-    if (a > 0.12)
-      ctx.translate(
-        0.9 * glee * Math.sin(a * 70),
-        0.9 * glee * Math.cos(a * 63)
-      );
+    if (a > 0.12) {
+      shake = [0.9 * glee * Math.sin(a * 70), 0.9 * glee * Math.cos(a * 63)];
+    }
   } else if (missed) {
     // Spun out, flailing: claws thrown wide, the blade drawn back in
     armR = 1.3 + 0.25 * Math.sin(R.age * 17);
@@ -707,38 +680,6 @@ export function drawStabber(p, scale, L) {
     armR += 0.3;
     armL += 0.3;
   }
-  ctx.translate(-back + tremble, 0);
-
-  // Lunging: thin speed lines off his flanks
-  if (LU) {
-    const a = 1 - LU.k;
-    ctx.globalAlpha = A0 * 0.7 * a;
-    ctx.fillStyle = CS.hot;
-    const sl = 14 + 24 * a;
-    ctx.fillRect(-12 - sl, -12, sl, 1.2);
-    ctx.fillRect(-22 - sl * 0.7, -6.5, sl * 0.7, 1);
-    ctx.fillRect(-22 - sl * 0.7, 5.5, sl * 0.7, 1);
-    ctx.fillRect(-12 - sl * 0.9, 11, sl * 0.9, 1.2);
-    ctx.globalAlpha = A0;
-  }
-
-  const heat = W ? coil : 0;
-  const hot = locked || !!LU;
-  blade(tip, heat, hot, wob);
-  ctx.save();
-  ctx.scale(K * sx, K * sy);
-  tendrils(t, wave, tcurl, lag, stretch, spread);
-  frill(t, fAmp, fSpeed, fPuff);
-  claw(1, armR, elR, false);
-  claw(-1, armL, elL, false);
-  stamp(SP.husk);
-  if (L.hit > 0.04) {
-    ctx.globalAlpha = A0 * Math.min(1, L.hit * 1.1);
-    claw(1, armR, elR, true);
-    claw(-1, armL, elL, true);
-    stamp(SP.huskW);
-    ctx.globalAlpha = A0;
-  }
 
   // ---- the eye: it watches the hero ----
   const look = L.toHero - turn;
@@ -780,13 +721,119 @@ export function drawStabber(p, scale, L) {
     slit = 0.55;
   }
   if (L.hitAge < 0.14) open = 0; // ow
-  eye(open, slant, ix, iy, slit, locked && W.lockAge > 0.06);
+  return {
+    t,
+    e8,
+    twitch,
+    turn,
+    lag,
+    coil,
+    tremble,
+    armR,
+    armL,
+    elR,
+    elL,
+    tip,
+    back,
+    wave,
+    tcurl,
+    stretch,
+    spread,
+    wob,
+    sx,
+    sy,
+    fAmp,
+    fSpeed,
+    fPuff,
+    shake,
+    heat: W ? coil : 0,
+    hot: locked || !!LU,
+    locked,
+    eye: { open, slant, ix, iy, slit, hot: locked && W.lockAge > 0.06 },
+  };
+}
+
+/**
+ * The shiv at (0, 0), from his pose (Stabber#pose()), times `scale` (his
+ * ART_SCALE). Multiplies the alpha it is drawn with and leaves the context
+ * as it found it
+ */
+export function drawStabber(p, scale, L) {
+  SP_S = K * scale;
+  SP = spriteParts(p, PARTS, SP_S);
+  ctx = p.drawingContext;
+  A0 = ctx.globalAlpha;
+  ctx.save();
+  ctx.scale(scale, scale);
+  const B = stabberBody(L);
+  const W = L.windup;
+  const LU = L.lunge;
+  const SN = L.stunned;
+  ctx.save();
+
+  // ---- the screen's frame: a shot's slide sheds gold flakes behind him ----
+  if (L.push > 0.05 && !LU) {
+    const c = Math.cos(L.hitDir);
+    const s = Math.sin(L.hitDir);
+    for (let i = 0; i < 3; i++) {
+      const d = 15 + i * 6 + 14 * (1 - L.push);
+      const off = (i - 1) * 6;
+      ctx.globalAlpha = A0 * L.push * (1 - i * 0.25);
+      star4(-c * d - s * off, -s * d + c * off, 3 - i * 0.4, CS.ink);
+      star4(-c * d - s * off, -s * d + c * off, 2 - i * 0.4, CS.star);
+    }
+    ctx.globalAlpha = A0;
+  }
+
+  // ---- jolts, never mid-lunge (there the tip sits exactly at his reach) ----
+  if (!LU) {
+    const j = 2.4 * L.hit + 1.1 * B.twitch;
+    if (j > 0.05)
+      ctx.translate(
+        j * (hash01(B.e8 * 1.7 + B.t * 31) - 0.5) * 2,
+        j * (hash01(B.e8 * 2.3 + B.t * 17) - 0.5) * 2
+      );
+  }
+  ctx.rotate(B.turn);
+  if (B.shake) ctx.translate(B.shake[0], B.shake[1]);
+  ctx.translate(-B.back + B.tremble, 0);
+
+  // Lunging: thin speed lines off his flanks
+  if (LU) {
+    const a = 1 - LU.k;
+    ctx.globalAlpha = A0 * 0.7 * a;
+    ctx.fillStyle = CS.hot;
+    const sl = 14 + 24 * a;
+    ctx.fillRect(-12 - sl, -12, sl, 1.2);
+    ctx.fillRect(-22 - sl * 0.7, -6.5, sl * 0.7, 1);
+    ctx.fillRect(-22 - sl * 0.7, 5.5, sl * 0.7, 1);
+    ctx.fillRect(-12 - sl * 0.9, 11, sl * 0.9, 1.2);
+    ctx.globalAlpha = A0;
+  }
+
+  blade(B.tip, B.heat, B.hot, B.wob);
+  ctx.save();
+  ctx.scale(K * B.sx, K * B.sy);
+  tendrils(B.t, B.wave, B.tcurl, B.lag, B.stretch, B.spread);
+  frill(B.t, B.fAmp, B.fSpeed, B.fPuff);
+  claw(1, B.armR, B.elR, false);
+  claw(-1, B.armL, B.elL, false);
+  stamp(SP.husk);
+  if (L.hit > 0.04) {
+    ctx.globalAlpha = A0 * Math.min(1, L.hit * 1.1);
+    claw(1, B.armR, B.elR, true);
+    claw(-1, B.armL, B.elL, true);
+    stamp(SP.huskW);
+    ctx.globalAlpha = A0;
+  }
+  const E = B.eye;
+  eye(E.open, E.slant, E.ix, E.iy, E.slit, E.hot);
   ctx.restore();
 
   // Locked: a glint runs out along the blade and sits on its tip
-  if (locked) {
+  if (B.locked) {
     const k = smooth(clamp01(W.lockAge / 0.14));
-    const gx = NOSE * K + (tip - NOSE * K) * k;
+    const gx = NOSE * K + (B.tip - NOSE * K) * k;
     const s = 3.4 + 1.3 * Math.sin(W.lockAge * 40);
     star4(gx, 0, s + 1.2, CS.ink);
     star4(gx, 0, s, CS.hot);
@@ -796,7 +843,7 @@ export function drawStabber(p, scale, L) {
   // Stunned: stars circling him (the screen's frame)
   if (SN) {
     for (let i = 0; i < 3; i++) {
-      const a = t * 6 + (i * TAU) / 3;
+      const a = B.t * 6 + (i * TAU) / 3;
       const x = Math.cos(a) * 13;
       const y = -15 + Math.sin(a) * 3.5;
       star4(x, y, 3.4, CS.ink);
