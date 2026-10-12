@@ -165,6 +165,33 @@ describe('drawing the tank', () => {
     );
   });
 
+  it('pops his anger mark on when he tips, for ANGER_MARK_BEATS, then lets it go', () => {
+    // How many strokes in the Dude's vein red he is drawn with
+    const red = (t) => {
+      const { p } = transformP5();
+      const ctx = p.drawingContext;
+      const styles = [];
+      ctx.stroke = () => styles.push(ctx.strokeStyle);
+      t.draw(p);
+      return styles.filter((st) => st.startsWith('rgba(236,46,58,')).length;
+    };
+    const tipped = (ago) => {
+      const t = tankAt(20);
+      t.isAngry = true;
+      t.angerAt = 20 - ago;
+      return t;
+    };
+    const { ANGER_MARK_BEATS } = CONFIG.TANK_LOOK;
+    expect(red(tankAt(20))).toBe(0); // never angered
+    expect(red(tipped(0.5))).toBeGreaterThan(0);
+    expect(red(tipped(ANGER_MARK_BEATS + 0.2))).toBeGreaterThan(0); // shrinking
+    expect(red(tipped(ANGER_MARK_BEATS + 1))).toBe(0); // gone
+    // Tipped for real: three hits through his back from aliens of one kind
+    const t = tankAt(20);
+    for (let i = 0; i < t.angerThreshold; i++) t.takeDamage(1, 0, 'grunt');
+    expect(red(t)).toBeGreaterThan(0);
+  });
+
   it('rebuilds his sprites when his drawn size changes, and removes the old ones', () => {
     const t = tankAt(18);
     const { p, graphics } = transformP5();

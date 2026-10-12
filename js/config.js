@@ -368,6 +368,10 @@ const CONFIG = {
   TANK_LOOK: {
     ART_SCALE: 1, // 1 = the prototype's proportions at size 50
     SWAGGER: 1, // his shoulder roll on 2, neck roll on 3, knuckle crack on 4
+    // The anger mark that pops on his head when aliens anger him: the Dude's
+    // vein, this many times its size, for this many beats
+    ANGER_MARK_SIZE: 3,
+    ANGER_MARK_BEATS: 4,
   },
 
   // The hero's bomb (js/systems/BombSystem.js), planted on a tank's back

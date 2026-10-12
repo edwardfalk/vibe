@@ -222,6 +222,8 @@ export const KNOBS = [
   [TANK, 'SIDESTEP_PX_S', [0, 150, 5]],
   [TANK_LOOK, 'ART_SCALE', [0.6, 1.6, 0.05]],
   [TANK_LOOK, 'SWAGGER', [0, 2, 0.1]],
+  [TANK_LOOK, 'ANGER_MARK_SIZE', [0.5, 8, 0.25]],
+  [TANK_LOOK, 'ANGER_MARK_BEATS', [1, 16, 1]],
   ['RUSHER_LOOK', 'ART_SCALE', [0.6, 1.6, 0.05]],
   ['PLAYER_LOOK', 'ART_SCALE', [0.7, 1.4, 0.05]], // 0.7 is about his old height
   [BOMB, 'FUSE_BEATS', [2, 16, 1]],

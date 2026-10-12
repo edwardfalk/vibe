@@ -29,8 +29,11 @@ import {
   drawTank,
   TANK_REACH,
   TANK_SIZE,
+  HEAD,
 } from './TankRenderer.js';
 import { tankFlinch, UH } from './TankFlinch.js';
+import { vein, easeOutBack } from './PlayerRenderer.js';
+import { heardKickOf } from '../audio/BeatTrack.js';
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 
 const BEATS_PER_BAR = 4;
@@ -70,6 +73,12 @@ const SHOVE_TAU_SEC = 0.2;
 const GLANCE_IN_SEC = 0.05;
 const GLANCE_HOLD_SEC = 0.3;
 const GLANCE_OUT_SEC = 0.2;
+// His anger mark: its pop, its throb on the heard kick and its shrink (s),
+// and where it sits, up and right of his head on screen (units of his size)
+const MARK_POP_SEC = 0.15;
+const MARK_THROB_TAU_SEC = 0.12;
+const MARK_OUT_SEC = 0.25;
+const MARK_AT = [0.3, -0.35];
 
 // Which way a broken plate's debris flies, from his facing
 const PLATE_SIDE = { front: 0, left: -PI / 2, right: PI / 2 };
@@ -136,6 +145,7 @@ class Tank extends BaseEnemy {
     this.glance = null;
     this.whipPending = false;
     this.whipAt = null; // when that bar action came (a beat position)
+    this.angerAt = null; // when he tipped, for his anger mark
 
     // Destructible armour plates, by side (tankSide in TankRenderer.js)
     const { FRONT, SIDE } = CONFIG.TANK_ARMOR;
@@ -469,6 +479,47 @@ class Tank extends BaseEnemy {
     const flinch = this.flinchNow(size);
     drawTank(p, size, this.pose(), flinch?.react);
     flinch?.sweat(p);
+    this.drawAngerMark(p, size);
+  }
+
+  /**
+   * The mark on his head when aliens anger him: the Dude's vein, upright on
+   * screen, popping in, throbbing on the heard kick for ANGER_MARK_BEATS,
+   * then shrinking away. Drawn here, not by drawTank, so his death (drawn
+   * from his last pose) never shows it
+   */
+  drawAngerMark(p, size) {
+    const beats = this.poseBeats;
+    if (this.angerAt === null || beats === null) return;
+    const L = CONFIG.TANK_LOOK;
+    const beatSec =
+      (this.getContextValue('beatClock')?.beatInterval ?? 0) / 1000;
+    const sec = (beats - this.angerAt) * beatSec;
+    const out = sec - L.ANGER_MARK_BEATS * beatSec;
+    if (sec < 0 || out >= MARK_OUT_SEC) return;
+    const kick = heardKickOf(
+      this.getContextValue('beatTrack'),
+      beats,
+      beatSec,
+      !!this.getContextValue('audio')?.soundPaused
+    );
+    const ctx = p.drawingContext;
+    const k = L.ANGER_MARK_SIZE * easeOutBack(clamp01(sec / MARK_POP_SEC));
+    ctx.save();
+    ctx.translate(
+      size * (HEAD[0] * cos(this.facing) + MARK_AT[0]),
+      size * (HEAD[0] * sin(this.facing) + MARK_AT[1])
+    );
+    ctx.scale(k, k);
+    vein(
+      env(kick.kickAge, MARK_THROB_TAU_SEC),
+      1,
+      0,
+      0,
+      1 - smooth(clamp01(out / MARK_OUT_SEC)),
+      ctx
+    );
+    ctx.restore();
   }
 
   /** His "uh oh" at the beat update() last kept, while BombSystem has set one */
@@ -683,6 +734,7 @@ class Tank extends BaseEnemy {
     this.angerCooldown = this.maxAngerCooldown;
     this.whipPending = true;
     this.whipAt = null;
+    this.angerAt = this.poseBeats;
     this.getContextValue('audio')?.speak(
       this,
       random(TANK_ANGER_LINES),
