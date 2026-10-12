@@ -577,18 +577,24 @@ class Tank extends BaseEnemy {
       this.plateBrokeAt[side] = this.poseBeats;
       audio?.playPlateClang?.(this.x, this.y);
       this.breakArmor(side);
-      this.trackAnger(damageSource);
       // One impact sound besides the clang: his, if damage is left over
       if (overflow > 0) audio?.playSound('tankHit', this.x, this.y, before);
       else audio?.playSound('tankPlateHit', this.x, this.y);
-      if (overflow <= 0) return DAMAGE_RESULT.DAMAGED;
-      return super.takeDamage(overflow, bulletAngle, damageSource);
+      if (overflow > 0) return this.wound(overflow, bulletAngle, damageSource);
+      this.trackAnger(damageSource);
+      return DAMAGE_RESULT.DAMAGED;
     }
 
     this.backHitAt = this.poseBeats; // his bare back, or skin under a broken plate
     audio?.playSound('tankHit', this.x, this.y, before);
-    this.trackAnger(damageSource);
-    return super.takeDamage(amount, bulletAngle, damageSource);
+    return this.wound(amount, bulletAngle, damageSource);
+  }
+
+  /** Damage through to him; one he lives through counts toward his anger */
+  wound(amount, bulletAngle, damageSource) {
+    const result = super.takeDamage(amount, bulletAngle, damageSource);
+    if (result !== DAMAGE_RESULT.DIED) this.trackAnger(damageSource);
+    return result;
   }
 
   /** Debris, a label and a shake where an armour plate broke off */
