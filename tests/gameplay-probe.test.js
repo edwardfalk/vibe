@@ -953,6 +953,7 @@ test.describe('Gameplay Probes', () => {
   }) => {
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
+    page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     await bootGame(page);
     // His death lines were rendered when audio started, ready for his scene
     const ready = await page.evaluate(async () => {
@@ -1164,8 +1165,9 @@ test.describe('Gameplay Probes', () => {
     expect(fc2).toBeGreaterThan(fc1);
   });
 
-  // A sound or effect that breaks only in a real fight logs an error and
-  // nothing else; the playtest, which plays longer, isn't in CI
+  // A sound or effect that breaks only in a real fight logs an error (a sound
+  // through Audio.guarded) and nothing else; the playtest, which plays
+  // longer, isn't in CI
   test('A fight with every enemy type logs no errors', async ({ page }) => {
     const FIGHT_MS = 8000;
     const AIM_MS = 50;
@@ -1174,15 +1176,17 @@ test.describe('Gameplay Probes', () => {
     page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
     await bootGame(page);
     // The level the last type comes in at, so the waves bring every type too
-    const allTypes = await page.evaluate(
-      async () =>
-        (await import('/js/systems/SpawnSystem.js')).ENEMY_INTRO_LEVEL.tank
-    );
+    const allTypes = await page.evaluate(async () => {
+      const { ENEMY_INTRO_LEVEL } = await import('/js/systems/SpawnSystem.js');
+      return Math.max(...Object.values(ENEMY_INTRO_LEVEL));
+    });
     await jumpToLevel(page, allTypes);
     // One of each type round the hero, so all of them fight from the start.
     // The tank's plates would soak every shot the bot aims at him, so he
-    // starts further out, and the others die to one hit
-    await page.evaluate(() => {
+    // starts further out with a bomb on his back (as the hero's touch plants
+    // it), and the others die to one hit
+    await page.evaluate(async () => {
+      const { plantBomb } = await import('/js/systems/BombSystem.js');
       const hero = window.player;
       const at = (type, a, distance) => {
         const e = window.spawnSystem.createEnemy(
@@ -1194,11 +1198,13 @@ test.describe('Gameplay Probes', () => {
         window.enemies.push(e);
         return e;
       };
-      at('tank', 0, 450);
-      window.__weak = ['grunt', 'rusher', 'stabber'].map((type, i) => {
+      const tank = at('tank', 0, 450);
+      plantBomb(window.activeBombs, tank, window.beatClock, window.audio);
+      window.__doomed = [tank];
+      ['grunt', 'rusher', 'stabber'].forEach((type, i) => {
         const e = at(type, ((i + 1) * Math.PI) / 2, 180);
         e.health = 1;
-        return e;
+        window.__doomed.push(e);
       });
     });
     const box = await page.locator('#defaultCanvas0').boundingBox();
@@ -1208,9 +1214,9 @@ test.describe('Gameplay Probes', () => {
       await page.waitForTimeout(AIM_MS);
     }
     await page.mouse.up();
-    // It was a fight: the three weak ones died, the rusher by his own blast
+    // It was a fight: all four died, the tank to his bomb
     const alive = await page.evaluate(() =>
-      window.__weak
+      window.__doomed
         .filter((e) => window.enemies.includes(e) && !e.markedForRemoval)
         .map((e) => e.type)
     );
