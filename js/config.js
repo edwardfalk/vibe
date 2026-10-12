@@ -337,8 +337,9 @@ const CONFIG = {
 
   // The tank, a bouncer from space (js/entities/Tank.js). He turns only on
   // beat 1, a step at a time; his gun follows his target within an arc; he
-  // drifts, and lurches on each beat 1; he shoves a hero in front of him on
-  // the beat. Health applies to tanks spawned after a change. Tune with ?tune.
+  // drifts, and lurches on each beat 1; on the beat he shoves a hero in front
+  // of him and elbows one at his side. Health applies to tanks spawned after
+  // a change. Tune with ?tune.
   TANK: {
     HEALTH: 60,
     TURN_STEP_DEG: 60, // the most he turns on one beat 1
@@ -358,7 +359,7 @@ const CONFIG = {
     CHARGE_RANGE_PX: 400, // he starts a charge with his target this close
     CHARGE_BEATS: 8, // two bars of straining, then the shot on beat 1
     RECHARGE_BEATS: 8, // from a shot to the next charge
-    SHOVE_COOLDOWN_BEATS: 2, // between two shoves from one tank
+    SHOVE_COOLDOWN_BEATS: 2, // between two blows (shove or elbow) from one tank
     SHOT_DAMAGE_TO_TANKS: 10, // another tank's ball only dents him (it kills other aliens)
   },
 
@@ -408,6 +409,7 @@ const CONFIG = {
     DAMAGE_TANK_BALL: 50,
     DAMAGE_STAB: 25,
     DAMAGE_TANK_SHOVE: 15, // a tank's shove when he's in front of it
+    DAMAGE_TANK_ELBOW: 10, // a tank's elbow when he's at its side
     // Knockback: a push of this many px/frame that fades by KNOCKBACK_DECAY
     // (share kept per frame), so it carries him about force x 6.7 px in all
     KNOCKBACK_DECAY: 0.85,
@@ -416,6 +418,7 @@ const CONFIG = {
     KNOCKBACK_AREA: 6, // hazard clouds
     KNOCKBACK_BOMB: 15,
     KNOCKBACK_TANK_SHOVE: 14, // about 95 px
+    KNOCKBACK_TANK_ELBOW: 14,
   },
 
   // The hero's look (js/entities/PlayerRenderer.js), drawn only. ART_SCALE:

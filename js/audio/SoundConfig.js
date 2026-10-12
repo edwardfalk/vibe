@@ -152,6 +152,18 @@ export const SOUND_CONFIG = {
     duration: 0.16,
     sweep: { to: ['5', 1], curve: 'exponential' },
   },
+  // His elbow: like the shove, a blow falling from beside the hero's hit
+  // into the tank's band, but on his root, shorter and harder, so the two
+  // blows tell apart by shape
+  tankElbow: {
+    group: 'feedback',
+    voice: 'tank',
+    note: ['1', 3],
+    waveform: 'square',
+    volume: 0.6 * dB(-2.92), // the shove's, to start
+    duration: 0.09,
+    sweep: { to: ['1', 2], curve: 'exponential' },
+  },
   tankHit: {
     group: 'feedback',
     voice: 'tank',

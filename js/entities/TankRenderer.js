@@ -72,7 +72,8 @@ export const TANK_REACH = 1.95;
 /**
  * Which of his sides an angle from his facing falls on: front within 45°,
  * back from 135°, left (y up) or right between. The plates take shots by
- * it, and contact goes by it (the shove in front, the bomb behind).
+ * it, and contact goes by it (the shove in front, the elbow at his sides,
+ * the bomb behind).
  */
 export function tankSide(rel) {
   const a = normalizeAngle(rel);

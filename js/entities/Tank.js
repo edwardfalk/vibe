@@ -28,9 +28,28 @@ const BEATS_PER_BAR = 4;
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const DEG = PI / 180;
 
-// The beat a hero was last shoved on, by any tank. A shove lands only on a
+// The beat a hero was last struck on, by any tank. A blow lands only on a
 // beat's first update, so this keeps it to one a frame from all tanks
 const shovedOnBeat = new WeakMap();
+
+// His blows, by the side of him the hero touches (tankSide): the shove in
+// front, the elbow at either side; his back takes the bomb. CONFIG.PLAYER keys
+const ELBOW = {
+  sound: 'tankElbow',
+  damage: 'DAMAGE_TANK_ELBOW',
+  knock: 'KNOCKBACK_TANK_ELBOW',
+  source: 'tank-elbow',
+};
+const BLOWS = {
+  front: {
+    sound: 'tankShove',
+    damage: 'DAMAGE_TANK_SHOVE',
+    knock: 'KNOCKBACK_TANK_SHOVE',
+    source: 'tank-shove',
+  },
+  left: ELBOW,
+  right: ELBOW,
+};
 
 const PLATE_NAMES = ['front', 'left', 'right'];
 // How fast his drawn envelopes fade (s)
@@ -84,8 +103,8 @@ class Tank extends BaseEnemy {
     this._lastTankFireBeat = -Infinity;
     this.firedAt = null;
     this.callsOut = false; // this charge says CHARGING! and FIRE!
-    this.lastBeat = null; // the last beat he saw, for the shove
-    this.lastShoveBeat = -Infinity;
+    this.lastBeat = null; // the last beat he saw, for his blows and plucks
+    this.lastShoveBeat = -Infinity; // his last blow, a shove or an elbow
     this.shovedAt = null;
 
     // Tank anger system - tracks who damages it
@@ -212,8 +231,9 @@ class Tank extends BaseEnemy {
         Math.cos(toTarget) * side) /
       FRAMES_PER_SEC;
 
-    // Any new beat: a hero in front of him gets shoved, and his charge
-    // plucks its next note (on his first update ever, too)
+    // Any new beat: a hero touching his front gets shoved, at his side
+    // elbowed, and his charge plucks its next note (on his first update
+    // ever, too)
     if (beats !== null) {
       const beat = Math.floor(beats);
       if (beat !== this.lastBeat) {
@@ -296,10 +316,11 @@ class Tank extends BaseEnemy {
   }
 
   /**
-   * The bouncer's shove, on the beat: a hero within reach and on his front
-   * side is hit and knocked back, at most once per SHOVE_COOLDOWN_BEATS from
-   * him and once a frame from all tanks. A real hit, so the shield takes it
-   * whole; the knockback happens either way, as the rusher's blast does.
+   * The bouncer's blows, on the beat: a hero within reach is shoved if he is
+   * at his front, elbowed if at his side, at most once per
+   * SHOVE_COOLDOWN_BEATS from him, either blow, and once a frame from all
+   * tanks. A real hit, so the shield takes it whole; the knockback happens
+   * either way, as the rusher's blast does.
    */
   tryShove(beatIndex, beats) {
     if (beatIndex - this.lastShoveBeat < CONFIG.TANK.SHOVE_COOLDOWN_BEATS) {
@@ -308,14 +329,17 @@ class Tank extends BaseEnemy {
     const hero = this.getContextValue('player');
     if (!hero || !this.checkCollision(hero)) return;
     const toHero = Math.atan2(hero.y - this.y, hero.x - this.x);
-    if (tankSide(toHero - this.facing) !== 'front') return;
+    const side = tankSide(toHero - this.facing);
+    const blow = BLOWS[side];
+    if (!blow) return;
     if (shovedOnBeat.get(hero) === beatIndex) return;
     shovedOnBeat.set(hero, beatIndex);
     this.lastShoveBeat = beatIndex;
-    this.shovedAt = beats;
-    this.getContextValue('audio')?.playSound('tankShove', hero.x, hero.y);
-    if (hero.hurt(CONFIG.PLAYER.DAMAGE_TANK_SHOVE, 'tank-shove')) return;
-    hero.knockBack(this.x, this.y, CONFIG.PLAYER.KNOCKBACK_TANK_SHOVE);
+    if (side === 'front') this.shovedAt = beats;
+    this.getContextValue('audio')?.playSound(blow.sound, hero.x, hero.y);
+    const P = CONFIG.PLAYER;
+    if (hero.hurt(P[blow.damage], blow.source)) return;
+    hero.knockBack(this.x, this.y, P[blow.knock]);
   }
 
   /**

@@ -24,8 +24,8 @@ export function handleContactCollisions({
         damage = 1;
         break;
       case 'tank': {
-        // Only from behind: his front shoves on the beat (Tank.js) and his
-        // sides do nothing; a tank still spawning takes no bomb
+        // Only from behind: on the beat his front shoves and his sides
+        // elbow (Tank.js); a tank still spawning takes no bomb
         if (enemy.isSpawning) break;
         const toHero = Math.atan2(player.y - enemy.y, player.x - enemy.x);
         shouldPlaceBomb = tankSide(toHero - enemy.facing) === 'back';

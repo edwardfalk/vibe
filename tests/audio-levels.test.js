@@ -521,6 +521,7 @@ async function overKick(page, tiers) {
               'killStreak',
               'tankBallKill',
               'tankShove',
+              'tankElbow',
               'shieldBreak',
               'shieldUp',
               'playerHit',
