@@ -84,7 +84,7 @@ Calls and smaller work:
 
 ## Deaths and effects
 
-- **call: the stabber's death, by eye and ear on `?tune`:** Empty shell or Gold shatter (`DEATHS.STABBER_STYLE`), and its level (`DEATHS.STABBER_VOLUME`; both styles sit about 2 dB over the kick, beside the tank's death). The port kept the studies page's small choices, each Edward's to change:
+- **call: the stabber's death, by eye and ear on `?tune`:** Gold shatter is the default (Edward's pick at the play test, for its sound), Empty shell the other `DEATHS.STABBER_STYLE`. Its level (`DEATHS.STABBER_VOLUME`; both styles sit about 2 dB over the kick, beside the tank's death). The port kept the studies page's small choices, each Edward's to change:
   - the shell's spike splits with the shell;
   - its glide falls almost an octave, onto the hum's fifth;
   - the shatter's spike turns and jabs at the hero before it crumbles (the designer's own idea);

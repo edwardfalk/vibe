@@ -1,5 +1,5 @@
 /**
- * The stabber's death, Gold shatter (on ?tune; StabberDeath.js). Frozen on
+ * The stabber's death, Gold shatter (the default; StabberDeath.js). Frozen on
  * the kill, ink cracks run across his shell from where the shot struck; on
  * the eighth his shell shatters into curved gold plates (his ink edge, his
  * goldHi rim) and a few bits of magenta flesh, tumbling out in a ragged ring

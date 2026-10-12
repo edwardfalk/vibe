@@ -1,5 +1,5 @@
 /**
- * The stabber's death, Empty shell (the default; StabberDeath.js): his gold
+ * The stabber's death, Empty shell (on ?tune; StabberDeath.js): his gold
  * shell cracks down his spine and the halves drift apart, each with its claw
  * and half his spike. Inside there is nothing but a puff of magenta mist, so
  * what he was stays a mystery. His one eye floats out last, glaring at the

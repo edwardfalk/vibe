@@ -433,7 +433,7 @@ const CONFIG = {
   // page's level (the last breath's plus the mix pass, DeathSounds.js's
   // BREATH_MIX_DB). LINGER: how long a death's remains stay, times (a
   // stabber's eye and spike too). STABBER_STYLE: how a stabber dies, read at
-  // his kill: 'shell' (Empty shell) or 'shatter' (Gold shatter). The Dude's scene: SCENE_BEATS
+  // his kill: 'shatter' (Gold shatter) or 'shell' (Empty shell). The Dude's scene: SCENE_BEATS
   // from his fatal hit to GAME OVER (his choreography takes 2 s; past it he
   // floats on), the camera easing in to SCENE_ZOOM (1: no ease).
   DEATHS: {
@@ -445,7 +445,7 @@ const CONFIG = {
     TANK_VOLUME: 1, // the tank's air, 1 = the studies page's level
     // How long a dying tank darts about, s (0.5 to 2): shorter is less
     TANK_ZIP_SEC: 0.95,
-    STABBER_STYLE: 'shell',
+    STABBER_STYLE: 'shatter',
     STABBER_VOLUME: 1, // his death, 1 = its level in feedback's events window
   },
 

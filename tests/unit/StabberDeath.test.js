@@ -194,7 +194,7 @@ describe('what his death keeps from the kill', () => {
     expect(w.kill({ dir: 0 }).record.hot).toBe(true);
   });
 
-  it('the style and the linger ?tune had at the kill, whatever they say after; an unknown style is the shell', () => {
+  it('the style and the linger ?tune had at the kill, whatever they say after; an unknown style is the shatter', () => {
     const w = world();
     w.run(0, 300);
     CONFIG.DEATHS.LINGER = 1.7;
@@ -202,9 +202,9 @@ describe('what his death keeps from the kill', () => {
     CONFIG.DEATHS.LINGER = 0.5;
     CONFIG.DEATHS.STABBER_STYLE = 'something else';
     expect(death.record.linger).toBe(1.7);
-    expect(death.record.style).toBe('shell');
+    expect(death.record.style).toBe('shatter');
     expect(record({ style: 'nonsense' }).style).toBe(STABBER_STYLES[0]);
-    expect(STABBER_STYLES[0]).toBe('shell');
+    expect(STABBER_STYLES[0]).toBe('shatter');
   });
 
   it("the blow's way, or his aim with none, and whether it was a blast", () => {
@@ -425,8 +425,8 @@ describe('Gold shatter', () => {
   it('is the style ?tune picks at the kill', () => {
     const w = world();
     w.run(0, 300);
-    CONFIG.DEATHS.STABBER_STYLE = 'shatter';
-    expect(w.kill({ dir: 0 }).record.style).toBe('shatter');
+    CONFIG.DEATHS.STABBER_STYLE = 'shell';
+    expect(w.kill({ dir: 0 }).record.style).toBe('shell');
   });
 
   it('hangs frozen until it starts, then shatters, lives its course and is gone', () => {

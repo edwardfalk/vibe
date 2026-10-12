@@ -906,6 +906,6 @@ export function stabberShatter(ctx, out, { at, record, noise, volume, pan }) {
 
 /** A stabber's death sound by its style (StabberDeath.js's styles) */
 export const STABBER_DEATH_SOUNDS = Object.freeze({
-  shell: stabberShell,
   shatter: stabberShatter,
+  shell: stabberShell,
 });
