@@ -47,6 +47,18 @@ describe('his glances at hits 1 and 2', () => {
     expect(t.pose().glance).toBeNull();
   });
 
+  it('glances at where a hit came from in the world, whichever way he faces', () => {
+    const { w, t } = angerWorld({ x: 0, y: -300 });
+    t.facing = 1;
+    t.turn = { from: 1, to: 1, at: null };
+    w.frame(t, 5000);
+    t.plates.left = { hp: 0, max: 30, destroyed: true };
+    // From his left (1 - π/2 in the world), through the broken plate
+    t.takeDamage(1, 1 - Math.PI / 2 + Math.PI, 'grunt');
+    w.frame(t, 5200);
+    expect(t.pose().glance.rel).toBeCloseTo(-Math.PI / 2, 9);
+  });
+
   it('a new hit restarts the glance toward it, over its own shoulder', () => {
     const { w, t } = angerWorld({ x: 0, y: -300 });
     w.frame(t, 5000);

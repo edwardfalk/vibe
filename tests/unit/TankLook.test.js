@@ -150,9 +150,9 @@ describe('drawing the tank', () => {
       return Math.atan2(matrix[1], matrix[0]);
     };
     // Each glance began at beat 17.5, 0.25 s ago: fully in
-    const glancing = (facing, rel0) => {
+    const glancing = (facing, aim) => {
       const t = tankAt(18, facing);
-      t.glance = { rel0, facing0: 0, at: 17.5, hold: false };
+      t.glance = { aim, at: 17.5, hold: false };
       return t;
     };
     // A hit from 1 rad to his right: he looks straight at it

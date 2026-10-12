@@ -720,12 +720,12 @@ class Tank extends BaseEnemy {
     const count = (this.damageTracker.get(damageSource) || 0) + 1;
     this.damageTracker.set(damageSource, count);
     const tipped = count >= this.angerThreshold;
-    // On his body, the side it picks kept; dead behind is over his left
-    // shoulder, as his "uh oh" looks
+    // A bearing unwrapped from his facing, so it keeps the side it picks (his
+    // facing never wraps); dead behind is over his left shoulder, as his
+    // "uh oh" looks
     const rel = normalizeAngle(bearing - this.facing);
     this.glance = {
-      rel0: rel === PI ? -PI : rel,
-      facing0: this.facing,
+      aim: this.facing + (rel === PI ? -PI : rel),
       at: this.poseBeats,
       hold: tipped,
     };
@@ -766,7 +766,7 @@ class Tank extends BaseEnemy {
       (1 - smooth(clamp01((age - until) / GLANCE_OUT_SEC)));
     if (!(k > 0)) return null;
     const lim = Math.abs(UH.LOOK);
-    const rel = g.rel0 - (this.facing - g.facing0);
+    const rel = g.aim - this.facing;
     return { rel: Math.max(-lim, Math.min(lim, rel)), k };
   }
 }
