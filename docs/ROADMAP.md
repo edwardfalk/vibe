@@ -24,8 +24,7 @@ Calls and smaller work:
 - **call: rushers set off in a chain crash together exactly in step,** +6 dB each doubling (the crash noise has a fixed seed). Fix only if it's heard as too loud: one crash per frame.
 - **build, low: a rusher lit while he warps in misses that beat's fuse beep.** A fuse with no beeps at all needs `FUSE_MIN_BEATS` 1, which also skips his punchline (said with his last beep). Fix: beep on his first update when it falls within the clock's tolerance of a beat. (Codex on #94)
 - **build: #94's deferred minors:**
-  - `Tank.js`'s `lastBeat` comment says "for the shove", but it also drives the charge's pluck;
-  - two tanks firing on one beat 1 come out about 2 dB loud;
+  - two tanks firing on one beat 1 come out about 2 dB loud (more often since tank charges start only on even bars);
   - a note with a fractional octave fails after its nodes exist;
   - no test for a late frame in the middle of a fuse;
   - no test that the `BAND` knobs show on `?tune`;
