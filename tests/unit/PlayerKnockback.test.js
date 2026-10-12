@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-vi.spyOn(console, 'log').mockImplementation(() => {});
-
 const { Player } = await import('../../js/entities/player.js');
 const { CONFIG } = await import('../../js/config.js');
 const { handleRusherExplosionCollision } =

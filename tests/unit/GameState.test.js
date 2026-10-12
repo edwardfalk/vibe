@@ -26,8 +26,6 @@ vi.stubGlobal('localStorage', {
   },
 });
 
-vi.spyOn(console, 'log').mockImplementation(() => {});
-
 const { GameState } = await import('../../js/core/GameState.js');
 const { CONFIG } = await import('../../js/config.js');
 

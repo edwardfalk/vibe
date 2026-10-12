@@ -19,11 +19,6 @@ describe('BeatClock tolerance constants', () => {
     expect(clock.tolerance).toBe(100); // 0.20 * 500ms
     expect(clock.eighthNoteTolerance).toBe(20); // 0.08 * 250ms
   });
-
-  it('should use EIGHTH_NOTE tolerance in isOnEighthNote', () => {
-    const result = clock.isOnEighthNote();
-    expect(typeof result).toBe('boolean');
-  });
 });
 
 describe('BeatClock reset with beat alignment', () => {

@@ -9,7 +9,6 @@ vi.stubGlobal('localStorage', {
     this._store[key] = String(value);
   },
 });
-vi.spyOn(console, 'log').mockImplementation(() => {});
 
 const { Player } = await import('../../js/entities/player.js');
 const { GameState } = await import('../../js/core/GameState.js');
