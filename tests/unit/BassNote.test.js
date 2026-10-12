@@ -16,19 +16,19 @@ afterEach(() => {
 });
 
 describe('the slap fires his note', () => {
-  it('along the aim let 3 locked, though the hero moved since', () => {
+  it('from where he is, at where the hero was on let 3, though both moved since', () => {
     const w = bassistWorld({ ms0: 1990, hero: { x: 300, y: 0 } });
     w.run(2000, letMs(6) - 10);
-    w.step(letMs(6) + 5); // let 3: his aim locks at the hero
-    const locked = w.b.toHero;
-    w.hero.y = 300; // he moves before the slap
+    w.step(letMs(6) + 5); // let 3: he locks onto the hero's spot
+    w.hero.y = 300; // the hero moves before the slap; he drifts on too
     const fired = w.run(letMs(6) + 21, 3999).map((e) => e.r);
     expect(fired).toHaveLength(1);
     const [note] = fired;
     expect(note.owner).toBe(NOTE_OWNER);
     expect(note.ownerId).toBe(w.b.id);
-    expect(note.angle).toBe(locked); // where the hero was at let 3
-    expect(Math.abs(w.b.toHero - locked)).toBeGreaterThan(0.3);
+    // It leaves from him at the slap, toward (300, 0)
+    expect(note.angle).toBeCloseTo(Math.atan2(0 - note.y, 300 - note.x), 9);
+    expect(Math.abs(w.b.toHero - note.angle)).toBeGreaterThan(0.3);
     expect(note.size).toBe(CONFIG.BASSIST.NOTE_SIZE);
     expect(note.damage).toBe(CONFIG.PLAYER.DAMAGE_BASS_NOTE);
   });

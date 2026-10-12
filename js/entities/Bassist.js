@@ -61,7 +61,8 @@ export class Bassist extends BaseEnemy {
         ? null
         : Math.floor(this.poseBeats - CONFIG.SWING.AND_AT + EPS);
     this.lockBar = null; // the bar whose let 3 locked his aim
-    this.lockAim = 0;
+    this.lockAt = null; // the hero's spot at that let 3: his slap aims there
+    this.heroAt = { x, y }; // the hero's spot at his last update
     this.puffAt = null; // the beat position of the last let he played
   }
 
@@ -79,6 +80,7 @@ export class Bassist extends BaseEnemy {
     deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS
   ) {
     this.keepInWorld();
+    this.heroAt = { x: playerX, y: playerY };
     this.distance = Math.hypot(playerX - this.x, playerY - this.y);
     this.toHero = Math.atan2(playerY - this.y, playerX - this.x);
     const result = this.poseBeats === null ? null : this.playLets();
@@ -107,7 +109,7 @@ export class Bassist extends BaseEnemy {
    * The let at or before now, if this update is the first to reach it: at
    * beat n + SWING.AND_AT for each beat n. Each acts once, even if AND_AT
    * moves; one reached more than half its gap to the next beat late is
-   * dropped, so nothing he plays sounds off its let. Let 3 locks his aim,
+   * dropped, so nothing he plays sounds off its let. Let 3 locks his aim on the hero's spot,
    * and only a bar whose let 3 he reached slaps
    */
   playLets() {
@@ -120,7 +122,7 @@ export class Bassist extends BaseEnemy {
     const bar = Math.floor(n / LETS_PER_BAR);
     if (k === LOCK_LET) {
       this.lockBar = bar;
-      this.lockAim = this.toHero;
+      this.lockAt = { ...this.heroAt };
     }
     if (!this.plays(k)) return null;
     if (k === SLAP_LET && this.lockBar !== bar) return null;
@@ -128,9 +130,14 @@ export class Bassist extends BaseEnemy {
     return k === SLAP_LET ? this.fireNote() : null;
   }
 
-  /** The slap's note, along the aim let 3 locked; the enemy loop takes it into the enemy bullets */
+  /**
+   * The slap's note, from him at the hero's spot let 3 locked: he drifts
+   * through the beat between, so an aim kept as an angle would miss a hero
+   * standing still. The enemy loop takes it into the enemy bullets
+   */
   fireNote() {
-    const note = Bullet.acquire(this.x, this.y, this.lockAim, 0, NOTE_OWNER);
+    const aim = Math.atan2(this.lockAt.y - this.y, this.lockAt.x - this.x);
+    const note = Bullet.acquire(this.x, this.y, aim, 0, NOTE_OWNER);
     note.ownerId = this.id;
     return note;
   }
