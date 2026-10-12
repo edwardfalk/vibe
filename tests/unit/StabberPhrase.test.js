@@ -545,8 +545,9 @@ describe('the stabber hit', () => {
     const { s, run } = shiv();
     run(0, 700);
     expect(s.state).toBe('windup');
+    // A shot's own damage: 1 gets through his armour, and his health lands on 0
     s.health = 1;
-    expect(s.takeDamage(5, Math.PI / 2, 'player_bullet')).toBe(
+    expect(s.takeDamage(1, Math.PI / 2, 'player_bullet')).toBe(
       DAMAGE_RESULT.DIED
     );
     expect(s.state).toBe('windup');
