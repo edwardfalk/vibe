@@ -106,6 +106,9 @@ class Tank extends BaseEnemy {
     this.lastBeat = null; // the last beat he saw, for his blows and plucks
     this.lastShoveBeat = -Infinity; // his last blow, a shove or an elbow
     this.shovedAt = null;
+    // His last elbow: from when its thwack is heard, and his side (-1 left)
+    this.elbowAt = null;
+    this.elbowSide = 0;
 
     // Tank anger system - tracks who damages it
     this.damageTracker = new Map(); // Track damage sources: enemyType -> count
@@ -336,6 +339,10 @@ class Tank extends BaseEnemy {
     shovedOnBeat.set(hero, beatIndex);
     this.lastShoveBeat = beatIndex;
     if (side === 'front') this.shovedAt = beats;
+    else {
+      this.elbowAt = this.getContextValue('beatClock').heardFrom(beatIndex);
+      this.elbowSide = side === 'left' ? -1 : 1;
+    }
     this.getContextValue('audio')?.playSound(blow.sound, hero.x, hero.y);
     const P = CONFIG.PLAYER;
     if (hero.hurt(P[blow.damage], blow.source)) return;
@@ -497,6 +504,8 @@ class Tank extends BaseEnemy {
       gunRel: this.gunRel,
       lurch: this.lurchNow,
       shove: env(since(this.shovedAt), SHOVE_TAU_SEC),
+      elbow: env(since(this.elbowAt), SHOVE_TAU_SEC),
+      elbowSide: this.elbowSide,
       charge: charging ? clamp01(intoCharge / this.chargeDurationBeats) : -1,
       chargeBeats: Math.max(0, Math.floor(intoCharge)),
       fire: env(since(this.firedAt), FIRE_TAU_SEC),

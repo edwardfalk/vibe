@@ -91,6 +91,56 @@ describe('drawing the tank', () => {
     }
   });
 
+  it('barges toward his side on an elbow, that pad punching out, and stays under his health bar', () => {
+    const drawn = (t) => {
+      const { p, shapes, calls } = transformP5();
+      t.draw(p);
+      const parts = tankParts(p, drawnSize());
+      const y = (sh) => sh.matrix[5];
+      const pads = shapes.filter(
+        (sh) => sh.kind === 'image' && sh.g === parts.pad.g
+      );
+      return {
+        slab: y(imageOf(shapes, parts.slab)),
+        right: y(pads.find((sh) => y(sh) > t.y)),
+        left: y(pads.find((sh) => y(sh) < t.y)),
+        shapes,
+        calls,
+      };
+    };
+    const rest = drawn(tankAt(18));
+    for (const side of [1, -1]) {
+      const t = tankAt(18); // facing +x: his right is screen +y
+      t.elbowAt = 18;
+      t.elbowSide = side;
+      const e = drawn(t);
+      const slab = (e.slab - rest.slab) * side;
+      const [near, far] = side > 0 ? ['right', 'left'] : ['left', 'right'];
+      expect(slab, `side ${side}`).toBeGreaterThan(2);
+      expect((e[near] - rest[near]) * side).toBeGreaterThan(slab + 2);
+      expect((e[far] - rest[far]) * side).toBeLessThan(slab + 1);
+    }
+    for (const facing of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+      for (const side of [1, -1]) {
+        const t = tankAt(18, facing);
+        t.elbowAt = 18;
+        t.elbowSide = side;
+        t.health = 1; // damaged, so the bar shows
+        const { shapes, calls } = drawn(t);
+        const top = Math.min(
+          ...shapes.filter((sh) => sh.blend !== 'add').map((sh) => sh.top)
+        );
+        const [, , barY, , barH] = calls.find(
+          ([k, , , w, h]) =>
+            k === 'rect' && h === HEALTH_BAR_HEIGHT_PX && w === t.size * 1.2
+        );
+        expect(top, `facing ${facing}, side ${side}`).toBeGreaterThan(
+          barY + barH
+        );
+      }
+    }
+  });
+
   it('rebuilds his sprites when his drawn size changes, and removes the old ones', () => {
     const t = tankAt(18);
     const { p, graphics } = transformP5();

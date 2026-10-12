@@ -176,6 +176,30 @@ describe('the side elbow', () => {
     );
   });
 
+  it('shows from when its thwack is heard, on the side it lands; a shove shows none', () => {
+    CONFIG.TANK.TURN_STEP_DEG = 0;
+    for (const [hero, side] of [
+      [{ x: 0, y: 60 }, 1],
+      [{ x: 0, y: -60 }, -1],
+    ]) {
+      const w = tankWorld({ hero });
+      const t = heldTank(w);
+      w.frame(t, 4250);
+      expect(t.pose().elbow).toBe(0);
+      w.frame(t, 4520); // beat 9, 20 ms late: still heard from beat 9
+      expect(t.elbowAt).toBe(w.clock.heardFrom(9));
+      expect(t.elbowAt).toBeLessThan(t.poseBeats);
+      expect(t.pose().elbowSide).toBe(side);
+      expect(t.pose().elbow).toBeGreaterThan(0.5);
+    }
+    const w = tankWorld({ hero: { x: 60, y: 0 } });
+    const t = heldTank(w);
+    w.frame(t, 4250);
+    w.frame(t, 4500);
+    expect(t.pose().shove).toBeGreaterThan(0.5);
+    expect(t.pose().elbow).toBe(0);
+  });
+
   it('a fatal elbow knocks no corpse', () => {
     CONFIG.TANK.TURN_STEP_DEG = 0;
     const w = tankWorld({ hero: { x: 0, y: 60 } });

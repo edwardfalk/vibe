@@ -836,8 +836,11 @@ export function drawTank(p, s, look, react = NO_REACTION) {
       0.04 * bulk -
       0.16 * wF +
       0.06 * backHit);
-  const yokeY = s * 0.16 * (wL - wR);
-  yokeA += 0.22 * (wR - wL);
+  // An elbow is a wince run the other way: he barges toward that side,
+  // that shoulder's pad punching out (below)
+  const elbow = look.elbow * look.elbowSide;
+  const yokeY = s * (0.16 * (wL - wR) + 0.22 * elbow);
+  yokeA += 0.22 * (wR - wL) - 0.15 * elbow;
   const stretch = 0.08 * L * (1 - hunch) - 0.08 * hunch - 0.06 * tw;
   const aimRel = look.gunRel - yokeA;
 
@@ -932,7 +935,11 @@ export function drawTank(p, s, look, react = NO_REACTION) {
     p.push();
     p.translate(
       s * PAD_AT[0] + side * rollX,
-      side * s * (PAD_AT[1] - 0.04 * hitP[name])
+      side *
+        s *
+        (PAD_AT[1] -
+          0.04 * hitP[name] +
+          (side === look.elbowSide ? 0.14 * look.elbow : 0))
     );
     p.scale(1, side);
     if (pl[name] > 0) {
