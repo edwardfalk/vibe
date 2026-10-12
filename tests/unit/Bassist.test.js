@@ -1,45 +1,18 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { Bassist, bassistAbout } from '../../js/entities/Bassist.js';
+import { bassistAbout } from '../../js/entities/Bassist.js';
 import { stalkWant } from '../../js/entities/Stabber.js';
 import { SpawnSystem } from '../../js/systems/SpawnSystem.js';
 import { CONFIG } from '../../js/config.js';
-import { createMockP5 } from './helpers/enemyMocks.js';
-import { beatWorld } from './helpers/beatWorld.js';
+import { bassistWorld, FRAME_MS } from './helpers/bassistWorld.js';
 
 const B = CONFIG.BASSIST;
 const DEFAULTS = { ...CONFIG.BASSIST };
-const FRAME_MS = 16;
 
 afterEach(() => {
   Object.assign(CONFIG.BASSIST, DEFAULTS);
 });
 
-// A spawned bassist at (x, y) in a beat world; step(ms) is one update at ms
-// with the hero at `hero`
-export function bassist({
-  x = 0,
-  y = 0,
-  ms0 = 0,
-  hero = { x: 300, y: 0 },
-} = {}) {
-  const w = beatWorld();
-  w.at(ms0);
-  const b = new Bassist(
-    x,
-    y,
-    'bassist',
-    { context: w.context },
-    createMockP5(),
-    w.audio
-  );
-  b.isSpawning = false;
-  b.spawnTimer = b.spawnDuration;
-  const step = (ms) => {
-    w.at(ms);
-    return b.update(hero.x, hero.y, FRAME_MS);
-  };
-  return { ...w, b, hero, step };
-}
+const bassist = (opts) => bassistWorld(opts);
 
 describe('the bassist arrives', () => {
   it('has four strings of HITS_PER_STRING hits each', () => {

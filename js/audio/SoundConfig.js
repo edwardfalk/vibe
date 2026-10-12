@@ -14,6 +14,7 @@ export const VOICE_DEGREES = {
   rusher: ['b7', '1'],
   hero: ['1', '5'],
   game: ['1', 'b3', '5', 'b7'],
+  bassist: ['b3', '4', '5', 'b7'], // his line, walking up into the root on ONE
 };
 
 // A grunt shoots one of these for life, by his look's seed (Grunt.shotNote):
@@ -35,6 +36,9 @@ export const SOUND_CONFIG = {
   // The tank's shot and his charge: the band's 808 boom with its zap, and a
   // rising pluck a beat (Instruments.js)
   tankShot: { synth: 'tankShot', group: 'band' },
+  // The bassist's lets, on his line's note (Bassist.js)
+  bassPluck: { synth: 'bassPluck', group: 'band' },
+  bassSlap: { synth: 'bassSlap', group: 'band' },
   tankCharge: { synth: 'tankCharge', group: 'band' },
   // A tank ball killing an enemy on its way: short, dry, not the shot's boom
   tankBallKill: {

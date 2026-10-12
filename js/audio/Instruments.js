@@ -580,6 +580,39 @@ const FUSE = {
 };
 
 /** Every synth by name; the crash keeps CONFIG.RUSHER.CRASH_VOLUME */
+// The bassist's ghost pluck and slap, on the note he is given: a saw
+// through a low-pass that closes, driven. shortcut: a stand-in until Edward
+// picks one on the listening page (the bassist spec, Sound); the pick
+// replaces these two
+const BASS_PLUCK = {
+  trim: -8,
+  LOWPASS: { FROM_HZ: 1400, TO_HZ: 250, Q: 1.5, SWEEP_SEC: 0.06 },
+  DRIVE: 2,
+  PEAK: 0.5,
+  ATTACK_SEC: 0.003,
+  SEC: 0.09,
+  STOP_SEC: 0.12,
+  notes: ({ note }) => [note],
+  play(ctx, bus, at, [f], cents) {
+    const L = this.LOWPASS;
+    const e = envelope(ctx, this.PEAK, this.ATTACK_SEC, this.SEC, at, bus);
+    const sat = drive(ctx, this.DRIVE);
+    sat.connect(e);
+    const lp = filterAt(ctx, 'lowpass', L.FROM_HZ, L.Q, at, sat);
+    lp.frequency.exponentialRampToValueAtTime(L.TO_HZ, at + L.SWEEP_SEC);
+    const saw = osc(ctx, 'sawtooth', f, at, lp, cents);
+    saw.start(at);
+    return [[saw], [e, sat, lp], this.STOP_SEC];
+  },
+};
+const BASS_SLAP = {
+  ...BASS_PLUCK,
+  trim: -4,
+  LOWPASS: { FROM_HZ: 3200, TO_HZ: 300, Q: 2, SWEEP_SEC: 0.18 },
+  SEC: 0.45,
+  STOP_SEC: 0.5,
+};
+
 export const SYNTHS = {
   crash: (ctx, out, cfg, { volume, pan, at }) =>
     playCrash(
@@ -592,6 +625,10 @@ export const SYNTHS = {
     ),
   heroShot,
   gruntShot,
+  bassPluck: (ctx, out, _cfg, opts) =>
+    playBand(ctx, out, BASS_PLUCK, CONFIG.BAND.BASS_PLUCK_DB, opts),
+  bassSlap: (ctx, out, _cfg, opts) =>
+    playBand(ctx, out, BASS_SLAP, CONFIG.BAND.BASS_SLAP_DB, opts),
   tankShot: (ctx, out, _cfg, opts) =>
     playBand(ctx, out, TANK_SHOT, CONFIG.BAND.TANK_SHOT_DB, opts),
   tankCharge: (ctx, out, _cfg, opts) =>

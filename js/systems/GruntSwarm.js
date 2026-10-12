@@ -10,6 +10,14 @@
 import { CONFIG } from '../config.js';
 import { random, sqrt, min, max } from '../mathUtils.js';
 
+/**
+ * Each of `n` playing together plays at this share of a lone one's level:
+ * VOLLEY_DB_PER_DOUBLING a doubling, so they carry about one's energy (a
+ * swarm's volley, a crowd of bassists on a let); one alone at 1
+ */
+export const volleyGain = (n) =>
+  n > 1 ? 10 ** ((CONFIG.SWARM.VOLLEY_DB_PER_DOUBLING * Math.log2(n)) / 20) : 1;
+
 // The centre holds its stand-off within this either way before it moves
 export const STANDOFF_BAND_PX = 50;
 // Each grunt's idle jitter a frame, either way (a lone grunt's, before swarms)
@@ -147,11 +155,7 @@ export class GruntSwarm {
       (g) => g.warnedOnBeat === total - 1 && !g.lineBlocked()
     );
     for (const g of shooters) g.fireOnBeat = total;
-    const n = shooters.length;
-    this.volleyGain =
-      n > 1
-        ? 10 ** ((CONFIG.SWARM.VOLLEY_DB_PER_DOUBLING * Math.log2(n)) / 20)
-        : 1;
+    this.volleyGain = volleyGain(shooters.length);
   }
 
   /** Its grunts, found in the enemies array: its own, live, not pending a death */

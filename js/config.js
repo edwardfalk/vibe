@@ -196,6 +196,8 @@ const CONFIG = {
     CHATTER: 'both', // both (each grunt his own voice), whine or squeak
     CHATTER_DB: 0,
     FUSE_DB: 0, // the rusher's fuse
+    BASS_PLUCK_DB: 0, // the bassist's ghost plucks
+    BASS_SLAP_DB: 0, // and his slap
   },
 
   // Pausing (P) stops the sound: the audio is suspended, which also stops
@@ -492,6 +494,9 @@ const CONFIG = {
     STALK_PX_S: 25, // circling the hero inside the band
     BACKOFF_PX_S: 90, // nearer than the band
     STEER_SEC: 0.35, // how fast his drift eases to what he wants
+    LURCH_PX_S: 160, // each let he plays puffs him on this fast
+    PUFF_KEEP: 0.88, // the share of a puff's push kept per 60 Hz frame
+    OCTAVE: 2, // his line's octave (b3, 4, 5, b7)
     HITS_PER_STRING: 3,
   },
 

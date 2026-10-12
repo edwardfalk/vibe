@@ -1,9 +1,19 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { CONFIG } from '../config.js';
 import { stalkWant } from './Stabber.js';
+import { volleyGain } from '../systems/GruntSwarm.js';
+import { mod } from './GruntRenderer.js';
 
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const STRINGS = 4;
+const LETS_PER_BAR = 4;
+/** The let of 3, where his aim locks */
+export const LOCK_LET = 2;
+/** The let of 4, his slap */
+export const SLAP_LET = 3;
+/** His line, one degree a let: walking up b3, 4, 5 into the slap's b7 */
+export const LINE = ['b3', '4', '5', 'b7'];
+const EPS = 1e-6; // slack on beat positions, for floating-point error
 
 // shortcut: a stand-in figure until Edward picks his look on the studies
 // page (the bassist spec, The creature); the picked one replaces it
@@ -39,9 +49,27 @@ export class Bassist extends BaseEnemy {
     this.distance = Infinity; // to the hero, at his last update
     this.toHero = 0;
     this.walk = { x: 0, y: 0 }; // his drift, px/s
+    this.push = { x: 0, y: 0 }; // a puff's push, px/s
+    // The beat he is at, kept by update(); the lets before he came are past
+    this.poseBeats =
+      this.getContextValue('beatClock')?.getBeatPosition() ?? null;
+    this.lastLet =
+      this.poseBeats === null
+        ? null
+        : Math.floor(this.poseBeats - CONFIG.SWING.AND_AT + EPS);
+    this.lockBar = null; // the bar whose let 3 locked his aim
+    this.lockAim = 0;
+    this.puffAt = null; // the beat position of the last let he played
   }
 
-  /** He drifts in his band round the hero; nothing he plays yet */
+  /** @override He keeps the beat he is at */
+  update(playerX, playerY, deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
+    this.poseBeats =
+      this.getContextValue('beatClock')?.getBeatPosition() ?? null;
+    return super.update(playerX, playerY, deltaTimeMs);
+  }
+
+  /** He plays the lets this update reached, then drifts in his band round the hero, puffed on by them */
   updateSpecificBehavior(
     playerX,
     playerY,
@@ -50,10 +78,79 @@ export class Bassist extends BaseEnemy {
     this.keepInWorld();
     this.distance = Math.hypot(playerX - this.x, playerY - this.y);
     this.toHero = Math.atan2(playerY - this.y, playerX - this.x);
+    const result = this.poseBeats === null ? null : this.playLets();
     this.steer(deltaTimeMs / 1000);
-    this.velocity.x = this.walk.x / FRAMES_PER_SEC;
-    this.velocity.y = this.walk.y / FRAMES_PER_SEC;
+    this.velocity.x = (this.walk.x + this.push.x) / FRAMES_PER_SEC;
+    this.velocity.y = (this.walk.y + this.push.y) / FRAMES_PER_SEC;
+    const keep =
+      CONFIG.BASSIST.PUFF_KEEP **
+      (deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS);
+    this.push.x *= keep;
+    this.push.y *= keep;
+    return result;
+  }
+
+  /** His strings left: one goes with each quarter of his health */
+  strings() {
+    return Math.max(0, Math.ceil((STRINGS * this.health) / this.maxHealth));
+  }
+
+  /** Whether he still plays let `k` of a bar (0 to 3): a snapped string drops let 1, then 2, then 3; the slap's goes last */
+  plays(k) {
+    return k >= STRINGS - this.strings();
+  }
+
+  /**
+   * The let at or before now, if this update is the first to reach it: at
+   * beat n + SWING.AND_AT for each beat n. Each acts once, even if AND_AT
+   * moves; one reached more than half its gap to the next beat late is
+   * dropped, so nothing he plays sounds off its let. Let 3 locks his aim,
+   * and only a bar whose let 3 he reached slaps
+   */
+  playLets() {
+    const and = CONFIG.SWING.AND_AT;
+    const n = Math.floor(this.poseBeats - and + EPS);
+    if (this.lastLet !== null && n <= this.lastLet) return null;
+    this.lastLet = n;
+    if (this.poseBeats - (n + and) > (1 - and) / 2) return null;
+    const k = mod(n, LETS_PER_BAR);
+    const bar = Math.floor(n / LETS_PER_BAR);
+    if (k === LOCK_LET) {
+      this.lockBar = bar;
+      this.lockAim = this.toHero;
+    }
+    if (!this.plays(k)) return null;
+    if (k === SLAP_LET && this.lockBar !== bar) return null;
+    this.pluck(n, k);
     return null;
+  }
+
+  /** Let n, the k-th of its bar: its sound, on its grid time, and a puff along his drift */
+  pluck(n, k) {
+    this.puffAt = this.poseBeats;
+    const speed = Math.hypot(this.walk.x, this.walk.y);
+    // Still, he puffs round the hero, the way he circles
+    const dir =
+      speed > EPS
+        ? Math.atan2(this.walk.y, this.walk.x)
+        : this.toHero + (this.circle * Math.PI) / 2;
+    const lurch = CONFIG.BASSIST.LURCH_PX_S;
+    this.push.x += Math.cos(dir) * lurch;
+    this.push.y += Math.sin(dir) * lurch;
+    const audio = this.getContextValue('audio');
+    const clock = this.getContextValue('beatClock');
+    if (!audio || !clock) return;
+    const beatSec = clock.beatInterval / 1000;
+    const at = clock.startTime / 1000 + (n + CONFIG.SWING.AND_AT) * beatSec;
+    const crowd = (this.getContextValue('enemies') ?? []).filter(
+      (e) => e.type === 'bassist' && !e.markedForRemoval && !e.isSpawning
+    ).length;
+    audio.playSound(k === SLAP_LET ? 'bassSlap' : 'bassPluck', this.x, this.y, {
+      at,
+      seed: this.lookSeed,
+      note: [LINE[k], CONFIG.BASSIST.OCTAVE],
+      gain: volleyGain(Math.max(1, crowd)),
+    });
   }
 
   /** His drift eases toward the stabber's stalk, on his own band and speeds */

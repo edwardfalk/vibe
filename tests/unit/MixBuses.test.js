@@ -81,6 +81,8 @@ const BAND = [
   'tankResponse',
   'stabberResponse',
   'rusherResponse',
+  'bassPluck',
+  'bassSlap',
 ];
 const groupOf = (name) =>
   DRUMS.includes(name) ? 'drums' : BAND.includes(name) ? 'band' : 'feedback';
@@ -181,6 +183,8 @@ const OPTS = {
   tankCharge: { step: 2, steps: 8, seed: 0.3 },
   gruntChatter: { voice: 'whine', seed: 0.3 },
   rusherFuse: { left: 2, seed: 0.3 },
+  bassPluck: { note: ['b3', 2], seed: 0.3, at: 0.1 },
+  bassSlap: { note: ['b7', 2], seed: 0.3, at: 0.1 },
 };
 
 describe('the buses at start-up', () => {
