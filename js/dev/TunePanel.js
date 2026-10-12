@@ -228,7 +228,7 @@ const KNOBS = [
   [BOMB, 'COUNT_LEAD_BEATS', [1, 4, 1]],
   [BOMB, 'RADIUS_PX', [80, 400, 10]],
   [BOMB, 'BANG_VOLUME', [0, 3, 0.05]],
-  [BOMB, 'CLOUD_VOLUME', [0, 3, 0.05]],
+  [BOMB, 'CLOUD_VOLUME', [0, 3, 0.01]], // its 1.41 is +3 dB
   [BOMB, 'ENEMY_DAMAGE_MAX', [0, 100, 5]],
   [BOMB, 'PLAYER_DAMAGE_MAX', [0, 100, 5]],
   [HITBOX, 'SHOW'],
