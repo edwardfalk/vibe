@@ -59,6 +59,18 @@ describe('his glances at hits 1 and 2', () => {
     expect(t.pose().glance.rel).toBeCloseTo(-Math.PI / 2, 9);
   });
 
+  it('a hit that breaks a plate with nothing left over counts, and turns his head', () => {
+    // A grunt's shot (1) always breaks a plate exactly: their usual way in
+    const { w, t } = angerWorld({ x: 0, y: -300 });
+    w.frame(t, 5000);
+    t.plates.left.hp = 1;
+    t.takeDamage(1, Math.PI / 2, 'grunt'); // from his left
+    expect(t.plates.left.destroyed).toBe(true);
+    expect(t.damageTracker.get('grunt')).toBe(1);
+    w.frame(t, 5200);
+    expect(t.pose().glance.rel).toBeCloseTo(-Math.PI / 2, 9);
+  });
+
   it('a new hit restarts the glance toward it, over its own shoulder', () => {
     const { w, t } = angerWorld({ x: 0, y: -300 });
     w.frame(t, 5000);
