@@ -1,7 +1,8 @@
 /**
  * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK (the kick, and whether it is tuned to the hum), HUM, SKY, PACING, the grunts' swarms (SWARM),
  * MIX, the rusher's flight, fuse, push and blast (RUSHER) and look (RUSHER_LOOK), the stabber's stalk, lunge, rest,
- * push, health and strings' volumes (STABBER) and size (STABBER_LOOK), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
+ * push, health and strings' volumes (STABBER) and size (STABBER_LOOK), the swing a bassist brings (SWING) and his stalk and
+ * strings (BASSIST), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the hero's
  * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK),
@@ -78,6 +79,8 @@ const HITS = 'HITS';
 const BAND = 'BAND';
 const RUSHER = 'RUSHER';
 const STABBER = 'STABBER';
+const SWING = 'SWING';
+const BASSIST = 'BASSIST';
 const HITBOX = 'HITBOX';
 const SKY = 'SKY';
 const GRUNT = 'GRUNT_LOOK';
@@ -179,6 +182,14 @@ export const KNOBS = [
   [RUSHER, 'EXPLOSION_RADIUS', [60, 300, 10]],
   [RUSHER, 'EXPLOSION_DAMAGE', [5, 100, 5]],
   [RUSHER, 'CRASH_VOLUME', [0, 2, 0.05]],
+  [SWING, 'AND_AT', [0.5, 0.75, 1 / 24]], // 2/3 is the triplet's let
+  [BASSIST, 'STALK_MIN_PX', [50, 500, 10]],
+  [BASSIST, 'STALK_MAX_PX', [100, 600, 10]],
+  [BASSIST, 'APPROACH_PX_S', [0, 400, 10]],
+  [BASSIST, 'STALK_PX_S', [0, 200, 5]],
+  [BASSIST, 'BACKOFF_PX_S', [0, 300, 10]],
+  [BASSIST, 'STEER_SEC', [0.05, 1, 0.05]],
+  [BASSIST, 'HITS_PER_STRING', [1, 10, 1]],
   [STABBER, 'STALK_MIN_PX', [50, 500, 10]],
   [STABBER, 'STALK_MAX_PX', [100, 600, 10]],
   [STABBER, 'APPROACH_PX_S', [0, 400, 10]],

@@ -18,6 +18,7 @@ import {
 } from './systems/BombSystem.js';
 import { updateEnemiesAndResolveResults } from './systems/gameplay/EnemyUpdatePipeline.js';
 import { Bullet } from './entities/bullet.js';
+import { bassistAbout } from './entities/Bassist.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
 import { runSetup } from './GameLoopSetup.js';
 import { runDraw } from './GameLoopDraw.js';
@@ -96,6 +97,8 @@ function updateGame(p) {
   // Update BeatClock every frame for accurate rhythm timing
   if (window.beatClock && typeof window.beatClock.update === 'function') {
     window.beatClock.update();
+    // The hero's fire and steps swing while a bassist is about
+    window.beatClock.wantSwing(bassistAbout(enemies));
   }
 
   // Update beat visualizer

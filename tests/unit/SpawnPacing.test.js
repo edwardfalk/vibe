@@ -47,7 +47,7 @@ describe('Spawn pacing', () => {
   it('knows which enemy type is introduced next', () => {
     expect(nextNewEnemyType(1)).toBe('stabber');
     expect(nextNewEnemyType(2)).toBe('rusher');
-    expect(nextNewEnemyType(3)).toBe('tank');
+    expect(nextNewEnemyType(3)).toBe('bassist');
     expect(nextNewEnemyType(4)).toBe('tank');
     expect(nextNewEnemyType(5)).toBeNull();
   });

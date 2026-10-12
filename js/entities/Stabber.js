@@ -46,6 +46,23 @@ const KICK_TAU_SEC = 0.12;
 const TICK_TAU_SEC = 0.1; // the flash as an arc of his ring goes out
 
 const barOf = (beats) => Math.floor(beats / BEATS_PER_BAR + EPS);
+
+/**
+ * Stalking, px/s: in from beyond the band round the hero, out from inside
+ * it, round him within it (`circle` ±1 says which way). `S` holds the band
+ * and speeds: CONFIG.STABBER, or the bassist's, who stalks the same way.
+ * (ux, uy) is the unit vector to the hero, `d` the distance to him
+ */
+export function stalkWant(S, d, circle, ux, uy) {
+  const lo = Math.min(S.STALK_MIN_PX, S.STALK_MAX_PX);
+  const hi = Math.max(S.STALK_MIN_PX, S.STALK_MAX_PX);
+  if (d > hi) return { x: ux * S.APPROACH_PX_S, y: uy * S.APPROACH_PX_S };
+  if (d < lo) return { x: -ux * S.BACKOFF_PX_S, y: -uy * S.BACKOFF_PX_S };
+  const mid = (lo + hi) / 2;
+  const pull = hi > mid ? ((d - mid) / (hi - mid)) * MID_PULL_PX_S : 0;
+  const round = S.STALK_PX_S * circle;
+  return { x: -uy * round + ux * pull, y: ux * round + uy * pull };
+}
 const easeOut = (k) => 1 - (1 - k) ** 3;
 
 /**
@@ -409,28 +426,15 @@ class Stabber extends BaseEnemy {
     const ux = Math.cos(this.toHero);
     const uy = Math.sin(this.toHero);
     let want = { x: 0, y: 0 };
-    if (this.state === 'stalk') want = this.stalkWant(ux, uy);
-    else if (this.state === 'windup') {
+    if (this.state === 'stalk') {
+      want = stalkWant(S, this.distance, this.circle, ux, uy);
+    } else if (this.state === 'windup') {
       want = { x: -ux * S.DRAWBACK_PX_S, y: -uy * S.DRAWBACK_PX_S };
     }
     const tau = this.state === 'stalk' ? S.STEER_SEC : BUSY_STEER_SEC;
     const k = 1 - Math.exp(-dtSec / tau);
     this.walk.x += (want.x - this.walk.x) * k;
     this.walk.y += (want.y - this.walk.y) * k;
-  }
-
-  /** Stalking: in from beyond the band, out from inside it, round the hero within it */
-  stalkWant(ux, uy) {
-    const S = CONFIG.STABBER;
-    const lo = Math.min(S.STALK_MIN_PX, S.STALK_MAX_PX);
-    const hi = Math.max(S.STALK_MIN_PX, S.STALK_MAX_PX);
-    const d = this.distance;
-    if (d > hi) return { x: ux * S.APPROACH_PX_S, y: uy * S.APPROACH_PX_S };
-    if (d < lo) return { x: -ux * S.BACKOFF_PX_S, y: -uy * S.BACKOFF_PX_S };
-    const mid = (lo + hi) / 2;
-    const pull = hi > mid ? ((d - mid) / (hi - mid)) * MID_PULL_PX_S : 0;
-    const round = S.STALK_PX_S * this.circle;
-    return { x: -uy * round + ux * pull, y: ux * round + uy * pull };
   }
 
   /** His aim: locked from the lock through the lunge and half a beat after; otherwise it follows the hero */

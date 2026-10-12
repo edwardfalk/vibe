@@ -312,6 +312,7 @@ const CONFIG = {
     rusher: 18, // the stuntman's rocket and rider
     stabber: 19, // the shiv's shell and claws
     tank: 55, // the Bouncer's shoulders reach about 65 px
+    bassist: 24, // his shell and neck
   },
 
   // How the rusher looks (js/entities/RusherRenderer.js). Drawn only; his hit
@@ -475,6 +476,23 @@ const CONFIG = {
     FRONT: 45,
     SIDE: 30,
     CLANG_VOLUME: 1, // a plate breaking, 1 = the studies page's level
+  },
+
+  // The bassist (js/entities/Bassist.js), an alien that resembles an upright
+  // bass. Speeds are px/s. He stalks the hero as the stabber does, between
+  // STALK_MIN_PX and STALK_MAX_PX, and plays the let of every beat
+  // (SWING.AND_AT). His four strings are his health: HITS_PER_STRING of the
+  // hero's shots snap one. Health applies to bassists spawned after a
+  // change. Tune live with ?tune.
+  BASSIST: {
+    SIZE: 30,
+    STALK_MIN_PX: 230,
+    STALK_MAX_PX: 380,
+    APPROACH_PX_S: 110, // closing in from further out
+    STALK_PX_S: 25, // circling the hero inside the band
+    BACKOFF_PX_S: 90, // nearer than the band
+    STEER_SEC: 0.35, // how fast his drift eases to what he wants
+    HITS_PER_STRING: 3,
   },
 
   // The stabber, the shiv (js/entities/Stabber.js). Speeds are px/s. He

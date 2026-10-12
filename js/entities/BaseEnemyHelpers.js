@@ -12,6 +12,7 @@ const GLOW_RGB = {
   rusher: RUSHER_COLORS.bike,
   stabber: [255, 140, 0],
   grunt: GRUNT_COLORS.glow,
+  bassist: [150, 95, 55], // shortcut: his stand-in shell's, until his look is picked
 };
 const DEFAULT_GLOW_RGB = [50, 200, 50];
 
