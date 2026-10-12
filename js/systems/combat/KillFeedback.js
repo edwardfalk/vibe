@@ -45,7 +45,6 @@ export function applyKillFeedback({
   }
 
   if (cameraSystem && enemyType !== 'tank') {
-    const shakeIntensity = enemyType === 'rusher' ? 12 : 8;
-    cameraSystem.addShake(shakeIntensity, 12);
+    cameraSystem.addShake(8, 12);
   }
 }

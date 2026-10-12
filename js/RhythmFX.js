@@ -12,11 +12,6 @@ export class RhythmFX {
     this.context = context;
     // Attack telegraphs for enemies
     this.telegraphs = []; // {x, y, type, beatsUntil, intensity, owner}
-
-    // Early-warning ring colour per enemy type
-    this.enemyTypeConfig = {
-      grunt: { color: [50, 255, 50] },
-    };
   }
 
   _getBeatClock() {
@@ -82,23 +77,10 @@ export class RhythmFX {
       const maxRadius = 50;
       const currentRadius = progress * maxRadius;
 
-      // Color based on urgency
-      let r, g, b;
-      if (telegraph.beatsUntil < 0.5) {
-        // Critical - red flash
-        r = 255;
-        g = 50;
-        b = 50;
-      } else if (telegraph.beatsUntil < 1.0) {
-        // Warning - orange
-        r = 255;
-        g = 150;
-        b = 50;
-      } else {
-        // Early warning - enemy color
-        const config = this.enemyTypeConfig[telegraph.type];
-        [r, g, b] = config ? config.color : [200, 200, 200];
-      }
+      // Orange, then a red flash for its last half beat (a grunt warns at
+      // most a beat ahead)
+      const [r, g, b] =
+        telegraph.beatsUntil < 0.5 ? [255, 50, 50] : [255, 150, 50];
 
       // Draw expanding ring
       const alpha = (1 - progress) * 200;
