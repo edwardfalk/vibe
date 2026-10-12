@@ -541,6 +541,19 @@ describe('the stabber hit', () => {
     expect(s.takeDamage(5, 0, 'player_bullet')).toBe(DAMAGE_RESULT.DIED);
   });
 
+  it('a lethal hit leaves him as he was: before his lock it neither dazes nor pushes him', () => {
+    const { s, run } = shiv();
+    run(0, 700);
+    expect(s.state).toBe('windup');
+    s.health = 1;
+    expect(s.takeDamage(5, Math.PI / 2, 'player_bullet')).toBe(
+      DAMAGE_RESULT.DIED
+    );
+    expect(s.state).toBe('windup');
+    expect(s.pose().windup).not.toBeNull();
+    expect(s.push).toEqual({ x: 0, y: 0 });
+  });
+
   it('lethal damage kills him while dazed', () => {
     const { s, run } = shiv();
     run(0, 700);

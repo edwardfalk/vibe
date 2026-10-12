@@ -491,22 +491,22 @@ class Stabber extends BaseEnemy {
    * Armour takes ARMOR off each hit, at least 1 gets through. Any hit
    * before his lock step cancels the stab and dazes him; one with a
    * direction pushes him, except mid-lunge. Lethal damage kills him in any
-   * state
+   * state, and leaves him as he was: his death starts from that pose
    */
   takeDamage(amount, bulletAngle = null, damageSource = null) {
     this.hitAt = this.poseBeats;
-    if (this.state === 'windup' && !this.locked) this.daze();
-    if (bulletAngle !== null && this.state !== 'lunge') this.shove(bulletAngle);
+    const dealt = Math.max(1, amount - CONFIG.STABBER.ARMOR);
+    if (this.health - dealt > 0) {
+      if (this.state === 'windup' && !this.locked) this.daze();
+      if (bulletAngle !== null && this.state !== 'lunge') {
+        this.shove(bulletAngle);
+      }
+    }
     this.getContextValue('audio')?.playSound('stabberHit', this.x, this.y, {
       health: this.health,
       maxHealth: this.maxHealth,
     });
-    const armour = CONFIG.STABBER.ARMOR;
-    return super.takeDamage(
-      Math.max(1, amount - armour),
-      bulletAngle,
-      damageSource
-    );
+    return super.takeDamage(dealt, bulletAngle, damageSource);
   }
 
   /** @override */
