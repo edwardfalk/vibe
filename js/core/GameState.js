@@ -21,11 +21,19 @@ function nextBarLine(clock) {
   return origin + Math.ceil((heard - origin) / bar) * bar;
 }
 
-// A browser that blocks site data throws on any access to localStorage
+// A browser that blocks site data throws on any access to localStorage (a
+// full one on a write): the game goes on without it, said once a session
+let storageWarned = false;
+function storageFailed(error) {
+  if (storageWarned) return;
+  storageWarned = true;
+  console.warn('The high score is not kept:', error);
+}
 function readHighScore() {
   try {
     return parseInt(localStorage.getItem('vibeHighScore')) || 0;
-  } catch {
+  } catch (error) {
+    storageFailed(error);
     return 0;
   }
 }
@@ -162,11 +170,10 @@ export class GameState {
 
   _flushHighScore() {
     if (this._highScoreDirty) {
-      // A browser that blocks site data throws here: the run goes on unsaved
       try {
         localStorage.setItem('vibeHighScore', this.highScore.toString());
-      } catch {
-        // nothing to keep it in
+      } catch (error) {
+        storageFailed(error);
       }
       this._highScoreDirty = false;
     }
