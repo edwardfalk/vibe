@@ -46,30 +46,8 @@ export function drawEnemyHealthBar(p, enemy) {
     0,
     Math.min(1, enemy.maxHealth > 0 ? enemy.health / enemy.maxHealth : 0)
   );
-  const healthColor =
-    healthPercent > 0.5
-      ? p.color(0, 255, 0)
-      : healthPercent > 0.25
-        ? p.color(255, 255, 0)
-        : p.color(255, 0, 0);
-  p.fill(healthColor);
+  if (healthPercent > 0.5) p.fill(0, 255, 0);
+  else if (healthPercent > 0.25) p.fill(255, 255, 0);
+  else p.fill(255, 0, 0);
   p.rect(enemy.x - barWidth / 2, barY, barWidth * healthPercent, barHeight);
-
-  if (enemy.health <= 0) {
-    p.stroke(255, 0, 0);
-    p.strokeWeight(3);
-    p.line(
-      enemy.x - barWidth / 2,
-      barY,
-      enemy.x + barWidth / 2,
-      barY + barHeight
-    );
-    p.line(
-      enemy.x + barWidth / 2,
-      barY,
-      enemy.x - barWidth / 2,
-      barY + barHeight
-    );
-    p.noStroke();
-  }
 }
