@@ -193,7 +193,15 @@ describe("the enemies' hits share one level knob", () => {
   it('every hit preset is marked, and only those', () => {
     const hits = Object.keys(SOUND_CONFIG).filter((k) => SOUND_CONFIG[k].hit);
     expect(hits.sort()).toEqual(
-      ['gruntHit', 'rusherHit', 'stabberHit', 'tankHit', 'tankPlateHit'].sort()
+      [
+        'gruntHit',
+        'rusherHit',
+        'stabberHit',
+        'tankHit',
+        'tankPlateHit',
+        'bassistHit',
+        'bassistTwang',
+      ].sort()
     );
   });
 

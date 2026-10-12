@@ -6,6 +6,7 @@ import { volleyGain } from '../systems/GruntSwarm.js';
 import { mod } from './GruntRenderer.js';
 import { Bullet } from './bullet.js';
 import { NOTE_OWNER } from './BassNote.js';
+import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const STRINGS = 4;
@@ -64,6 +65,7 @@ export class Bassist extends BaseEnemy {
     this.lockAt = null; // the hero's spot at that let 3: his slap aims there
     this.heroAt = { x, y }; // the hero's spot at his last update
     this.puffAt = null; // the beat position of the last let he played
+    this.snapAt = null; // and of the last hit that snapped a string
   }
 
   /** @override He keeps the beat he is at */
@@ -92,6 +94,29 @@ export class Bassist extends BaseEnemy {
       (deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS);
     this.push.x *= keep;
     this.push.y *= keep;
+    return result;
+  }
+
+  /**
+   * @override One sound a hit: his hit, climbing from his health before it,
+   * or, when it snaps one string or more, one twang. A lethal hit plays
+   * none: his death's twang is its sound
+   */
+  takeDamage(amount, bulletAngle = null, damageSource = null) {
+    const health = this.health;
+    const strings = this.strings();
+    const result = super.takeDamage(amount, bulletAngle, damageSource);
+    if (result === DAMAGE_RESULT.DIED) return result;
+    const audio = this.getContextValue('audio');
+    if (this.strings() < strings) {
+      this.snapAt = this.poseBeats;
+      audio?.playSound('bassistTwang', this.x, this.y);
+    } else {
+      audio?.playSound('bassistHit', this.x, this.y, {
+        health,
+        maxHealth: this.maxHealth,
+      });
+    }
     return result;
   }
 

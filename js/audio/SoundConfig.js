@@ -177,6 +177,27 @@ export const SOUND_CONFIG = {
     duration: 0.2,
     hit: true,
   },
+  // The bassist's: a hit climbs from his 4; a hit that snaps a string
+  // twangs from his b7 down to his 5 instead (Bassist.takeDamage)
+  bassistHit: {
+    group: 'feedback',
+    voice: 'bassist',
+    note: ['4', 3],
+    waveform: 'triangle',
+    volume: 0.3,
+    duration: 0.06,
+    hit: true,
+  },
+  bassistTwang: {
+    group: 'feedback',
+    voice: 'bassist',
+    note: ['b7', 3],
+    sweep: { to: ['5', 2], curve: 'exponential' },
+    waveform: 'sawtooth',
+    volume: 0.3,
+    duration: 0.3,
+    hit: true, // the hit's one sound; played without his health, it never climbs
+  },
   stabberHit: {
     group: 'feedback',
     voice: 'stabber',
