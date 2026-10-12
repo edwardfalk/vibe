@@ -280,6 +280,7 @@ describe('the hero shoots his notes down', () => {
       9
     );
     expect(opts.seed).toBe(w.b.lookSeed);
+    expect(opts.exact).toBe(true); // on its let, not its nearest eighth
   });
 
   it('waits for the let after the one it was shot on', () => {
