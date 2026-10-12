@@ -151,12 +151,17 @@ class Tank extends BaseEnemy {
     this.poseBeats = beats;
     const beatSec = (beatClock?.beatInterval ?? 0) / 1000;
 
-    // Whole bars since his last update the game sat out (a hidden tab,
-    // ?tune's "Sound while paused") don't count toward his charge, as whole
-    // beats don't toward a bomb's fuse. A hitstop never lasts a bar
-    if (beats !== null && this.seenBeats !== null && this.chargingShot) {
-      const missed = Math.floor((beats - this.seenBeats) / BEATS_PER_BAR);
-      if (missed >= 1) this.chargeStartBeat += missed * BEATS_PER_BAR;
+    // A whole bar or more since his last update (a hidden tab, ?tune's
+    // "Sound while paused") ends his charge with no shot: he starts again on
+    // the grid, from its first pluck, so the hero always gets the whole
+    // warning. A hitstop never lasts a bar
+    if (
+      beats !== null &&
+      this.seenBeats !== null &&
+      this.chargingShot &&
+      beats - this.seenBeats >= BEATS_PER_BAR
+    ) {
+      this.chargingShot = false;
     }
     this.seenBeats = beats;
 
@@ -277,8 +282,7 @@ class Tank extends BaseEnemy {
 
   /**
    * His charge's note on whole beat `beat`: step 0 on the beat it started,
-   * one step up a beat, none on the beat his shot is due. A stalled bar
-   * moved chargeStartBeat on, and the steps with it
+   * one step up a beat, none on the beat his shot is due
    */
   chargeNote(beat) {
     const step = beat - this.chargeStartBeat;
