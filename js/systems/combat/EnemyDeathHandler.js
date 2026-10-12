@@ -240,15 +240,17 @@ export class EnemyDeathHandler {
     // Audio first, as for a grunt: the death's times are on the clock it is read by
     audio.ensureAudioContext?.();
     const clock = this.getContextValue('beatClock');
-    const at = deathStart(blow, clock, clock.nowSec());
+    const diedAt = clock.nowSec();
+    const at = deathStart(blow, clock, diedAt);
     explosionManager.fragmentExplosions.push(
       new BassistDeath({
         x: enemy.x,
         y: enemy.y,
-        size: enemy.size,
-        aim: enemy.aimAngle,
+        pose: enemy.pose(),
+        scale: CONFIG.BASSIST_LOOK.ART_SCALE,
         dir: blow?.dir ?? enemy.aimAngle,
         seed: enemy.lookSeed,
+        diedAt,
         startsAt: at + heardLatencySec(audio.audioContext, clock),
         now: () => clock.nowSec(),
       })

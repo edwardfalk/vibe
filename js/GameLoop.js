@@ -178,7 +178,12 @@ function updateGame(p) {
   if (window.collisionSystem) {
     // The bassists' notes first: one whose bassist is gone pops here, so
     // the collisions' compaction clears it before any bullet is reused
-    driveBassNotes(enemyBullets, enemies, window.beatClock);
+    driveBassNotes(
+      enemyBullets,
+      enemies,
+      window.beatClock,
+      window.explosionManager
+    );
     window.collisionSystem.checkBulletCollisions();
     window.collisionSystem.checkContactCollisions();
   }

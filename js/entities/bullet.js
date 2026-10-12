@@ -3,7 +3,7 @@ import { sin, cos, dist } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import { GRUNT_COLORS } from './GruntRenderer.js';
 import { TANK_COLORS, drawTankBall } from './TankRenderer.js';
-import { NOTE_OWNER, NOTE_GLOW_RGB, SWELL, drawBassNote } from './BassNote.js';
+import { NOTE_OWNER, drawBassNote } from './BassNote.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
@@ -59,7 +59,8 @@ export class Bullet {
     this.ownerId = undefined;
     this.energy = undefined;
     this.hung = null; // a bassist's note the hero shot (BassNote.hangNote)
-    this.swell = 0;
+    this.swell = 0; // and how far through its wait for the let
+    this.push = 0; // how hard a let pushes a note now, 0..1
     this._inPool = false;
     this._remove = false; // a hit marks it; a recycled bullet starts clean
 
@@ -113,6 +114,11 @@ export class Bullet {
 
   draw(p) {
     if (!this.active) return;
+    // A bassist's note draws itself, trail and glow too, as on its page
+    if (this.owner === NOTE_OWNER) {
+      drawBassNote(p, this);
+      return;
+    }
 
     try {
       if (this.owner === 'player') {
@@ -129,8 +135,6 @@ export class Bullet {
           TANK_GLOW,
           1.2
         );
-      } else if (this.owner === NOTE_OWNER) {
-        drawGlow(p, this.x, this.y, this.size * 2.5, NOTE_GLOW_RGB, 0.8);
       } else {
         drawGlow(p, this.x, this.y, this.size * 1.5, ENEMY_GLOW, 0.5);
       }
@@ -166,10 +170,6 @@ export class Bullet {
         : 1;
       p.blendMode(p.BLEND);
       drawTankBall(p, this.size * energyPercent, (p.frameCount / 60) * 14);
-    } else if (this.owner === NOTE_OWNER) {
-      p.blendMode(p.BLEND);
-      p.rotate(-this.angle); // a note stands upright
-      drawBassNote(p, this.size * (1 + SWELL * this.swell));
     } else {
       // A grunt's shot: a coral line with a white core
       p.stroke(...GRUNT_COLORS.shotCore, 210);
@@ -200,8 +200,6 @@ export class Bullet {
         p.fill(255, 255, 100, alpha);
       } else if (this.owner === 'enemy-tank') {
         p.fill(...TANK_COLORS.amber, alpha);
-      } else if (this.owner === NOTE_OWNER) {
-        p.fill(...NOTE_GLOW_RGB, alpha);
       } else {
         p.fill(...GRUNT_COLORS.shot, alpha);
       }

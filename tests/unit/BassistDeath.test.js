@@ -75,10 +75,11 @@ describe('his death', () => {
     const death = new BassistDeath({
       x: 10,
       y: 20,
-      size: 30,
-      aim: 0.5,
+      pose: bassistWorld().b.pose(),
+      scale: 1,
       dir: 1,
       seed: 0.3,
+      diedAt: 0,
       startsAt: 0.25,
       now: () => now,
     });

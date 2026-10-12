@@ -4,11 +4,15 @@
 // is recorded by name in `calls`. createGraphics returns a plain recorder
 // that notes whether it was removed.
 // A raw canvas context stand-in: properties set on it (globalAlpha,
-// fillStyle, ...) read back; save() and restore() keep and bring back that
+// fillStyle, ...) read back; a gradient's stops do nothing; save() and restore() keep and bring back that
 // state exactly, as a canvas does; moved counts the transforms (translate,
 // rotate, scale, ...) in that state; every fill, stroke and image notes the
 // alpha and composite it was drawn with, in alphasDrawn and opsDrawn; depth
 // is how many saves are open; any other call does nothing
+// A gradient a context hands back: its stops do nothing
+const GRADIENTS = new Set(['createRadialGradient', 'createLinearGradient']);
+const gradient = () => ({ addColorStop() {} });
+
 function rawContext() {
   const state = {
     globalAlpha: 1,
@@ -38,6 +42,7 @@ function rawContext() {
       if (k === 'alphasDrawn') return alphasDrawn;
       if (k === 'opsDrawn') return opsDrawn;
       if (k === 'depth') return saved.length; // saves not yet restored
+      if (GRADIENTS.has(k)) return gradient;
       if (k in t) return t[k];
       if (MOVES.has(k)) return () => t.moved++;
       if (DRAWS.has(k)) {
@@ -88,7 +93,10 @@ export function transformP5() {
       {
         CHORD: 'chord',
         removed: false,
-        drawingContext: new Proxy({}, { get: () => () => {} }),
+        drawingContext: new Proxy(
+          {},
+          { get: (t, k) => (GRADIENTS.has(k) ? gradient : () => {}) }
+        ),
         remove() {
           this.removed = true;
         },

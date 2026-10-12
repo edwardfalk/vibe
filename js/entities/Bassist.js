@@ -12,8 +12,10 @@ import { stalkWant } from './Stabber.js';
 import { volleyGain } from '../systems/GruntSwarm.js';
 import { mod } from './GruntRenderer.js';
 import { Bullet } from './bullet.js';
-import { NOTE_OWNER } from './BassNote.js';
+import { NOTE_OWNER, NoteFlash } from './BassNote.js';
 import { DAMAGE_RESULT } from '../shared/DamageResult.js';
+import { drawBassist, BASSIST_MUZZLE_PX } from './BassistRenderer.js';
+import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const STRINGS = 4;
@@ -25,6 +27,9 @@ export const SLAP_LET = 3;
 /** His line, one degree a let: walking up b3, 4, 5 into the slap's b7 */
 export const LINE = ['b3', '4', '5', 'b7'];
 const EPS = 1e-6; // slack on beat positions, for floating-point error
+// px from his centre to the furthest of him, at ART_SCALE 1: his health bar
+// clears it whichever way he faces
+const REACH_PX = 40;
 // His telegraph goes white-hot for this last share of a beat before the slap
 const HOT_BEATS = 1 / 3;
 // His look's envelopes, s (the studies page's)
@@ -32,37 +37,6 @@ const KICK_TAU_SEC = 0.12;
 const HIT_TAU_SEC = 0.08;
 const UNCURL_SEC = 0.15; // his scroll opens with the turn on let 3
 const RECURL_BEATS = 0.8; // and curls back this long after the slap's beat
-
-// shortcut: a stand-in figure until Edward picks his look on the studies
-// page (the bassist spec, The creature); the picked one replaces it
-const SHELL_RGB = [150, 95, 55];
-const SINEW_RGB = [235, 225, 200];
-
-/**
- * His figure at the origin, facing `aim`; `slack` (0..1) curls his sinews
- * as in his death, and `alpha` (0..1) fades him. shortcut: the stand-in
- * figure, until his look is picked
- */
-export function drawBassistFigure(p, s, aim, slack = 0, alpha = 1) {
-  const a = 255 * alpha;
-  p.push();
-  p.rotate(aim + Math.PI / 2);
-  p.noStroke();
-  p.fill(...SHELL_RGB, a);
-  p.ellipse(0, s * 0.25, s * 0.9, s * 0.7);
-  p.ellipse(0, -s * 0.15, s * 0.7, s * 0.55);
-  p.stroke(...SINEW_RGB, a);
-  p.strokeWeight(1);
-  p.noFill();
-  for (let i = 0; i < STRINGS; i++) {
-    const x = (i - (STRINGS - 1) / 2) * s * 0.08;
-    // Slack, each curls back up from the bridge
-    const top = -s * 0.6 + slack * s * 0.7;
-    const curl = slack * s * 0.25 * (i % 2 ? 1 : -1);
-    p.bezier(x, s * 0.4, x + curl, s * 0.1, x - curl, top, x + curl, top);
-  }
-  p.pop();
-}
 
 /** Whether a bassist is about: the hero's grid swings while one is (BeatClock.wantSwing) */
 export const bassistAbout = (enemies) =>
@@ -89,6 +63,7 @@ export class Bassist extends BaseEnemy {
       p,
       audio
     );
+    this.hitFlashAlpha = 255; // he stays solid when hit: his own white flash shows it
     this.circle = this.lookSeed < 0.5 ? 1 : -1; // which way he circles the hero
     const hero = this.getContextValue('player');
     // His own facing: BaseEnemy aims every enemy at the hero each update,
@@ -286,7 +261,7 @@ export class Bassist extends BaseEnemy {
    * standing still. The enemy loop takes it into the enemy bullets
    */
   fireNote() {
-    const muzzle = CONFIG.BASSIST.MUZZLE_PX;
+    const muzzle = BASSIST_MUZZLE_PX * CONFIG.BASSIST_LOOK.ART_SCALE;
     const x = this.x + Math.cos(this.aim) * muzzle;
     const y = this.y + Math.sin(this.aim) * muzzle;
     const note = Bullet.acquire(x, y, this.aim, 0, NOTE_OWNER);
@@ -391,13 +366,22 @@ export class Bassist extends BaseEnemy {
       dying: null,
       slack: null,
       seed: this.lookSeed,
-      muzzle: B.MUZZLE_PX,
+      muzzle: BASSIST_MUZZLE_PX * CONFIG.BASSIST_LOOK.ART_SCALE,
     };
   }
 
-  drawFigure(p, s) {
-    this.applyHitShake(p);
-    drawBassistFigure(p, s, this.aimAngle);
+  /** His look (BassistRenderer.js), from his pose */
+  drawFigure(p) {
+    drawBassist(p, CONFIG.BASSIST_LOOK.ART_SCALE, this.pose());
+  }
+
+  /** His health bar sits clear of him, whichever way he faces */
+  get healthBarRise() {
+    return (
+      REACH_PX * CONFIG.BASSIST_LOOK.ART_SCALE +
+      HEALTH_BAR_GAP_PX +
+      HEALTH_BAR_HEIGHT_PX
+    );
   }
 }
 
@@ -425,26 +409,36 @@ function letTime(clock, n) {
  * all: long-short, the shuffle seen
  */
 export function noteSpeed(bassist, beats, beatSec) {
-  const B = CONFIG.BASSIST;
+  return CONFIG.BASSIST.NOTE_GLIDE_PX_S + notePush(bassist, beats, beatSec);
+}
+
+// The push part of noteSpeed, px/s
+function notePush(bassist, beats, beatSec) {
   const and = CONFIG.SWING.AND_AT;
   const n = Math.floor(beats - and + EPS);
   const gap = 1 - and; // from the let to the next beat, beats
   const since = beats - (n + and);
   if (since < 0 || since >= gap || !bassist.plays(mod(n, LETS_PER_BAR))) {
-    return B.NOTE_GLIDE_PX_S;
+    return 0;
   }
-  const fade = 1 - since / gap;
-  return B.NOTE_GLIDE_PX_S + (2 * B.NOTE_LURCH_PX * fade) / (gap * beatSec);
+  return pushPeak(beatSec) * (1 - since / gap);
 }
+
+// A push's speed at its let, px/s: it fades to 0 by the next beat, so it
+// carries the note NOTE_LURCH_PX in all
+const pushPeak = (beatSec) =>
+  (2 * CONFIG.BASSIST.NOTE_LURCH_PX) / ((1 - CONFIG.SWING.AND_AT) * beatSec);
 
 /**
  * One pass a frame over the enemy bullets, before the collisions: each note
  * finds its bassist by its ownerId among the enemies not marked for
  * removal and takes its velocity from him (noteSpeed, along its own line);
- * a note whose bassist is gone pops, silently (his death covers it). The
- * only rule that pops them, so no death needs to know about notes
+ * and how hard it is pushed, for its look; a note whose bassist is gone
+ * pops, silently (his death covers it). The only rule that pops them, so no
+ * death needs to know about notes. `effects` (the explosion manager) takes
+ * the pops' and the bursts' flashes
  */
-export function driveBassNotes(bullets, enemies, clock) {
+export function driveBassNotes(bullets, enemies, clock, effects = null) {
   if (!clock) return;
   const beats = clock.getBeatPosition();
   const beatSec = clock.beatInterval / 1000;
@@ -454,15 +448,18 @@ export function driveBassNotes(bullets, enemies, clock) {
       (e) => e.id === note.ownerId && !e.markedForRemoval
     );
     if (!bassist) {
+      flash(effects, note, 'pop', clock);
       Bullet.release(note);
       note._remove = true;
       continue;
     }
     if (note.hung) {
-      hangOn(note, bassist, clock, beats);
+      hangOn(note, bassist, clock, beats, effects);
       continue;
     }
-    const perFrame = noteSpeed(bassist, beats, beatSec) / FRAMES_PER_SEC;
+    const push = notePush(bassist, beats, beatSec);
+    note.push = push / pushPeak(beatSec);
+    const perFrame = (CONFIG.BASSIST.NOTE_GLIDE_PX_S + push) / FRAMES_PER_SEC;
     note.velocity.x = Math.cos(note.angle) * perFrame;
     note.velocity.y = Math.sin(note.angle) * perFrame;
   }
@@ -473,7 +470,7 @@ export function driveBassNotes(bullets, enemies, clock) {
  * its let; then it bursts with its b7, booked at that let's grid time as
  * his own lets are
  */
-function hangOn(note, bassist, clock, beats) {
+function hangOn(note, bassist, clock, beats, effects) {
   note.velocity.x = 0;
   note.velocity.y = 0;
   const { at, let: n } = note.hung;
@@ -488,6 +485,21 @@ function hangOn(note, bassist, clock, beats) {
     seed: bassist.lookSeed,
     note: [LINE[SLAP_LET], CONFIG.BASSIST.OCTAVE],
   });
+  flash(effects, note, 'burst', clock);
   Bullet.release(note);
   note._remove = true;
+}
+
+// A note's end, drawn where it was (BassNote.NoteFlash)
+function flash(effects, note, kind, clock) {
+  effects?.fragmentExplosions?.push(
+    new NoteFlash({
+      x: note.x,
+      y: note.y,
+      kind,
+      seed: (note.x * 0.37 + note.y * 0.11) % 1,
+      startsAt: clock.nowSec(),
+      now: () => clock.nowSec(),
+    })
+  );
 }

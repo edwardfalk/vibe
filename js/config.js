@@ -314,7 +314,7 @@ const CONFIG = {
     rusher: 18, // the stuntman's rocket and rider
     stabber: 19, // the shiv's shell and claws
     tank: 55, // the Bouncer's shoulders reach about 65 px
-    bassist: 24, // his shell and neck
+    bassist: 20, // his shell (the look's, on the studies page)
   },
 
   // How the rusher looks (js/entities/RusherRenderer.js). Drawn only; his hit
@@ -497,7 +497,6 @@ const CONFIG = {
     KNOCK_PX_S: 160, // a shot's push (the stabber's is 480)
     KNOCK_MAX_PX_S: 500, // capped under steady fire
     KNOCK_DECAY: 0.85, // the share of it kept per 60 Hz frame
-    MUZZLE_PX: 20, // his note leaves this far along his aim (his scroll's end)
     OCTAVE: 2, // his line's octave (b3, 4, 5, b7)
     HITS_PER_STRING: 3,
     // His note, fired on the slap: it glides at NOTE_GLIDE_PX_S, and each
@@ -506,6 +505,13 @@ const CONFIG = {
     NOTE_GLIDE_PX_S: 60,
     NOTE_LURCH_PX: 45,
     NOTE_DAMAGE_TO_TANKS: 5, // it kills smaller aliens; a tank only takes this
+  },
+
+  // How the bassist looks (js/entities/BassistRenderer.js). Drawn only:
+  // ART_SCALE 1 is the studies page's size (about 75 px long); his hit
+  // circle is HITBOX.bassist
+  BASSIST_LOOK: {
+    ART_SCALE: 1,
   },
 
   // The stabber, the shiv (js/entities/Stabber.js). Speeds are px/s. He
