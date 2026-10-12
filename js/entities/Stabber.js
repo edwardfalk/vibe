@@ -89,7 +89,6 @@ class Stabber extends BaseEnemy {
     super(x, y, 'stabber', stabberConfig, p, audio);
 
     this.hitFlashAlpha = 255; // he stays solid when hit: his own white flash shows it
-    this.lookSeed = this.animFrame / p.TWO_PI; // his own, 0..1
     this.circle = this.lookSeed < 0.5 ? 1 : -1; // which way he circles the hero
     const hero = this.getContextValue('player');
     this.aim = hero ? Math.atan2(hero.y - y, hero.x - x) : 0; // his own: BaseEnemy overwrites aimAngle

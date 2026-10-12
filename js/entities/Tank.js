@@ -109,7 +109,6 @@ class Tank extends BaseEnemy {
     this.backHitAt = null;
 
     this.hitFlashAlpha = 255; // he stays solid when hit: his own parts flash
-    this.lookSeed = this.animFrame / p.TWO_PI; // his swagger's phase
     // While a bomb on his back is about to blow, BombSystem sets when (the
     // bang's beat) and for how many beats before it he flinches
     this.flinch = null;

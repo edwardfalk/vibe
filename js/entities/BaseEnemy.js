@@ -44,10 +44,11 @@ export class BaseEnemy {
     // Movement and animation
     this.velocity = { x: 0, y: 0 };
     this.aimAngle = 0;
-    this.animFrame = random(0, p.TWO_PI);
+    // Its own 0..1, which starts and detunes its look and its sounds apart
+    // from its kin's
+    this.lookSeed = random();
 
     // Combat
-    this.shootCooldown = 0;
     this.hitFlash = 0;
     this.hitFlashAlpha = 100; // how solid it is drawn just after a hit (of 255); a type may set its own
     this.markedForRemoval = false;
@@ -86,11 +87,7 @@ export class BaseEnemy {
     // Normalize deltaTime to 60fps baseline for frame-independent behavior
     const dt = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
 
-    // Update animation frame (delta-aware)
-    this.animFrame += 0.1 * dt;
-
     // Decrease cooldowns using deltaTime
-    if (this.shootCooldown > 0) this.shootCooldown -= dt;
     if (this.hitFlash > 0) this.hitFlash -= dt;
     if (this.speechCooldown > 0) this.speechCooldown -= dt;
 
