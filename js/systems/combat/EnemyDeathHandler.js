@@ -2,6 +2,10 @@ import { createContextAccessor } from '../../shared/ContextAccessor.js';
 import { CONFIG } from '../../config.js';
 import { GruntDeath } from '../../entities/GruntDeath.js';
 import { TankDeath, airDarts } from '../../entities/TankDeath.js';
+import {
+  StabberDeath,
+  stabberDeathRecord,
+} from '../../entities/StabberDeath.js';
 import { LEAD_SEC } from '../../audio/speech/Voicebox.js';
 import { heardLatencySec, heardKick } from '../../audio/BeatTrack.js';
 
@@ -9,7 +13,6 @@ const TANK_SHAKE = [8, 15]; // a tank's death shakes the camera: px, frames
 const MS_PER_SEC = 1000;
 
 const DEATH_SOUND = {
-  stabber: 'stabberOhNo',
   rusher: 'rusherOhNo',
 };
 
@@ -36,6 +39,15 @@ export function popTime(now, clock) {
   const origin = clock.startTime / 1000;
   const eighth = clock.beatInterval / 2000;
   return origin + Math.ceil((now + LEAD_SEC - origin) / eighth) * eighth;
+}
+
+/**
+ * When a tank's or a stabber's death killed at `diedAt` starts, on the audio
+ * clock: with the bang when the hero's bomb killed him (its blow says
+ * `bomb`; a bang that played nothing has no time), else on the next eighth
+ */
+export function deathStart(blow, clock, diedAt) {
+  return blow?.bomb && blow.at != null ? blow.at : popTime(diedAt, clock);
 }
 
 export class EnemyDeathHandler {
@@ -68,6 +80,8 @@ export class EnemyDeathHandler {
     } else if (enemyType === 'tank') {
       this.tankDies(enemy, blow, explosionManager, audio);
       cameraSystem?.addShake(...TANK_SHAKE);
+    } else if (enemyType === 'stabber') {
+      popsAt = this.stabberDies(enemy, blow, explosionManager, audio);
     } else {
       explosionManager.addFragmentExplosion(x, y, enemy);
       audio.playSound(DEATH_SOUND[enemyType] ?? 'enemyOhNo', x, y);
@@ -148,7 +162,7 @@ export class EnemyDeathHandler {
     const clock = this.getContextValue('beatClock');
     const now = () => clock.nowSec();
     const diedAt = now();
-    const at = blow?.bomb ? (blow.at ?? diedAt) : popTime(diedAt, clock);
+    const at = deathStart(blow, clock, diedAt);
     const latency = () => heardLatencySec(audio.audioContext, clock);
     const beatSec = clock.beatInterval / MS_PER_SEC;
     const death = new TankDeath({
@@ -172,5 +186,47 @@ export class EnemyDeathHandler {
       death.timing,
       airDarts(death.timing, enemy.lookSeed)
     );
+  }
+
+  /**
+   * A stabber's death (StabberDeath.js), in the style ?tune has at the kill:
+   * as a tank's, with the bang or on the next eighth, seen when it is heard.
+   * His neighbours answer an eighth after it starts. Returns its start's
+   * audio time.
+   */
+  stabberDies(enemy, blow, explosionManager, audio) {
+    // Audio first, as for a grunt: the death's times are on the clock it is read by
+    audio.ensureAudioContext?.();
+    const clock = this.getContextValue('beatClock');
+    const now = () => clock.nowSec();
+    const diedAt = now();
+    const at = deathStart(blow, clock, diedAt);
+    const record = stabberDeathRecord({
+      style: CONFIG.DEATHS.STABBER_STYLE,
+      linger: CONFIG.DEATHS.LINGER,
+      beatSec: clock.beatInterval / MS_PER_SEC,
+      origin: clock.startTime / MS_PER_SEC,
+      at,
+      // Clean: the killing hit's flash is the death's to draw
+      pose: { ...enemy.pose(), hit: 0, hitAge: Infinity },
+      scale: enemy.drawScale(),
+      dir: blow?.dir ?? enemy.aim,
+      blast: blow?.blast,
+      seed: enemy.lookSeed,
+    });
+    const player = this.getContextValue('player');
+    explosionManager.fragmentExplosions.push(
+      new StabberDeath({
+        x: enemy.x,
+        y: enemy.y,
+        record,
+        diedAt,
+        startsAt: at + heardLatencySec(audio.audioContext, clock),
+        now,
+        hero: () => player ?? null,
+      })
+    );
+    audio.playStabberDeath?.(enemy.x, enemy.y, at, record);
+    return at;
   }
 }

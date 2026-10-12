@@ -21,28 +21,29 @@
  * are live paths on the raw context. Shapes are traced by functions, not
  * Path2D: the unit tests run in Node, which has none.
  */
-import { clamp01, smooth, env } from '../mathUtils.js';
+import { clamp01, smooth, env, easeOut } from '../mathUtils.js';
 import { hash01 } from './RusherRenderer.js';
 import { spriteParts } from './spriteCache.js';
 
 const PI = Math.PI;
 const TAU = 2 * PI;
-const K = 1.2; // body units to game px
+export const K = 1.2; // body units to game px
 /** px, his centre to his spike's tip at the lunge, at ART_SCALE 1 */
 export const STABBER_REACH_PX = 42;
 const REST = 25; // px, its tip while he stalks: always out
 const RAISED = 34; // px, its tip at the end of the wind-up
 const COCKED = 37; // px, its tip from the lock
-const BLADE_W = 3.4; // px, the blade's half-width where it leaves him
-const NOSE = 12; // units: the shell's point, where the blade comes out
-const SHOULDER = [2.5, 5.8]; // units: the right claw's shoulder (the left mirrors)
-const UPPER = 7.5; // units: shoulder to elbow
-const EYE = [-0.4, 0]; // units: the eye's centre
-const EYE_RX = 4.8; // its half-length along him
-const EYE_RY = 3.7; // its half-width, wide open
-const O = 1.1 / K; // the ink round each part (the grunt's 1.1 px), in units
+export const BLADE_W = 3.4; // px, the blade's half-width where it leaves him
+export const BLADE_ROOT = 7; // px, where the blade starts, inside his nose
+export const NOSE = 12; // units: the shell's point, where the blade comes out
+export const SHOULDER = [2.5, 5.8]; // units: the right claw's shoulder (the left mirrors)
+export const UPPER = 7.5; // units: shoulder to elbow
+export const EYE = [-0.4, 0]; // units: the eye's centre
+export const EYE_RX = 4.8; // its half-length along him
+export const EYE_RY = 3.7; // its half-width, wide open
+export const O = 1.1 / K; // the ink round each part (the grunt's 1.1 px), in units
 
-const RGB = {
+export const RGB = {
   ink: [38, 26, 48],
   gold: [244, 190, 46],
   goldHi: [255, 240, 156],
@@ -62,7 +63,6 @@ const CS = Object.fromEntries(
 );
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
-const easeOut = (k) => 1 - (1 - k) ** 3;
 
 // ---- sprites (a stroke is free here: drawn once) ----
 // A shape traced onto a context (c) as a new path
@@ -70,7 +70,7 @@ const path = (f) => (c) => {
   c.beginPath();
   f(c);
 };
-function inked(c, shape, fill, o = O) {
+export function inked(c, shape, fill, o = O) {
   c.fillStyle = c.strokeStyle = CS.ink;
   c.lineWidth = 2 * o;
   shape(c);
@@ -81,7 +81,7 @@ function inked(c, shape, fill, o = O) {
 }
 // The shell's outline: four cubics from the nose round the right flank, the
 // rear and the left flank. The sprite and the live frill both use it
-const SHELL = [
+export const SHELL = [
   [
     [NOSE, 0],
     [8.5, 5.4],
@@ -107,12 +107,12 @@ const SHELL = [
     [NOSE, 0],
   ],
 ];
-const HUSK = path((q) => {
+export const HUSK = path((q) => {
   q.moveTo(NOSE, 0);
   for (const [, a, b, c] of SHELL) q.bezierCurveTo(...a, ...b, ...c);
 });
 // The cowl, his front plate, ends in two sharp corners round a notch
-const COWL = path((q) => {
+export const COWL = path((q) => {
   q.moveTo(NOSE, 0);
   q.bezierCurveTo(8.5, -5.4, 4, -7.4, -0.5, -8.2);
   q.quadraticCurveTo(3, -4, 5.4, 0);
@@ -120,7 +120,7 @@ const COWL = path((q) => {
   q.bezierCurveTo(4, 7.4, 8.5, 5.4, NOSE, 0);
 });
 // An almond along him (pointed fore and aft): the eye and its socket
-const almond = (q, x, y, rx, ry) => {
+export const almond = (q, x, y, rx, ry) => {
   q.moveTo(x - rx, y);
   q.quadraticCurveTo(x, y - 2 * ry, x + rx, y);
   q.quadraticCurveTo(x, y + 2 * ry, x - rx, y);
@@ -189,7 +189,7 @@ const FORE = path((q) => {
   q.quadraticCurveTo(-3, 2.4, 0.5, 1.6);
   q.closePath();
 });
-function drawArm(c, white) {
+export function drawArm(c, white) {
   if (white) {
     ARM(c);
     c.fillStyle = CS.white;
@@ -204,7 +204,7 @@ function drawArm(c, white) {
   c.fillRect(-UPPER - 1, 0.5, UPPER + 3, 3);
   c.restore();
 }
-function drawFore(c, white) {
+export function drawFore(c, white) {
   if (white) {
     FORE(c);
     c.fillStyle = CS.white;
@@ -239,7 +239,7 @@ function drawFore(c, white) {
 // His sprites (spriteCache.js): a part's box is in body units, and the
 // cache's size s is the drawn px a unit (K × ART_SCALE), so a new ART_SCALE
 // rebuilds them at the cache's resolution
-const inUnits = (draw) => (g, s) => {
+export const inUnits = (draw) => (g, s) => {
   const c = g.drawingContext;
   c.scale(s, s);
   c.lineJoin = 'round';
@@ -247,8 +247,8 @@ const inUnits = (draw) => (g, s) => {
   draw(c);
 };
 const HUSK_BOX = [-14, -10, 14, 10];
-const ARM_BOX = [-UPPER - 2, -3.5, 3, 3.5];
-const FORE_BOX = [-15, -6.5, 3, 4];
+export const ARM_BOX = [-UPPER - 2, -3.5, 3, 3.5];
+export const FORE_BOX = [-15, -6.5, 3, 4];
 const PARTS = {
   husk: [HUSK_BOX, inUnits((c) => drawHusk(c, false))],
   huskW: [HUSK_BOX, inUnits((c) => drawHusk(c, true))],
@@ -425,7 +425,7 @@ function tendrils(t, wave, curl, lag, stretch, spread) {
 // The blade (px): bone, a spike from inside his nose to `tip`. heat reddens
 // its front; hot is white-hot; wob (rad) swings it about his nose
 function blade(tip, heat, hot, wob) {
-  const r = 7;
+  const r = BLADE_ROOT;
   const w = BLADE_W;
   const nose = NOSE * K;
   if (wob) {

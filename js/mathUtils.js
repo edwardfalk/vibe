@@ -61,6 +61,11 @@ export function constrain(value, low, high) {
 export const clamp01 = (x) => Math.max(0, Math.min(1, x));
 // Ease in and out over 0..1
 export const smooth = (k) => k * k * (3 - 2 * k);
+// Ease out over 0..1: fast, then settling
+export const easeOut = (k) => 1 - (1 - k) ** 3;
+// Drifting in space from speed v (px/s), slowing with time constant tau (s):
+// how far it has gone by t (no gravity, only drag)
+export const drift = (v, tau, t) => v * tau * (1 - Math.exp(-t / tau));
 // An envelope age seconds after its event: 1 decaying with time constant
 // tau; 0 before the event (a negative age) and after 3 s
 export const env = (age, tau) =>

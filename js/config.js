@@ -428,10 +428,12 @@ const CONFIG = {
     FLIP_COS: 0.3,
   },
 
-  // Deaths (js/entities/GruntDeath.js, DudeDeath.js, js/audio/DeathSounds.js).
-  // Volumes: 1 is the prototype page's level (the last breath's plus the mix
-  // pass, DeathSounds.js's BREATH_MIX_DB). LINGER: how long a grunt's
-  // remains and the Dude's milk trail stay, times. The Dude's scene: SCENE_BEATS
+  // Deaths (js/entities/GruntDeath.js, DudeDeath.js, TankDeath.js,
+  // StabberDeath.js, js/audio/DeathSounds.js). Volumes: 1 is the prototype
+  // page's level (the last breath's plus the mix pass, DeathSounds.js's
+  // BREATH_MIX_DB). LINGER: how long a death's remains stay, times (a
+  // stabber's eye and spike too). STABBER_STYLE: how a stabber dies, read at
+  // his kill: 'shell' (Empty shell) or 'shatter' (Gold shatter). The Dude's scene: SCENE_BEATS
   // from his fatal hit to GAME OVER (his choreography takes 2 s; past it he
   // floats on), the camera easing in to SCENE_ZOOM (1: no ease).
   DEATHS: {
@@ -443,6 +445,7 @@ const CONFIG = {
     TANK_VOLUME: 1, // the tank's air, 1 = the studies page's level
     // How long a dying tank darts about, s (0.5 to 2): shorter is less
     TANK_ZIP_SEC: 0.95,
+    STABBER_STYLE: 'shell',
   },
 
   // Tank armour plates (hits to break). Applies to tanks spawned after a

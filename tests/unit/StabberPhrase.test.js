@@ -643,7 +643,8 @@ describe('his strings', () => {
     const handle = s.tremolo;
     const values = {
       audio: { playSound: vi.fn() },
-      explosionManager: { addFragmentExplosion: vi.fn() },
+      beatClock: { nowSec: () => 1, startTime: 0, beatInterval: 500 },
+      explosionManager: { fragmentExplosions: [] },
       enemies: [],
     };
     new EnemyDeathHandler({ get: (k) => values[k] }).handleEnemyDeath(
