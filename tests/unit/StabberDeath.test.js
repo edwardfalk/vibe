@@ -11,7 +11,11 @@ import {
   EnemyDeathHandler,
   popTime,
 } from '../../js/systems/combat/EnemyDeathHandler.js';
-import { stabberShell, stabberShatter } from '../../js/audio/DeathSounds.js';
+import {
+  stabberShell,
+  stabberShatter,
+  STABBER_DEATH_SOUNDS,
+} from '../../js/audio/DeathSounds.js';
 import { shatterTimes } from '../../js/entities/StabberShatter.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { Audio } from '../../js/Audio.js';
@@ -410,6 +414,12 @@ describe('Gold shatter', () => {
     // His flakes trail behind the push, so against the blow: on his left
     expect(firstX('shell')).toBeLessThan(0);
     expect(firstX('shatter')).toBeLessThan(0);
+  });
+
+  it('has a sound for every style it draws, and no other', () => {
+    // A style drawn with no sound would throw in Audio.playStabberDeath,
+    // inside the kill, and leave the dead stabber in play
+    expect(Object.keys(STABBER_DEATH_SOUNDS)).toEqual([...STABBER_STYLES]);
   });
 
   it('is the style ?tune picks at the kill', () => {
