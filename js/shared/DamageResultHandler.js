@@ -16,14 +16,14 @@ export function killPoints(enemy, points) {
 /**
  * Handles an enemy's takeDamage result (DAMAGE_RESULT) with standard effects.
  *
- * All three call-sites (CollisionSystem, EnemyUpdatePipeline, AreaDamageHandler)
- * share the same EXPLODING/DAMAGED/DIED switch structure. This function captures
- * the common behavior and parameterizes the differences via `ctx`.
+ * Bullet hits, the stabber's stab, area damage and the bomb's blast share the
+ * same EXPLODING/DAMAGED/DIED switch structure. This function captures the
+ * common behavior and parameterizes the differences via `ctx`.
  *
  * @param {string} result - The DAMAGE_RESULT enemy.takeDamage() returned
  * @param {object} enemy - The damaged enemy
  * @param {object} ctx - Context bag:
- *   Required: { explosionManager, audio }
+ *   Required: { explosionManager }
  *   Death handling: { onDeath(enemy, blow), blow } (blow: { dir, blast },
  *       the way the killing blow sent it, for its death)
  *   Scoring: { gameState, scorePoints } (default 10)

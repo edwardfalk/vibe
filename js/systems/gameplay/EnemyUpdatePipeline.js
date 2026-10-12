@@ -46,14 +46,8 @@ function handleRusherExplosionResult(result, enemy, context, blasts) {
 }
 
 function handleStabberAttackResult(result, context) {
-  const {
-    player,
-    gameState,
-    audio,
-    cameraSystem,
-    explosionManager,
-    collisionSystem,
-  } = context;
+  const { player, gameState, cameraSystem, explosionManager, collisionSystem } =
+    context;
 
   if (result.type === 'stabber-melee' && result.playerHit && player) {
     if (!player.hurt(result.damage, 'stabber-melee')) {
@@ -80,7 +74,6 @@ function handleStabberAttackResult(result, context) {
       targetEnemy,
       {
         explosionManager,
-        audio,
         gameState,
         onDeath: (e) => {
           if (collisionSystem) {
@@ -158,7 +151,6 @@ function damageEnemiesInBlasts(blasts, context) {
       enemies,
       {
         explosionManager: context.explosionManager,
-        audio: context.audio,
         // No scoring from blasts in the frame the game ended
         gameState,
         onDeath: (e, blow) =>

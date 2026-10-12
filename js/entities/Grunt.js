@@ -97,7 +97,6 @@ class Grunt extends BaseEnemy {
           this,
           {
             explosionManager: this.getContextValue('explosionManager'),
-            audio: this.getContextValue('audio'),
             gameState: this.getContextValue('gameState'),
             onDeath: (e) =>
               collisionSystem?.handleEnemyDeath(e, e.type, e.x, e.y, {

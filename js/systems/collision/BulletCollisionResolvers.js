@@ -21,7 +21,6 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
 
   const context = getContext();
   const explosionManager = getContextValue('explosionManager');
-  const audio = getContextValue('audio');
   const gameState = getContextValue('gameState');
   const floatingText = getContextValue('floatingText');
   const beatClock = getContextValue('beatClock');
@@ -37,7 +36,6 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
 
   handleDamageResult(result, enemy, {
     explosionManager,
-    audio,
     gameState,
     onDeath: (e) =>
       handleEnemyDeath(e, enemyType, bullet.x, bullet.y, { dir: bullet.angle }),
@@ -136,7 +134,6 @@ export function handleRegularEnemyBulletHit(
 ) {
   const { getContextValue, handleEnemyDeath } = deps;
   const explosionManager = getContextValue('explosionManager');
-  const audio = getContextValue('audio');
   const gameState = getContextValue('gameState');
 
   // Determine bullet source type for tank anger tracking
@@ -154,7 +151,6 @@ export function handleRegularEnemyBulletHit(
     enemy,
     {
       explosionManager,
-      audio,
       gameState,
       onDeath: (e) =>
         handleEnemyDeath(e, e.type, e.x, e.y, { dir: bullet.angle }),

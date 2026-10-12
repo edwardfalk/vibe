@@ -58,7 +58,6 @@ export class Player {
     this.aimAngle = 0;
     this.shootCooldownMs = 0;
     this.queuedShot = null;
-    this.wantsToContinueShooting = false;
 
     // Burst state: the first shot is immediate, held fire snaps to eighth notes
     this.isCurrentlyShooting = false;
@@ -288,9 +287,7 @@ export class Player {
       }
     }
 
-    // Reset continuous shooting flag (will be set again if mouse still pressed)
     const wasShooting = this.isCurrentlyShooting;
-    this.wantsToContinueShooting = false;
 
     // The burst ends when no fire input is held (mouse or keys), so held
     // keyboard fire is quantised to eighth notes like the mouse
@@ -430,8 +427,6 @@ export class Player {
   shoot() {
     if (!this.getContextValue('playerBullets')) return null;
 
-    this.wantsToContinueShooting = true;
-
     // First shot tracking
     if (!this.isCurrentlyShooting) {
       this.isCurrentlyShooting = true;
@@ -494,10 +489,8 @@ export class Player {
   queueShot(timeToNextBeat) {
     // Queue shot for next beat - allow re-queuing if no shot is currently queued
     if (!this.queuedShot) {
-      this.queuedShot = {
-        timerMs: timeToNextBeat, // Store milliseconds directly
-        aimAngle: this.aimAngle, // Store current aim angle
-      };
+      // It fires along his aim when it comes due, not this one
+      this.queuedShot = { timerMs: timeToNextBeat };
     }
   }
 
@@ -624,10 +617,5 @@ export class Player {
     if (!this.takeDamage(amount, damageSource)) return false;
     this.getContextValue('gameState')?.setGameState('gameOver');
     return true;
-  }
-
-  checkCollision(other) {
-    const distance = this.p.dist(this.x, this.y, other.x, other.y);
-    return distance < (this.size + other.size) * 0.5;
   }
 }
