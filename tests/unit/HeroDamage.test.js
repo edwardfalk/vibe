@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { CollisionSystem } from '../../js/systems/CollisionSystem.js';
 import { Bullet } from '../../js/entities/bullet.js';
 import { CONFIG } from '../../js/config.js';
+import { Player } from '../../js/entities/player.js';
 
 const contextOf = (values) => ({ get: (key) => values[key], set: () => {} });
 
@@ -42,6 +43,33 @@ describe('damage enemy shots do to the hero', () => {
       {}
     ).checkEnemyBulletsVsPlayer();
     expect(player.hurt).toHaveBeenCalledTimes(2);
+    expect(volley.every((b) => b._remove)).toBe(true);
+  });
+
+  it('a bullet after the fatal one, in the same frame, does nothing more', () => {
+    const audio = { playSound: vi.fn(), speakPlayerLine: vi.fn() };
+    const gameState = {
+      gameState: 'playing',
+      resetKillStreak: vi.fn(),
+      setGameState: vi.fn(),
+    };
+    const player = new Player({ color: () => ({}) }, 0, 0, null, {
+      audio,
+      gameState,
+    });
+    player.shieldUp = false;
+    player.health = 1;
+    const volley = [
+      Bullet.acquire(0, 0, 0, 8, 'enemy-grunt'),
+      Bullet.acquire(4, 0, 0, 8, 'enemy-grunt'),
+    ];
+    new CollisionSystem(
+      contextOf({ enemyBullets: volley, player }),
+      {}
+    ).checkEnemyBulletsVsPlayer();
+    expect(gameState.setGameState).toHaveBeenCalledTimes(1);
+    const hits = audio.playSound.mock.calls.filter(([k]) => k === 'playerHit');
+    expect(hits).toHaveLength(1);
     expect(volley.every((b) => b._remove)).toBe(true);
   });
 

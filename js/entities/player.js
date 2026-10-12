@@ -618,6 +618,9 @@ export class Player {
 
   // Take a hit; a fatal one ends the run. Returns true if the player died.
   hurt(amount, damageSource) {
+    // A hit after the fatal one in the same frame (a volley, a blast) finds
+    // him already dead: no more sound, flinch or game over
+    if (this.health <= 0) return true;
     if (!this.takeDamage(amount, damageSource)) return false;
     this.getContextValue('gameState')?.setGameState('gameOver');
     return true;
