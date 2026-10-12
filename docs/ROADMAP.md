@@ -140,7 +140,7 @@ Calls and smaller work:
 
 ## Tests and tooling
 
-- **build: the 2026-10-12 audit's smaller leftovers** (its fixes are PR `audit-fixes`):
+- **build: the 2026-10-12 audit's smaller leftovers** (its fixes are #103):
   - an aggressive line's bubble shakes with `random()` while drawn, so it jitters through a pause and draws the replay's random numbers, as enemies' hit shakes did;
   - each enemy type calls `keepInWorld()` after `super.update()`; one call in `BaseEnemy.update` would do (keep the rusher's own while `Rusher.fuse.test.js` calls his behaviour step directly);
   - no test presses an arrow key into the aim flags or checks that a window blur clears them;
