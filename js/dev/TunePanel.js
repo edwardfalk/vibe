@@ -87,7 +87,7 @@ const BOMB = 'BOMB';
 const DEATHS = 'DEATHS';
 const SPEECH = 'SPEECH_SETTINGS';
 
-const KNOBS = [
+export const KNOBS = [
   [BEAT_CLOCK, 'AHEAD_MS', [0, 60, 1]],
   [KICK, 'ENABLED'],
   [KICK, 'PATTERN', ['four', 'oneThree']],
