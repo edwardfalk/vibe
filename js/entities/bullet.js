@@ -3,6 +3,7 @@ import { sin, cos, dist } from '../mathUtils.js';
 import { drawGlow } from '../effects/glowUtils.js';
 import { GRUNT_COLORS } from './GruntRenderer.js';
 import { TANK_COLORS, drawTankBall } from './TankRenderer.js';
+import { NOTE_OWNER, NOTE_GLOW_RGB, drawBassNote } from './BassNote.js';
 
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 
@@ -73,6 +74,10 @@ export class Bullet {
       this.size = 26;
       this.damage = 50;
       this.energy = 100;
+    } else if (owner === NOTE_OWNER) {
+      // The bassist's note: its speed is set each frame (driveBassNotes)
+      this.size = CONFIG.BASSIST.NOTE_SIZE;
+      this.damage = CONFIG.PLAYER.DAMAGE_BASS_NOTE;
     } else {
       this.size = 6;
       this.damage = 1;
@@ -121,6 +126,8 @@ export class Bullet {
           TANK_GLOW,
           1.2
         );
+      } else if (this.owner === NOTE_OWNER) {
+        drawGlow(p, this.x, this.y, this.size * 2.5, NOTE_GLOW_RGB, 0.8);
       } else {
         drawGlow(p, this.x, this.y, this.size * 1.5, ENEMY_GLOW, 0.5);
       }
@@ -156,6 +163,10 @@ export class Bullet {
         : 1;
       p.blendMode(p.BLEND);
       drawTankBall(p, this.size * energyPercent, (p.frameCount / 60) * 14);
+    } else if (this.owner === NOTE_OWNER) {
+      p.blendMode(p.BLEND);
+      p.rotate(-this.angle); // a note stands upright
+      drawBassNote(p, this.size);
     } else {
       // A grunt's shot: a coral line with a white core
       p.stroke(...GRUNT_COLORS.shotCore, 210);
@@ -186,6 +197,8 @@ export class Bullet {
         p.fill(255, 255, 100, alpha);
       } else if (this.owner === 'enemy-tank') {
         p.fill(...TANK_COLORS.amber, alpha);
+      } else if (this.owner === NOTE_OWNER) {
+        p.fill(...NOTE_GLOW_RGB, alpha);
       } else {
         p.fill(...GRUNT_COLORS.shot, alpha);
       }

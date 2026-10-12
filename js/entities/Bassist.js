@@ -3,6 +3,8 @@ import { CONFIG } from '../config.js';
 import { stalkWant } from './Stabber.js';
 import { volleyGain } from '../systems/GruntSwarm.js';
 import { mod } from './GruntRenderer.js';
+import { Bullet } from './bullet.js';
+import { NOTE_OWNER } from './BassNote.js';
 
 const FRAMES_PER_SEC = 60; // BaseEnemy's velocity is px per 60 Hz frame
 const STRINGS = 4;
@@ -122,7 +124,14 @@ export class Bassist extends BaseEnemy {
     if (!this.plays(k)) return null;
     if (k === SLAP_LET && this.lockBar !== bar) return null;
     this.pluck(n, k);
-    return null;
+    return k === SLAP_LET ? this.fireNote() : null;
+  }
+
+  /** The slap's note, along the aim let 3 locked; the enemy loop takes it into the enemy bullets */
+  fireNote() {
+    const note = Bullet.acquire(this.x, this.y, this.lockAim, 0, NOTE_OWNER);
+    note.ownerId = this.id;
+    return note;
   }
 
   /** Let n, the k-th of its bar: its sound, on its grid time, and a puff along his drift */
@@ -181,5 +190,51 @@ export class Bassist extends BaseEnemy {
       const x = (i - (STRINGS - 1) / 2) * s * 0.08;
       p.line(x, s * 0.4, x, -s * 0.6);
     }
+  }
+}
+
+/**
+ * His note's speed, px/s, at beat position `beats`: NOTE_GLIDE_PX_S, plus,
+ * from each let its bassist still plays (the slap's too) to the next beat,
+ * a push that fades to nothing by that beat and carries it NOTE_LURCH_PX in
+ * all: long-short, the shuffle seen
+ */
+export function noteSpeed(bassist, beats, beatSec) {
+  const B = CONFIG.BASSIST;
+  const and = CONFIG.SWING.AND_AT;
+  const n = Math.floor(beats - and + EPS);
+  const gap = 1 - and; // from the let to the next beat, beats
+  const since = beats - (n + and);
+  if (since < 0 || since >= gap || !bassist.plays(mod(n, LETS_PER_BAR))) {
+    return B.NOTE_GLIDE_PX_S;
+  }
+  const fade = 1 - since / gap;
+  return B.NOTE_GLIDE_PX_S + (2 * B.NOTE_LURCH_PX * fade) / (gap * beatSec);
+}
+
+/**
+ * One pass a frame over the enemy bullets, before the collisions: each note
+ * finds its bassist by its ownerId among the enemies not marked for
+ * removal and takes its velocity from him (noteSpeed, along its own line);
+ * a note whose bassist is gone pops, silently (his death covers it). The
+ * only rule that pops them, so no death needs to know about notes
+ */
+export function driveBassNotes(bullets, enemies, clock) {
+  if (!clock) return;
+  const beats = clock.getBeatPosition();
+  const beatSec = clock.beatInterval / 1000;
+  for (const note of bullets) {
+    if (note.owner !== NOTE_OWNER || note._remove) continue;
+    const bassist = enemies.find(
+      (e) => e.id === note.ownerId && !e.markedForRemoval
+    );
+    if (!bassist) {
+      Bullet.release(note);
+      note._remove = true;
+      continue;
+    }
+    const perFrame = noteSpeed(bassist, beats, beatSec) / FRAMES_PER_SEC;
+    note.velocity.x = Math.cos(note.angle) * perFrame;
+    note.velocity.y = Math.sin(note.angle) * perFrame;
   }
 }

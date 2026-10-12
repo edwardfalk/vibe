@@ -1,8 +1,8 @@
 /**
  * Live tuning panel, shown when the URL has ?tune: CONFIG.BEAT_TRACK (the kick, and whether it is tuned to the hum), HUM, SKY, PACING, the grunts' swarms (SWARM),
  * MIX, the rusher's flight, fuse, push and blast (RUSHER) and look (RUSHER_LOOK), the stabber's stalk, lunge, rest,
- * push, health and strings' volumes (STABBER) and size (STABBER_LOOK), the swing a bassist brings (SWING) and his stalk and
- * strings (BASSIST), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
+ * push, health and strings' volumes (STABBER) and size (STABBER_LOOK), the swing a bassist brings (SWING) and his stalk,
+ * strings, puff, octave and note (BASSIST), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
  * while paused box (ticked here: the beat plays on while paused), the hero's
  * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK),
@@ -167,6 +167,8 @@ export const KNOBS = [
   [BAND, 'CHATTER', CHATTER_CHOICES],
   [BAND, 'CHATTER_DB', [-24, 12, 1]],
   [BAND, 'FUSE_DB', [-24, 12, 1]],
+  [BAND, 'BASS_PLUCK_DB', [-24, 12, 1]],
+  [BAND, 'BASS_SLAP_DB', [-24, 12, 1]],
   [RUSHER, 'BOOST_PX_S', [0, 600, 10]],
   [RUSHER, 'CRUISE_PX_S', [0, 400, 10]],
   [RUSHER, 'BOOST_TAU_SEC', [0.02, 1, 0.01]],
@@ -190,6 +192,12 @@ export const KNOBS = [
   [BASSIST, 'BACKOFF_PX_S', [0, 300, 10]],
   [BASSIST, 'STEER_SEC', [0.05, 1, 0.05]],
   [BASSIST, 'HITS_PER_STRING', [1, 10, 1]],
+  [BASSIST, 'LURCH_PX_S', [0, 600, 10]],
+  [BASSIST, 'PUFF_KEEP', [0.5, 0.98, 0.01]],
+  [BASSIST, 'OCTAVE', [1, 4, 1]],
+  // Above 0, so a note always leaves
+  [BASSIST, 'NOTE_GLIDE_PX_S', [10, 300, 5]],
+  [BASSIST, 'NOTE_LURCH_PX', [5, 200, 5]],
   [STABBER, 'STALK_MIN_PX', [50, 500, 10]],
   [STABBER, 'STALK_MAX_PX', [100, 600, 10]],
   [STABBER, 'APPROACH_PX_S', [0, 400, 10]],
@@ -267,6 +275,7 @@ export const KNOBS = [
   ['PLAYER', 'REGEN_PER_SEC', [0, 10, 0.1]],
   ['PLAYER', 'DAMAGE_GRUNT_BULLET', [0, 30, 1]],
   ['PLAYER', 'DAMAGE_TANK_BALL', [0, 100, 1]],
+  ['PLAYER', 'DAMAGE_BASS_NOTE', [0, 60, 1]],
   ['PLAYER', 'DAMAGE_STAB', [0, 60, 1]],
   ['PLAYER', 'DAMAGE_TANK_SHOVE', [0, 60, 1]],
   ['PLAYER', 'DAMAGE_TANK_ELBOW', [0, 60, 1]],

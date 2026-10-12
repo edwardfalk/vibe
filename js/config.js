@@ -424,6 +424,7 @@ const CONFIG = {
     DAMAGE_STAB: 25,
     DAMAGE_TANK_SHOVE: 15, // a tank's shove when he's in front of it
     DAMAGE_TANK_ELBOW: 10, // a tank's elbow when he's at its side
+    DAMAGE_BASS_NOTE: 15, // a bassist's note
     // A held shot waits this long before the next: longer than the eighth's
     // window (BEAT_TOLERANCES.EIGHTH_NOTE either side), so no eighth fires
     // twice, and shorter than a swung let's gap to the beat (125 ms at
@@ -498,6 +499,11 @@ const CONFIG = {
     PUFF_KEEP: 0.88, // the share of a puff's push kept per 60 Hz frame
     OCTAVE: 2, // his line's octave (b3, 4, 5, b7)
     HITS_PER_STRING: 3,
+    // His note, fired on the slap: it glides at NOTE_GLIDE_PX_S, and each
+    // let he plays pushes it NOTE_LURCH_PX further by the next beat
+    NOTE_SIZE: 16,
+    NOTE_GLIDE_PX_S: 60,
+    NOTE_LURCH_PX: 45,
   },
 
   // The stabber, the shiv (js/entities/Stabber.js). Speeds are px/s. He

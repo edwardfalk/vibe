@@ -18,7 +18,7 @@ import {
 } from './systems/BombSystem.js';
 import { updateEnemiesAndResolveResults } from './systems/gameplay/EnemyUpdatePipeline.js';
 import { Bullet } from './entities/bullet.js';
-import { bassistAbout } from './entities/Bassist.js';
+import { bassistAbout, driveBassNotes } from './entities/Bassist.js';
 import { handleAreaDamageEvents } from './effects/AreaDamageHandler.js';
 import { runSetup } from './GameLoopSetup.js';
 import { runDraw } from './GameLoopDraw.js';
@@ -176,6 +176,9 @@ function updateGame(p) {
 
   // Check collisions using CollisionSystem
   if (window.collisionSystem) {
+    // The bassists' notes first: one whose bassist is gone pops here, so
+    // the collisions' compaction clears it before any bullet is reused
+    driveBassNotes(enemyBullets, enemies, window.beatClock);
     window.collisionSystem.checkBulletCollisions();
     window.collisionSystem.checkContactCollisions();
   }

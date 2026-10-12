@@ -14,6 +14,7 @@ import {
   handleTankEnergyBallHit,
   handleRegularEnemyBulletHit,
 } from './collision/BulletCollisionResolvers.js';
+import { NOTE_OWNER } from '../entities/BassNote.js';
 
 // Single-pass compaction: O(n) instead of O(n²) from repeated splice
 function compactArray(arr) {
@@ -102,7 +103,9 @@ export class CollisionSystem {
         const damage =
           bullet.owner === 'enemy-tank'
             ? CONFIG.PLAYER.DAMAGE_TANK_BALL
-            : CONFIG.PLAYER.DAMAGE_GRUNT_BULLET;
+            : bullet.owner === NOTE_OWNER
+              ? CONFIG.PLAYER.DAMAGE_BASS_NOTE
+              : CONFIG.PLAYER.DAMAGE_GRUNT_BULLET;
         player.hurt(damage, `${bullet.owner}-bullet`);
         Bullet.release(bullet);
         bullet._remove = true;
@@ -119,6 +122,9 @@ export class CollisionSystem {
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const bullet = enemyBullets[i];
       if (bullet._remove) continue;
+      // shortcut: a bassist's note meets no alien yet; the next commit
+      // gives it the tank ball's rule
+      if (bullet.owner === NOTE_OWNER) continue;
 
       for (let j = 0; j < enemies.length; j++) {
         const enemy = enemies[j];
