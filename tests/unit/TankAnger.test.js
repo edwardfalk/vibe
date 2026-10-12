@@ -132,5 +132,10 @@ describe('the third hit tips him', () => {
     expect(t.pose().glance).toBeNull();
     w.frame(t, 6000);
     expect(t.turn.to - t.turn.from).toBeCloseTo(Math.PI / 3, 9);
+    // A whip left over would stamp whipAt and hold his head on the old hit
+    expect(t.whipAt).toBeNull();
+    expect(t.pose().glance).toBeNull();
+    w.frame(t, 6200);
+    expect(t.pose().glance).toBeNull();
   });
 });

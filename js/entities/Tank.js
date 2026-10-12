@@ -446,6 +446,8 @@ class Tank extends BaseEnemy {
         this.angerTarget = null;
         this.damageTracker.clear(); // a fresh count for the next grudge
         this.calmLinePending = true; // said on the next beat 1
+        // A whip left over would stamp whipAt, holding his head on the old hit
+        this.whipPending = false;
       }
     }
     if (!this.calmLinePending) return;
