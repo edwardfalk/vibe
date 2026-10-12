@@ -92,7 +92,6 @@ export class Bassist extends BaseEnemy {
     this.plucked = Array(STRINGS).fill(null); // each sinew's last play
     this.snapped = Array(STRINGS).fill(null); // and when it snapped
     this.hitAt = null;
-    this.hitDir = 0;
   }
 
   /** @override He keeps the beat he is at, and his own facing */
@@ -181,7 +180,6 @@ export class Bassist extends BaseEnemy {
   /** A shot's push along its line, KNOCK_PX_S, the whole capped at KNOCK_MAX_PX_S */
   knockAlong(dir) {
     const { KNOCK_PX_S, KNOCK_MAX_PX_S } = CONFIG.BASSIST;
-    this.hitDir = dir;
     this.knock.x += Math.cos(dir) * KNOCK_PX_S;
     this.knock.y += Math.sin(dir) * KNOCK_PX_S;
     const speed = Math.hypot(this.knock.x, this.knock.y);
@@ -303,11 +301,11 @@ export class Bassist extends BaseEnemy {
   }
 
   /**
-   * His look at the beat update() kept: what a version on the studies page
-   * draws from (its L), so the picked one draws in the game unchanged
+   * His look at the beat update() kept: what his look (BassistRenderer.js)
+   * and his death draw from, the studies page's record, less what neither
+   * reads
    */
   pose() {
-    const B = CONFIG.BASSIST;
     const and = CONFIG.SWING.AND_AT;
     const beats = this.poseBeats ?? 0;
     const beatSec =
@@ -319,20 +317,14 @@ export class Bassist extends BaseEnemy {
     const u = mod(beats - (SLAP_LET + and), LETS_PER_BAR);
     const notch = Math.min(SLAP_LET, Math.floor(u + EPS));
     const next = Math.floor(beats - and + EPS) + 1;
-    const turnAge = this.turn ? age(this.turn.at) : Infinity;
     const { x: vx, y: vy } = this.moving();
     const hitAge = age(this.hitAt);
     return {
       t: beats * beatSec,
-      beatSec,
-      beats,
       beat: mod(n, LETS_PER_BAR),
-      beatPhase: beats - n,
       kick: env((beats - n) * beatSec, KICK_TAU_SEC),
       andAt: and,
       aim: this.aim,
-      toHero: this.toHero,
-      turn: this.turn ? clamp01(turnAge / B.TURN_SEC) : 1,
       uncurl: uncurl(
         age(this.turn?.at ?? null),
         age(this.plucked[SLAP_LET]),
@@ -359,15 +351,9 @@ export class Bassist extends BaseEnemy {
         hot: u >= LETS_PER_BAR - HOT_BEATS - EPS,
       },
       hit: hitAge < Infinity ? env(hitAge, HIT_TAU_SEC) : 0,
-      hitAge,
-      hitDir: this.hitDir,
-      push: clamp01(Math.hypot(this.knock.x, this.knock.y) / B.KNOCK_PX_S),
-      hp: this.health / this.maxHealth,
-      spawn: this.isSpawning ? this.spawnTimer / this.spawnDuration : 1,
       dying: null,
       slack: null,
       seed: this.lookSeed,
-      muzzle: BASSIST_MUZZLE_PX * CONFIG.BASSIST_LOOK.ART_SCALE,
     };
   }
 

@@ -6,7 +6,7 @@
 
 import { CONFIG } from '../config.js';
 import { smooth, easeOut } from '../mathUtils.js';
-import { NOTE_COLORS } from './BassistRenderer.js';
+import { NOTE_COLORS, rgb } from './BassistRenderer.js';
 
 const PI = Math.PI;
 const EPS = 1e-6; // slack on beat positions, for floating-point error
@@ -31,8 +31,6 @@ export function hangNote(note, beats) {
       beats === null ? null : Math.floor(beats - CONFIG.SWING.AND_AT + EPS) + 1,
   };
 }
-
-const rgb = (c, a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
 // A soft glow of radius r round (x, y), added
 function glow(ctx, x, y, r, c, a) {

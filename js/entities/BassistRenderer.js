@@ -19,6 +19,7 @@
  */
 import { clamp01, smooth, easeOut, env } from '../mathUtils.js';
 import { spriteParts } from './spriteCache.js';
+import { AMBER, HOT } from './GruntRenderer.js'; // the cast's: about to strike
 
 const PI = Math.PI;
 const TAU = 2 * PI;
@@ -30,10 +31,8 @@ export const NOTE_COLORS = { head: [222, 255, 250], glow: [70, 232, 214] };
 export const BASSIST_GLOW_RGB = [120, 255, 220];
 
 const INK = [38, 26, 48]; // the cast's ink
-const AMBER = [255, 170, 40]; // about to strike (the cast's)
-const HOT = [255, 248, 225]; // the last third: white-hot
 const NAVY = [16, 22, 52];
-const rgb = (c, a = 1) =>
+export const rgb = (c, a = 1) =>
   a >= 1
     ? `rgb(${c[0]},${c[1]},${c[2]})`
     : `rgba(${c[0]},${c[1]},${c[2]},${a})`;

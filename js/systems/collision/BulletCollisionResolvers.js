@@ -12,20 +12,6 @@ import {
 import { applyKillFeedback } from '../combat/KillFeedback.js';
 import { NOTE_OWNER } from '../../entities/BassNote.js';
 
-// The heavy shots that kill smaller aliens outright, spending their energy
-// as they go: what a tank and a rusher take instead, and the shot's own
-// sounds on a kill
-const HEAVY_SHOTS = {
-  'enemy-tank': {
-    dent: () => CONFIG.TANK.SHOT_DAMAGE_TO_TANKS,
-    killSounds: ['tankBallKill', 'enemyFrying'],
-  },
-  [NOTE_OWNER]: {
-    dent: () => CONFIG.BASSIST.NOTE_DAMAGE_TO_TANKS,
-    killSounds: [],
-  },
-};
-
 /**
  * Resolve a player bullet hitting an enemy.
  * @returns {boolean} true if bullet hit
@@ -79,22 +65,24 @@ export function resolveBulletEnemyHit(bullet, enemy, deps) {
  * Handle tank energy ball hitting an enemy (friendly fire).
  */
 export function handleTankEnergyBallHit(bullet, enemy, deps) {
-  // A tank's ball, or a bassist's note (HEAVY_SHOTS): another tank only takes
+  // A tank's ball, or a bassist's note: another tank only takes
   // a dent, through his armour, and the shot is spent on him; so is it on a
   // rusher, whom it lights as any hit does (he never dies of damage: he
   // blows on his beat); any other alien it meets dies outright
-  const shot = HEAVY_SHOTS[bullet.owner] ?? HEAVY_SHOTS['enemy-tank'];
+  // A bassist's note dents by its own number, and kills without the ball's sounds
+  const note = bullet.owner === NOTE_OWNER;
   if (enemy.type === 'tank' || enemy.type === 'rusher') {
-    handleRegularEnemyBulletHit(bullet, enemy, deps, shot.dent());
+    const dent = note
+      ? CONFIG.BASSIST.NOTE_DAMAGE_TO_TANKS
+      : CONFIG.TANK.SHOT_DAMAGE_TO_TANKS;
+    handleRegularEnemyBulletHit(bullet, enemy, deps, dent);
     return;
   }
   const { getContextValue, handleEnemyDeath } = deps;
   const audio = getContextValue('audio');
   const gameState = getContextValue('gameState');
-  const [killSound, fryingSound] = shot.killSounds;
-
-  if (audio && killSound) {
-    audio.playSound(killSound, bullet.x, bullet.y);
+  if (audio && !note) {
+    audio.playSound('tankBallKill', bullet.x, bullet.y);
   }
 
   // Calculate energy cost based on enemy's remaining health
@@ -104,8 +92,8 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
   // Kill the enemy: his own death
   handleEnemyDeath(enemy, enemy.type, enemy.x, enemy.y, { dir: bullet.angle });
 
-  if (audio && fryingSound) {
-    audio.playSound(fryingSound, enemy.x, enemy.y);
+  if (audio && !note) {
+    audio.playSound('enemyFrying', enemy.x, enemy.y);
   }
 
   enemy.markedForRemoval = true;
