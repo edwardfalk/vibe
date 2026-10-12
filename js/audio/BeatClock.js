@@ -220,8 +220,15 @@ export class BeatClock {
     };
   }
 
-  /** isOnEighthNote() on the hero's grid */
+  /** The shorter of the hero's two gaps between eighths now, ms: half a beat, or the swung let's to the beat */
+  heroShortestGapMs() {
+    const a = this._heroAndAt();
+    return this.beatInterval * Math.min(a, 1 - a);
+  }
+
+  /** isOnEighthNote() on the hero's grid; with swing off, that very method, so the game without a bassist plays exactly as before */
   isOnHeroEighth() {
+    if (!this.swingOn) return this.isOnEighthNote();
     const { elapsed, prevMs, nextMs } = this._heroEighthsAround();
     return (
       elapsed - prevMs <= this.eighthNoteTolerance ||
@@ -229,8 +236,9 @@ export class BeatClock {
     );
   }
 
-  /** getTimeToNextEighthNote() on the hero's grid */
+  /** getTimeToNextEighthNote() on the hero's grid; with swing off, that very method */
   getTimeToNextHeroEighth() {
+    if (!this.swingOn) return this.getTimeToNextEighthNote();
     const { elapsed, nextMs } = this._heroEighthsAround();
     return nextMs - elapsed;
   }

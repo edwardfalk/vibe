@@ -425,11 +425,6 @@ const CONFIG = {
     DAMAGE_TANK_SHOVE: 15, // a tank's shove when he's in front of it
     DAMAGE_TANK_ELBOW: 10, // a tank's elbow when he's at its side
     DAMAGE_BASS_NOTE: 15, // a bassist's note
-    // A held shot waits this long before the next: longer than the eighth's
-    // window (BEAT_TOLERANCES.EIGHTH_NOTE either side), so no eighth fires
-    // twice, and shorter than a swung let's gap to the beat (125 ms at
-    // SWING.AND_AT 0.75). The first shot of a press waits 200 ms.
-    HELD_FIRE_COOLDOWN_MS: 100,
     // Knockback: a push of this many px/frame that fades by KNOCKBACK_DECAY
     // (share kept per frame), so it carries him about force x 6.7 px in all
     KNOCKBACK_DECAY: 0.85,

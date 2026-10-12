@@ -157,3 +157,38 @@ describe('held fire on the hero grid', () => {
     expect(onGrid(shots, 0.5)).toBe(true);
   });
 });
+
+// Held fire's cooldown is the grid's: today's 200 ms on the straight grid,
+// so a game with no bassist plays as before, and short enough on the swung
+// one to make the beat after the let
+describe("held fire's cooldown", () => {
+  const cooldown = (swing, at = 2 / 3) => {
+    CONFIG.SWING.AND_AT = at;
+    const ctx = { currentTime: 0 };
+    const clock = new BeatClock(120, ctx);
+    clock.startTime = 0;
+    clock.wantSwing(swing);
+    ctx.currentTime = 2.1; // a new bar takes it
+    clock.update(true);
+    const player = new Player(p, 100, 100, null, {
+      playerBullets: [],
+      beatClock: clock,
+    });
+    return player.heldCooldownMs();
+  };
+  afterEach(() => {
+    CONFIG.SWING.AND_AT = 2 / 3;
+  });
+
+  it('is 200 ms on the straight grid, as before', () => {
+    expect(cooldown(false)).toBe(200);
+  });
+
+  it('is under the swung let-to-beat gap, and over the eighth window either side', () => {
+    for (const at of [2 / 3, 0.75]) {
+      const ms = cooldown(true, at);
+      expect(ms).toBeLessThan((1 - at) * 500);
+      expect(ms).toBeGreaterThan(2 * 20);
+    }
+  });
+});
