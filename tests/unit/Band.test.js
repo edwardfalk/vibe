@@ -18,55 +18,15 @@ import { Audio } from '../../js/Audio.js';
 import { Grunt } from '../../js/entities/Grunt.js';
 import { createMockP5, createMockAudio } from './helpers/enemyMocks.js';
 import { fakeBuses } from './helpers/audioBuses.js';
+import { fakeAudio } from './helpers/fakeAudio.js';
 
 const AT = 2.5;
 const dB = (d) => 10 ** (d / 20);
 
-// A Web Audio stand-in that records the nodes a sound makes
-function fakeContext() {
-  const made = [];
-  const param = () => ({
-    value: 1,
-    setValueAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-  });
-  const node = (kind, extra = {}) => {
-    const n = {
-      kind,
-      connect: vi.fn((d) => d),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      ...extra,
-    };
-    made.push(n);
-    return n;
-  };
-  const ctx = {
-    currentTime: 2,
-    sampleRate: 8000,
-    state: 'running',
-    createStereoPanner: () => node('pan', { pan: param() }),
-    createBiquadFilter: () =>
-      node('filter', { frequency: param(), Q: param() }),
-    createGain: () => node('gain', { gain: param() }),
-    createOscillator: () =>
-      node('osc', { frequency: param(), detune: param() }),
-    createBufferSource: () => node('source'),
-    createWaveShaper: () => node('shaper'),
-    createBuffer: vi.fn((_channels, length) => {
-      const data = new Float32Array(length);
-      return { duration: length / 8000, getChannelData: () => data };
-    }),
-  };
-  return { ctx, made };
-}
-
 // The game's Audio on the stand-in, the hero at (0, 0), its beat clock at
 // `beats` (120 BPM)
 function gameAudio(beats = 1) {
-  const { ctx, made } = fakeContext();
+  const { ctx, made } = fakeAudio({ currentTime: 2 });
   const clock = { beatInterval: 500, getBeatPosition: () => beats };
   const audio = Object.assign(Object.create(Audio.prototype), {
     audioContext: ctx,
@@ -222,7 +182,7 @@ function playBandSound(name, ctx, out, opts) {
 
 // One play of a band sound on the stand-in: full volume, centred, at AT
 function play(name, opts = {}) {
-  const { ctx, made } = fakeContext();
+  const { ctx, made } = fakeAudio({ currentTime: 2 });
   playBandSound(name, ctx, { kind: 'out' }, opts);
   const of = (kind) => made.filter((n) => n.kind === kind);
   return { ctx, made, of };
@@ -231,7 +191,7 @@ function play(name, opts = {}) {
 // A play straight to `synth`, under whatever CONFIG.BAND the test set: the
 // throw, if any, and the nodes made
 function direct(synth, opts) {
-  const { ctx, made } = fakeContext();
+  const { ctx, made } = fakeAudio({ currentTime: 2 });
   let thrown = null;
   try {
     SYNTHS[synth](
@@ -266,7 +226,7 @@ function withBand(key, value, fn) {
 }
 // A play that must throw, and the nodes it made
 function failing(name, opts) {
-  const { ctx, made } = fakeContext();
+  const { ctx, made } = fakeAudio({ currentTime: 2 });
   expect(() => playBandSound(name, ctx, {}, opts)).toThrow();
   return made;
 }

@@ -3,45 +3,11 @@ import { playCrash } from '../../js/audio/CrashSynth.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { Audio } from '../../js/Audio.js';
 import { fakeBuses } from './helpers/audioBuses.js';
-
-// A Web Audio stand-in that records the nodes it makes
-function fakeAudio() {
-  const made = [];
-  const param = () => ({
-    setValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-  });
-  const node = (kind, extra = {}) => {
-    const n = {
-      kind,
-      connect: vi.fn((d) => d),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      ...extra,
-    };
-    made.push(n);
-    return n;
-  };
-  const ctx = {
-    currentTime: 2,
-    sampleRate: 8000,
-    createStereoPanner: () => node('pan', { pan: param() }),
-    createBiquadFilter: () => node('filter', { frequency: param() }),
-    createGain: () => node('gain', { gain: param() }),
-    createOscillator: () => node('osc', { frequency: param() }),
-    createBufferSource: () => node('source'),
-    createBuffer: vi.fn((channels, length) => {
-      const data = new Float32Array(length);
-      return { getChannelData: () => data };
-    }),
-  };
-  return { ctx, made };
-}
+import { fakeAudio } from './helpers/fakeAudio.js';
 
 // The game's Audio on that stand-in, sound on, the hero at (0, 0)
 function gameAudio() {
-  const { ctx, made } = fakeAudio();
+  const { ctx, made } = fakeAudio({ currentTime: 2 });
   ctx.state = 'running';
   const audio = Object.assign(Object.create(Audio.prototype), {
     audioContext: ctx,
@@ -66,7 +32,7 @@ describe("the rusher's crash", () => {
   const cfg = SOUND_CONFIG.rusherCrash;
 
   it('is six squares and noise, all through one high-pass above the stabbers and the kick click', () => {
-    const { ctx, made } = fakeAudio();
+    const { ctx, made } = fakeAudio({ currentTime: 2 });
     playCrash(ctx, { kind: 'out' }, cfg, 1, 0.5);
     const oscs = made.filter((n) => n.kind === 'osc');
     expect(oscs.map((o) => o.type)).toEqual(Array(6).fill('square'));
@@ -88,7 +54,7 @@ describe("the rusher's crash", () => {
   });
 
   it("draws none of the game's random numbers, and builds its noise once per context", () => {
-    const { ctx } = fakeAudio();
+    const { ctx } = fakeAudio({ currentTime: 2 });
     const spy = vi.spyOn(Math, 'random');
     playCrash(ctx, {}, cfg, 1, 0);
     playCrash(ctx, {}, cfg, 0.5, -1);

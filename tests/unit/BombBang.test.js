@@ -13,6 +13,7 @@ import { hz } from '../../js/audio/Harmony.js';
 import { Audio } from '../../js/Audio.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { fakeBuses } from './helpers/audioBuses.js';
+import { fakeAudio } from './helpers/fakeAudio.js';
 
 const BOMB = { ...CONFIG.BOMB };
 const DEATHS = { ...CONFIG.DEATHS };
@@ -149,49 +150,6 @@ describe('the Comic bang', () => {
     expect(manager.bangs).toEqual([]);
   });
 });
-
-// A Web Audio stand-in that records the nodes it makes (as DeathSounds.test.js)
-function fakeAudio() {
-  const made = [];
-  const param = () => ({
-    value: 0,
-    setValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    setTargetAtTime: vi.fn(),
-  });
-  const node = (kind, extra = {}) => {
-    const n = {
-      kind,
-      connect: vi.fn((d) => d),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      ...extra,
-    };
-    made.push(n);
-    return n;
-  };
-  const ctx = {
-    currentTime: 3,
-    sampleRate: 8000,
-    state: 'running',
-    createStereoPanner: () => node('pan', { pan: param() }),
-    createBiquadFilter: () =>
-      node('filter', { frequency: param(), Q: param() }),
-    createGain: () => node('gain', { gain: param() }),
-    createOscillator: () =>
-      node('osc', { frequency: param(), detune: param() }),
-    createBufferSource: () => node('source', { playbackRate: param() }),
-    createWaveShaper: () => node('shaper'),
-    createConvolver: () => node('convolver'),
-    createBuffer: vi.fn((channels, length, rate) => {
-      const data = new Float32Array(length);
-      return { duration: length / rate, getChannelData: () => data };
-    }),
-  };
-  return { ctx, made };
-}
 
 describe("the hero's death scene", () => {
   it('a bang plays out while the world holds still, rather than freezing over him', () => {

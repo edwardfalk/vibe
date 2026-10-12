@@ -6,50 +6,11 @@ import { Audio } from '../../js/Audio.js';
 import { CONFIG } from '../../js/config.js';
 import { hz, stepUp } from '../../js/audio/Harmony.js';
 import { fakeBuses } from './helpers/audioBuses.js';
-
-// A Web Audio stand-in that records the nodes playTone makes
-function fakeAudio() {
-  const made = [];
-  const param = () => ({
-    value: 1,
-    setValueAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-  });
-  const node = (kind, extra = {}) => {
-    const n = {
-      kind,
-      connect: vi.fn((d) => d),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      ...extra,
-    };
-    made.push(n);
-    return n;
-  };
-  const ctx = {
-    currentTime: 2,
-    sampleRate: 8000,
-    state: 'running',
-    createStereoPanner: () => node('pan', { pan: param() }),
-    createBiquadFilter: () =>
-      node('filter', { frequency: param(), Q: param() }),
-    createGain: () => node('gain', { gain: param() }),
-    createOscillator: () =>
-      node('osc', { frequency: param(), detune: param() }),
-    createBufferSource: () => node('source'),
-    createBuffer: vi.fn((channels, length) => {
-      const data = new Float32Array(length);
-      return { duration: length / 8000, getChannelData: () => data };
-    }),
-  };
-  return { ctx, made };
-}
+import { fakeAudio } from './helpers/fakeAudio.js';
 
 // The game's Audio on that stand-in, sound on, the hero at (0, 0)
 function gameAudio() {
-  const { ctx, made } = fakeAudio();
+  const { ctx, made } = fakeAudio({ currentTime: 2 });
   const audio = Object.assign(Object.create(Audio.prototype), {
     audioContext: ctx,
     initialized: true,
