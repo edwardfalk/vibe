@@ -122,6 +122,42 @@ function deathOf(rec = record(), hero = () => ({ x: 300, y: 0 })) {
   return { death, at: (t) => (clock = t) };
 }
 
+// Where each point drawn on p's raw context lands on screen: it keeps the
+// raw context's own transform (save, restore, translate, rotate, scale)
+function screenPoints(p) {
+  const raw = p.drawingContext;
+  let m = [1, 0, 0, 1, 0, 0];
+  const stack = [];
+  const points = [];
+  const at = (x, y) => [m[0] * x + m[2] * y + m[4], m[1] * x + m[3] * y + m[5]];
+  const mul = ([a, b, c, d, e, f]) =>
+    (m = [
+      m[0] * a + m[2] * b,
+      m[1] * a + m[3] * b,
+      m[0] * c + m[2] * d,
+      m[1] * c + m[3] * d,
+      m[0] * e + m[2] * f + m[4],
+      m[1] * e + m[3] * f + m[5],
+    ]);
+  const own = {
+    save: () => (stack.push(m), raw.save()),
+    restore: () => ((m = stack.pop()), raw.restore()),
+    translate: (x, y) => mul([1, 0, 0, 1, x, y]),
+    scale: (x, y) => mul([x, 0, 0, y, 0, 0]),
+    rotate: (a) =>
+      mul([Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0]),
+    moveTo: (x, y) => points.push(at(x, y)),
+    lineTo: (x, y) => points.push(at(x, y)),
+    quadraticCurveTo: (cx, cy, x, y) => points.push(at(x, y)),
+    bezierCurveTo: (a, b, c, d, x, y) => points.push(at(x, y)),
+  };
+  p.drawingContext = new Proxy(raw, {
+    get: (t, k) => own[k] ?? t[k],
+    set: (t, k, v) => ((t[k] = v), true),
+  });
+  return { points };
+}
+
 describe("when the stabber's death starts", () => {
   it("on the next eighth, at least the voices' lead ahead: his sound then, his picture when it is heard", () => {
     const w = world();
@@ -466,6 +502,20 @@ describe('Gold shatter', () => {
         expect(p.drawingContext.depth).toBe(0);
       }
     }
+  });
+
+  it('grows with him: at any ART_SCALE its plates and spike reach as far, in his sizes', () => {
+    // The furthest point it draws on screen, its plates' outer edge, before the jab
+    const reach = (scale) => {
+      const { death, at } = deathOf(shatter({ scale }));
+      const { p } = transformP5();
+      const ctx = screenPoints(p);
+      at(2.3);
+      death.draw(p);
+      return Math.max(...ctx.points.map(([x, y]) => Math.hypot(x, y)));
+    };
+    expect(reach(1.6) / reach(1)).toBeCloseTo(1.6, 1);
+    expect(reach(0.6) / reach(1)).toBeCloseTo(0.6, 1);
   });
 
   it('its spike turns to the hero until it crumbles; its dust stays where it crumbled', () => {

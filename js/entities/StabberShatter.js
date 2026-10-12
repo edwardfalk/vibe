@@ -272,7 +272,6 @@ function prep(d) {
   const B = d.body;
   const rand = mulberry32(Math.floor(d.seed * SEED_STEPS) + 1);
   const r = (lo, hi) => lo + (hi - lo) * rand();
-  const sc = d.scale;
   const L = Math.max(0.5, d.linger);
   // The cracks, from where the shot struck him (his frame, units)
   const hitAt = d.dir + PI - B.turn;
@@ -306,7 +305,7 @@ function prep(d) {
   const a0 = r(0, TWO_PI);
   kinds.forEach(([S, kind], i) => {
     const a = a0 + (TWO_PI * i) / kinds.length + r(-1, 1) * SHARDS.JITTER;
-    const r0 = onShell(a - B.turn)[2] * K * sc;
+    const r0 = onShell(a - B.turn)[2] * K;
     const along = 1 + SHARDS.BIAS * Math.cos(a - d.dir);
     const flesh = kind === 'flesh';
     const R = SHARDS.R * r(...SHARDS.R_K) * along * far;
@@ -329,7 +328,7 @@ function prep(d) {
   const side = Math.sin(d.dir - B.turn);
   const sgn = Math.abs(side) > 0.2 ? Math.sign(side) : d.seed > 0.5 ? 1 : -1;
   const len = B.tip - BLADE_ROOT;
-  const mid = (BLADE_ROOT + len / 3 - B.back + B.tremble) * sc; // its centroid, along him
+  const mid = BLADE_ROOT + len / 3 - B.back + B.tremble; // its centroid, along him
   const { jab, crumble } = shatterTimes(d);
   const dust = [];
   for (const [n, S, V] of SPIKE.BITS) {
@@ -553,7 +552,10 @@ function spikeAt(st, d, t) {
     // Round to the hero, from where its spin had it when it began
     const ref = spun(from);
     const to =
-      ref + normalizeAngle(Math.atan2(d.hero.y - y, d.hero.x - x) - ref);
+      ref +
+      normalizeAngle(
+        Math.atan2(d.hero.y / d.scale - y, d.hero.x / d.scale - x) - ref
+      );
     a += (to - a) * k;
     w *= 1 - k;
   }
@@ -571,7 +573,6 @@ function spikeAt(st, d, t) {
 
 function drawSpike(c, st, d, t) {
   const S = st.spike;
-  const sc = d.scale;
   const x0 = -S.len / 3;
   const x1 = (S.len * 2) / 3;
   if (t < S.crumble) {
@@ -596,7 +597,6 @@ function drawSpike(c, st, d, t) {
     const base = c.globalAlpha;
     c.save();
     c.translate(x, y);
-    c.scale(sc, sc);
     c.rotate(a);
     // The whoosh its tip leaves as it spins
     const sweep = Math.max(
@@ -647,7 +647,6 @@ function drawSpike(c, st, d, t) {
     const base = c.globalAlpha;
     c.save();
     c.translate(x, y);
-    c.scale(sc, sc);
     c.rotate(a);
     c.globalCompositeOperation = 'lighter';
     c.fillStyle = `rgb(${COL.hot})`;
@@ -661,7 +660,7 @@ function drawSpike(c, st, d, t) {
   for (const q of S.dust) {
     if (tc >= q.life) continue;
     const u = tc / q.life;
-    const along = (x0 + (x1 - x0) * q.u) * sc;
+    const along = x0 + (x1 - x0) * q.u;
     // Off the blade sideways, plus what its spin gave it
     const v = q.v + w * along;
     const go = drift(v, SPIKE.DUST_TAU, tc);
@@ -752,6 +751,8 @@ export function drawShatter(p, d) {
     c.stroke();
     c.restore();
   }
+  // The plates and the spike in his sizes, as he was drawn
+  c.scale(d.scale, d.scale);
   const shards = drawShards(c, st, d, t);
   const spike = drawSpike(c, st, d, t);
   c.restore();
