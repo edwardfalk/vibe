@@ -297,6 +297,41 @@ describe('GameState', () => {
     expect(gs.level).toBe(2);
   });
 
+  it('each level costs its number times LEVEL_POINTS_PER_LEVEL more; a restart starts the count over', () => {
+    const { FIRST_LEVEL_POINTS, LEVEL_POINTS_PER_LEVEL } = CONFIG.PACING;
+    // Values no constant uses, so a mix-up between them shows
+    CONFIG.PACING.FIRST_LEVEL_POINTS = 70;
+    CONFIG.PACING.LEVEL_POINTS_PER_LEVEL = 37;
+    try {
+      const run = new GameState();
+      const steps = [];
+      for (let level = 2; level <= 4; level++) {
+        run.addScore(run.nextLevelThreshold - run.score);
+        steps.push([
+          run.level,
+          run.previousLevelThreshold,
+          run.nextLevelThreshold,
+        ]);
+      }
+      expect(steps).toEqual([
+        [2, 70, 70 + 2 * 37],
+        [3, 144, 144 + 3 * 37],
+        [4, 255, 255 + 4 * 37],
+      ]);
+      run.restart();
+      expect([run.previousLevelThreshold, run.nextLevelThreshold]).toEqual([
+        0, 70,
+      ]);
+      run.addScore(69);
+      expect(run.level).toBe(1);
+      run.addScore(1);
+      expect(run.level).toBe(2);
+    } finally {
+      CONFIG.PACING.FIRST_LEVEL_POINTS = FIRST_LEVEL_POINTS;
+      CONFIG.PACING.LEVEL_POINTS_PER_LEVEL = LEVEL_POINTS_PER_LEVEL;
+    }
+  });
+
   it('high score persists in localStorage', () => {
     gs.addScore(500);
     // High score is debounced; flush explicitly to verify persistence
