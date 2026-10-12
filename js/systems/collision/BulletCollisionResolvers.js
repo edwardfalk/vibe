@@ -95,10 +95,6 @@ export function handleTankEnergyBallHit(bullet, enemy, deps) {
 
   if (audio) {
     audio.playSound('enemyFrying', enemy.x, enemy.y);
-    // A grunt's death is its pop, on the beat
-    if (enemy.type !== 'grunt') {
-      audio.playSound('explosion', enemy.x, enemy.y);
-    }
   }
 
   enemy.markedForRemoval = true;
@@ -161,9 +157,6 @@ export function handleRegularEnemyBulletHit(
       gameState,
       onDeath: (e) =>
         handleEnemyDeath(e, e.type, e.x, e.y, { dir: bullet.angle }),
-      // A grunt's or a tank's death has its own sound, on the beat
-      deathSound:
-        enemy.type === 'grunt' || enemy.type === 'tank' ? null : 'explosion',
       scorePoints: 8,
       hitX: bullet.x,
       hitY: bullet.y,

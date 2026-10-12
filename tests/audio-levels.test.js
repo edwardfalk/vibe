@@ -510,9 +510,7 @@ async function overKick(page, tiers) {
               pan: 0,
             }),
           ...Object.fromEntries(
-            ['gruntOw', 'enemyFrying', 'stabberOhNo', 'rusherOhNo'].map(
-              (name) => [name, preset(name)]
-            )
+            ['gruntOw', 'enemyFrying'].map((name) => [name, preset(name)])
           ),
         },
         events: {
@@ -521,7 +519,6 @@ async function overKick(page, tiers) {
               'levelUp',
               'gameOver',
               'killStreak',
-              'explosion',
               'tankBallKill',
               'tankShove',
               'shieldBreak',

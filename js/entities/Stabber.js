@@ -85,7 +85,6 @@ class Stabber extends BaseEnemy {
       size: 28,
       health: S.HEALTH,
       speed: S.APPROACH_PX_S / FRAMES_PER_SEC,
-      color: p.color(255, 215, 0),
     };
     super(x, y, 'stabber', stabberConfig, p, audio);
 

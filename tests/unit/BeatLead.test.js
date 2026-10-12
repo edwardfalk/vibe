@@ -199,7 +199,6 @@ describe('what waits for the heard kick waits one lead more', () => {
     };
     const explosionManager = {
       fragmentExplosions: [],
-      addFragmentExplosion: vi.fn(),
     };
     const values = {
       beatClock: clock,

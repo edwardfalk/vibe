@@ -157,6 +157,19 @@ describe("when the stabber's death starts", () => {
   });
 });
 
+describe('a type with no death of its own', () => {
+  it('logs an error and draws nothing: a rusher never dies of damage, he blows', () => {
+    const w = world();
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    w.handler.handleEnemyDeath({ type: 'rusher', x: 0, y: 0 }, 'rusher', 0, 0, {
+      dir: 0,
+    });
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(w.values.explosionManager.fragmentExplosions).toHaveLength(0);
+    expect(w.audio.playSound).not.toHaveBeenCalled();
+  });
+});
+
 describe('what his death keeps from the kill', () => {
   it('the pose he died in: killed before his lock, he is winding up, not dazed', () => {
     const w = world();

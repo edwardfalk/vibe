@@ -12,10 +12,6 @@ import { heardLatencySec, heardKick } from '../../audio/BeatTrack.js';
 const TANK_SHAKE = [8, 15]; // a tank's death shakes the camera: px, frames
 const MS_PER_SEC = 1000;
 
-const DEATH_SOUND = {
-  rusher: 'rusherOhNo',
-};
-
 // Grunts popping together play the chord's next tone each, in order, then
 // round again; a grunt alone plays the first, the minor third. Strummed this
 // far apart, they read as one chord.
@@ -83,8 +79,9 @@ export class EnemyDeathHandler {
     } else if (enemyType === 'stabber') {
       popsAt = this.stabberDies(enemy, blow, explosionManager, audio);
     } else {
-      explosionManager.addFragmentExplosion(x, y, enemy);
-      audio.playSound(DEATH_SOUND[enemyType] ?? 'enemyOhNo', x, y);
+      // Every type that dies has its own death (a rusher never dies of
+      // damage: he blows)
+      console.error(`No death for a ${enemyType}`);
     }
 
     // Call-and-response: notify nearby same-type enemies. Grunts popping

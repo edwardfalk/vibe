@@ -12,7 +12,6 @@ import { GRUNT_SHOT_NOTES } from '../audio/SoundConfig.js';
 import { GRUNT_VOICES, playedChatterVoice } from '../audio/Instruments.js';
 import { HEALTH_BAR_HEIGHT_PX, HEALTH_BAR_GAP_PX } from './BaseEnemyHelpers.js';
 import {
-  GRUNT_COLORS,
   drawGrunt,
   gruntMuzzle,
   gruntPose,
@@ -48,7 +47,6 @@ class Grunt extends BaseEnemy {
       size: 26,
       health: 2,
       speed: 1.2,
-      color: p.color(...GRUNT_COLORS.body),
     };
     super(x, y, 'grunt', gruntConfig, p, audio);
 

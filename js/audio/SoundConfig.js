@@ -46,15 +46,6 @@ export const SOUND_CONFIG = {
     duration: 0.3,
     sweep: { to: ['1', 1], curve: 'exponential' },
   },
-  explosion: {
-    group: 'feedback',
-    voice: 'game',
-    note: ['1', 3],
-    waveform: 'sawtooth',
-    volume: 0.7 * dB(-3.62), // the mix pass
-    duration: 0.4,
-    sweep: { to: ['b3', 1], curve: 'exponential' },
-  },
   // A shot on one of the tank's intact plates: his fifth, high (his root up
   // there is the hero's tick)
   tankPlateHit: {
@@ -129,33 +120,6 @@ export const SOUND_CONFIG = {
     duration: 0.4,
     tremolo: true,
     sweep: { to: ['1', 2], curve: 'exponential' },
-  },
-  enemyOhNo: {
-    group: 'feedback',
-    voice: 'game',
-    note: ['1', 5],
-    waveform: 'sawtooth',
-    volume: 0.35,
-    duration: 0.4,
-    sweep: { to: ['1', 3], curve: 'exponential' },
-  },
-  stabberOhNo: {
-    group: 'feedback',
-    voice: 'stabber',
-    note: ['b7', 5],
-    waveform: 'triangle',
-    volume: 0.3 * dB(-5.59), // the mix pass
-    duration: 0.35,
-    sweep: { to: ['b6', 3], curve: 'exponential' },
-  },
-  rusherOhNo: {
-    group: 'feedback',
-    voice: 'rusher',
-    note: ['b7', 5],
-    waveform: 'sawtooth',
-    volume: 0.4 * dB(-7.04), // the mix pass
-    duration: 0.5,
-    sweep: { to: ['b7', 2], curve: 'exponential' },
   },
   // The grunts' chatter: the band's whine or squeak (Instruments.js)
   gruntChatter: { synth: 'gruntChatter', group: 'band' },

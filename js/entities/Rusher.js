@@ -2,7 +2,6 @@ import { BaseEnemy } from './BaseEnemy.js';
 import { random, env, clamp01, PI } from '../mathUtils.js';
 import { nextFacing } from './GruntRenderer.js';
 import {
-  RUSHER_COLORS,
   BOOST_ENV_SEC,
   drawRusher,
   drawCountRing,
@@ -51,7 +50,6 @@ class Rusher extends BaseEnemy {
       size: 22,
       health: 1,
       speed: CONFIG.RUSHER.CRUISE_PX_S / FRAMES_PER_SEC,
-      color: p.color(...RUSHER_COLORS.bike),
     };
     super(x, y, 'rusher', rusherConfig, p, audio);
 

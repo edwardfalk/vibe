@@ -108,18 +108,10 @@ const TABLE = {
   tankPlateHit: [['5', 5], null],
   tankResponse: [['5', 1], null],
   stabberHit: [['5', 6], null],
-  stabberOhNo: [
-    ['b7', 5],
-    ['b6', 3],
-  ],
   stabberResponse: [['b6', 6], null],
   rusherCharge: [
     ['b7', 4],
     ['1', 2],
-  ],
-  rusherOhNo: [
-    ['b7', 5],
-    ['b7', 2],
   ],
   rusherHit: [['b7', 4], null],
   rusherResponse: [
@@ -136,14 +128,6 @@ const TABLE = {
   ],
   playerHit: [['5', 3], null],
   lowHealthWarning: [['1', 3], null],
-  explosion: [
-    ['1', 3],
-    ['b3', 1],
-  ],
-  enemyOhNo: [
-    ['1', 5],
-    ['1', 3],
-  ],
   levelUp: [
     ['1', 4],
     ['1', 5],
@@ -159,8 +143,8 @@ const TABLE = {
 };
 
 describe("every preset on the spec's note", () => {
-  it("each of the table's 26 presets plays its note and sweeps to its end", () => {
-    expect(Object.keys(TABLE)).toHaveLength(26);
+  it("each of the table's 22 presets plays its note and sweeps to its end", () => {
+    expect(Object.keys(TABLE)).toHaveLength(22);
     for (const [name, [note, to]] of Object.entries(TABLE)) {
       expect(SOUND_CONFIG[name]?.note, name).toEqual(note);
       expect(SOUND_CONFIG[name]?.sweep?.to ?? null, name).toEqual(to);
@@ -192,8 +176,6 @@ describe('every sound the game plays exists', () => {
     // And the names that reach playSound through a variable
     for (const name of [
       ...['gruntAdvance', 'gruntRetreat'], // his moveSound
-      ...['stabberOhNo', 'rusherOhNo', 'enemyOhNo'], // EnemyDeathHandler
-      'explosion', // BulletCollisionResolvers' deathSound
     ]) {
       expect(SOUND_CONFIG, name).toHaveProperty(name);
     }

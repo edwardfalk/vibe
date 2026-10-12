@@ -76,7 +76,6 @@ function deathWorld(t) {
   };
   const explosionManager = {
     fragmentExplosions: [],
-    addFragmentExplosion: vi.fn(),
   };
   const cameraSystem = { addShake: vi.fn() };
   const values = {
@@ -130,10 +129,9 @@ describe("when the tank's death starts", () => {
     expect(w.audio.playTankDeath.mock.calls[1][2]).toBeCloseTo(at, 9);
   });
 
-  it('with no burst, no cloud, no old "oh no" and no extra explosion; a small shake', () => {
+  it('with no cloud, no old "oh no" and no extra explosion; a small shake', () => {
     const w = deathWorld(1.13);
     w.kill({ dir: 0 });
-    expect(w.explosionManager.addFragmentExplosion).not.toHaveBeenCalled();
     const sounds = w.audio.playSound.mock.calls.map(([k]) => k);
     expect(sounds).not.toContain('tankOhNo');
     expect(sounds).not.toContain('explosion');
