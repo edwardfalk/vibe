@@ -521,6 +521,23 @@ describe('the bang kills the tank it is on', () => {
     expect(other.health).toBeLessThan(other.maxHealth);
   });
 
+  it("reaches an alien whose hit radius comes inside its ring, as a rusher's blast does, and sparks where it hurts him", () => {
+    const w = tankWorld({ hero: { x: 3000, y: 0 } });
+    const t = w.tank(0, 0);
+    const s = 50 * CONFIG.TANK_LOOK.ART_SCALE;
+    const back = tankBackPoint(t.x, t.y, s, t.facing);
+    // His centre past the ring, his shoulders inside it
+    const other = w.tank(back.x + CONFIG.BOMB.RADIUS_PX + 10, back.y);
+    expect(other.hitRadius).toBeGreaterThan(10);
+    const { explosionManager } = blowOn(w, t, [t, other]);
+    expect(other.health).toBeLessThan(other.maxHealth);
+    expect(explosionManager.addExplosion).toHaveBeenCalledWith(
+      other.x,
+      other.y,
+      'hit'
+    );
+  });
+
   it('a bomb whose tank died first still blows where he was, with no lethal hit for anyone', () => {
     const w = tankWorld({ hero: { x: 3000, y: 0 } });
     const t = w.tank(0, 0);

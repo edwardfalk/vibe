@@ -15,12 +15,11 @@
  */
 import { floor, clamp01 } from '../mathUtils.js';
 import { CONFIG } from '../config.js';
-import { DAMAGE_RESULT } from '../shared/DamageResult.js';
 import { TANK_COLORS, tankBackPoint } from '../entities/TankRenderer.js';
 import { hash01 } from '../entities/RusherRenderer.js';
 import { COMIC } from '../effects/explosions/BombBlast.js';
 import { BOMB_PLANTED, COUNTDOWN, TANK_UH_OH } from '../audio/DialogueLines.js';
-import { killPoints } from '../shared/DamageResultHandler.js';
+import { handleDamageResult } from '../shared/DamageResultHandler.js';
 
 const COUNT_EVERY_BEATS = 2;
 const SEED_Y = 7.31; // folds y into a bang's seed, so bombs on one row differ
@@ -55,10 +54,11 @@ const backOf = (tank) =>
 const fuseOf = (bomb, beats) =>
   beats - Math.ceil(bomb.plantedAt + CONFIG.BOMB.COUNT_LEAD_BEATS);
 // Its damage at a point: from hi at its centre to lo at its reach, 0 beyond;
-// never above hi, so a max of 0 deals none
-function blastAt(bomb, x, y, lo, hi) {
+// never above hi, so a max of 0 deals none. An alien counts once his hit
+// radius (`reach`) comes inside, as a rusher's blast and the clouds count him
+function blastAt(bomb, x, y, lo, hi, reach = 0) {
   const R = CONFIG.BOMB.RADIUS_PX;
-  const d = Math.hypot(x - bomb.x, y - bomb.y);
+  const d = Math.hypot(x - bomb.x, y - bomb.y) - reach;
   if (d >= R) return 0;
   return Math.min(hi, Math.max(lo, floor(hi * (1 - d / R))));
 }
@@ -110,7 +110,6 @@ export function updateBombs(context) {
     gameState,
     collisionSystem,
     enemyDeathHandler,
-    floatingText,
     beatClock,
   } = context;
   if (!activeBombs || !enemies || !beatClock) return;
@@ -193,7 +192,8 @@ export function updateBombs(context) {
         enemy.x,
         enemy.y,
         B.ENEMY_DAMAGE_MIN,
-        B.ENEMY_DAMAGE_MAX
+        B.ENEMY_DAMAGE_MAX,
+        enemy.hitRadius
       );
       // Its own tank dies whatever the damage sliders say
       if (!reached && enemy.id !== bomb.tankId) continue;
@@ -201,44 +201,27 @@ export function updateBombs(context) {
         enemy.id === bomb.tankId
           ? Math.max(reached, enemy.health || 0)
           : reached;
-      const damageResult = enemy.takeDamage(damage, null, 'bomb');
-
-      if (damageResult === DAMAGE_RESULT.DAMAGED) {
-        if (floatingText) {
-          floatingText.addDamage(
-            enemy.x,
-            enemy.y - (enemy.size || 0) * 0.5,
-            damage
-          );
-        }
-      }
-
-      if (damageResult === DAMAGE_RESULT.DIED) {
+      handleDamageResult(enemy.takeDamage(damage, null, 'bomb'), enemy, {
+        explosionManager,
+        gameState,
+        scorePoints: 20,
         // A blast, away from the bomb, and the bomb's: a tank it kills starts
         // dying with the bang, at its start
-        const blow = {
+        blow: {
           dir: Math.atan2(enemy.y - bomb.y, enemy.x - bomb.x),
           blast: true,
           bomb: true,
           at: bangAt,
-        };
-        (enemyDeathHandler ?? collisionSystem)?.handleEnemyDeath(
-          enemy,
-          enemy.type,
-          enemy.x,
-          enemy.y,
-          blow
-        );
-        enemy.markedForRemoval = true;
-        if (gameState) {
-          gameState.addKill();
-          gameState.addScore(killPoints(enemy, 20));
-        }
-      } else if (damageResult === DAMAGE_RESULT.EXPLODING) {
-        if (explosionManager) {
-          explosionManager.addExplosion(enemy.x, enemy.y, 'hit');
-        }
-      }
+        },
+        onDeath: (e, blow) =>
+          (enemyDeathHandler ?? collisionSystem)?.handleEnemyDeath(
+            e,
+            e.type,
+            e.x,
+            e.y,
+            blow
+          ),
+      });
     }
 
     activeBombs.splice(i, 1);
