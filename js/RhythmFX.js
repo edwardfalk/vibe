@@ -68,20 +68,14 @@ export class RhythmFX {
     }
   }
 
-  /**
-   * Draw enemy attack telegraph rings
-   */
-  drawAttackTelegraphs(p, cameraSystem) {
+  /** Draw enemy attack telegraph rings, in the world (under the camera) */
+  drawAttackTelegraphs(p) {
     if (!this._getBeatClock() || this.telegraphs.length === 0) return;
 
     p.push();
 
     for (const telegraph of this.telegraphs) {
-      // Convert world position to screen position
-      const at = telegraph.owner ?? telegraph;
-      const { x: screenX, y: screenY } = cameraSystem
-        ? cameraSystem.worldToScreen(at.x, at.y)
-        : at;
+      const { x, y } = telegraph.owner ?? telegraph;
 
       // Calculate ring size based on beats until attack
       const progress = 1 - min(1, max(0, telegraph.beatsUntil / 2));
@@ -111,13 +105,13 @@ export class RhythmFX {
       p.noFill();
       p.stroke(r, g, b, alpha);
       p.strokeWeight(2 + progress * 2);
-      p.ellipse(screenX, screenY, currentRadius * 2, currentRadius * 2);
+      p.ellipse(x, y, currentRadius * 2, currentRadius * 2);
 
       // Draw inner dot pulsing
       const pulse = sin(Date.now() * 0.01) * 0.3 + 0.7;
       p.fill(r, g, b, alpha * pulse);
       p.noStroke();
-      p.ellipse(screenX, screenY, 6 * pulse, 6 * pulse);
+      p.ellipse(x, y, 6 * pulse, 6 * pulse);
     }
 
     p.pop();

@@ -286,6 +286,12 @@ function drawGame(p) {
     window.audio.drawTexts(p);
   }
 
+  // The grunts' warning rings, in the world so they shake with their
+  // grunts; not while paused or over, when they would freeze
+  if (gameState?.gameState === 'playing') {
+    window.rhythmFX?.drawAttackTelegraphs(p);
+  }
+
   if (cameraSystem) {
     cameraSystem.removeTransform();
   }
