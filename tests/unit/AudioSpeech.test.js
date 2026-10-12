@@ -317,7 +317,7 @@ describe('a bubble that waits for its line', () => {
     const drawn = () => calls.filter(([k]) => k === 'text').map(([, t]) => t);
     const frame = (now) => {
       updateActiveTexts(texts, now);
-      drawActiveTexts(p, texts, false, 0, 0, null, now);
+      drawActiveTexts(p, texts, now);
     };
     frame(0.9);
     frame(0.99);
@@ -352,10 +352,10 @@ describe('a bubble that waits for its line', () => {
     const { p, calls } = transformP5();
     const drawn = () => calls.filter(([k]) => k === 'text').map(([, t]) => t);
     updateActiveTexts(texts, 0);
-    drawActiveTexts(p, texts, false, 0, 0, null, 0);
+    drawActiveTexts(p, texts, 0);
     expect(drawn()).toEqual(['A']);
     updateActiveTexts(texts); // no audio clock: every bubble shows
-    drawActiveTexts(p, texts, false, 0, 0, null);
+    drawActiveTexts(p, texts);
     expect(drawn()).toEqual(['A', 'A', 'B']);
   });
 });

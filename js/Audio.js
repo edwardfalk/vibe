@@ -15,7 +15,6 @@
 // Requires p5.js in instance mode: all p5 functions/vars must use the 'p' parameter (e.g., p.ellipse, p.fill)
 import { random, floor, dB } from './mathUtils.js';
 import { createContextAccessor } from './shared/ContextAccessor.js';
-import { drawGlow } from './effects/glowUtils.js';
 import {
   AMBIENT_SOUNDS,
   resolveSoundSourcePosition,
@@ -143,9 +142,6 @@ export class Audio {
 
     // Speech bubbles and floating text
     this.activeTexts = [];
-    this.showBeatIndicator = false;
-    this.beatX = 0;
-    this.beatY = 0;
 
     this.sounds = { ...SOUND_CONFIG };
   }
@@ -986,15 +982,7 @@ export class Audio {
   }
 
   drawTexts(p) {
-    drawActiveTexts(
-      p,
-      this.activeTexts,
-      this.showBeatIndicator,
-      this.beatX,
-      this.beatY,
-      drawGlow,
-      this.textTime
-    );
+    drawActiveTexts(p, this.activeTexts, this.textTime);
   }
 
   // Control methods

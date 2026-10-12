@@ -30,15 +30,7 @@ export function updateActiveTexts(activeTexts, now = Infinity) {
   }
 }
 
-export function drawActiveTexts(
-  p,
-  activeTexts,
-  showBeatIndicator,
-  beatX,
-  beatY,
-  drawGlowFn,
-  now = Infinity
-) {
+export function drawActiveTexts(p, activeTexts, now = Infinity) {
   p.push();
   p.textAlign(p.CENTER, p.CENTER);
 
@@ -81,10 +73,6 @@ export function drawActiveTexts(
     p.strokeWeight(strokeWeightValue);
     p.fill(textColor[0], textColor[1], textColor[2], clampedAlpha);
     p.text(textObj.text, screenX, screenY);
-  }
-
-  if (showBeatIndicator && typeof drawGlowFn === 'function') {
-    drawGlowFn(p, beatX, beatY, 40, [255, 255, 100], 0.5);
   }
 
   p.pop();
