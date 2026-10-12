@@ -90,6 +90,16 @@ describe('the hero grid', () => {
     expect(clock.swingOn).toBe(true);
   });
 
+  it('a restart turns it off even when a slower tempo brought the bar number back to 0', () => {
+    clock.wantSwing(true);
+    at(4.1);
+    expect(clock.swingOn).toBe(true);
+    clock.setBPM(30); // 2.05 s is beat 1.025: bar 0, and swing still wanted
+    expect(clock.swingOn).toBe(true);
+    clock.reset();
+    expect(clock.swingOn).toBe(false);
+  });
+
   it('times the hero eighths: on one, and the time to the next', () => {
     clock.wantSwing(true);
     at(4.01);
