@@ -89,6 +89,7 @@ describe('his death', () => {
       expect(death.active).toBe(true);
     }
     expect(p.drawingContext.depth).toBe(0);
+    expect(p.drawingContext.globalAlpha).toBe(1); // he fades only himself
     CONFIG.DEATHS.LINGER = 2; // remains stay twice as long
     now = 0.25 + DEATH_SEC * 1.5;
     death.draw(p);
