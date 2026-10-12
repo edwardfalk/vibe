@@ -453,6 +453,19 @@ test.describe('Gameplay Probes', () => {
     ]) {
       await expect(page.locator('#tunePanel')).toContainText(`${label}:`);
     }
+    // The rusher's voice: a named choice sets that whole voice
+    const voice = page
+      .locator('#tunePanel label')
+      .filter({ hasText: 'SPEAKERS.rusher:' });
+    await expect(voice).toContainText('SPEAKERS.rusher: singer');
+    await voice.locator('select').selectOption('ringmaster');
+    await expect(voice).toContainText('SPEAKERS.rusher: ringmaster');
+    expect(
+      await page.evaluate(async () => {
+        const { CONFIG } = await import('/js/config.js');
+        return CONFIG.SPEECH.SPEAKERS.rusher.voice.variant;
+      })
+    ).toBe('announcer');
   });
 
   test('?tune panel clicks during play do not shoot or keep focus', async ({
@@ -946,9 +959,12 @@ test.describe('Gameplay Probes', () => {
       const { spoken } = await import('/js/audio/speech/Voicebox.js');
       const { PLAYER_LINES } = await import('/js/audio/DialogueLines.js');
       const vb = window.audio.voicebox;
-      const engine = vb.config.SPEAKERS.player.engine;
-      return PLAYER_LINES.death.map((line) =>
-        vb.lines.has(`player:${spoken(engine, line, vb.config.RESPELL)}`)
+      const setup = vb.config.SPEAKERS.player;
+      return PLAYER_LINES.death.map(
+        (line) =>
+          !!vb.lines
+            .get(setup)
+            ?.has(spoken(setup.engine, line, vb.config.RESPELL))
       );
     });
     expect(ready).toEqual([true, true, true, true]);

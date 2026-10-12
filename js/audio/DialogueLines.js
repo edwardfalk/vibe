@@ -69,34 +69,37 @@ export const GRUNT_LINES = [
   "I'M CONFUSED!",
 ];
 
+// The stuntman (docs/superpowers/specs/2026-10-02-stuntman-rusher-design.md),
+// sure every time he'll land the stunt; lines redone 2026-10-12. Each moment
+// has its own. His chatter shows off to the crowd
 export const RUSHER_LINES = [
-  'KAMIKAZE TIME!',
-  'SUICIDE RUN!',
-  'INCOMING!',
-  'BOOM!',
-  'EXPLOSIVE DIARRHEA!',
-  'LEEROY JENKINS!',
-  'WHEEE!',
-  "CAN'T STOP!",
-  'YOLO!',
-  'KAMIKAZE PIZZA PARTY!',
-  // The stuntman (docs/superpowers/specs/2026-10-02-stuntman-rusher-design.md)
   'WATCH THIS!',
   'NO HANDS!',
-  'TA-DA!',
+  'KAMIKAZE TIME!',
+  'LOOK MA!',
+  'I DO MY OWN STUNTS!',
+  'IS ANYONE FILMING?',
+  'TOTALLY SAFE!',
+  'TRUST ME!',
+  'ROLL CAMERA!',
+  'DID YOU SEE THAT?',
 ];
 
+// His battle cry commits to the charge
 export const RUSHER_BATTLE_CRIES = [
   'INCOMING!',
-  'BOOM!',
   'KAMIKAZE!',
   'WHEEE!',
-  'YOLO!',
   "CAN'T STOP!",
-  'EXPLOSIVE DIARRHEA!',
-  'LEEROY JENKINS!',
-  'KAMIKAZE PIZZA PARTY!',
+  'HOLD MY BEER!',
+  'GERONIMO!',
+  'HERE GOES!',
+  'NO BRAKES!',
+  'YEEHAW!',
 ];
+
+// His punchline, on the beat before he blows (Rusher.js)
+export const RUSHER_BLAST_LINES = ['TA-DA!', 'NAILED IT!', 'YOLO!'];
 
 export const STABBER_LINES = [
   'STAB!',
@@ -184,7 +187,7 @@ export const SPEAKER_LINES = {
   player: distinct(...Object.values(PLAYER_LINES), [BOMB_PLANTED], COUNTDOWN),
   grunt: distinct(GRUNT_LINES, [GRUNT_OW]),
   stabber: distinct(STABBER_LINES, STAB_WARNINGS),
-  rusher: distinct(RUSHER_LINES, RUSHER_BATTLE_CRIES),
+  rusher: distinct(RUSHER_LINES, RUSHER_BATTLE_CRIES, RUSHER_BLAST_LINES),
   tank: distinct(TANK_LINES, TANK_ANGER_LINES, TANK_CALM_LINES, [
     TANK_FIRE,
     TANK_CHARGING,

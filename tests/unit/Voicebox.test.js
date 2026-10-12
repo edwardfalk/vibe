@@ -413,6 +413,29 @@ describe("Voicebox: the game's side", () => {
     expect((await second).duration).toBe(0.5);
   });
 
+  it("a speaker given a new setup (?tune's rusher voice) renders afresh, and the old one's lines are kept", () => {
+    const { voicebox, worker } = setup();
+    // ?tune's pick writes CONFIG, so the game's Voicebox reads CONFIG's own
+    expect(voicebox.config).toBe(CONFIG.SPEECH);
+    const { SPEAKERS } = voicebox.config;
+    const first = SPEAKERS.rusher;
+    const other = { ...first, voice: { ...first.voice, pitch: 99 } };
+    try {
+      voicebox.prepare('rusher', 'YOLO!');
+      SPEAKERS.rusher = other;
+      voicebox.prepare('rusher', 'YOLO!');
+      expect(worker.posted.map((m) => m.voice.pitch)).toEqual([
+        first.voice.pitch,
+        99,
+      ]);
+      SPEAKERS.rusher = first;
+      voicebox.prepare('rusher', 'YOLO!');
+      expect(worker.posted).toHaveLength(2);
+    } finally {
+      SPEAKERS.rusher = first;
+    }
+  });
+
   it("a line it can't render is logged once and dropped, and speech stays on", async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { voicebox, worker, reply } = setup();

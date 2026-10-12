@@ -285,25 +285,30 @@ test('in a running game every line starts on the grid, and the count on its beat
     { timeout: 5000 }
   );
   // The shout and the count were rendered ahead, when the audio started,
-  // not when they're due
-  expect(
-    await page.evaluate(() =>
-      ['TIMEBOMB!', '3', '2', '1'].every((w) =>
-        window.audio.voicebox.lines.has(`player:${w}`)
-      )
-    )
-  ).toBe(true);
-  // So was the tank's "UH, OH", keyed by what his engine says
+  // not when they're due; so were the tank's "UH, OH" and the rusher's
+  // punchlines. Each is cached under its speaker's voice by what his engine says
   expect(
     await page.evaluate(async () => {
       const { spoken } = await import('/js/audio/speech/Voicebox.js');
-      const { CONFIG } = await import('/js/config.js');
-      const { TANK_UH_OH } = await import('/js/audio/DialogueLines.js');
-      const { engine } = CONFIG.SPEECH.SPEAKERS.tank;
-      const words = spoken(engine, TANK_UH_OH, CONFIG.SPEECH.RESPELL);
-      return window.audio.voicebox.lines.has(`tank:${words}`);
+      const { TANK_UH_OH, RUSHER_BLAST_LINES } =
+        await import('/js/audio/DialogueLines.js');
+      const vb = window.audio.voicebox;
+      const ready = (speaker, lines) => {
+        const setup = vb.config.SPEAKERS[speaker];
+        return lines.every(
+          (line) =>
+            !!vb.lines
+              .get(setup)
+              ?.has(spoken(setup.engine, line, vb.config.RESPELL))
+        );
+      };
+      return [
+        ready('player', ['TIMEBOMB!', '3', '2', '1']),
+        ready('tank', [TANK_UH_OH]),
+        ready('rusher', RUSHER_BLAST_LINES),
+      ];
     })
-  ).toBe(true);
+  ).toEqual([true, true, true]);
   const report = await page.evaluate(async () => {
     const { plantBomb } = await import('/js/systems/BombSystem.js');
     const { SPEAKER_LINES } = await import('/js/audio/DialogueLines.js');

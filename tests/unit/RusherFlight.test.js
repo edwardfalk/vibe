@@ -1,5 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { Rusher } from '../../js/entities/Rusher.js';
+import {
+  RUSHER_LINES,
+  RUSHER_BATTLE_CRIES,
+} from '../../js/audio/DialogueLines.js';
 import { CONFIG } from '../../js/config.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { beatWorld } from './helpers/beatWorld.js';
@@ -85,10 +89,20 @@ describe('the rusher in flight', () => {
     expect(audio.speak).not.toHaveBeenCalled();
     step(1020, R.CRY_DIST_PX - 10, 0);
     expect(audio.speak).toHaveBeenCalledTimes(1);
+    // A battle cry, not his chatter or his punchline
+    expect(RUSHER_BATTLE_CRIES).toContain(audio.speak.mock.calls[0][1]);
     expect(r.speedNow).toBeCloseTo(R.CRUISE_PX_S * R.CHARGE_BOOST, 6);
     step(1505, R.CRY_DIST_PX - 20, 0);
     expect(r.speedNow).toBeCloseTo(R.BOOST_PX_S * R.CHARGE_BOOST, 6);
     expect(audio.speak).toHaveBeenCalledTimes(1);
+  });
+
+  it('chatters from his chatter lines on beats 1 and 3', () => {
+    const { r } = flight();
+    const { lines, gate } = r.getAmbientSpeechConfig();
+    expect(lines).toBe(RUSHER_LINES);
+    expect(gate({ isOnBeat: (beats) => beats.includes(3) })).toBe(true);
+    expect(gate({ isOnBeat: (beats) => beats.includes(2) })).toBe(false);
   });
 
   it('plays rusherCharge on the first new beat after his cry, also when a shot lit him first', () => {

@@ -8,7 +8,8 @@
  * the deaths (DEATHS): the grunt's pop and the Dude's last breath, how
  * long remains stay, and his death scene's length and camera zoom, and the
  * chatter (SPEECH_SETTINGS): the gap between lines, how often each enemy
- * speaks, and the share of the tank's charges he calls out.
+ * speaks, and the share of the tank's charges he calls out, and the rusher's
+ * voice (SPEECH.SPEAKERS.rusher).
  * Voices are tuned in the voice playground (voices.html). Sound and spawn changes apply from the next
  * beat or wave; level thresholds from the next level-up (the first one after
  * a restart); armour on tanks spawned after the change (and the tank's health); the rest at once.
@@ -23,8 +24,45 @@ import {
   CHATTER_CHOICES,
 } from '../audio/Instruments.js';
 
+// The rusher's voices from the 2026-10-12 voice studies, to try in play:
+// the singer is the game's, the old one his voice before it.
+// shortcut: trial voices; once one is picked, put it in config.js and
+// delete these and their knob
+const RUSHER_VOICES = {
+  singer: CONFIG.SPEECH.SPEAKERS.rusher,
+  ringmaster: {
+    engine: 'espeak',
+    voice: { variant: 'announcer', pitch: 55, range: 60, speed: 175 },
+    chain: [
+      { type: 'bandpass', freq: 1800, q: 2 },
+      { type: 'drive', amount: 8 },
+      { type: 'slapback', time: 0.12, feedback: 0.2, mix: 0.25 },
+    ],
+    levelDb: 0,
+  },
+  cousin: {
+    engine: 'espeak',
+    voice: { variant: 'Tweaky', pitch: 72, range: 50, speed: 170 },
+    chain: [
+      { type: 'drive', amount: 5 },
+      { type: 'tremolo', rate: 6, depth: 0.2 },
+    ],
+    levelDb: 0,
+  },
+  old: {
+    engine: 'espeak',
+    voice: { variant: 'Tweaky', pitch: 72, range: 90, speed: 235 },
+    chain: [
+      { type: 'drive', amount: 5 },
+      { type: 'tremolo', rate: 14, depth: 0.6 },
+    ],
+    levelDb: 0,
+  },
+};
+
 // [group, key, options]: group is a path under CONFIG; options is
-// [min, max, step] for a slider or a list of choices for a dropdown;
+// [min, max, step] for a slider, a list of choices for a dropdown, or an
+// object of named choices for a dropdown that sets the chosen value;
 // booleans get a checkbox.
 const BEAT_CLOCK = 'BEAT_CLOCK';
 const KICK = 'BEAT_TRACK.KICK';
@@ -235,6 +273,7 @@ const KNOBS = [
   [`${SPEECH}.RUSHER`, 'CHANCE', [0, 1, 0.05]],
   [`${SPEECH}.TANK`, 'CHANCE', [0, 1, 0.05]],
   [`${SPEECH}.TANK`, 'CALLOUT_CHANCE', [0, 1, 0.05]],
+  ['SPEECH.SPEAKERS', 'rusher', RUSHER_VOICES],
 ];
 
 // The top-level CONFIG groups the knobs live in, in order: the JSON to copy
@@ -299,12 +338,27 @@ export function createTunePanel() {
     const row = document.createElement('label');
     row.style.cssText = 'display:block;margin:6px 0;';
     const name = document.createElement('div');
+    // Named choices show the name of the one set
+    const named = !Array.isArray(options) && typeof value === 'object';
+    const shown = () =>
+      named
+        ? Object.keys(options).find((n) => options[n] === settings[key])
+        : settings[key];
     const readout = () => {
-      name.textContent = `${group}.${key}: ${settings[key]}`;
+      name.textContent = `${group}.${key}: ${shown()}`;
     };
 
     let input;
-    if (typeof value === 'boolean') {
+    if (named) {
+      const select = document.createElement('select');
+      select.style.maxWidth = '100%';
+      select.replaceChildren(
+        ...Object.keys(options).map((c) => new Option(c, c))
+      );
+      select.value = shown();
+      select.onchange = () => (settings[key] = options[select.value]);
+      input = select;
+    } else if (typeof value === 'boolean') {
       input = document.createElement('input');
       input.type = 'checkbox';
       input.checked = value;

@@ -7,7 +7,9 @@ import {
   TANK_ANGER_LINES,
   TANK_CALM_LINES,
   STAB_WARNINGS,
+  RUSHER_LINES,
   RUSHER_BATTLE_CRIES,
+  RUSHER_BLAST_LINES,
   PLAYER_LINES,
   MAX_FIGHT_WORDS,
   getPlayerDialogueLine,
@@ -40,7 +42,7 @@ describe('dialogue lines', () => {
       expect.arrayContaining(STAB_WARNINGS)
     );
     expect(SPEAKER_LINES.rusher).toEqual(
-      expect.arrayContaining(RUSHER_BATTLE_CRIES)
+      expect.arrayContaining([...RUSHER_BATTLE_CRIES, ...RUSHER_BLAST_LINES])
     );
     // The hero shouts as he plants his bomb, then counts it down (BombSystem.js)
     expect(SPEAKER_LINES.player).toEqual(
@@ -65,6 +67,15 @@ describe('dialogue lines', () => {
         'THAT CARPET REALLY TIED THE ROOM TOGETHER.',
         'NO CARPET HERE EITHER.',
       ])
+    );
+  });
+
+  it("gives each of the rusher's moments its own lines: chatter, battle cry, punchline", () => {
+    const pools = [RUSHER_LINES, RUSHER_BATTLE_CRIES, RUSHER_BLAST_LINES];
+    const all = pools.flat();
+    expect(new Set(all).size).toBe(all.length);
+    expect(RUSHER_BLAST_LINES).toEqual(
+      expect.arrayContaining(['TA-DA!', 'NAILED IT!', 'YOLO!'])
     );
   });
 
