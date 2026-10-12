@@ -414,3 +414,30 @@ describe('a tank the bomb kills dies with the bang', () => {
     );
   });
 });
+
+// The bassist plays between the eighths, on his let: a synth given a time
+// books at it exactly, with the guard (the bassist spec, Timing)
+describe('a synth given a time books at it, not its nearest eighth', () => {
+  it('beatTiming books an exact target at its time, and rounds without', () => {
+    const { game } = ledAudio();
+    const let3 = 3 + 1 / 3; // a let, 83 ms past the eighth at 3.25
+    expect(game(3.21).beatTiming({ target: let3, exact: true }).at).toBe(let3);
+    expect(game(3.21).beatTiming({ target: let3 }).at).toBe(3.25);
+  });
+
+  it('an exact target less than a render quantum ahead plays at once', () => {
+    const { game } = ledAudio();
+    const t = game(3.03).beatTiming({ target: 3.006, exact: true });
+    expect(t.at).toBeCloseTo(3.005, 9); // the audio's now
+  });
+
+  it("playSound passes a synth caller's time on, booked exactly", () => {
+    const { made, game } = ledAudio();
+    game(3.31).playSound('tankShot', 100, 0, { at: 3 + 1 / 3 });
+    const starts = made
+      .filter((n) => n.start.mock.calls.length)
+      .map((n) => n.start.mock.calls[0][0]);
+    expect(starts.length).toBeGreaterThan(0);
+    for (const t of starts) expect(t).toBeCloseTo(3 + 1 / 3, 9);
+  });
+});
