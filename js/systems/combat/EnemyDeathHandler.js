@@ -6,6 +6,7 @@ import {
   StabberDeath,
   stabberDeathRecord,
 } from '../../entities/StabberDeath.js';
+import { BassistDeath } from '../../entities/BassistDeath.js';
 import { LEAD_SEC } from '../../audio/speech/Voicebox.js';
 import { heardLatencySec, heardKick } from '../../audio/BeatTrack.js';
 
@@ -78,6 +79,8 @@ export class EnemyDeathHandler {
       cameraSystem?.addShake(...TANK_SHAKE);
     } else if (enemyType === 'stabber') {
       popsAt = this.stabberDies(enemy, blow, explosionManager, audio);
+    } else if (enemyType === 'bassist') {
+      popsAt = this.bassistDies(enemy, blow, explosionManager, audio);
     } else {
       // Every type that dies has its own death (a rusher never dies of
       // damage: he blows)
@@ -224,6 +227,33 @@ export class EnemyDeathHandler {
       })
     );
     audio.playStabberDeath?.(enemy.x, enemy.y, at, record);
+    return at;
+  }
+
+  /**
+   * A bassist's death (BassistDeath.js): as a tank's, with the bang or on
+   * the next eighth, seen when it is heard, his last string's twang sliding
+   * down onto the hum's root. His kin answer an eighth after it starts.
+   * Returns its start's audio time.
+   */
+  bassistDies(enemy, blow, explosionManager, audio) {
+    // Audio first, as for a grunt: the death's times are on the clock it is read by
+    audio.ensureAudioContext?.();
+    const clock = this.getContextValue('beatClock');
+    const at = deathStart(blow, clock, clock.nowSec());
+    explosionManager.fragmentExplosions.push(
+      new BassistDeath({
+        x: enemy.x,
+        y: enemy.y,
+        size: enemy.size,
+        aim: enemy.aimAngle,
+        dir: blow?.dir ?? enemy.aimAngle,
+        seed: enemy.lookSeed,
+        startsAt: at + heardLatencySec(audio.audioContext, clock),
+        now: () => clock.nowSec(),
+      })
+    );
+    audio.playSound('bassistDeath', enemy.x, enemy.y, { at });
     return at;
   }
 }

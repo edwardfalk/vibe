@@ -14,7 +14,7 @@ export const VOICE_DEGREES = {
   rusher: ['b7', '1'],
   hero: ['1', '5'],
   game: ['1', 'b3', '5', 'b7'],
-  bassist: ['b3', '4', '5', 'b7'], // his line, walking up into the root on ONE
+  bassist: ['1', 'b3', '4', '5', 'b7'], // his line walks up b3, 4, 5, b7 into the root
 };
 
 // A grunt shoots one of these for life, by his look's seed (Grunt.shotNote):
@@ -197,6 +197,25 @@ export const SOUND_CONFIG = {
     volume: 0.3,
     duration: 0.3,
     hit: true, // the hit's one sound; played without his health, it never climbs
+  },
+  // His last string's twang, sliding down onto the hum's root as he dies
+  bassistDeath: {
+    group: 'feedback',
+    voice: 'bassist',
+    note: ['b7', 3],
+    sweep: { to: ['1', 2], curve: 'exponential' },
+    waveform: 'sawtooth',
+    volume: 0.35,
+    duration: 0.6,
+  },
+  // A bassist's answer to his kin's death: a pluck on his 5
+  bassistResponse: {
+    group: 'band',
+    voice: 'bassist',
+    note: ['5', 3],
+    waveform: 'triangle',
+    volume: 0.25,
+    duration: 0.12,
   },
   stabberHit: {
     group: 'feedback',

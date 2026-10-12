@@ -24,6 +24,32 @@ const EPS = 1e-6; // slack on beat positions, for floating-point error
 const SHELL_RGB = [150, 95, 55];
 const SINEW_RGB = [235, 225, 200];
 
+/**
+ * His figure at the origin, facing `aim`; `slack` (0..1) curls his sinews
+ * as in his death, and `alpha` (0..1) fades him. shortcut: the stand-in
+ * figure, until his look is picked
+ */
+export function drawBassistFigure(p, s, aim, slack = 0, alpha = 1) {
+  const a = 255 * alpha;
+  p.push();
+  p.rotate(aim + Math.PI / 2);
+  p.noStroke();
+  p.fill(...SHELL_RGB, a);
+  p.ellipse(0, s * 0.25, s * 0.9, s * 0.7);
+  p.ellipse(0, -s * 0.15, s * 0.7, s * 0.55);
+  p.stroke(...SINEW_RGB, a);
+  p.strokeWeight(1);
+  p.noFill();
+  for (let i = 0; i < STRINGS; i++) {
+    const x = (i - (STRINGS - 1) / 2) * s * 0.08;
+    // Slack, each curls back up from the bridge
+    const top = -s * 0.6 + slack * s * 0.7;
+    const curl = slack * s * 0.25 * (i % 2 ? 1 : -1);
+    p.bezier(x, s * 0.4, x + curl, s * 0.1, x - curl, top, x + curl, top);
+  }
+  p.pop();
+}
+
 /** Whether a bassist is about: the hero's grid swings while one is (BeatClock.wantSwing) */
 export const bassistAbout = (enemies) =>
   enemies.some((e) => e.type === 'bassist' && !e.markedForRemoval);
@@ -210,17 +236,7 @@ export class Bassist extends BaseEnemy {
 
   drawFigure(p, s) {
     this.applyHitShake(p);
-    p.rotate(this.aimAngle + Math.PI / 2);
-    p.noStroke();
-    p.fill(...SHELL_RGB);
-    p.ellipse(0, s * 0.25, s * 0.9, s * 0.7);
-    p.ellipse(0, -s * 0.15, s * 0.7, s * 0.55);
-    p.stroke(...SINEW_RGB);
-    p.strokeWeight(1);
-    for (let i = 0; i < STRINGS; i++) {
-      const x = (i - (STRINGS - 1) / 2) * s * 0.08;
-      p.line(x, s * 0.4, x, -s * 0.6);
-    }
+    drawBassistFigure(p, s, this.aimAngle);
   }
 }
 

@@ -83,6 +83,7 @@ const BAND = [
   'rusherResponse',
   'bassPluck',
   'bassSlap',
+  'bassistResponse',
 ];
 const groupOf = (name) =>
   DRUMS.includes(name) ? 'drums' : BAND.includes(name) ? 'band' : 'feedback';
