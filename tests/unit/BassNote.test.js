@@ -82,10 +82,11 @@ describe('the pass that drives his notes', () => {
 
   it("sets each note's velocity along its own line, per 60 Hz frame", () => {
     const w = bassistWorld();
-    w.at(4.1 * 500);
+    w.at(letMs(4) + 25); // inside let 1's push
     const n = note(w.b.id, Math.PI / 2);
     driveBassNotes([n], w.values.enemies, w.clock);
     const speed = noteSpeed(w.b, w.clock.getBeatPosition(), 0.5);
+    expect(speed).toBeGreaterThan(CONFIG.BASSIST.NOTE_GLIDE_PX_S * 2); // pushed
     expect(n.velocity.x).toBeCloseTo(0, 9);
     expect(n.velocity.y).toBeCloseTo(speed / 60, 9);
   });

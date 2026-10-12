@@ -412,7 +412,8 @@ export function noteSpeed(bassist, beats, beatSec) {
   return CONFIG.BASSIST.NOTE_GLIDE_PX_S + notePush(bassist, beats, beatSec);
 }
 
-// The push part of noteSpeed, px/s
+// The push part of noteSpeed, px/s. shortcut: read at the frame's beat
+// position, so a long frame loses a little of it; integrate it if that shows
 function notePush(bassist, beats, beatSec) {
   const and = CONFIG.SWING.AND_AT;
   const n = Math.floor(beats - and + EPS);
