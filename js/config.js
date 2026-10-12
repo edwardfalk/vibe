@@ -497,6 +497,12 @@ const CONFIG = {
     STEER_SEC: 0.35, // how fast his drift eases to what he wants
     LURCH_PX_S: 160, // each let he plays puffs him on this fast
     PUFF_KEEP: 0.88, // the share of a puff's push kept per 60 Hz frame
+    TURN_SEC: 0.12, // his quick turn to the hero on let 3
+    RECOIL_PX_S: 110, // the slap kicks him back off his aim
+    KNOCK_PX_S: 160, // a shot's push (the stabber's is 480)
+    KNOCK_MAX_PX_S: 500, // capped under steady fire
+    KNOCK_DECAY: 0.85, // the share of it kept per 60 Hz frame
+    MUZZLE_PX: 20, // his note leaves this far along his aim (his scroll's end)
     OCTAVE: 2, // his line's octave (b3, 4, 5, b7)
     HITS_PER_STRING: 3,
     // His note, fired on the slap: it glides at NOTE_GLIDE_PX_S, and each

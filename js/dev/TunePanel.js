@@ -194,6 +194,11 @@ export const KNOBS = [
   [BASSIST, 'HITS_PER_STRING', [1, 10, 1]],
   [BASSIST, 'LURCH_PX_S', [0, 600, 10]],
   [BASSIST, 'PUFF_KEEP', [0.5, 0.98, 0.01]],
+  [BASSIST, 'TURN_SEC', [0.02, 0.5, 0.02]],
+  [BASSIST, 'RECOIL_PX_S', [0, 400, 10]],
+  [BASSIST, 'KNOCK_PX_S', [0, 600, 10]],
+  [BASSIST, 'KNOCK_MAX_PX_S', [0, 1500, 50]],
+  [BASSIST, 'KNOCK_DECAY', [0.5, 0.98, 0.01]],
   [BASSIST, 'OCTAVE', [1, 4, 1]],
   // Above 0, so a note always leaves
   [BASSIST, 'NOTE_GLIDE_PX_S', [10, 300, 5]],

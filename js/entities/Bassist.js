@@ -1,6 +1,13 @@
 import { BaseEnemy } from './BaseEnemy.js';
 import { CONFIG } from '../config.js';
-import { clamp01 } from '../mathUtils.js';
+import {
+  clamp01,
+  smooth,
+  easeOut,
+  env,
+  lerp,
+  normalizeAngle,
+} from '../mathUtils.js';
 import { stalkWant } from './Stabber.js';
 import { volleyGain } from '../systems/GruntSwarm.js';
 import { mod } from './GruntRenderer.js';
@@ -18,6 +25,13 @@ export const SLAP_LET = 3;
 /** His line, one degree a let: walking up b3, 4, 5 into the slap's b7 */
 export const LINE = ['b3', '4', '5', 'b7'];
 const EPS = 1e-6; // slack on beat positions, for floating-point error
+// His telegraph goes white-hot for this last share of a beat before the slap
+const HOT_BEATS = 1 / 3;
+// His look's envelopes, s (the studies page's)
+const KICK_TAU_SEC = 0.12;
+const HIT_TAU_SEC = 0.08;
+const UNCURL_SEC = 0.15; // his scroll opens with the turn on let 3
+const RECURL_BEATS = 0.8; // and curls back this long after the slap's beat
 
 // shortcut: a stand-in figure until Edward picks his look on the studies
 // page (the bassist spec, The creature); the picked one replaces it
@@ -76,6 +90,13 @@ export class Bassist extends BaseEnemy {
       audio
     );
     this.circle = this.lookSeed < 0.5 ? 1 : -1; // which way he circles the hero
+    const hero = this.getContextValue('player');
+    // His own facing: BaseEnemy aims every enemy at the hero each update,
+    // but he holds his between his turns on let 3
+    this.aim = hero ? Math.atan2(hero.y - y, hero.x - x) : 0;
+    this.aimAngle = this.aim;
+    this.turn = null; // { from, to, at (beats) }: his turn on the last let 3
+    this.knock = { x: 0, y: 0 }; // a shot's push, px/s
     this.distance = Infinity; // to the hero, at his last update
     this.toHero = 0;
     this.walk = { x: 0, y: 0 }; // his drift, px/s
@@ -90,15 +111,22 @@ export class Bassist extends BaseEnemy {
     this.lockBar = null; // the bar whose let 3 locked his aim
     this.lockAt = null; // the hero's spot at that let 3: his slap aims there
     this.heroAt = { x, y }; // the hero's spot at his last update
-    this.puffAt = null; // the beat position of the last let he played
-    this.snapAt = null; // and of the last hit that snapped a string
+    // When things happened to him, in beat positions, for drawing (pose)
+    this.puffAt = null; // his last puff, a let he played
+    this.puffDir = 0; // the way it lurched him
+    this.plucked = Array(STRINGS).fill(null); // each sinew's last play
+    this.snapped = Array(STRINGS).fill(null); // and when it snapped
+    this.hitAt = null;
+    this.hitDir = 0;
   }
 
-  /** @override He keeps the beat he is at */
+  /** @override He keeps the beat he is at, and his own facing */
   update(playerX, playerY, deltaTimeMs = CONFIG.GAME_SETTINGS.FRAME_TIME_MS) {
     this.poseBeats =
       this.getContextValue('beatClock')?.getBeatPosition() ?? null;
-    return super.update(playerX, playerY, deltaTimeMs);
+    const result = super.update(playerX, playerY, deltaTimeMs);
+    this.aimAngle = this.aim;
+    return result;
   }
 
   /** He plays the lets this update reached, then drifts in his band round the hero, puffed on by them */
@@ -112,15 +140,39 @@ export class Bassist extends BaseEnemy {
     this.distance = Math.hypot(playerX - this.x, playerY - this.y);
     this.toHero = Math.atan2(playerY - this.y, playerX - this.x);
     const result = this.poseBeats === null ? null : this.playLets();
+    this.turnOn();
     this.steer(deltaTimeMs / 1000);
-    this.velocity.x = (this.walk.x + this.push.x) / FRAMES_PER_SEC;
-    this.velocity.y = (this.walk.y + this.push.y) / FRAMES_PER_SEC;
-    const keep =
-      CONFIG.BASSIST.PUFF_KEEP **
-      (deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS);
-    this.push.x *= keep;
-    this.push.y *= keep;
+    const { x, y } = this.moving();
+    this.velocity.x = x / FRAMES_PER_SEC;
+    this.velocity.y = y / FRAMES_PER_SEC;
+    const B = CONFIG.BASSIST;
+    const frames = deltaTimeMs / CONFIG.GAME_SETTINGS.FRAME_TIME_MS;
+    const puffKeep = B.PUFF_KEEP ** frames;
+    this.push.x *= puffKeep;
+    this.push.y *= puffKeep;
+    const knockKeep = B.KNOCK_DECAY ** frames;
+    this.knock.x *= knockKeep;
+    this.knock.y *= knockKeep;
     return result;
+  }
+
+  /** His velocity, px/s: his drift, his puffs and recoil, and the shots' knocks */
+  moving() {
+    return {
+      x: this.walk.x + this.push.x + this.knock.x,
+      y: this.walk.y + this.push.y + this.knock.y,
+    };
+  }
+
+  /** His quick turn to the hero on let 3, eased over TURN_SEC; else he holds his facing */
+  turnOn() {
+    if (!this.turn || this.poseBeats === null) return;
+    const beatSec =
+      (this.getContextValue('beatClock')?.beatInterval ?? 0) / 1000;
+    const k = clamp01(
+      ((this.poseBeats - this.turn.at) * beatSec) / CONFIG.BASSIST.TURN_SEC
+    );
+    this.aim = lerp(this.turn.from, this.turn.to, easeOut(k));
   }
 
   /**
@@ -133,9 +185,14 @@ export class Bassist extends BaseEnemy {
     const strings = this.strings();
     const result = super.takeDamage(amount, bulletAngle, damageSource);
     if (result === DAMAGE_RESULT.DIED) return result;
+    this.hitAt = this.poseBeats;
+    if (bulletAngle !== null) this.knockAlong(bulletAngle);
     const audio = this.getContextValue('audio');
     if (this.strings() < strings) {
-      this.snapAt = this.poseBeats;
+      // Let 1's sinew goes first: sinew k plays let k
+      for (let k = STRINGS - strings; k < STRINGS - this.strings(); k++) {
+        this.snapped[k] = this.poseBeats;
+      }
       audio?.playSound('bassistTwang', this.x, this.y);
     } else {
       audio?.playSound('bassistHit', this.x, this.y, {
@@ -144,6 +201,19 @@ export class Bassist extends BaseEnemy {
       });
     }
     return result;
+  }
+
+  /** A shot's push along its line, KNOCK_PX_S, the whole capped at KNOCK_MAX_PX_S */
+  knockAlong(dir) {
+    const { KNOCK_PX_S, KNOCK_MAX_PX_S } = CONFIG.BASSIST;
+    this.hitDir = dir;
+    this.knock.x += Math.cos(dir) * KNOCK_PX_S;
+    this.knock.y += Math.sin(dir) * KNOCK_PX_S;
+    const speed = Math.hypot(this.knock.x, this.knock.y);
+    if (speed > KNOCK_MAX_PX_S) {
+      this.knock.x *= KNOCK_MAX_PX_S / speed;
+      this.knock.y *= KNOCK_MAX_PX_S / speed;
+    }
   }
 
   /** His strings left: one goes with each quarter of his health */
@@ -174,11 +244,40 @@ export class Bassist extends BaseEnemy {
     if (k === LOCK_LET) {
       this.lockBar = bar;
       this.lockAt = { ...this.heroAt };
+      const to = this.aim + normalizeAngle(this.toHero - this.aim);
+      this.turn = { from: this.aim, to, at: this.poseBeats };
     }
     if (!this.plays(k)) return null;
     if (k === SLAP_LET && this.lockBar !== bar) return null;
     this.pluck(n, k);
-    return k === SLAP_LET ? this.fireNote() : null;
+    if (k !== SLAP_LET) {
+      this.puffAlong(this.driftDir(), CONFIG.BASSIST.LURCH_PX_S);
+      return null;
+    }
+    return this.slap();
+  }
+
+  /** The way he drifts; still, round the hero, the way he circles */
+  driftDir() {
+    return Math.hypot(this.walk.x, this.walk.y) > EPS
+      ? Math.atan2(this.walk.y, this.walk.x)
+      : this.toHero + (this.circle * Math.PI) / 2;
+  }
+
+  /** A let's puff, pushing him `speed` px/s along `dir` */
+  puffAlong(dir, speed) {
+    this.puffAt = this.poseBeats;
+    this.puffDir = dir;
+    this.push.x += Math.cos(dir) * speed;
+    this.push.y += Math.sin(dir) * speed;
+  }
+
+  /** The slap: he faces the hero's spot let 3 locked, fires at it, and recoils off it */
+  slap() {
+    this.aim = Math.atan2(this.lockAt.y - this.y, this.lockAt.x - this.x);
+    this.turn = null;
+    this.puffAlong(this.aim + Math.PI, CONFIG.BASSIST.RECOIL_PX_S);
+    return this.fireNote();
   }
 
   /**
@@ -187,24 +286,17 @@ export class Bassist extends BaseEnemy {
    * standing still. The enemy loop takes it into the enemy bullets
    */
   fireNote() {
-    const aim = Math.atan2(this.lockAt.y - this.y, this.lockAt.x - this.x);
-    const note = Bullet.acquire(this.x, this.y, aim, 0, NOTE_OWNER);
+    const muzzle = CONFIG.BASSIST.MUZZLE_PX;
+    const x = this.x + Math.cos(this.aim) * muzzle;
+    const y = this.y + Math.sin(this.aim) * muzzle;
+    const note = Bullet.acquire(x, y, this.aim, 0, NOTE_OWNER);
     note.ownerId = this.id;
     return note;
   }
 
-  /** Let n, the k-th of its bar: its sound, on its grid time, and a puff along his drift */
+  /** Let n, the k-th of its bar, played: its sinew, and its sound on its grid time */
   pluck(n, k) {
-    this.puffAt = this.poseBeats;
-    const speed = Math.hypot(this.walk.x, this.walk.y);
-    // Still, he puffs round the hero, the way he circles
-    const dir =
-      speed > EPS
-        ? Math.atan2(this.walk.y, this.walk.x)
-        : this.toHero + (this.circle * Math.PI) / 2;
-    const lurch = CONFIG.BASSIST.LURCH_PX_S;
-    this.push.x += Math.cos(dir) * lurch;
-    this.push.y += Math.sin(dir) * lurch;
+    this.plucked[k] = this.poseBeats;
     const audio = this.getContextValue('audio');
     const clock = this.getContextValue('beatClock');
     if (!audio || !clock) return;
@@ -234,10 +326,90 @@ export class Bassist extends BaseEnemy {
     this.walk.y += (want.y - this.walk.y) * k;
   }
 
+  /**
+   * His look at the beat update() kept: what a version on the studies page
+   * draws from (its L), so the picked one draws in the game unchanged
+   */
+  pose() {
+    const B = CONFIG.BASSIST;
+    const and = CONFIG.SWING.AND_AT;
+    const beats = this.poseBeats ?? 0;
+    const beatSec =
+      (this.getContextValue('beatClock')?.beatInterval ?? 500) / 1000;
+    const age = (at) => (at === null ? Infinity : (beats - at) * beatSec);
+    const n = Math.floor(beats);
+    // The telegraph, from the position in the bar: a notch at each let,
+    // played or not, amber from let 3, white-hot just before the slap
+    const u = mod(beats - (SLAP_LET + and), LETS_PER_BAR);
+    const notch = Math.min(SLAP_LET, Math.floor(u + EPS));
+    const next = Math.floor(beats - and + EPS) + 1;
+    const turnAge = this.turn ? age(this.turn.at) : Infinity;
+    const { x: vx, y: vy } = this.moving();
+    const hitAge = age(this.hitAt);
+    return {
+      t: beats * beatSec,
+      beatSec,
+      beats,
+      beat: mod(n, LETS_PER_BAR),
+      beatPhase: beats - n,
+      kick: env((beats - n) * beatSec, KICK_TAU_SEC),
+      andAt: and,
+      aim: this.aim,
+      toHero: this.toHero,
+      turn: this.turn ? clamp01(turnAge / B.TURN_SEC) : 1,
+      uncurl: uncurl(
+        age(this.turn?.at ?? null),
+        age(this.plucked[SLAP_LET]),
+        beatSec
+      ),
+      vx,
+      vy,
+      speed: Math.hypot(vx, vy),
+      strings: this.strings(),
+      plays: [0, 1, 2, 3].map((k) => this.plays(k)),
+      sinews: [0, 1, 2, 3].map((k) => ({
+        snapped: this.snapped[k] === null ? -1 : age(this.snapped[k]),
+        pluck: age(this.plucked[k]),
+      })),
+      letK: mod(next, LETS_PER_BAR),
+      letIn: (next + and - beats) * beatSec,
+      puff: age(this.puffAt),
+      puffDir: this.puffDir,
+      slap: age(this.plucked[SLAP_LET]),
+      tell: {
+        notch,
+        notchAge: (u - notch) * beatSec,
+        amber: notch >= SLAP_LET,
+        hot: u >= LETS_PER_BAR - HOT_BEATS - EPS,
+      },
+      hit: hitAge < Infinity ? env(hitAge, HIT_TAU_SEC) : 0,
+      hitAge,
+      hitDir: this.hitDir,
+      push: clamp01(Math.hypot(this.knock.x, this.knock.y) / B.KNOCK_PX_S),
+      hp: this.health / this.maxHealth,
+      spawn: this.isSpawning ? this.spawnTimer / this.spawnDuration : 1,
+      dying: null,
+      slack: null,
+      seed: this.lookSeed,
+      muzzle: B.MUZZLE_PX,
+    };
+  }
+
   drawFigure(p, s) {
     this.applyHitShake(p);
     drawBassistFigure(p, s, this.aimAngle);
   }
+}
+
+/**
+ * How far his scroll is open (0..1): it opens with his turn on let 3
+ * (`turnAge`, s), holds, and curls back after the slap (`slapAge`, s)
+ */
+function uncurl(turnAge, slapAge, beatSec) {
+  if (slapAge < turnAge) {
+    return 1 - smooth(clamp01(slapAge / (RECURL_BEATS * beatSec)));
+  }
+  return turnAge < Infinity ? smooth(clamp01(turnAge / UNCURL_SEC)) : 0;
 }
 
 /** Let n's grid time on the audio clock, s: beat n + SWING.AND_AT */
