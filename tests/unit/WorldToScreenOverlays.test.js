@@ -23,7 +23,9 @@ describe('world-space overlays drawn under the camera', () => {
     fx.addAttackTelegraph(grunt.x, grunt.y, 'grunt', 1, grunt);
     camera.applyTransform();
     p.ellipse(grunt.x, grunt.y, 10); // the grunt, drawn in the world
-    fx.drawAttackTelegraphs(p);
+    // Handed the camera as its old screen-space call was, it must not move
+    // the ring a second time
+    fx.drawAttackTelegraphs(p, camera);
     camera.removeTransform();
     const [body, ring] = shapes.map((sh) => sh.centre);
     expect(ring).toEqual(body);
