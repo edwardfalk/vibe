@@ -95,6 +95,10 @@ describe('GameState', () => {
       dashTimerMs: 120,
       dashCooldownMs: 2400,
       queuedShot: { timerMs: 80 },
+      // Fire held through the restart
+      shootCooldownMs: 150,
+      isCurrentlyShooting: true,
+      firstShotFired: true,
     };
     window.player = player;
     try {
@@ -109,6 +113,12 @@ describe('GameState', () => {
       expect([player.isDashing, player.dashTimerMs]).toEqual([false, 0]);
       expect(player.dashCooldownMs).toBe(0);
       expect(player.queuedShot).toBe(null);
+      // His next run's first shot is immediate, as any burst's is
+      expect([
+        player.shootCooldownMs,
+        player.isCurrentlyShooting,
+        player.firstShotFired,
+      ]).toEqual([0, false, false]);
     } finally {
       window.player = null;
     }

@@ -288,8 +288,9 @@ export class GameState {
       window.player.msSinceHit = 0;
       // His look starts clean: the beat clock's reset below can land it
       // near beat 4 (it snaps to a beat), so last run's first stamps would
-      // otherwise survive; and a dash he died in, its cooldown and a shot
-      // still queued don't carry over (only his update counts them down)
+      // otherwise survive; and a dash he died in, its cooldown, a shot still
+      // queued and a burst he was firing don't carry over (only his update
+      // counts them down): his first shot is immediate, as any burst's is
       window.player.shotAt = null;
       window.player.hurtAt = null;
       window.player.shieldBackAt = null;
@@ -299,6 +300,9 @@ export class GameState {
       window.player.dashTimerMs = 0;
       window.player.dashCooldownMs = 0;
       window.player.queuedShot = null;
+      window.player.shootCooldownMs = 0;
+      window.player.isCurrentlyShooting = false;
+      window.player.firstShotFired = false;
     }
 
     // Clear all game objects
