@@ -145,6 +145,7 @@ class Tank extends BaseEnemy {
     this.glance = null;
     this.whipPending = false;
     this.whipAt = null; // when that bar action came (a beat position)
+    this.whipTo = null; // the facing its turn ends at, or null for none
     this.angerAt = null; // when he tipped, for his anger mark
 
     // Destructible armour plates, by side (tankSide in TankRenderer.js)
@@ -296,7 +297,8 @@ class Tank extends BaseEnemy {
   onKick(kickBeat, toTarget, distance, atAlien = false) {
     const T = CONFIG.TANK;
     let most = T.TURN_STEP_DEG * DEG;
-    if (this.whipPending) {
+    const whip = this.whipPending;
+    if (whip) {
       this.whipPending = false;
       this.whipAt = this.kickAt;
       if (atAlien) most = PI;
@@ -307,6 +309,8 @@ class Tank extends BaseEnemy {
       most,
       T.TURN_DEADZONE_DEG * DEG
     );
+    // Kept apart from this.turn, which the next bar's turn replaces
+    if (whip) this.whipTo = step !== 0 ? this.facing + step : null;
     if (step !== 0) {
       this.turn = {
         from: this.facing,
@@ -761,8 +765,8 @@ class Tank extends BaseEnemy {
     let until = GLANCE_IN_SEC + GLANCE_HOLD_SEC;
     if (g.hold) {
       if (this.whipAt !== null) {
-        const whip = this.turn.at === this.whipAt ? this.turn : null;
-        const away = whip && Math.abs(g.aim - whip.to) > lim;
+        const away =
+          this.whipTo !== null && Math.abs(g.aim - this.whipTo) > lim;
         until =
           (this.whipAt - g.at) * beatSec + (away ? 0 : CONFIG.TANK.TURN_SEC);
       } else until = this.isAngry ? Infinity : 0;

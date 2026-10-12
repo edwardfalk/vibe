@@ -120,6 +120,21 @@ describe('the third hit tips him', () => {
     expect(t.pose().glance).toBeNull();
   });
 
+  it('a late whip that swung him away keeps his head let go when his next turn comes', () => {
+    const { w, t, g } = angerWorld({ x: 0, y: 300 }); // a grunt at his right
+    w.frame(t, 5000);
+    tip(t); // from dead behind: his head over his left shoulder
+    w.frame(t, 5900);
+    w.frame(t, 7700); // bar 3's action 1.4 s late (a hitch): the whip, away
+    expect(t.whipAt).toBeCloseTo(15.4, 9);
+    w.frame(t, 7950);
+    expect(t.pose().glance).toBeNull();
+    Object.assign(g, { x: 300, y: 0 }); // so bar 4 turns him again
+    w.frame(t, 8000);
+    expect(t.turn.at).toBe(16);
+    expect(t.pose().glance).toBeNull();
+  });
+
   it('a whip that swings him toward where his head looks holds it on the hit through the turn', () => {
     const { w, t } = angerWorld({ x: 0, y: -300 }); // a grunt at his left
     w.frame(t, 5000);
