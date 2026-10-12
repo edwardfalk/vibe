@@ -68,9 +68,9 @@ Calls and smaller work:
   - family reactions between enemy types;
   - the carpet in play.
 - **build: #83's minor:** the sprite cache never rebuilds after a lost graphics context (only the sky checks for one).
+- **check: the grunts' drawing costs most of a frame's work in big swarms.** 25 grunts take about 5.7 ms a frame in headless Chromium (2026-10-12), up to 1.9 ms of it in the 18 colour changes each grunt makes (fill and stroke). Building his fixed colours once as p5.Colors saved nothing measurable: the cost is the canvas switching colour, so a cut needs fewer switches (more of him in his sprites). Time it on Edward's laptop before building. (The audit fixes.)
 - **build: #82's rusher minors:**
   - a ring lit by a bomb flashes a ghost arc for about 0.15 s;
-  - `pose()` is built twice a frame while he's lit;
   - the arm sprite clips the hand;
   - the crash call has no try/catch;
   - three missing tests: the hit flash, `turnAt`'s easing and GameLoop's `update(dt)`.
