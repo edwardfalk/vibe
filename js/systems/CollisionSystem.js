@@ -122,18 +122,18 @@ export class CollisionSystem {
     for (let i = enemyBullets.length - 1; i >= 0; i--) {
       const bullet = enemyBullets[i];
       if (bullet._remove) continue;
-      // shortcut: a bassist's note meets no alien yet; the next commit
-      // gives it the tank ball's rule
-      if (bullet.owner === NOTE_OWNER) continue;
+      const note = bullet.owner === NOTE_OWNER;
 
       for (let j = 0; j < enemies.length; j++) {
         const enemy = enemies[j];
         if (bullet.ownerId === enemy.id || enemy.markedForRemoval) continue;
+        // A bassist's note passes through his kind
+        if (note && enemy.type === 'bassist') continue;
 
         // Check if bullet hits enemy (but not the one that fired it)
         if (bullet.checkCollision(enemy)) {
-          // Handle different bullet types
-          if (bullet.owner === 'enemy-tank') {
+          // Handle different bullet types: the heavy shots kill outright
+          if (bullet.owner === 'enemy-tank' || note) {
             this.handleTankEnergyBallHit(bullet, enemy);
           } else {
             this.handleRegularEnemyBulletHit(bullet, enemy);

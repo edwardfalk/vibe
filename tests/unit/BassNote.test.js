@@ -130,3 +130,76 @@ describe('what his note does', () => {
     expect(shot.energy).toBeUndefined();
   });
 });
+
+// It meets aliens as the tank's ball does, but passes through his kind
+// (the bassist spec, The note)
+describe("his note meets aliens by the tank ball's rule", () => {
+  function hit(enemies) {
+    const note = Bullet.acquire(0, 0, 0, 0, NOTE_OWNER);
+    note.ownerId = 'his';
+    const audio = { playSound: vi.fn() };
+    const gameState = { addKill: vi.fn(), addScore: vi.fn(), killStreak: 0 };
+    const values = { enemies, enemyBullets: [note], audio, gameState };
+    const handleEnemyDeath = vi.fn();
+    new CollisionSystem(
+      { get: (k) => values[k], set() {} },
+      { handleEnemyDeath }
+    ).checkEnemyBulletsVsEnemies();
+    const sounds = audio.playSound.mock.calls.map(([key]) => key);
+    return { note, gameState, handleEnemyDeath, sounds };
+  }
+  const alien = (type, more) => ({
+    type,
+    id: type,
+    x: 0,
+    y: 0,
+    size: 20,
+    health: 3,
+    maxHealth: 3,
+    takeDamage: vi.fn(() => 'damaged'),
+    ...more,
+  });
+
+  it("kills a grunt in its path and goes on; the kill scores as the ball's, without the ball's sounds", () => {
+    const grunt = alien('grunt');
+    const { note, gameState, handleEnemyDeath, sounds } = hit([grunt]);
+    expect(handleEnemyDeath).toHaveBeenCalledWith(grunt, 'grunt', 0, 0, {
+      dir: 0,
+    });
+    expect(grunt.markedForRemoval).toBe(true);
+    expect(gameState.addScore).toHaveBeenCalled();
+    expect(note._remove).toBe(false); // energy left: on through the swarm
+    expect(note.energy).toBeLessThan(100);
+    expect(sounds).not.toContain('tankBallKill');
+    expect(sounds).not.toContain('enemyFrying');
+  });
+
+  it('passes through bassists, its own and others', () => {
+    const own = alien('bassist', { id: 'his' });
+    const other = alien('bassist', { id: 'another' });
+    const { note, handleEnemyDeath } = hit([own, other]);
+    expect(own.takeDamage).not.toHaveBeenCalled();
+    expect(other.takeDamage).not.toHaveBeenCalled();
+    expect(handleEnemyDeath).not.toHaveBeenCalled();
+    expect(note._remove).toBe(false);
+  });
+
+  it('passes a bassist to reach the grunt behind him', () => {
+    const other = alien('bassist', { id: 'another' });
+    const grunt = alien('grunt');
+    const { handleEnemyDeath } = hit([other, grunt]);
+    expect(handleEnemyDeath).toHaveBeenCalledWith(grunt, 'grunt', 0, 0, {
+      dir: 0,
+    });
+  });
+
+  it('dents a tank by its own NOTE_DAMAGE_TO_TANKS, and is spent on him', () => {
+    const saved = CONFIG.BASSIST.NOTE_DAMAGE_TO_TANKS;
+    CONFIG.BASSIST.NOTE_DAMAGE_TO_TANKS = 7;
+    const tank = alien('tank');
+    const { note } = hit([tank]);
+    expect(tank.takeDamage).toHaveBeenCalledWith(7, 0, 'bassist');
+    expect(note._remove).toBe(true);
+    CONFIG.BASSIST.NOTE_DAMAGE_TO_TANKS = saved;
+  });
+});

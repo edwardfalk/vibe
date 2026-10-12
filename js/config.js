@@ -504,6 +504,7 @@ const CONFIG = {
     NOTE_SIZE: 16,
     NOTE_GLIDE_PX_S: 60,
     NOTE_LURCH_PX: 45,
+    NOTE_DAMAGE_TO_TANKS: 5, // it kills smaller aliens; a tank only takes this
   },
 
   // The stabber, the shiv (js/entities/Stabber.js). Speeds are px/s. He

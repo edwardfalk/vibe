@@ -78,6 +78,7 @@ export class Bullet {
       // The bassist's note: its speed is set each frame (driveBassNotes)
       this.size = CONFIG.BASSIST.NOTE_SIZE;
       this.damage = CONFIG.PLAYER.DAMAGE_BASS_NOTE;
+      this.energy = 100; // spent on the aliens it kills, as the tank's ball
     } else {
       this.size = 6;
       this.damage = 1;

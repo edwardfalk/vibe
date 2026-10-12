@@ -198,6 +198,7 @@ export const KNOBS = [
   // Above 0, so a note always leaves
   [BASSIST, 'NOTE_GLIDE_PX_S', [10, 300, 5]],
   [BASSIST, 'NOTE_LURCH_PX', [5, 200, 5]],
+  [BASSIST, 'NOTE_DAMAGE_TO_TANKS', [0, 30, 1]],
   [STABBER, 'STALK_MIN_PX', [50, 500, 10]],
   [STABBER, 'STALK_MAX_PX', [100, 600, 10]],
   [STABBER, 'APPROACH_PX_S', [0, 400, 10]],
