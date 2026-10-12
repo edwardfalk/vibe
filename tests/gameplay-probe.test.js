@@ -1225,6 +1225,70 @@ test.describe('Gameplay Probes', () => {
     expect(errors).toEqual([]);
   });
 
+  // The game loop's two bassist hooks (the bassist spec): the hero's grid
+  // swings from the bar after one is about and stops the bar after none
+  // is (BeatClock.wantSwing), and one pass a frame drives his notes and
+  // pops them once he is gone (driveBassNotes)
+  test('A bassist swings the hero, drives his notes, and takes them with him', async ({
+    page,
+  }) => {
+    await bootGame(page);
+    const r = await page.evaluate(async () => {
+      const clock = window.beatClock;
+      const hero = window.player;
+      hero.health = hero.maxHealth = 10000; // his notes may land
+      const frames = (n) =>
+        new Promise((done) => {
+          const start = window.frameCount;
+          const tick = () =>
+            window.frameCount >= start + n
+              ? done()
+              : window.requestAnimationFrame(tick);
+          tick();
+        });
+      const until = async (ok, maxFrames = 600) => {
+        for (let i = 0; i < maxFrames && !ok(); i++) await frames(1);
+        return ok();
+      };
+      const nextBar = () => (Math.floor(clock.getBeatPosition() / 4) + 1) * 4;
+      const out = { before: clock.swingOn };
+      const b = window.spawnSystem.createEnemy(
+        hero.x + 260,
+        hero.y,
+        'bassist',
+        hero.p
+      );
+      b.isSpawning = false;
+      window.enemies.push(b);
+      const bar = nextBar();
+      await until(() => clock.getBeatPosition() >= bar + 0.2);
+      out.swung = clock.swingOn;
+      const noteOf = () =>
+        window.enemyBullets.find(
+          (n) => n.owner === 'enemy-bassist' && n.ownerId === b.id
+        );
+      out.fired = await until(() => !!noteOf(), 300);
+      const note = noteOf();
+      const x0 = note?.x;
+      const y0 = note?.y;
+      await frames(5);
+      out.moved = note ? Math.hypot(note.x - x0, note.y - y0) : 0;
+      b.markedForRemoval = true; // gone, by whatever route
+      await frames(3);
+      out.popped = !window.enemyBullets.includes(note);
+      const after = nextBar();
+      await until(() => clock.getBeatPosition() >= after + 0.2);
+      out.straight = !clock.swingOn;
+      return out;
+    });
+    expect(r.before).toBe(false);
+    expect(r.swung).toBe(true);
+    expect(r.fired).toBe(true);
+    expect(r.moved).toBeGreaterThan(1);
+    expect(r.popped).toBe(true);
+    expect(r.straight).toBe(true);
+  });
+
   test('Bullet collision kills enemy and awards score', async ({ page }) => {
     await bootGame(page);
 
