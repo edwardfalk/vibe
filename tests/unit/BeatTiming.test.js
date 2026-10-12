@@ -455,13 +455,23 @@ describe('a synth given a time books at it, not its nearest eighth', () => {
     expect(t.at).toBeCloseTo(3.005, 9); // the audio's now
   });
 
-  it("playSound passes a synth caller's time on, booked exactly", () => {
+  it("playSound passes a synth caller's time on, booked exactly when asked", () => {
     const { made, game } = ledAudio();
-    game(3.31).playSound('tankShot', 100, 0, { at: 3 + 1 / 3 });
+    game(3.31).playSound('tankShot', 100, 0, { at: 3 + 1 / 3, exact: true });
     const starts = made
       .filter((n) => n.start.mock.calls.length)
       .map((n) => n.start.mock.calls[0][0]);
     expect(starts.length).toBeGreaterThan(0);
     for (const t of starts) expect(t).toBeCloseTo(3 + 1 / 3, 9);
+  });
+
+  it("a synth caller's time not asked to be exact goes on its nearest eighth, as a tone's", () => {
+    const { made, game } = ledAudio();
+    game(3.21).playSound('tankShot', 100, 0, { at: 3 + 1 / 3 });
+    const starts = made
+      .filter((n) => n.start.mock.calls.length)
+      .map((n) => n.start.mock.calls[0][0]);
+    expect(starts.length).toBeGreaterThan(0);
+    for (const t of starts) expect(t).toBeCloseTo(3.25, 9);
   });
 });

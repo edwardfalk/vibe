@@ -391,12 +391,16 @@ export class Audio {
     const { near, pan } = this.placement(x, y);
     // Every synth starts on its eighth when it can (beatTiming) and is told
     // it; the hero's shot has its own window, and softens in a burst
-    // A caller's own time (the bassist's let) is booked as it is
+    // A caller's own time goes on its nearest eighth, as a tone's does, or,
+    // asked (`exact`: the bassist's let), as it is
     const { at, eighth, level } =
       config.synth === 'heroShot'
         ? this.heroShotTiming()
         : {
-            ...this.beatTiming({ target: opts?.at, exact: true }),
+            ...this.beatTiming({
+              target: opts?.at,
+              exact: opts?.exact === true,
+            }),
             level: 1,
           };
     // Scrambled: a creature picks its note and voice from its seed's top

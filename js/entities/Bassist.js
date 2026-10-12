@@ -280,6 +280,7 @@ export class Bassist extends BaseEnemy {
     ).length;
     audio.playSound(k === SLAP_LET ? 'bassSlap' : 'bassPluck', this.x, this.y, {
       at: letTime(clock, n),
+      exact: true,
       seed: this.lookSeed,
       note: [LINE[k], CONFIG.BASSIST.OCTAVE],
       gain: volleyGain(Math.max(1, crowd)),
@@ -483,6 +484,7 @@ function hangOn(note, bassist, clock, beats, effects) {
   }
   bassist.getContextValue('audio')?.playSound('bassPluck', note.x, note.y, {
     at: letTime(clock, n),
+    exact: true,
     seed: bassist.lookSeed,
     note: [LINE[SLAP_LET], CONFIG.BASSIST.OCTAVE],
   });

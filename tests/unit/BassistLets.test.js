@@ -41,7 +41,10 @@ describe('his lets', () => {
       ['5', 2],
       ['b7', 2],
     ]);
-    for (const p of plays) expect(p.seed).toBe(w.b.lookSeed);
+    for (const p of plays) {
+      expect(p.seed).toBe(w.b.lookSeed);
+      expect(p.exact).toBe(true); // booked on the let, not its nearest eighth
+    }
   });
 
   it('drops plucks in order as strings snap; the slap stays to the last', () => {
