@@ -707,7 +707,12 @@ export function drawShatterWait(p, d) {
   c.translate(j * Math.sin(d.since * 137), j * Math.cos(d.since * 113));
   const sw = 1 + WAIT.SWELL * smooth(u);
   c.scale(sw, sw);
-  drawStabber(p, d.scale, { ...d.pose, hit: 0, hitAge: d.since });
+  drawStabber(p, d.scale, {
+    ...d.pose,
+    hit: 0,
+    hitAge: d.since,
+    hitDir: d.dir,
+  });
   toFrame(c, d.body, d.scale);
   const fl = WAIT.FLASH * env(d.since, WAIT.FLASH_TAU);
   if (fl > 0.02) {

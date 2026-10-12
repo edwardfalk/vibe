@@ -392,6 +392,26 @@ describe('Gold shatter', () => {
     expect(off.crumble).toBeCloseTo(1.15, 9);
   });
 
+  it("hangs frozen with the blow's way, not the pose's: an earlier shot's flakes trail from the killing one", () => {
+    // Shoved by a shot from the right (hitDir π), killed by one from the left
+    const pose = { ...record().pose, push: 1, hitDir: Math.PI };
+    const firstX = (style) => {
+      const { death, at } = deathOf(record({ style, pose, dir: 0 }));
+      const { p } = transformP5();
+      const xs = [];
+      const ctx = p.drawingContext;
+      p.drawingContext = new Proxy(ctx, {
+        get: (t, k) => (k === 'lineTo' ? (x) => xs.push(x) : t[k]),
+      });
+      at(1.9);
+      death.draw(p);
+      return xs[0];
+    };
+    // His flakes trail behind the push, so against the blow: on his left
+    expect(firstX('shell')).toBeLessThan(0);
+    expect(firstX('shatter')).toBeLessThan(0);
+  });
+
   it('is the style ?tune picks at the kill', () => {
     const w = world();
     w.run(0, 300);
