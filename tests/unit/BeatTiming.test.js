@@ -128,6 +128,30 @@ describe("the hero's shot", () => {
     expect(game(2.98).heroShotTiming().at).toBeCloseTo(2.955, 9);
   });
 
+  // While a bassist is about his grid swings (BeatClock.heroEighths)
+  it('held fire books the swung "and" when swing is on, told its eighth', () => {
+    const { audio, clock, game } = hero(true);
+    clock.wantSwing(true);
+    game(4.05).heroShotTiming(); // a new bar takes the swing
+    const and = (8 + 2 / 3) * 0.5; // the let after beat 8, in s
+    const t = game(and - 0.02).heroShotTiming();
+    expect(clock.swingOn).toBe(true);
+    expect(t.at).toBeCloseTo(and, 9);
+    expect(t.eighth).toBe(17);
+    expect(audio.player.shotHeld).toBe(true);
+  });
+
+  it('a first shot with swing on never waits for the next "and"', () => {
+    const { clock, game } = hero(false);
+    clock.wantSwing(true);
+    game(4.05).heroShotTiming();
+    // 8.52 beats: 30 ms on is still before the swung "and" at 8.667, so it
+    // plays at once (on the straight grid it would wait for the let)
+    const t = game(8.52 * 0.5).heroShotTiming();
+    expect(t.at).toBeCloseTo(8.52 * 0.5 - AHEAD, 9);
+    expect(t.eighth).toBe(17); // the nearest
+  });
+
   it('a shot with no mark is taken as a first shot', () => {
     expect(hero(undefined).game(2.98).heroShotTiming().at).toBeCloseTo(
       2.955,

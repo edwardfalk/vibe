@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Player } from '../../js/entities/player.js';
+import { BeatClock } from '../../js/audio/BeatClock.js';
+import { CONFIG } from '../../js/config.js';
 
 const p = {
   color: () => ({}),
@@ -20,8 +22,8 @@ describe('Player held fire', () => {
     let onEighth = false;
     const playerBullets = [];
     const beatClock = {
-      isOnEighthNote: () => onEighth,
-      getTimeToNextEighthNote: () => 30,
+      isOnHeroEighth: () => onEighth,
+      getTimeToNextHeroEighth: () => 30,
     };
     const player = new Player(p, 100, 100, null, { playerBullets, beatClock });
     let fired = 0;
@@ -44,8 +46,8 @@ describe('Player held fire', () => {
   it('marks the first shot of a press as not held, and the rest as held (Audio.heroShotTiming)', () => {
     let onEighth = false;
     const beatClock = {
-      isOnEighthNote: () => onEighth,
-      getTimeToNextEighthNote: () => 30,
+      isOnHeroEighth: () => onEighth,
+      getTimeToNextHeroEighth: () => 30,
     };
     const player = new Player(p, 100, 100, null, {
       playerBullets: [],
@@ -72,8 +74,8 @@ describe('Player held fire', () => {
 
   it("a new burst does not also fire the last burst's queued shot", () => {
     const beatClock = {
-      isOnEighthNote: () => false,
-      getTimeToNextEighthNote: () => 30,
+      isOnHeroEighth: () => false,
+      getTimeToNextHeroEighth: () => 30,
     };
     const player = new Player(p, 100, 100, null, {
       playerBullets: [],
@@ -92,5 +94,66 @@ describe('Player held fire', () => {
     player.shoot(); // pressed again: the new burst's first shot is immediate
     player.update(16); // the old queued shot comes due on this frame
     expect(fired).toBe(2);
+  });
+});
+
+// While a bassist is about the hero's held fire swings: his "and" moves to
+// CONFIG.SWING.AND_AT, and a held shot's cooldown is short enough to make
+// the beat after it (the bassist spec, Timing)
+describe('held fire on the hero grid', () => {
+  const andAt = CONFIG.SWING.AND_AT;
+  afterEach(() => {
+    CONFIG.SWING.AND_AT = andAt;
+  });
+
+  // Holds fire from beat 2.9 to 8 at 60 fps; the beat positions he fired at
+  function holdThroughABar({ swing, at = andAt }) {
+    globalThis.window = { playerIsShooting: true };
+    CONFIG.SWING.AND_AT = at;
+    const ahead = CONFIG.BEAT_CLOCK.AHEAD_MS / 1000;
+    const ctx = { currentTime: 2.9 * 0.5 - ahead };
+    const clock = new BeatClock(120, ctx);
+    clock.startTime = 0;
+    clock.wantSwing(swing);
+    const player = new Player(p, 100, 100, null, {
+      playerBullets: [],
+      beatClock: clock,
+    });
+    const shots = [];
+    const fire = player.fireBullet.bind(player);
+    player.fireBullet = (held) => {
+      shots.push(clock.getBeatPosition());
+      return fire(held);
+    };
+    const frameMs = 1000 / 60;
+    for (let i = 0; i < 500 && clock.getBeatPosition() < 8; i++) {
+      player.shoot();
+      ctx.currentTime += frameMs / 1000;
+      player.update(frameMs);
+    }
+    return shots.filter((b) => b >= 4 - 0.04 && b < 8 - 0.04);
+  }
+
+  // Each shot within the 20 ms window (0.04 beat) of 0 or `and` in its beat
+  const onGrid = (shots, and) =>
+    shots.every((b) => {
+      const f = b - Math.round(b);
+      const g = b - Math.floor(b) - and;
+      return Math.abs(f) <= 0.04 || Math.abs(g) <= 0.04;
+    });
+
+  it.each([2 / 3, 0.75])(
+    'swung at %s: 8 shots a bar, on 0 and the let',
+    (at) => {
+      const shots = holdThroughABar({ swing: true, at });
+      expect(shots).toHaveLength(8);
+      expect(onGrid(shots, at)).toBe(true);
+    }
+  );
+
+  it('straight: 8 shots a bar, on 0 and 0.5, as today', () => {
+    const shots = holdThroughABar({ swing: false });
+    expect(shots).toHaveLength(8);
+    expect(onGrid(shots, 0.5)).toBe(true);
   });
 });

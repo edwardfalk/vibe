@@ -279,7 +279,7 @@ export class Player {
           }
 
           // Set proper cooldown to prevent double shot from shoot() later this frame
-          this.shootCooldownMs = 200;
+          this.shootCooldownMs = CONFIG.PLAYER.HELD_FIRE_COOLDOWN_MS;
 
           this.queuedShot = null; // Clear the queue
         }
@@ -442,15 +442,16 @@ export class Player {
         return bullet;
       }
 
-      // Sustained fire: quantized to 8th notes
+      // Sustained fire: quantized to his eighths, swung while a bassist is
+      // about (BeatClock's hero grid)
       const beatClock = this.getContextValue('beatClock');
       if (beatClock) {
-        if (beatClock.isOnEighthNote()) {
+        if (beatClock.isOnHeroEighth()) {
           const bullet = this.fireBullet();
-          this.shootCooldownMs = 200;
+          this.shootCooldownMs = CONFIG.PLAYER.HELD_FIRE_COOLDOWN_MS;
           return bullet;
         } else if (!this.queuedShot) {
-          const timeToNext = beatClock.getTimeToNextEighthNote();
+          const timeToNext = beatClock.getTimeToNextHeroEighth();
           this.queueShot(timeToNext);
           return null;
         }

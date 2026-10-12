@@ -14,6 +14,12 @@ import { Audio } from '../../js/Audio.js';
 import { fakeBuses } from './helpers/audioBuses.js';
 import { fakeAudio } from './helpers/fakeAudio.js';
 
+// BeatClock's hero grid with no bassist about: the straight eighths
+const STRAIGHT_HERO_GRID = {
+  heroEighths: (beats) => beats * 2,
+  heroEighthBeat: (eighth) => eighth / 2,
+};
+
 const AT = 2.5;
 const dB = (d) => 10 ** (d / 20);
 
@@ -224,7 +230,11 @@ describe("the hero's four shots, as on the listening page", () => {
 // `beats` (120 BPM)
 function gameAudio(beats = 1) {
   const { ctx, made } = fakeAudio({ currentTime: 2 });
-  const clock = { beatInterval: 500, getBeatPosition: () => beats };
+  const clock = {
+    beatInterval: 500,
+    getBeatPosition: () => beats,
+    ...STRAIGHT_HERO_GRID,
+  };
   const audio = Object.assign(Object.create(Audio.prototype), {
     audioContext: ctx,
     initialized: true,
@@ -382,6 +392,7 @@ describe('the shot booked on its eighth', () => {
       startTime: 1000,
       beatInterval: 500,
       getBeatPosition: () => (ctx.currentTime * 1000 - 1000) / 500,
+      ...STRAIGHT_HERO_GRID,
     };
     audio.getContextValue = (key) => (key === 'beatClock' ? clock : undefined);
     audio.playSound('playerShoot', 0, 0);
@@ -429,6 +440,8 @@ describe('the shot booked on its eighth', () => {
         startTime: 1000,
         beatInterval: 500,
         getBeatPosition: () => (ctx.currentTime * 1000 - 1000) / 500,
+        ...STRAIGHT_HERO_GRID,
+        ...STRAIGHT_HERO_GRID,
       };
       audio.getContextValue = (key) =>
         key === 'beatClock' ? clock : undefined;
