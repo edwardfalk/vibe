@@ -73,6 +73,18 @@ Calls and smaller work:
   - the arm sprite clips the hand;
   - the crash call has no try/catch;
   - three missing tests: the hit flash, `turnAt`'s easing and GameLoop's `update(dt)`.
+- **call: the tank's elbow and anger, the play test's smaller questions** (the tank elbow and anger PR, 2026-10-12). Edward: "it plays well, keep the defaults". Not judged yet:
+  - do the glances at hits 1 and 2 read at game size? His head is a small bald ball, so mostly his shades move; a shoulder twist with it would show more;
+  - his forced anger line can talk over another alien's line begun under `VOICE_GAP_SEC` before;
+  - a tank killed mid-glance or mid-elbow keeps that pose through his death, as the shove already did;
+  - when the bomb's "uh oh" starts during a glance, his head flicks to the front for about a frame (its `react.turn` is 0 for the first 0.02 s).
+- **build: the tank elbow and anger PR's deferred minors** (its review round; the code is right, the tests are missing):
+  - no test that a second grudge resets `whipAt`;
+  - `ANGER_MARK_SIZE`'s scale, `ANGER_MARK_BEATS` and the mark's throb are untested;
+  - the glance's correction for `yokeA`, `headA` and `gaze` is untested with his gun off his facing;
+  - the "uh oh" winning over a glance (`react.turn ??`) is untested;
+  - no test that an elbow doesn't also stamp the shove's lunge;
+  - `CHARGE_BEATS` must be whole bars for the even-bar grid, and `config.js` doesn't say so.
 - **check: #87's stabber minors:**
   - a dead `'stabber-miss'` route;
   - duplicated helpers;
