@@ -13,6 +13,7 @@ import { Tank } from '../../js/entities/Tank.js';
 import { createMockP5 } from './helpers/enemyMocks.js';
 import { tankWorld } from './helpers/tankWorld.js';
 import { fakeBuses } from './helpers/audioBuses.js';
+import { fakeAudio } from './helpers/fakeAudio.js';
 
 const DEFAULT_AHEAD_MS = CONFIG.BEAT_CLOCK.AHEAD_MS;
 const AHEAD = 0.025;
@@ -23,59 +24,13 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// A Web Audio stand-in at 48 kHz (a render quantum is 2.7 ms) that records
-// the nodes a sound makes
-function fakeContext() {
-  const made = [];
-  const param = () => ({
-    value: 1,
-    setValueAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-    setTargetAtTime: vi.fn(),
-    cancelScheduledValues: vi.fn(),
-  });
-  const node = (kind, extra = {}) => {
-    const n = {
-      kind,
-      connect: vi.fn((d) => d),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      ...extra,
-    };
-    made.push(n);
-    return n;
-  };
-  const ctx = {
-    currentTime: 0,
-    sampleRate: 48000,
-    state: 'running',
-    createStereoPanner: () => node('pan', { pan: param() }),
-    createBiquadFilter: () =>
-      node('filter', { frequency: param(), Q: param(), gain: param() }),
-    createGain: () => node('gain', { gain: param() }),
-    createOscillator: () =>
-      node('osc', { frequency: param(), detune: param() }),
-    createBufferSource: () =>
-      node('source', { playbackRate: param(), detune: param() }),
-    createConstantSource: () => node('constant', { offset: param() }),
-    createWaveShaper: () => node('shaper'),
-    createConvolver: () => node('convolver'),
-    createBuffer: vi.fn((_channels, length) => {
-      const data = new Float32Array(length);
-      return { duration: length / 48000, getChannelData: () => data };
-    }),
-  };
-  return { ctx, made };
-}
-
 // The game's Audio on the stand-in, the hero at (0, 0), with a real beat
 // clock on the same context running AHEAD ahead of it: its eighths are at
 // clock times k × 0.25 s. `game(t)` sets the game's now to t
 function ledAudio({ ahead = AHEAD, otherClock = false } = {}) {
   CONFIG.BEAT_CLOCK.AHEAD_MS = ahead * 1000;
-  const { ctx, made } = fakeContext();
+  // At 48 kHz a render quantum is 2.7 ms
+  const { ctx, made } = fakeAudio({ currentTime: 0, sampleRate: 48000 });
   const clock = new BeatClock(120, otherClock ? { currentTime: 0 } : ctx);
   clock.startTime = 0;
   const audio = Object.assign(Object.create(Audio.prototype), {

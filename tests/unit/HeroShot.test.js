@@ -12,53 +12,14 @@ import { hz } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 import { Audio } from '../../js/Audio.js';
 import { fakeBuses } from './helpers/audioBuses.js';
+import { fakeAudio } from './helpers/fakeAudio.js';
 
 const AT = 2.5;
 const dB = (d) => 10 ** (d / 20);
 
-// A Web Audio stand-in that records the nodes a sound makes
-function fakeContext() {
-  const made = [];
-  const param = () => ({
-    value: 1,
-    setValueAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-  });
-  const node = (kind, extra = {}) => {
-    const n = {
-      kind,
-      connect: vi.fn((d) => d),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      ...extra,
-    };
-    made.push(n);
-    return n;
-  };
-  const ctx = {
-    currentTime: 2,
-    sampleRate: 8000,
-    state: 'running',
-    createStereoPanner: () => node('pan', { pan: param() }),
-    createBiquadFilter: () =>
-      node('filter', { frequency: param(), Q: param() }),
-    createGain: () => node('gain', { gain: param() }),
-    createOscillator: () =>
-      node('osc', { frequency: param(), detune: param() }),
-    createBufferSource: () => node('source'),
-    createBuffer: vi.fn((_channels, length) => {
-      const data = new Float32Array(length);
-      return { duration: length / 8000, getChannelData: () => data };
-    }),
-  };
-  return { ctx, made };
-}
-
 // One shot of `sound` on `eighth`, at full volume, centred
 function shoot(sound, eighth = 1) {
-  const { ctx, made } = fakeContext();
+  const { ctx, made } = fakeAudio({ currentTime: 2 });
   const saved = CONFIG.HERO_SHOT.SOUND;
   CONFIG.HERO_SHOT.SOUND = sound;
   try {
@@ -237,7 +198,7 @@ describe("the hero's four shots, as on the listening page", () => {
     const root = CONFIG.HUM.ROOT;
     try {
       CONFIG.HUM.ROOT = 'H';
-      const { ctx, made } = fakeContext();
+      const { ctx, made } = fakeAudio({ currentTime: 2 });
       const saved = CONFIG.HERO_SHOT.SOUND;
       CONFIG.HERO_SHOT.SOUND = 'tick';
       try {
@@ -262,7 +223,7 @@ describe("the hero's four shots, as on the listening page", () => {
 // The game's Audio on the stand-in, the hero at (0, 0), its beat clock at
 // `beats` (120 BPM)
 function gameAudio(beats = 1) {
-  const { ctx, made } = fakeContext();
+  const { ctx, made } = fakeAudio({ currentTime: 2 });
   const clock = { beatInterval: 500, getBeatPosition: () => beats };
   const audio = Object.assign(Object.create(Audio.prototype), {
     audioContext: ctx,

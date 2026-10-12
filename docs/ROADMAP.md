@@ -147,8 +147,7 @@ Calls and smaller work:
   - `Audio` keeps fields nothing reads (`p`, `volume`, the one-key `effects`), `update()` only calls `updateTexts()`, and `speechEnabled` always follows `enabled`;
   - about a dozen names are exported but only used in their own file.
 
-- **build: fail on console errors during real play.** `playtest.js` only counts them, so a sound that breaks in play leaves every suite green. (#94)
-- **build: one shared fake-audio helper for the unit tests.** Eight test files each define their own; `tests/unit/helpers/fakeAudio.js` exists now (`StabberDeath.test.js` and `DeathSounds.test.js` use it): move the others onto it.
+- **check: the two flakes below may be gone.** Until #104 the E2E server reloaded the page under test whenever a file was written in the checkout, such as a failed test's files in `test-results/`, which matches both. Delete them if neither recurs.
 - **check: a known flake under full-suite load:** "Held keyboard fire lands on eighth notes". (The kick-lock check, the other one, failed about 1 run in 10 on the grunts' random skips; it now plants a swarm held still with a clear line, and passed 30 runs out of 30 alone on the desktop, 2026-10-10 and 11.)
 - **check: "The sky draws in every state" failed once under full-suite load** on the desktop (2026-10-12, #100), message lost; it then passed 6 runs out of 6 alone and the full suite again. It wants a sky frame within each 300 ms window, which a loaded runner can miss.
 

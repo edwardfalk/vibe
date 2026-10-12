@@ -29,7 +29,7 @@ function handleRusherExplosionResult(result, enemy, context, blasts) {
       visualEffectsManager.triggerChromaticAberration(0.8, 45);
       visualEffectsManager.triggerBloom(0.5, 30);
     } catch (error) {
-      console.warn('⚠️ Explosion effects error:', error);
+      console.error('⚠️ Explosion effects error:', error);
     }
   }
 
@@ -119,7 +119,7 @@ export function updateEnemiesAndResolveResults(context) {
       ) {
         handleStabberAttackResult(result, context);
       } else {
-        console.warn(`⚠️ Unknown object returned from enemy update:`, result);
+        console.error(`⚠️ Unknown object returned from enemy update:`, result);
       }
     }
   }

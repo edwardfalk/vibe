@@ -17,6 +17,7 @@ import {
   calculateVolumeForPosition,
 } from '../../js/audio/SpatialAudio.js';
 import { fakeBuses } from './helpers/audioBuses.js';
+import { fakeAudio } from './helpers/fakeAudio.js';
 
 const STABBER = { ...CONFIG.STABBER };
 afterEach(() => {
@@ -24,46 +25,6 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// A Web Audio stand-in that records the nodes it makes and what is set on
-// their params
-function fakeAudio() {
-  const made = [];
-  const param = () => ({
-    value: 0,
-    setValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    cancelScheduledValues: vi.fn(),
-  });
-  const node = (kind, extra = {}) => {
-    const n = {
-      kind,
-      connect: vi.fn((d) => d),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      ...extra,
-    };
-    made.push(n);
-    return n;
-  };
-  const ctx = {
-    currentTime: 2,
-    sampleRate: 8000,
-    state: 'running',
-    createStereoPanner: () => node('pan', { pan: param() }),
-    createBiquadFilter: () =>
-      node('filter', { frequency: param(), Q: param(), gain: param() }),
-    createGain: () => node('gain', { gain: param() }),
-    createOscillator: () => node('osc', { frequency: param() }),
-    createBufferSource: () => node('source'),
-    createBuffer: vi.fn((channels, length, rate) => {
-      const data = new Float32Array(length);
-      return { duration: length / rate, getChannelData: () => data };
-    }),
-  };
-  return { ctx, made };
-}
 const noise = { duration: 1.6 };
 const o = (extra = {}) => ({
   at: 3,
@@ -82,7 +43,7 @@ const cents = (c) => 2 ** (c / 1200);
 
 describe("the stabber's strings", () => {
   it('stab: six saws, three on b5 in octave 6 and three a semitone above at 0.55 of the level', () => {
-    const { ctx, made } = fakeAudio();
+    const { ctx, made } = fakeAudio({ currentTime: 2 });
     stab(ctx, {}, o());
     const f = hz(['b5', 6], 3);
     const pitches = saws(made).map(settled);
@@ -102,7 +63,7 @@ describe("the stabber's strings", () => {
   it('all four parts play b5 in octave 6 (FrequencyRedistribution pins its band)', () => {
     const f = hz(['b5', 6], 0);
     for (const part of [stab, screech, pluck, tremolo]) {
-      const { ctx, made } = fakeAudio();
+      const { ctx, made } = fakeAudio({ currentTime: 2 });
       part(ctx, {}, o({ at: 0, beatSec: 0.5, untilSec: 0.5 }));
       // Every saw starts within a semitone and a scoop of the note
       for (const s of saws(made)) {
@@ -114,7 +75,7 @@ describe("the stabber's strings", () => {
   });
 
   it('screech: the stab bent up 6% over 0.2 s, and a softer echo a sixteenth later', () => {
-    const { ctx, made } = fakeAudio();
+    const { ctx, made } = fakeAudio({ currentTime: 2 });
     screech(ctx, {}, o({ beatSec: 0.5 }));
     const all = saws(made);
     expect(all).toHaveLength(12);
@@ -127,7 +88,7 @@ describe("the stabber's strings", () => {
   });
 
   it('pluck: a saw on the note closing to a low-pass of 700 Hz, and a tick of noise from its offset', () => {
-    const { ctx, made } = fakeAudio();
+    const { ctx, made } = fakeAudio({ currentTime: 2 });
     pluck(ctx, {}, o());
     expect(saws(made)[0].frequency.setValueAtTime).toHaveBeenCalledWith(
       hz(['b5', 6], 3),
@@ -145,7 +106,7 @@ describe("the stabber's strings", () => {
 
   it('every part puts its volume on its output gain, so a volume of 0 is silence, never a ramp to 0', () => {
     for (const part of [stab, screech, pluck, tremolo]) {
-      const { ctx, made } = fakeAudio();
+      const { ctx, made } = fakeAudio({ currentTime: 2 });
       part(ctx, {}, o({ volume: 0, beatSec: 0.5, untilSec: 0.5 }));
       const out = made.find((n) => n.kind === 'gain');
       expect(out.gain.setValueAtTime).toHaveBeenCalledWith(0, 3);
@@ -161,7 +122,7 @@ describe("the stabber's strings", () => {
 
   it('frees every node once its last source ends', () => {
     for (const part of [stab, pluck, tremolo]) {
-      const { ctx, made } = fakeAudio();
+      const { ctx, made } = fakeAudio({ currentTime: 2 });
       part(ctx, {}, o({ untilSec: 0.5 }));
       const last = made.find((n) => typeof n.onended === 'function');
       last.onended();
@@ -172,7 +133,7 @@ describe("the stabber's strings", () => {
   it('draws none of the game random numbers', () => {
     const spy = vi.spyOn(Math, 'random');
     for (const part of [stab, screech, pluck, tremolo]) {
-      const { ctx } = fakeAudio();
+      const { ctx } = fakeAudio({ currentTime: 2 });
       part(ctx, {}, o({ beatSec: 0.5, untilSec: 0.5 }));
     }
     expect(spy).not.toHaveBeenCalled();
@@ -181,7 +142,7 @@ describe("the stabber's strings", () => {
 
 describe("the stabber's tremolo", () => {
   it('fades out at the lock by itself, and its sources stop just after', () => {
-    const { ctx, made } = fakeAudio();
+    const { ctx, made } = fakeAudio({ currentTime: 2 });
     tremolo(ctx, {}, o({ untilSec: 0.75 }));
     const amp = made.find(
       (n) =>
@@ -197,7 +158,7 @@ describe("the stabber's tremolo", () => {
   });
 
   it('stop() cuts it at once on a gain of its own, and a second stop() does nothing', () => {
-    const { ctx, made } = fakeAudio();
+    const { ctx, made } = fakeAudio({ currentTime: 2 });
     const handle = tremolo(ctx, {}, o({ untilSec: 0.75 }));
     ctx.currentTime = 3.2;
     handle.stop();
@@ -218,7 +179,7 @@ describe("the stabber's tremolo", () => {
   });
 
   it('stop() after it has ended does nothing', () => {
-    const { ctx, made } = fakeAudio();
+    const { ctx, made } = fakeAudio({ currentTime: 2 });
     const handle = tremolo(ctx, {}, o({ untilSec: 0.75 }));
     ctx.currentTime = 3.75;
     const calls = made.map((n) => n.stop.mock.calls.length);
@@ -229,7 +190,7 @@ describe("the stabber's tremolo", () => {
 
 // The game's Audio on the stand-in, sound on, the hero at (0, 0)
 function gameAudio() {
-  const { ctx, made } = fakeAudio();
+  const { ctx, made } = fakeAudio({ currentTime: 2 });
   const audio = Object.assign(Object.create(Audio.prototype), {
     audioContext: ctx,
     initialized: true,

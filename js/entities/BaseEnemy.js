@@ -216,7 +216,7 @@ export class BaseEnemy {
       const glowColor = this.getGlowColor();
       drawGlow(p, this.x, this.y, this.getGlowSize(), glowColor, 0.3);
     } catch (error) {
-      console.warn('⚠️ Enemy glow error:', error);
+      console.error('⚠️ Enemy glow error:', error);
     }
   }
 

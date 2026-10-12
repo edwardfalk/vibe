@@ -125,7 +125,7 @@ export class Bullet {
         drawGlow(p, this.x, this.y, this.size * 1.5, ENEMY_GLOW, 0.5);
       }
     } catch (error) {
-      console.warn('⚠️ Bullet glow error:', error);
+      console.error('⚠️ Bullet glow error:', error);
     }
 
     // Draw trail

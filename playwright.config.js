@@ -47,7 +47,10 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: `node_modules/.bin/five-server --port=${PORT} --open=false`,
+    // No live reload: it reloaded the page of a running test whenever a file
+    // was written under the checkout, e.g. a failed test's files in
+    // test-results/. It watches only a path that doesn't exist
+    command: `node_modules/.bin/five-server --port=${PORT} --open=false --watch=.no-live-reload`,
     port: Number(PORT),
     reuseExistingServer: !process.env.CI,
     timeout: 15000,

@@ -11,6 +11,7 @@ import { hz } from '../../js/audio/Harmony.js';
 import { Audio } from '../../js/Audio.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { fakeBuses } from './helpers/audioBuses.js';
+import { fakeAudio } from './helpers/fakeAudio.js';
 
 const BOMB = { ...CONFIG.BOMB };
 afterEach(() => {
@@ -201,47 +202,6 @@ describe("the cloud's picture and sound", () => {
   });
 });
 
-// A Web Audio stand-in that records the nodes it makes (as DeathSounds.test.js)
-function fakeAudio() {
-  const made = [];
-  const param = () => ({
-    value: 0,
-    setValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    setTargetAtTime: vi.fn(),
-    cancelScheduledValues: vi.fn(),
-  });
-  const node = (kind, extra = {}) => {
-    const n = {
-      kind,
-      connect: vi.fn((d) => d),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      ...extra,
-    };
-    made.push(n);
-    return n;
-  };
-  const ctx = {
-    currentTime: 3,
-    sampleRate: 8000,
-    state: 'running',
-    createStereoPanner: () => node('pan', { pan: param() }),
-    createBiquadFilter: () =>
-      node('filter', { frequency: param(), Q: param() }),
-    createGain: () => node('gain', { gain: param() }),
-    createOscillator: () =>
-      node('osc', { frequency: param(), detune: param() }),
-    createBufferSource: () => node('source', { playbackRate: param() }),
-    createBuffer: vi.fn((channels, length, rate) => {
-      const data = new Float32Array(length);
-      return { duration: length / rate, getChannelData: () => data };
-    }),
-  };
-  return { ctx, made };
-}
 const SOUND = {
   at: 2,
   noise: { duration: 2 },

@@ -1,6 +1,6 @@
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { writeFileSync } from 'fs';
-import { bootGame, jumpToLevel } from './helpers/boot.js';
+import { aimAtNearestEnemy, bootGame, jumpToLevel } from './helpers/boot.js';
 
 const DURATION_MS = parseInt(process.env.DURATION) || 30000;
 const SAMPLE_INTERVAL = 500;
@@ -23,30 +23,6 @@ const MOVEMENT_PATTERNS = [
   [['s', 'd'], 600],
   [[], 400], // stand still
 ];
-
-/**
- * Point the mouse at the nearest live enemy (the canvas is CSS-scaled, so
- * canvas pixels are converted to page pixels).
- */
-const aimAtNearestEnemy = async (page, box) => {
-  const target = await page.evaluate(() => {
-    const p = window.player;
-    let best = null;
-    let bestDist = Infinity;
-    for (const e of window.enemies ?? []) {
-      if (e.markedForRemoval) continue;
-      const d = Math.hypot(e.x - p.x, e.y - p.y);
-      if (d < bestDist) {
-        bestDist = d;
-        best = e;
-      }
-    }
-    return best ? window.cameraSystem.worldToScreen(best.x, best.y) : null;
-  });
-  if (!target) return;
-  const scale = box.width / 800;
-  await page.mouse.move(box.x + target.x * scale, box.y + target.y * scale);
-};
 
 /**
  * Sample game state for metrics.
@@ -422,4 +398,6 @@ test('playtest session', async ({ page }) => {
   const fullResults = { summary, samples, errors };
   writeFileSync(OUTPUT_PATH, JSON.stringify(fullResults, null, 2));
   console.log(`   📄 Full results: ${OUTPUT_PATH}`);
+  // A sound or effect that breaks in play logs here and nowhere else
+  expect(errors, 'console errors in play').toEqual([]);
 });

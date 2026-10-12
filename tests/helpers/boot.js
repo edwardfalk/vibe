@@ -37,3 +37,26 @@ export async function jumpToLevel(page, level) {
     }
   }, level);
 }
+
+// Point the mouse at the nearest live enemy (the canvas is CSS-scaled, so
+// canvas pixels are converted to page pixels). `box` is the canvas's
+// bounding box.
+export const aimAtNearestEnemy = async (page, box) => {
+  const target = await page.evaluate(() => {
+    const p = window.player;
+    let best = null;
+    let bestDist = Infinity;
+    for (const e of window.enemies ?? []) {
+      if (e.markedForRemoval) continue;
+      const d = Math.hypot(e.x - p.x, e.y - p.y);
+      if (d < bestDist) {
+        bestDist = d;
+        best = e;
+      }
+    }
+    return best ? window.cameraSystem.worldToScreen(best.x, best.y) : null;
+  });
+  if (!target) return;
+  const scale = box.width / 800;
+  await page.mouse.move(box.x + target.x * scale, box.y + target.y * scale);
+};

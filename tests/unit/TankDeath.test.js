@@ -22,6 +22,7 @@ import { createMockP5 } from './helpers/enemyMocks.js';
 import { transformP5 } from './helpers/transformP5.js';
 import { tankWorld } from './helpers/tankWorld.js';
 import { fakeBuses } from './helpers/audioBuses.js';
+import { fakeAudio } from './helpers/fakeAudio.js';
 
 const DEATHS = { ...CONFIG.DEATHS };
 afterEach(() => {
@@ -291,47 +292,6 @@ describe('All air', () => {
     expect(glintsAt(0.3)).toBe(0);
   });
 });
-
-// A Web Audio stand-in that records the nodes it makes (as DeathSounds.test.js)
-function fakeAudio() {
-  const made = [];
-  const param = () => ({
-    value: 0,
-    setValueAtTime: vi.fn(),
-    exponentialRampToValueAtTime: vi.fn(),
-    linearRampToValueAtTime: vi.fn(),
-    setTargetAtTime: vi.fn(),
-  });
-  const node = (kind, extra = {}) => {
-    const n = {
-      kind,
-      connect: vi.fn((d) => d),
-      disconnect: vi.fn(),
-      start: vi.fn(),
-      stop: vi.fn(),
-      ...extra,
-    };
-    made.push(n);
-    return n;
-  };
-  const ctx = {
-    currentTime: 3,
-    sampleRate: 8000,
-    state: 'running',
-    createStereoPanner: () => node('pan', { pan: param() }),
-    createBiquadFilter: () =>
-      node('filter', { frequency: param(), Q: param() }),
-    createGain: () => node('gain', { gain: param() }),
-    createOscillator: () =>
-      node('osc', { frequency: param(), detune: param() }),
-    createBufferSource: () => node('source'),
-    createBuffer: vi.fn((channels, length, rate) => {
-      const data = new Float32Array(length);
-      return { duration: length / rate, getChannelData: () => data };
-    }),
-  };
-  return { ctx, made };
-}
 
 describe("the tank's air (his death's sound)", () => {
   it("squeals down onto the root, jumping on each of the picture's darts", () => {
