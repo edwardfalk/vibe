@@ -68,10 +68,14 @@ function stick(x, y) {
  * a press, as the keys E, M and P (R on the GAME OVER screen).
  */
 export function pollGamepad() {
+  let pads = [];
+  try {
+    pads = navigator.getGamepads?.() ?? [];
+  } catch {
+    // Refused, as in an iframe without allow="gamepad": play on without
+  }
   // shortcut: assumes the standard mapping; a pad without it needs a remap
-  const pad = Array.from(navigator.getGamepads?.() ?? []).find(
-    (g) => g?.connected
-  );
+  const pad = Array.from(pads).find((g) => g?.connected);
   if (!pad) {
     window.padMove = null;
     padDown.clear();

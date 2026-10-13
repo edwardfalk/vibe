@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Player } from '../../js/entities/player.js';
+import { heroMuzzle } from '../../js/entities/PlayerRenderer.js';
 import { CONFIG } from '../../js/config.js';
 
 // A hero at (0, 0), no keys down, the mouse straight below him; `pad` is
@@ -49,6 +50,22 @@ describe('Player on a controller', () => {
     h.update(FRAME);
     expect(Math.cos(h.aimAngle)).toBeCloseTo(0, 1); // down, to the mouse
     expect(Math.sin(h.aimAngle)).toBeGreaterThan(0);
+  });
+
+  it('the right stick turns him round: his shot leaves the gun on that side', () => {
+    const h = hero({ padAim: Math.PI });
+    h.update(FRAME);
+    expect(h.facing).toBe(-1);
+    const b = h.fireBullet();
+    const m = heroMuzzle(h.x, h.y, Math.PI, -1, h.drawnSize());
+    expect(b.x).toBeCloseTo(m.x, 6);
+    expect(b.y).toBeCloseTo(m.y, 6);
+  });
+
+  it('the arrow keys win over a kept right-stick aim', () => {
+    const h = hero({ padAim: 2.7, arrowUpPressed: true });
+    h.update(FRAME);
+    expect(h.aimAngle).toBeCloseTo(-Math.PI / 2);
   });
 
   it('he dashes along the left stick, else along the right stick', () => {

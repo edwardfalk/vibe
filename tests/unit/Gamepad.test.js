@@ -93,10 +93,12 @@ describe('Gamepad', () => {
     expect(window.playerIsShooting).toBe(false);
   });
 
-  it('a controller unplugged with RT held stops the gun', () => {
+  it('a controller unplugged with RT held and the stick pushed stops him', () => {
     press(pad, 7);
+    pad.axes[0] = 1;
     pollGamepad();
     expect(window.playerIsShooting).toBe(true);
+    expect(window.padMove).not.toBeNull();
     vi.stubGlobal('navigator', { getGamepads: () => [null, null] });
     pollGamepad();
     expect(window.playerIsShooting).toBe(false);
@@ -131,6 +133,17 @@ describe('Gamepad', () => {
 
   it('a browser without the Gamepad API reads no controller', () => {
     vi.stubGlobal('navigator', {});
+    expect(() => pollGamepad()).not.toThrow();
+    expect(window.padMove).toBeNull();
+  });
+
+  // As in an iframe without allow="gamepad": it must not stop the game
+  it('a browser that refuses the controller reads none', () => {
+    vi.stubGlobal('navigator', {
+      getGamepads: () => {
+        throw new Error('SecurityError: not allowed');
+      },
+    });
     expect(() => pollGamepad()).not.toThrow();
     expect(window.padMove).toBeNull();
   });
