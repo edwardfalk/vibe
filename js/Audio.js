@@ -617,9 +617,10 @@ export class Audio {
 
   /**
    * A bassist's death, Ink cloud (DeathSounds.js), from (x, y) at audio time
-   * `at`, from its record, at CONFIG.DEATHS.BASSIST_VOLUME
+   * `at`, from its record, at CONFIG.DEATHS.BASSIST_VOLUME times `gain` (one
+   * of several dying together is quieter)
    */
-  playBassistDeath(x, y, at, record) {
+  playBassistDeath(x, y, at, record, gain = 1) {
     if (!this.ensureAudioContext()) return;
     this.guarded('bassistDeath', () => {
       const { near, pan } = this.placement(x, y);
@@ -627,7 +628,7 @@ export class Audio {
         at,
         record,
         noise: crashNoise(this.audioContext),
-        volume: CONFIG.DEATHS.BASSIST_VOLUME * near,
+        volume: CONFIG.DEATHS.BASSIST_VOLUME * near * gain,
         pan,
       });
     });

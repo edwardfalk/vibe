@@ -9,6 +9,7 @@ import {
 import {
   EnemyDeathHandler,
   popTime,
+  STRUM_SEC,
 } from '../../js/systems/combat/EnemyDeathHandler.js';
 import { heardLatencySec } from '../../js/audio/BeatTrack.js';
 import { bassistInk } from '../../js/audio/DeathSounds.js';
@@ -73,7 +74,8 @@ describe('his death', () => {
       0,
       0,
       at,
-      death.record
+      death.record,
+      1
     );
   });
 
@@ -90,6 +92,30 @@ describe('his death', () => {
     const w = killed(null, 1.2);
     const [death] = w.explosionManager.fragmentExplosions;
     expect(death.record.dir).toBe(1.2);
+  });
+
+  it('several dying together don’t stack up: each next sounds a strum later and quieter, all seen on the start (Edward’s addition)', () => {
+    const explosionManager = { fragmentExplosions: [] };
+    const w = bassistWorld({ ms0: 4100, values: { explosionManager } });
+    w.audio.ensureAudioContext = vi.fn();
+    w.audio.playBassistDeath = vi.fn();
+    const handler = new EnemyDeathHandler(w.context);
+    const at = popTime(w.clock.nowSec(), w.clock);
+    for (let i = 0; i < 3; i++) handler.handleEnemyDeath(w.b, 'bassist', 0, 0);
+    const calls = w.audio.playBassistDeath.mock.calls;
+    calls.forEach(([, , t, , gain], k) => {
+      expect(t).toBeCloseTo(at + k * STRUM_SEC, 9);
+      expect(gain).toBeCloseTo(1 / Math.sqrt(k + 1), 9);
+    });
+    expect(calls).toHaveLength(3);
+    const starts = explosionManager.fragmentExplosions.map((d) => d.startsAt);
+    expect(new Set(starts).size).toBe(1);
+    // a later start begins a new count
+    w.at(4600);
+    handler.handleEnemyDeath(w.b, 'bassist', 0, 0);
+    const [, , t, , gain] = calls.at(-1);
+    expect(t).toBeCloseTo(popTime(w.clock.nowSec(), w.clock), 9);
+    expect(gain).toBe(1);
   });
 
   it('asks a bassist nearby to answer, from its start', () => {
@@ -435,6 +461,11 @@ describe('the ink’s sound', () => {
     expect(off.gain / here.gain).toBeCloseTo(near, 9);
     CONFIG.DEATHS.BASSIST_VOLUME = 2.6;
     expect(placedAt(0).gain / here.gain).toBeCloseTo(2, 9);
+    // one of several dying together: its gain on top
+    const from = made.length;
+    audio.playBassistDeath(0, 0, 4, rec({ at: 4 }), 0.5);
+    const half = made.slice(from).find((n) => n.kind === 'gain');
+    expect(half.gain.setValueAtTime.mock.calls[0][0]).toBeCloseTo(here.gain, 9);
     expect(off.pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(pan, 9);
     expect(off.pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
     CONFIG.DEATHS.BASSIST_VOLUME = 0; // silences the jets' plucks too: they play into it
