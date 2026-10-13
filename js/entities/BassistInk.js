@@ -31,12 +31,12 @@ import {
 import {
   drawBassist,
   traceScroll,
+  paintScroll,
   newScrollCoil,
   SCROLL_N,
   BASSIST_SHAPE as G,
   BASSIST_COLORS as C,
-  INK,
-  NAVY,
+  NOTE_COLORS,
   rgb,
 } from './BassistRenderer.js';
 
@@ -64,7 +64,7 @@ const BODY = {
 const CLOUD = {
   OUTER: [44, 32, 82], // thin ink: dark violet, lifted so it shows on deep space
   CORE: [22, 15, 40], // dense ink, in the middle of each puff
-  FRINGE: [70, 232, 214], // a faint glow round it: his light, in the ink
+  FRINGE: NOTE_COLORS.glow, // a faint glow round it: his light, in the ink
   OUTER_A: 0.8,
   CORE_A: 0.7,
   FRINGE_A: 0.3,
@@ -143,6 +143,9 @@ const FLY = {
   SPUTTER_HZ: 14,
   SPUTTER_ON: 1.2,
   SPUTTER_OFF: 0.15,
+  EDGE: 0.6, // its lit edge brightens with its lure: this times...
+  EDGE_FROM: 0.4, // ...this plus the lure, to 1
+  HALO_GROW: 0.3, // its lure's halo grows by this past full
   FADE_AFTER: 0.12, // s after the fizzle, it fades...
   FADE_SEC: 0.4, // ...over this, times linger
   PUFF_R: [1.5, 5], // the puff each jet leaves, px
@@ -156,24 +159,6 @@ const FLY = {
   DYING: 0.3, // ...and curled by his trembling
   DYING_SEC: 0.25,
 };
-// The scroll as drawn: its ink, its chambers, its lit edge, its lure
-const SCROLL_LOOK = {
-  INK_PX: 1.1,
-  CHAMBER_A: 0.7,
-  CHAMBER_W: 0.45,
-  CHAMBER_SPAN: 0.95,
-  CHAMBER_BULGE: 0.8,
-  EDGE_A: 0.6,
-  EDGE_FROM: 0.4,
-  EDGE_W: 0.7,
-  EDGE_SPAN: 0.85,
-  HALO_PX: 3.4,
-  HALO_A: 0.35,
-  HALO_GROW: 0.3,
-  DOT_PX: 1.2,
-  LURE: [230, 255, 250],
-};
-
 // The way he flees (away from the hero) and how far his ink may reach: the
 // hero's place is kept from the death's first frame of ink; with none, or
 // within 20 px, the scroll flees along the blow and the ink takes its
@@ -339,7 +324,7 @@ function drawCloud(c, d, ink, age) {
     c.beginPath();
     c.arc(q.sx, q.sy, SPECK.HALO, 0, TAU);
     c.fill();
-    c.fillStyle = rgb(SCROLL_LOOK.LURE, a);
+    c.fillStyle = rgb(C.lure, a);
     c.beginPath();
     c.arc(q.sx, q.sy, SPECK.R, 0, TAU);
     c.fill();
@@ -350,8 +335,9 @@ function drawCloud(c, d, ink, age) {
 // His scroll's coil (BassistRenderer.js's tracer), from its root at the
 // origin along +x, coiled by f; returns its middle
 const COIL = newScrollCoil();
-const { x: SX, y: SY, a: SA, w: SW } = COIL;
+const { x: SX, y: SY } = COIL;
 const NS = SCROLL_N;
+const HALO_PX = 3.4; // his lure's halo, as his look paints it
 function coil(f) {
   traceScroll(f, 0, COIL);
   let mx = 0;
@@ -362,74 +348,6 @@ function coil(f) {
   }
   return [mx / (NS + 1), my / (NS + 1)];
 }
-function ribbon(c, grow) {
-  c.beginPath();
-  for (let j = 0; j <= NS; j++) {
-    c.lineTo(
-      SX[j] - Math.sin(SA[j]) * (SW[j] + grow),
-      SY[j] + Math.cos(SA[j]) * (SW[j] + grow)
-    );
-  }
-  for (let j = NS; j >= 0; j--) {
-    c.lineTo(
-      SX[j] + Math.sin(SA[j]) * (SW[j] + grow),
-      SY[j] - Math.cos(SA[j]) * (SW[j] + grow)
-    );
-  }
-  c.closePath();
-}
-function drawScroll(c, lure) {
-  const S = SCROLL_LOOK;
-  const { curl } = G.scroll;
-  c.fillStyle = rgb(INK);
-  ribbon(c, S.INK_PX);
-  c.fill();
-  c.beginPath();
-  c.arc(SX[NS], SY[NS], SW[NS] + S.INK_PX, 0, TAU);
-  c.fill();
-  c.fillStyle = rgb(C.scroll);
-  ribbon(c, 0);
-  c.fill();
-  c.strokeStyle = rgb(NAVY, S.CHAMBER_A);
-  c.lineWidth = S.CHAMBER_W;
-  c.beginPath();
-  for (let j = 2; j < NS; j += 2) {
-    const w = SW[j] * S.CHAMBER_SPAN;
-    c.moveTo(SX[j] - Math.sin(SA[j]) * w, SY[j] + Math.cos(SA[j]) * w);
-    c.quadraticCurveTo(
-      SX[j] + Math.cos(SA[j]) * S.CHAMBER_BULGE,
-      SY[j] + Math.sin(SA[j]) * S.CHAMBER_BULGE,
-      SX[j] + Math.sin(SA[j]) * w,
-      SY[j] - Math.cos(SA[j]) * w
-    );
-  }
-  c.stroke();
-  c.globalCompositeOperation = 'lighter';
-  c.strokeStyle = rgb(C.scrollHi, S.EDGE_A * Math.min(1, S.EDGE_FROM + lure));
-  c.lineWidth = S.EDGE_W;
-  c.beginPath();
-  for (let j = 0; j <= NS; j++) {
-    const w = SW[j] * S.EDGE_SPAN;
-    c.lineTo(
-      SX[j] + Math.sin(SA[j]) * w * curl,
-      SY[j] - Math.cos(SA[j]) * w * curl
-    );
-  }
-  c.stroke();
-  if (lure > 0.02) {
-    const halo = S.HALO_PX * (1 + S.HALO_GROW * Math.max(0, lure - 1));
-    c.fillStyle = rgb(C.photo, Math.min(1, S.HALO_A * lure));
-    c.beginPath();
-    c.arc(SX[NS], SY[NS], halo, 0, TAU);
-    c.fill();
-    c.fillStyle = rgb(S.LURE, Math.min(1, lure));
-    c.beginPath();
-    c.arc(SX[NS], SY[NS], S.DOT_PX, 0, TAU);
-    c.fill();
-  }
-  c.globalCompositeOperation = 'source-over';
-}
-
 // How hard jet j pushes: the pop, his lets, the fizzle
 const jetV = (jets, j) =>
   j === 0 ? FLY.JETS[0] : j === jets.length - 1 ? FLY.JETS[2] : FLY.JETS[1];
@@ -597,7 +515,13 @@ export function drawInk(p, d) {
     c.scale(sz * (1 + FLY.STRETCH * je), sz * (1 - FLY.SQUASH * je));
     c.translate(-cx, -cy);
     c.lineJoin = 'round';
-    drawScroll(c, lure);
+    paintScroll(
+      c,
+      COIL,
+      lure,
+      FLY.EDGE * Math.min(1, FLY.EDGE_FROM + lure),
+      HALO_PX * (1 + FLY.HALO_GROW * Math.max(0, lure - 1))
+    );
     c.restore();
   }
 
