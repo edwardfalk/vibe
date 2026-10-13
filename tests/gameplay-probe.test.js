@@ -911,45 +911,81 @@ test.describe('Gameplay Probes', () => {
         const { CONFIG } = await import('/js/config.js');
         return CONFIG.SPEECH.SPEAKERS[n];
       }, name);
-    // Saved the way voices.html saves an edit: against config.js's own voice
-    const saveGrunt = (on, pitch) =>
-      on.evaluate(async (p) => {
+    // Saved the way voices.html saves edits: each against config.js's
+    // voice, one save per set of pitches, as fast as a slider drag
+    const save = (on, ...saves) =>
+      on.evaluate(async (all) => {
         const { CONFIG } = await import('/js/config.js');
-        const base = CONFIG.SPEECH.SPEAKERS.grunt;
-        const edit = { ...base, voice: { ...base.voice, pitch: p } };
-        localStorage.setItem(
-          'vibe.voices.v1',
-          JSON.stringify({
-            speakers: { grunt: { base, edit } },
-            respell: {},
-          })
-        );
-      }, pitch);
+        for (const pitches of all) {
+          const speakers = {};
+          for (const [name, pitch] of Object.entries(pitches)) {
+            const base = CONFIG.SPEECH.SPEAKERS[name];
+            const edit = { ...base, voice: { ...base.voice, pitch } };
+            speakers[name] = { base, edit };
+          }
+          localStorage.setItem(
+            'vibe.voices.v1',
+            JSON.stringify({ speakers, respell: {} })
+          );
+        }
+      }, saves);
+    // Each swap renders the timed lines (the bomb's count...) in the new voices
+    const swaps = () => page.evaluate(() => window.__swaps);
+    await page.evaluate(() => {
+      window.__swaps = 0;
+      const prepare = window.audio.prepareTimedLines.bind(window.audio);
+      window.audio.prepareTimedLines = () => {
+        window.__swaps++;
+        prepare();
+      };
+    });
     const gruntPitch = (await speaker('grunt')).voice.pitch;
-    await saveGrunt(page, 37);
-    // A rusher picked on his knob stays picked through the box
+    await save(page, { grunt: 37, rusher: 23 });
     const rusher = page
       .locator('#tunePanel label')
       .filter({ hasText: 'SPEAKERS.rusher:' });
+    const json = page.locator('#tunePanel pre');
     await rusher.locator('select').selectOption('ringmaster');
 
     const box = page.getByLabel('Playground voices');
     await box.check();
     await expect(page.locator('#tunePanel')).toContainText(
-      'Playground voices (grunt)'
+      'Playground voices (grunt, rusher)'
     );
     expect((await speaker('grunt')).voice.pitch).toBe(37);
-    // The playground saving in another tab reaches the game
+    expect((await speaker('rusher')).voice.pitch).toBe(23);
+    expect(await swaps()).toBe(1);
+    // The knob says whose voice it is, and the JSON shows what plays
+    await expect(rusher).toContainText('SPEAKERS.rusher: playground');
+    await expect(json).toContainText('"pitch": 37');
+    // Unticked, the knob's pick comes back
+    await box.uncheck();
+    expect((await speaker('rusher')).voice.variant).toBe('announcer');
+    await expect(rusher).toContainText('SPEAKERS.rusher: ringmaster');
+    await expect(json).not.toContainText('"pitch": 37');
+
+    // Ticked again, then a knob pick: the playground saving another voice,
+    // in another tab, reaches the game and leaves the pick alone
+    await box.check();
+    expect((await speaker('rusher')).voice.pitch).toBe(23);
+    await rusher.locator('select').selectOption('ringmaster');
     const playground = await context.newPage();
     await playground.goto('/?tune');
-    await saveGrunt(playground, 43);
+    const before = await swaps();
+    await save(
+      playground,
+      ...[39, 40, 41, 42, 43].map((grunt) => ({ grunt, rusher: 23 }))
+    );
     await expect
       .poll(async () => (await speaker('grunt')).voice.pitch)
       .toBe(43);
+    expect(await swaps()).toBe(before + 1); // the drag's saves, once
+    expect((await speaker('rusher')).voice.variant).toBe('announcer');
 
     await box.uncheck();
     expect((await speaker('grunt')).voice.pitch).toBe(gruntPitch);
     expect((await speaker('rusher')).voice.variant).toBe('announcer');
+    await expect(json).not.toContainText('"pitch": 43');
   });
 
   test('Game dips while speech plays and always recovers', async ({ page }) => {

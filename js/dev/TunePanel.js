@@ -66,6 +66,10 @@ const RUSHER_VOICES = {
   },
 };
 
+// Quiet time after the voice playground's last save before ?tune's
+// Playground voices box takes its edits
+const PLAYGROUND_SETTLE_MS = 300;
+
 // [group, key, options]: group is a path under CONFIG; options is
 // [min, max, step] for a slider, a list of choices for a dropdown, or an
 // object of named choices for a dropdown that sets the chosen value;
@@ -347,7 +351,9 @@ export function createTunePanel() {
   };
   panel.append(levelUp);
 
-  // Boxes that aren't knobs, so they never land in the JSON for config.js
+  // Boxes that aren't knobs: Sound while paused and Immortal hero never land
+  // in the JSON for config.js (Playground voices changes CONFIG.SPEECH,
+  // which the JSON shows for the rusher's knob)
   const addBox = (text, checked, onChange) => {
     const row = document.createElement('label');
     row.style.cssText = 'display:block;margin:6px 0;';
@@ -376,45 +382,64 @@ export function createTunePanel() {
   addBox('Immortal hero', CONFIG.IMMORTAL, (on) => (CONFIG.IMMORTAL = on));
 
   // Playground voices: the voice playground's saved edits in play, kept up
-  // to date while it saves in another tab
+  // to date while it saves in another tab. The latest change wins, the box's
+  // or a knob's; unticked, it puts back what it replaced
   const configVoices = {
     speakers: { ...CONFIG.SPEECH.SPEAKERS },
     respell: CONFIG.SPEECH.RESPELL,
   };
   const fromPlayground = new WeakSet();
+  const replaced = {};
+  const applied = {}; // each voice as the box last put it in
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-  const useVoices = (on) => {
-    const { voices, blocked } = on
-      ? savedVoices(configVoices)
-      : { voices: configVoices };
+  // `saved`: the playground saved; a voice it left as it was stays as a
+  // knob may have set it since
+  const useVoices = (on, saved = false) => {
+    const read = on ? savedVoices(configVoices) : { voices: configVoices };
+    const { voices, dropped = [], blocked } = read;
     const edited = [];
+    const current = CONFIG.SPEECH.SPEAKERS;
     for (const [name, setup] of Object.entries(voices.speakers)) {
-      const current = CONFIG.SPEECH.SPEAKERS;
       if (!same(setup, configVoices.speakers[name])) {
         // A voice left as it was keeps its object, and so its rendered lines
-        if (!same(setup, current[name])) {
+        const json = JSON.stringify(setup);
+        const knobsTurn = saved && applied[name] === json;
+        if (!same(setup, current[name]) && !knobsTurn) {
+          if (!fromPlayground.has(current[name]))
+            replaced[name] = current[name];
           fromPlayground.add(setup);
           current[name] = setup;
+          applied[name] = json;
         }
         edited.push(name);
       } else if (fromPlayground.has(current[name])) {
-        // Back to config.js's own object; a rusher's knob pick stays put
-        current[name] = configVoices.speakers[name];
+        current[name] = replaced[name];
       }
     }
     CONFIG.SPEECH.RESPELL = voices.respell;
     if (!same(voices.respell, configVoices.respell)) edited.push('respell');
-    playground.label.textContent = ` Playground voices${
-      !on
-        ? ''
-        : blocked
-          ? ' (storage blocked)'
-          : ` (${edited.join(', ') || 'none edited'})`
-    }`;
+    let status = '';
+    if (blocked) status = " (can't read its saves)";
+    else if (on) status = ` (${edited.join(', ') || 'none edited'})`;
+    if (dropped.length) {
+      status += `; old saves skipped: ${dropped.join(', ')}`;
+    }
+    playground.label.textContent = ` Playground voices${status}`;
+    for (const refresh of knobRefreshes) refresh();
+    showJson();
+    window.audio?.prepareTimedLines?.();
   };
   const playground = addBox('Playground voices', false, useVoices);
+  // The playground saves on every slider step: wait for it to settle, or a
+  // drag would queue a render of every timed line for each step
+  let settling;
   window.addEventListener('storage', (e) => {
-    if (e.key === STORE_KEY && playground.box.checked) useVoices(true);
+    if (e.key !== STORE_KEY || !playground.box.checked) return;
+    clearTimeout(settling);
+    settling = setTimeout(
+      () => playground.box.checked && useVoices(true, true),
+      PLAYGROUND_SETTLE_MS
+    );
   });
 
   const json = document.createElement('pre');
@@ -424,6 +449,7 @@ export function createTunePanel() {
     json.textContent = JSON.stringify(groups, null, 2);
   };
 
+  const knobRefreshes = [];
   for (const [path, key, options] of KNOBS) {
     const settings = resolve(path);
     const group = path.split('.').pop();
@@ -433,9 +459,11 @@ export function createTunePanel() {
     const name = document.createElement('div');
     // Named choices show the name of the one set
     const named = !Array.isArray(options) && typeof value === 'object';
+    // (none of them: the Playground voices box put another voice in)
     const shown = () =>
       named
-        ? Object.keys(options).find((n) => options[n] === settings[key])
+        ? (Object.keys(options).find((n) => options[n] === settings[key]) ??
+          'playground')
         : settings[key];
     const readout = () => {
       name.textContent = `${group}.${key}: ${shown()}`;
@@ -484,6 +512,12 @@ export function createTunePanel() {
     });
 
     readout();
+    if (named) {
+      knobRefreshes.push(() => {
+        input.value = shown();
+        readout();
+      });
+    }
     row.append(name, input);
     panel.append(row);
   }
