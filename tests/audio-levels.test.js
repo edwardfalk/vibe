@@ -149,8 +149,8 @@ test('a bad root costs only the hum and the pitched sounds: the kick plays on', 
     const track = window.beatTrack;
     const play = track._playKick.bind(track);
     window.kicksPlayed = 0;
-    track._playKick = (time) => {
-      play(time);
+    track._playKick = (...args) => {
+      play(...args);
       window.kicksPlayed++; // counted only once it played without throwing
     };
   });

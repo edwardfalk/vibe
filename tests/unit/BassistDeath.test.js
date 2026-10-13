@@ -172,6 +172,19 @@ describe('his death', () => {
     expect(calls[1][4]).toBeCloseTo(1 / Math.sqrt(2), 9);
   });
 
+  it('pulses on the kicks the track played, as heard', () => {
+    const w = killed();
+    const heard = w.clock.nowSec() - CONFIG.SKY.OFFSET_MS / 1000;
+    w.values.beatTrack = {
+      isPlaying: true,
+      ctx: { state: 'running' }, // no latency, not the clock's: no lead
+      kicks: [{ at: w.clock.nowSec() - 0.1, downbeat: false }],
+      getContextValue: (k) => (k === 'beatClock' ? w.clock : null),
+    };
+    const [death] = w.explosionManager.fragmentExplosions;
+    expect(death.kickAge()).toBeCloseTo(heard - (w.clock.nowSec() - 0.1), 9);
+  });
+
   it('dies where he was, keeps the hero, the linger and his seed from the kill', () => {
     const explosionManager = { fragmentExplosions: [] };
     const player = { x: 200, y: 10 };

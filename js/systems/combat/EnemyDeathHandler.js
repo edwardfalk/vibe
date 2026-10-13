@@ -11,7 +11,7 @@ import {
   bassistDeathRecord,
 } from '../../entities/BassistDeath.js';
 import { LEAD_SEC } from '../../audio/speech/Voicebox.js';
-import { heardLatencySec, heardKick } from '../../audio/BeatTrack.js';
+import { heardLatencySec, heardKickOf } from '../../audio/BeatTrack.js';
 
 const TANK_SHAKE = [8, 15]; // a tank's death shakes the camera: px, frames
 const MS_PER_SEC = 1000;
@@ -29,8 +29,8 @@ export const GRUNT_CHORD = Object.freeze(
   ].map((note) => Object.freeze(note))
 );
 export const STRUM_SEC = 0.018;
-// A bassists' start's count is kept this long after it, s: no later death shares it
-const INK_KEEP_SEC = 1;
+// A start's count of deaths is kept this long after it, s: no later death shares it
+const START_KEEP_SEC = 1;
 
 /**
  * When a death at `now` (s, the beat clock's) pops: on the next eighth note,
@@ -60,11 +60,39 @@ export class EnemyDeathHandler {
     // answer: a pop's audio time never comes round again, even across a
     // restart
     this.chord = { at: null, n: 0, answered: false };
-    // How many bassists die at each start: their sounds spread as a chord's
-    // (Edward's addition to the bassist death spec, 2026-10-13). A start is
-    // kept until it is INK_KEEP_SEC past, so another start between its
-    // deaths (a bomb's bang) doesn't reset its count
-    this.inks = new Map();
+    // How many of each type die at each start (type -> start -> count): their
+    // sounds spread as a chord's (Edward's addition to the bassist death
+    // spec, 2026-10-13)
+    this.starts = new Map();
+  }
+
+  /** Seconds since the kick heard now (heardKickOf), for a death's pulse */
+  kickAge(clock, audio) {
+    return heardKickOf(
+      this.getContextValue('beatTrack'),
+      clock.getBeatPosition(),
+      clock.beatInterval / MS_PER_SEC,
+      !!audio.soundPaused
+    ).kickAge;
+  }
+
+  /**
+   * This death's place among its type's at the start `at`: 0 for the first.
+   * Each next sounds a strum later and quieter, 1/sqrt of its place, as a
+   * grunt chord's pops, so a bomb through several doesn't stack them in
+   * phase; all are seen on the start. A start is kept until it is
+   * START_KEEP_SEC past, so another start between its deaths (a bomb's bang)
+   * doesn't reset its count
+   */
+  placeAt(type, at, diedAt) {
+    let starts = this.starts.get(type);
+    if (!starts) this.starts.set(type, (starts = new Map()));
+    for (const t of starts.keys()) {
+      if (t < diedAt - START_KEEP_SEC) starts.delete(t);
+    }
+    const k = starts.get(at) ?? 0;
+    starts.set(at, k + 1);
+    return k;
   }
 
   /**
@@ -173,8 +201,6 @@ export class EnemyDeathHandler {
     const now = () => clock.nowSec();
     const diedAt = now();
     const at = deathStart(blow, clock, diedAt);
-    const latency = () => heardLatencySec(audio.audioContext, clock);
-    const beatSec = clock.beatInterval / MS_PER_SEC;
     const death = new TankDeath({
       x: enemy.x,
       y: enemy.y,
@@ -183,18 +209,19 @@ export class EnemyDeathHandler {
       dir: blow?.dir ?? enemy.facing,
       seed: enemy.lookSeed,
       diedAt,
-      startsAt: at + latency(),
+      startsAt: at + heardLatencySec(audio.audioContext, clock),
       now,
-      kickAge: () =>
-        heardKick(clock.getBeatPosition(), beatSec, latency(), true).kickAge,
+      kickAge: () => this.kickAge(clock, audio),
     });
     explosionManager.fragmentExplosions.push(death);
+    const k = this.placeAt('tank', at, diedAt);
     audio.playTankDeath?.(
       enemy.x,
       enemy.y,
-      at,
+      at + k * STRUM_SEC,
       death.timing,
-      airDarts(death.timing, enemy.lookSeed)
+      airDarts(death.timing, enemy.lookSeed),
+      1 / Math.sqrt(k + 1)
     );
   }
 
@@ -236,7 +263,14 @@ export class EnemyDeathHandler {
         hero: () => player ?? null,
       })
     );
-    audio.playStabberDeath?.(enemy.x, enemy.y, at, record);
+    const k = this.placeAt('stabber', at, diedAt);
+    audio.playStabberDeath?.(
+      enemy.x,
+      enemy.y,
+      at + k * STRUM_SEC,
+      record,
+      1 / Math.sqrt(k + 1)
+    );
     return at;
   }
 
@@ -252,7 +286,6 @@ export class EnemyDeathHandler {
     const now = () => clock.nowSec();
     const diedAt = now();
     const at = deathStart(blow, clock, diedAt);
-    const latency = () => heardLatencySec(audio.audioContext, clock);
     const beatSec = clock.beatInterval / MS_PER_SEC;
     const record = bassistDeathRecord({
       linger: CONFIG.DEATHS.LINGER,
@@ -271,21 +304,13 @@ export class EnemyDeathHandler {
         y: enemy.y,
         record,
         diedAt,
-        startsAt: at + latency(),
+        startsAt: at + heardLatencySec(audio.audioContext, clock),
         now,
         hero: () => player ?? null,
-        kickAge: () =>
-          heardKick(clock.getBeatPosition(), beatSec, latency(), true).kickAge,
+        kickAge: () => this.kickAge(clock, audio),
       })
     );
-    // Bassists dying together don't stack up: each next sounds a strum later
-    // and quieter, 1/sqrt of its place, as a grunt chord's pops; all are seen
-    // on the start
-    for (const t of this.inks.keys()) {
-      if (t < diedAt - INK_KEEP_SEC) this.inks.delete(t);
-    }
-    const k = this.inks.get(at) ?? 0;
-    this.inks.set(at, k + 1);
+    const k = this.placeAt('bassist', at, diedAt);
     audio.playBassistDeath?.(
       enemy.x,
       enemy.y,

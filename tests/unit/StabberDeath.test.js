@@ -10,6 +10,7 @@ import { shellShutAt, shellEnd } from '../../js/entities/StabberShell.js';
 import {
   EnemyDeathHandler,
   popTime,
+  STRUM_SEC,
 } from '../../js/systems/combat/EnemyDeathHandler.js';
 import {
   stabberShell,
@@ -189,6 +190,24 @@ describe("when the stabber's death starts", () => {
       popTime(w2.clock.nowSec(), w2.clock),
       9
     );
+  });
+
+  it('several dying together don’t stack up: each next sounds a strum later and quieter, all seen on the start (the bassist death spec)', () => {
+    const w = world();
+    w.run(0, 300);
+    const deaths = [0, 1, 2].map(() =>
+      w.kill({ dir: 0, blast: true, bomb: true, at: 0.33 })
+    );
+    const calls = w.audio.playStabberDeath.mock.calls;
+    expect(calls).toHaveLength(3);
+    calls.forEach(([, , t, , gain], k) => {
+      expect(t).toBeCloseTo(0.33 + k * STRUM_SEC, 9);
+      expect(gain).toBeCloseTo(1 / Math.sqrt(k + 1), 9);
+    });
+    expect(new Set(deaths.map((d) => d.startsAt)).size).toBe(1);
+    // each type counts its own: unlike sounds don't stack in phase
+    expect(w.handler.placeAt('tank', 0.33, 0.33)).toBe(0);
+    expect(w.handler.placeAt('stabber', 0.33, 0.33)).toBe(3);
   });
 
   it('his neighbours answer an eighth after it starts, not on it', () => {
@@ -455,6 +474,11 @@ describe("Empty shell's sound", () => {
     expect(off.gain / here.gain).toBeCloseTo(near, 9);
     CONFIG.DEATHS.STABBER_VOLUME = 2.6;
     expect(placedAt(0).gain / here.gain).toBeCloseTo(2, 9);
+    // one of several dying together: its gain on top
+    const from = made.length;
+    audio.playStabberDeath(0, 0, 4, record({ at: 4 }), 0.5);
+    const half = made.slice(from).find((n) => n.kind === 'gain');
+    expect(half.gain.setValueAtTime.mock.calls[0][0]).toBeCloseTo(here.gain, 9);
     expect(off.pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(pan, 9);
     expect(off.pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
     const count = made.length;

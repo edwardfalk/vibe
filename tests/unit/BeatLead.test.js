@@ -184,8 +184,12 @@ describe('what waits for the heard kick waits one lead more', () => {
       getContextValue: (k) => (k === 'beatClock' ? clock : undefined),
     };
     const beats = clock.getBeatPosition();
-    const { t } = heardKickOf(track, beats, 0.5);
+    // A kick played a beat before it (the grid's origin is 0): heard a beat
+    // before, less the waits
+    track.kicks = [{ at: (beats - 1) * 0.5, downbeat: false }];
+    const { t, kickAge } = heardKickOf(track, beats, 0.5);
     expect(t).toBeCloseTo(beats * 0.5 - extra(), 9);
+    expect(kickAge).toBeCloseTo(0.5 - extra(), 9);
   });
 
   const world = (t) => {

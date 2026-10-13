@@ -113,7 +113,6 @@ Calls and smaller work:
   - the scroll is drawn at 1.3× his size, to read at game size;
   - the scroll's jets keep his lets after the hero's grid goes straight at the bar line following the last bassist's death;
   - a kill far above or below the hero, or at the world's edge, can leave the scroll's fizzle out of view.
-- **build: the tank's and the stabber's deaths stack in phase** when several start together (a bomb through them): two about +6 dB. Spread them as the bassist's and the grunts' are: each next a strum (`STRUM_SEC`) later, at 1/√ of its place. (bassist death spec, Edward's addition)
 
 - **call: the stabber's death, by eye and ear on `?tune`:** Gold shatter is the default (Edward's pick at the play test, for its sound), Empty shell the other `DEATHS.STABBER_STYLE`. Its level (`DEATHS.STABBER_VOLUME`; both styles sit about 2 dB over the kick, beside the tank's death). The port kept the studies page's small choices, each Edward's to change:
   - the shell's spike splits with the shell;
@@ -138,10 +137,6 @@ Calls and smaller work:
 
 - **call: the nebula's detail** ("good enough to push, work more on the detail later").
 - **call: should the sky keep pulsing while muted?** It does today.
-- **call, then build: the beat track records the kicks it really plays,** so the sky and the Dude stop rebuilding them from the pattern. This fixes:
-  - the phantom pulse on the first key press;
-  - pulses on kicks a pattern change or a restart skipped;
-  - the old bar's accent carried past a restart.
 - **build, idea: curved space.** The world as a slice of curved space, bullets following the curve and the nebula bending round masses. The sky spec named it as the next spike.
 - **build: drop a weak GPU to the flat sky by itself** when frames stay over 22 ms for 2 s. Today only a lost context or `?sky=flat` does.
 - **build, idea:** where the kill-streak orbs sit near the score; the look of the health wash.
