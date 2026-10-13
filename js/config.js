@@ -454,7 +454,7 @@ const CONFIG = {
   },
 
   // Deaths (js/entities/GruntDeath.js, DudeDeath.js, TankDeath.js,
-  // StabberDeath.js, js/audio/DeathSounds.js). Volumes: 1 is the prototype
+  // StabberDeath.js, BassistDeath.js, js/audio/DeathSounds.js). Volumes: 1 is the prototype
   // page's level (the last breath's plus the mix pass, DeathSounds.js's
   // BREATH_MIX_DB). LINGER: how long a death's remains stay, times (a
   // stabber's eye and spike too). STABBER_STYLE: how a stabber dies, read at
