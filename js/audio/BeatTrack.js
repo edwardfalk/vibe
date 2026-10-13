@@ -31,8 +31,10 @@ const KICK_PATTERNS = {
 const mod4 = (n) => ((n % 4) + 4) % 4;
 // "None" for the sky: finite, so no maths downstream turns it into NaN
 export const NONE_SEC = 99;
-// How far back to look for the two latest kicks (oneThree kicks every 2 beats)
-const LOOKBACK_BEATS = 8;
+// How far ahead the pattern's next kick is looked for (oneThree kicks every 2 beats)
+const LOOKAHEAD_BEATS = 4;
+// The kicks a track keeps: the two latest heard, and those booked but not yet heard
+const KICKS_KEPT = 8;
 
 /** Does the kick play on this beat (0-3) of the bar? Read live, so ?tune applies at once. */
 export function kicksOn(beat) {
@@ -41,42 +43,57 @@ export function kicksOn(beat) {
 }
 
 /**
- * The kick as the player hears it, for the sky. It works from the grid this
- * track plays on and the current pattern, so a pattern change, a stall or a
- * restart can cost one wrong pulse (see the spec). Times are seconds; "none"
- * is NONE_SEC.
+ * The kick as the player hears it, for the sky and the hero: the kicks the
+ * track really played, so a pattern change, a skipped note or a restart
+ * never shows one it didn't. The next kick is the next one booked, else the
+ * current pattern's on a grid beat the track hasn't come to yet. Times are
+ * seconds; "none" is NONE_SEC.
  * @param {number} beats BeatClock's position in beats (getTotalBeats() + getBeatPhase())
  * @param {number} beatSec seconds per beat
- * @param {number} latencySec audio latency (base + output) plus the sky's offset
- * @param {boolean} running the track is playing on a running AudioContext
+ * @param {number} latencySec heardLatencySec: what is heard at `beats` was booked this long before it
+ * @param {?{ kicks: { at: number, downbeat: boolean }[], originSec: number, until: number }} booked
+ *   the kicks played (audio times, oldest first; downbeat: on a beat 1), the
+ *   grid's origin, and the last grid time the track has come to; null while
+ *   the track isn't playing
  */
-export function heardKick(beats, beatSec, latencySec, running) {
+export function heardKick(beats, beatSec, latencySec, booked) {
   const heard = beats - latencySec / beatSec;
+  const t = heard * beatSec;
+  if (!booked) {
+    return {
+      t,
+      kickAge: NONE_SEC,
+      prevKickAge: NONE_SEC,
+      downbeat: false,
+      nextKickIn: NONE_SEC,
+    };
+  }
+  const { kicks, originSec, until } = booked;
+  const now = originSec + t; // the audio time heard at `beats`
+  let i = kicks.length - 1;
+  while (i >= 0 && kicks[i].at > now) i--;
+  let next = kicks[i + 1]?.at ?? null;
   const n = Math.floor(heard);
-  const kicks = (k) => running && kicksOn(mod4(k));
-  const back = [];
-  for (let k = n; k > n - LOOKBACK_BEATS && back.length < 2; k--) {
-    if (kicks(k)) back.push(k);
+  for (let k = n + 1; k <= n + LOOKAHEAD_BEATS && next === null; k++) {
+    const at = originSec + k * beatSec;
+    if (at > until && kicksOn(mod4(k))) next = at;
   }
-  let next = null;
-  for (let k = n + 1; k <= n + 4 && next === null; k++) {
-    if (kicks(k)) next = k;
-  }
-  const age = (k) => (k === undefined ? NONE_SEC : (heard - k) * beatSec);
+  const age = (j) => (j < 0 ? NONE_SEC : Math.min(NONE_SEC, now - kicks[j].at));
   return {
-    t: heard * beatSec,
-    kickAge: age(back[0]),
-    prevKickAge: age(back[1]),
-    downbeat: back[0] !== undefined && mod4(back[0]) === 0,
-    nextKickIn: next === null ? NONE_SEC : (next - heard) * beatSec,
+    t,
+    kickAge: age(i),
+    prevKickAge: age(i - 1),
+    downbeat: i >= 0 && kicks[i].downbeat,
+    nextKickIn: next === null ? NONE_SEC : next - now,
   };
 }
 
 /**
- * The heard kick at beat position `beats`, from this track's own state: its
- * AudioContext's latency plus CONFIG.SKY.OFFSET_MS and its beat clock's lead,
- * and whether it is playing. A pause that holds the sound (held) keeps the glow the stopped
- * beat had. The sky and the hero's pulses both read it.
+ * The heard kick at beat position `beats`, from this track's own state: the
+ * kicks it played, its AudioContext's latency plus CONFIG.SKY.OFFSET_MS and
+ * its beat clock's lead, and whether it is playing. A pause that holds the
+ * sound (held) keeps the glow the stopped beat had. The sky, the hero's
+ * pulses and the deaths' all read it.
  * @param {?BeatTrack} beatTrack
  * @param {number} beats BeatClock's position in beats
  * @param {number} beatSec seconds per beat
@@ -86,7 +103,15 @@ export function heardKickOf(beatTrack, beats, beatSec, held = false) {
   const ctx = beatTrack?.ctx;
   const running = !!beatTrack?.isPlaying && (ctx?.state === 'running' || held);
   const clock = beatTrack?.getContextValue?.('beatClock');
-  return heardKick(beats, beatSec, heardLatencySec(ctx, clock), running);
+  const booked =
+    running && clock
+      ? {
+          kicks: beatTrack.kicks,
+          originSec: clock.startTime / 1000,
+          until: beatTrack._lastNoteSec ?? -Infinity,
+        }
+      : null;
+  return heardKick(beats, beatSec, heardLatencySec(ctx, clock), booked);
 }
 
 /**
@@ -155,6 +180,10 @@ export class BeatTrack {
     // it up
     this.hum = null;
     this._humFailed = false;
+
+    // The kicks it played, oldest first: { at (audio time it started),
+    // downbeat (on a beat 1) }, for heardKickOf
+    this.kicks = [];
   }
 
   async start() {
@@ -250,7 +279,7 @@ export class BeatTrack {
     if (eighth % 2 !== 0) return;
     const beat = eighth / 2; // 0-3
     if (kicksOn(beat)) {
-      this._playKick(time);
+      this._playKick(time, beat === 0);
     }
     // Every beat dips the hum, kick or not; each bar's beat 1 turns its breath
     if (this.hum) {
@@ -276,7 +305,7 @@ export class BeatTrack {
 
   // -- Kick ---------------------------------------------------------------
 
-  _playKick(time) {
+  _playKick(time, downbeat = false) {
     if (!this.ctx || !this.masterGain) return;
     const k = CONFIG.BEAT_TRACK.KICK;
 
@@ -308,6 +337,9 @@ export class BeatTrack {
     };
     osc.start(time);
     osc.stop(time + k.DECAY_SEC + TAIL_FADE_SEC);
+    // Kept once it sounds, from when: a late note starts at once
+    this.kicks.push({ at: Math.max(time, this.ctx.currentTime), downbeat });
+    if (this.kicks.length > KICKS_KEPT) this.kicks.shift();
 
     // Click: a few ms of high-passed noise for the attack
     if (k.CLICK_LEVEL > 0 && this._noiseBuffer) {

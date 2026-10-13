@@ -11,7 +11,7 @@ import {
   bassistDeathRecord,
 } from '../../entities/BassistDeath.js';
 import { LEAD_SEC } from '../../audio/speech/Voicebox.js';
-import { heardLatencySec, heardKick } from '../../audio/BeatTrack.js';
+import { heardLatencySec, heardKickOf } from '../../audio/BeatTrack.js';
 
 const TANK_SHAKE = [8, 15]; // a tank's death shakes the camera: px, frames
 const MS_PER_SEC = 1000;
@@ -64,6 +64,16 @@ export class EnemyDeathHandler {
     // sounds spread as a chord's (Edward's addition to the bassist death
     // spec, 2026-10-13)
     this.starts = new Map();
+  }
+
+  /** Seconds since the kick heard now (heardKickOf), for a death's pulse */
+  kickAge(clock, audio) {
+    return heardKickOf(
+      this.getContextValue('beatTrack'),
+      clock.getBeatPosition(),
+      clock.beatInterval / MS_PER_SEC,
+      !!audio.soundPaused
+    ).kickAge;
   }
 
   /**
@@ -191,8 +201,6 @@ export class EnemyDeathHandler {
     const now = () => clock.nowSec();
     const diedAt = now();
     const at = deathStart(blow, clock, diedAt);
-    const latency = () => heardLatencySec(audio.audioContext, clock);
-    const beatSec = clock.beatInterval / MS_PER_SEC;
     const death = new TankDeath({
       x: enemy.x,
       y: enemy.y,
@@ -201,10 +209,9 @@ export class EnemyDeathHandler {
       dir: blow?.dir ?? enemy.facing,
       seed: enemy.lookSeed,
       diedAt,
-      startsAt: at + latency(),
+      startsAt: at + heardLatencySec(audio.audioContext, clock),
       now,
-      kickAge: () =>
-        heardKick(clock.getBeatPosition(), beatSec, latency(), true).kickAge,
+      kickAge: () => this.kickAge(clock, audio),
     });
     explosionManager.fragmentExplosions.push(death);
     const k = this.placeAt('tank', at, diedAt);
@@ -279,7 +286,6 @@ export class EnemyDeathHandler {
     const now = () => clock.nowSec();
     const diedAt = now();
     const at = deathStart(blow, clock, diedAt);
-    const latency = () => heardLatencySec(audio.audioContext, clock);
     const beatSec = clock.beatInterval / MS_PER_SEC;
     const record = bassistDeathRecord({
       linger: CONFIG.DEATHS.LINGER,
@@ -298,11 +304,10 @@ export class EnemyDeathHandler {
         y: enemy.y,
         record,
         diedAt,
-        startsAt: at + latency(),
+        startsAt: at + heardLatencySec(audio.audioContext, clock),
         now,
         hero: () => player ?? null,
-        kickAge: () =>
-          heardKick(clock.getBeatPosition(), beatSec, latency(), true).kickAge,
+        kickAge: () => this.kickAge(clock, audio),
       })
     );
     const k = this.placeAt('bassist', at, diedAt);

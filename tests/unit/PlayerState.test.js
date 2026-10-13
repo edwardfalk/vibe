@@ -8,6 +8,7 @@ import {
   FEET_Y,
   CRACK_AHEAD,
 } from '../../js/entities/PlayerRenderer.js';
+import { playedKicks, beatsFrom } from './helpers/playedKicks.js';
 
 const MS_PER_BEAT = 500;
 const FRAME_MS = 16;
@@ -22,6 +23,7 @@ function hero() {
   const mouse = { x: 300, y: 0 };
   const clock = {
     beats: 4,
+    startTime: 0,
     beatInterval: MS_PER_BEAT,
     getBeatPosition() {
       return this.beats;
@@ -41,9 +43,12 @@ function hero() {
       return mouse.y;
     },
   };
+  // A kick played on every beat of its first four bars
   const beatTrack = {
     isPlaying: true,
     ctx: { state: 'running', baseLatency: 0, outputLatency: 0 },
+    kicks: playedKicks(beatsFrom(0, 15)),
+    getContextValue: (k) => (k === 'beatClock' ? clock : undefined),
   };
   const audio = { playSound: vi.fn(), speakPlayerLine: vi.fn() };
   const gameState = { gameState: 'playing', resetKillStreak: vi.fn() };
@@ -279,20 +284,25 @@ describe('the hero’s state for his look', () => {
     expect(player.facing).toBe(-1);
   });
 
-  it('pulses on the kick he hears, not on a beat the kick skips', () => {
-    const { player, clock } = hero();
+  it('pulses on the kicks the track played, not on a beat it skipped', () => {
+    const { player, clock, beatTrack } = hero();
+    beatTrack.kicks = playedKicks([4, 5, 6, 8]); // none on beat 7
     clock.beats = 5.05; // just after the kick on beat 2
     player.update(FRAME_MS);
     expect(player.pose().kick).toBeGreaterThan(0.5);
-    CONFIG.BEAT_TRACK.KICK.PATTERN = 'oneThree';
-    clock.beats = 7.05; // beat 4: oneThree plays no kick there
+    clock.beats = 7.05; // beat 4, skipped: beat 3's, a beat gone
     player.update(FRAME_MS);
-    expect(player.pose().kick).toBeLessThan(0.05); // beat 3's, a beat gone
+    expect(player.pose().kick).toBeLessThan(0.05);
+    // Switching the kick off takes back none it played
     CONFIG.BEAT_TRACK.KICK.ENABLED = false;
-    clock.beats = 4.05;
+    clock.beats = 8.05;
+    player.update(FRAME_MS);
+    expect(player.pose().kick).toBeGreaterThan(0.5);
+    // With none played, none: his nod still moves
+    beatTrack.kicks = [];
     player.update(FRAME_MS);
     expect(player.pose().kick).toBe(0);
-    expect(player.pose().beat).toBeGreaterThan(0.5); // his nod still moves
+    expect(player.pose().beat).toBeGreaterThan(0.5);
   });
 
   it('pulses on beat 1 only for the glint', () => {

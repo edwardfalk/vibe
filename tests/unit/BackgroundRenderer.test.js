@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { BackgroundRenderer } from '../../js/systems/BackgroundRenderer.js';
 import { NebulaSky } from '../../js/systems/background/NebulaSky.js';
 import { CONFIG } from '../../js/config.js';
+import { playedKicks, beatsFrom } from './helpers/playedKicks.js';
 
 vi.mock('../../js/systems/background/NebulaSky.js', () => ({
   // A plain function, since it is called with `new`
@@ -58,6 +59,8 @@ describe('BackgroundRenderer sky frame', () => {
     const beatTrack = {
       isPlaying: true,
       ctx: { state: 'running', baseLatency: 0.01, outputLatency: 0.02 },
+      kicks: playedKicks(beatsFrom(20, 26), 0.5, 4.715119),
+      getContextValue: (k) => (k === 'beatClock' ? beatClock : undefined),
     };
     const { gameState, step } = renderer(2, { beatClock, beatTrack });
     expect(step().levelAge).toBe(99);
@@ -98,7 +101,12 @@ describe('BackgroundRenderer sky frame', () => {
       getTotalBeats: () => 8,
       getBeatPhase: () => 0.2,
     };
-    const beatTrack = { isPlaying: true, ctx: { state: 'running' } };
+    const beatTrack = {
+      isPlaying: true,
+      ctx: { state: 'running' },
+      kicks: playedKicks([8], 0.5, 0.37),
+      getContextValue: (k) => (k === 'beatClock' ? beatClock : undefined),
+    };
     const audio = { soundPaused: false };
     const { gameState, step } = renderer(1, { beatClock, beatTrack, audio });
     const moving = step();
@@ -121,12 +129,15 @@ describe('BackgroundRenderer sky frame', () => {
   it('hears the kick after both latencies plus OFFSET_MS, and only on a running context', () => {
     const beatClock = {
       beatInterval: 500,
+      startTime: 0,
       getTotalBeats: () => 8,
       getBeatPhase: () => 0.2,
     };
     const beatTrack = {
       isPlaying: true,
       ctx: { state: 'running', baseLatency: 0.01, outputLatency: 0.02 },
+      kicks: playedKicks([7, 8]),
+      getContextValue: (k) => (k === 'beatClock' ? beatClock : undefined),
     };
     const { step } = renderer(1, { beatClock, beatTrack });
     const offset = CONFIG.SKY.OFFSET_MS;

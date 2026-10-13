@@ -69,7 +69,7 @@ const audioClock = (t) => ({
   nowSec: () => t,
   getBeatPosition: () => t / 0.5,
 });
-function deathWorld(t) {
+function deathWorld(t, more = {}) {
   const audio = {
     audioContext: { baseLatency: 0.01, outputLatency: 0.02 },
     playTankDeath: vi.fn(),
@@ -85,6 +85,7 @@ function deathWorld(t) {
     audio,
     explosionManager,
     cameraSystem,
+    ...more,
   };
   const handler = new EnemyDeathHandler({ get: (k) => values[k] });
   const tank = tankAt();
@@ -152,6 +153,27 @@ describe("when the tank's death starts", () => {
     w.kill({ dir: 0, blast: true, bomb: true, at: 1.4 });
     expect(calls.at(-1)[2]).toBe(1.4);
     expect(calls.at(-1)[5]).toBe(1);
+  });
+
+  it('pulses on the kicks the track played, as heard; a pause that holds the sound holds it', () => {
+    const ctx = { state: 'running', baseLatency: 0.01, outputLatency: 0.02 };
+    const beatTrack = {
+      isPlaying: true,
+      ctx,
+      kicks: [{ at: 1, downbeat: true }],
+      getContextValue: (k) => (k === 'beatClock' ? audioClock(1.13) : null),
+    };
+    const w = deathWorld(1.13, { beatTrack });
+    w.audio.audioContext = ctx;
+    w.kill({ dir: 0 });
+    const [death] = w.explosionManager.fragmentExplosions;
+    const heard = 1.13 - 0.03 - CONFIG.SKY.OFFSET_MS / 1000;
+    expect(death.kickAge()).toBeCloseTo(heard - 1, 9);
+    ctx.state = 'suspended';
+    w.audio.soundPaused = true;
+    expect(death.kickAge()).toBeCloseTo(heard - 1, 9);
+    w.audio.soundPaused = false;
+    expect(death.kickAge()).toBe(99);
   });
 
   it('with no cloud, no old "oh no" and no extra explosion; a small shake', () => {
