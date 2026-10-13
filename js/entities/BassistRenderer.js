@@ -30,8 +30,8 @@ export const NOTE_COLORS = { head: [222, 255, 250], glow: [70, 232, 214] };
 /** His glow, BaseEnemy's: his photophores' */
 export const BASSIST_GLOW_RGB = [120, 255, 220];
 
-const INK = [38, 26, 48]; // the cast's ink
-const NAVY = [16, 22, 52];
+export const INK = [38, 26, 48]; // the cast's ink
+export const NAVY = [16, 22, 52];
 export const rgb = (c, a = 1) =>
   a >= 1
     ? `rgb(${c[0]},${c[1]},${c[2]})`
@@ -102,6 +102,10 @@ const G = {
   ],
   scroll: { len: 16, w0: 3.6, turn: 6.4, curl: -1 },
 };
+
+/** His palette and his shape (his frame, px at ART_SCALE 1), as data: his death draws from them too */
+export const BASSIST_COLORS = C;
+export const BASSIST_SHAPE = G;
 
 // ---- his shapes, traced ----
 
@@ -665,29 +669,45 @@ function puffs(L) {
 }
 
 // ---- the scroll: a nautilus ribbon coiling from the neck's end ----
-const NS = 16;
-const SX = new Float32Array(NS + 1);
-const SY = new Float32Array(NS + 1);
-const SA = new Float32Array(NS + 1);
-const SW = new Float32Array(NS + 1);
-function scroll(L, S) {
+/** His scroll is traced at SCROLL_N + 1 points */
+export const SCROLL_N = 16;
+/** Arrays for one traced coil: each point's x, y, angle and half-width */
+export const newScrollCoil = () => ({
+  x: new Float32Array(SCROLL_N + 1),
+  y: new Float32Array(SCROLL_N + 1),
+  a: new Float32Array(SCROLL_N + 1),
+  w: new Float32Array(SCROLL_N + 1),
+});
+/**
+ * His scroll's coil, coiled by f (0 straight, 1 as he rests), traced from
+ * its root at (x0, 0) along +x in his frame into `out` (newScrollCoil()),
+ * which it returns: his look and his death each trace into their own
+ */
+export function traceScroll(f, x0, out) {
   const { len, w0, turn, curl } = G.scroll;
-  const f = S.coil;
-  let x = G.nut;
+  let x = x0;
   let y = 0;
   let a = 0;
-  const ds = len / NS;
-  for (let j = 0; j <= NS; j++) {
-    const u = j / NS;
-    SX[j] = x;
-    SY[j] = y;
-    SA[j] = a;
-    SW[j] = w0 * (1 - 0.72 * u);
+  const ds = len / SCROLL_N;
+  for (let j = 0; j <= SCROLL_N; j++) {
+    const u = j / SCROLL_N;
+    out.x[j] = x;
+    out.y[j] = y;
+    out.a[j] = a;
+    out.w[j] = w0 * (1 - 0.72 * u);
     const kap = (f * turn * (0.15 + 3 * u * u)) / (1.15 * len);
     a += curl * kap * ds;
     x += Math.cos(a) * ds;
     y += Math.sin(a) * ds;
   }
+  return out;
+}
+const NS = SCROLL_N;
+const COIL = newScrollCoil();
+const { x: SX, y: SY, a: SA, w: SW } = COIL;
+function scroll(L, S) {
+  const { curl } = G.scroll;
+  traceScroll(S.coil, G.nut, COIL);
   const ribbon = (grow) => {
     ctx.beginPath();
     for (let j = 0; j <= NS; j++) {
