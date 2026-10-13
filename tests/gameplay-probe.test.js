@@ -420,6 +420,7 @@ test.describe('Gameplay Probes', () => {
     for (const key of [
       'GRUNT_VOLUME',
       'BREATH_VOLUME',
+      'BASSIST_VOLUME',
       'LINGER',
       'SCENE_BEATS',
       'SCENE_ZOOM',

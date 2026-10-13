@@ -271,7 +271,7 @@ export class EnemyDeathHandler {
           heardKick(clock.getBeatPosition(), beatSec, latency(), true).kickAge,
       })
     );
-    audio.playSound('bassistDeath', enemy.x, enemy.y, { at });
+    audio.playBassistDeath?.(enemy.x, enemy.y, at, record);
     return at;
   }
 }

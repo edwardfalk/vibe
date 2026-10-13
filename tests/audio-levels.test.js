@@ -305,9 +305,12 @@ async function overKick(page, tiers) {
         gruntPop,
         lastBreath,
         STABBER_DEATH_SOUNDS,
+        bassistInk,
       } = await import('/js/audio/DeathSounds.js');
       const { stabberDeathRecord } =
         await import('/js/entities/StabberDeath.js');
+      const { bassistDeathRecord } =
+        await import('/js/entities/BassistDeath.js');
       const { crashNoise } = await import('/js/audio/CrashSynth.js');
       const { STRING_PARTS } = await import('/js/audio/StabberStrings.js');
       const { airTiming, airDarts } = await import('/js/entities/TankDeath.js');
@@ -531,7 +534,6 @@ async function overKick(page, tiers) {
             [
               'levelUp',
               'gameOver',
-              'bassistDeath',
               'killStreak',
               'tankBallKill',
               'tankShove',
@@ -576,6 +578,28 @@ async function overKick(page, tiers) {
                 volume: CONFIG.DEATHS.BREATH_VOLUME,
               }),
             3,
+          ],
+          // A bassist's death, Ink cloud, on the grid at AT: the blurt, a
+          // jet and the fizzle (his pose's fields are the picture's)
+          'bassist ink': [
+            (ctx, out) =>
+              bassistInk(ctx, out, {
+                at: AT,
+                record: bassistDeathRecord({
+                  linger: CONFIG.DEATHS.LINGER,
+                  andAt: CONFIG.SWING.AND_AT,
+                  beatSec: 0.5,
+                  origin: AT,
+                  at: AT,
+                  pose: { aim: 0, sinews: [] },
+                  dir: 0,
+                  seed: 0.5,
+                }),
+                noise: crashNoise(ctx),
+                volume: CONFIG.DEATHS.BASSIST_VOLUME,
+                pan: 0,
+              }),
+            2,
           ],
           // A stabber's death, each style, killed stalking and white-hot
           ...Object.fromEntries(

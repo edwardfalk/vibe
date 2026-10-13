@@ -472,6 +472,7 @@ const CONFIG = {
     TANK_ZIP_SEC: 0.95,
     STABBER_STYLE: 'shatter',
     STABBER_VOLUME: 1, // his death, 1 = its level in feedback's events window
+    BASSIST_VOLUME: 1, // his death, 1 = its level in feedback's events window
   },
 
   // Tank armour plates (hits to break). Applies to tanks spawned after a

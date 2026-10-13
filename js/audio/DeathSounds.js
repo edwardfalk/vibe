@@ -25,6 +25,7 @@ import { hash01 } from '../entities/RusherRenderer.js';
 import { shellShutAt } from '../entities/StabberShell.js';
 import { shatterTimes } from '../entities/StabberShatter.js';
 import { pluck } from './StabberStrings.js';
+import { SYNTHS } from './Instruments.js';
 import { CONFIG } from '../config.js';
 import { dB, smooth } from '../mathUtils.js';
 
@@ -905,6 +906,212 @@ export function stabberShatter(ctx, out, { at, record, noise, volume, pan }) {
 }
 
 /** A stabber's death sound by its style (StabberDeath.js's styles) */
+// A bassist's death, Ink cloud (BassistInk.js), from the studies page's
+// death-ink.js: his FM bass blurting a fluttering raspberry from his 5 down
+// to his b3 under a squirt of ink; on each middle jet of his scroll a ghost
+// pluck of his and a small squirt; on its fizzle a last squirt and his last
+// note, sounding on his b3 and bent down onto the hum's root (gains at the
+// page's deaths' bus; TRIM_DB sets the whole in feedback's events window)
+const INK_SOUND = {
+  // Its level in feedback's events window: about 2 dB over the kick, beside
+  // the tank's and the stabber's deaths (tests/audio-levels.test.js; +5.8 dB
+  // at the page's level, where the stand-in's twang sat)
+  TRIM_DB: -3.8,
+  NOISE_FROM_SEC: 0.3, // into the noise, plus his seed (s): it reads under 2 s
+  BLURT: {
+    FROM: ['5', 2],
+    TO: ['b3', 2],
+    PEAK: 0.22,
+    ATTACK_SEC: 0.004,
+    HOLD_SEC: 0.06,
+    DECAY: 0.06,
+    SEC: 0.4,
+    BEND_SEC: 0.16,
+    INDEX: [5, 0.9], // bright as it blurts, rounder as it goes
+    INDEX_SEC: 0.14,
+    FLUTTER: 0.5, // a raspberry: his note fluttering...
+    FLUTTER_HZ: 27, // ...this fast
+  },
+  // A squirt of ink: noise through a band falling fast
+  SQUIRT: {
+    PEAK: 0.17,
+    ATTACK_SEC: 0.003,
+    HOLD_SEC: 0.02,
+    DECAY: 0.05,
+    Q: 1.3,
+    HP_HZ: 200,
+    FROM_HZ: 2400,
+    TO_HZ: 500,
+    SEC: 0.18,
+    TAIL_SEC: 0.1,
+  },
+  // A middle jet of his scroll (not the one hard on the blurt: it is in it)
+  JET: {
+    FROM_SEC: 0.2,
+    NOTE: ['5', 2],
+    PLUCK: 0.35,
+    SQUIRT: 0.06,
+    SQUIRT_SEC: 0.1,
+  },
+  LAST: {
+    FROM: ['b3', 2],
+    TO: ['1', 2],
+    PEAK: 0.11,
+    ATTACK_SEC: 0.003,
+    HOLD_SEC: 0.05,
+    DECAY: 0.13,
+    BEND_FROM_SEC: 0.04, // it sounds on his b3, then bends
+    BEND_SEC: 0.24,
+    INDEX: [2.4, 0.7],
+    INDEX_SEC: 0.12,
+    SEC: 0.6,
+    SQUIRT: 0.05, // the fizzle's last squirt
+    SQUIRT_SEC: 0.1,
+  },
+};
+
+/**
+ * A bassist's death, Ink cloud, from audio time `at`: the blurt there, his
+ * scroll's jets and its fizzle at `at` plus their offsets in the record
+ * (BassistDeath.js's bassistDeathRecord).
+ * @param {AudioContext} ctx
+ * @param {AudioNode} out the effects' bus
+ * @param {object} o { at, record, noise (an AudioBuffer), volume (1: its
+ *   level in feedback's events window), pan (-1..1) }
+ */
+export function bassistInk(ctx, out, { at, record, noise, volume, pan }) {
+  const S = INK_SOUND;
+  const B = S.BLURT;
+  const L = S.LAST;
+  // Everything worked out before the first node, so a bad value plays nothing
+  const tLast = at + record.fizzle;
+  const jets = record.jets
+    .slice(1, -1)
+    .filter((a) => a >= S.JET.FROM_SEC)
+    .map((a) => at + a);
+  const blurt = [hz(B.FROM, at), hz(B.TO, at)];
+  const lastNote = [hz(L.FROM, tLast), hz(L.TO, tLast)];
+  const last0 = lastNote[0];
+  const level = volume * dB(S.TRIM_DB);
+  for (const v of [...blurt, ...lastNote, level, tLast, ...jets]) {
+    if (!Number.isFinite(v)) throw new Error(`bassistInk: ${v} at ${at}`);
+  }
+  const [bus, panner] = placed(ctx, out, level, pan, at);
+  const nodes = [bus, panner];
+  const gainNode = (v) => {
+    const g = ctx.createGain();
+    g.gain.value = v;
+    nodes.push(g);
+    return g;
+  };
+  // A struck envelope: up to `peak`, held, then falling away
+  const struck = (t, peak, attack, hold, decay) => {
+    const g = gainNode(0);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + attack);
+    g.gain.setTargetAtTime(0, t + hold, decay);
+    return g;
+  };
+  // Every source stops by `stop`, which keeps the last of them: it frees all
+  let last = null;
+  let lastStop = -Infinity;
+  const stop = (src, t) => {
+    src.stop(t);
+    if (t >= lastStop) [last, lastStop] = [src, t];
+  };
+  const squirt = (t, peak, sec) => {
+    const Q = S.SQUIRT;
+    const n = ctx.createBufferSource();
+    n.buffer = noise;
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = Q.HP_HZ;
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.Q.value = Q.Q;
+    bp.frequency.setValueAtTime(Q.FROM_HZ, t);
+    bp.frequency.exponentialRampToValueAtTime(Q.TO_HZ, t + sec);
+    const e = struck(
+      t,
+      peak,
+      Q.ATTACK_SEC,
+      Q.HOLD_SEC,
+      Q.DECAY * (sec / Q.SEC)
+    );
+    n.connect(hp).connect(bp).connect(e).connect(bus);
+    n.start(t, S.NOISE_FROM_SEC + record.seed);
+    stop(n, t + sec + Q.TAIL_SEC);
+    nodes.push(n, hp, bp);
+  };
+  // His FM bass: a sine whose frequency a sine of its own bends, on `from`
+  // Hz until bendAt, then bending to `to` over bendSec; the bend's depth
+  // (Hz) falls from depth[0] to depth[1] over depthSec
+  const fm = (t, [from, to], bendAt, bendSec, depth, depthSec, sec, into) => {
+    const car = ctx.createOscillator();
+    const mod = ctx.createOscillator();
+    for (const o of [car, mod]) {
+      o.frequency.setValueAtTime(from, t);
+      o.frequency.setValueAtTime(from, bendAt);
+      o.frequency.exponentialRampToValueAtTime(to, bendAt + bendSec);
+    }
+    const idx = gainNode(depth[0]);
+    idx.gain.setValueAtTime(depth[0], t);
+    idx.gain.exponentialRampToValueAtTime(depth[1], t + depthSec);
+    mod.connect(idx).connect(car.frequency);
+    car.connect(into);
+    for (const o of [car, mod]) {
+      o.start(t);
+      stop(o, t + sec);
+    }
+    nodes.push(car, mod);
+  };
+
+  // The blurt: fluttering, under a squirt of ink through his slits
+  {
+    const e = struck(at, B.PEAK, B.ATTACK_SEC, B.HOLD_SEC, B.DECAY);
+    const flutter = gainNode(1 - B.FLUTTER);
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = B.FLUTTER_HZ;
+    lfo.connect(gainNode(B.FLUTTER)).connect(flutter.gain);
+    lfo.start(at);
+    stop(lfo, at + B.SEC);
+    nodes.push(lfo);
+    flutter.connect(e).connect(bus);
+    const depth = [B.INDEX[0] * blurt[0], B.INDEX[1] * blurt[1]];
+    fm(at, blurt, at, B.BEND_SEC, depth, B.INDEX_SEC, B.SEC, flutter);
+    squirt(at, S.SQUIRT.PEAK, S.SQUIRT.SEC);
+  }
+  // His scroll's middle jets: a ghost pluck of his, into this bus (it frees
+  // its own nodes), and a small squirt
+  for (const t of jets) {
+    SYNTHS.bassPluck(ctx, bus, null, {
+      at: t,
+      note: S.JET.NOTE,
+      volume: S.JET.PLUCK,
+      pan: 0,
+    });
+    squirt(t, S.JET.SQUIRT, S.JET.SQUIRT_SEC);
+  }
+  // Its fizzle, as its lure goes out: a last squirt and his last note, a
+  // pluck on his b3 bent down onto the hum's root as it is then
+  squirt(tLast, L.SQUIRT, L.SQUIRT_SEC);
+  const e = struck(tLast, L.PEAK, L.ATTACK_SEC, L.HOLD_SEC, L.DECAY);
+  e.connect(bus);
+  const depth = [L.INDEX[0] * last0, L.INDEX[1] * last0];
+  fm(
+    tLast,
+    lastNote,
+    tLast + L.BEND_FROM_SEC,
+    L.BEND_SEC,
+    depth,
+    L.INDEX_SEC,
+    L.SEC,
+    e
+  );
+  // The last to stop frees them all
+  disconnectWhenEnded(last, nodes);
+}
+
 export const STABBER_DEATH_SOUNDS = Object.freeze({
   shatter: stabberShatter,
   shell: stabberShell,

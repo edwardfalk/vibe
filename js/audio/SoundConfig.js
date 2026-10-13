@@ -198,16 +198,6 @@ export const SOUND_CONFIG = {
     duration: 0.3,
     hit: true, // the hit's one sound; played without his health, it never climbs
   },
-  // His last string's twang, sliding down onto the hum's root as he dies
-  bassistDeath: {
-    group: 'feedback',
-    voice: 'bassist',
-    note: ['b7', 3],
-    sweep: { to: ['1', 2], curve: 'exponential' },
-    waveform: 'sawtooth',
-    volume: 0.35 * dB(-1.2), // the window test: with the other events
-    duration: 0.6,
-  },
   // A bassist's answer to his kin's death: a pluck on his 5
   bassistResponse: {
     group: 'band',

@@ -11,6 +11,11 @@ import {
   popTime,
 } from '../../js/systems/combat/EnemyDeathHandler.js';
 import { heardLatencySec } from '../../js/audio/BeatTrack.js';
+import { bassistInk } from '../../js/audio/DeathSounds.js';
+import { hz } from '../../js/audio/Harmony.js';
+import { Audio } from '../../js/Audio.js';
+import { fakeAudio } from './helpers/fakeAudio.js';
+import { fakeBuses } from './helpers/audioBuses.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { bassistWorld } from './helpers/bassistWorld.js';
 import { transformP5 } from './helpers/transformP5.js';
@@ -27,6 +32,7 @@ function killed(blow = null, aim = null) {
   const explosionManager = { fragmentExplosions: [] };
   const w = bassistWorld({ ms0: 4100, values: { explosionManager } });
   w.audio.ensureAudioContext = vi.fn();
+  w.audio.playBassistDeath = vi.fn();
   if (aim !== null) w.b.aim = aim;
   const error = vi.spyOn(console, 'error');
   const diedAt = w.clock.nowSec();
@@ -62,6 +68,13 @@ describe('his death', () => {
     ]);
     expect(death.record.pose.strings).toBe(0);
     expect(death.record.jets[0]).toBe(0);
+    // its sound from the same record, at its start
+    expect(w.audio.playBassistDeath).toHaveBeenCalledWith(
+      0,
+      0,
+      at,
+      death.record
+    );
   });
 
   it('starts with the bang when the bomb killed him', () => {
@@ -286,5 +299,149 @@ describe('what his death keeps', () => {
       const r = record({ beatSec });
       expect(r.jets.length).toBeLessThanOrEqual(8);
     }
+  });
+});
+
+// His death's sound: the blurt, a pluck and a squirt on each middle jet, and
+// his last note bent onto the root, all from the same record
+describe('the ink’s sound', () => {
+  const rec = (o = {}) =>
+    bassistDeathRecord({
+      linger: 1,
+      andAt: 2 / 3,
+      beatSec: 0.5,
+      origin: 0,
+      at: 7, // on a beat: a jet on the let 0.33 s on, then the fizzle at 0.83 s
+      pose: bassistWorld().b.pose(),
+      dir: 0,
+      seed: 0.4,
+      ...o,
+    });
+  const play = (r, at = 7) => {
+    const { ctx, made } = fakeAudio();
+    bassistInk(
+      ctx,
+      { kind: 'bus' },
+      { at, record: r, noise: { duration: 2 }, volume: 1, pan: 0 }
+    );
+    return made;
+  };
+  const startsOf = (made, kind) =>
+    made
+      .filter((n) => n.kind === kind && n.start.mock.calls.length)
+      .map((n) => n.start.mock.calls[0][0]);
+
+  it('books each jet at its start plus its offset, and the fizzle’s note last', () => {
+    const r = rec();
+    expect(r.jets.length).toBeGreaterThanOrEqual(3);
+    const made = play(r);
+    const middle = r.jets.slice(1, -1).filter((a) => a >= 0.2);
+    expect(middle.length).toBeGreaterThan(0);
+    const starts = startsOf(made, 'osc');
+    for (const a of middle)
+      expect(starts.some((t) => Math.abs(t - (7 + a)) < 1e-9)).toBe(true);
+    expect(Math.max(...starts)).toBeCloseTo(7 + r.fizzle, 9);
+  });
+
+  it('bends his last note onto the root as it drifts at the fizzle, not the drift-less one', () => {
+    const r = rec();
+    const t = 7 + r.fizzle;
+    expect(Math.abs(hz(['1', 2], t) - hz(['1', 2], 0))).toBeGreaterThan(0.01);
+    const made = play(r);
+    const bends = made
+      .filter((n) => n.kind === 'osc')
+      .flatMap((o) =>
+        o.frequency.exponentialRampToValueAtTime.mock.calls.map((c) => c[0])
+      );
+    expect(bends.some((f) => Math.abs(f - hz(['1', 2], t)) < 1e-6)).toBe(true);
+  });
+
+  it('sounds every note of his from its start, never the default 440 Hz', () => {
+    const made = play(rec());
+    const tuned = made.filter(
+      (n) => n.kind === 'osc' && n.frequency.setValueAtTime.mock.calls.length
+    );
+    expect(tuned.length).toBeGreaterThan(3);
+    for (const o of tuned) {
+      const first = Math.min(
+        ...o.frequency.setValueAtTime.mock.calls.map((c) => c[1])
+      );
+      expect(first).toBeLessThanOrEqual(o.start.mock.calls[0][0]);
+    }
+  });
+
+  it('stops every source it starts, and frees every node once they end', () => {
+    const made = play(rec());
+    const started = made.filter((n) => n.start.mock.calls.length);
+    expect(started.length).toBeGreaterThan(6);
+    for (const n of started) expect(n.stop).toHaveBeenCalled();
+    for (const n of made.filter((m) => m.onended)) n.onended();
+    for (const n of made) expect(n.disconnect).toHaveBeenCalled();
+    // its own nodes go with its last source to stop
+    const latest = Math.max(...started.map((n) => n.stop.mock.calls[0][0]));
+    expect(
+      made.some((n) => n.onended && n.stop.mock.calls[0][0] === latest)
+    ).toBe(true);
+  });
+
+  it('plays its plucks into its own placed bus, never past it', () => {
+    const { ctx, made } = fakeAudio();
+    const out = { kind: 'feedback' };
+    bassistInk(ctx, out, {
+      at: 7,
+      record: rec(),
+      noise: { duration: 2 },
+      volume: 1,
+      pan: 0.3,
+    });
+    const intoOut = made.filter((n) =>
+      n.connect.mock.calls.some((c) => c[0] === out)
+    );
+    expect(intoOut).toHaveLength(1);
+    expect(intoOut[0].kind).toBe('pan');
+    expect(intoOut[0].pan.setValueAtTime.mock.calls[0][0]).toBe(0.3);
+  });
+
+  it("the game's Audio plays it at its volume knob, placed, on feedback, and not while a pause holds the sound", () => {
+    const { ctx, made } = fakeAudio();
+    const audio = Object.assign(Object.create(Audio.prototype), {
+      audioContext: ctx,
+      initialized: true,
+      enabled: true,
+      initialize() {},
+      sounds: { ...SOUND_CONFIG },
+      player: { x: 0, y: 0 },
+      masterGain: { kind: 'effects bus' },
+      buses: fakeBuses(),
+      getContextValue: () => undefined,
+      _pausedByGame: false,
+      _resuming: false,
+    });
+    CONFIG.DEATHS.BASSIST_VOLUME = 1.3;
+    const placedAt = (x) => {
+      const from = made.length;
+      audio.playBassistDeath(x, 0, 4, rec({ at: 4 }));
+      const mine = made.slice(from);
+      return {
+        gain: mine.find((n) => n.kind === 'gain').gain.setValueAtTime.mock
+          .calls[0][0],
+        pan: mine.find((n) => n.kind === 'pan'),
+      };
+    };
+    const here = placedAt(0);
+    const off = placedAt(300);
+    const { near, pan } = audio.placement(300, 0);
+    expect(near).toBeLessThan(0.9);
+    expect(off.gain / here.gain).toBeCloseTo(near, 9);
+    CONFIG.DEATHS.BASSIST_VOLUME = 2.6;
+    expect(placedAt(0).gain / here.gain).toBeCloseTo(2, 9);
+    expect(off.pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(pan, 9);
+    expect(off.pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
+    CONFIG.DEATHS.BASSIST_VOLUME = 0; // silences the jets' plucks too: they play into it
+    expect(placedAt(0).gain).toBe(0);
+    const count = made.length;
+    audio._pausedByGame = true;
+    audio.playBassistDeath(0, 0, 4, rec({ at: 4 }));
+    expect(made).toHaveLength(count);
   });
 });
