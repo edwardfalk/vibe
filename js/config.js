@@ -436,6 +436,13 @@ const CONFIG = {
     KNOCKBACK_TANK_ELBOW: 14,
   },
 
+  // A controller (js/core/InputHandlers.js): a stick counts once pushed past
+  // DEADZONE of full tilt; RT fires once pulled past TRIGGER
+  GAMEPAD: {
+    DEADZONE: 0.25,
+    TRIGGER: 0.3,
+  },
+
   // The hero's look (js/entities/PlayerRenderer.js), drawn only. ART_SCALE:
   // drawn size over his size (1 = the prototype's proportions at size 32,
   // about 44 px tall); his hit circle stays size / 2, but his shots leave

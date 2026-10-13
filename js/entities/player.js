@@ -166,6 +166,12 @@ export class Player {
       this.velocity.x *= 0.707;
       this.velocity.y *= 0.707;
     }
+    // A controller's left stick, when no key steers: its way, at his speed
+    if (!this.isMoving && window.padMove) {
+      this.velocity.x = window.padMove.x * this.speed;
+      this.velocity.y = window.padMove.y * this.speed;
+      this.isMoving = true;
+    }
 
     if (this.isDashing) {
       const clampedDelta = Math.max(
@@ -216,9 +222,10 @@ export class Player {
       worldBounds.bottom - halfSize
     );
 
-    // His aim. With the arrow keys it is their direction. With the mouse
-    // he faces the cursor as seen from his centre, then aims from his
-    // shoulder, so his shots leave the drawn gun on a line through the cursor
+    // His aim. With the arrow keys it is their direction, with a
+    // controller its right stick's. With the mouse he faces the cursor as
+    // seen from his centre, then aims from his shoulder, so his shots leave
+    // the drawn gun on a line through the cursor
     if (
       window.arrowUpPressed ||
       window.arrowDownPressed ||
@@ -234,6 +241,13 @@ export class Player {
       if (dx !== 0 || dy !== 0) {
         this.aimAngle = atan2(dy, dx);
       }
+      this.facing = nextFacing(
+        this.facing,
+        this.aimAngle,
+        CONFIG.PLAYER_LOOK.FLIP_COS
+      );
+    } else if (window.padAim != null) {
+      this.aimAngle = window.padAim;
       this.facing = nextFacing(
         this.facing,
         this.aimAngle,
@@ -522,7 +536,10 @@ export class Player {
     }
   }
 
-  /** Try to start a dash (keys, else toward the mouse). True if it started. */
+  /**
+   * Try to start a dash (keys, else a controller's left stick, else its
+   * aim, else toward the mouse). True if it started.
+   */
   dash() {
     if (this.dashCooldownMs > 0 || this.isDashing) return false;
 
@@ -545,6 +562,14 @@ export class Player {
     if (this.p.keyIsDown(68)) {
       dashDirX = 1;
       dashFromKeyboard = true;
+    }
+
+    if (dashDirX === 0 && dashDirY === 0 && window.padMove) {
+      dashDirX = window.padMove.x;
+      dashDirY = window.padMove.y;
+    } else if (dashDirX === 0 && dashDirY === 0 && window.padAim != null) {
+      dashDirX = cos(window.padAim);
+      dashDirY = sin(window.padAim);
     }
 
     if (dashDirX === 0 && dashDirY === 0 && this.cameraSystem) {

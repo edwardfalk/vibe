@@ -3,6 +3,7 @@
  * Extracted from GameLoop.js for file-size split (~500 line guideline).
  */
 import { CONFIG } from './config.js';
+import { pollGamepad } from './core/InputHandlers.js';
 
 /**
  * Run main draw loop. Calls updateGame and drawGame when appropriate.
@@ -12,6 +13,8 @@ import { CONFIG } from './config.js';
  */
 export function runDraw(p, updateGame, drawGame) {
   window.frameCount = p.frameCount;
+  // A controller has no events: read it every frame, paused or not
+  pollGamepad();
   // Before the state switch, so speech on the game-over screen can't stick.
   // (Pauses in a hidden tab with the draw loop; the 5 s cap still applies.)
   window.audio?.syncDuck?.();
