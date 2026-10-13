@@ -118,6 +118,21 @@ describe('Gamepad', () => {
     expect(keys).toEqual(['e', 'e', 'm']);
   });
 
+  it('a left stick click dashes too; with A on the same frame, once', () => {
+    press(pad, 10);
+    pollGamepad();
+    pollGamepad();
+    expect(keys).toEqual(['e']);
+    release(pad, 10);
+    pollGamepad();
+    press(pad, 0);
+    press(pad, 10);
+    pollGamepad();
+    release(pad, 0);
+    pollGamepad(); // still clicked: no second dash
+    expect(keys).toEqual(['e', 'e']);
+  });
+
   it('Start restarts after GAME OVER, else pauses', () => {
     press(pad, 9);
     pollGamepad();
@@ -129,6 +144,25 @@ describe('Gamepad', () => {
     press(pad, 9);
     pollGamepad();
     expect(keys).toEqual(['r']); // restarted: no pause after it
+  });
+
+  // As M there: muted before the start, the run would get no AudioContext
+  it('on the title screen its buttons do nothing, nor once the run starts', () => {
+    window.gameState.gameState = 'title';
+    press(pad, 0);
+    press(pad, 8);
+    press(pad, 9);
+    pollGamepad();
+    window.gameState.gameState = 'playing';
+    pollGamepad(); // still held
+    expect(keys).toEqual([]);
+  });
+
+  it('a standard pad is read before an odd device ahead of it', () => {
+    const wheel = { ...makePad(), mapping: '', axes: [0, 0, -1, 0] };
+    vi.stubGlobal('navigator', { getGamepads: () => [wheel, pad] });
+    pollGamepad();
+    expect(window.padAim).toBeNull();
   });
 
   it('a browser without the Gamepad API reads no controller', () => {

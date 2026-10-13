@@ -19,13 +19,13 @@ Enemies attack on the beat, and each type plays a different part of the band. Th
 | P / M                 | pause / mute            |
 | R                     | restart after game over |
 
-| Xbox controller    | Action                                |
-| ------------------ | ------------------------------------- |
-| Left stick / D-pad | move                                  |
-| Right stick        | aim (until the mouse moves)           |
-| RT                 | shoot                                 |
-| A                  | dash                                  |
-| Start / View       | pause, restart after game over / mute |
+| Xbox controller      | Action                                |
+| -------------------- | ------------------------------------- |
+| Left stick / D-pad   | move                                  |
+| Right stick          | aim (until the mouse moves)           |
+| RT                   | shoot                                 |
+| A / click left stick | dash                                  |
+| Start / View         | pause, restart after game over / mute |
 
 ## How the music works
 

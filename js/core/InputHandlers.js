@@ -47,12 +47,13 @@ const PAD = {
   RT: 7,
   VIEW: 8,
   START: 9,
+  LS: 10, // the left stick, clicked
   UP: 12,
   DOWN: 13,
   LEFT: 14,
   RIGHT: 15,
 };
-const padDown = new Set(); // A, View and Start held down last frame
+const padDown = new Set(); // the buttons that act once held down last frame
 
 // The stick (x, y) as a unit direction, or null inside the dead zone
 function stick(x, y) {
@@ -64,8 +65,9 @@ function stick(x, y) {
  * Read the first controller, once a frame. The left stick or D-pad writes
  * window.padMove (a unit direction, null when still); the right stick
  * window.padAim (an angle, kept after the stick is let go, until the mouse
- * moves). RT holds the trigger like the mouse; A, View and Start act once
- * a press, as the keys E, M and P (R on the GAME OVER screen).
+ * moves). RT holds the trigger like the mouse; A or a left stick click, View
+ * and Start act once a press, as the keys E, M and P (R on the GAME OVER
+ * screen).
  */
 export function pollGamepad() {
   let pads = [];
@@ -74,8 +76,10 @@ export function pollGamepad() {
   } catch {
     // Refused, as in an iframe without allow="gamepad": play on without
   }
-  // shortcut: assumes the standard mapping; a pad without it needs a remap
-  const pad = Array.from(pads).find((g) => g?.connected);
+  const live = Array.from(pads).filter((g) => g?.connected);
+  // shortcut: a pad without the standard mapping is read as if it had it
+  // (wrong buttons); give it a remap if one turns up
+  const pad = live.find((g) => g.mapping === 'standard') ?? live[0];
   if (!pad) {
     window.padMove = null;
     padDown.clear();
@@ -104,10 +108,21 @@ export function pollGamepad() {
     else padDown.delete(i);
     return down(i) && !was && ui;
   };
-  if (pressed(PAD.A)) ui.handleKeyPress('e');
-  if (pressed(PAD.VIEW)) ui.handleKeyPress('m');
+  // All read first, so each notes its state: one dash if A and the stick
+  // go down at once, and none held through the start acts in the run
+  const [dash, stickDash, mute, start] = [
+    PAD.A,
+    PAD.LS,
+    PAD.VIEW,
+    PAD.START,
+  ].map(pressed);
+  // Not on the title screen, as the keys there: muted before the start,
+  // the run would get no AudioContext
+  if (window.gameState?.gameState === 'title') return;
+  if (dash || stickDash) ui.handleKeyPress('e');
+  if (mute) ui.handleKeyPress('m');
   // R only acts on the GAME OVER screen; anywhere else Start pauses
-  if (pressed(PAD.START)) ui.handleKeyPress('r') || ui.handleKeyPress('p');
+  if (start) ui.handleKeyPress('r') || ui.handleKeyPress('p');
 }
 
 export function initializeInputHandlers() {
