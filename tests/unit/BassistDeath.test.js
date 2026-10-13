@@ -328,6 +328,37 @@ describe('the ink', () => {
     expect(calls()).toEqual(before);
   });
 
+  it('his scroll jets on the record’s lets: each jet leaves its puff of ink from then', () => {
+    const { death, p, at } = inkDeath();
+    const arcs = (t) => {
+      let n = 0;
+      const keep = p.drawingContext;
+      p.drawingContext = new Proxy(
+        {},
+        {
+          get: (o, k) =>
+            k in o
+              ? o[k]
+              : (...a) => {
+                  if (k === 'arc') n++;
+                  return { addColorStop() {} };
+                },
+          set: (o, k, v) => {
+            o[k] = v;
+            return true;
+          },
+        }
+      );
+      at(0.25 + t); // the ink's start is at 0.25
+      p.drawingContext = keep;
+      return n;
+    };
+    const [, jet, fizzle] = death.record.jets;
+    // a puff of ink (its glow and itself) appears behind the scroll at each
+    for (const t of [jet, fizzle])
+      expect(arcs(t + 0.002) - arcs(t - 0.002)).toBe(2);
+  });
+
   it('with no hero, or one on top of him, flees along the blow', () => {
     for (const hero of [
       () => null,
