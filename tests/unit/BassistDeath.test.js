@@ -20,6 +20,7 @@ import { fakeBuses } from './helpers/audioBuses.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { bassistWorld } from './helpers/bassistWorld.js';
 import { transformP5 } from './helpers/transformP5.js';
+import { drawBassist } from '../../js/entities/BassistRenderer.js';
 
 // He dies in a cloud of ink: frozen until his death's start, then he blurts
 // it and his scroll escapes on his lets (the bassist death spec)
@@ -234,8 +235,44 @@ describe('the ink', () => {
     expect(Math.cos(death.state.esc.E)).toBeCloseTo(-1, 6);
   });
 
+  it('a living bassist drawn between two of its frames leaves its scroll as it was', () => {
+    const { at, p } = inkDeath();
+    const calls = () => {
+      const log = [];
+      const keep = p.drawingContext;
+      p.drawingContext = new Proxy(
+        {},
+        {
+          get: (t, k) =>
+            k in t
+              ? t[k]
+              : (...a) => {
+                  log.push(
+                    `${String(k)}(${a.map((v) => (typeof v === 'number' ? v.toFixed(6) : typeof v)).join()})`
+                  );
+                  return { addColorStop() {} };
+                },
+          set: (t, k, v) => {
+            t[k] = v;
+            return true;
+          },
+        }
+      );
+      at(0.6); // the scroll jetting away, after the ink's start at 0.25
+      p.drawingContext = keep;
+      return log;
+    };
+    const before = calls();
+    drawBassist(p, 1, bassistWorld().b.pose());
+    expect(calls()).toEqual(before);
+  });
+
   it('with no hero, or one on top of him, flees along the blow', () => {
-    for (const hero of [() => null, () => ({ x: 10 + 19, y: 20 })]) {
+    for (const hero of [
+      () => null,
+      () => ({ x: 10 + 19, y: 20 }),
+      () => ({ x: 10 + 20, y: 20 }),
+    ]) {
       const { death, at } = inkDeath({ hero });
       at(0.3);
       expect(death.state.esc.E).toBe(1);
@@ -382,6 +419,33 @@ describe('the ink’s sound', () => {
     for (const a of middle)
       expect(starts.some((t) => Math.abs(t - (7 + a)) < 1e-9)).toBe(true);
     expect(Math.max(...starts)).toBeCloseTo(7 + r.fizzle, 9);
+  });
+
+  it('plucks no jet hard on the blurt: none under 0.2 s', () => {
+    const r = rec({ at: 7.25 }); // a quaver before a beat: his let 0.08 s on
+    expect(r.jets[1]).toBeLessThan(0.2);
+    const made = play(r, 7.25);
+    const starts = startsOf(made, 'osc');
+    expect(starts.some((t) => Math.abs(t - (7.25 + r.jets[1])) < 1e-6)).toBe(
+      false
+    );
+  });
+
+  it('sounds his last note on his b3 as it drifts at the fizzle', () => {
+    const r = rec();
+    const t = 7 + r.fizzle;
+    expect(Math.abs(hz(['b3', 2], t) - hz(['b3', 2], 7))).toBeGreaterThan(1e-6);
+    const made = play(r);
+    const last = made.filter(
+      (n) => n.kind === 'osc' && n.start.mock.calls[0]?.[0] === t
+    );
+    expect(last.length).toBeGreaterThan(0);
+    for (const o of last) {
+      expect(o.frequency.setValueAtTime.mock.calls[0][0]).toBeCloseTo(
+        hz(['b3', 2], t),
+        6
+      );
+    }
   });
 
   it('bends his last note onto the root as it drifts at the fizzle, not the drift-less one', () => {
