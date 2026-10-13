@@ -9,6 +9,64 @@ import { drawBassist } from './BassistRenderer.js';
 // curled and scroll unrolled, and drifts off limp along the blow, turning
 // slowly and fading
 
+const SLACK = 1e-6; // on beat positions, for floating-point error
+/** His scroll jets on each of his lets from this long after his death's start, s */
+export const FIRST_JET_SEC = 0.04;
+/** ...and fizzles on the first let at least this long after it, s */
+export const FIZZLE_FROM_SEC = 0.45;
+const MAX_JETS = 8; // however the beat is set, a bounded schedule
+
+/**
+ * What his death keeps from the kill, read by its picture and its sound
+ * alike (DeathSounds.js), so a ?tune change mid-death applies to the next:
+ * the linger, the beat and where his let falls in it, the blow's way (rad),
+ * his seed, and his pose with the kill's snaps. A lethal hit stamps none
+ * (Bassist.takeDamage), so every sinew still whole is snapped at the kill:
+ * no strings, nothing played, and clean of the hit's flash (the death draws
+ * its own). And his scroll's jets, as offsets from the start `at` (audio
+ * s): the pop at 0, one on each of his lets from FIRST_JET_SEC, the last
+ * (`fizzle`) on the first let at least FIZZLE_FROM_SEC on. His lets are
+ * beat n + andAt of the song (origin: the beat clock's start, audio s),
+ * whatever the start (a bang can fall off the grid).
+ */
+export function bassistDeathRecord({
+  linger,
+  andAt,
+  beatSec,
+  origin,
+  at,
+  pose,
+  dir,
+  seed,
+}) {
+  const b0 = (at - origin) / beatSec; // the start's beat
+  const offset = (n) => (n + andAt - b0) * beatSec;
+  const first = Math.ceil(b0 - andAt + FIRST_JET_SEC / beatSec - SLACK);
+  const last = Math.ceil(b0 - andAt + FIZZLE_FROM_SEC / beatSec - SLACK);
+  const jets = [0];
+  for (let n = first; n <= last && jets.length < MAX_JETS; n++) {
+    jets.push(offset(n));
+  }
+  return Object.freeze({
+    linger,
+    beatSec,
+    andAt,
+    pose: Object.freeze({
+      ...pose,
+      strings: 0,
+      plays: [false, false, false, false],
+      sinews: pose.sinews.map((s) =>
+        s.snapped < 0 ? { ...s, snapped: 0 } : s
+      ),
+      hit: 0,
+    }),
+    dir,
+    seed,
+    jets: Object.freeze(jets),
+    fizzle: jets[jets.length - 1],
+  });
+}
+
 /** How long he drifts off slack, s, times CONFIG.DEATHS.LINGER */
 export const DEATH_SEC = 2.4;
 const DRIFT_PX_S = 28;
