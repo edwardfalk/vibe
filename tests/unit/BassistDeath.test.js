@@ -411,6 +411,30 @@ describe('the ink’s sound', () => {
     }
   });
 
+  it('makes no node when his band pluck knob is broken, rather than half a sound', () => {
+    const knob = CONFIG.BAND.BASS_PLUCK_DB;
+    CONFIG.BAND.BASS_PLUCK_DB = NaN;
+    try {
+      const { ctx, made } = fakeAudio();
+      expect(() =>
+        bassistInk(
+          ctx,
+          { kind: 'bus' },
+          {
+            at: 7,
+            record: rec(),
+            noise: { duration: 2 },
+            volume: 1,
+            pan: 0,
+          }
+        )
+      ).toThrow();
+      expect(made).toEqual([]);
+    } finally {
+      CONFIG.BAND.BASS_PLUCK_DB = knob;
+    }
+  });
+
   it('stops every source it starts, and frees every node once they end', () => {
     const made = play(rec());
     const started = made.filter((n) => n.start.mock.calls.length);

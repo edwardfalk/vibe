@@ -993,7 +993,9 @@ export function bassistInk(ctx, out, { at, record, noise, volume, pan }) {
   const lastNote = [hz(L.FROM, tLast), hz(L.TO, tLast)];
   const last0 = lastNote[0];
   const level = volume * dB(S.TRIM_DB);
-  for (const v of [...blurt, ...lastNote, level, tLast, ...jets]) {
+  // (his band pluck knob too: the jets' plucks read it, after the blurt starts)
+  const knob = CONFIG.BAND.BASS_PLUCK_DB;
+  for (const v of [...blurt, ...lastNote, level, tLast, knob, ...jets]) {
     if (!Number.isFinite(v)) throw new Error(`bassistInk: ${v} at ${at}`);
   }
   const [bus, panner] = placed(ctx, out, level, pan, at);
