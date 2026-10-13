@@ -93,16 +93,19 @@ describe('Gamepad', () => {
     expect(window.playerIsShooting).toBe(false);
   });
 
-  it('a controller unplugged with RT held and the stick pushed stops him', () => {
+  it('a controller unplugged with RT held and the sticks pushed stops him, and gives the mouse the aim', () => {
     press(pad, 7);
     pad.axes[0] = 1;
+    pad.axes[3] = 1;
     pollGamepad();
     expect(window.playerIsShooting).toBe(true);
     expect(window.padMove).not.toBeNull();
+    expect(window.padAim).not.toBeNull();
     vi.stubGlobal('navigator', { getGamepads: () => [null, null] });
     pollGamepad();
     expect(window.playerIsShooting).toBe(false);
     expect(window.padMove).toBeNull();
+    expect(window.padAim).toBeNull();
   });
 
   it('A dashes and View mutes, once a press, however long it is held', () => {

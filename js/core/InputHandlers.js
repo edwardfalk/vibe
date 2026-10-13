@@ -65,7 +65,7 @@ function stick(x, y) {
  * Read the first controller, once a frame. The left stick or D-pad writes
  * window.padMove (a unit direction, null when still); the right stick
  * window.padAim (an angle, kept after the stick is let go, until the mouse
- * moves). RT holds the trigger like the mouse; A or a left stick click, View
+ * moves or the pad goes). RT holds the trigger like the mouse; A or a left stick click, View
  * and Start act once a press, as the keys E, M and P (R on the GAME OVER
  * screen).
  */
@@ -82,6 +82,7 @@ export function pollGamepad() {
   const pad = live.find((g) => g.mapping === 'standard') ?? live[0];
   if (!pad) {
     window.padMove = null;
+    window.padAim = null; // unplugged: the mouse aims again
     padDown.clear();
     if (held.delete('pad')) syncShooting();
     return;
