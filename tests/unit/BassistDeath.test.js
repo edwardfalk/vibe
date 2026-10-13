@@ -118,6 +118,21 @@ describe('his death', () => {
     expect(gain).toBe(1);
   });
 
+  it('keeps the count of a start when another start comes between its deaths', () => {
+    const explosionManager = { fragmentExplosions: [] };
+    const w = bassistWorld({ ms0: 4100, values: { explosionManager } });
+    w.audio.ensureAudioContext = vi.fn();
+    w.audio.playBassistDeath = vi.fn();
+    const handler = new EnemyDeathHandler(w.context);
+    const P = popTime(w.clock.nowSec(), w.clock);
+    handler.handleEnemyDeath(w.b, 'bassist', 0, 0); // shot: on the next eighth
+    handler.handleEnemyDeath(w.b, 'bassist', 0, 0, { bomb: true, at: P - 0.2 }); // the bang
+    handler.handleEnemyDeath(w.b, 'bassist', 0, 0); // shot again, the same eighth
+    const [, , t, , gain] = w.audio.playBassistDeath.mock.calls[2];
+    expect(t).toBeCloseTo(P + STRUM_SEC, 9);
+    expect(gain).toBeCloseTo(1 / Math.sqrt(2), 9);
+  });
+
   it('asks a bassist nearby to answer, from its start', () => {
     const explosionManager = { fragmentExplosions: [] };
     const w = bassistWorld({ ms0: 4100, values: { explosionManager } });

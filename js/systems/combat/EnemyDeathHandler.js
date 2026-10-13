@@ -29,6 +29,8 @@ export const GRUNT_CHORD = Object.freeze(
   ].map((note) => Object.freeze(note))
 );
 export const STRUM_SEC = 0.018;
+// A bassists' start's count is kept this long after it, s: no later death shares it
+const INK_KEEP_SEC = 1;
 
 /**
  * When a death at `now` (s, the beat clock's) pops: on the next eighth note,
@@ -58,9 +60,11 @@ export class EnemyDeathHandler {
     // answer: a pop's audio time never comes round again, even across a
     // restart
     this.chord = { at: null, n: 0, answered: false };
-    // The bassists dying at one time: their sounds spread as a chord's
-    // (Edward's addition to the bassist death spec, 2026-10-13)
-    this.inks = { at: null, n: 0 };
+    // How many bassists die at each start: their sounds spread as a chord's
+    // (Edward's addition to the bassist death spec, 2026-10-13). A start is
+    // kept until it is INK_KEEP_SEC past, so another start between its
+    // deaths (a bomb's bang) doesn't reset its count
+    this.inks = new Map();
   }
 
   /**
@@ -277,8 +281,11 @@ export class EnemyDeathHandler {
     // Bassists dying together don't stack up: each next sounds a strum later
     // and quieter, 1/sqrt of its place, as a grunt chord's pops; all are seen
     // on the start
-    if (at !== this.inks.at) this.inks = { at, n: 0 };
-    const k = this.inks.n++;
+    for (const t of this.inks.keys()) {
+      if (t < diedAt - INK_KEEP_SEC) this.inks.delete(t);
+    }
+    const k = this.inks.get(at) ?? 0;
+    this.inks.set(at, k + 1);
     audio.playBassistDeath?.(
       enemy.x,
       enemy.y,
