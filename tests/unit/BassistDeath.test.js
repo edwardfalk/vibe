@@ -2,7 +2,6 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { CONFIG } from '../../js/config.js';
 import {
   BassistDeath,
-  DEATH_SEC,
   bassistDeathRecord,
   FIRST_JET_SEC,
   FIZZLE_FROM_SEC,
@@ -11,23 +10,24 @@ import {
   EnemyDeathHandler,
   popTime,
 } from '../../js/systems/combat/EnemyDeathHandler.js';
+import { heardLatencySec } from '../../js/audio/BeatTrack.js';
 import { SOUND_CONFIG } from '../../js/audio/SoundConfig.js';
 import { bassistWorld } from './helpers/bassistWorld.js';
 import { transformP5 } from './helpers/transformP5.js';
 
-// For now he dies his own simple way: the last string snaps, its twang
-// sliding down onto the hum's root, and on the next eighth he goes slack and
-// drifts off (the bassist spec, Death)
+// He dies in a cloud of ink: frozen until his death's start, then he blurts
+// it and his scroll escapes on his lets (the bassist death spec)
 const DEATHS = { ...CONFIG.DEATHS };
 afterEach(() => {
   Object.assign(CONFIG.DEATHS, DEATHS);
   vi.restoreAllMocks();
 });
 
-function killed(blow = null) {
+function killed(blow = null, aim = null) {
   const explosionManager = { fragmentExplosions: [] };
   const w = bassistWorld({ ms0: 4100, values: { explosionManager } });
   w.audio.ensureAudioContext = vi.fn();
+  if (aim !== null) w.b.aim = aim;
   const error = vi.spyOn(console, 'error');
   const diedAt = w.clock.nowSec();
   new EnemyDeathHandler(w.context).handleEnemyDeath(
@@ -41,23 +41,42 @@ function killed(blow = null) {
 }
 
 describe('his death', () => {
-  it('starts on the next eighth, his own, with the twang sliding onto the root', () => {
-    const w = killed({ dir: 0 });
+  it('starts on the next eighth, his own, from a record of the kill', () => {
+    const w = killed({ dir: 0.4 });
     expect(w.error).not.toHaveBeenCalled();
     const [death] = w.explosionManager.fragmentExplosions;
     expect(death).toBeInstanceOf(BassistDeath);
     const at = popTime(w.diedAt, w.clock);
-    expect(w.audio.playSound).toHaveBeenCalledWith('bassistDeath', 0, 0, {
-      at,
-    });
-    expect(SOUND_CONFIG.bassistDeath.sweep.to[0]).toBe('1');
+    expect(death.startsAt).toBeCloseTo(
+      at + heardLatencySec(w.audio.audioContext, w.clock),
+      9
+    );
+    expect(death.record.dir).toBe(0.4);
+    // his own pose at the kill, with the kill's snaps
+    expect(death.record.pose.aim).toBe(w.b.aim);
+    expect(death.record.pose.sinews.map((s) => s.snapped >= 0)).toEqual([
+      true,
+      true,
+      true,
+      true,
+    ]);
+    expect(death.record.pose.strings).toBe(0);
+    expect(death.record.jets[0]).toBe(0);
   });
 
   it('starts with the bang when the bomb killed him', () => {
     const w = killed({ dir: 0, bomb: true, at: 3 });
-    expect(w.audio.playSound).toHaveBeenCalledWith('bassistDeath', 0, 0, {
-      at: 3,
-    });
+    const [death] = w.explosionManager.fragmentExplosions;
+    expect(death.startsAt).toBeCloseTo(
+      3 + heardLatencySec(w.audio.audioContext, w.clock),
+      9
+    );
+  });
+
+  it('falls back to his aim when the blow has no way', () => {
+    const w = killed(null, 1.2);
+    const [death] = w.explosionManager.fragmentExplosions;
+    expect(death.record.dir).toBe(1.2);
   });
 
   it('asks a bassist nearby to answer, from its start', () => {
@@ -75,34 +94,101 @@ describe('his death', () => {
     );
     expect(SOUND_CONFIG.bassistResponse.group).toBe('band');
   });
+});
 
-  it('draws before and after its start, and is gone once its time is up', () => {
-    let now = 0;
-    const death = new BassistDeath({
-      x: 10,
-      y: 20,
-      pose: bassistWorld().b.pose(),
-      scale: 1,
+// A death of his on its own clock: frozen until 0.25 s, the ink from then
+function inkDeath({ hero = () => ({ x: 310, y: 20 }), linger = 1 } = {}) {
+  let now = 0;
+  const w = bassistWorld();
+  w.b.takeDamage(w.b.maxHealth, 0);
+  const death = new BassistDeath({
+    x: 10,
+    y: 20,
+    record: bassistDeathRecord({
+      linger,
+      andAt: 2 / 3,
+      beatSec: 0.5,
+      origin: 0,
+      at: 2, // beat 4: his lets 0.33 and 0.83 s on
+      pose: w.b.pose(),
       dir: 1,
       seed: 0.3,
-      diedAt: 0,
-      startsAt: 0.25,
-      now: () => now,
-    });
-    const { p } = transformP5();
-    for (now of [0.1, 0.3, 0.25 + DEATH_SEC * 0.9]) {
-      death.draw(p);
+    }),
+    diedAt: 0,
+    startsAt: 0.25,
+    now: () => now,
+    hero,
+    kickAge: () => 0.1,
+  });
+  const { p } = transformP5();
+  const at = (t) => {
+    now = t;
+    death.draw(p);
+    return death;
+  };
+  return { death, p, at };
+}
+// Seconds after its start that it shows: the ink's fade or the scroll's
+const showsFor = (r) =>
+  Math.max(
+    1.25 * r.linger,
+    r.fizzle + 0.12 + 0.4 * r.linger,
+    r.fizzle + 0.45 * r.linger
+  );
+
+describe('the ink', () => {
+  it('waits frozen, then blurts, and is gone once all of it has faded', () => {
+    const { death, p, at } = inkDeath();
+    const ends = 0.25 + showsFor(death.record);
+    for (const t of [0.1, 0.25, 0.3, 0.6, 1.1, ends - 0.01]) {
+      at(t);
       expect(death.active).toBe(true);
     }
     expect(p.drawingContext.depth).toBe(0);
-    expect(p.drawingContext.globalAlpha).toBe(1); // he fades only himself
-    CONFIG.DEATHS.LINGER = 2; // remains stay twice as long
-    now = 0.25 + DEATH_SEC * 1.5;
-    death.draw(p);
-    expect(death.active).toBe(true);
-    now = 0.25 + DEATH_SEC * 2.01;
-    death.draw(p);
+    expect(p.drawingContext.globalAlpha).toBe(1); // it fades only itself
+    at(ends + 0.01);
     expect(death.active).toBe(false);
+  });
+
+  it('stays longer with the linger kept at the kill', () => {
+    const { death, at } = inkDeath({ linger: 2 });
+    at(0.25 + showsFor({ ...death.record, linger: 1 }) + 0.05);
+    expect(death.active).toBe(true);
+    at(0.25 + showsFor(death.record) + 0.01);
+    expect(death.active).toBe(false);
+  });
+
+  it('draws at any age it is first drawn', () => {
+    for (const t of [0.05, 0.25, 0.4, 0.9, 1.6]) {
+      const { death, p, at } = inkDeath();
+      at(t);
+      expect(death.active).toBe(true);
+      expect(p.drawingContext.depth).toBe(0);
+    }
+  });
+
+  it('keeps the hero’s place from its first frame of ink, though he moves', () => {
+    let hero = { x: 10, y: -300 }; // during the wait: straight above him
+    const { death, at } = inkDeath({ hero: () => hero });
+    at(0.1);
+    expect(death.state.esc).toBeUndefined();
+    hero = { x: 310, y: 20 }; // at the start: to his right
+    at(0.26);
+    expect(Math.cos(death.state.esc.E)).toBeCloseTo(-1, 6); // flees left
+    hero = { x: 10, y: 320 };
+    at(0.6);
+    expect(Math.cos(death.state.esc.E)).toBeCloseTo(-1, 6);
+  });
+
+  it('with no hero, or one on top of him, flees along the blow', () => {
+    for (const hero of [() => null, () => ({ x: 10 + 19, y: 20 })]) {
+      const { death, at } = inkDeath({ hero });
+      at(0.3);
+      expect(death.state.esc.E).toBe(1);
+    }
+    const { death, at } = inkDeath({ hero: () => ({ x: 10 + 21, y: 20 }) });
+    at(0.3);
+    expect(Math.cos(death.state.esc.E)).toBeCloseTo(-1, 6);
   });
 });
 

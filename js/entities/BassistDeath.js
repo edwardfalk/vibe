@@ -1,14 +1,20 @@
+/**
+ * How the bassist dies, Ink cloud (docs/superpowers/specs/2026-10-13-bassist-death-design.md;
+ * the picture is BassistInk.js). What a death keeps from the kill is one
+ * record, read by its picture and its sound alike (DeathSounds.js), so a
+ * ?tune change mid-death applies to the next one. From the kill until its
+ * start (on the next eighth, or with the bomb's bang) he hangs frozen in the
+ * pose he died in, trembling; then the ink. Everything runs on the audio
+ * clock, read when drawn, so the picture stays with its sound through
+ * hitstop, and a pause (which suspends the clock) holds both. A change of
+ * the lead or the output latency mid-death moves the picture against its
+ * booked sound by that change, as for the stabber's death.
+ */
 import { CONFIG } from '../config.js';
-import { clamp01, smooth } from '../mathUtils.js';
-import { drawBassist } from './BassistRenderer.js';
+import { env } from '../mathUtils.js';
+import { drawInk, drawInkWait } from './BassistInk.js';
 
-// A bassist's death (EnemyDeathHandler.bassistDies): shortcut: a simple one
-// of his own until his own is picked on a studies page (the bassist spec,
-// Death; docs/ROADMAP.md). As on the look's page: his last sinew snaps and
-// he trembles, frozen, until the next eighth; then he goes slack, sinews
-// curled and scroll unrolled, and drifts off limp along the blow, turning
-// slowly and fading
-
+const KICK_TAU_SEC = 0.12; // the heard kick's pulse, as his pose's kick
 const SLACK = 1e-6; // on beat positions, for floating-point error
 /** His scroll jets on each of his lets from this long after his death's start, s */
 export const FIRST_JET_SEC = 0.04;
@@ -67,74 +73,61 @@ export function bassistDeathRecord({
   });
 }
 
-/** How long he drifts off slack, s, times CONFIG.DEATHS.LINGER */
-export const DEATH_SEC = 2.4;
-const DRIFT_PX_S = 28;
-const TURN_RAD_S = 0.9;
-const FADE_FROM = 0.55; // he fades over the rest of it, from this share
-const LAST = 3; // the slap's sinew, the last to go
-
+/**
+ * A bassist's death, for ExplosionManager's fragmentExplosions: its
+ * update() and draw(p), and `active` false once it is all gone.
+ */
 export class BassistDeath {
   /**
    * @param {object} o
-   * @param {number} o.x where he died
+   * @param {number} o.x where he died (his centre)
    * @param {number} o.y
-   * @param {object} o.pose his pose at the kill (Bassist#pose())
-   * @param {number} o.scale his BASSIST_LOOK.ART_SCALE at the kill
-   * @param {number} o.dir the blow's way, which he drifts
-   * @param {number} o.seed his lookSeed: which way he turns
-   * @param {number} o.diedAt the beat clock's time at the kill, s
-   * @param {number} o.startsAt when he goes slack, heard, on that clock, s
-   * @param {() => number} o.now that clock, s
+   * @param {object} o.record what it keeps from the kill (bassistDeathRecord)
+   * @param {number} o.diedAt the audio clock at the kill, s
+   * @param {number} o.startsAt when its start is heard, on the audio clock, s
+   * @param {() => number} o.now the audio clock, s
+   * @param {() => ?{x: number, y: number}} o.hero where the hero is, now
+   * @param {() => number} o.kickAge seconds since the last heard kick
    */
-  constructor({ x, y, pose, scale, dir, seed, diedAt, startsAt, now }) {
-    Object.assign(this, { x, y, pose, scale, dir, diedAt, startsAt, now });
-    this.turn = seed < 0.5 ? -1 : 1;
+  constructor({ x, y, record, diedAt, startsAt, now, hero, kickAge }) {
+    Object.assign(this, { x, y, record, diedAt, startsAt, now, hero, kickAge });
+    // The ink's caches, and the hero's place kept from its first frame of ink
+    this.state = {};
     this.active = true;
   }
 
-  // It runs on the clock, as it is drawn
+  // It runs on the audio clock, as it is drawn
   update() {}
 
   draw(p) {
     if (!this.active) return;
     const now = this.now();
     const age = now - this.startsAt;
-    const sec = DEATH_SEC * CONFIG.DEATHS.LINGER;
-    if (age >= sec) {
-      this.active = false;
-      return;
-    }
-    const t = Math.max(0, age);
-    const k = t / sec;
-    const since = now - this.diedAt;
-    const P = this.pose;
-    const L = {
-      ...P,
-      t: P.t + since,
-      aim: P.aim + this.turn * TURN_RAD_S * t,
-      vx: Math.cos(this.dir) * DRIFT_PX_S,
-      vy: Math.sin(this.dir) * DRIFT_PX_S,
-      speed: DRIFT_PX_S,
-      sinews: P.sinews.map((s, i) =>
-        i === LAST ? { ...s, snapped: since } : s
-      ),
-      tell: null,
-      hit: 0,
-      dying: age < 0 ? { age: since } : null,
-      slack: age < 0 ? null : { age, k },
+    if (age >= 0 && !('hero' in this.state)) this.state.hero = this.heroAt();
+    // The ink's frame: the record, its age (from its start), since the kill,
+    // how long it waited, his scale (live, as the living bassists draw), the
+    // hero kept from its first frame of ink, the heard kick
+    const d = {
+      ...this.record,
+      aim: this.record.pose.aim,
+      age,
+      since: now - this.diedAt,
+      wait: this.startsAt - this.diedAt,
+      scale: CONFIG.BASSIST_LOOK.ART_SCALE,
+      hero: this.state.hero ?? null,
+      kick: this.kickAge ? env(this.kickAge(), KICK_TAU_SEC) : 0,
+      state: this.state,
     };
     p.push();
-    p.translate(
-      this.x + Math.cos(this.dir) * DRIFT_PX_S * t,
-      this.y + Math.sin(this.dir) * DRIFT_PX_S * t
-    );
-    const ctx = p.drawingContext;
-    const a0 = ctx.globalAlpha;
-    ctx.globalAlpha =
-      a0 * (1 - smooth(clamp01((k - FADE_FROM) / (1 - FADE_FROM))));
-    drawBassist(p, this.scale, L);
-    ctx.globalAlpha = a0;
+    p.translate(this.x, this.y);
+    if (age < 0) drawInkWait(p, d);
+    else if (!drawInk(p, d)) this.active = false;
     p.pop();
+  }
+
+  /** Where the hero is, from where he died, or null */
+  heroAt() {
+    const h = this.hero?.();
+    return h ? { x: h.x - this.x, y: h.y - this.y } : null;
   }
 }

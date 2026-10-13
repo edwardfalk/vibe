@@ -6,7 +6,10 @@ import {
   StabberDeath,
   stabberDeathRecord,
 } from '../../entities/StabberDeath.js';
-import { BassistDeath } from '../../entities/BassistDeath.js';
+import {
+  BassistDeath,
+  bassistDeathRecord,
+} from '../../entities/BassistDeath.js';
 import { LEAD_SEC } from '../../audio/speech/Voicebox.js';
 import { heardLatencySec, heardKick } from '../../audio/BeatTrack.js';
 
@@ -231,28 +234,41 @@ export class EnemyDeathHandler {
   }
 
   /**
-   * A bassist's death (BassistDeath.js): as a tank's, with the bang or on
-   * the next eighth, seen when it is heard, his last string's twang sliding
-   * down onto the hum's root. His kin answer an eighth after it starts.
-   * Returns its start's audio time.
+   * A bassist's death, Ink cloud (BassistDeath.js): as a tank's, with the
+   * bang or on the next eighth, seen when it is heard. His kin answer an
+   * eighth after it starts. Returns its start's audio time.
    */
   bassistDies(enemy, blow, explosionManager, audio) {
     // Audio first, as for a grunt: the death's times are on the clock it is read by
     audio.ensureAudioContext?.();
     const clock = this.getContextValue('beatClock');
-    const diedAt = clock.nowSec();
+    const now = () => clock.nowSec();
+    const diedAt = now();
     const at = deathStart(blow, clock, diedAt);
+    const latency = () => heardLatencySec(audio.audioContext, clock);
+    const beatSec = clock.beatInterval / MS_PER_SEC;
+    const record = bassistDeathRecord({
+      linger: CONFIG.DEATHS.LINGER,
+      andAt: CONFIG.SWING.AND_AT,
+      beatSec,
+      origin: clock.startTime / MS_PER_SEC,
+      at,
+      pose: enemy.pose(),
+      dir: blow?.dir ?? enemy.aim,
+      seed: enemy.lookSeed,
+    });
+    const player = this.getContextValue('player');
     explosionManager.fragmentExplosions.push(
       new BassistDeath({
         x: enemy.x,
         y: enemy.y,
-        pose: enemy.pose(),
-        scale: CONFIG.BASSIST_LOOK.ART_SCALE,
-        dir: blow?.dir ?? enemy.aimAngle,
-        seed: enemy.lookSeed,
+        record,
         diedAt,
-        startsAt: at + heardLatencySec(audio.audioContext, clock),
-        now: () => clock.nowSec(),
+        startsAt: at + latency(),
+        now,
+        hero: () => player ?? null,
+        kickAge: () =>
+          heardKick(clock.getBeatPosition(), beatSec, latency(), true).kickAge,
       })
     );
     audio.playSound('bassistDeath', enemy.x, enemy.y, { at });
