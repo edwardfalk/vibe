@@ -359,6 +359,22 @@ describe('the ink', () => {
       expect(arcs(t + 0.002) - arcs(t - 0.002)).toBe(2);
   });
 
+  it('a ?tune scale change mid-death moves the ink’s slits with him', () => {
+    const scale = CONFIG.BASSIST_LOOK.ART_SCALE;
+    try {
+      const { death, at } = inkDeath();
+      at(0.3);
+      const slitPuff = (k) => death.state.ink.puffs[k]; // past his two body puffs
+      const before = { x: slitPuff(2).x0, y: slitPuff(2).y0 };
+      CONFIG.BASSIST_LOOK.ART_SCALE = scale * 2;
+      at(0.31);
+      expect(slitPuff(2).x0).toBeCloseTo(before.x * 2, 6);
+      expect(slitPuff(2).y0).toBeCloseTo(before.y * 2, 6);
+    } finally {
+      CONFIG.BASSIST_LOOK.ART_SCALE = scale;
+    }
+  });
+
   it('with no hero, or one on top of him, flees along the blow', () => {
     for (const hero of [
       () => null,

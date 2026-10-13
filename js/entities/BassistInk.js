@@ -379,7 +379,12 @@ export function drawInk(p, d) {
   const c = p.drawingContext;
   const st = d.state;
   st.esc ??= escape(d);
-  st.ink ??= makeInk(d, st.esc);
+  // His scale is read live: a ?tune change mid-death moves the ink's slits
+  // with him (the puffs are seeded, so they come out the same, rescaled)
+  if (st.inkScale !== d.scale) {
+    st.ink = makeInk(d, st.esc);
+    st.inkScale = d.scale;
+  }
   const jets = d.jets;
   const aLet = d.fizzle;
   const P = d.pose;
