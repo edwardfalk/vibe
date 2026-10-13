@@ -46,8 +46,8 @@ export function kicksOn(beat) {
  * The kick as the player hears it, for the sky and the hero: the kicks the
  * track really played, so a pattern change, a skipped note or a restart
  * never shows one it didn't. The next kick is the next one booked, else the
- * current pattern's on a grid beat the track hasn't come to yet. Times are
- * seconds; "none" is NONE_SEC.
+ * current pattern's on a grid beat the track will still come to; either way
+ * with whether it is a beat 1. Times are seconds; "none" is NONE_SEC.
  * @param {number} beats BeatClock's position in beats (getTotalBeats() + getBeatPhase())
  * @param {number} beatSec seconds per beat
  * @param {number} latencySec heardLatencySec: what is heard at `beats` was booked this long before it
@@ -66,17 +66,20 @@ export function heardKick(beats, beatSec, latencySec, booked) {
       prevKickAge: NONE_SEC,
       downbeat: false,
       nextKickIn: NONE_SEC,
+      nextDownbeat: false,
     };
   }
   const { kicks, originSec, until } = booked;
   const now = originSec + t; // the audio time heard at `beats`
   let i = kicks.length - 1;
   while (i >= 0 && kicks[i].at > now) i--;
-  let next = kicks[i + 1]?.at ?? null;
+  let next = kicks[i + 1] ?? null;
+  // The scheduler books nothing within half an eighth after its last note
+  const from = until + beatSec / 4;
   const n = Math.floor(heard);
   for (let k = n + 1; k <= n + LOOKAHEAD_BEATS && next === null; k++) {
     const at = originSec + k * beatSec;
-    if (at > until && kicksOn(mod4(k))) next = at;
+    if (at >= from && kicksOn(mod4(k))) next = { at, downbeat: mod4(k) === 0 };
   }
   const age = (j) => (j < 0 ? NONE_SEC : Math.min(NONE_SEC, now - kicks[j].at));
   return {
@@ -84,7 +87,8 @@ export function heardKick(beats, beatSec, latencySec, booked) {
     kickAge: age(i),
     prevKickAge: age(i - 1),
     downbeat: i >= 0 && kicks[i].downbeat,
-    nextKickIn: next === null ? NONE_SEC : next - now,
+    nextKickIn: next === null ? NONE_SEC : next.at - now,
+    nextDownbeat: !!next?.downbeat,
   };
 }
 

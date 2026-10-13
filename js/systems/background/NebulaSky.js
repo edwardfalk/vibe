@@ -128,6 +128,7 @@ export const REST_FRAME = {
   prevKickAge: NONE_SEC,
   downbeat: false,
   nextKickIn: NONE_SEC,
+  nextDownbeat: false,
 };
 
 const VERT = `attribute vec3 aPosition;
@@ -303,7 +304,7 @@ function spikeSprite(p, c) {
 }
 
 // What the kick and the level do this frame; every number here is finite
-function envelopes(s) {
+export function envelopes(s) {
   const cfg = CONFIG.SKY;
   const lv = levelFraction(s.level);
   const str = cfg.KICK_STRENGTH;
@@ -334,12 +335,10 @@ function envelopes(s) {
         str *
         cfg.DOWNBEAT_FRONT
       : 0;
-  const nextBeat = Math.round((s.t + s.nextKickIn) / s.beatSec);
-  const nextDown = ((nextBeat % 4) + 4) % 4 === 0;
   const inhale =
     s.nextKickIn < INHALE_SEC
       ? (1 - s.nextKickIn / INHALE_SEC) ** 2 *
-        (nextDown ? 1 : INHALE_OFFBEAT) *
+        (s.nextDownbeat ? 1 : INHALE_OFFBEAT) *
         str
       : 0;
   return {

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import {
   NebulaSky,
   REST_FRAME,
+  envelopes,
 } from '../../js/systems/background/NebulaSky.js';
 import { CONFIG } from '../../js/config.js';
 import { readFileSync } from 'node:fs';
@@ -125,6 +126,15 @@ describe('NebulaSky', () => {
     // levelAge began 0.1 s ago: between the previous kick and this one
     sky.draw(p, frame({ ...kick, levelAge: 0.1 }));
     expect(uniforms.breath / normal).toBeCloseTo(1.6); // LEVEL_UP_BREATH
+  });
+
+  it('inhales deeper before a beat 1, as the kick was booked, whatever the grid says', () => {
+    // 0.05 s before the next kick; t puts it on the grid's beat 1 either way
+    const before = (nextDownbeat) =>
+      envelopes({ ...REST_FRAME, t: 1.95, nextKickIn: 0.05, nextDownbeat })
+        .inhale;
+    expect(before(false)).toBeGreaterThan(0);
+    expect(before(true)).toBeGreaterThan(before(false));
   });
 
   it('draws flat on a software renderer, but still links the shader', () => {

@@ -379,9 +379,9 @@ test.describe('Gameplay Probes', () => {
       const track = window.beatTrack;
       const play = track._playKick.bind(track);
       window.kickCount = 0;
-      track._playKick = (time) => {
+      track._playKick = (...args) => {
         window.kickCount++;
-        play(time);
+        play(...args);
       };
     });
     // 120 BPM = 2 beats per second, four on the floor = 2 kicks per second

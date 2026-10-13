@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { BeatTrack, heardKick } from '../../js/audio/BeatTrack.js';
+import { BeatTrack, heardKick, heardKickOf } from '../../js/audio/BeatTrack.js';
 import { hz } from '../../js/audio/Harmony.js';
 import { CONFIG } from '../../js/config.js';
 import { fakeAudio } from './helpers/fakeAudio.js';
@@ -309,6 +309,8 @@ describe('BeatTrack kick', () => {
     expect(k.kickAge).toBeCloseTo(0.1);
     expect(k.prevKickAge).toBeCloseTo(1.1);
     expect(k.downbeat).toBe(true);
+    // the pattern's next on the new grid, its beat 3 at 4.5 s
+    expect(k.nextKickIn).toBeCloseTo(0.4);
   });
 
   it("heardKick's next kick: the next booked, else the pattern's on a beat the track hasn't come to", () => {
@@ -319,6 +321,45 @@ describe('BeatTrack kick', () => {
     // The track came through beat 9 kicking oneThree, then four: not beat 9
     const k = heardKick(8.5, 0.5, 0, booked([8], 9.5));
     expect(k.nextKickIn).toBeCloseTo(0.75);
+    // nor a grid beat a hair past its last note (a restart's rounding)
+    const hair = heardKick(8.5, 0.5, 0, booked([8], 9 - 1e-13));
+    expect(hair.nextKickIn).toBeCloseTo(0.75);
+  });
+
+  it("heardKick's next kick has the accent it was booked with, across a restart too", () => {
+    // Booked as an ordinary beat at 4.5 s; a restart made 4.5 s a beat 1
+    const b = {
+      kicks: [
+        { at: 4, downbeat: true },
+        { at: 4.5, downbeat: false },
+      ],
+      originSec: 4.5,
+      until: 4.5,
+    };
+    const k = heardKick(-0.8, 0.5, 0, b); // heard at 4.1 s
+    expect(k.nextKickIn).toBeCloseTo(0.4);
+    expect(k.nextDownbeat).toBe(false);
+    // Forecast, the grid's: beat 12 is a bar's beat 1, beat 9 isn't
+    expect(heardKick(11.5, 0.5, 0, booked([], -Infinity)).nextDownbeat).toBe(
+      true
+    );
+    expect(heardKick(8.5, 0.5, 0, booked([], -Infinity)).nextDownbeat).toBe(
+      false
+    );
+  });
+
+  it("heardKickOf reads the track's record, its grid from the clock and how far it has come", () => {
+    const clock = { startTime: 1000, beatInterval: 500 }; // the grid from 1 s
+    const track = {
+      isPlaying: true,
+      ctx: { state: 'running' },
+      kicks: playedKicks([8], 0.5, 1),
+      _lastNoteSec: 1 + 9.5 * 0.5, // come through beat 9 without a kick
+      getContextValue: (k) => (k === 'beatClock' ? clock : null),
+    };
+    const k = heardKickOf(track, 8.5, 0.5);
+    expect(k.kickAge).toBeCloseTo(0.25 - CONFIG.SKY.OFFSET_MS / 1000);
+    expect(k.nextKickIn).toBeCloseTo(0.75 + CONFIG.SKY.OFFSET_MS / 1000);
   });
 
   it('heardKick gives finite "none" values when nothing plays', () => {
@@ -327,6 +368,7 @@ describe('BeatTrack kick', () => {
       prevKickAge: 99,
       nextKickIn: 99,
       downbeat: false,
+      nextDownbeat: false,
     };
     expect(heardKick(8.2, 0.5, 0, null)).toMatchObject(none);
     CONFIG.BEAT_TRACK.KICK.ENABLED = false;
