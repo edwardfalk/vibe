@@ -4,7 +4,7 @@
 
 Enemies attack on the beat, and each type plays a different part of the band. The longer you survive, the more of them join, and the fight turns into the soundtrack.
 
-**[Play it in the browser](https://edwardfalk.github.io/vibe/)**. It needs a computer with a keyboard and mouse. Turn the sound on.
+**[Play it in the browser](https://edwardfalk.github.io/vibe/)**. It needs a computer with a keyboard and mouse, or an Xbox controller after one click or key press to start. Turn the sound on.
 
 ![Vibe gameplay](docs/media/demo.webp)
 
@@ -18,6 +18,14 @@ Enemies attack on the beat, and each type plays a different part of the band. Th
 | E                     | dash                    |
 | P / M                 | pause / mute            |
 | R                     | restart after game over |
+
+| Xbox controller      | Action                                |
+| -------------------- | ------------------------------------- |
+| Left stick / D-pad   | move                                  |
+| Right stick          | aim (until the mouse moves)           |
+| RT                   | shoot                                 |
+| A / click left stick | dash                                  |
+| Start / View         | pause, restart after game over / mute |
 
 ## How the music works
 

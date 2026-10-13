@@ -160,6 +160,7 @@ Calls and smaller work:
 
 - **call: a time limit for a lit rusher.** He waits for his beat however long that takes. Options: none, or a backstop.
 - **check: a tank with blockers on both sides can stall midway between them.** It's rare, and two simple fixes made it worse.
+- **check: the Xbox controller in Firefox, and under Steam.** Edward played it in one browser (2026-10-13); the other wasn't tried with a real pad. Steam's desktop controller layout can turn the right stick into mouse movement, which takes the aim back from the stick every frame. A pad without the standard mapping is read as if it had one (`pollGamepad`'s shortcut).
 
 ## Tests and tooling
 

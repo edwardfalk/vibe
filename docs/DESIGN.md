@@ -61,7 +61,7 @@ This is BeatTrack's steady kick, not the tank's beat-1 part. Apart from the sky,
 
 ## Player fire
 
-The first shot of a burst fires the moment you press, so the controls feel instant. While fire stays held (mouse, Space or Shift), later shots snap to eighth notes: if a shot is due off the grid, `queueShot()` holds it until the next eighth note. A shot that was queued still fires if you let go before it lands, so a quick tap never loses its shot.
+The first shot of a burst fires the moment you press, so the controls feel instant. While fire stays held (mouse, Space, Shift or a controller's RT), later shots snap to eighth notes: if a shot is due off the grid, `queueShot()` holds it until the next eighth note. A shot that was queued still fires if you let go before it lands, so a quick tap never loses its shot.
 
 While a bassist is about the hero's eighths swing (`BeatClock.heroEighths`): his "and" falls at `CONFIG.SWING.AND_AT` of the beat, the bassist's let, and a held shot waits only as long as the shorter gap allows. Its sound lands exactly on the eighth: held fire fires up to 20 ms, plus the game's lead, before the line you hear, and the sound waits for it (a shot that fires later than the lead after its eighth plays at once). The first shot of a burst never waits more than 30 ms. It is one of four sounds from the listening page, chosen on `?tune`: a soft hat, a metal hat, a tuned tick on the root five octaves up (the default), or the soft hat with a ghost arpeggio walking the chord under it. The "and" is a little louder than the beat, like a dance beat, and a long burst softens. The sounds are in `js/audio/Instruments.js`, their numbers in `CONFIG.HERO_SHOT`.
 

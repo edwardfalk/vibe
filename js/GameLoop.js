@@ -46,6 +46,8 @@ window.arrowUpPressed = false;
 window.arrowDownPressed = false;
 window.arrowLeftPressed = false;
 window.arrowRightPressed = false;
+window.padMove = null;
+window.padAim = null;
 
 initializeInputHandlers();
 

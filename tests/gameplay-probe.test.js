@@ -1057,6 +1057,58 @@ test.describe('Gameplay Probes', () => {
     expect(after.y).toBeLessThan(before.y);
   });
 
+  test('A controller moves him, aims, fires on RT and pauses on Start', async ({
+    page,
+  }) => {
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    // A standard-mapping pad, all at rest, that the test moves
+    await page.addInitScript(() => {
+      const pad = {
+        connected: true,
+        mapping: 'standard',
+        axes: [0, 0, 0, 0],
+        buttons: Array.from({ length: 17 }, () => ({
+          pressed: false,
+          value: 0,
+        })),
+      };
+      window.__pad = pad;
+      Object.defineProperty(navigator, 'getGamepads', { value: () => [pad] });
+    });
+    const button = (i, on) =>
+      page.evaluate(
+        ([i, on]) =>
+          (window.__pad.buttons[i] = { pressed: on, value: on ? 1 : 0 }),
+        [i, on]
+      );
+    await bootGame(page);
+
+    const startX = await page.evaluate(() => window.player.x);
+    await page.evaluate(() => (window.__pad.axes[0] = 1)); // left stick right
+    await page.waitForFunction((x) => window.player.x > x + 20, startX);
+    await page.evaluate(() => {
+      window.__pad.axes[0] = 0;
+      window.__pad.axes[3] = -1; // right stick up
+    });
+    await page.waitForFunction(
+      () => Math.abs(window.player.aimAngle + Math.PI / 2) < 0.01
+    );
+
+    const shots = await page.evaluate(() => window.gameState.shotsFired);
+    await button(7, true); // RT
+    await page.waitForFunction((n) => window.gameState.shotsFired > n, shots);
+    await button(7, false);
+
+    await button(9, true); // Start
+    await page.waitForFunction(() => window.gameState.gameState === 'paused');
+    await button(9, false);
+    await page.waitForTimeout(100); // its release is read (draws run paused)
+    await button(9, true);
+    await page.waitForFunction(() => window.gameState.gameState === 'playing');
+    expect(errors).toEqual([]);
+  });
+
   test('Enemy lifecycle cleanup removes marked enemies', async ({ page }) => {
     await bootGame(page);
 
