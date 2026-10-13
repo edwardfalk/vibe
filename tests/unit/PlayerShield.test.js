@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 vi.stubGlobal('localStorage', {
   _store: {},
@@ -175,5 +175,34 @@ describe('Player healing', () => {
     player.takeDamage(1000, 'test');
     player.update(60000);
     expect(player.health).toBe(0);
+  });
+});
+
+describe('Immortal hero (?tune)', () => {
+  beforeEach(() => {
+    globalThis.window = { playerIsShooting: false };
+  });
+  afterEach(() => {
+    CONFIG.IMMORTAL = false;
+  });
+
+  it('hits land but take no health, and the run keeps no high score', () => {
+    const { player, audio, gameState } = makePlayer();
+    gameState.setGameState = vi.fn();
+    CONFIG.IMMORTAL = true;
+    player.hurt(37, 'test'); // the shield takes this one
+    expect(player.hurt(1000, 'test')).toBe(false);
+    expect(player.health).toBe(100);
+    expect(audio.playSound).toHaveBeenCalledWith('playerHit');
+    expect(gameState.setGameState).not.toHaveBeenCalled();
+    expect(gameState.practiceRun).toBe(true);
+  });
+
+  it('unticked, the same hit kills him', () => {
+    const { player, gameState } = makePlayer();
+    gameState.setGameState = vi.fn();
+    player.hurt(37, 'test');
+    expect(player.hurt(1000, 'test')).toBe(true);
+    expect(gameState.practiceRun).toBeUndefined();
   });
 });

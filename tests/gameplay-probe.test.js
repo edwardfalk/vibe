@@ -900,6 +900,58 @@ test.describe('Gameplay Probes', () => {
     );
   });
 
+  test("?tune's Playground voices box plays the voice playground's saved edits, kept up to date", async ({
+    page,
+    context,
+  }) => {
+    await page.goto('/?tune');
+    await page.waitForFunction(() => window.gameState?.gameState === 'title');
+    const speaker = (name) =>
+      page.evaluate(async (n) => {
+        const { CONFIG } = await import('/js/config.js');
+        return CONFIG.SPEECH.SPEAKERS[n];
+      }, name);
+    // Saved the way voices.html saves an edit: against config.js's own voice
+    const saveGrunt = (on, pitch) =>
+      on.evaluate(async (p) => {
+        const { CONFIG } = await import('/js/config.js');
+        const base = CONFIG.SPEECH.SPEAKERS.grunt;
+        const edit = { ...base, voice: { ...base.voice, pitch: p } };
+        localStorage.setItem(
+          'vibe.voices.v1',
+          JSON.stringify({
+            speakers: { grunt: { base, edit } },
+            respell: {},
+          })
+        );
+      }, pitch);
+    const gruntPitch = (await speaker('grunt')).voice.pitch;
+    await saveGrunt(page, 37);
+    // A rusher picked on his knob stays picked through the box
+    const rusher = page
+      .locator('#tunePanel label')
+      .filter({ hasText: 'SPEAKERS.rusher:' });
+    await rusher.locator('select').selectOption('ringmaster');
+
+    const box = page.getByLabel('Playground voices');
+    await box.check();
+    await expect(page.locator('#tunePanel')).toContainText(
+      'Playground voices (grunt)'
+    );
+    expect((await speaker('grunt')).voice.pitch).toBe(37);
+    // The playground saving in another tab reaches the game
+    const playground = await context.newPage();
+    await playground.goto('/?tune');
+    await saveGrunt(playground, 43);
+    await expect
+      .poll(async () => (await speaker('grunt')).voice.pitch)
+      .toBe(43);
+
+    await box.uncheck();
+    expect((await speaker('grunt')).voice.pitch).toBe(gruntPitch);
+    expect((await speaker('rusher')).voice.variant).toBe('announcer');
+  });
+
   test('Game dips while speech plays and always recovers', async ({ page }) => {
     await bootGame(page);
     await page.waitForFunction(() => window.audio?.duckGain);

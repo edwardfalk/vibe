@@ -54,7 +54,7 @@ export class GameState {
     this.gameState = 'playing'; // 'title', 'playing', 'gameOver', 'paused'
     // His death scene, the first bar of 'gameOver' (startDeathScene)
     this.scene = null;
-    this.practiceRun = false; // set by ?tune jumps: no high score this run
+    this.practiceRun = false; // set by ?tune's jumps and immortal hero: no high score this run
 
     // Combat statistics
     this.killStreak = 0;

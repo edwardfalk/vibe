@@ -4,7 +4,9 @@
  * push, health and strings' volumes (STABBER) and size (STABBER_LOOK), the swing a bassist brings (SWING) and his stalk,
  * strings, puff, octave and note (BASSIST), TANK_ARMOR, the tank's turn, aim, motion and health (TANK)
  * and look (TANK_LOOK), the bomb (BOMB), HITBOX, the grunt's motion (GRUNT_LOOK), a Sound
- * while paused box (ticked here: the beat plays on while paused), the hero's
+ * while paused box (ticked here: the beat plays on while paused), an
+ * Immortal hero box, a Playground voices box (the voice playground's saved
+ * edits, in play), the hero's
  * shield, healing, knockback, the damage hits do to him and his size (PLAYER_LOOK),
  * the deaths (DEATHS): the grunt's pop and the Dude's last breath, how
  * long remains stay, how the stabber dies, and the Dude's death scene's
@@ -26,6 +28,7 @@ import {
   CHATTER_CHOICES,
 } from '../audio/Instruments.js';
 import { STABBER_STYLES } from '../entities/StabberDeath.js';
+import { STORE_KEY, savedVoices } from './SavedVoices.js';
 
 // The rusher's voices from the 2026-10-12 voice studies, to try in play:
 // the singer is the game's, the old one his voice before it.
@@ -344,21 +347,75 @@ export function createTunePanel() {
   };
   panel.append(levelUp);
 
-  // Sound while paused: on here, so the kick can be tuned by ear while the
-  // game is paused. Not a knob, so it never lands in the JSON for config.js
-  CONFIG.SOUND_WHILE_PAUSED = true;
-  const soundRow = document.createElement('label');
-  soundRow.style.cssText = 'display:block;margin:6px 0;';
-  const sound = document.createElement('input');
-  sound.type = 'checkbox';
-  sound.checked = true;
-  sound.onchange = () => {
-    CONFIG.SOUND_WHILE_PAUSED = sound.checked;
-    window.audio?.syncPause?.(window.gameState?.gameState === 'paused');
-    sound.blur(); // hand the keyboard back to the game, so P still works
+  // Boxes that aren't knobs, so they never land in the JSON for config.js
+  const addBox = (text, checked, onChange) => {
+    const row = document.createElement('label');
+    row.style.cssText = 'display:block;margin:6px 0;';
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = checked;
+    box.onchange = () => {
+      onChange(box.checked);
+      box.blur(); // hand the keyboard back to the game, so P still works
+    };
+    const label = document.createElement('span');
+    label.textContent = ` ${text}`;
+    row.append(box, label);
+    panel.append(row);
+    return { box, label };
   };
-  soundRow.append(sound, ' Sound while paused');
-  panel.append(soundRow);
+
+  // Sound while paused: on here, so the kick can be tuned by ear while the
+  // game is paused
+  CONFIG.SOUND_WHILE_PAUSED = true;
+  addBox('Sound while paused', true, (on) => {
+    CONFIG.SOUND_WHILE_PAUSED = on;
+    window.audio?.syncPause?.(window.gameState?.gameState === 'paused');
+  });
+
+  addBox('Immortal hero', CONFIG.IMMORTAL, (on) => (CONFIG.IMMORTAL = on));
+
+  // Playground voices: the voice playground's saved edits in play, kept up
+  // to date while it saves in another tab
+  const configVoices = {
+    speakers: { ...CONFIG.SPEECH.SPEAKERS },
+    respell: CONFIG.SPEECH.RESPELL,
+  };
+  const fromPlayground = new WeakSet();
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const useVoices = (on) => {
+    const { voices, blocked } = on
+      ? savedVoices(configVoices)
+      : { voices: configVoices };
+    const edited = [];
+    for (const [name, setup] of Object.entries(voices.speakers)) {
+      const current = CONFIG.SPEECH.SPEAKERS;
+      if (!same(setup, configVoices.speakers[name])) {
+        // A voice left as it was keeps its object, and so its rendered lines
+        if (!same(setup, current[name])) {
+          fromPlayground.add(setup);
+          current[name] = setup;
+        }
+        edited.push(name);
+      } else if (fromPlayground.has(current[name])) {
+        // Back to config.js's own object; a rusher's knob pick stays put
+        current[name] = configVoices.speakers[name];
+      }
+    }
+    CONFIG.SPEECH.RESPELL = voices.respell;
+    if (!same(voices.respell, configVoices.respell)) edited.push('respell');
+    playground.label.textContent = ` Playground voices${
+      !on
+        ? ''
+        : blocked
+          ? ' (storage blocked)'
+          : ` (${edited.join(', ') || 'none edited'})`
+    }`;
+  };
+  const playground = addBox('Playground voices', false, useVoices);
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORE_KEY && playground.box.checked) useVoices(true);
+  });
 
   const json = document.createElement('pre');
   json.style.cssText = 'white-space:pre-wrap;color:#0ff;margin:8px 0 0;';
