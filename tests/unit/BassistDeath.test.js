@@ -134,6 +134,67 @@ describe('his death', () => {
     expect(gain).toBeCloseTo(1 / Math.sqrt(2), 9);
   });
 
+  it('counts his lets from the song’s start and beat, off the grid too', () => {
+    const explosionManager = { fragmentExplosions: [] };
+    const w = bassistWorld({ ms0: 4100, values: { explosionManager } });
+    w.audio.ensureAudioContext = vi.fn();
+    w.audio.playBassistDeath = vi.fn();
+    w.clock.startTime = w.clock.startTime + 123.4; // the song's start, not on a beat of ours
+    new EnemyDeathHandler(w.context).handleEnemyDeath(w.b, 'bassist', 0, 0);
+    const [death] = explosionManager.fragmentExplosions;
+    const at = w.audio.playBassistDeath.mock.calls[0][2];
+    const beatSec = w.clock.beatInterval / 1000;
+    const origin = w.clock.startTime / 1000;
+    expect(death.record.jets.length).toBeGreaterThan(1);
+    // the fizzle on the first let from 0.45 s: within a beat of it
+    expect(death.record.fizzle).toBeGreaterThanOrEqual(FIZZLE_FROM_SEC);
+    expect(death.record.fizzle).toBeLessThan(FIZZLE_FROM_SEC + beatSec);
+    for (const offset of death.record.jets.slice(1)) {
+      const beats = (at + offset - origin) / beatSec - CONFIG.SWING.AND_AT;
+      expect(beats).toBeCloseTo(Math.round(beats), 6);
+    }
+  });
+
+  it('spreads the bassists one bomb kills, its bang already past (Edward’s addition)', () => {
+    const explosionManager = { fragmentExplosions: [] };
+    const w = bassistWorld({ ms0: 4100, values: { explosionManager } });
+    w.audio.ensureAudioContext = vi.fn();
+    w.audio.playBassistDeath = vi.fn();
+    const handler = new EnemyDeathHandler(w.context);
+    const bang = w.clock.nowSec() - 0.05; // the eighth that just passed
+    for (let i = 0; i < 2; i++) {
+      handler.handleEnemyDeath(w.b, 'bassist', 0, 0, { bomb: true, at: bang });
+    }
+    const calls = w.audio.playBassistDeath.mock.calls;
+    expect(calls[0][2]).toBeCloseTo(bang, 9);
+    expect(calls[0][4]).toBe(1);
+    expect(calls[1][2]).toBeCloseTo(bang + STRUM_SEC, 9);
+    expect(calls[1][4]).toBeCloseTo(1 / Math.sqrt(2), 9);
+  });
+
+  it('dies where he was, keeps the hero, the linger and his seed from the kill', () => {
+    const explosionManager = { fragmentExplosions: [] };
+    const player = { x: 200, y: 10 };
+    const w = bassistWorld({
+      x: 37,
+      y: -52,
+      ms0: 4100,
+      values: { explosionManager, player },
+    });
+    w.audio.ensureAudioContext = vi.fn();
+    w.audio.playBassistDeath = vi.fn();
+    CONFIG.DEATHS.LINGER = 1.6;
+    new EnemyDeathHandler(w.context).handleEnemyDeath(w.b, 'bassist', 37, -52);
+    const [death] = explosionManager.fragmentExplosions;
+    expect([death.x, death.y]).toEqual([37, -52]);
+    expect(w.audio.playBassistDeath.mock.calls[0].slice(0, 2)).toEqual([
+      37, -52,
+    ]);
+    expect(death.record.linger).toBe(1.6);
+    expect(death.record.seed).toBe(w.b.lookSeed);
+    expect(death.heroAt()).toEqual({ x: 200 - 37, y: 10 + 52 });
+  });
+
   it('asks a bassist nearby to answer, from its start', () => {
     const explosionManager = { fragmentExplosions: [] };
     const w = bassistWorld({ ms0: 4100, values: { explosionManager } });
