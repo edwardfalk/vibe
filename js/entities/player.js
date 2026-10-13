@@ -620,7 +620,11 @@ export class Player {
     this.stampHurt(damageSource);
 
     const prevHealth = this.health;
-    this.health -= amount;
+    if (CONFIG.IMMORTAL) {
+      if (gameState) gameState.practiceRun = true; // no high score this run
+    } else {
+      this.health -= amount;
+    }
 
     // Play low health warning sound when crossing the 30% threshold
     if (

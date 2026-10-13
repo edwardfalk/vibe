@@ -186,17 +186,7 @@ export class Audio {
       // Speech goes straight to the limiter: the duck never touches it
       this.voicebox = this.createVoicebox(this.audioContext);
       this.voicebox.connect(this.masterLimiter);
-      // The bomb's shout and count and his death lines can't wait for a
-      // render: the shout must end before the count, the count land on its
-      // beats, and his death scene is too short
-      for (const line of [BOMB_PLANTED, ...COUNTDOWN, ...PLAYER_LINES.death]) {
-        this.voicebox.prepare('player', line);
-      }
-      // and the tank's "uh oh" and the rusher's punchlines have a beat
-      this.voicebox.prepare('tank', TANK_UH_OH);
-      for (const line of RUSHER_BLAST_LINES) {
-        this.voicebox.prepare('rusher', line);
-      }
+      this.prepareTimedLines();
       this.applyMix();
       // The universe's hum, behind masterGain so it mutes and ducks with the
       // effects; built before the beat track starts, which keeps its time.
@@ -297,6 +287,21 @@ export class Audio {
         ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
     }
     return curve;
+  }
+
+  // The bomb's shout and count and his death lines can't wait for a render:
+  // the shout must end before the count, the count land on its beats, and
+  // his death scene is too short; the tank's "uh oh" and the rusher's
+  // punchlines have a beat. Again after ?tune swaps a voice in
+  prepareTimedLines() {
+    if (!this.voicebox) return; // before the first key: initialize() does it
+    for (const line of [BOMB_PLANTED, ...COUNTDOWN, ...PLAYER_LINES.death]) {
+      this.voicebox.prepare('player', line);
+    }
+    this.voicebox.prepare('tank', TANK_UH_OH);
+    for (const line of RUSHER_BLAST_LINES) {
+      this.voicebox.prepare('rusher', line);
+    }
   }
 
   // The game's speech; the replay tool, which has no Worker, stands one in

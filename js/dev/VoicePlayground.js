@@ -8,27 +8,12 @@ import { SPEAKER_LINES } from '../audio/DialogueLines.js';
 import { BeatClock } from '../audio/BeatClock.js';
 import { BeatTrack } from '../audio/BeatTrack.js';
 import { Hum } from '../audio/Hum.js';
-import {
-  STAGE_PARAMS,
-  stageDefaults,
-  validateChain,
-} from '../audio/speech/effects.js';
+import { STAGE_PARAMS, stageDefaults } from '../audio/speech/effects.js';
 import { Voicebox, spoken, startTime } from '../audio/speech/Voicebox.js';
+import { STORE_KEY, VOICE_PARAMS, savedVoices } from './SavedVoices.js';
 
-const STORE_KEY = 'vibe.voices.v1';
 const BPM = 120;
 const PAUSE_BETWEEN_LINES_MS = 300;
-// Slider ranges [min, max, step]; SAM reads 0 as "its default" for pitch
-// and speed, so those start at 1
-const VOICE_PARAMS = {
-  sam: {
-    pitch: [1, 255, 1],
-    speed: [1, 255, 1],
-    mouth: [0, 255, 1],
-    throat: [0, 255, 1],
-  },
-  espeak: { pitch: [0, 100, 1], range: [0, 100, 1], speed: [80, 450, 5] },
-};
 
 const $ = (id) => document.getElementById(id);
 const game = {
@@ -53,54 +38,16 @@ function notice(text) {
   $('notice').hidden = false;
 }
 
-function fits(group, edit) {
-  if (group === 'respell') {
-    return (
-      edit !== null &&
-      typeof edit === 'object' &&
-      Object.values(edit).every((as) => typeof as === 'string')
-    );
-  }
-  try {
-    if (!VOICE_PARAMS[edit?.engine] || !Array.isArray(edit.chain)) return false;
-    validateChain(edit.chain);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Saved edits come back one entry at a time: an entry whose config has
-// changed since (or that this page can't use) is dropped, and named
+// Saved edits come back one entry at a time (SavedVoices.js); one made
+// against an older config.js, or that this page can't use, is named
 function restore() {
-  const restored = structuredClone(game);
-  let stored = null;
-  try {
-    stored = JSON.parse(localStorage.getItem(STORE_KEY) ?? 'null');
-  } catch {
-    return restored; // storage blocked: edits last until the page reloads
-  }
-  const dropped = [];
-  for (const group of ['speakers', 'respell']) {
-    for (const [name, saved] of Object.entries(stored?.[group] ?? {})) {
-      const current = game[group][name];
-      if (
-        current !== undefined &&
-        JSON.stringify(saved?.base) === JSON.stringify(current) &&
-        fits(group, saved.edit)
-      ) {
-        restored[group][name] = saved.edit;
-      } else {
-        dropped.push(name);
-      }
-    }
-  }
+  const { voices, dropped } = savedVoices(game);
   if (dropped.length) {
     notice(
       `Saved edits for ${dropped.join(', ')} were made against an older config.js, or no longer fit this page, so they were dropped.`
     );
   }
-  return restored;
+  return voices; // storage blocked: edits last until the page reloads
 }
 
 function save() {

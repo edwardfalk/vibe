@@ -205,6 +205,10 @@ const CONFIG = {
   // (its "Sound while paused" box), so the kick can be tuned by ear while
   // paused. Top level, so ?tune's JSON never carries it into this file.
   SOUND_WHILE_PAUSED: false,
+  // ?tune's "Immortal hero" box: hits still land (sound, flinch, knockback,
+  // shield) but take no health, and the run keeps no high score. Top level,
+  // like SOUND_WHILE_PAUSED, so it never lands in ?tune's JSON.
+  IMMORTAL: false,
 
   // The universe's hum (js/audio/Hum.js): a root and its fifth under
   // everything, drifting slowly like an old analog synth. It dips on every
