@@ -905,7 +905,6 @@ export function stabberShatter(ctx, out, { at, record, noise, volume, pan }) {
   disconnectWhenEnded(last, nodes);
 }
 
-/** A stabber's death sound by its style (StabberDeath.js's styles) */
 // A bassist's death, Ink cloud (BassistInk.js), from the studies page's
 // death-ink.js: his FM bass blurting a fluttering raspberry from his 5 down
 // to his b3 under a squirt of ink; on each middle jet of his scroll a ghost
@@ -1114,6 +1113,7 @@ export function bassistInk(ctx, out, { at, record, noise, volume, pan }) {
   disconnectWhenEnded(last, nodes);
 }
 
+/** A stabber's death sound by its style (StabberDeath.js's styles) */
 export const STABBER_DEATH_SOUNDS = Object.freeze({
   shatter: stabberShatter,
   shell: stabberShell,

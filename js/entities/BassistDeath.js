@@ -25,8 +25,8 @@ const MAX_JETS = 8; // however the beat is set, a bounded schedule
 /**
  * What his death keeps from the kill, read by its picture and its sound
  * alike (DeathSounds.js), so a ?tune change mid-death applies to the next:
- * the linger, the beat and where his let falls in it, the blow's way (rad),
- * his seed, and his pose with the kill's snaps. A lethal hit stamps none
+ * the linger, the blow's way (rad), his seed, and his pose with the kill's
+ * snaps. A lethal hit stamps none
  * (Bassist.takeDamage), so every sinew still whole is snapped at the kill:
  * no strings, nothing played, and clean of the hit's flash (the death draws
  * its own). And his scroll's jets, as offsets from the start `at` (audio
@@ -55,8 +55,6 @@ export function bassistDeathRecord({
   }
   return Object.freeze({
     linger,
-    beatSec,
-    andAt,
     pose: Object.freeze({
       ...pose,
       strings: 0,
