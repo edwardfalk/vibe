@@ -6,7 +6,10 @@ import {
   StabberDeath,
   stabberDeathRecord,
 } from '../../entities/StabberDeath.js';
-import { BassistDeath } from '../../entities/BassistDeath.js';
+import {
+  BassistDeath,
+  bassistDeathRecord,
+} from '../../entities/BassistDeath.js';
 import { LEAD_SEC } from '../../audio/speech/Voicebox.js';
 import { heardLatencySec, heardKick } from '../../audio/BeatTrack.js';
 
@@ -26,6 +29,8 @@ export const GRUNT_CHORD = Object.freeze(
   ].map((note) => Object.freeze(note))
 );
 export const STRUM_SEC = 0.018;
+// A bassists' start's count is kept this long after it, s: no later death shares it
+const INK_KEEP_SEC = 1;
 
 /**
  * When a death at `now` (s, the beat clock's) pops: on the next eighth note,
@@ -55,6 +60,11 @@ export class EnemyDeathHandler {
     // answer: a pop's audio time never comes round again, even across a
     // restart
     this.chord = { at: null, n: 0, answered: false };
+    // How many bassists die at each start: their sounds spread as a chord's
+    // (Edward's addition to the bassist death spec, 2026-10-13). A start is
+    // kept until it is INK_KEEP_SEC past, so another start between its
+    // deaths (a bomb's bang) doesn't reset its count
+    this.inks = new Map();
   }
 
   /**
@@ -231,31 +241,58 @@ export class EnemyDeathHandler {
   }
 
   /**
-   * A bassist's death (BassistDeath.js): as a tank's, with the bang or on
-   * the next eighth, seen when it is heard, his last string's twang sliding
-   * down onto the hum's root. His kin answer an eighth after it starts.
-   * Returns its start's audio time.
+   * A bassist's death, Ink cloud (BassistDeath.js): as a tank's, with the
+   * bang or on the next eighth, seen when it is heard. His kin answer an
+   * eighth after it starts. Returns its start's audio time.
    */
   bassistDies(enemy, blow, explosionManager, audio) {
     // Audio first, as for a grunt: the death's times are on the clock it is read by
     audio.ensureAudioContext?.();
     const clock = this.getContextValue('beatClock');
-    const diedAt = clock.nowSec();
+    const now = () => clock.nowSec();
+    const diedAt = now();
     const at = deathStart(blow, clock, diedAt);
+    const latency = () => heardLatencySec(audio.audioContext, clock);
+    const beatSec = clock.beatInterval / MS_PER_SEC;
+    const record = bassistDeathRecord({
+      linger: CONFIG.DEATHS.LINGER,
+      andAt: CONFIG.SWING.AND_AT,
+      beatSec,
+      origin: clock.startTime / MS_PER_SEC,
+      at,
+      pose: enemy.pose(),
+      dir: blow?.dir ?? enemy.aim,
+      seed: enemy.lookSeed,
+    });
+    const player = this.getContextValue('player');
     explosionManager.fragmentExplosions.push(
       new BassistDeath({
         x: enemy.x,
         y: enemy.y,
-        pose: enemy.pose(),
-        scale: CONFIG.BASSIST_LOOK.ART_SCALE,
-        dir: blow?.dir ?? enemy.aimAngle,
-        seed: enemy.lookSeed,
+        record,
         diedAt,
-        startsAt: at + heardLatencySec(audio.audioContext, clock),
-        now: () => clock.nowSec(),
+        startsAt: at + latency(),
+        now,
+        hero: () => player ?? null,
+        kickAge: () =>
+          heardKick(clock.getBeatPosition(), beatSec, latency(), true).kickAge,
       })
     );
-    audio.playSound('bassistDeath', enemy.x, enemy.y, { at });
+    // Bassists dying together don't stack up: each next sounds a strum later
+    // and quieter, 1/sqrt of its place, as a grunt chord's pops; all are seen
+    // on the start
+    for (const t of this.inks.keys()) {
+      if (t < diedAt - INK_KEEP_SEC) this.inks.delete(t);
+    }
+    const k = this.inks.get(at) ?? 0;
+    this.inks.set(at, k + 1);
+    audio.playBassistDeath?.(
+      enemy.x,
+      enemy.y,
+      at + k * STRUM_SEC,
+      record,
+      1 / Math.sqrt(k + 1)
+    );
     return at;
   }
 }

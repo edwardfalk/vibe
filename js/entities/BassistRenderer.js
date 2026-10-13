@@ -30,8 +30,8 @@ export const NOTE_COLORS = { head: [222, 255, 250], glow: [70, 232, 214] };
 /** His glow, BaseEnemy's: his photophores' */
 export const BASSIST_GLOW_RGB = [120, 255, 220];
 
-const INK = [38, 26, 48]; // the cast's ink
-const NAVY = [16, 22, 52];
+export const INK = [38, 26, 48]; // the cast's ink
+export const NAVY = [16, 22, 52];
 export const rgb = (c, a = 1) =>
   a >= 1
     ? `rgb(${c[0]},${c[1]},${c[2]})`
@@ -60,6 +60,7 @@ const C = {
   scroll: [60, 96, 170],
   scrollHi: [150, 255, 230],
   photo: [120, 255, 220],
+  lure: [230, 255, 250], // his lure's white, and his photophores' core
   bubble: [176, 232, 255],
 };
 
@@ -102,6 +103,10 @@ const G = {
   ],
   scroll: { len: 16, w0: 3.6, turn: 6.4, curl: -1 },
 };
+
+/** His palette and his shape (his frame, px at ART_SCALE 1), as data: his death draws from them too */
+export const BASSIST_COLORS = C;
+export const BASSIST_SHAPE = G;
 
 // ---- his shapes, traced ----
 
@@ -265,7 +270,7 @@ function paintShell(c, white) {
 function paintPhotos(c) {
   for (const [x, y] of PHOTO) {
     const r = c.createRadialGradient(x, y, 0, x, y, 2.2);
-    r.addColorStop(0, rgb([230, 255, 250]));
+    r.addColorStop(0, rgb(C.lure));
     r.addColorStop(0.35, rgb(C.photo, 0.8));
     r.addColorStop(1, rgb(C.photo, 0));
     c.fillStyle = r;
@@ -665,93 +670,117 @@ function puffs(L) {
 }
 
 // ---- the scroll: a nautilus ribbon coiling from the neck's end ----
-const NS = 16;
-const SX = new Float32Array(NS + 1);
-const SY = new Float32Array(NS + 1);
-const SA = new Float32Array(NS + 1);
-const SW = new Float32Array(NS + 1);
-function scroll(L, S) {
+/** His scroll is traced at SCROLL_N + 1 points */
+export const SCROLL_N = 16;
+/** Arrays for one traced coil: each point's x, y, angle and half-width */
+export const newScrollCoil = () => ({
+  x: new Float32Array(SCROLL_N + 1),
+  y: new Float32Array(SCROLL_N + 1),
+  a: new Float32Array(SCROLL_N + 1),
+  w: new Float32Array(SCROLL_N + 1),
+});
+/**
+ * His scroll's coil, coiled by f (0 straight, 1 as he rests), traced from
+ * its root at (x0, 0) along +x in his frame into `out` (newScrollCoil()),
+ * which it returns: his look and his death each trace into their own
+ */
+export function traceScroll(f, x0, out) {
   const { len, w0, turn, curl } = G.scroll;
-  const f = S.coil;
-  let x = G.nut;
+  let x = x0;
   let y = 0;
   let a = 0;
-  const ds = len / NS;
-  for (let j = 0; j <= NS; j++) {
-    const u = j / NS;
-    SX[j] = x;
-    SY[j] = y;
-    SA[j] = a;
-    SW[j] = w0 * (1 - 0.72 * u);
+  const ds = len / SCROLL_N;
+  for (let j = 0; j <= SCROLL_N; j++) {
+    const u = j / SCROLL_N;
+    out.x[j] = x;
+    out.y[j] = y;
+    out.a[j] = a;
+    out.w[j] = w0 * (1 - 0.72 * u);
     const kap = (f * turn * (0.15 + 3 * u * u)) / (1.15 * len);
     a += curl * kap * ds;
     x += Math.cos(a) * ds;
     y += Math.sin(a) * ds;
   }
+  return out;
+}
+const NS = SCROLL_N;
+const COIL = newScrollCoil();
+/**
+ * His scroll, painted from a traced coil (traceScroll) on the canvas `c`,
+ * placed by the caller: its ink, its body, its chamber lines, its lit outer
+ * edge (alpha edgeA) and its lure at the tip (`lure`: how bright; its halo
+ * haloPx across). His look and his death both paint it
+ */
+export function paintScroll(c, coil, lure, edgeA = 0.6, haloPx = 3.4) {
+  const { curl } = G.scroll;
+  const { x: X, y: Y, a: A, w: W } = coil;
   const ribbon = (grow) => {
-    ctx.beginPath();
+    c.beginPath();
     for (let j = 0; j <= NS; j++) {
-      ctx.lineTo(
-        SX[j] - Math.sin(SA[j]) * (SW[j] + grow),
-        SY[j] + Math.cos(SA[j]) * (SW[j] + grow)
+      c.lineTo(
+        X[j] - Math.sin(A[j]) * (W[j] + grow),
+        Y[j] + Math.cos(A[j]) * (W[j] + grow)
       );
     }
     for (let j = NS; j >= 0; j--) {
-      ctx.lineTo(
-        SX[j] + Math.sin(SA[j]) * (SW[j] + grow),
-        SY[j] - Math.cos(SA[j]) * (SW[j] + grow)
+      c.lineTo(
+        X[j] + Math.sin(A[j]) * (W[j] + grow),
+        Y[j] - Math.cos(A[j]) * (W[j] + grow)
       );
     }
-    ctx.closePath();
+    c.closePath();
   };
-  ctx.fillStyle = rgb(INK);
+  c.fillStyle = rgb(INK);
   ribbon(1.1);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(SX[NS], SY[NS], SW[NS] + 1.1, 0, TAU);
-  ctx.fill();
-  ctx.fillStyle = rgb(C.scroll);
+  c.fill();
+  c.beginPath();
+  c.arc(X[NS], Y[NS], W[NS] + 1.1, 0, TAU);
+  c.fill();
+  c.fillStyle = rgb(C.scroll);
   ribbon(0);
-  ctx.fill();
+  c.fill();
   // Chamber lines across it, its outer edge lit, a lure at its tip
-  ctx.strokeStyle = rgb(NAVY, 0.7);
-  ctx.lineWidth = 0.45;
-  ctx.beginPath();
+  c.strokeStyle = rgb(NAVY, 0.7);
+  c.lineWidth = 0.45;
+  c.beginPath();
   for (let j = 2; j < NS; j += 2) {
-    const w = SW[j] * 0.95;
-    ctx.moveTo(SX[j] - Math.sin(SA[j]) * w, SY[j] + Math.cos(SA[j]) * w);
-    ctx.quadraticCurveTo(
-      SX[j] + Math.cos(SA[j]) * 0.8,
-      SY[j] + Math.sin(SA[j]) * 0.8,
-      SX[j] + Math.sin(SA[j]) * w,
-      SY[j] - Math.cos(SA[j]) * w
+    const w = W[j] * 0.95;
+    c.moveTo(X[j] - Math.sin(A[j]) * w, Y[j] + Math.cos(A[j]) * w);
+    c.quadraticCurveTo(
+      X[j] + Math.cos(A[j]) * 0.8,
+      Y[j] + Math.sin(A[j]) * 0.8,
+      X[j] + Math.sin(A[j]) * w,
+      Y[j] - Math.cos(A[j]) * w
     );
   }
-  ctx.stroke();
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.strokeStyle = rgb(C.scrollHi, 0.6);
-  ctx.lineWidth = 0.7;
-  ctx.beginPath();
+  c.stroke();
+  c.save();
+  c.globalCompositeOperation = 'lighter';
+  c.strokeStyle = rgb(C.scrollHi, edgeA);
+  c.lineWidth = 0.7;
+  c.beginPath();
   for (let j = 0; j <= NS; j++) {
-    const w = SW[j] * 0.85;
-    ctx.lineTo(
-      SX[j] + Math.sin(SA[j]) * w * curl,
-      SY[j] - Math.cos(SA[j]) * w * curl
+    const w = W[j] * 0.85;
+    c.lineTo(
+      X[j] + Math.sin(A[j]) * w * curl,
+      Y[j] - Math.cos(A[j]) * w * curl
     );
   }
-  ctx.stroke();
+  c.stroke();
+  c.fillStyle = rgb(C.photo, 0.35 * lure);
+  c.beginPath();
+  c.arc(X[NS], Y[NS], haloPx, 0, TAU);
+  c.fill();
+  c.fillStyle = rgb(C.lure, Math.min(1, lure));
+  c.beginPath();
+  c.arc(X[NS], Y[NS], 1.2, 0, TAU);
+  c.fill();
+  c.restore();
+}
+function scroll(L, S) {
+  traceScroll(S.coil, G.nut, COIL);
   // the lure: brighter as he aims
-  const lure = (0.55 + 0.45 * L.uncurl + 0.3 * L.kick) * S.dim;
-  ctx.fillStyle = rgb(C.photo, 0.35 * lure);
-  ctx.beginPath();
-  ctx.arc(SX[NS], SY[NS], 3.4, 0, TAU);
-  ctx.fill();
-  ctx.fillStyle = rgb([230, 255, 250], Math.min(1, lure));
-  ctx.beginPath();
-  ctx.arc(SX[NS], SY[NS], 1.2, 0, TAU);
-  ctx.fill();
-  ctx.restore();
+  paintScroll(ctx, COIL, (0.55 + 0.45 * L.uncurl + 0.3 * L.kick) * S.dim);
 }
 
 // ---- the deep's extras ----

@@ -52,6 +52,7 @@ import {
   plateClang,
   STABBER_DEATH_SOUNDS,
   GRUNT_POP_SEC,
+  bassistInk,
 } from './audio/DeathSounds.js';
 import { STRING_PARTS, STRINGS_NOISE_SEC } from './audio/StabberStrings.js';
 import { Hum } from './audio/Hum.js';
@@ -611,6 +612,25 @@ export class Audio {
           pan,
         }
       );
+    });
+  }
+
+  /**
+   * A bassist's death, Ink cloud (DeathSounds.js), from (x, y) at audio time
+   * `at`, from its record, at CONFIG.DEATHS.BASSIST_VOLUME times `gain` (one
+   * of several dying together is quieter)
+   */
+  playBassistDeath(x, y, at, record, gain = 1) {
+    if (!this.ensureAudioContext()) return;
+    this.guarded('bassistDeath', () => {
+      const { near, pan } = this.placement(x, y);
+      bassistInk(this.audioContext, this.bus('feedback'), {
+        at,
+        record,
+        noise: crashNoise(this.audioContext),
+        volume: CONFIG.DEATHS.BASSIST_VOLUME * near * gain,
+        pan,
+      });
     });
   }
 

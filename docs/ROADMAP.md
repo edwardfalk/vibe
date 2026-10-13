@@ -85,8 +85,14 @@ Calls and smaller work:
   - the "uh oh" winning over a glance (`react.turn ??`) is untested;
   - no test that an elbow doesn't also stamp the shove's lunge;
   - `CHARGE_BEATS` must be whole bars for the even-bar grid, and `config.js` doesn't say so.
+- **build: the bassist's death's deferred minors** (its review round, 2026-10-13):
+  - `Bassist.takeDamage`'s comment still names the old death twang as his death's sound (it is the ink's now);
+  - `BassistRenderer`'s slack branches, and its doc comment's "his death's adds `dying` or `slack`", are reached only by a unit test since the stand-in went; it also exports `INK` and `NAVY`, which nothing imports;
+  - `audio.playBassistDeath?.(...)` would silently mute every bassist death if the method were renamed on one side: no test ties the name to `Audio`;
+  - a hero position that isn't a number makes the ink invisible (`escape` passes the NaN distance to the reach); `heroAt` could return null unless x and y are finite;
+  - `bassistInk`'s up-front check leaves out `record.seed`; `SPECK.ON` hard-codes puff numbers up to 11;
+  - untested: the record test's `plays` input already plays nothing; the wait's tremble and flash inside `drawInkWait`; which ways the scroll and the ink move; the frame's aim, wait and kick; the blurt's drift, the jets' pluck note and volume, the squirts; the living scroll's root and edge. The tests' `showsFor` copies the end formula's numbers.
 - **build: the bassist's deferred minors** (its review round, 2026-10-12):
-  - a bomb-killed bassist's twang is a tone, rounded to its nearest eighth, while his slack starts at the bang's exact time (up to about 125 ms apart after a 150 ms hitch);
   - a shot note's burst flash shows about 25 ms plus the output latency before its b7 is heard;
   - a shot note with no beat clock would hang forever (no route in the game reaches it);
   - `playLets`' comment says nothing sounds off its let, but a let 22-83 ms late plays at once (the game's general rule);
@@ -102,7 +108,12 @@ Calls and smaller work:
 
 ## Deaths and effects
 
-- **build: the bassist's own death.** He ships with a stand-in (`BassistDeath.js`: slack, sinews curling, drifting off). Pick his own from a studies page of animated options, as the stabber's was, then port it. (bassist spec, Death)
+- **call: the bassist's death, Ink cloud, by eye and ear on `?tune`:** its level (`DEATHS.BASSIST_VOLUME`; it sits about 2 dB over the kick, beside the tank's and the stabber's deaths, where the stand-in's twang sat at about 5.6). The port kept the studies page's small choices, each Edward's to change:
+  - the ink squirts toward the hero while his scroll flees away from him;
+  - the scroll is drawn at 1.3× his size, to read at game size;
+  - the scroll's jets keep his lets after the hero's grid goes straight at the bar line following the last bassist's death;
+  - a kill far above or below the hero, or at the world's edge, can leave the scroll's fizzle out of view.
+- **build: the tank's and the stabber's deaths stack in phase** when several start together (a bomb through them): two about +6 dB. Spread them as the bassist's and the grunts' are: each next a strum (`STRUM_SEC`) later, at 1/√ of its place. (bassist death spec, Edward's addition)
 
 - **call: the stabber's death, by eye and ear on `?tune`:** Gold shatter is the default (Edward's pick at the play test, for its sound), Empty shell the other `DEATHS.STABBER_STYLE`. Its level (`DEATHS.STABBER_VOLUME`; both styles sit about 2 dB over the kick, beside the tank's death). The port kept the studies page's small choices, each Edward's to change:
   - the shell's spike splits with the shell;

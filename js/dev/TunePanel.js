@@ -299,6 +299,7 @@ export const KNOBS = [
   [DEATHS, 'LINGER', [0.5, 2, 0.1]],
   [DEATHS, 'STABBER_STYLE', STABBER_STYLES],
   [DEATHS, 'STABBER_VOLUME', [0, 3, 0.05]],
+  [DEATHS, 'BASSIST_VOLUME', [0, 3, 0.05]],
   [DEATHS, 'SCENE_BEATS', [4, 8, 1]],
   [DEATHS, 'SCENE_ZOOM', [1, 2, 0.05]],
   [DEATHS, 'TANK_VOLUME', [0, 3, 0.05]],

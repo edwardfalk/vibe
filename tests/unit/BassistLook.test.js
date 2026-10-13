@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { CONFIG } from '../../js/config.js';
-import { drawBassist } from '../../js/entities/BassistRenderer.js';
+import {
+  drawBassist,
+  traceScroll,
+  newScrollCoil,
+  SCROLL_N,
+  BASSIST_SHAPE,
+} from '../../js/entities/BassistRenderer.js';
 import { NoteFlash, NOTE_OWNER, hangNote } from '../../js/entities/BassNote.js';
 import { Bullet } from '../../js/entities/bullet.js';
 import { bassistWorld } from './helpers/bassistWorld.js';
@@ -111,5 +117,44 @@ describe('his note', () => {
       f.draw(p);
       expect(f.active).toBe(false);
     }
+  });
+});
+
+// His scroll's coil, traced by one function that his look and his death
+// both call, each into its own arrays
+describe('his scroll’s coil', () => {
+  const coil = () => newScrollCoil();
+
+  it('starts at its root along +x, and tapers to its tip', () => {
+    const c = traceScroll(0.7, 27, coil());
+    const { len, w0 } = BASSIST_SHAPE.scroll;
+    expect([c.x[0], c.y[0], c.a[0]]).toEqual([27, 0, 0]);
+    expect(c.w[0]).toBeCloseTo(w0, 6);
+    expect(c.w[SCROLL_N]).toBeLessThan(c.w[0] / 3);
+    const straight = traceScroll(0, 5, coil());
+    expect(straight.x[SCROLL_N]).toBeCloseTo(5 + len, 6);
+    expect(straight.y[SCROLL_N]).toBeCloseTo(0, 6);
+  });
+
+  it('curls his way (toward -y), more for a larger coil', () => {
+    const loose = traceScroll(0.3, 0, coil());
+    const tight = traceScroll(1, 0, coil());
+    expect(loose.y[SCROLL_N]).toBeLessThan(0);
+    expect(tight.a[SCROLL_N]).toBeLessThan(loose.a[SCROLL_N]);
+  });
+
+  it('writes only into the arrays it is given', () => {
+    const mine = traceScroll(1, 27, coil());
+    const tip = mine.x[SCROLL_N];
+    traceScroll(0.2, 0, coil());
+    expect(mine.x[SCROLL_N]).toBe(tip);
+  });
+
+  it('is what his look draws: drawing him leaves another coil as it was', () => {
+    const mine = traceScroll(0.5, 0, coil());
+    const before = Array.from(mine.x);
+    const { p } = transformP5();
+    drawBassist(p, 1, poses()[0]);
+    expect(Array.from(mine.x)).toEqual(before);
   });
 });
