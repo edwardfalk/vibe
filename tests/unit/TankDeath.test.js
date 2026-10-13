@@ -11,6 +11,7 @@ import { tankParts } from '../../js/entities/TankRenderer.js';
 import {
   EnemyDeathHandler,
   popTime,
+  STRUM_SEC,
 } from '../../js/systems/combat/EnemyDeathHandler.js';
 import { CollisionSystem } from '../../js/systems/CollisionSystem.js';
 import { Bullet } from '../../js/entities/bullet.js';
@@ -127,7 +128,30 @@ describe("when the tank's death starts", () => {
     const [death] = w.explosionManager.fragmentExplosions;
     expect(death.startsAt).toBeCloseTo(at + 0.03, 9);
     w.kill({ dir: 0, blast: true }); // a cloud's or a rusher's blast
-    expect(w.audio.playTankDeath.mock.calls[1][2]).toBeCloseTo(at, 9);
+    // (the second on that eighth sounds a strum later)
+    expect(w.audio.playTankDeath.mock.calls[1][2]).toBeCloseTo(
+      at + STRUM_SEC,
+      9
+    );
+  });
+
+  it('several dying together don’t stack up: each next sounds a strum later and quieter, all seen on the start (the bassist death spec)', () => {
+    const w = deathWorld(1.13);
+    for (let i = 0; i < 3; i++) {
+      w.kill({ dir: 0, blast: true, bomb: true, at: 1.13 });
+    }
+    const calls = w.audio.playTankDeath.mock.calls;
+    expect(calls).toHaveLength(3);
+    calls.forEach(([, , t, , , gain], k) => {
+      expect(t).toBeCloseTo(1.13 + k * STRUM_SEC, 9);
+      expect(gain).toBeCloseTo(1 / Math.sqrt(k + 1), 9);
+    });
+    const starts = w.explosionManager.fragmentExplosions.map((d) => d.startsAt);
+    expect(new Set(starts).size).toBe(1);
+    // a later start begins a new count
+    w.kill({ dir: 0, blast: true, bomb: true, at: 1.4 });
+    expect(calls.at(-1)[2]).toBe(1.4);
+    expect(calls.at(-1)[5]).toBe(1);
   });
 
   it('with no cloud, no old "oh no" and no extra explosion; a small shake', () => {
@@ -354,6 +378,14 @@ describe("the tank's air (his death's sound)", () => {
     const pan = made.find((n) => n.kind === 'pan');
     expect(pan.pan.setValueAtTime.mock.calls[0][0]).toBeCloseTo(side, 9);
     expect(pan.connect).toHaveBeenCalledWith(audio.buses.feedback);
+    // one of several dying together: its gain on top
+    const from = made.length;
+    audio.playTankDeath(300, 0, 4, timing, airDarts(timing, 0.5), 0.5);
+    const half = made.slice(from).find((n) => n.kind === 'gain');
+    expect(half.gain.setValueAtTime.mock.calls[0][0]).toBeCloseTo(
+      0.25 * near * 0.5,
+      9
+    );
     const count = made.length;
     audio._pausedByGame = true;
     audio.playTankDeath(0, 0, 4, timing, airDarts(timing, 0.5));

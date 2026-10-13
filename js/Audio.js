@@ -580,9 +580,11 @@ export class Audio {
 
   /**
    * A tank's death, All air (DeathSounds.js), from (x, y) at audio time
-   * `at`, on his timing and darts (TankDeath.js)
+   * `at`, on his timing and darts (TankDeath.js), at
+   * CONFIG.DEATHS.TANK_VOLUME times `gain` (one of several dying together is
+   * quieter)
    */
-  playTankDeath(x, y, at, timing, darts) {
+  playTankDeath(x, y, at, timing, darts, gain = 1) {
     if (!this.ensureAudioContext()) return;
     this.guarded('tankDeath', () => {
       const { near, pan } = this.placement(x, y);
@@ -590,7 +592,7 @@ export class Audio {
         at,
         note: TANK_DEATH_NOTE,
         noise: crashNoise(this.audioContext),
-        volume: CONFIG.DEATHS.TANK_VOLUME * near,
+        volume: CONFIG.DEATHS.TANK_VOLUME * near * gain,
         pan,
         timing,
         darts,
@@ -600,9 +602,10 @@ export class Audio {
 
   /**
    * A stabber's death (DeathSounds.js) from (x, y) at audio time `at`, in
-   * its record's style, at CONFIG.DEATHS.STABBER_VOLUME
+   * its record's style, at CONFIG.DEATHS.STABBER_VOLUME times `gain` (one of
+   * several dying together is quieter)
    */
-  playStabberDeath(x, y, at, record) {
+  playStabberDeath(x, y, at, record, gain = 1) {
     if (!this.ensureAudioContext()) return;
     this.guarded(`stabberDeath ${record.style}`, () => {
       const { near, pan } = this.placement(x, y);
@@ -613,7 +616,7 @@ export class Audio {
           at,
           record,
           noise: crashNoise(this.audioContext),
-          volume: CONFIG.DEATHS.STABBER_VOLUME * near,
+          volume: CONFIG.DEATHS.STABBER_VOLUME * near * gain,
           pan,
         }
       );
