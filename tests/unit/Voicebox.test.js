@@ -222,7 +222,12 @@ describe('Voicebox', () => {
     });
 
     it("keeps a line's note from play to play, and follows the hum's drift where each starts", async () => {
-      CONFIG.HUM = { ...CONFIG.HUM, ROOT: 'F#', DRIFT_CENTS: 9 };
+      CONFIG.HUM = {
+        ...CONFIG.HUM,
+        ROOT: 'F#',
+        DRIFT_CENTS: 9,
+        SOUNDS_DRIFT: true,
+      };
       // 105 c above F#2: 99 c under the 2. At t = 5 the grid has drifted
       // 6.85 c up, which puts the root nearer; the line stays on the 2
       const f0 = 2 * 46.249 * 2 ** (105 / 1200);

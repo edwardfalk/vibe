@@ -15,8 +15,10 @@ import { fakeBuses } from './helpers/audioBuses.js';
 import { fakeAudio } from './helpers/fakeAudio.js';
 
 const DEATHS = { ...CONFIG.DEATHS };
+const SOUNDS_DRIFT = CONFIG.HUM.SOUNDS_DRIFT;
 afterEach(() => {
   Object.assign(CONFIG.DEATHS, DEATHS);
+  CONFIG.HUM.SOUNDS_DRIFT = SOUNDS_DRIFT;
   vi.restoreAllMocks();
 });
 
@@ -27,6 +29,7 @@ const sources = (made) =>
 
 describe("a grunt's pop", () => {
   it('whines down from above onto its note, with the drift at its own start', () => {
+    CONFIG.HUM.SOUNDS_DRIFT = true;
     const { ctx, made } = fakeAudio();
     const at = 7.31; // a strummed tone's own start
     gruntPop(

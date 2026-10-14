@@ -199,7 +199,7 @@ export function cloudSound(
 // through a drive with the kick's curve; the fifth over it; a roar of noise
 // falling from bright to dull, half of it into a short dark room; a low
 // rumble above the kick's band; and when the ring hits the edge, a short
-// thud, fifth to root. [degree, octave] notes with the hum's drift at `at`.
+// thud, fifth to root. [degree, octave] notes (drifted to `at` if sounds drift).
 const BANG = {
   ROOT: ['1', 2],
   FIFTH: ['5', 2],

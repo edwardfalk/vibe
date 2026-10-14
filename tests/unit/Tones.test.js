@@ -68,7 +68,7 @@ describe('playTone plays notes', () => {
   const startOf = (osc) => osc.start.mock.calls[0][0];
   const startHzOf = (osc) => osc.frequency.setValueAtTime.mock.calls[0][0];
 
-  it("plays its preset's note at the hum's root and drift, with no random detune at the middle draw", () => {
+  it("plays its preset's note on the hum's grid, with no random detune at the middle draw", () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
     const { audio, made } = gameAudio();
     audio.playSound('gruntHit');

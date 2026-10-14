@@ -213,12 +213,13 @@ const CONFIG = {
   // The universe's hum (js/audio/Hum.js): a root and its fifth under
   // everything, drifting slowly like an old analog synth. It dips on every
   // beat, breathes over two bars, grows at levels 3 and 5 and brightens as
-  // enemies fill the screen. Every tuned sound shares its root and drift
-  // (js/audio/Harmony.js). Tune live with ?tune.
+  // enemies fill the screen. Every tuned sound shares its root, and its drift
+  // with SOUNDS_DRIFT (js/audio/Harmony.js). Tune live with ?tune.
   HUM: {
     ROOT: 'F#', // the universe's key: E, F, F#, G or A, in the octave up to A1 = 55 Hz
     LEVEL_DB: 0, // added to the listening page's level (Hum.js's TRIM_DB)
     DRIFT_CENTS: 10, // the furthest the root wanders
+    SOUNDS_DRIFT: false, // the other tuned sounds drift with the hum; false: they stay on the root
     DIP: 0.85, // share of the hum's level each beat's dip takes
     BREATH: 0.7, // how far the filter opens and closes over two bars
     CUTOFF_HZ: 420, // the filter's resting brightness
@@ -234,7 +235,7 @@ const CONFIG = {
     KICK: {
       ENABLED: true,
       PATTERN: 'four', // 'four' = every beat, 'oneThree' = beats 1 and 3
-      // The pitch drop ends on the hum's root (with its drift) instead of
+      // The pitch drop ends on the hum's root (drifting with SOUNDS_DRIFT) instead of
       // PITCH_END_HZ; false is the kick as it was
       TUNED: true,
       VOLUME: 0.6, // peak gain, before the beat track's master volume
@@ -573,7 +574,7 @@ const CONFIG = {
   // The game's own speech engines (js/audio/speech/): each speaker's engine,
   // voice and effect chain. Tune them in voices.html, then paste here.
   // Every line is detuned so its median pitch lands on the hum's scale (the
-  // nearest note, with the drift), unless its speaker says tune: false. A
+  // nearest note, drifting with SOUNDS_DRIFT), unless its speaker says tune: false. A
   // SAM voice with sing: true no longer lifts its stressed syllables.
   SPEECH: {
     TARGET_DB: -20, // RMS loudness every line is matched to, in and out

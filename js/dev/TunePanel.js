@@ -114,6 +114,7 @@ export const KNOBS = [
   [HUM, 'ROOT', Object.keys(ROOTS)],
   [HUM, 'LEVEL_DB', [-24, 12, 1]],
   [HUM, 'DRIFT_CENTS', [0, 30, 1]],
+  [HUM, 'SOUNDS_DRIFT'],
   [HUM, 'DIP', [0, 0.9, 0.05]],
   [HUM, 'BREATH', [0, 1, 0.05]],
   [HUM, 'CUTOFF_HZ', [150, 1500, 10]],

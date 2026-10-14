@@ -53,8 +53,9 @@ describe('Harmony, the pitch grid', () => {
     expect(hz(['1', 1])).toBeCloseTo(46.249, 3);
   });
 
-  it('drifts every note by driftCents at audio time t', () => {
+  it('drifts every note by driftCents at audio time t, with SOUNDS_DRIFT', () => {
     CONFIG.HUM.DRIFT_CENTS = 9;
+    CONFIG.HUM.SOUNDS_DRIFT = true;
     expect(driftCents(0)).toBe(0);
     // 9 × (0.6 sin(2π·0.031·5) + 0.4 sin(2π·0.077·5))
     expect(driftCents(5)).toBeCloseTo(6.847, 3);
@@ -63,6 +64,16 @@ describe('Harmony, the pitch grid', () => {
       expect(drifted).toBeCloseTo(2 ** (driftCents(t) / 1200), 9);
       expect(Math.abs(driftCents(t))).toBeLessThanOrEqual(9);
     }
+  });
+
+  it('drifts only the hum (drift true) without SOUNDS_DRIFT', () => {
+    CONFIG.HUM.DRIFT_CENTS = 9;
+    CONFIG.HUM.SOUNDS_DRIFT = false;
+    expect(hz(['5', 2], 5)).toBe(hz(['5', 2], 0));
+    expect(hz(['5', 2], 5, true) / hz(['5', 2], 0)).toBeCloseTo(
+      2 ** (driftCents(5) / 1200),
+      9
+    );
   });
 
   it('nearestNote: the note of the scale nearest a frequency, never the sour b5', () => {

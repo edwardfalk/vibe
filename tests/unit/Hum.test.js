@@ -131,8 +131,9 @@ describe('Hum', () => {
     });
   });
 
-  it('carries the drift into every voice', () => {
+  it('carries the drift into every voice, with the other sounds held still', () => {
     CONFIG.HUM.DRIFT_CENTS = 9;
+    CONFIG.HUM.SOUNDS_DRIFT = false;
     CONFIG.HUM.ROOT = 'A';
     hum.sync(5, 1, 0);
     // 6.847 cents at t = 5 (Harmony.test.js)
