@@ -102,7 +102,7 @@ const EXHALE = {
 
 /**
  * A grunt's pop and whine at audio time `at`, its whine landing on `note`
- * ([degree, octave], with the hum's drift at `at`).
+ * ([degree, octave], drifted to `at` if sounds drift).
  * @param {AudioContext} ctx
  * @param {AudioNode} out the effects' bus
  * @param {object} o { at, note, noise (an AudioBuffer), offset (s into it),
@@ -180,7 +180,7 @@ export function gruntPop(ctx, out, { at, note, noise, offset, volume, pan }) {
 }
 
 /**
- * The Dude's last breath at audio time `at`, with the hum's drift then.
+ * The Dude's last breath at audio time `at` (with the hum's drift then if sounds drift).
  * @param {AudioContext} ctx
  * @param {AudioNode} out its group's bus
  * @param {object} o { at, noise (an AudioBuffer), volume (1: the page's level,
@@ -287,7 +287,7 @@ function heldGain(ctx, at, peak, attack, hold, release) {
 
 /**
  * The tank's death, All air, from audio time `at`, its squeal landing on
- * `note` ([degree, octave], with the hum's drift at `at`).
+ * `note` ([degree, octave], drifted to `at` if sounds drift).
  * @param {AudioContext} ctx
  * @param {AudioNode} out the effects' bus
  * @param {object} o { at, note, noise (an AudioBuffer), volume (1: the

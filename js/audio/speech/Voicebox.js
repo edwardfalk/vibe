@@ -171,7 +171,7 @@ export class Voicebox {
   }
 
   // Play a line at `when`. A tuned line is detuned so its median pitch lands
-  // on its note with the hum's drift at `when`; that shifts its effects too,
+  // on its note (with the hum's drift at `when` if sounds drift); that shifts its effects too,
   // and stretches it by the same ratio (at most half the scale's widest gap,
   // 102 c, plus the drift: 7 %). Returns its start, its durations as played
   // (the spoken part, and with the tail) and the correction in cents.

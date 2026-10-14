@@ -318,7 +318,7 @@ export class BeatTrack {
     const gain = this.ctx.createGain();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(k.PITCH_START_HZ, time);
-    // Tuned, the drop ends on the hum's root, with its drift at this moment
+    // Tuned, the drop ends on the hum's root (drifted to this moment if sounds drift)
     let endHz = k.PITCH_END_HZ;
     if (k.TUNED) this._tryHum(() => (endHz = hz(['1', 1], time)));
     osc.frequency.exponentialRampToValueAtTime(endHz, time + k.PITCH_DROP_SEC);
