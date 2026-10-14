@@ -172,25 +172,44 @@ describe('Hum', () => {
     ]);
   });
 
-  it('breathes on the bars; a restart that moves them bends the breath', () => {
+  it('breathes in halves; a restart that moves them bends the breath', () => {
     CONFIG.HUM.CUTOFF_HZ = 400;
     CONFIG.HUM.BREATH = 0.5;
     const swing = 400 * 0.6 * 0.5; // 120 Hz
-    hum.barAt(2, 2);
+    hum.fadeInAt(2);
+    hum.breathAt(2, 2, true);
     // The bar line moved half a bar earlier: the old ramp still ends at 4,
     // and this one ends on the new line, so nothing jumps
-    hum.barAt(3.5, 2);
-    hum.barAt(5.5, 2);
+    hum.fadeInAt(3.5);
+    hum.breathAt(3.5, 2, false);
+    hum.breathAt(5.5, 2, true);
     expect(hum.breath.offset.calls).toEqual([
       ['setValueAtTime', 0, 2],
       ['linearRampToValueAtTime', swing, 2 + 2],
       ['linearRampToValueAtTime', -swing, 3.5 + 2],
       ['linearRampToValueAtTime', swing, 5.5 + 2],
     ]);
-    // The fade-in runs once, from the first bar
+    // The fade-in runs once, from the first call
     expect(hum.fade.gain.calls).toEqual([
       ['setValueAtTime', 0, 2],
       ['linearRampToValueAtTime', 1, 2 + 0.4],
+    ]);
+  });
+
+  it('lets a running half play out when a shorter one would end inside it', () => {
+    CONFIG.HUM.CUTOFF_HZ = 400;
+    CONFIG.HUM.BREATH = 0.5;
+    const swing = 400 * 0.6 * 0.5;
+    hum.breathAt(2, 2, true);
+    // Switched to halves of 2 beats mid-bar: these would end at or before 4,
+    // where the running half ends, and make the filter jump
+    hum.breathAt(3, 1, false);
+    hum.breathAt(3.5, 0.5, false);
+    hum.breathAt(4, 1, false);
+    expect(hum.breath.offset.calls).toEqual([
+      ['setValueAtTime', 0, 2],
+      ['linearRampToValueAtTime', swing, 2 + 2],
+      ['linearRampToValueAtTime', -swing, 4 + 1],
     ]);
   });
 
@@ -198,10 +217,10 @@ describe('Hum', () => {
     CONFIG.HUM.CUTOFF_HZ = 400;
     CONFIG.HUM.BREATH = 0.5;
     const swing = 400 * 0.6 * 0.5;
-    hum.barAt(2, 2);
+    hum.breathAt(2, 2, true);
     // A stall or a hidden tab skipped the bars at 4 and 6: the next ramp
     // starts from the value held since 4, not from 4 itself
-    hum.barAt(8, 2);
+    hum.breathAt(8, 2, false);
     expect(hum.breath.offset.calls).toEqual([
       ['setValueAtTime', 0, 2],
       ['linearRampToValueAtTime', swing, 2 + 2],

@@ -85,15 +85,20 @@ describe('BeatTrack grid', () => {
     const track = new BeatTrack({ get: (k) => ({ beatClock: clock })[k] });
     Object.assign(track, { ctx, masterGain: {}, isPlaying: true });
     vi.spyOn(track, '_playKick').mockImplementation(() => {});
-    track.hum = { sync: vi.fn(), dipAt: vi.fn(), barAt: vi.fn() };
+    track.hum = {
+      sync: vi.fn(),
+      dipAt: vi.fn(),
+      fadeInAt: vi.fn(),
+      breathAt: vi.fn(),
+    };
     track._scheduler();
     // Four seconds of passes: at 150 BPM, a bar is 4 × 0.4 s
     for (let i = 0; i < 160; i++) {
       ctx.currentTime += 0.025;
       vi.advanceTimersByTime(25);
     }
-    expect(track.hum.barAt).toHaveBeenCalled();
-    for (const [, barSec] of track.hum.barAt.mock.calls) {
+    expect(track.hum.breathAt).toHaveBeenCalled();
+    for (const [, barSec] of track.hum.breathAt.mock.calls) {
       expect(barSec).toBeCloseTo(1.6, 9);
     }
   });

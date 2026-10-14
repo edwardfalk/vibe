@@ -85,7 +85,7 @@ describe('BeatTrack kick', () => {
     expect(playMeasure()).toEqual([0, 2]);
   });
 
-  it('dips the hum on every beat, kick or not, and turns its breath on each beat 1', () => {
+  it('dips the hum on every beat, kick or not, and turns its breath on each beat 1 by default', () => {
     const setups = [
       () => {},
       () => (CONFIG.BEAT_TRACK.KICK.PATTERN = 'oneThree'),
@@ -94,16 +94,51 @@ describe('BeatTrack kick', () => {
     for (const setup of setups) {
       CONFIG.BEAT_TRACK = structuredClone(original);
       setup();
-      const hum = { dipAt: vi.fn(), barAt: vi.fn() };
+      const hum = { dipAt: vi.fn(), fadeInAt: vi.fn(), breathAt: vi.fn() };
       playMeasure(hum, 16); // two bars
       expect(hum.dipAt.mock.calls).toEqual(
         [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map((t) => [t])
       );
-      expect(hum.barAt.mock.calls).toEqual([
-        [0, 2],
-        [2, 2],
+      expect(hum.fadeInAt.mock.calls).toEqual([[0], [2]]); // the hum keeps the first
+      expect(hum.breathAt.mock.calls).toEqual([
+        [0, 2, true],
+        [2, 2, false],
       ]); // a bar: 4 × 0.5 s
     }
+  });
+
+  it('breathes every BREATH_BEATS beats, opening from each half counted from beat 1', () => {
+    const breaths = (every) => {
+      CONFIG.HUM.BREATH_BEATS = every;
+      const hum = { dipAt: vi.fn(), fadeInAt: vi.fn(), breathAt: vi.fn() };
+      playMeasure(hum, 8);
+      return hum.breathAt.mock.calls;
+    };
+    expect(breaths(2)).toEqual([
+      [0, 1, true],
+      [1, 1, false],
+    ]);
+    expect(breaths(1)).toEqual([
+      [0, 0.5, true],
+      [0.5, 0.5, false],
+      [1, 0.5, true],
+      [1.5, 0.5, false],
+    ]);
+  });
+
+  it('keeps the breath in its place in the bar when the track starts mid-bar', () => {
+    CONFIG.HUM.BREATH_BEATS = 2;
+    const track = new BeatTrack({});
+    track.hum = { dipAt: vi.fn(), fadeInAt: vi.fn(), breathAt: vi.fn() };
+    track._beatSec = 0.5;
+    vi.spyOn(track, '_playKick').mockImplementation(() => {});
+    // From beat 3 of a bar: it closes over 3-4, then opens from the bar line
+    for (let i = 4; i < 12; i++) track._scheduleNote(i * 0.25, i % 8);
+    expect(track.hum.breathAt.mock.calls).toEqual([
+      [1, 1, false],
+      [2, 1, true],
+    ]);
+    expect(track.hum.fadeInAt.mock.calls).toEqual([[2]]);
   });
 
   it('keeps every kick when the hum throws on the beat, logging once', () => {
@@ -112,7 +147,8 @@ describe('BeatTrack kick', () => {
       const fail = () => {
         throw new Error('hum');
       };
-      expect(playMeasure({ dipAt: fail, barAt: fail })).toEqual([0, 1, 2, 3]);
+      const hum = { dipAt: fail, fadeInAt: fail, breathAt: fail };
+      expect(playMeasure(hum)).toEqual([0, 1, 2, 3]);
       expect(error).toHaveBeenCalledTimes(1);
     } finally {
       error.mockRestore();
