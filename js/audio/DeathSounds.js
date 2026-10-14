@@ -63,8 +63,8 @@ const WHINE = {
 /** How long a grunt's pop lasts, s, for a noise offset that stays in the buffer */
 export const GRUNT_POP_SEC = WHINE.DELAY_SEC + WHINE.SLIDE_SEC + WHINE.HOLD_SEC;
 // The mix pass: the last breath over the page's level, in dB, to the top of
-// the events' window: his death line ducks it 6 dB, and Edward never heard
-// it (docs/superpowers/specs/2026-10-10-mix-pass-design.md)
+// the events' window: his death line ducked it 6 dB then (3 dB since), and
+// Edward never heard it (docs/superpowers/specs/2026-10-10-mix-pass-design.md)
 export const BREATH_MIX_DB = 14.56;
 
 // The Dude's last breath: a soft pad an octave under his note, gliding down

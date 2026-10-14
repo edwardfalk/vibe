@@ -148,8 +148,8 @@ const CONFIG = {
     BAND_DB: 0,
     FEEDBACK_DB: 0,
     SPEECH_DISTANCE_FLOOR: 0.7, // far-off enemies still this loud (was 0.4)
-    DUCK_SFX_DB: -6, // effects dip while someone speaks
-    DUCK_BEAT_DB: -3, // the kick dips less: it keeps time
+    DUCK_SFX_DB: -3, // effects dip while someone speaks (was -6: the dip was too noticeable)
+    DUCK_BEAT_DB: -3, // the kick's dip; never more than the effects': it keeps time
     DUCK_RELEASE_SEC: 0.3,
     DUCK_MAX_HOLD_MS: 5000, // never stay ducked longer than this after a line starts
   },
