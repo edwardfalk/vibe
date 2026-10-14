@@ -196,6 +196,23 @@ describe('Hum', () => {
     ]);
   });
 
+  it('lets a running half play out when a shorter one would end inside it', () => {
+    CONFIG.HUM.CUTOFF_HZ = 400;
+    CONFIG.HUM.BREATH = 0.5;
+    const swing = 400 * 0.6 * 0.5;
+    hum.breathAt(2, 2, true);
+    // Switched to halves of 2 beats mid-bar: these would end at or before 4,
+    // where the running half ends, and make the filter jump
+    hum.breathAt(3, 1, false);
+    hum.breathAt(3.5, 0.5, false);
+    hum.breathAt(4, 1, false);
+    expect(hum.breath.offset.calls).toEqual([
+      ['setValueAtTime', 0, 2],
+      ['linearRampToValueAtTime', swing, 2 + 2],
+      ['linearRampToValueAtTime', -swing, 4 + 1],
+    ]);
+  });
+
   it('holds the breath through missed bars, then carries on from there', () => {
     CONFIG.HUM.CUTOFF_HZ = 400;
     CONFIG.HUM.BREATH = 0.5;

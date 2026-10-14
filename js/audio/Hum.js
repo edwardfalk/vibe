@@ -48,6 +48,8 @@ const DIP_RISE_TAU_SEC = 0.12;
 // BREATH 1 swings the filter by this share of CUTOFF_HZ either way
 const BREATH_SHARE = 0.6;
 const FADE_IN_SEC = 0.4;
+// Ramp ends this close are the same moment (sums of beats in floating point)
+const SAME_TIME_SEC = 1e-6;
 
 const levelGainOf = () => dB(TRIM_DB + CONFIG.HUM.LEVEL_DB);
 
@@ -156,13 +158,14 @@ export class Hum {
    * or closes. A ramp starts where the last one ended, so a restart that
    * moves the bar line bends the breath. A missed half (a stall, a hidden
    * tab) leaves the last ramp ended in the past, so the new one is anchored
-   * at the value held since.
-   * shortcut: a shorter BREATH_BEATS picked on ?tune mid-ramp books a ramp
-   * inside the long one; the breath is bent for up to a bar, then right.
-   * Cut the old ramp where it stands if that is ever heard.
+   * at the value held since. A half that would end before the running one
+   * (a shorter BREATH_BEATS picked on ?tune mid-half) is dropped: two ramps
+   * ending together make the filter jump, so the running half plays out.
    */
   breathAt(time, sec, up) {
     const { offset } = this.breath;
+    const end = this._breathEnd?.sec ?? -Infinity;
+    if (time + sec <= end + SAME_TIME_SEC) return;
     if (!this._breathEnd) offset.setValueAtTime(0, time);
     else if (time > this._breathEnd.sec) {
       offset.setValueAtTime(this._breathEnd.value, time);
