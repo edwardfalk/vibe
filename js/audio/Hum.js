@@ -4,15 +4,16 @@
  * "Warm saws" from the listening page (docs/superpowers/specs/
  * 2026-10-04-universe-hum-design.md): two detuned saws on the root's octave,
  * a saw on the fifth and a sine on the root, through a soft lowpass.
- * BeatTrack keeps its time: dipAt on every beat, barAt on each beat 1, and
- * sync as the audio clock moves (the root, the drift, the level and the fight).
+ * BeatTrack keeps its time: dipAt on every beat, fadeInAt on the first beat 1,
+ * breathAt every HUM.BREATH_BEATS beats, and sync as the audio clock moves
+ * (the root, the drift, the level and the fight).
  *
  * Chain: voices -> lowpass -> dip -> fade -> level -> out, which is Audio's
  * masterGain, so mute and the speech duck apply. Each AudioParam has one
  * writer: sync writes the voices' frequencies, the layers' gains, the
- * filter's frequency and the level; dipAt the dip; the first barAt the
- * fade. The breathing adds into the filter's frequency through its own
- * ConstantSource, which barAt ramps. Settings: CONFIG.HUM, read live.
+ * filter's frequency and the level; dipAt the dip; fadeInAt the fade. The
+ * breathing adds into the filter's frequency through its own
+ * ConstantSource, which breathAt ramps. Settings: CONFIG.HUM, read live.
  */
 
 import { CONFIG } from '../config.js';
@@ -90,7 +91,7 @@ export class Hum {
     this.breath.offset.value = 0;
     this.breath.connect(this.filter.frequency);
     this.breath.start(now);
-    this._breathUp = false;
+    this._breathEnd = null; // { sec, value } where the last ramp ends
     this._started = false;
 
     this.voices = VOICES.map(([note, type, cents, level, from], i) => {
@@ -142,28 +143,34 @@ export class Hum {
     gain.setTargetAtTime(1, time + DIP_HOLD_SEC, DIP_RISE_TAU_SEC);
   }
 
+  /** The first bar's beat 1 at audio time `time`: the hum fades in, once */
+  fadeInAt(time) {
+    if (this._started) return;
+    this._started = true;
+    this.fade.gain.setValueAtTime(0, time);
+    this.fade.gain.linearRampToValueAtTime(1, time + FADE_IN_SEC);
+  }
+
   /**
-   * A bar's beat 1 at audio time `time`: the filter's breath ramps up over
-   * this bar and down over the next. A ramp starts where the last one ended,
-   * so a restart that moves the bar line bends the breath. A missed bar (a
-   * stall, a hidden tab) leaves the last ramp ended in the past, so the new
-   * one is anchored at the value held since. The first bar fades the hum in.
+   * Half a breath from audio time `time`, `sec` long: the filter opens (`up`)
+   * or closes. A ramp starts where the last one ended, so a restart that
+   * moves the bar line bends the breath. A missed half (a stall, a hidden
+   * tab) leaves the last ramp ended in the past, so the new one is anchored
+   * at the value held since.
+   * shortcut: a shorter BREATH_BEATS picked on ?tune mid-ramp books a ramp
+   * inside the long one; the breath is bent for up to a bar, then right.
+   * Cut the old ramp where it stands if that is ever heard.
    */
-  barAt(time, barSec) {
+  breathAt(time, sec, up) {
     const { offset } = this.breath;
-    if (!this._started) {
-      this._started = true;
-      this.fade.gain.setValueAtTime(0, time);
-      this.fade.gain.linearRampToValueAtTime(1, time + FADE_IN_SEC);
-      offset.setValueAtTime(0, time);
-    } else if (time > this._breathEnd.sec) {
+    if (!this._breathEnd) offset.setValueAtTime(0, time);
+    else if (time > this._breathEnd.sec) {
       offset.setValueAtTime(this._breathEnd.value, time);
     }
     const { CUTOFF_HZ, BREATH } = CONFIG.HUM;
     const swing = CUTOFF_HZ * BREATH_SHARE * BREATH;
-    this._breathUp = !this._breathUp;
-    const value = this._breathUp ? swing : -swing;
-    offset.linearRampToValueAtTime(value, time + barSec);
-    this._breathEnd = { sec: time + barSec, value };
+    const value = up ? swing : -swing;
+    offset.linearRampToValueAtTime(value, time + sec);
+    this._breathEnd = { sec: time + sec, value };
   }
 }

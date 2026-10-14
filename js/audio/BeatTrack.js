@@ -285,11 +285,22 @@ export class BeatTrack {
     if (kicksOn(beat)) {
       this._playKick(time, beat === 0);
     }
-    // Every beat dips the hum, kick or not; each bar's beat 1 turns its breath
+    // Every beat dips the hum, kick or not; the first beat 1 fades it in.
+    // Every BREATH_BEATS beats half a breath starts, opening on the even
+    // halves counted from the first bar line, so a breath keeps its place
+    // in the bar however it was started or switched
+    if (beat === 0) this._bars = (this._bars ?? -1) + 1;
     if (this.hum) {
       this._tryHum(() => {
         this.hum.dipAt(time);
-        if (beat === 0) this.hum.barAt(time, BEATS_PER_BAR * this._beatSec);
+        if (beat === 0) this.hum.fadeInAt(time);
+        const every = CONFIG.HUM.BREATH_BEATS;
+        if (beat % every === 0) {
+          const half = Math.floor(
+            (BEATS_PER_BAR * (this._bars ?? -1) + beat) / every
+          );
+          this.hum.breathAt(time, every * this._beatSec, half % 2 === 0);
+        }
       });
     }
   }
