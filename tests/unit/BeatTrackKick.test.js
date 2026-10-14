@@ -127,8 +127,9 @@ describe('BeatTrack kick', () => {
     expect(kickEndHz()).toBeCloseTo(55, 3);
   });
 
-  it('takes the drift at the moment the tuned kick starts', () => {
+  it('takes the drift at the moment the tuned kick starts, with SOUNDS_DRIFT', () => {
     CONFIG.HUM.DRIFT_CENTS = 9;
+    CONFIG.HUM.SOUNDS_DRIFT = true;
     expect(kickEndHz()).toBeCloseTo(hz(['1', 1], 2), 9);
     expect(kickEndHz()).not.toBeCloseTo(hz(['1', 1], 0), 3);
   });

@@ -29,8 +29,10 @@ import { beatWorld } from './helpers/beatWorld.js';
 import { transformP5 } from './helpers/transformP5.js';
 
 const DEATHS = { ...CONFIG.DEATHS };
+const SOUNDS_DRIFT = CONFIG.HUM.SOUNDS_DRIFT;
 afterEach(() => {
   Object.assign(CONFIG.DEATHS, DEATHS);
+  CONFIG.HUM.SOUNDS_DRIFT = SOUNDS_DRIFT;
   vi.restoreAllMocks();
 });
 
@@ -380,6 +382,7 @@ describe("Empty shell's sound", () => {
   };
 
   it("glides onto the hum's fifth as it drifts at its start, not the drift-less one", () => {
+    CONFIG.HUM.SOUNDS_DRIFT = true;
     const at = 7.3;
     expect(Math.abs(hz(['5', 5], at) - hz(['5', 5], 0))).toBeGreaterThan(0.05);
     const made = play(record({ at }), at);
@@ -641,6 +644,7 @@ describe("Gold shatter's sound", () => {
   };
 
   it("rings on the hum's fifth as it drifts at its start", () => {
+    CONFIG.HUM.SOUNDS_DRIFT = true;
     const at = 7.3;
     const made = play(record({ style: 'shatter', at }), at);
     const freqs = made

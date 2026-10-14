@@ -4,9 +4,10 @@
  *
  * A note is [degree, octave]: a degree of natural minor on CONFIG.HUM.ROOT,
  * in pure ratios, and an octave counted from the root (1 = the root's own).
- * The root never changes key but drifts slowly, like an old analog synth;
- * hz() includes the drift at the audio time a sound starts, and the sound
- * keeps it. Plain functions with no state: CONFIG.HUM is read live.
+ * The root never changes key but drifts slowly, like an old analog synth.
+ * The hum always follows the drift; other sounds do only with
+ * CONFIG.HUM.SOUNDS_DRIFT, taking it at the audio time they start and keeping
+ * it. Plain functions with no state: CONFIG.HUM is read live.
  */
 
 import { CONFIG } from '../config.js';
@@ -43,13 +44,14 @@ export function driftCents(t) {
 }
 
 /**
- * The frequency of a note at audio time t (seconds), drift included. Throws
- * on an unknown root or degree, so a typo in a preset fails its test
- * instead of playing a wrong note.
+ * The frequency of a note at audio time t (seconds), with the drift if
+ * `drift`. Throws on an unknown root or degree, so a typo in a preset fails
+ * its test instead of playing a wrong note.
  * @param {[string, number]} note [degree, octave]
  * @param {number} [t] the audio time the sound starts
+ * @param {boolean} [drift] the hum passes true; others follow the setting
  */
-export function hz([degree, octave], t = 0) {
+export function hz([degree, octave], t = 0, drift = CONFIG.HUM.SOUNDS_DRIFT) {
   const root = CONFIG.HUM.ROOT;
   if (!Object.hasOwn(ROOTS, root)) throw new Error(`Unknown root: ${root}`);
   if (!Object.hasOwn(DEGREES, degree)) {
@@ -59,7 +61,7 @@ export function hz([degree, octave], t = 0) {
     ROOTS[root] *
     2 ** (octave - 1) *
     DEGREES[degree] *
-    2 ** (driftCents(t) / CENTS_PER_OCTAVE)
+    (drift ? 2 ** (driftCents(t) / CENTS_PER_OCTAVE) : 1)
   );
 }
 

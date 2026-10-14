@@ -19,8 +19,10 @@ const DEFAULT_AHEAD_MS = CONFIG.BEAT_CLOCK.AHEAD_MS;
 const AHEAD = 0.025;
 const SPREAD = 0.005; // MAX_START_OFFSET_SEC: copies start up to this late
 
+const SOUNDS_DRIFT = CONFIG.HUM.SOUNDS_DRIFT;
 afterEach(() => {
   CONFIG.BEAT_CLOCK.AHEAD_MS = DEFAULT_AHEAD_MS;
+  CONFIG.HUM.SOUNDS_DRIFT = SOUNDS_DRIFT;
   vi.restoreAllMocks();
 });
 
@@ -222,7 +224,9 @@ describe('every beat sound books on its eighth through playSound', () => {
   );
 
   it("a tone's pitch is read at its booked start, before its spread", () => {
-    // The hum's drift moves every pitch: it is read where the tone starts
+    // With SOUNDS_DRIFT the hum's drift moves every pitch: it is read where
+    // the tone starts
+    CONFIG.HUM.SOUNDS_DRIFT = true;
     const { made, game } = ledAudio();
     const random = vi.spyOn(Math, 'random').mockReturnValue(0.5); // no detune
     game(3.01).playSound('gruntAdvance', 100, 0);

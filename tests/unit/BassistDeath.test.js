@@ -25,8 +25,10 @@ import { drawBassist } from '../../js/entities/BassistRenderer.js';
 // He dies in a cloud of ink: frozen until his death's start, then he blurts
 // it and his scroll escapes on his lets (the bassist death spec)
 const DEATHS = { ...CONFIG.DEATHS };
+const SOUNDS_DRIFT = CONFIG.HUM.SOUNDS_DRIFT;
 afterEach(() => {
   Object.assign(CONFIG.DEATHS, DEATHS);
+  CONFIG.HUM.SOUNDS_DRIFT = SOUNDS_DRIFT;
   vi.restoreAllMocks();
 });
 
@@ -553,6 +555,7 @@ describe('the ink’s sound', () => {
   });
 
   it('sounds his last note on his b3 as it drifts at the fizzle', () => {
+    CONFIG.HUM.SOUNDS_DRIFT = true;
     const r = rec();
     const t = 7 + r.fizzle;
     expect(Math.abs(hz(['b3', 2], t) - hz(['b3', 2], 7))).toBeGreaterThan(1e-6);
@@ -570,6 +573,7 @@ describe('the ink’s sound', () => {
   });
 
   it('bends his last note onto the root as it drifts at the fizzle, not the drift-less one', () => {
+    CONFIG.HUM.SOUNDS_DRIFT = true;
     const r = rec();
     const t = 7 + r.fizzle;
     expect(Math.abs(hz(['1', 2], t) - hz(['1', 2], 0))).toBeGreaterThan(0.01);

@@ -71,7 +71,7 @@ export class Hum {
   constructor(ctx, out) {
     const now = ctx.currentTime;
     // Every pitch first: a bad root throws here, with nothing started
-    const pitches = VOICES.map(([note]) => hz(note, now));
+    const pitches = VOICES.map(([note]) => hz(note, now, true));
 
     this.levelGain = ctx.createGain();
     this.levelGain.gain.value = levelGainOf();
@@ -116,7 +116,11 @@ export class Hum {
    */
   sync(now, level, enemies) {
     for (const v of this.voices) {
-      v.osc.frequency.setTargetAtTime(hz(v.note, now), now, VOICE_GLIDE_SEC);
+      v.osc.frequency.setTargetAtTime(
+        hz(v.note, now, true),
+        now,
+        VOICE_GLIDE_SEC
+      );
       const on = level >= v.from;
       if (on !== v.on) {
         v.on = on;

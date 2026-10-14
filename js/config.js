@@ -219,6 +219,7 @@ const CONFIG = {
     ROOT: 'F#', // the universe's key: E, F, F#, G or A, in the octave up to A1 = 55 Hz
     LEVEL_DB: 0, // added to the listening page's level (Hum.js's TRIM_DB)
     DRIFT_CENTS: 10, // the furthest the root wanders
+    SOUNDS_DRIFT: false, // the other tuned sounds drift with the hum; false: they stay on the root
     DIP: 0.85, // share of the hum's level each beat's dip takes
     BREATH: 0.7, // how far the filter opens and closes over two bars
     CUTOFF_HZ: 420, // the filter's resting brightness
