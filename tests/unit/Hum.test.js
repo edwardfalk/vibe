@@ -74,6 +74,7 @@ describe('Hum', () => {
 
   it('opens the filter as enemies fill the screen, up to its full screen (HUM.FULL_SCREEN_ENEMIES)', () => {
     CONFIG.HUM.CUTOFF_HZ = 400;
+    CONFIG.HUM.FIGHT_OPEN = 1;
     expect(filterTarget(0)).toBe(400);
     expect(filterTarget(3)).toBe(600);
     expect(filterTarget(6)).toBe(800);
@@ -156,6 +157,7 @@ describe('Hum', () => {
 
   it('sets the filter target and the level on each sync', () => {
     CONFIG.HUM.CUTOFF_HZ = 400;
+    CONFIG.HUM.FIGHT_OPEN = 1;
     CONFIG.HUM.LEVEL_DB = 6;
     hum.sync(1, 1, 6);
     expect(lastTarget(hum.filter.frequency)).toEqual([800, 1, 2]);

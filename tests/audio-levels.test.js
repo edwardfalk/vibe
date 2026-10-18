@@ -7,8 +7,9 @@ import { test, expect } from '@playwright/test';
 // bars, from WINDOW_SEC, once the hum's fades and its fight filter (2 s time
 // constant) have settled. On the page's engine with Edward's settings the
 // hum, dipping, measured 5.1 dB under the kick; with the level-5 layers and
-// the filter fully open, 5.0 dB under (2026-10-04).
-const HUM_UNDER_KICK_DB = -5;
+// the filter fully open, 5.0 dB under (2026-10-04). Edward's ?tune levels
+// of 2026-10-18 (HUM.LEVEL_DB 2, DIP 0.75, FIGHT_OPEN 0.5) put it 3.4 under.
+const HUM_UNDER_KICK_DB = -3.5;
 const HUM_TOLERANCE_DB = 2;
 const HERO_UNDER_KICK_DB = -4;
 const HERO_TOLERANCE_DB = 1.5;

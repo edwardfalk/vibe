@@ -217,14 +217,14 @@ const CONFIG = {
   // with SOUNDS_DRIFT (js/audio/Harmony.js). Tune live with ?tune.
   HUM: {
     ROOT: 'F#', // the universe's key: E, F, F#, G or A, in the octave up to A1 = 55 Hz
-    LEVEL_DB: 0, // added to the listening page's level (Hum.js's TRIM_DB)
+    LEVEL_DB: 2, // added to the listening page's level (Hum.js's TRIM_DB)
     DRIFT_CENTS: 10, // the furthest the root wanders
     SOUNDS_DRIFT: false, // the other tuned sounds drift with the hum; false: they stay on the root
-    DIP: 0.85, // share of the hum's level each beat's dip takes
+    DIP: 0.75, // share of the hum's level each beat's dip takes
     BREATH: 0.7, // how far the filter opens and closes on each breath
     BREATH_BEATS: 4, // beats the filter takes to open, and again to close: 4, 2 or 1
     CUTOFF_HZ: 420, // the filter's resting brightness
-    FIGHT_OPEN: 1, // a full screen opens the filter this much more (1 = twice as bright)
+    FIGHT_OPEN: 0.5, // a full screen opens the filter this much more (1 = twice as bright)
     // A full screen (Hum.filterTarget): SWARM.COUNT full swarms of SIZE_MAX
     // plus the others' top cap (5); move it with either
     FULL_SCREEN_ENEMIES: 17,
