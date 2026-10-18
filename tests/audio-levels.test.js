@@ -76,7 +76,10 @@ test("the hum and the hero's shots sit under the kick, the hum quiet and on a fu
         for (let t = 0; t < END_SEC; t += PASS_SEC) h.sync(t, level, enemies);
         for (let beat = 0; beat * BEAT_SEC < END_SEC; beat++) {
           h.dipAt(beat * BEAT_SEC);
-          if (beat % 4 === 0) h.barAt(beat * BEAT_SEC, BAR_SEC);
+          if (beat % 4 === 0) {
+            h.fadeInAt(beat * BEAT_SEC);
+            h.breathAt(beat * BEAT_SEC, BAR_SEC, beat % 8 === 0);
+          }
         }
       });
 
@@ -730,7 +733,10 @@ test('the bassist plays over the hum at level 4: every pluck and his slap', asyn
       for (let t = 0; t < END_SEC; t += PASS_SEC) h.sync(t, 4, 8);
       for (let beat = 0; beat * BEAT_SEC < END_SEC; beat++) {
         h.dipAt(beat * BEAT_SEC);
-        if (beat % 4 === 0) h.barAt(beat * BEAT_SEC, BAR_SEC);
+        if (beat % 4 === 0) {
+          h.fadeInAt(beat * BEAT_SEC);
+          h.breathAt(beat * BEAT_SEC, BAR_SEC, beat % 8 === 0);
+        }
       }
     });
     let sum = 0;

@@ -117,6 +117,7 @@ export const KNOBS = [
   [HUM, 'SOUNDS_DRIFT'],
   [HUM, 'DIP', [0, 0.9, 0.05]],
   [HUM, 'BREATH', [0, 1, 0.05]],
+  [HUM, 'BREATH_BEATS', { 'two bars': 4, 'a bar': 2, 'two beats': 1 }],
   [HUM, 'CUTOFF_HZ', [150, 1500, 10]],
   [HUM, 'FIGHT_OPEN', [0, 3, 0.1]],
   [HUM, 'FULL_SCREEN_ENEMIES', [1, 30, 1]],
@@ -460,7 +461,7 @@ export function createTunePanel() {
     row.style.cssText = 'display:block;margin:6px 0;';
     const name = document.createElement('div');
     // Named choices show the name of the one set
-    const named = !Array.isArray(options) && typeof value === 'object';
+    const named = typeof options === 'object' && !Array.isArray(options);
     // (none of them: the Playground voices box put another voice in)
     const shown = () =>
       named
