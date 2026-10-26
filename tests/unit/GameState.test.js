@@ -87,6 +87,7 @@ describe('GameState', () => {
       shotAt: 3.6,
       hurtAt: 3.6,
       shieldBackAt: 3.6,
+      plantedAt: 3.6,
       footfalls: [{ x: 1, y: 2, at: 3.5, foot: 1 }],
       lastEighth: 7,
       isDashing: true,
@@ -101,11 +102,12 @@ describe('GameState', () => {
     window.player = player;
     try {
       gs.restart();
-      expect([player.shotAt, player.hurtAt, player.shieldBackAt]).toEqual([
-        null,
-        null,
-        null,
-      ]);
+      expect([
+        player.shotAt,
+        player.hurtAt,
+        player.shieldBackAt,
+        player.plantedAt,
+      ]).toEqual([null, null, null, null]);
       expect(player.footfalls).toEqual([]);
       expect(player.lastEighth).toBe(null);
       expect([player.isDashing, player.dashTimerMs]).toEqual([false, 0]);

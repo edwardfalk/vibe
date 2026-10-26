@@ -301,6 +301,7 @@ export class GameState {
       window.player.shotAt = null;
       window.player.hurtAt = null;
       window.player.shieldBackAt = null;
+      window.player.plantedAt = null;
       window.player.footfalls = [];
       window.player.lastEighth = null;
       window.player.isDashing = false;

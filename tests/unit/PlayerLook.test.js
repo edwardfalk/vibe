@@ -242,7 +242,7 @@ describe('drawing him', () => {
     player.shieldDownMs = 200;
     player.hurtAt = 17.1;
     player.shotAt = 17.25;
-    player.plantedAt = 17.28;
+    player.plantedAt = 17.1; // his kick held out
     player.footfalls = [{ x: 4, y: 20, at: 17, foot: 0 }];
   };
 
@@ -281,6 +281,29 @@ describe('drawing him', () => {
     player.facing = -1; // he turned round to it
     expect(player.pose().plantAhead).toBe(true);
     expect(heroAimingAt({ x: 300, y: 0 }).pose().plantAge).toBe(Infinity);
+  });
+
+  it('draws the dash’s leap in its afterimages while he kicks, and the kick on him', () => {
+    const player = heroAimingAt({ x: 300, y: 0 });
+    player.poseBeats = 17.3;
+    player.isDashing = true;
+    player.dashTimerMs = 150;
+    player.plantedAt = 17.1; // 0.1 s ago: held out
+    const { p } = transformP5();
+    const ctx = p.drawingContext;
+    const stamped = []; // [alpha, width in his px] of each sprite drawn
+    p.drawingContext = new Proxy(ctx, {
+      get: (t, k) =>
+        k === 'drawImage'
+          ? (img, x, y, w) => stamped.push([t.globalAlpha, w])
+          : t[k],
+    });
+    drawPlayer(p, player);
+    const kickW = 46; // the kick's pictures' box; the leap's is 42
+    const ghosts = stamped.filter(([a]) => a < 1);
+    expect(ghosts.some(([, w]) => w === 42)).toBe(true);
+    expect(ghosts.some(([, w]) => w === kickW)).toBe(false);
+    expect(stamped.some(([a, w]) => a === 1 && w === kickW)).toBe(true);
   });
 
   it('draws at both ends of the size slider', () => {
