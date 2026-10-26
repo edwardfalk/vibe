@@ -222,7 +222,7 @@ const CONFIG = {
     SOUNDS_DRIFT: false, // the other tuned sounds drift with the hum; false: they stay on the root
     DIP: 0.75, // share of the hum's level each beat's dip takes
     BREATH: 0.7, // how far the filter opens and closes on each breath
-    BREATH_BEATS: 4, // beats the filter takes to open, and again to close: 4, 2 or 1
+    BREATH_BEATS: 2, // beats the filter takes to open, and again to close: 4, 2 or 1 (2: brightest on beat 3)
     CUTOFF_HZ: 420, // the filter's resting brightness
     FIGHT_OPEN: 0.5, // a full screen opens the filter this much more (1 = twice as bright)
     // A full screen (Hum.filterTarget): SWARM.COUNT full swarms of SIZE_MAX

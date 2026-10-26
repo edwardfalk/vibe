@@ -69,17 +69,21 @@ test("the hum and the hero's shots sit under the kick, the hum quiet and on a fu
     });
 
     // The hum at a level and enemy count, as at run time: a sync every
-    // scheduler pass (so the drift moves), a dip every beat, a bar every 4
+    // scheduler pass (so the drift moves), a dip every beat, a breath half every HUM.BREATH_BEATS
     const hum = (level, enemies) =>
       rms((ctx, out) => {
         const h = new Hum(ctx, out);
         for (let t = 0; t < END_SEC; t += PASS_SEC) h.sync(t, level, enemies);
         for (let beat = 0; beat * BEAT_SEC < END_SEC; beat++) {
           h.dipAt(beat * BEAT_SEC);
-          if (beat % 4 === 0) {
-            h.fadeInAt(beat * BEAT_SEC);
-            h.breathAt(beat * BEAT_SEC, BAR_SEC, beat % 8 === 0);
-          }
+          if (beat % 4 === 0) h.fadeInAt(beat * BEAT_SEC);
+          const every = CONFIG.HUM.BREATH_BEATS;
+          if (beat % every === 0)
+            h.breathAt(
+              beat * BEAT_SEC,
+              every * BEAT_SEC,
+              beat % (2 * every) === 0
+            );
         }
       });
 
@@ -733,10 +737,14 @@ test('the bassist plays over the hum at level 4: every pluck and his slap', asyn
       for (let t = 0; t < END_SEC; t += PASS_SEC) h.sync(t, 4, 8);
       for (let beat = 0; beat * BEAT_SEC < END_SEC; beat++) {
         h.dipAt(beat * BEAT_SEC);
-        if (beat % 4 === 0) {
-          h.fadeInAt(beat * BEAT_SEC);
-          h.breathAt(beat * BEAT_SEC, BAR_SEC, beat % 8 === 0);
-        }
+        if (beat % 4 === 0) h.fadeInAt(beat * BEAT_SEC);
+        const every = CONFIG.HUM.BREATH_BEATS;
+        if (beat % every === 0)
+          h.breathAt(
+            beat * BEAT_SEC,
+            every * BEAT_SEC,
+            beat % (2 * every) === 0
+          );
       }
     });
     let sum = 0;

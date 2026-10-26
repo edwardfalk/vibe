@@ -29,7 +29,7 @@ Every sound lands on its beat with the kick. The game runs a lead (`CONFIG.BEAT_
 
 The universe has a tone as well as a beat. Under everything plays a hum: one root note and its fifth, two detuned saws on the root, a saw on the fifth and a low sine through a soft filter, in a dark synthwave colour. The root never changes key (F# by default), but it drifts a few cents, slowly, like an old analog synth. Every other tuned sound stays on the root's true pitch; on `?tune` they can take the drift too (`HUM.SOUNDS_DRIFT`). The kick's thump ends on the root.
 
-The hum dips on every beat, kick or not, and swells back, and its filter opens over one bar and closes over the next. It grows with the levels: from level 3 a saw an octave higher, from level 5 a shimmer of high fifths. It brightens as enemies fill the screen and settles when the run ends. It sits about 5 dB under the kick above 250 Hz, where laptop speakers play, and dips with the effects while anyone speaks. The pitch grid is `js/audio/Harmony.js`, the hum `js/audio/Hum.js`, and its settings are in `CONFIG.HUM`.
+The hum dips on every beat, kick or not, and swells back, and its filter opens from each bar line over two beats and closes over the next two, brightest on beat 3 (on `?tune` it can breathe over two bars, or every two beats). It grows with the levels: from level 3 a saw an octave higher, from level 5 a shimmer of high fifths. It brightens as enemies fill the screen and settles when the run ends. It sits about 5 dB under the kick above 250 Hz, where laptop speakers play, and dips with the effects while anyone speaks. The pitch grid is `js/audio/Harmony.js`, the hum `js/audio/Hum.js`, and its settings are in `CONFIG.HUM`.
 
 ## The cast
 
