@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BeatTrack } from '../../js/audio/BeatTrack.js';
+import { CONFIG } from '../../js/config.js';
 
 // A BeatTrack whose scheduler reads a fake BeatClock on a fake AudioContext
 function setup({ now, clockStartMs, beatMs = 500, gameState }) {
@@ -79,22 +80,27 @@ describe('BeatTrack grid', () => {
     expect(notes).toEqual([]);
   });
 
-  it("turns the hum's breath over the clock's own bar length", () => {
+  it("times the hum's breath by the clock's own beat length", () => {
     const ctx = { currentTime: 10.2 };
     const clock = { audioContext: ctx, startTime: 1234, beatInterval: 400 };
     const track = new BeatTrack({ get: (k) => ({ beatClock: clock })[k] });
     Object.assign(track, { ctx, masterGain: {}, isPlaying: true });
     vi.spyOn(track, '_playKick').mockImplementation(() => {});
-    track.hum = { sync: vi.fn(), dipAt: vi.fn(), barAt: vi.fn() };
+    track.hum = {
+      sync: vi.fn(),
+      dipAt: vi.fn(),
+      fadeInAt: vi.fn(),
+      breathAt: vi.fn(),
+    };
     track._scheduler();
-    // Four seconds of passes: at 150 BPM, a bar is 4 × 0.4 s
+    // Four seconds of passes: at 150 BPM, a beat is 0.4 s
     for (let i = 0; i < 160; i++) {
       ctx.currentTime += 0.025;
       vi.advanceTimersByTime(25);
     }
-    expect(track.hum.barAt).toHaveBeenCalled();
-    for (const [, barSec] of track.hum.barAt.mock.calls) {
-      expect(barSec).toBeCloseTo(1.6, 9);
+    expect(track.hum.breathAt).toHaveBeenCalled();
+    for (const [, sec] of track.hum.breathAt.mock.calls) {
+      expect(sec).toBeCloseTo(CONFIG.HUM.BREATH_BEATS * 0.4, 9);
     }
   });
 
