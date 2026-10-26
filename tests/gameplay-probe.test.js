@@ -998,12 +998,19 @@ test.describe('Gameplay Probes', () => {
       window.audio.voicebox.isSpeaking = () => window.__speaking;
     });
     const speak = (on) => page.evaluate((v) => (window.__speaking = v), on);
+    // Past halfway down to each tuned dip, so retuning a dip can't break it
+    const halfway = await page.evaluate(async () => {
+      const { MIX } = (await import('/js/config.js')).CONFIG;
+      const half = (db) => (1 + 10 ** (db / 20)) / 2;
+      return { sfx: half(MIX.DUCK_SFX_DB), beat: half(MIX.DUCK_BEAT_DB) };
+    });
     const ducked = () =>
       page.waitForFunction(
-        () =>
+        (h) =>
           window.audio._ducked &&
-          window.audio.duckGain.gain.value < 0.6 &&
-          window.audio.beatDuckGain.gain.value < 0.8
+          window.audio.duckGain.gain.value < h.sfx &&
+          window.audio.beatDuckGain.gain.value < h.beat,
+        halfway
       );
     // Well under the 5 s cap, so a release that only comes from the cap fails
     const released = () =>
