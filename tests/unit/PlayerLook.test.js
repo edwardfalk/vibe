@@ -42,6 +42,8 @@ const LOOK = {
   shield: true,
   shatterAge: Infinity,
   shieldBackAge: Infinity,
+  plantAge: Infinity,
+  plantAhead: true,
   footfalls: [],
 };
 
@@ -146,6 +148,42 @@ describe('his flipbook', () => {
     expect(heroFrame({ ...LOOK, dash: 0.5 })).toBe('dash1');
     expect(heroFrame({ ...LOOK, dash: 1 })).toBe('dash2');
   });
+
+  it('kicks a bomb on through three pictures, out, held and back, ahead or back, over a dash too', () => {
+    // Each picture he shows, in order, through the kick
+    const shown = (o) => {
+      const frames = [];
+      for (let ms = 0; ms <= 450; ms += 5) {
+        const f = heroFrame({
+          ...LOOK,
+          moving: false,
+          ...o,
+          plantAge: ms / 1000,
+        });
+        if (f !== frames.at(-1)) frames.push(f);
+      }
+      return frames;
+    };
+    const kick = (name) => [0, 1, 2, 1, 0].map((i) => `${name}${i}`);
+    expect(shown({})).toEqual(['stand', ...kick('plantAhead'), 'stand']);
+    expect(shown({ plantAhead: false })).toEqual([
+      'stand',
+      ...kick('plantBack'),
+      'stand',
+    ]);
+    expect(shown({ dash: 0.5 })).toEqual([
+      'dash1',
+      ...kick('plantAhead'),
+      'dash1',
+    ]);
+    // Held out for a while, not just a picture in passing
+    const held = [];
+    for (let ms = 0; ms <= 450; ms += 5) {
+      if (heroFrame({ ...LOOK, plantAge: ms / 1000 }) === 'plantAhead2')
+        held.push(ms);
+    }
+    expect(held.at(-1) - held[0]).toBeGreaterThanOrEqual(100);
+  });
 });
 
 describe('his pose', () => {
@@ -171,6 +209,18 @@ describe('his pose', () => {
     expect(askew(Infinity)).toBe(0);
   });
 
+  it('yells through a planting kick and leans away from it; a dash under it keeps its afterimages', () => {
+    const at = (o) => heroPose({ ...LOOK, plantAge: 0.1, ...o });
+    expect(at({}).yell).toBe(true);
+    expect(at({}).lean).toBeLessThan(0); // back, from a kick ahead
+    expect(at({ plantAhead: false }).lean).toBeGreaterThan(0);
+    expect(heroPose({ ...LOOK, plantAge: 0.45 }).yell).toBe(false);
+    expect(at({ dash: 0.5 })).toMatchObject({
+      frame: 'plantAhead2',
+      ghostFrame: 'dashGhost1',
+    });
+  });
+
   it('yells while he holds fire, grits his teeth when hit', () => {
     expect(heroPose({ ...LOOK, firing: true }).yell).toBe(true);
     expect(heroPose({ ...LOOK, hurtAge: 0.2 }).grit).toBe(true);
@@ -192,6 +242,7 @@ describe('drawing him', () => {
     player.shieldDownMs = 200;
     player.hurtAt = 17.1;
     player.shotAt = 17.25;
+    player.plantedAt = 17.28;
     player.footfalls = [{ x: 4, y: 20, at: 17, foot: 0 }];
   };
 
@@ -218,6 +269,18 @@ describe('drawing him', () => {
       expect(ctx.opsDrawn.at(-1)).toBe('source-over');
       spy.mockRestore();
     }
+  });
+
+  it('kicks toward the bomb: ahead on the side he faces, back like a mule on the other', () => {
+    const player = heroAimingAt({ x: 300, y: 0 });
+    player.poseBeats = 4;
+    player.plantedBomb(40);
+    expect(player.pose()).toMatchObject({ plantAge: 0, plantAhead: true });
+    player.plantedBomb(-40);
+    expect(player.pose().plantAhead).toBe(false);
+    player.facing = -1; // he turned round to it
+    expect(player.pose().plantAhead).toBe(true);
+    expect(heroAimingAt({ x: 300, y: 0 }).pose().plantAge).toBe(Infinity);
   });
 
   it('draws at both ends of the size slider', () => {

@@ -41,7 +41,8 @@ export function handleContactCollisions({
     }
 
     if (!shouldPlaceBomb || !activeBombs) continue;
-    plantBomb(activeBombs, enemy, beatClock, audio);
+    const bomb = plantBomb(activeBombs, enemy, beatClock, audio);
+    if (bomb) player.plantedBomb?.(bomb.x);
   }
 
   return false;

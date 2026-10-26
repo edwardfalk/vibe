@@ -119,9 +119,20 @@ const DASH_BOB_PX = 3;
 const DASH_LEAN_RAD = 0.38;
 const DASH_PEAK = 1.2; // the leap peaks a little before the dash ends
 const BACK_COS = 0.25; // dashing this much against his facing, he leaps back
+// Planting a bomb: both hands full, he kicks it on with a sandal, ahead or
+// back like a mule, the leg out fast, held, then back
+const PLANT_SEC = 0.4;
+const PLANT_OUT = 0.2; // the share of it the kick takes to land
+const PLANT_HOLD = 0.45; // held out till this share
+const PLANT_FRAMES = 3;
+const PLANT_AHEAD_RAD = 1.6; // his near leg's swing (+ forward)
+const PLANT_BACK_RAD = -1.35;
+const PLANT_LEAN_RAD = 0.25; // he leans away from the kick
+const DRINK_SAVE_RAD = 3.0; // kicking ahead, he holds the glass out behind him
 // His body's pictures, round his centre: the dash's leap reaches 19.4 px
 // ahead and the sandals 22.7 px down, plus ink (PlayerLook.test.js checks)
 const FLIPBOOK_BOX = [-21, -24, 21, 24];
+const PLANT_BOX = [-23, -24, 23, 24]; // the front kick's sandal reaches further
 export const OFF_SHOULDER = Object.freeze([-3.6, -6.6]); // his drink arm's shoulder
 // His hips, [x, y]: far and near; his legs swing from them
 export const HIPS = Object.freeze([
@@ -572,12 +583,13 @@ export function headFrame(nod, hurt, tilt = 0) {
  * One flipbook picture: everything below his head that moves with his
  * stride, in his body's frame (lean and bob are applied when it is
  * stamped). b: { far, near } his legs' swing (rad, + forward), w 1 walking
- * (0 standing), ph the step phase, dash 0..1 through the dash.
+ * (0 standing), ph the step phase, dash 0..1 through the dash; a kick's
+ * also { robe } the swing his robe opens for and { arm } his drink arm's.
  */
 function body(b) {
   const flare = b.dash ? Math.sin(PI * clamp01(b.dash * DASH_PEAK)) : 0;
   const leap = b.dash ? Math.sin(PI * b.dash) : 0;
-  const armA = DRINK_ARM_RAD + (b.dash ? DRINK_ARM_DASH_RAD : 0);
+  const armA = b.arm ?? DRINK_ARM_RAD + (b.dash ? DRINK_ARM_DASH_RAD : 0);
   // Off arm, behind him, holding the drink by his belly
   ctx.save();
   ctx.translate(OFF_SHOULDER[0], OFF_SHOULDER[1]);
@@ -594,7 +606,7 @@ function body(b) {
     leg(skin);
     ctx.restore();
   }
-  robe(b.far, flare);
+  robe(b.robe ?? b.far, flare);
   sash(0.35 * b.w + 0.12 * Math.sin(TWO_PI * b.ph) * b.w + 0.9 * leap);
   // His hand and the glass, in front of his belly, upright in this picture
   ctx.save();
@@ -639,6 +651,24 @@ function dashPose(i) {
   };
 }
 
+// The planting kick's pictures, its leg further out in each; ahead, his
+// drink swings out behind him
+function plantPose(i, ahead) {
+  const k = (i + 1) / PLANT_FRAMES;
+  const near = (ahead ? PLANT_AHEAD_RAD : PLANT_BACK_RAD) * k;
+  return {
+    far: 0,
+    near,
+    robe: 0.6 * near,
+    w: 0,
+    ph: 0,
+    dash: 0,
+    arm: ahead
+      ? DRINK_ARM_RAD + (DRINK_SAVE_RAD - DRINK_ARM_RAD) * k
+      : DRINK_ARM_RAD,
+  };
+}
+
 // Parts in the prototype's px: [box, draw]. A ghost's draw sets ghost
 const asGhost = (draw) => () => {
   ghost = true;
@@ -672,6 +702,10 @@ for (let i = 0; i < WALK_FRAMES; i++) {
 for (let i = 0; i < DASH_FRAMES; i++) {
   PARTS_PX[`dash${i}`] = [FLIPBOOK_BOX, () => body(dashPose(i))];
   PARTS_PX[`dashGhost${i}`] = [FLIPBOOK_BOX, asGhost(() => body(dashPose(i)))];
+}
+for (let i = 0; i < PLANT_FRAMES; i++) {
+  PARTS_PX[`plantAhead${i}`] = [PLANT_BOX, () => body(plantPose(i, true))];
+  PARTS_PX[`plantBack${i}`] = [PLANT_BOX, () => body(plantPose(i, false))];
 }
 /**
  * A parts table for spriteParts from parts drawn in the prototype's px:
@@ -730,11 +764,25 @@ export function prepareHeroLook(p, player) {
 /** His anger, 0..1, from his health share */
 export const heroAnger = (hp) => clamp01((1 - hp) / ANGER_FULL);
 
+/** How far out his planting kick is, 0..1, age seconds after the plant */
+export function heroPlant(age) {
+  if (!(age >= 0 && age < PLANT_SEC)) return 0;
+  const u = age / PLANT_SEC;
+  if (u < PLANT_OUT) return smooth(u / PLANT_OUT);
+  if (u < PLANT_HOLD) return 1;
+  return 1 - smooth((u - PLANT_HOLD) / (1 - PLANT_HOLD));
+}
+const dashFrame = (dash) =>
+  Math.min(DASH_FRAMES - 1, Math.floor(dash * DASH_FRAMES));
+
 /** The flipbook picture for this moment (Player#pose) */
 export function heroFrame(look) {
-  if (look.dash > 0) {
-    return `dash${Math.min(DASH_FRAMES - 1, Math.floor(look.dash * DASH_FRAMES))}`;
+  // The kick's nearest picture; it shows over a dash, it's that short
+  const plant = Math.round(heroPlant(look.plantAge) * PLANT_FRAMES);
+  if (plant > 0) {
+    return `${look.plantAhead ? 'plantAhead' : 'plantBack'}${plant - 1}`;
   }
+  if (look.dash > 0) return `dash${dashFrame(look.dash)}`;
   if (!look.moving) return 'stand';
   // Backing off from his aim, his stride runs the other way: the same loop,
   // half a cycle on
@@ -769,7 +817,8 @@ export const heroRed = (anger) => RED_K * Math.pow(anger, 1.15);
 /** What his drawing needs this frame, from his pose (Player#pose) */
 export function heroPose(look) {
   const dash = look.dash;
-  const moving = look.moving && !dash;
+  const plant = heroPlant(look.plantAge);
+  const moving = look.moving && !dash && !plant;
   const dir = look.back ? -1 : 1;
   let bob = moving ? -WALK_BOB_PX * Math.abs(Math.sin(PI * look.stepPhase)) : 0;
   let lean = moving ? WALK_LEAN_RAD * dir : 0;
@@ -781,10 +830,13 @@ export function heroPose(look) {
   }
   const recoil = env(look.shotAge, RECOIL_TAU_SEC);
   lean -= RECOIL_LEAN_RAD * recoil;
+  lean += PLANT_LEAN_RAD * plant * (look.plantAhead ? -1 : 1);
   const anger = heroAnger(look.hp);
-  const idle = !moving && !dash && !look.firing;
+  const idle = !moving && !dash && !plant && !look.firing;
   return {
     frame: heroFrame(look),
+    // The dash's afterimages keep its leap, a kick or not
+    ghostFrame: dash ? `dashGhost${dashFrame(dash)}` : null,
     dash,
     bob,
     lean,
@@ -796,7 +848,7 @@ export function heroPose(look) {
     glow: anger > GLOW_ANGER,
     ...heroHurt(look.hurtAge),
     tremble: heroTremble(anger, look.t),
-    yell: look.firing,
+    yell: look.firing || plant > 0,
   };
 }
 
@@ -951,10 +1003,7 @@ function figure(look, P, flash) {
   ctx.translate(0, HIP_Y);
   ctx.rotate(P.lean);
   ctx.translate(0, -HIP_Y);
-  stamp(
-    ghost && P.dash ? P.frame.replace('dash', 'dashGhost') : P.frame,
-    flash
-  );
+  stamp(ghost ? P.ghostFrame : P.frame, flash);
   // A hit spills some of his drink
   if (!ghost && look.hurtAge < SPILL_SEC) {
     const u = look.hurtAge / SPILL_SEC;
