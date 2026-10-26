@@ -101,11 +101,9 @@ describe('BeatTrack kick', () => {
       );
       expect(hum.fadeInAt.mock.calls).toEqual([[0], [2]]); // the hum keeps the first
       expect(hum.breathAt.mock.calls).toEqual([
-        [0, 1, true],
-        [1, 1, false],
-        [2, 1, true],
-        [3, 1, false],
-      ]); // half a bar each way: 2 × 0.5 s
+        [0, 2, true],
+        [2, 2, false],
+      ]); // a bar each way: 4 × 0.5 s
     }
   });
 
@@ -116,9 +114,11 @@ describe('BeatTrack kick', () => {
       playMeasure(hum, 16); // two bars
       return hum.breathAt.mock.calls;
     };
-    expect(breaths(4)).toEqual([
-      [0, 2, true],
-      [2, 2, false],
+    expect(breaths(2)).toEqual([
+      [0, 1, true],
+      [1, 1, false],
+      [2, 1, true],
+      [3, 1, false],
     ]);
     expect(breaths(1)).toEqual(
       [0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5].map((t, i) => [t, 0.5, i % 2 === 0])
