@@ -346,6 +346,18 @@ describe('drawing him', () => {
     }
   });
 
+  it('kicks ahead past his walk and back past it, as the pictures are named', () => {
+    const reach = (name) => {
+      const { points, ctx } = boundsContext();
+      HERO_PARTS[name][1]({ scale() {}, drawingContext: ctx }, 1);
+      const xs = points.map(([x]) => x);
+      return [Math.min(...xs), Math.max(...xs)];
+    };
+    const [standBack, standAhead] = reach('stand');
+    expect(reach('plantAhead2')[1]).toBeGreaterThan(standAhead + 5);
+    expect(reach('plantBack2')[0]).toBeLessThan(standBack - 5);
+  });
+
   it('builds his sprites once at a size, and again only when ART_SCALE changes', () => {
     const player = heroAimingAt({ x: 300, y: 0 });
     const { p, graphics } = transformP5();
