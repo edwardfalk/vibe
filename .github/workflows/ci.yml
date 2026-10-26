@@ -31,11 +31,22 @@ jobs:
       - name: Unit tests
         run: pnpm run test:unit
 
+      - name: Playwright version
+        id: playwright
+        run: echo "version=$(pnpm exec playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+
+      # Downloading and extracting the browser once hung for 50 minutes (PR #87)
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
       - name: Install Playwright browsers
-        # It once hung for 50 minutes extracting (PR #87): rerun the job if
-        # this times out
+        # A no-op on a cache hit. No --with-deps: the runner image already has
+        # Chrome's libraries, and apt's slow mirror timed this step out
+        # fetching fonts the game never uses. Rerun the job if this times out
         timeout-minutes: 10
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
 
       - name: E2E tests
         run: pnpm run test:e2e
