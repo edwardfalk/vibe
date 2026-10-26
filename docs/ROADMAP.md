@@ -58,7 +58,6 @@ Calls and smaller work:
   - a beat-grid epoch, so a mid-run grid reset can't strand him.
 - **call: the cast's beat moves run one lead ahead of their sounds.** The Dude's nod and steps, the grunts' crouch, the tank's lurch, the rusher's boost and the stabber's count ring read the game's clock, which runs `CONFIG.BEAT_CLOCK.AHEAD_MS` ahead of what you hear. If it shows, move them to the heard beat, as the sky and the Dude's kick pulse already are. (beat-lead spec)
 - **call (deferred by Edward): the Dude's speech text sits on his health bar.** The fix is a text offset per speaker.
-- **build: a bomb-planting pose for the Dude:** his drink hand is full. (#83's spec)
 - **build: lines that fit the new cast.** Grunts still shout soldier lines ("KILL HUMAN!"), and the tank's anger and calm lines are robotic, not a vain bully's. The rusher's were redone on 2026-10-12.
 - **build, ideas Edward liked:**
   - the tank can't reach the bomb on his back;

@@ -82,6 +82,16 @@ describe("planting the hero's bomb", () => {
     ]);
   });
 
+  it('the hero kicks it on: told once, where it went, and only when it went on', () => {
+    const activeBombs = [];
+    const hero = { x: -60, y: 0, plantedBomb: vi.fn() };
+    for (let i = 0; i < 5; i++) touch(hero, [touchingTank(1)], activeBombs);
+    expect(hero.plantedBomb.mock.calls).toEqual([[activeBombs[0].x]]);
+    const atFront = { x: 60, y: 0, plantedBomb: vi.fn() };
+    touch(atFront, [touchingTank(2)], []);
+    expect(atFront.plantedBomb).not.toHaveBeenCalled();
+  });
+
   it('each tank takes its own', () => {
     const activeBombs = [];
     const enemies = [touchingTank(1), touchingTank(2)];

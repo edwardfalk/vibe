@@ -27,7 +27,7 @@ const MIN_DASH_DELTA_MS = 1;
 const MAX_DASH_DELTA_MS = 100;
 // His look's timing (PlayerRenderer.js draws from pose())
 const DEFAULT_BEAT_MS = 500; // without a beat clock
-const STAMPS = ['shotAt', 'hurtAt', 'shieldBackAt']; // beat positions; null = never
+const STAMPS = ['shotAt', 'hurtAt', 'shieldBackAt', 'plantedAt']; // beat positions; null = never
 const FOOTFALLS_KEPT = 3; // a crack lasts under a beat
 const CONTACT_FLINCH_SEC = 0.35; // contact ticks (one a frame) restamp his flinch this seldom
 const FIRING_SEC = 0.3; // he yells this long after a shot (held fire is an eighth apart)
@@ -90,6 +90,8 @@ export class Player {
     this.shotAt = null;
     this.hurtAt = null;
     this.shieldBackAt = null;
+    this.plantedAt = null; // he kicked a bomb onto a tank's back
+    this.plantSide = 1; // where it went: 1 right of him, -1 left
     this.footfalls = []; // { x, y, at, foot }: where his last stomps landed
     this.lastEighth = null; // the eighth note his last stomp landed on
 
@@ -348,6 +350,12 @@ export class Player {
     }
   }
 
+  /** He planted a bomb at x: both hands full, he kicks it on with a sandal */
+  plantedBomb(x) {
+    this.plantedAt = this.poseBeats;
+    this.plantSide = x < this.x ? -1 : 1;
+  }
+
   /** A stomp on each new eighth note he walks into: his look's cracks */
   recordFootfall() {
     const beats = this.poseBeats;
@@ -441,6 +449,8 @@ export class Player {
       shield: this.shieldUp,
       shatterAge: this.shieldUp ? Infinity : this.shieldDownMs / 1000,
       shieldBackAge: since(this.shieldBackAt),
+      plantAge: since(this.plantedAt),
+      plantAhead: this.plantSide === this.facing, // a front kick; else a mule kick
       footfalls: this.footfalls.map((f) => ({ ...f, age: since(f.at) })),
     };
   }

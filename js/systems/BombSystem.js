@@ -66,7 +66,8 @@ function blastAt(bomb, x, y, lo, hi, reach = 0) {
 
 /**
  * The hero plants his bomb on a tank's back (one each, MAX_ACTIVE at once)
- * and shouts "TIMEBOMB!", forced past the gap between his lines
+ * and shouts "TIMEBOMB!", forced past the gap between his lines. Returns
+ * the bomb, or nothing when none was planted
  */
 export function plantBomb(activeBombs, tank, beatClock, audio = null) {
   if (!activeBombs || !tank || !beatClock) return;
@@ -98,6 +99,7 @@ export function plantBomb(activeBombs, tank, beatClock, audio = null) {
     // next update mustn't add its beats again as missed
     bomb.seenAt = Math.max(bomb.seenAt, beatClock.getBeatPosition());
   });
+  return bomb;
 }
 
 export function updateBombs(context) {
